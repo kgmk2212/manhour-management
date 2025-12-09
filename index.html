@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -13,234 +12,383 @@
             box-sizing: border-box;
         }
 
-    body {
-        font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 10px;
-    }
-
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        overflow: hidden;
-    }
-
-    header {
-        background: #2c3e50;
-        color: white;
-        padding: 20px;
-    }
-
-    h1 {
-        font-size: 24px;
-        margin-bottom: 10px;
-    }
-
-    .header-buttons {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    .tabs {
-        display: flex;
-        gap: 5px;
-        background: #ecf0f1;
-        padding: 10px;
-        overflow-x: auto;
-    }
-
-    .tab {
-        padding: 12px 20px;
-        background: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        white-space: nowrap;
-    }
-
-    .tab.active {
-        background: #3498db;
-        color: white;
-    }
-
-    .content {
-        padding: 20px;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-    }
-
-    .btn-primary {
-        background: #3498db;
-        color: white;
-    }
-
-    .btn-success {
-        background: #27ae60;
-        color: white;
-    }
-
-    .btn-danger {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .btn-small {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
-    }
-
-    input, select {
-        width: 100%;
-        padding: 10px;
-        border: 2px solid #ddd;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-
-    .quick-input {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-        margin-bottom: 20px;
-    }
-
-    .quick-form {
-        display: grid;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-        background: white;
-        min-width: 600px;
-    }
-
-    th {
-        background: #34495e;
-        color: white;
-        padding: 12px;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #eee;
-        white-space: nowrap;
-    }
-
-    .badge {
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .badge-ui { background: #e3f2fd; color: #1976d2; }
-    .badge-pg { background: #f3e5f5; color: #7b1fa2; }
-    .badge-pt { background: #fff3e0; color: #f57c00; }
-    .badge-it { background: #e8f5e9; color: #388e3c; }
-    .badge-st { background: #fce4ec; color: #c2185b; }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-    }
-
-    .stat-card h3 {
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-
-    .stat-card .value {
-        font-size: 32px;
-        font-weight: 700;
-    }
-
-    @media (max-width: 768px) {
         body {
-            padding: 0;
+            font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
         }
 
         .container {
-            border-radius: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
         }
 
         h1 {
-            font-size: 18px;
+            font-size: 24px;
+            margin-bottom: 10px;
         }
 
         .header-buttons {
-            flex-direction: column;
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            background: #ecf0f1;
+            padding: 10px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select {
             width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .quick-input {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 20px;
         }
 
         .quick-form {
-            grid-template-columns: 1fr;
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            min-width: 600px;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+
+        /* マトリクス表示用のスタイル */
+        table tr td:first-child,
+        table tr th:first-child {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 1;
+        }
+
+        table tr th:first-child {
+            z-index: 2;
+        }
+
+        /* 週末の行 */
+        table tr[style*="ffebee"] td:first-child {
+            background: #ffebee;
+        }
+
+        /* 小計行 */
+        table tr[style*="fff3cd"] td:first-child {
+            background: #fff3cd;
+        }
+
+        /* 総合計行 */
+        table tr[style*="2c3e50"] td:first-child {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .modal-close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+        }
+
+        .modal-close:hover {
+            opacity: 0.8;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .work-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .work-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .work-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .work-item-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #2c3e50;
+        }
+
+        .work-item-hours {
+            font-size: 18px;
+            font-weight: 700;
+            color: #3498db;
+        }
+
+        .work-item-details {
             font-size: 13px;
+            color: #666;
+            line-height: 1.6;
         }
 
-        th, td {
-            padding: 8px;
+        .work-item-details span {
+            display: inline-block;
+            margin-right: 12px;
         }
-    }
-</style>
 
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-ui { background: #e3f2fd; color: #1976d2; }
+        .badge-pg { background: #f3e5f5; color: #7b1fa2; }
+        .badge-pt { background: #fff3e0; color: #f57c00; }
+        .badge-it { background: #e8f5e9; color: #388e3c; }
+        .badge-st { background: #fce4ec; color: #c2185b; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            .header-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .quick-form {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -252,696 +400,960 @@
             </div>
         </header>
 
-    <div class="tabs">
-        <button class="tab active" onclick="showTab('quick')">クイック入力</button>
-        <button class="tab" onclick="showTab('estimate')">見積管理</button>
-        <button class="tab" onclick="showTab('actual')">実績一覧</button>
-        <button class="tab" onclick="showTab('report')">レポート</button>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('quick')">クイック入力</button>
+            <button class="tab" onclick="showTab('estimate')">見積管理</button>
+            <button class="tab" onclick="showTab('actual')">実績一覧</button>
+            <button class="tab" onclick="showTab('report')">レポート</button>
+        </div>
+
+        <div class="content">
+            <div id="quick" class="tab-content active">
+                <div class="quick-input">
+                    <h2>今日の実績を入力</h2>
+                    <div class="quick-form">
+                        <div class="form-group">
+                            <label>対応選択</label>
+                            <select id="quickTask" onchange="autoFillTaskInfo()">
+                                <option value="">選択してください</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>工程</label>
+                            <input type="text" id="quickProcess" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>実績工数 (h)</label>
+                            <input type="number" id="quickHours" step="0.5" min="0">
+                        </div>
+                        <button class="btn btn-success" onclick="quickAddActual()">追加</button>
+                    </div>
+                </div>
+
+                <h3>今日の入力済み実績</h3>
+                <div id="todayActuals"></div>
+            </div>
+
+            <div id="estimate" class="tab-content">
+                <h2>見積データ管理</h2>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>新規見積登録</h3>
+                    <div class="form-group">
+                        <label>版数</label>
+                        <input type="text" id="estVersion" placeholder="第2025.11版">
+                    </div>
+                    <div class="form-group">
+                        <label>対応名</label>
+                        <input type="text" id="estTask" placeholder="帳票A_X対応">
+                    </div>
+                    <h4>各工程の見積</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                        <div class="form-group">
+                            <label>UI (担当)</label>
+                            <select id="estUI_member">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <input type="number" id="estUI" placeholder="時間" step="0.5" style="margin-top: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label>PG (担当)</label>
+                            <select id="estPG_member">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <input type="number" id="estPG" placeholder="時間" step="0.5" style="margin-top: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label>PT (担当)</label>
+                            <select id="estPT_member">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <input type="number" id="estPT" placeholder="時間" step="0.5" style="margin-top: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label>IT (担当)</label>
+                            <select id="estIT_member">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <input type="number" id="estIT" placeholder="時間" step="0.5" style="margin-top: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label>ST (担当)</label>
+                            <select id="estST_member">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <input type="number" id="estST" placeholder="時間" step="0.5" style="margin-top: 5px;">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addEstimate()" style="margin-top: 15px;">登録</button>
+                </div>
+
+                <h3>登録済み見積一覧</h3>
+                <div id="estimateList"></div>
+            </div>
+
+            <div id="actual" class="tab-content">
+                <h2>実績データ一覧</h2>
+                
+                <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
+                    <label>表示形式</label>
+                    <select id="actualViewType" onchange="renderActualList()">
+                        <option value="matrix">担当者×日付マトリクス</option>
+                        <option value="list">リスト形式</option>
+                    </select>
+                </div>
+                
+                <div id="actualList"></div>
+            </div>
+
+            <div id="report" class="tab-content">
+                <h2>工数レポート</h2>
+                
+                <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
+                    <label>表示月を選択</label>
+                    <select id="reportMonth" onchange="updateReport()">
+                        <option value="all">全期間</option>
+                    </select>
+                </div>
+
+                <h3 id="reportPeriodTitle">全期間の集計</h3>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>総見積工数</h3>
+                        <div class="value" id="totalEstimate">0h</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>総実績工数</h3>
+                        <div class="value" id="totalActual">0h</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>差異</h3>
+                        <div class="value" id="totalDiff">0h</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>実績率</h3>
+                        <div class="value" id="actualRate">0%</div>
+                    </div>
+                </div>
+
+                <h3>担当者別工数</h3>
+                <div id="memberReport"></div>
+
+                <h3 style="margin-top: 20px;">版数別進捗</h3>
+                <div id="versionReport"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="content">
-        <div id="quick" class="tab-content active">
-            <div class="quick-input">
-                <h2>今日の実績を入力</h2>
-                <div class="quick-form">
-                    <div class="form-group">
-                        <label>対応選択</label>
-                        <select id="quickTask" onchange="autoFillTaskInfo()">
-                            <option value="">選択してください</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>工程</label>
-                        <input type="text" id="quickProcess" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>実績工数 (h)</label>
-                        <input type="number" id="quickHours" step="0.5" min="0">
-                    </div>
-                    <button class="btn btn-success" onclick="quickAddActual()">追加</button>
-                </div>
+    <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;" onchange="handleFileImport(event)">
+
+    <!-- 作業詳細モーダル -->
+    <div id="workModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">作業詳細</h3>
+                <button class="modal-close" onclick="closeWorkModal()">&times;</button>
             </div>
-
-            <h3>今日の入力済み実績</h3>
-            <div id="todayActuals"></div>
-        </div>
-
-        <div id="estimate" class="tab-content">
-            <h2>見積データ管理</h2>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>新規見積登録</h3>
-                <div class="form-group">
-                    <label>版数</label>
-                    <input type="text" id="estVersion" placeholder="第2025.11版">
-                </div>
-                <div class="form-group">
-                    <label>対応名</label>
-                    <input type="text" id="estTask" placeholder="帳票A_X対応">
-                </div>
-                <h4>各工程の見積</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                    <div class="form-group">
-                        <label>UI (担当)</label>
-                        <select id="estUI_member">
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                        </select>
-                        <input type="number" id="estUI" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                    </div>
-                    <div class="form-group">
-                        <label>PG (担当)</label>
-                        <select id="estPG_member">
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                        </select>
-                        <input type="number" id="estPG" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                    </div>
-                    <div class="form-group">
-                        <label>PT (担当)</label>
-                        <select id="estPT_member">
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                        </select>
-                        <input type="number" id="estPT" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                    </div>
-                    <div class="form-group">
-                        <label>IT (担当)</label>
-                        <select id="estIT_member">
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                        </select>
-                        <input type="number" id="estIT" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                    </div>
-                    <div class="form-group">
-                        <label>ST (担当)</label>
-                        <select id="estST_member">
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                        </select>
-                        <input type="number" id="estST" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                    </div>
-                </div>
-                <button class="btn btn-primary" onclick="addEstimate()" style="margin-top: 15px;">登録</button>
+            <div class="modal-body" id="modalBody">
             </div>
-
-            <h3>登録済み見積一覧</h3>
-            <div id="estimateList"></div>
-        </div>
-
-        <div id="actual" class="tab-content">
-            <h2>実績データ一覧</h2>
-            <div id="actualList"></div>
-        </div>
-
-        <div id="report" class="tab-content">
-            <h2>工数レポート</h2>
-            
-            <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
-                <label>表示月を選択</label>
-                <select id="reportMonth" onchange="updateReport()">
-                    <option value="all">全期間</option>
-                </select>
-            </div>
-
-            <h3 id="reportPeriodTitle">全期間の集計</h3>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>総見積工数</h3>
-                    <div class="value" id="totalEstimate">0h</div>
-                </div>
-                <div class="stat-card">
-                    <h3>総実績工数</h3>
-                    <div class="value" id="totalActual">0h</div>
-                </div>
-                <div class="stat-card">
-                    <h3>差異</h3>
-                    <div class="value" id="totalDiff">0h</div>
-                </div>
-                <div class="stat-card">
-                    <h3>実績率</h3>
-                    <div class="value" id="actualRate">0%</div>
-                </div>
-            </div>
-
-            <h3>担当者別工数</h3>
-            <div id="memberReport"></div>
-
-            <h3 style="margin-top: 20px;">版数別進捗</h3>
-            <div id="versionReport"></div>
         </div>
     </div>
-</div>
 
-<input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;" onchange="handleFileImport(event)">
+    <script>
+        let estimates = [];
+        let actuals = [];
 
-<script>
-    let estimates = [];
-    let actuals = [];
-
-    document.addEventListener('DOMContentLoaded', function() {
-        loadData();
-        updateMonthOptions();
-        updateQuickTaskList();
-        renderEstimateList();
-        renderActualList();
-        renderTodayActuals();
-        updateReport();
-    });
-
-    function saveData() {
-        localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
-        localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
-        autoBackup();
-    }
-
-    function loadData() {
-        const savedEstimates = localStorage.getItem('manhour_estimates');
-        const savedActuals = localStorage.getItem('manhour_actuals');
-        
-        if (savedEstimates) estimates = JSON.parse(savedEstimates);
-        if (savedActuals) actuals = JSON.parse(savedActuals);
-    }
-
-    function updateMonthOptions() {
-        const select = document.getElementById('reportMonth');
-        const months = new Set();
-        
-        // 実績データから月を抽出
-        actuals.forEach(a => {
-            if (a.date) {
-                const month = a.date.substring(0, 7); // YYYY-MM形式
-                months.add(month);
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateMonthOptions();
+            updateQuickTaskList();
+            renderEstimateList();
+            renderActualList();
+            renderTodayActuals();
+            updateReport();
         });
-        
-        // 月を降順でソート
-        const sortedMonths = Array.from(months).sort().reverse();
-        
-        // 選択肢を生成
-        select.innerHTML = '<option value="all">全期間</option>';
-        sortedMonths.forEach(month => {
-            const [year, monthNum] = month.split('-');
-            const option = document.createElement('option');
-            option.value = month;
-            option.textContent = `${year}年${monthNum}月`;
-            select.appendChild(option);
-        });
-    }
 
-    function autoBackup() {
-        const data = {
-            estimates: estimates,
-            actuals: actuals,
-            timestamp: new Date().toISOString(),
-            version: '1.0'
-        };
-        
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        a.href = url;
-        a.download = `工数管理_バックアップ_${timestamp}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    function showTab(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        event.target.classList.add('active');
-        document.getElementById(tabName).classList.add('active');
-    }
-
-    function addEstimate() {
-        const version = document.getElementById('estVersion').value;
-        const task = document.getElementById('estTask').value;
-        
-        if (!version || !task) {
-            alert('版数と対応名を入力してください');
-            return;
+        function saveData() {
+            localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
+            localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+            autoBackup();
         }
 
-        const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
-        
-        processes.forEach(proc => {
-            const hours = parseFloat(document.getElementById(`est${proc}`).value);
-            const member = document.getElementById(`est${proc}_member`).value;
+        function loadData() {
+            const savedEstimates = localStorage.getItem('manhour_estimates');
+            const savedActuals = localStorage.getItem('manhour_actuals');
             
-            if (hours > 0 && member) {
-                estimates.push({
-                    id: Date.now() + Math.random(),
-                    version: version,
-                    task: task,
-                    process: proc,
-                    member: member,
-                    hours: hours,
-                    createdAt: new Date().toISOString()
-                });
-            }
-        });
-
-        saveData();
-        clearEstimateForm();
-        renderEstimateList();
-        updateQuickTaskList();
-        updateReport();
-        alert('見積を登録しました');
-    }
-
-    function clearEstimateForm() {
-        document.getElementById('estVersion').value = '';
-        document.getElementById('estTask').value = '';
-        ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
-            document.getElementById(`est${proc}`).value = '';
-            document.getElementById(`est${proc}_member`).value = '';
-        });
-    }
-
-    function updateQuickTaskList() {
-        const select = document.getElementById('quickTask');
-        select.innerHTML = '<option value="">選択してください</option>';
-        
-        const uniqueTasks = [...new Set(estimates.map(e => `${e.version}|${e.task}|${e.process}`))];
-        
-        uniqueTasks.forEach(task => {
-            const [version, taskName, process] = task.split('|');
-            const option = document.createElement('option');
-            option.value = task;
-            option.textContent = `${version} - ${taskName} [${process}]`;
-            select.appendChild(option);
-        });
-    }
-
-    function autoFillTaskInfo() {
-        const selected = document.getElementById('quickTask').value;
-        if (!selected) {
-            document.getElementById('quickProcess').value = '';
-            return;
-        }
-        
-        const [version, task, process] = selected.split('|');
-        document.getElementById('quickProcess').value = process;
-    }
-
-    function quickAddActual() {
-        const selected = document.getElementById('quickTask').value;
-        const hours = parseFloat(document.getElementById('quickHours').value);
-        
-        if (!selected || !hours) {
-            alert('対応と実績工数を入力してください');
-            return;
+            if (savedEstimates) estimates = JSON.parse(savedEstimates);
+            if (savedActuals) actuals = JSON.parse(savedActuals);
         }
 
-        const [version, task, process] = selected.split('|');
-        const estimate = estimates.find(e => 
-            e.version === version && e.task === task && e.process === process
-        );
-
-        if (!estimate) {
-            alert('見積データが見つかりません');
-            return;
-        }
-
-        actuals.push({
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            version: version,
-            task: task,
-            process: process,
-            member: estimate.member,
-            hours: hours,
-            createdAt: new Date().toISOString()
-        });
-
-        saveData();
-        document.getElementById('quickHours').value = '';
-        updateMonthOptions();
-        renderTodayActuals();
-        renderActualList();
-        updateReport();
-        alert('実績を追加しました');
-    }
-
-    function renderTodayActuals() {
-        const today = new Date().toISOString().split('T')[0];
-        const todayData = actuals.filter(a => a.date === today);
-        
-        const container = document.getElementById('todayActuals');
-        
-        if (todayData.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">まだ実績が入力されていません</p>';
-            return;
-        }
-
-        let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>工数</th><th>操作</th></tr>';
-        
-        todayData.forEach(a => {
-            const time = new Date(a.createdAt).toLocaleTimeString('ja-JP');
-            html += `
-                <tr>
-                    <td>${time}</td>
-                    <td>${a.version}</td>
-                    <td>${a.task}</td>
-                    <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
-                    <td>${a.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
-                </tr>
-            `;
-        });
-        
-        html += '</table></div>';
-        container.innerHTML = html;
-    }
-
-    function renderEstimateList() {
-        const container = document.getElementById('estimateList');
-        
-        if (estimates.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
-            return;
-        }
-
-        let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>操作</th></tr>';
-        
-        estimates.forEach(e => {
-            html += `
-                <tr>
-                    <td>${e.version}</td>
-                    <td>${e.task}</td>
-                    <td><span class="badge badge-${e.process.toLowerCase()}">${e.process}</span></td>
-                    <td>${e.member}</td>
-                    <td>${e.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteEstimate(${e.id})">削除</button></td>
-                </tr>
-            `;
-        });
-        
-        html += '</table></div>';
-        container.innerHTML = html;
-    }
-
-    function renderActualList() {
-        const container = document.getElementById('actualList');
-        
-        if (actuals.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
-            return;
-        }
-
-        let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
-        
-        const sortedActuals = [...actuals].sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        sortedActuals.forEach(a => {
-            html += `
-                <tr>
-                    <td>${a.date}</td>
-                    <td>${a.version}</td>
-                    <td>${a.task}</td>
-                    <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
-                    <td>${a.member}</td>
-                    <td>${a.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
-                </tr>
-            `;
-        });
-        
-        html += '</table></div>';
-        container.innerHTML = html;
-    }
-
-    function updateReport() {
-        const selectedMonth = document.getElementById('reportMonth').value;
-        
-        // フィルタリング
-        let filteredActuals = actuals;
-        if (selectedMonth !== 'all') {
-            filteredActuals = actuals.filter(a => a.date && a.date.startsWith(selectedMonth));
-        }
-        
-        // タイトル更新
-        const titleElement = document.getElementById('reportPeriodTitle');
-        if (selectedMonth === 'all') {
-            titleElement.textContent = '全期間の集計';
-        } else {
-            const [year, month] = selectedMonth.split('-');
-            titleElement.textContent = `${year}年${month}月の集計`;
-        }
-        
-        const totalEst = estimates.reduce((sum, e) => sum + e.hours, 0);
-        const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
-        const diff = totalAct - totalEst;
-        const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
-
-        document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
-        document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
-        document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'h';
-        document.getElementById('actualRate').textContent = rate + '%';
-
-        renderMemberReport(filteredActuals);
-        renderVersionReport(filteredActuals);
-    }
-
-    function renderMemberReport(filteredActuals) {
-        const members = ['A', 'B', 'C', 'D'];
-        let html = '<div class="table-wrapper"><table><tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th></tr>';
-
-        members.forEach(member => {
-            const est = estimates.filter(e => e.member === member).reduce((sum, e) => sum + e.hours, 0);
-            const act = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
-            const diff = act - est;
-            const rate = est > 0 ? ((diff / est) * 100).toFixed(1) : 0;
-
-            html += `
-                <tr>
-                    <td><strong>${member}</strong></td>
-                    <td>${est.toFixed(1)}h</td>
-                    <td>${act.toFixed(1)}h</td>
-                    <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
-                    <td>${rate}%</td>
-                </tr>
-            `;
-        });
-
-        html += '</table></div>';
-        document.getElementById('memberReport').innerHTML = html;
-    }
-
-    function renderVersionReport(filteredActuals) {
-        const versions = [...new Set(estimates.map(e => e.version))];
-        let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>見積工数</th><th>実績工数</th><th>進捗率</th></tr>';
-
-        versions.forEach(version => {
-            const est = estimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
-            const act = filteredActuals.filter(a => a.version === version).reduce((sum, a) => sum + a.hours, 0);
-            const progress = est > 0 ? (act / est * 100).toFixed(1) : 0;
-
-            html += `
-                <tr>
-                    <td><strong>${version}</strong></td>
-                    <td>${est.toFixed(1)}h</td>
-                    <td>${act.toFixed(1)}h</td>
-                    <td>${progress}%</td>
-                </tr>
-            `;
-        });
-
-        html += '</table></div>';
-        document.getElementById('versionReport').innerHTML = html;
-    }
-
-    function deleteEstimate(id) {
-        if (!confirm('この見積を削除しますか?')) return;
-        estimates = estimates.filter(e => e.id !== id);
-        saveData();
-        renderEstimateList();
-        updateQuickTaskList();
-        updateReport();
-        alert('見積を削除しました');
-    }
-
-    function deleteActual(id) {
-        if (!confirm('この実績を削除しますか?')) return;
-        actuals = actuals.filter(a => a.id !== id);
-        saveData();
-        updateMonthOptions();
-        renderActualList();
-        renderTodayActuals();
-        updateReport();
-        alert('実績を削除しました');
-    }
-
-    function exportBackup() {
-        autoBackup();
-        alert('バックアップを作成しました');
-    }
-
-    function importBackup() {
-        document.getElementById('fileInput').click();
-    }
-
-    function handleFileImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const fileName = file.name.toLowerCase();
-        
-        if (fileName.endsWith('.json')) {
-            // JSONファイルの処理
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (confirm('現在のデータを復元したデータで上書きしますか？')) {
-                        estimates = data.estimates || [];
-                        actuals = data.actuals || [];
-                        saveData();
-                        
-                        updateMonthOptions();
-                        updateQuickTaskList();
-                        renderEstimateList();
-                        renderActualList();
-                        renderTodayActuals();
-                        updateReport();
-                        
-                        alert('データを復元しました');
-                    }
-                } catch (error) {
-                    alert('ファイルの読み込みに失敗しました');
+        function updateMonthOptions() {
+            const select = document.getElementById('reportMonth');
+            const months = new Set();
+            
+            // 実績データから月を抽出
+            actuals.forEach(a => {
+                if (a.date) {
+                    const month = a.date.substring(0, 7); // YYYY-MM形式
+                    months.add(month);
                 }
+            });
+            
+            // 月を降順でソート
+            const sortedMonths = Array.from(months).sort().reverse();
+            
+            // 選択肢を生成
+            select.innerHTML = '<option value="all">全期間</option>';
+            sortedMonths.forEach(month => {
+                const [year, monthNum] = month.split('-');
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = `${year}年${monthNum}月`;
+                select.appendChild(option);
+            });
+        }
+
+        function autoBackup() {
+            const data = {
+                estimates: estimates,
+                actuals: actuals,
+                timestamp: new Date().toISOString(),
+                version: '1.0'
             };
-            reader.readAsText(file);
-        } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-            // Excelファイルの処理
-            handleExcelImport(file);
-        } else {
-            alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            a.href = url;
+            a.download = `工数管理_バックアップ_${timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
-        
-        event.target.value = '';
-    }
 
-    async function handleExcelImport(file) {
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(arrayBuffer);
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            const estimatesSheet = workbook.getWorksheet('見積データ');
-            const actualsSheet = workbook.getWorksheet('実績データ');
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function addEstimate() {
+            const version = document.getElementById('estVersion').value;
+            const task = document.getElementById('estTask').value;
             
-            if (!estimatesSheet || !actualsSheet) {
-                alert('Excelファイルに「見積データ」と「実績データ」のシートが必要です');
+            if (!version || !task) {
+                alert('版数と対応名を入力してください');
                 return;
             }
+
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
             
-            // 見積データの読み込み
-            const newEstimates = [];
-            estimatesSheet.eachRow((row, rowNumber) => {
-                if (rowNumber === 1) return; // ヘッダー行をスキップ
+            processes.forEach(proc => {
+                const hours = parseFloat(document.getElementById(`est${proc}`).value);
+                const member = document.getElementById(`est${proc}_member`).value;
                 
-                const version = row.getCell(1).value;
-                const task = row.getCell(2).value;
-                const process = row.getCell(3).value;
-                const member = row.getCell(4).value;
-                const hours = parseFloat(row.getCell(5).value);
-                
-                if (version && task && process && member && hours) {
-                    newEstimates.push({
+                if (hours > 0 && member) {
+                    estimates.push({
                         id: Date.now() + Math.random(),
-                        version: String(version),
-                        task: String(task),
-                        process: String(process),
-                        member: String(member),
+                        version: version,
+                        task: task,
+                        process: proc,
+                        member: member,
                         hours: hours,
                         createdAt: new Date().toISOString()
                     });
                 }
             });
-            
-            // 実績データの読み込み
-            const newActuals = [];
-            actualsSheet.eachRow((row, rowNumber) => {
-                if (rowNumber === 1) return; // ヘッダー行をスキップ
-                
-                const dateValue = row.getCell(1).value;
-                const version = row.getCell(2).value;
-                const task = row.getCell(3).value;
-                const process = row.getCell(4).value;
-                const member = row.getCell(5).value;
-                const hours = parseFloat(row.getCell(6).value);
-                
-                // 日付の処理
-                let dateStr = '';
-                if (dateValue instanceof Date) {
-                    dateStr = dateValue.toISOString().split('T')[0];
-                } else if (typeof dateValue === 'string') {
-                    dateStr = dateValue;
-                } else if (typeof dateValue === 'number') {
-                    // Excel のシリアル値を日付に変換
-                    const date = new Date((dateValue - 25569) * 86400 * 1000);
-                    dateStr = date.toISOString().split('T')[0];
-                }
-                
-                if (dateStr && version && task && process && member && hours) {
-                    newActuals.push({
-                        id: Date.now() + Math.random(),
-                        date: dateStr,
-                        version: String(version),
-                        task: String(task),
-                        process: String(process),
-                        member: String(member),
-                        hours: hours,
-                        createdAt: new Date().toISOString()
-                    });
-                }
+
+            saveData();
+            clearEstimateForm();
+            renderEstimateList();
+            updateQuickTaskList();
+            updateReport();
+            alert('見積を登録しました');
+        }
+
+        function clearEstimateForm() {
+            document.getElementById('estVersion').value = '';
+            document.getElementById('estTask').value = '';
+            ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
+                document.getElementById(`est${proc}`).value = '';
+                document.getElementById(`est${proc}_member`).value = '';
             });
+        }
+
+        function updateQuickTaskList() {
+            const select = document.getElementById('quickTask');
+            select.innerHTML = '<option value="">選択してください</option>';
             
-            if (newEstimates.length === 0 && newActuals.length === 0) {
-                alert('データが見つかりませんでした。Excelのフォーマットを確認してください。');
+            const uniqueTasks = [...new Set(estimates.map(e => `${e.version}|${e.task}|${e.process}`))];
+            
+            uniqueTasks.forEach(task => {
+                const [version, taskName, process] = task.split('|');
+                const option = document.createElement('option');
+                option.value = task;
+                option.textContent = `${version} - ${taskName} [${process}]`;
+                select.appendChild(option);
+            });
+        }
+
+        function autoFillTaskInfo() {
+            const selected = document.getElementById('quickTask').value;
+            if (!selected) {
+                document.getElementById('quickProcess').value = '';
                 return;
             }
             
-            if (confirm(`見積: ${newEstimates.length}件、実績: ${newActuals.length}件のデータを読み込みました。\n現在のデータを上書きしますか？`)) {
-                estimates = newEstimates;
-                actuals = newActuals;
-                saveData();
-                
-                updateMonthOptions();
-                updateQuickTaskList();
-                renderEstimateList();
-                renderActualList();
-                renderTodayActuals();
-                updateReport();
-                
-                alert('Excelデータを読み込みました');
+            const [version, task, process] = selected.split('|');
+            document.getElementById('quickProcess').value = process;
+        }
+
+        function quickAddActual() {
+            const selected = document.getElementById('quickTask').value;
+            const hours = parseFloat(document.getElementById('quickHours').value);
+            
+            if (!selected || !hours) {
+                alert('対応と実績工数を入力してください');
+                return;
+            }
+
+            const [version, task, process] = selected.split('|');
+            const estimate = estimates.find(e => 
+                e.version === version && e.task === task && e.process === process
+            );
+
+            if (!estimate) {
+                alert('見積データが見つかりません');
+                return;
+            }
+
+            actuals.push({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                version: version,
+                task: task,
+                process: process,
+                member: estimate.member,
+                hours: hours,
+                createdAt: new Date().toISOString()
+            });
+
+            saveData();
+            document.getElementById('quickHours').value = '';
+            updateMonthOptions();
+            renderTodayActuals();
+            renderActualList();
+            updateReport();
+            alert('実績を追加しました');
+        }
+
+        function renderTodayActuals() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayData = actuals.filter(a => a.date === today);
+            
+            const container = document.getElementById('todayActuals');
+            
+            if (todayData.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">まだ実績が入力されていません</p>';
+                return;
+            }
+
+            let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>工数</th><th>操作</th></tr>';
+            
+            todayData.forEach(a => {
+                const time = new Date(a.createdAt).toLocaleTimeString('ja-JP');
+                html += `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${a.version}</td>
+                        <td>${a.task}</td>
+                        <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
+                        <td>${a.hours}h</td>
+                        <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        function renderEstimateList() {
+            const container = document.getElementById('estimateList');
+            
+            if (estimates.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
+                return;
+            }
+
+            let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>操作</th></tr>';
+            
+            estimates.forEach(e => {
+                html += `
+                    <tr>
+                        <td>${e.version}</td>
+                        <td>${e.task}</td>
+                        <td><span class="badge badge-${e.process.toLowerCase()}">${e.process}</span></td>
+                        <td>${e.member}</td>
+                        <td>${e.hours}h</td>
+                        <td><button class="btn btn-danger btn-small" onclick="deleteEstimate(${e.id})">削除</button></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        function renderActualList() {
+            const container = document.getElementById('actualList');
+            const viewType = document.getElementById('actualViewType').value;
+            
+            if (actuals.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
+                return;
+            }
+
+            if (viewType === 'matrix') {
+                renderActualMatrix();
+            } else {
+                renderActualListView();
+            }
+        }
+
+        function renderActualMatrix() {
+            const container = document.getElementById('actualList');
+            
+            // 担当者と日付を抽出
+            const members = [...new Set(actuals.map(a => a.member))].sort();
+            
+            if (members.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
+                return;
             }
             
-        } catch (error) {
-            console.error('Excel読み込みエラー:', error);
-            alert('Excelファイルの読み込みに失敗しました: ' + error.message);
+            // 実績データの最小・最大日付を取得
+            const dates = actuals.map(a => a.date).sort();
+            const minDate = new Date(dates[0]);
+            const maxDate = new Date(dates[dates.length - 1]);
+            
+            // 月の範囲を生成（最小日付の月初から最大日付の月末まで）
+            const startDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+            const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+            
+            // 日付範囲を生成
+            const allDates = [];
+            let currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                allDates.push(currentDate.toISOString().split('T')[0]);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            let html = '<div class="table-wrapper"><table>';
+            html += '<tr><th style="min-width: 100px;">日付</th>';
+            
+            // 担当者ヘッダー
+            members.forEach(member => {
+                html += `<th style="min-width: 80px;">${member}</th>`;
+            });
+            html += '<th style="min-width: 80px;">日別合計</th></tr>';
+            
+            let currentMonth = '';
+            let monthTotals = {};
+            members.forEach(m => monthTotals[m] = 0);
+            let monthTotal = 0;
+            
+            // 日付ごとの行
+            allDates.forEach(date => {
+                const dateObj = new Date(date);
+                const month = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月`;
+                const dayOfWeek = getDayOfWeek(date);
+                const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
+                
+                // 月が変わったら月次小計行を挿入
+                if (currentMonth && currentMonth !== month) {
+                    html += '<tr style="background: #fff3cd; font-weight: 600;">';
+                    html += `<td>${currentMonth} 小計</td>`;
+                    members.forEach(member => {
+                        html += `<td>${monthTotals[member].toFixed(1)}h</td>`;
+                    });
+                    html += `<td style="background: #ffc107; color: white;">${monthTotal.toFixed(1)}h</td>`;
+                    html += '</tr>';
+                    
+                    // リセット
+                    members.forEach(m => monthTotals[m] = 0);
+                    monthTotal = 0;
+                }
+                
+                currentMonth = month;
+                
+                // 日付行
+                const bgColor = isWeekend ? '#ffebee' : 'white';
+                html += `<tr style="background: ${bgColor};">`;
+                
+                // 日付セル
+                const [year, m, day] = date.split('-');
+                html += `<td style="font-weight: 500; ${isWeekend ? 'color: #c62828;' : ''}">
+                    ${parseInt(m)}/${parseInt(day)} (${dayOfWeek})
+                </td>`;
+                
+                let dayTotal = 0;
+                
+                // 担当者ごとのセル
+                members.forEach(member => {
+                    const dayActuals = actuals.filter(a => a.member === member && a.date === date);
+                    const memberDayTotal = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+                    dayTotal += memberDayTotal;
+                    monthTotals[member] += memberDayTotal;
+                    
+                    if (memberDayTotal > 0) {
+                        // クリックで詳細表示
+                        html += `<td style="background: #e3f2fd; text-align: center; cursor: pointer;" 
+                                    onclick="showWorkDetail('${member}', '${date}')">
+                            <strong>${memberDayTotal.toFixed(1)}</strong>
+                        </td>`;
+                    } else {
+                        html += `<td style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
+                    }
+                });
+                
+                monthTotal += dayTotal;
+                
+                // 日別合計
+                if (dayTotal > 0) {
+                    html += `<td style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(1)}h</td>`;
+                } else {
+                    html += `<td style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
+                }
+                
+                html += '</tr>';
+            });
+            
+            // 最後の月の小計
+            if (currentMonth) {
+                html += '<tr style="background: #fff3cd; font-weight: 600;">';
+                html += `<td>${currentMonth} 小計</td>`;
+                members.forEach(member => {
+                    html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
+                });
+                html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
+                html += '</tr>';
+            }
+            
+            // 全期間の合計行
+            html += '<tr style="background: #2c3e50; color: white; font-weight: 700;">';
+            html += '<td>総合計</td>';
+            let grandTotal = 0;
+            
+            members.forEach(member => {
+                const memberTotal = actuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
+                grandTotal += memberTotal;
+                html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
+            });
+            
+            html += `<td style="background: #ffc107; text-align: center;">${grandTotal.toFixed(1)}h</td>`;
+            html += '</tr>';
+            
+            html += '</table></div>';
+            
+            // 詳細リスト（削除用）
+            html += '<h3 style="margin-top: 30px;">詳細データ（削除用）</h3>';
+            html += '<div class="table-wrapper"><table><tr><th>日付</th><th>担当者</th><th>版数</th><th>対応名</th><th>工程</th><th>実績工数</th><th>操作</th></tr>';
+            
+            const sortedActuals = [...actuals].sort((a, b) => {
+                if (a.date !== b.date) return b.date.localeCompare(a.date);
+                return a.member.localeCompare(b.member);
+            });
+            
+            sortedActuals.forEach(a => {
+                html += `
+                    <tr>
+                        <td>${a.date}</td>
+                        <td>${a.member}</td>
+                        <td>${a.version}</td>
+                        <td>${a.task}</td>
+                        <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
+                        <td>${a.hours}h</td>
+                        <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
         }
-    }
-</script>
 
+        function renderActualListView() {
+            const container = document.getElementById('actualList');
+            let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
+            
+            const sortedActuals = [...actuals].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedActuals.forEach(a => {
+                html += `
+                    <tr>
+                        <td>${a.date}</td>
+                        <td>${a.version}</td>
+                        <td>${a.task}</td>
+                        <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
+                        <td>${a.member}</td>
+                        <td>${a.hours}h</td>
+                        <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        function getDayOfWeek(dateStr) {
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const date = new Date(dateStr);
+            return days[date.getDay()];
+        }
+
+        function showWorkDetail(member, date) {
+            const dayActuals = actuals.filter(a => a.member === member && a.date === date);
+            
+            if (dayActuals.length === 0) return;
+            
+            const dateObj = new Date(date);
+            const [year, month, day] = date.split('-');
+            const dayOfWeek = getDayOfWeek(date);
+            
+            // モーダルタイトル
+            document.getElementById('modalTitle').textContent = 
+                `${member}さんの作業 - ${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
+            
+            // モーダル本文
+            let html = '';
+            const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+            
+            dayActuals.forEach(actual => {
+                html += `
+                    <div class="work-item">
+                        <div class="work-item-header">
+                            <div class="work-item-title">${actual.task}</div>
+                            <div class="work-item-hours">${actual.hours}h</div>
+                        </div>
+                        <div class="work-item-details">
+                            <span><strong>版数:</strong> ${actual.version}</span>
+                            <span><strong>工程:</strong> <span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span></span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
+                    <strong style="font-size: 16px;">合計: ${totalHours.toFixed(1)}時間</strong>
+                    <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
+                </div>
+            `;
+            
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('workModal').style.display = 'block';
+        }
+
+        function closeWorkModal() {
+            document.getElementById('workModal').style.display = 'none';
+        }
+
+        // モーダル外をクリックで閉じる
+        window.onclick = function(event) {
+            const modal = document.getElementById('workModal');
+            if (event.target === modal) {
+                closeWorkModal();
+            }
+        }
+
+        function updateReport() {
+            const selectedMonth = document.getElementById('reportMonth').value;
+            
+            // フィルタリング
+            let filteredActuals = actuals;
+            if (selectedMonth !== 'all') {
+                filteredActuals = actuals.filter(a => a.date && a.date.startsWith(selectedMonth));
+            }
+            
+            // タイトル更新
+            const titleElement = document.getElementById('reportPeriodTitle');
+            if (selectedMonth === 'all') {
+                titleElement.textContent = '全期間の集計';
+            } else {
+                const [year, month] = selectedMonth.split('-');
+                titleElement.textContent = `${year}年${month}月の集計`;
+            }
+            
+            const totalEst = estimates.reduce((sum, e) => sum + e.hours, 0);
+            const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+            const diff = totalAct - totalEst;
+            const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
+
+            document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
+            document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
+            document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'h';
+            document.getElementById('actualRate').textContent = rate + '%';
+
+            renderMemberReport(filteredActuals);
+            renderVersionReport(filteredActuals);
+        }
+
+        function renderMemberReport(filteredActuals) {
+            // 見積データと実績データから担当者を動的に抽出
+            const allMembers = new Set();
+            estimates.forEach(e => allMembers.add(e.member));
+            filteredActuals.forEach(a => allMembers.add(a.member));
+            
+            const members = Array.from(allMembers).sort();
+            
+            if (members.length === 0) {
+                document.getElementById('memberReport').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">データがありません</p>';
+                return;
+            }
+            
+            let html = '<div class="table-wrapper"><table><tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th></tr>';
+
+            members.forEach(member => {
+                const est = estimates.filter(e => e.member === member).reduce((sum, e) => sum + e.hours, 0);
+                const act = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
+                const diff = act - est;
+                const rate = est > 0 ? ((diff / est) * 100).toFixed(1) : 0;
+
+                html += `
+                    <tr>
+                        <td><strong>${member}</strong></td>
+                        <td>${est.toFixed(1)}h</td>
+                        <td>${act.toFixed(1)}h</td>
+                        <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
+                        <td>${rate}%</td>
+                    </tr>
+                `;
+            });
+
+            html += '</table></div>';
+            document.getElementById('memberReport').innerHTML = html;
+        }
+
+        function renderVersionReport(filteredActuals) {
+            const versions = [...new Set(estimates.map(e => e.version))];
+            let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>見積工数</th><th>実績工数</th><th>進捗率</th></tr>';
+
+            versions.forEach(version => {
+                const est = estimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
+                const act = filteredActuals.filter(a => a.version === version).reduce((sum, a) => sum + a.hours, 0);
+                const progress = est > 0 ? (act / est * 100).toFixed(1) : 0;
+
+                html += `
+                    <tr>
+                        <td><strong>${version}</strong></td>
+                        <td>${est.toFixed(1)}h</td>
+                        <td>${act.toFixed(1)}h</td>
+                        <td>${progress}%</td>
+                    </tr>
+                `;
+            });
+
+            html += '</table></div>';
+            document.getElementById('versionReport').innerHTML = html;
+        }
+
+        function deleteEstimate(id) {
+            if (!confirm('この見積を削除しますか?')) return;
+            estimates = estimates.filter(e => e.id !== id);
+            saveData();
+            renderEstimateList();
+            updateQuickTaskList();
+            updateReport();
+            alert('見積を削除しました');
+        }
+
+        function deleteActual(id) {
+            if (!confirm('この実績を削除しますか?')) return;
+            actuals = actuals.filter(a => a.id !== id);
+            saveData();
+            updateMonthOptions();
+            renderActualList();
+            renderTodayActuals();
+            updateReport();
+            alert('実績を削除しました');
+        }
+
+        function exportBackup() {
+            autoBackup();
+            alert('バックアップを作成しました');
+        }
+
+        function importBackup() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            
+            if (fileName.endsWith('.json')) {
+                // JSONファイルの処理
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (confirm('現在のデータを復元したデータで上書きしますか？')) {
+                            estimates = data.estimates || [];
+                            actuals = data.actuals || [];
+                            saveData();
+                            
+                            updateMonthOptions();
+                            updateQuickTaskList();
+                            renderEstimateList();
+                            renderActualList();
+                            renderTodayActuals();
+                            updateReport();
+                            
+                            alert('データを復元しました');
+                        }
+                    } catch (error) {
+                        alert('ファイルの読み込みに失敗しました');
+                    }
+                };
+                reader.readAsText(file);
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                // Excelファイルの処理
+                handleExcelImport(file);
+            } else {
+                alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
+            }
+            
+            event.target.value = '';
+        }
+
+        async function handleExcelImport(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = new ExcelJS.Workbook();
+                await workbook.xlsx.load(arrayBuffer);
+                
+                const estimatesSheet = workbook.getWorksheet('見積データ');
+                const actualsSheet = workbook.getWorksheet('実績データ');
+                
+                if (!estimatesSheet || !actualsSheet) {
+                    alert('Excelファイルに「見積データ」と「実績データ」のシートが必要です');
+                    return;
+                }
+                
+                // 見積データの読み込み
+                const newEstimates = [];
+                estimatesSheet.eachRow((row, rowNumber) => {
+                    if (rowNumber === 1) return; // ヘッダー行をスキップ
+                    
+                    const version = row.getCell(1).value;
+                    const task = row.getCell(2).value;
+                    const process = row.getCell(3).value;
+                    const member = row.getCell(4).value;
+                    const hours = parseFloat(row.getCell(5).value);
+                    
+                    if (version && task && process && member && hours) {
+                        newEstimates.push({
+                            id: Date.now() + Math.random(),
+                            version: String(version),
+                            task: String(task),
+                            process: String(process),
+                            member: String(member),
+                            hours: hours,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                });
+                
+                // 実績データの読み込み
+                const newActuals = [];
+                actualsSheet.eachRow((row, rowNumber) => {
+                    if (rowNumber === 1) return; // ヘッダー行をスキップ
+                    
+                    const dateValue = row.getCell(1).value;
+                    const version = row.getCell(2).value;
+                    const task = row.getCell(3).value;
+                    const process = row.getCell(4).value;
+                    const member = row.getCell(5).value;
+                    const hours = parseFloat(row.getCell(6).value);
+                    
+                    // 日付の処理
+                    let dateStr = '';
+                    if (dateValue instanceof Date) {
+                        dateStr = dateValue.toISOString().split('T')[0];
+                    } else if (typeof dateValue === 'string') {
+                        dateStr = dateValue;
+                    } else if (typeof dateValue === 'number') {
+                        // Excel のシリアル値を日付に変換
+                        const date = new Date((dateValue - 25569) * 86400 * 1000);
+                        dateStr = date.toISOString().split('T')[0];
+                    }
+                    
+                    if (dateStr && version && task && process && member && hours) {
+                        newActuals.push({
+                            id: Date.now() + Math.random(),
+                            date: dateStr,
+                            version: String(version),
+                            task: String(task),
+                            process: String(process),
+                            member: String(member),
+                            hours: hours,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                });
+                
+                if (newEstimates.length === 0 && newActuals.length === 0) {
+                    alert('データが見つかりませんでした。Excelのフォーマットを確認してください。');
+                    return;
+                }
+                
+                if (confirm(`見積: ${newEstimates.length}件、実績: ${newActuals.length}件のデータを読み込みました。\n現在のデータを上書きしますか？`)) {
+                    estimates = newEstimates;
+                    actuals = newActuals;
+                    saveData();
+                    
+                    updateMonthOptions();
+                    updateQuickTaskList();
+                    renderEstimateList();
+                    renderActualList();
+                    renderTodayActuals();
+                    updateReport();
+                    
+                    alert('Excelデータを読み込みました');
+                }
+                
+            } catch (error) {
+                console.error('Excel読み込みエラー:', error);
+                alert('Excelファイルの読み込みに失敗しました: ' + error.message);
+            }
+        }
+    </script>
 </body>
 </html>
