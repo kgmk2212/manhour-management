@@ -622,6 +622,7 @@
             updateMemberOptions();
             updateQuickTaskList();
             renderEstimateList();
+            setDefaultActualMonth(); // 前月をデフォルト表示
             renderActualList();
             renderTodayActuals();
             updateReport();
@@ -779,6 +780,26 @@
                 option.textContent = `${year}年${monthNum}月`;
                 select.appendChild(option);
             });
+        }
+
+        function setDefaultActualMonth() {
+            // 前月を計算
+            const today = new Date();
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const defaultMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+            
+            const select = document.getElementById('actualMonthFilter');
+            
+            // 前月のオプションが存在するか確認
+            const options = Array.from(select.options);
+            const hasDefaultMonth = options.some(opt => opt.value === defaultMonth);
+            
+            if (hasDefaultMonth) {
+                select.value = defaultMonth;
+            } else if (options.length > 1) {
+                // 前月のデータがない場合は、最新月を選択
+                select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
+            }
         }
 
         function autoBackup() {
