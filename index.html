@@ -531,8 +531,16 @@
                     </div>
                     
                     <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary" onclick="toggleMemberOrderSetting()">⚙️ 表示順設定</button>
+                    </div>
+                </div>
+                
+                <div id="memberOrderSetting" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div class="form-group" style="margin: 0;">
                         <label>担当者表示順 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db;">ℹ️</button></label>
                         <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="renderActualList()">
+                        <small style="color: #666; display: block; margin-top: 5px;">カンマ区切りで入力してください。設定は自動保存されます。</small>
                     </div>
                 </div>
                 
@@ -601,6 +609,7 @@
             loadData();
             updateMonthOptions();
             updateActualMonthOptions();
+            updateMemberOptions();
             updateQuickTaskList();
             renderEstimateList();
             renderActualList();
@@ -619,6 +628,81 @@
             }
             
             autoBackup();
+        }
+
+        function updateMemberOptions() {
+            // 見積と実績データから担当者を抽出
+            const members = new Set();
+            estimates.forEach(e => members.add(e.member));
+            actuals.forEach(a => members.add(a.member));
+            
+            // 表示順が設定されている場合はそれを使用
+            let sortedMembers;
+            const memberOrderInput = document.getElementById('memberOrder').value.trim();
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const orderedMembers = [];
+                const unorderedMembers = [];
+                
+                orderList.forEach(name => {
+                    if (members.has(name)) {
+                        orderedMembers.push(name);
+                    }
+                });
+                
+                Array.from(members).forEach(m => {
+                    if (!orderedMembers.includes(m)) {
+                        unorderedMembers.push(m);
+                    }
+                });
+                
+                sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
+            } else {
+                sortedMembers = Array.from(members).sort();
+            }
+            
+            // 各工程の担当者選択肢を更新
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            processes.forEach(process => {
+                const select = document.getElementById(`est${process}_member`);
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">-</option>';
+                    
+                    sortedMembers.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member;
+                        option.textContent = member;
+                        select.appendChild(option);
+                    });
+                    
+                    // 以前の選択を復元
+                    if (currentValue && sortedMembers.includes(currentValue)) {
+                        select.value = currentValue;
+                    }
+                }
+            });
+            
+            // クイック入力の担当者選択肢も更新
+            const quickMemberSelect = document.getElementById('quickMember');
+            if (quickMemberSelect) {
+                const currentValue = quickMemberSelect.value;
+                quickMemberSelect.innerHTML = '';
+                
+                sortedMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member;
+                    option.textContent = member;
+                    quickMemberSelect.appendChild(option);
+                });
+                
+                // 以前の選択を復元
+                if (currentValue && sortedMembers.includes(currentValue)) {
+                    quickMemberSelect.value = currentValue;
+                } else if (sortedMembers.length > 0) {
+                    quickMemberSelect.value = sortedMembers[0];
+                }
+            }
         }
 
         function loadData() {
@@ -744,6 +828,7 @@
 
             saveData();
             clearEstimateForm();
+            updateMemberOptions();
             renderEstimateList();
             updateQuickTaskList();
             updateReport();
@@ -819,6 +904,7 @@
             document.getElementById('quickHours').value = '';
             updateMonthOptions();
             updateActualMonthOptions();
+            updateMemberOptions();
             renderTodayActuals();
             renderActualList();
             updateReport();
@@ -836,7 +922,7 @@
                 return;
             }
 
-            let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>工数</th><th>操作</th></tr>';
+            let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>工数</th><th>操作</th></tr>';
             
             todayData.forEach(a => {
                 const time = new Date(a.createdAt).toLocaleTimeString('ja-JP');
@@ -846,6 +932,7 @@
                         <td>${a.version}</td>
                         <td>${a.task}</td>
                         <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
+                        <td>${a.member}</td>
                         <td>${a.hours}h</td>
                         <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
                     </tr>
@@ -1215,6 +1302,15 @@
             alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
         }
 
+        function toggleMemberOrderSetting() {
+            const setting = document.getElementById('memberOrderSetting');
+            if (setting.style.display === 'none') {
+                setting.style.display = 'block';
+            } else {
+                setting.style.display = 'none';
+            }
+        }
+
         // モーダル外をクリックで閉じる
         window.onclick = function(event) {
             const modal = document.getElementById('workModal');
@@ -1370,6 +1466,8 @@
                             saveData();
                             
                             updateMonthOptions();
+                            updateActualMonthOptions();
+                            updateMemberOptions();
                             updateQuickTaskList();
                             renderEstimateList();
                             renderActualList();
@@ -1480,6 +1578,8 @@
                     saveData();
                     
                     updateMonthOptions();
+                    updateActualMonthOptions();
+                    updateMemberOptions();
                     updateQuickTaskList();
                     renderEstimateList();
                     renderActualList();
