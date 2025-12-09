@@ -614,6 +614,98 @@
     </div>
 </div>
 
+<!-- 実績編集モーダル -->
+<div id="editActualModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>実績データを編集</h3>
+            <button class="modal-close" onclick="closeEditActualModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editActualId">
+            <div class="form-group">
+                <label>日付</label>
+                <input type="date" id="editActualDate">
+            </div>
+            <div class="form-group">
+                <label>版数</label>
+                <input type="text" id="editActualVersion" placeholder="第2025.12版">
+            </div>
+            <div class="form-group">
+                <label>対応名</label>
+                <input type="text" id="editActualTask" placeholder="帳票A_新規作成">
+            </div>
+            <div class="form-group">
+                <label>工程</label>
+                <select id="editActualProcess">
+                    <option value="UI">UI</option>
+                    <option value="PG">PG</option>
+                    <option value="PT">PT</option>
+                    <option value="IT">IT</option>
+                    <option value="ST">ST</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>担当</label>
+                <select id="editActualMember">
+                </select>
+            </div>
+            <div class="form-group">
+                <label>実績工数</label>
+                <input type="number" id="editActualHours" step="0.5" min="0" placeholder="8">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveActualEdit()">保存</button>
+                <button class="btn" onclick="closeEditActualModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 見積編集モーダル -->
+<div id="editEstimateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>見積データを編集</h3>
+            <button class="modal-close" onclick="closeEditEstimateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editEstimateId">
+            <div class="form-group">
+                <label>版数</label>
+                <input type="text" id="editEstimateVersion" placeholder="第2025.12版">
+            </div>
+            <div class="form-group">
+                <label>対応名</label>
+                <input type="text" id="editEstimateTask" placeholder="帳票A_新規作成">
+            </div>
+            <div class="form-group">
+                <label>工程</label>
+                <select id="editEstimateProcess">
+                    <option value="UI">UI</option>
+                    <option value="PG">PG</option>
+                    <option value="PT">PT</option>
+                    <option value="IT">IT</option>
+                    <option value="ST">ST</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>担当</label>
+                <select id="editEstimateMember">
+                </select>
+            </div>
+            <div class="form-group">
+                <label>見積工数</label>
+                <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
+                <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let estimates = [];
     let actuals = [];
@@ -817,7 +909,17 @@
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        
+        // ローカルタイムでファイル名を生成
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const minute = String(now.getMinutes()).padStart(2, '0');
+        const second = String(now.getSeconds()).padStart(2, '0');
+        const timestamp = `${year}-${month}-${day}_${hour}-${minute}-${second}`;
+        
         a.href = url;
         a.download = `工数管理_バックアップ_${timestamp}.json`;
         a.click();
@@ -968,7 +1070,10 @@
                     <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
                     <td>${a.member}</td>
                     <td>${a.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
+                    </td>
                 </tr>
             `;
         });
@@ -995,7 +1100,10 @@
                     <td><span class="badge badge-${e.process.toLowerCase()}">${e.process}</span></td>
                     <td>${e.member}</td>
                     <td>${e.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteEstimate(${e.id})">削除</button></td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="editEstimate(${e.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${e.id})">削除</button>
+                    </td>
                 </tr>
             `;
         });
@@ -1279,7 +1387,10 @@
                     <td>${a.task}</td>
                     <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
                     <td>${a.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
+                    </td>
                 </tr>
             `;
         });
@@ -1304,7 +1415,10 @@
                     <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
                     <td>${a.member}</td>
                     <td>${a.hours}h</td>
-                    <td><button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button></td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
+                    </td>
                 </tr>
             `;
         });
@@ -1379,6 +1493,214 @@
         document.getElementById('workModal').style.display = 'none';
     }
 
+    function editActual(id) {
+        const actual = actuals.find(a => a.id === id);
+        if (!actual) {
+            alert('データが見つかりません');
+            return;
+        }
+        
+        // フォームに既存データを設定
+        document.getElementById('editActualId').value = id;
+        document.getElementById('editActualDate').value = actual.date;
+        document.getElementById('editActualVersion').value = actual.version;
+        document.getElementById('editActualTask').value = actual.task;
+        document.getElementById('editActualProcess').value = actual.process;
+        document.getElementById('editActualHours').value = actual.hours;
+        
+        // 担当者選択肢を更新
+        const memberSelect = document.getElementById('editActualMember');
+        const allMembers = new Set();
+        estimates.forEach(e => allMembers.add(e.member));
+        actuals.forEach(a => allMembers.add(a.member));
+        
+        let sortedMembers;
+        const memberOrderInput = document.getElementById('memberOrder').value.trim();
+        if (memberOrderInput) {
+            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+            const orderedMembers = [];
+            const unorderedMembers = [];
+            
+            orderList.forEach(name => {
+                if (allMembers.has(name)) {
+                    orderedMembers.push(name);
+                }
+            });
+            
+            Array.from(allMembers).forEach(m => {
+                if (!orderedMembers.includes(m)) {
+                    unorderedMembers.push(m);
+                }
+            });
+            
+            sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
+        } else {
+            sortedMembers = Array.from(allMembers).sort();
+        }
+        
+        memberSelect.innerHTML = '';
+        sortedMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member;
+            option.textContent = member;
+            memberSelect.appendChild(option);
+        });
+        
+        memberSelect.value = actual.member;
+        
+        // モーダルを表示
+        document.getElementById('editActualModal').style.display = 'block';
+    }
+
+    function closeEditActualModal() {
+        document.getElementById('editActualModal').style.display = 'none';
+    }
+
+    function saveActualEdit() {
+        const id = parseFloat(document.getElementById('editActualId').value);
+        const date = document.getElementById('editActualDate').value;
+        const version = document.getElementById('editActualVersion').value;
+        const task = document.getElementById('editActualTask').value;
+        const process = document.getElementById('editActualProcess').value;
+        const member = document.getElementById('editActualMember').value;
+        const hours = parseFloat(document.getElementById('editActualHours').value);
+        
+        if (!date || !version || !task || !process || !member || !hours) {
+            alert('すべての項目を入力してください');
+            return;
+        }
+        
+        // データを更新
+        const actualIndex = actuals.findIndex(a => a.id === id);
+        if (actualIndex !== -1) {
+            actuals[actualIndex] = {
+                ...actuals[actualIndex],
+                date: date,
+                version: version,
+                task: task,
+                process: process,
+                member: member,
+                hours: hours
+            };
+            
+            saveData();
+            closeEditActualModal();
+            
+            updateMonthOptions();
+            updateActualMonthOptions();
+            updateMemberOptions();
+            updateQuickTaskList();
+            renderTodayActuals();
+            renderActualList();
+            updateReport();
+            
+            alert('実績データを更新しました');
+        } else {
+            alert('データの更新に失敗しました');
+        }
+    }
+
+    function editEstimate(id) {
+        const estimate = estimates.find(e => e.id === id);
+        if (!estimate) {
+            alert('データが見つかりません');
+            return;
+        }
+        
+        // フォームに既存データを設定
+        document.getElementById('editEstimateId').value = id;
+        document.getElementById('editEstimateVersion').value = estimate.version;
+        document.getElementById('editEstimateTask').value = estimate.task;
+        document.getElementById('editEstimateProcess').value = estimate.process;
+        document.getElementById('editEstimateHours').value = estimate.hours;
+        
+        // 担当者選択肢を更新
+        const memberSelect = document.getElementById('editEstimateMember');
+        const allMembers = new Set();
+        estimates.forEach(e => allMembers.add(e.member));
+        actuals.forEach(a => allMembers.add(a.member));
+        
+        let sortedMembers;
+        const memberOrderInput = document.getElementById('memberOrder').value.trim();
+        if (memberOrderInput) {
+            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+            const orderedMembers = [];
+            const unorderedMembers = [];
+            
+            orderList.forEach(name => {
+                if (allMembers.has(name)) {
+                    orderedMembers.push(name);
+                }
+            });
+            
+            Array.from(allMembers).forEach(m => {
+                if (!orderedMembers.includes(m)) {
+                    unorderedMembers.push(m);
+                }
+            });
+            
+            sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
+        } else {
+            sortedMembers = Array.from(allMembers).sort();
+        }
+        
+        memberSelect.innerHTML = '';
+        sortedMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member;
+            option.textContent = member;
+            memberSelect.appendChild(option);
+        });
+        
+        memberSelect.value = estimate.member;
+        
+        // モーダルを表示
+        document.getElementById('editEstimateModal').style.display = 'block';
+    }
+
+    function closeEditEstimateModal() {
+        document.getElementById('editEstimateModal').style.display = 'none';
+    }
+
+    function saveEstimateEdit() {
+        const id = parseFloat(document.getElementById('editEstimateId').value);
+        const version = document.getElementById('editEstimateVersion').value;
+        const task = document.getElementById('editEstimateTask').value;
+        const process = document.getElementById('editEstimateProcess').value;
+        const member = document.getElementById('editEstimateMember').value;
+        const hours = parseFloat(document.getElementById('editEstimateHours').value);
+        
+        if (!version || !task || !process || !member || !hours) {
+            alert('すべての項目を入力してください');
+            return;
+        }
+        
+        // データを更新
+        const estimateIndex = estimates.findIndex(e => e.id === id);
+        if (estimateIndex !== -1) {
+            estimates[estimateIndex] = {
+                ...estimates[estimateIndex],
+                version: version,
+                task: task,
+                process: process,
+                member: member,
+                hours: hours
+            };
+            
+            saveData();
+            closeEditEstimateModal();
+            
+            updateMemberOptions();
+            updateQuickTaskList();
+            renderEstimateList();
+            updateReport();
+            
+            alert('見積データを更新しました');
+        } else {
+            alert('データの更新に失敗しました');
+        }
+    }
+
     function showMemberOrderHelp() {
         alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
     }
@@ -1393,9 +1715,18 @@
 
     // モーダル外をクリックで閉じる
     window.onclick = function(event) {
-        const modal = document.getElementById('workModal');
-        if (event.target === modal) {
+        const workModal = document.getElementById('workModal');
+        const editActualModal = document.getElementById('editActualModal');
+        const editEstimateModal = document.getElementById('editEstimateModal');
+        
+        if (event.target === workModal) {
             closeWorkModal();
+        }
+        if (event.target === editActualModal) {
+            closeEditActualModal();
+        }
+        if (event.target === editEstimateModal) {
+            closeEditEstimateModal();
         }
     }
 
