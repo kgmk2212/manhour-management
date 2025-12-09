@@ -887,23 +887,65 @@
 
         function renderActualMatrix() {
             const container = document.getElementById('actualList');
+            const selectedMonth = document.getElementById('actualMonthFilter').value;
+            const memberOrderInput = document.getElementById('memberOrder').value.trim();
             
-            // 担当者と日付を抽出
-            const members = [...new Set(actuals.map(a => a.member))].sort();
+            // 月でフィルタリング
+            let filteredActuals = actuals;
+            if (selectedMonth !== 'all') {
+                filteredActuals = actuals.filter(a => a.date && a.date.startsWith(selectedMonth));
+            }
             
-            if (members.length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
+            if (filteredActuals.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
                 return;
             }
             
-            // 実績データの最小・最大日付を取得
-            const dates = actuals.map(a => a.date).sort();
+            // 担当者を抽出して並び替え
+            let members = [...new Set(filteredActuals.map(a => a.member))];
+            
+            // 表示順が指定されている場合
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const orderedMembers = [];
+                const unorderedMembers = [];
+                
+                // 指定された順序で追加
+                orderList.forEach(name => {
+                    if (members.includes(name)) {
+                        orderedMembers.push(name);
+                    }
+                });
+                
+                // 指定されていない担当者を後ろに追加
+                members.forEach(m => {
+                    if (!orderedMembers.includes(m)) {
+                        unorderedMembers.push(m);
+                    }
+                });
+                
+                members = [...orderedMembers, ...unorderedMembers.sort()];
+            } else {
+                members.sort();
+            }
+            
+            // 実績データの日付範囲を取得
+            const dates = filteredActuals.map(a => a.date).sort();
             const minDate = new Date(dates[0]);
             const maxDate = new Date(dates[dates.length - 1]);
             
-            // 月の範囲を生成（最小日付の月初から最大日付の月末まで）
-            const startDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-            const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+            // 表示範囲を決定
+            let startDate, endDate;
+            if (selectedMonth !== 'all') {
+                // 選択した月のみ
+                const [year, month] = selectedMonth.split('-');
+                startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                endDate = new Date(parseInt(year), parseInt(month), 0);
+            } else {
+                // 全期間（最小日付の月初から最大日付の月末まで）
+                startDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+                endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+            }
             
             // 日付範囲を生成
             const allDates = [];
@@ -913,7 +955,34 @@
                 currentDate.setDate(currentDate.getDate() + 1);
             }
             
-            let html = '<div class="table-wrapper"><table>';
+            let html = '';
+            
+            // 月の合計を最上部に表示（月選択時のみ）
+            if (selectedMonth !== 'all') {
+                const [year, month] = selectedMonth.split('-');
+                html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">';
+                html += `<h3 style="margin: 0 0 15px 0; font-size: 20px;">${year}年${parseInt(month)}月の合計</h3>`;
+                html += '<div style="display: flex; gap: 15px; flex-wrap: wrap;">';
+                
+                let monthGrandTotal = 0;
+                members.forEach(member => {
+                    const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
+                    monthGrandTotal += memberTotal;
+                    html += `<div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px);">
+                        <div style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">${member}</div>
+                        <div style="font-size: 28px; font-weight: 700;">${memberTotal.toFixed(1)}h</div>
+                    </div>`;
+                });
+                
+                html += `<div style="background: rgba(255,193,7,0.9); padding: 12px 20px; border-radius: 8px;">
+                    <div style="font-size: 13px; margin-bottom: 5px;">総合計</div>
+                    <div style="font-size: 28px; font-weight: 700;">${monthGrandTotal.toFixed(1)}h</div>
+                </div>`;
+                
+                html += '</div></div>';
+            }
+            
+            html += '<div class="table-wrapper"><table>';
             html += '<tr><th style="min-width: 100px;">日付</th>';
             
             // 担当者ヘッダー
@@ -934,14 +1003,14 @@
                 const dayOfWeek = getDayOfWeek(date);
                 const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
                 
-                // 月が変わったら月次小計行を挿入
-                if (currentMonth && currentMonth !== month) {
+                // 月が変わったら月次小計行を挿入（全期間表示時のみ）
+                if (selectedMonth === 'all' && currentMonth && currentMonth !== month) {
                     html += '<tr style="background: #fff3cd; font-weight: 600;">';
                     html += `<td>${currentMonth} 小計</td>`;
                     members.forEach(member => {
-                        html += `<td>${monthTotals[member].toFixed(1)}h</td>`;
+                        html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
                     });
-                    html += `<td style="background: #ffc107; color: white;">${monthTotal.toFixed(1)}h</td>`;
+                    html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
                     html += '</tr>';
                     
                     // リセット
@@ -965,7 +1034,7 @@
                 
                 // 担当者ごとのセル
                 members.forEach(member => {
-                    const dayActuals = actuals.filter(a => a.member === member && a.date === date);
+                    const dayActuals = filteredActuals.filter(a => a.member === member && a.date === date);
                     const memberDayTotal = dayActuals.reduce((sum, a) => sum + a.hours, 0);
                     dayTotal += memberDayTotal;
                     monthTotals[member] += memberDayTotal;
@@ -993,8 +1062,8 @@
                 html += '</tr>';
             });
             
-            // 最後の月の小計
-            if (currentMonth) {
+            // 最後の月の小計（全期間表示時のみ）
+            if (selectedMonth === 'all' && currentMonth) {
                 html += '<tr style="background: #fff3cd; font-weight: 600;">';
                 html += `<td>${currentMonth} 小計</td>`;
                 members.forEach(member => {
@@ -1010,7 +1079,7 @@
             let grandTotal = 0;
             
             members.forEach(member => {
-                const memberTotal = actuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
+                const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
                 grandTotal += memberTotal;
                 html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
             });
@@ -1024,7 +1093,7 @@
             html += '<h3 style="margin-top: 30px;">詳細データ（削除用）</h3>';
             html += '<div class="table-wrapper"><table><tr><th>日付</th><th>担当者</th><th>版数</th><th>対応名</th><th>工程</th><th>実績工数</th><th>操作</th></tr>';
             
-            const sortedActuals = [...actuals].sort((a, b) => {
+            const sortedActuals = [...filteredActuals].sort((a, b) => {
                 if (a.date !== b.date) return b.date.localeCompare(a.date);
                 return a.member.localeCompare(b.member);
             });
@@ -1046,6 +1115,7 @@
             html += '</table></div>';
             container.innerHTML = html;
         }
+
 
         function renderActualListView() {
             const container = document.getElementById('actualList');
