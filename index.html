@@ -405,6 +405,7 @@
             <button class="tab" onclick="showTab('estimate')">見積管理</button>
             <button class="tab" onclick="showTab('actual')">実績一覧</button>
             <button class="tab" onclick="showTab('report')">レポート</button>
+            <button class="tab" onclick="showTab('settings')">⚙️ 設定</button>
         </div>
 
         <div class="content">
@@ -529,19 +530,6 @@
                             <option value="all">全期間</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <button class="btn btn-primary" onclick="toggleMemberOrderSetting()">⚙️ 表示順設定</button>
-                    </div>
-                </div>
-                
-                <div id="memberOrderSetting" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div class="form-group" style="margin: 0;">
-                        <label>担当者表示順 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db;">ℹ️</button></label>
-                        <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="renderActualList()">
-                        <small style="color: #666; display: block; margin-top: 5px;">カンマ区切りで入力してください。設定は自動保存されます。</small>
-                    </div>
                 </div>
                 
                 <div id="actualList"></div>
@@ -583,6 +571,28 @@
 
                 <h3 style="margin-top: 20px;">版数別進捗</h3>
                 <div id="versionReport"></div>
+            </div>
+
+            <div id="settings" class="tab-content">
+                <h2>⚙️ 設定</h2>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>担当者表示順</h3>
+                    <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。</p>
+                    
+                    <div class="form-group">
+                        <label>表示順序 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db; font-size: 18px;">ℹ️</button></label>
+                        <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="updateAllDisplays()">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ・カンマ区切りで入力してください<br>
+                            ・指定した順番で表示されます<br>
+                            ・指定していない担当者は後ろにアルファベット順で表示されます<br>
+                            ・設定は自動的に保存されます
+                        </small>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1066,21 +1076,21 @@
                 const workedDays = new Set(filteredActuals.map(a => a.date)).size;
                 
                 html += `<div style="margin-bottom: 15px;">
-                    <h3 style="margin: 0 0 10px 0;">${year}年${parseInt(month)}月の合計</h3>
-                    <p style="margin: 0 0 10px 0; color: #666;">稼働日数: ${workedDays}日</p>
+                    <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
+                    <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日</p>
                 </div>`;
                 
                 html += '<div class="table-wrapper"><table>';
-                html += '<tr style="background: #2c3e50; color: white; font-weight: 700;"><td>総合計</td>';
+                html += '<tr style="background: #2c3e50; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
                 
                 let monthGrandTotal = 0;
                 members.forEach(member => {
                     const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
                     monthGrandTotal += memberTotal;
-                    html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
+                    html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(1)}h</th>`;
                 });
                 
-                html += `<td style="background: #ffc107; text-align: center;">${monthGrandTotal.toFixed(1)}h</td>`;
+                html += `<th style="background: #ffc107; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
                 html += '</tr></table></div>';
                 
                 html += '<div style="margin: 20px 0;"></div>';
@@ -1302,13 +1312,12 @@
             alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
         }
 
-        function toggleMemberOrderSetting() {
-            const setting = document.getElementById('memberOrderSetting');
-            if (setting.style.display === 'none') {
-                setting.style.display = 'block';
-            } else {
-                setting.style.display = 'none';
-            }
+        function updateAllDisplays() {
+            saveData();
+            updateMemberOptions();
+            renderActualList();
+            updateReport();
+            alert('設定を適用しました');
         }
 
         // モーダル外をクリックで閉じる
