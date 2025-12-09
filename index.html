@@ -163,7 +163,7 @@
         }
 
         td {
-            padding: 10px 12px;
+            padding: 8px 10px;
             border-bottom: 1px solid #eee;
             white-space: nowrap;
         }
@@ -514,12 +514,26 @@
             <div id="actual" class="tab-content">
                 <h2>実績データ一覧</h2>
                 
-                <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
-                    <label>表示形式</label>
-                    <select id="actualViewType" onchange="renderActualList()">
-                        <option value="matrix">担当者×日付マトリクス</option>
-                        <option value="list">リスト形式</option>
-                    </select>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label>表示形式</label>
+                        <select id="actualViewType" onchange="renderActualList()">
+                            <option value="matrix">担当者×日付マトリクス</option>
+                            <option value="list">リスト形式</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>表示期間</label>
+                        <select id="actualMonthFilter" onchange="renderActualList()">
+                            <option value="all">全期間</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>担当者表示順 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db;">ℹ️</button></label>
+                        <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="renderActualList()">
+                    </div>
                 </div>
                 
                 <div id="actualList"></div>
@@ -586,6 +600,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             updateMonthOptions();
+            updateActualMonthOptions();
             updateQuickTaskList();
             renderEstimateList();
             renderActualList();
@@ -609,6 +624,32 @@
 
         function updateMonthOptions() {
             const select = document.getElementById('reportMonth');
+            const months = new Set();
+            
+            // 実績データから月を抽出
+            actuals.forEach(a => {
+                if (a.date) {
+                    const month = a.date.substring(0, 7); // YYYY-MM形式
+                    months.add(month);
+                }
+            });
+            
+            // 月を降順でソート
+            const sortedMonths = Array.from(months).sort().reverse();
+            
+            // 選択肢を生成
+            select.innerHTML = '<option value="all">全期間</option>';
+            sortedMonths.forEach(month => {
+                const [year, monthNum] = month.split('-');
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = `${year}年${monthNum}月`;
+                select.appendChild(option);
+            });
+        }
+
+        function updateActualMonthOptions() {
+            const select = document.getElementById('actualMonthFilter');
             const months = new Set();
             
             // 実績データから月を抽出
@@ -763,6 +804,7 @@
             saveData();
             document.getElementById('quickHours').value = '';
             updateMonthOptions();
+            updateActualMonthOptions();
             renderTodayActuals();
             renderActualList();
             updateReport();
@@ -1080,6 +1122,10 @@
 
         function closeWorkModal() {
             document.getElementById('workModal').style.display = 'none';
+        }
+
+        function showMemberOrderHelp() {
+            alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
         }
 
         // モーダル外をクリックで閉じる
