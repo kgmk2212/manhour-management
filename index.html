@@ -1080,7 +1080,10 @@
                     <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日</p>
                 </div>`;
                 
+                // 同じtable-wrapper内に合計表を配置
                 html += '<div class="table-wrapper"><table>';
+                
+                // 合計行
                 html += '<tr style="background: #2c3e50; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
                 
                 let monthGrandTotal = 0;
@@ -1091,19 +1094,27 @@
                 });
                 
                 html += `<th style="background: #ffc107; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
-                html += '</tr></table></div>';
+                html += '</tr>';
                 
-                html += '<div style="margin: 20px 0;"></div>';
+                // ヘッダー行
+                html += '<tr><th style="min-width: 100px;">日付</th>';
+                
+                // 担当者ヘッダー
+                members.forEach(member => {
+                    html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
+                });
+                html += '<th style="min-width: 80px; text-align: center;">日別合計</th></tr>';
+            } else {
+                // 全期間表示の場合は通常通りヘッダーのみ
+                html += '<div class="table-wrapper"><table>';
+                html += '<tr><th style="min-width: 100px;">日付</th>';
+                
+                // 担当者ヘッダー
+                members.forEach(member => {
+                    html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
+                });
+                html += '<th style="min-width: 80px; text-align: center;">日別合計</th></tr>';
             }
-            
-            html += '<div class="table-wrapper"><table>';
-            html += '<tr><th style="min-width: 100px;">日付</th>';
-            
-            // 担当者ヘッダー
-            members.forEach(member => {
-                html += `<th style="min-width: 80px;">${member}</th>`;
-            });
-            html += '<th style="min-width: 80px;">日別合計</th></tr>';
             
             let currentMonth = '';
             let monthTotals = {};
