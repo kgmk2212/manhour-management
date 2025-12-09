@@ -14,7 +14,6 @@
             box-sizing: border-box;
         }
 
-```
     body {
         font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -392,7 +391,6 @@
         }
     }
 </style>
-```
 
 </head>
 <body>
@@ -405,7 +403,6 @@
             </div>
         </header>
 
-```
     <div class="tabs">
         <button class="tab active" onclick="showTab('quick')">クイック入力</button>
         <button class="tab" onclick="showTab('estimate')">見積管理</button>
@@ -1069,28 +1066,45 @@
         
         // 実績データの日付範囲を取得
         const dates = filteredActuals.map(a => a.date).sort();
-        const minDate = new Date(dates[0]);
-        const maxDate = new Date(dates[dates.length - 1]);
         
         // 表示範囲を決定
         let startDate, endDate;
         if (selectedMonth !== 'all') {
-            // 選択した月のみ
+            // 選択した月のみ（月初から月末まで正確に）
             const [year, month] = selectedMonth.split('-');
-            startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-            endDate = new Date(parseInt(year), parseInt(month), 0);
+            const yearNum = parseInt(year);
+            const monthNum = parseInt(month);
+            
+            // 月の最初の日
+            startDate = `${year}-${month}-01`;
+            
+            // 月の最後の日を計算
+            const lastDay = new Date(yearNum, monthNum, 0).getDate();
+            endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
         } else {
             // 全期間（最小日付の月初から最大日付の月末まで）
-            startDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-            endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+            const minDate = dates[0];
+            const maxDate = dates[dates.length - 1];
+            
+            const [minYear, minMonth] = minDate.split('-');
+            const [maxYear, maxMonth] = maxDate.split('-');
+            
+            startDate = `${minYear}-${minMonth}-01`;
+            
+            const lastDay = new Date(parseInt(maxYear), parseInt(maxMonth), 0).getDate();
+            endDate = `${maxYear}-${maxMonth}-${String(lastDay).padStart(2, '0')}`;
         }
         
         // 日付範囲を生成
         const allDates = [];
-        let currentDate = new Date(startDate);
-        while (currentDate <= endDate) {
-            allDates.push(currentDate.toISOString().split('T')[0]);
-            currentDate.setDate(currentDate.getDate() + 1);
+        let currentDateStr = startDate;
+        while (currentDateStr <= endDate) {
+            allDates.push(currentDateStr);
+            
+            // 次の日付を計算
+            const [y, m, d] = currentDateStr.split('-').map(Number);
+            const nextDate = new Date(y, m - 1, d + 1);
+            currentDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
         }
         
         let html = '';
@@ -1686,7 +1700,6 @@
         }
     }
 </script>
-```
 
 </body>
 </html>
