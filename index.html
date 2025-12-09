@@ -1357,7 +1357,32 @@
             estimates.forEach(e => allMembers.add(e.member));
             filteredActuals.forEach(a => allMembers.add(a.member));
             
-            const members = Array.from(allMembers).sort();
+            // 表示順が設定されている場合はそれを使用
+            let members;
+            const memberOrderInput = document.getElementById('memberOrder').value.trim();
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const orderedMembers = [];
+                const unorderedMembers = [];
+                
+                // 指定された順序で追加
+                orderList.forEach(name => {
+                    if (allMembers.has(name)) {
+                        orderedMembers.push(name);
+                    }
+                });
+                
+                // 指定されていない担当者を後ろに追加
+                Array.from(allMembers).forEach(m => {
+                    if (!orderedMembers.includes(m)) {
+                        unorderedMembers.push(m);
+                    }
+                });
+                
+                members = [...orderedMembers, ...unorderedMembers.sort()];
+            } else {
+                members = Array.from(allMembers).sort();
+            }
             
             if (members.length === 0) {
                 document.getElementById('memberReport').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">データがありません</p>';
