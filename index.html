@@ -611,6 +611,13 @@
         function saveData() {
             localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
             localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+            
+            // 担当者表示順を保存
+            const memberOrder = document.getElementById('memberOrder').value.trim();
+            if (memberOrder) {
+                localStorage.setItem('manhour_memberOrder', memberOrder);
+            }
+            
             autoBackup();
         }
 
@@ -620,6 +627,12 @@
             
             if (savedEstimates) estimates = JSON.parse(savedEstimates);
             if (savedActuals) actuals = JSON.parse(savedActuals);
+            
+            // 担当者表示順を読み込み
+            const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
+            if (savedMemberOrder) {
+                document.getElementById('memberOrder').value = savedMemberOrder;
+            }
         }
 
         function updateMonthOptions() {
@@ -678,6 +691,7 @@
             const data = {
                 estimates: estimates,
                 actuals: actuals,
+                memberOrder: document.getElementById('memberOrder').value.trim(),
                 timestamp: new Date().toISOString(),
                 version: '1.0'
             };
@@ -960,26 +974,29 @@
             // 月の合計を最上部に表示（月選択時のみ）
             if (selectedMonth !== 'all') {
                 const [year, month] = selectedMonth.split('-');
-                html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">';
-                html += `<h3 style="margin: 0 0 15px 0; font-size: 20px;">${year}年${parseInt(month)}月の合計</h3>`;
-                html += '<div style="display: flex; gap: 15px; flex-wrap: wrap;">';
+                
+                // 稼働日数を計算（実績が入力されている日数）
+                const workedDays = new Set(filteredActuals.map(a => a.date)).size;
+                
+                html += `<div style="margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 10px 0;">${year}年${parseInt(month)}月の合計</h3>
+                    <p style="margin: 0 0 10px 0; color: #666;">稼働日数: ${workedDays}日</p>
+                </div>`;
+                
+                html += '<div class="table-wrapper"><table>';
+                html += '<tr style="background: #2c3e50; color: white; font-weight: 700;"><td>総合計</td>';
                 
                 let monthGrandTotal = 0;
                 members.forEach(member => {
                     const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
                     monthGrandTotal += memberTotal;
-                    html += `<div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px);">
-                        <div style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">${member}</div>
-                        <div style="font-size: 28px; font-weight: 700;">${memberTotal.toFixed(1)}h</div>
-                    </div>`;
+                    html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
                 });
                 
-                html += `<div style="background: rgba(255,193,7,0.9); padding: 12px 20px; border-radius: 8px;">
-                    <div style="font-size: 13px; margin-bottom: 5px;">総合計</div>
-                    <div style="font-size: 28px; font-weight: 700;">${monthGrandTotal.toFixed(1)}h</div>
-                </div>`;
+                html += `<td style="background: #ffc107; text-align: center;">${monthGrandTotal.toFixed(1)}h</td>`;
+                html += '</tr></table></div>';
                 
-                html += '</div></div>';
+                html += '<div style="margin: 20px 0;"></div>';
             }
             
             html += '<div class="table-wrapper"><table>';
@@ -1343,6 +1360,13 @@
                         if (confirm('現在のデータを復元したデータで上書きしますか？')) {
                             estimates = data.estimates || [];
                             actuals = data.actuals || [];
+                            
+                            // 担当者表示順を復元
+                            if (data.memberOrder) {
+                                document.getElementById('memberOrder').value = data.memberOrder;
+                                localStorage.setItem('manhour_memberOrder', data.memberOrder);
+                            }
+                            
                             saveData();
                             
                             updateMonthOptions();
