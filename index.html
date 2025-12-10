@@ -580,6 +580,14 @@
                 </div>
 
                 <h3>登録済み見積一覧</h3>
+                <div class="form-group" style="max-width: 300px; margin-bottom: 15px;">
+                    <label>表示形式</label>
+                    <select id="estimateViewType" onchange="renderEstimateList()">
+                        <option value="grouped">対応別グループ表示</option>
+                        <option value="matrix">対応別マトリクス表示</option>
+                        <option value="list">詳細リスト表示</option>
+                    </select>
+                </div>
                 <div id="estimateList"></div>
             </div>
 
@@ -1220,12 +1228,144 @@
 
         function renderEstimateList() {
             const container = document.getElementById('estimateList');
+            const viewType = document.getElementById('estimateViewType').value;
             
             if (estimates.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
                 return;
             }
 
+            if (viewType === 'grouped') {
+                renderEstimateGrouped();
+            } else if (viewType === 'matrix') {
+                renderEstimateMatrix();
+            } else {
+                renderEstimateDetailList();
+            }
+        }
+
+        function renderEstimateGrouped() {
+            const container = document.getElementById('estimateList');
+            
+            // 対応ごとにグループ化
+            const taskGroups = {};
+            estimates.forEach(e => {
+                const key = `${e.version}|||${e.task}`;
+                if (!taskGroups[key]) {
+                    taskGroups[key] = {
+                        version: e.version,
+                        task: e.task,
+                        processes: []
+                    };
+                }
+                taskGroups[key].processes.push({
+                    process: e.process,
+                    member: e.member,
+                    hours: e.hours,
+                    id: e.id
+                });
+            });
+            
+            let html = '<div class="table-wrapper"><table>';
+            html += '<tr><th style="min-width: 120px;">版数</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 100px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
+            
+            Object.values(taskGroups).forEach(group => {
+                const total = group.processes.reduce((sum, p) => sum + p.hours, 0);
+                const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+                const sortedProcesses = group.processes.sort((a, b) => 
+                    processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
+                );
+                
+                sortedProcesses.forEach((proc, index) => {
+                    html += '<tr>';
+                    if (index === 0) {
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${group.version}</td>`;
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px;">${group.task}</td>`;
+                    }
+                    html += `<td><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
+                    html += `<td>${proc.member}</td>`;
+                    html += `<td style="text-align: right;">${proc.hours}h</td>`;
+                    if (index === 0) {
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right; font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</td>`;
+                    }
+                    html += `<td>
+                        <button class="btn btn-primary btn-small" onclick="editEstimate(${proc.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${proc.id})">削除</button>
+                    </td>`;
+                    html += '</tr>';
+                });
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        function renderEstimateMatrix() {
+            const container = document.getElementById('estimateList');
+            
+            // 対応ごとにグループ化
+            const taskGroups = {};
+            estimates.forEach(e => {
+                const key = `${e.version}|||${e.task}`;
+                if (!taskGroups[key]) {
+                    taskGroups[key] = {
+                        version: e.version,
+                        task: e.task,
+                        processes: {}
+                    };
+                }
+                taskGroups[key].processes[e.process] = {
+                    member: e.member,
+                    hours: e.hours,
+                    id: e.id
+                };
+            });
+            
+            const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            
+            let html = '<div class="table-wrapper"><table>';
+            html += '<tr><th style="min-width: 120px;">版数</th><th style="min-width: 200px;">対応名</th>';
+            processOrder.forEach(proc => {
+                html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
+            });
+            html += '<th style="min-width: 80px; text-align: center;">合計</th><th style="min-width: 150px;">操作</th></tr>';
+            
+            Object.values(taskGroups).forEach(group => {
+                html += '<tr>';
+                html += `<td style="font-weight: 600;">${group.version}</td>`;
+                html += `<td>${group.task}</td>`;
+                
+                let total = 0;
+                let firstId = null;
+                processOrder.forEach(proc => {
+                    if (group.processes[proc]) {
+                        const p = group.processes[proc];
+                        total += p.hours;
+                        if (!firstId) firstId = p.id;
+                        html += `<td style="text-align: center;">
+                            <div style="font-weight: 600;">${p.hours}h</div>
+                            <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                        </td>`;
+                    } else {
+                        html += `<td style="text-align: center; color: #ccc;">-</td>`;
+                    }
+                });
+                
+                html += `<td style="text-align: center; font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</td>`;
+                html += `<td>
+                    <button class="btn btn-primary btn-small" onclick="editEstimate(${firstId})" style="margin-right: 5px;">編集</button>
+                    <button class="btn btn-danger btn-small" onclick="deleteEstimate(${firstId})">削除</button>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        function renderEstimateDetailList() {
+            const container = document.getElementById('estimateList');
+            
             let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>操作</th></tr>';
             
             estimates.forEach(e => {
