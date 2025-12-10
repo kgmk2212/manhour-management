@@ -1624,7 +1624,7 @@
         const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
         const workedDays = new Set(filteredActuals.map(a => a.date)).size;
         
-        let html = `<h3 style="margin-bottom: 10px;">${selectedMember}さんの実績カレンダー</h3>`;
+        let html = `<h3 style="margin-bottom: 10px;">${selectedMember}の実績カレンダー</h3>`;
         
         if (selectedMonth !== 'all') {
             const [year, month] = selectedMonth.split('-');
@@ -2534,12 +2534,13 @@
                 };
             }
             if (!versionGroups[e.version][taskKey].estimates[e.process]) {
-                versionGroups[e.version][taskKey].estimates[e.process] = { member: e.member, hours: 0 };
+                versionGroups[e.version][taskKey].estimates[e.process] = { members: new Set(), hours: 0 };
             }
+            versionGroups[e.version][taskKey].estimates[e.process].members.add(e.member);
             versionGroups[e.version][taskKey].estimates[e.process].hours += e.hours;
         });
         
-        // 実績データを追加
+        // 実績データを追加（担当者も集計）
         filteredActuals.forEach(a => {
             if (!versionGroups[a.version]) {
                 versionGroups[a.version] = {};
@@ -2553,8 +2554,9 @@
                 };
             }
             if (!versionGroups[a.version][taskKey].actuals[a.process]) {
-                versionGroups[a.version][taskKey].actuals[a.process] = { member: a.member, hours: 0 };
+                versionGroups[a.version][taskKey].actuals[a.process] = { members: new Set(), hours: 0 };
             }
+            versionGroups[a.version][taskKey].actuals[a.process].members.add(a.member);
             versionGroups[a.version][taskKey].actuals[a.process].hours += a.hours;
         });
         
@@ -2566,7 +2568,7 @@
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
             html += '<div class="table-wrapper"><table>';
-            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
+            html += '<tr><th style="min-width: 150px; max-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
             
             Object.values(versionGroups[version]).forEach(taskGroup => {
                 const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -2579,19 +2581,27 @@
                 let totalAct = 0;
                 
                 sortedProcesses.forEach((proc, index) => {
-                    const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
-                    const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
+                    const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
+                    const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                     const diff = act.hours - est.hours;
                     
                     totalEst += est.hours;
                     totalAct += act.hours;
                     
+                    // 実績ベースで担当者を表示（実績がなければ見積）
+                    let memberDisplay = '-';
+                    if (act.members.size > 0) {
+                        memberDisplay = Array.from(act.members).join(',');
+                    } else if (est.members.size > 0) {
+                        memberDisplay = Array.from(est.members).join(',');
+                    }
+                    
                     html += '<tr>';
                     if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600; word-break: break-word; max-width: 200px;">${taskGroup.task}</td>`;
                     }
                     html += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
-                    html += `<td>${est.member !== '-' ? est.member : act.member}</td>`;
+                    html += `<td style="word-break: break-word;">${memberDisplay}</td>`;
                     html += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                     html += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                     html += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
@@ -2610,6 +2620,10 @@
             html += '</table></div>';
             html += '</div>';
         });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
         
         html += '</div>';
         container.innerHTML = html;
