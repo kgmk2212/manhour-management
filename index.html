@@ -1720,9 +1720,33 @@
 
         function renderActualListView() {
             const container = document.getElementById('actualList');
+            const viewMode = document.getElementById('actualViewMode').value;
+            const selectedMonth = document.getElementById('actualMonthFilter').value;
+            
+            // フィルタリング処理
+            let filteredActuals = actuals;
+            
+            // 担当者別モードの場合
+            if (viewMode === 'member') {
+                const selectedMember = document.getElementById('actualMemberSelect').value;
+                if (selectedMember) {
+                    filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
+                }
+            }
+            
+            // 月でフィルタリング
+            if (selectedMonth !== 'all') {
+                filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
+            }
+            
             let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
             
-            const sortedActuals = [...actuals].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sortedActuals = [...filteredActuals].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (sortedActuals.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した条件に該当する実績データがありません</p>';
+                return;
+            }
             
             sortedActuals.forEach(a => {
                 html += `
