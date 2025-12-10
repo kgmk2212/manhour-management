@@ -588,9 +588,23 @@
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div class="form-group">
+                        <label>表示モード</label>
+                        <select id="actualViewMode" onchange="renderActualList()">
+                            <option value="all">全担当者</option>
+                            <option value="member">担当者別</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="memberSelectGroup" style="display: none;">
+                        <label>担当者</label>
+                        <select id="actualMemberSelect" onchange="renderActualList()">
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
                         <label>表示形式</label>
                         <select id="actualViewType" onchange="renderActualList()">
-                            <option value="matrix">担当者×日付マトリクス</option>
+                            <option value="matrix">カレンダー形式</option>
                             <option value="list">リスト形式</option>
                         </select>
                     </div>
@@ -1237,6 +1251,16 @@
         function renderActualList() {
             const container = document.getElementById('actualList');
             const viewType = document.getElementById('actualViewType').value;
+            const viewMode = document.getElementById('actualViewMode').value;
+            
+            // 担当者別モード時は担当者選択を表示
+            const memberSelectGroup = document.getElementById('memberSelectGroup');
+            if (viewMode === 'member') {
+                memberSelectGroup.style.display = 'block';
+                updateMemberSelectOptions();
+            } else {
+                memberSelectGroup.style.display = 'none';
+            }
             
             if (actuals.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
@@ -1244,10 +1268,182 @@
             }
 
             if (viewType === 'matrix') {
-                renderActualMatrix();
+                if (viewMode === 'member') {
+                    renderMemberCalendar();
+                } else {
+                    renderActualMatrix();
+                }
             } else {
                 renderActualListView();
             }
+        }
+
+        function updateMemberSelectOptions() {
+            const select = document.getElementById('actualMemberSelect');
+            const currentValue = select.value;
+            
+            // 担当者を抽出
+            const allMembers = new Set();
+            actuals.forEach(a => allMembers.add(a.member));
+            estimates.forEach(e => allMembers.add(e.member));
+            
+            // 表示順でソート
+            let sortedMembers;
+            const memberOrderInput = document.getElementById('memberOrder').value.trim();
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const orderedMembers = [];
+                const unorderedMembers = [];
+                
+                orderList.forEach(name => {
+                    if (allMembers.has(name)) {
+                        orderedMembers.push(name);
+                    }
+                });
+                
+                Array.from(allMembers).forEach(m => {
+                    if (!orderedMembers.includes(m)) {
+                        unorderedMembers.push(m);
+                    }
+                });
+                
+                sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
+            } else {
+                sortedMembers = Array.from(allMembers).sort();
+            }
+            
+            select.innerHTML = '';
+            sortedMembers.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member;
+                option.textContent = member;
+                select.appendChild(option);
+            });
+            
+            // 以前の選択を復元
+            if (currentValue && sortedMembers.includes(currentValue)) {
+                select.value = currentValue;
+            } else if (sortedMembers.length > 0) {
+                select.value = sortedMembers[0];
+            }
+        }
+
+        function renderMemberCalendar() {
+            const container = document.getElementById('actualList');
+            const selectedMonth = document.getElementById('actualMonthFilter').value;
+            const selectedMember = document.getElementById('actualMemberSelect').value;
+            
+            if (!selectedMember) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">担当者を選択してください</p>';
+                return;
+            }
+            
+            // 担当者と月でフィルタリング
+            let filteredActuals = actuals.filter(a => a.member === selectedMember);
+            if (selectedMonth !== 'all') {
+                filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
+            }
+            
+            if (filteredActuals.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
+                return;
+            }
+            
+            // 日付範囲を計算
+            const dates = filteredActuals.map(a => a.date).sort();
+            let startDate, endDate;
+            
+            if (selectedMonth !== 'all') {
+                const [year, month] = selectedMonth.split('-');
+                const yearNum = parseInt(year);
+                const monthNum = parseInt(month);
+                
+                startDate = `${year}-${month}-01`;
+                const lastDay = new Date(yearNum, monthNum, 0).getDate();
+                endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+            } else {
+                const [minYear, minMonth] = dates[0].split('-');
+                const [maxYear, maxMonth] = dates[dates.length - 1].split('-');
+                
+                startDate = `${minYear}-${minMonth}-01`;
+                const lastDay = new Date(parseInt(maxYear), parseInt(maxMonth), 0).getDate();
+                endDate = `${maxYear}-${maxMonth}-${String(lastDay).padStart(2, '0')}`;
+            }
+            
+            // 日付リスト生成
+            const allDates = [];
+            let currentDateStr = startDate;
+            while (currentDateStr <= endDate) {
+                allDates.push(currentDateStr);
+                const [y, m, d] = currentDateStr.split('-').map(Number);
+                const nextDate = new Date(y, m - 1, d + 1);
+                currentDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+            }
+            
+            // 合計情報
+            const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+            const workedDays = new Set(filteredActuals.map(a => a.date)).size;
+            
+            let html = `<h3 style="margin-bottom: 10px;">${selectedMember} の実績カレンダー</h3>`;
+            
+            if (selectedMonth !== 'all') {
+                const [year, month] = selectedMonth.split('-');
+                html += `<div style="margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
+                    <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(1)}h</p>
+                </div>`;
+            }
+            
+            html += '<div class="table-wrapper"><table>';
+            html += '<tr><th style="min-width: 120px;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
+            
+            allDates.forEach(date => {
+                const dateObj = new Date(date);
+                const dayOfWeek = getDayOfWeek(date);
+                const holiday = getHoliday(date);
+                const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
+                const isHoliday = holiday !== null;
+                
+                const dayActuals = filteredActuals.filter(a => a.date === date);
+                const dayTotal = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+                
+                const bgColor = (isWeekend || isHoliday) ? '#ffebee' : 'white';
+                const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
+                const holidayName = isHoliday ? ` ${holiday}` : '';
+                
+                const [year, m, day] = date.split('-');
+                const dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})${holidayName}`;
+                
+                if (dayActuals.length === 0) {
+                    html += `<tr style="background: ${bgColor};">`;
+                    html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
+                    html += `<td style="color: #999;">-</td>`;
+                    html += `<td style="text-align: center; color: #999;">-</td>`;
+                    html += `</tr>`;
+                } else {
+                    dayActuals.forEach((actual, index) => {
+                        if (index === 0) {
+                            html += `<tr style="background: ${bgColor};">`;
+                            html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px;">${dateDisplay}</td>`;
+                        } else {
+                            html += `<tr style="background: ${bgColor};">`;
+                        }
+                        html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
+                        html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
+                        html += `</tr>`;
+                    });
+                }
+            });
+            
+            // 総合計行
+            html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
+            html += `<td>総合計</td>`;
+            html += `<td style="text-align: right;">${workedDays}日稼働</td>`;
+            html += `<td style="text-align: center;">${totalHours.toFixed(1)}h</td>`;
+            html += `</tr>`;
+            
+            html += '</table></div>';
+            container.innerHTML = html;
         }
 
         function renderActualMatrix() {
@@ -1354,8 +1550,8 @@
                 // 同じtable-wrapper内に合計表を配置
                 html += '<div class="table-wrapper"><table>';
                 
-                // 合計行
-                html += '<tr style="background: #2c3e50; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
+                // 合計行（濃い青色）
+                html += '<tr style="background: #1565c0; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
                 
                 let monthGrandTotal = 0;
                 members.forEach(member => {
@@ -1364,10 +1560,10 @@
                     html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(1)}h</th>`;
                 });
                 
-                html += `<th style="background: #ffc107; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
+                html += `<th style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
                 html += '</tr>';
                 
-                // ヘッダー行
+                // ヘッダー行（通常の色）
                 html += '<tr><th style="min-width: 100px;">日付</th>';
                 
                 // 担当者ヘッダー
