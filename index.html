@@ -1394,8 +1394,8 @@
                 </div>`;
             }
             
-            html += '<div class="table-wrapper"><table>';
-            html += '<tr><th style="min-width: 120px;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
+            html += '<div class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
+            html += '<tr><th style="min-width: 120px; position: static;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
             
             allDates.forEach(date => {
                 const dateObj = new Date(date);
@@ -1416,23 +1416,18 @@
                 
                 if (dayActuals.length === 0) {
                     html += `<tr style="background: ${bgColor};">`;
-                    html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
+                    html += `<td style="font-weight: 500; ${dateColor} position: static;">${dateDisplay}</td>`;
                     html += `<td style="color: #999;">-</td>`;
                     html += `<td style="text-align: center; color: #999;">-</td>`;
                     html += `</tr>`;
-                } else if (dayActuals.length === 1) {
-                    // 1件の場合は1行で表示
-                    const actual = dayActuals[0];
-                    html += `<tr style="background: ${bgColor};">`;
-                    html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
-                    html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
-                    html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
-                    html += `</tr>`;
                 } else {
-                    // 複数件の場合は各行に日付を表示（モバイル横スクロール対応）
-                    dayActuals.forEach((actual) => {
-                        html += `<tr style="background: ${bgColor};">`;
-                        html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
+                    dayActuals.forEach((actual, index) => {
+                        if (index === 0) {
+                            html += `<tr style="background: ${bgColor};">`;
+                            html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px; position: static;">${dateDisplay}</td>`;
+                        } else {
+                            html += `<tr style="background: ${bgColor};">`;
+                        }
                         html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
                         html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
                         html += `</tr>`;
