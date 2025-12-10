@@ -738,7 +738,7 @@
         updateReport();
     });
 
-    function saveData() {
+    function saveData(skipAutoBackup = false) {
         localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
         localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
         
@@ -748,7 +748,10 @@
             localStorage.setItem('manhour_memberOrder', memberOrder);
         }
         
-        autoBackup();
+        // 復元時など、自動バックアップをスキップする場合
+        if (!skipAutoBackup) {
+            autoBackup();
+        }
     }
 
     function updateMemberOptions() {
@@ -2040,7 +2043,7 @@
                             localStorage.setItem('manhour_memberOrder', data.memberOrder);
                         }
                         
-                        saveData();
+                        saveData(true); // 復元時は自動バックアップをスキップ
                         
                         updateMonthOptions();
                         updateActualMonthOptions();
@@ -2152,7 +2155,7 @@
             if (confirm(`見積: ${newEstimates.length}件、実績: ${newActuals.length}件のデータを読み込みました。\n現在のデータを上書きしますか？`)) {
                 estimates = newEstimates;
                 actuals = newActuals;
-                saveData();
+                saveData(true); // 復元時は自動バックアップをスキップ
                 
                 updateMonthOptions();
                 updateActualMonthOptions();
