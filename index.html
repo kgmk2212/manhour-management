@@ -1420,14 +1420,19 @@
                     html += `<td style="color: #999;">-</td>`;
                     html += `<td style="text-align: center; color: #999;">-</td>`;
                     html += `</tr>`;
+                } else if (dayActuals.length === 1) {
+                    // 1件の場合は1行で表示
+                    const actual = dayActuals[0];
+                    html += `<tr style="background: ${bgColor};">`;
+                    html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
+                    html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
+                    html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
+                    html += `</tr>`;
                 } else {
-                    dayActuals.forEach((actual, index) => {
-                        if (index === 0) {
-                            html += `<tr style="background: ${bgColor};">`;
-                            html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px;">${dateDisplay}</td>`;
-                        } else {
-                            html += `<tr style="background: ${bgColor};">`;
-                        }
+                    // 複数件の場合は各行に日付を表示（モバイル横スクロール対応）
+                    dayActuals.forEach((actual) => {
+                        html += `<tr style="background: ${bgColor};">`;
+                        html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
                         html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
                         html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
                         html += `</tr>`;
