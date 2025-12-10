@@ -211,6 +211,58 @@
             animation: fadeIn 0.2s;
         }
 
+        .custom-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            margin-top: 4px;
+        }
+
+        .custom-dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+
+        .custom-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .custom-dropdown-item:hover {
+            background-color: #e3f2fd;
+        }
+
+        .custom-dropdown-item.selected {
+            background-color: #e3f2fd;
+        }
+
+        .custom-dropdown-empty {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+
+        #quickTaskSearch {
+            cursor: text;
+        }
+
+        #quickTaskSearch:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
         .modal-content {
             background-color: white;
             margin: 10% auto;
@@ -416,12 +468,21 @@
                     <div class="quick-form">
                         <div class="form-group">
                             <label>対応検索・選択</label>
-                            <input type="text" id="quickTaskSearch" placeholder="対応名で検索..." oninput="filterQuickTaskList()">
-                            <select id="quickTask" onchange="autoFillTaskInfo()" size="6" style="margin-top: 5px;">
-                                <option value="">選択してください</option>
-                            </select>
+                            <div style="position: relative;">
+                                <input 
+                                    type="text" 
+                                    id="quickTaskSearch" 
+                                    placeholder="対応名で検索して選択..." 
+                                    autocomplete="off"
+                                    oninput="filterQuickTaskList()"
+                                    onfocus="showQuickTaskDropdown()"
+                                    onblur="hideQuickTaskDropdown()">
+                                <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
+                                    <!-- JavaScriptで動的に生成 -->
+                                </div>
+                            </div>
                             <small style="color: #666; display: block; margin-top: 5px;">
-                                ↑ 上の検索欄で絞り込み、リストから選択
+                                ↑ 入力して絞り込み、リストから選択
                             </small>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -999,10 +1060,9 @@
 
         // クイック入力用の全タスクリストを保持
         let allQuickTasks = [];
+        let selectedQuickTask = null;
 
         function updateQuickTaskList() {
-            const select = document.getElementById('quickTask');
-            
             // 見積データから一意のタスクを抽出（担当者情報も含む）
             const taskMap = new Map();
             estimates.forEach(e => {
@@ -1019,60 +1079,62 @@
             });
             
             allQuickTasks = Array.from(taskMap.values());
-            
-            // 全リストを表示
-            renderQuickTaskList(allQuickTasks);
         }
 
-        function renderQuickTaskList(tasks) {
-            const select = document.getElementById('quickTask');
-            select.innerHTML = '<option value="">選択してください</option>';
-            
-            tasks.forEach(taskInfo => {
-                const option = document.createElement('option');
-                option.value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
-                option.textContent = taskInfo.display;
-                select.appendChild(option);
-            });
+        function showQuickTaskDropdown() {
+            filterQuickTaskList();
+        }
+
+        function hideQuickTaskDropdown() {
+            // 少し遅延させてクリックイベントを処理できるようにする
+            setTimeout(() => {
+                document.getElementById('quickTaskDropdown').style.display = 'none';
+            }, 200);
         }
 
         function filterQuickTaskList() {
             const searchText = document.getElementById('quickTaskSearch').value.toLowerCase();
+            const dropdown = document.getElementById('quickTaskDropdown');
             
-            if (!searchText) {
-                renderQuickTaskList(allQuickTasks);
-                return;
+            let filtered = allQuickTasks;
+            if (searchText) {
+                filtered = allQuickTasks.filter(taskInfo => 
+                    taskInfo.display.toLowerCase().includes(searchText)
+                );
             }
             
-            // 検索文字列でフィルタリング
-            const filtered = allQuickTasks.filter(taskInfo => 
-                taskInfo.display.toLowerCase().includes(searchText)
-            );
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="custom-dropdown-empty">該当する対応が見つかりません</div>';
+            } else {
+                dropdown.innerHTML = filtered.map(taskInfo => {
+                    const value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
+                    return `<div class="custom-dropdown-item" onmousedown="selectQuickTask('${value.replace(/'/g, "\\'")}', '${taskInfo.display.replace(/'/g, "\\'")}', '${taskInfo.member}')">${taskInfo.display}</div>`;
+                }).join('');
+            }
             
-            renderQuickTaskList(filtered);
+            dropdown.style.display = 'block';
+        }
+
+        function selectQuickTask(value, display, member) {
+            selectedQuickTask = value;
+            document.getElementById('quickTaskSearch').value = display;
+            document.getElementById('quickMemberDisplay').value = member;
+            document.getElementById('quickTaskDropdown').style.display = 'none';
         }
 
         function autoFillTaskInfo() {
-            const selected = document.getElementById('quickTask').value;
-            if (!selected) {
-                document.getElementById('quickMemberDisplay').value = '';
-                return;
-            }
-            
-            const [version, task, process, member] = selected.split('|');
-            document.getElementById('quickMemberDisplay').value = member;
+            // この関数は互換性のために残す（使用されていない）
         }
 
         function quickAddActual() {
-            const selected = document.getElementById('quickTask').value;
             const hours = parseFloat(document.getElementById('quickHours').value);
             
-            if (!selected || !hours) {
+            if (!selectedQuickTask || !hours) {
                 alert('対応と実績工数を入力してください');
                 return;
             }
 
-            const [version, task, process, member] = selected.split('|');
+            const [version, task, process, member] = selectedQuickTask.split('|');
             const estimate = estimates.find(e => 
                 e.version === version && e.task === task && e.process === process && e.member === member
             );
