@@ -403,6 +403,7 @@
             </div>
         </header>
 
+```
     <div class="tabs">
         <button class="tab active" onclick="showTab('quick')">クイック入力</button>
         <button class="tab" onclick="showTab('estimate')">見積管理</button>
@@ -1713,8 +1714,8 @@
         alert('設定を適用しました');
     }
 
-    // モーダル外をクリックで閉じる
-    window.onclick = function(event) {
+    // モーダル外をクリック/タップで閉じる
+    function handleModalClose(event) {
         const workModal = document.getElementById('workModal');
         const editActualModal = document.getElementById('editActualModal');
         const editEstimateModal = document.getElementById('editEstimateModal');
@@ -1729,6 +1730,9 @@
             closeEditEstimateModal();
         }
     }
+    
+    window.onclick = handleModalClose;
+    window.ontouchend = handleModalClose;
 
     function updateReport() {
         const selectedMonth = document.getElementById('reportMonth').value;
