@@ -183,6 +183,27 @@
         z-index: 2;
     }
 
+    /* rowspan固定列の改善 */
+    table td[rowspan] {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 200px;
+    }
+
+    /* モバイル用の固定列の幅制限 */
+    @media (max-width: 768px) {
+        table tr td:first-child {
+            max-width: 150px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        table td[rowspan] {
+            max-width: 150px;
+        }
+    }
+
     /* 週末・祝日の行 */
     table tr[style*="ffebee"] td:first-child {
         background: #ffebee;
@@ -853,9 +874,10 @@
         }
         
         // 復元時など、自動バックアップをスキップする場合
-        if (!skipAutoBackup) {
-            autoBackup();
-        }
+        // 自動バックアップは無効化（手動バックアップのみ）
+        // if (!skipAutoBackup) {
+        //     autoBackup();
+        // }
     }
 
     function updateMemberOptions() {
@@ -2678,7 +2700,7 @@
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
             html += '<div class="table-wrapper"><table>';
-            html += '<tr><th style="min-width: 150px; max-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
+            html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
             
             Object.values(versionGroups[version]).forEach(taskGroup => {
                 const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -2708,7 +2730,7 @@
                     
                     html += '<tr>';
                     if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600; word-break: break-word; max-width: 200px;">${taskGroup.task}</td>`;
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
                     }
                     html += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
                     html += `<td style="word-break: break-word;">${memberDisplay}</td>`;
