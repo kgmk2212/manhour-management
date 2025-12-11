@@ -275,6 +275,27 @@
         }
     }
 
+    /* 対応名の表示制御 */
+    /* デスクトップ: 通常表示 */
+    .task-name-desktop {
+        display: inline;
+    }
+    .task-name-mobile {
+        display: none;
+    }
+
+    /* タブレット以下: 「:」で改行 */
+    @media (max-width: 1024px) {
+        .task-name-desktop {
+            display: none;
+        }
+        .task-name-mobile {
+            display: inline;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+    }
+
     /* モーダル */
     .modal {
         display: none;
@@ -1570,10 +1591,17 @@
                     processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
                 );
                 
+                // 対応名を「:」で分割してレスポンシブ表示
+                let taskDisplayHtml = taskGroup.task;
+                if (taskGroup.task.includes(':')) {
+                    const parts = taskGroup.task.split(':');
+                    taskDisplayHtml = `<span class="task-name-desktop">${taskGroup.task}</span><span class="task-name-mobile">${parts[0]}:<wbr>${parts.slice(1).join(':')}</span>`;
+                }
+                
                 sortedProcesses.forEach((proc, index) => {
                     html += '<tr>';
                     if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                     }
                     html += `<td><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
                     html += `<td>${proc.member}</td>`;
