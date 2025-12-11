@@ -256,6 +256,25 @@
         color: white;
     }
 
+    /* 祝日表示のレスポンシブ制御 */
+    /* デスクトップ: 1行で表示 */
+    .holiday-inline {
+        display: inline;
+    }
+    .holiday-break {
+        display: none;
+    }
+
+    /* タブレット以下: 2行で表示 */
+    @media (max-width: 1024px) {
+        .holiday-inline {
+            display: none;
+        }
+        .holiday-break {
+            display: inline;
+        }
+    }
+
     /* モーダル */
     .modal {
         display: none;
@@ -1845,10 +1864,12 @@
             
             const bgColor = (isWeekend || isHoliday) ? '#ffebee' : 'white';
             const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
-            const holidayName = isHoliday ? ` ${holiday}` : '';
             
             const [year, m, day] = date.split('-');
-            const dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})${holidayName}`;
+            // 祝日の場合、クラスで制御して画面幅に応じて表示を変える
+            const dateDisplay = isHoliday 
+                ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
+                : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
             
             if (dayActuals.length === 0) {
                 html += `<tr style="background: ${bgColor};">`;
@@ -2059,9 +2080,12 @@
             // 日付セル
             const [year, m, day] = date.split('-');
             const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
-            const holidayName = isHoliday ? ` ${holiday}` : '';
+            // 祝日の場合、クラスで制御して画面幅に応じて表示を変える
+            const dateDisplay = isHoliday
+                ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
+                : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
             html += `<td style="font-weight: 500; ${dateColor}">
-                ${parseInt(m)}/${parseInt(day)} (${dayOfWeek})${holidayName}
+                ${dateDisplay}
             </td>`;
             
             let dayTotal = 0;
