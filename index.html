@@ -197,11 +197,11 @@
             white-space: normal;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            max-width: 16vw; /* 画面幅の16% (20%→16%) */
+            max-width: 14vw; /* 画面幅の14% (16%→14%) */
         }
         
         table tr td:first-child {
-            max-width: 16vw;
+            max-width: 14vw;
             white-space: normal;
             word-wrap: break-word;
         }
@@ -210,22 +210,22 @@
     /* モバイル用の固定列の幅制限 */
     @media (max-width: 768px) {
         table td[rowspan] {
-            max-width: 20vw; /* 画面幅の20% (25%→20%) */
+            max-width: 18vw; /* 画面幅の18% (20%→18%) */
         }
         
         table tr td:first-child {
-            max-width: 20vw;
+            max-width: 18vw;
         }
     }
 
     /* 小型モバイル */
     @media (max-width: 480px) {
         table td[rowspan] {
-            max-width: 25vw; /* 画面幅の25% (30%→25%) */
+            max-width: 22vw; /* 画面幅の22% (25%→22%) */
         }
         
         table tr td:first-child {
-            max-width: 25vw;
+            max-width: 22vw;
         }
     }
 
@@ -1263,7 +1263,7 @@
                     task: e.task,
                     process: e.process,
                     member: e.member,
-                    display: `${e.version} - ${e.task} [${e.process}]`
+                    display: `${e.version} - ${e.task} [${e.process}] (${e.member})`
                 });
             }
         });
@@ -1569,12 +1569,12 @@
             });
         });
         
-        // 実働日数を計算（当月のデフォルト値）
-        const workingDaysPerMonth = getCurrentMonthWorkingDays();
+        // 人月計算は月20日固定
+        const workingDaysPerMonth = 20;
         
         let html = '<div style="margin-bottom: 30px;">';
         html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-            <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（当月の実働日数、土日祝日除く）
+            <strong>換算基準:</strong> 1人日 = 8h、1人月 = 20人日（版数単位のため固定値）
         </div>`;
         
         // 版数ごとに表示
