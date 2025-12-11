@@ -197,11 +197,11 @@
             white-space: normal;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            max-width: 20vw; /* 画面幅の20% */
+            max-width: 16vw; /* 画面幅の16% (20%→16%) */
         }
         
         table tr td:first-child {
-            max-width: 20vw;
+            max-width: 16vw;
             white-space: normal;
             word-wrap: break-word;
         }
@@ -210,22 +210,22 @@
     /* モバイル用の固定列の幅制限 */
     @media (max-width: 768px) {
         table td[rowspan] {
-            max-width: 25vw; /* 画面幅の25% */
+            max-width: 20vw; /* 画面幅の20% (25%→20%) */
         }
         
         table tr td:first-child {
-            max-width: 25vw;
+            max-width: 20vw;
         }
     }
 
     /* 小型モバイル */
     @media (max-width: 480px) {
         table td[rowspan] {
-            max-width: 30vw; /* 画面幅の30% */
+            max-width: 25vw; /* 画面幅の25% (30%→25%) */
         }
         
         table tr td:first-child {
-            max-width: 30vw;
+            max-width: 25vw;
         }
     }
 
@@ -1263,7 +1263,7 @@
                     task: e.task,
                     process: e.process,
                     member: e.member,
-                    display: `${e.version} - ${e.task} [${e.process}] (${e.member})`
+                    display: `${e.version} - ${e.task} [${e.process}]`
                 });
             }
         });
@@ -1609,7 +1609,8 @@
                     }
                     
                     const restPart = parts.slice(1).join(separator);
-                    taskDisplayHtml = `${parts[0]}${separator}<span class="task-separator-inline"> ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
+                    // デスクトップ: コロンあり、モバイル: コロンなし
+                    taskDisplayHtml = `${parts[0]}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
                 }
                 
                 sortedProcesses.forEach((proc, index) => {
