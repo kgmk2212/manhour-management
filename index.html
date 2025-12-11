@@ -481,7 +481,12 @@
                                 autocomplete="off"
                                 oninput="filterQuickTaskList()"
                                 onclick="showQuickTaskDropdown()"
-                                onblur="hideQuickTaskDropdown()">
+                                style="padding-right: 35px;">
+                            <button 
+                                id="quickTaskClearBtn"
+                                onclick="clearQuickTaskSelection()"
+                                style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
+                                title="クリア">×</button>
                             <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
                                 <!-- JavaScriptで動的に生成 -->
                             </div>
@@ -1197,10 +1202,18 @@
     }
 
     function hideQuickTaskDropdown() {
-        // 少し遅延させてクリックイベントを処理できるようにする
-        setTimeout(() => {
-            document.getElementById('quickTaskDropdown').style.display = 'none';
-        }, 200);
+        document.getElementById('quickTaskDropdown').style.display = 'none';
+    }
+
+    function clearQuickTaskSelection() {
+        document.getElementById('quickTaskSearch').value = '';
+        document.getElementById('quickTaskClearBtn').style.display = 'none';
+        selectedQuickTask = null;
+        // 担当者もリセット
+        document.getElementById('quickMemberSelect').value = '';
+        selectedMemberFilter = null;
+        // ドロップダウンを非表示
+        hideQuickTaskDropdown();
     }
 
     function filterQuickTaskList() {
@@ -1242,6 +1255,9 @@
         // 表示を更新
         document.getElementById('quickTaskSearch').value = `${version} - ${task} [${process}]`;
         
+        // ×ボタンを表示
+        document.getElementById('quickTaskClearBtn').style.display = 'block';
+        
         // 担当者セレクトを更新
         const memberSelect = document.getElementById('quickMemberSelect');
         
@@ -1254,6 +1270,19 @@
         
         document.getElementById('quickTaskDropdown').style.display = 'none';
     }
+
+    // 外部クリックでドロップダウンを閉じる
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('quickTaskDropdown');
+        const searchInput = document.getElementById('quickTaskSearch');
+        
+        if (dropdown && searchInput) {
+            // クリックされた要素がドロップダウンまたは検索入力欄でない場合
+            if (!dropdown.contains(event.target) && event.target !== searchInput) {
+                hideQuickTaskDropdown();
+            }
+        }
+    });
 
     function quickAddActual() {
         const hours = parseFloat(document.getElementById('quickHours').value);
@@ -1287,6 +1316,7 @@
         // 入力欄をクリア
         document.getElementById('quickTaskSearch').value = '';
         document.getElementById('quickHours').value = '';
+        document.getElementById('quickTaskClearBtn').style.display = 'none';
         // 担当者選択はリセット（次の入力に備える）
         document.getElementById('quickMemberSelect').value = '';
         selectedQuickTask = null;
