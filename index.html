@@ -280,24 +280,22 @@
         }
     }
 
-    /* 対応名の表示制御 */
-    /* デスクトップ: 通常表示 */
-    .task-name-desktop {
+    /* 対応名の表示制御（祝日と同じ方式） */
+    /* デスクトップ: 1行で表示 */
+    .task-separator-inline {
         display: inline;
     }
-    .task-name-mobile {
+    .task-separator-break {
         display: none;
     }
 
-    /* タブレット以下: 「:」で改行 */
+    /* タブレット以下: 「:」「：」で改行 */
     @media (max-width: 1024px) {
-        .task-name-desktop {
+        .task-separator-inline {
             display: none;
         }
-        .task-name-mobile {
+        .task-separator-break {
             display: inline;
-            word-break: break-word;
-            overflow-wrap: break-word;
         }
     }
 
@@ -1596,13 +1594,22 @@
                     processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
                 );
                 
-                // 対応名を「:」または「：」で分割してレスポンシブ表示
+                // 対応名を「:」または「：」で分割してレスポンシブ表示（祝日と同じ方式）
                 let taskDisplayHtml = taskGroup.task;
                 if (taskGroup.task.includes(':') || taskGroup.task.includes('：')) {
                     // 半角と全角の両方に対応
-                    const separator = taskGroup.task.includes(':') ? ':' : '：';
-                    const parts = taskGroup.task.split(separator);
-                    taskDisplayHtml = `<span class="task-name-desktop">${taskGroup.task}</span><span class="task-name-mobile">${parts[0]}${separator}<wbr>${parts.slice(1).join(separator)}</span>`;
+                    let separator = ':';
+                    let parts;
+                    
+                    if (taskGroup.task.includes(':')) {
+                        parts = taskGroup.task.split(':');
+                    } else {
+                        separator = '：';
+                        parts = taskGroup.task.split('：');
+                    }
+                    
+                    const restPart = parts.slice(1).join(separator);
+                    taskDisplayHtml = `${parts[0]}${separator}<span class="task-separator-inline"> ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
                 }
                 
                 sortedProcesses.forEach((proc, index) => {
