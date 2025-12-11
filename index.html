@@ -472,35 +472,56 @@
                 <h2>今日の実績を入力</h2>
                 <div class="quick-form">
                     <div class="form-group">
-                        <label>対応検索・選択</label>
-                        <div style="position: relative;">
-                            <input 
-                                type="text" 
-                                id="quickTaskSearch" 
-                                placeholder="対応名で検索して選択..." 
-                                autocomplete="off"
-                                oninput="filterQuickTaskList()"
-                                onfocus="showQuickTaskDropdown()"
-                                onblur="hideQuickTaskDropdown()">
-                            <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
-                                <!-- JavaScriptで動的に生成 -->
-                            </div>
-                        </div>
+                        <label>担当者を選択</label>
+                        <select id="quickMemberSelect" onchange="updateQuickTasksByMember()">
+                            <option value="">担当者を選択...</option>
+                        </select>
                         <small style="color: #666; display: block; margin-top: 5px;">
-                            ↑ 入力して絞り込み、リストから選択
+                            👆 まず担当者を選択してください
                         </small>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    
+                    <div id="quickTaskSelectArea" style="display: none;">
                         <div class="form-group">
-                            <label>担当</label>
-                            <input type="text" id="quickMemberDisplay" readonly style="background: #f5f5f5;">
+                            <label>対応を選択 または 対応名で検索</label>
+                            <div style="position: relative;">
+                                <input 
+                                    type="text" 
+                                    id="quickTaskSearch" 
+                                    placeholder="対応名で検索して選択..." 
+                                    autocomplete="off"
+                                    oninput="filterQuickTaskListByMember()"
+                                    onfocus="showQuickTaskDropdown()"
+                                    onblur="hideQuickTaskDropdown()">
+                                <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
+                                    <!-- JavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                            <small style="color: #666; display: block; margin-top: 5px;">
+                                ↑ 入力して絞り込み、リストから選択
+                            </small>
                         </div>
+                        
                         <div class="form-group">
-                            <label>実績工数 (h)</label>
-                            <input type="number" id="quickHours" step="0.5" min="0">
+                            <label>選択した対応</label>
+                            <input type="text" id="quickTaskDisplay" readonly style="background: #f5f5f5;">
                         </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label>担当を変更する場合</label>
+                                <select id="quickMemberOverride">
+                                    <option value="">（変更なし）</option>
+                                </select>
+                                <small style="color: #999; font-size: 11px;">通常は変更不要</small>
+                            </div>
+                            <div class="form-group">
+                                <label>実績工数 (h)</label>
+                                <input type="number" id="quickHours" step="0.5" min="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="quickAddActual()">追加</button>
                     </div>
-                    <button class="btn btn-success" onclick="quickAddActual()">追加</button>
                 </div>
             </div>
 
@@ -1113,15 +1134,16 @@
         });
     }
 
-    // クイック入力用の全タスクリストを保持
+    // クイック入力用の変数
     let allQuickTasks = [];
     let selectedQuickTask = null;
+    let currentQuickMember = null;
 
     function updateQuickTaskList() {
         // 見積データから一意のタスクを抽出（担当者情報も含む）
         const taskMap = new Map();
         estimates.forEach(e => {
-            const key = `${e.version}|${e.task}|${e.process}`;
+            const key = `${e.version}|${e.task}|${e.process}|${e.member}`;
             if (!taskMap.has(key)) {
                 taskMap.set(key, {
                     version: e.version,
@@ -1134,10 +1156,87 @@
         });
         
         allQuickTasks = Array.from(taskMap.values());
+        
+        // 担当者セレクトボックスを更新
+        updateQuickMemberSelect();
+    }
+
+    function updateQuickMemberSelect() {
+        const select = document.getElementById('quickMemberSelect');
+        const members = new Set();
+        
+        // 見積データから担当者を抽出
+        estimates.forEach(e => members.add(e.member));
+        
+        // 表示順が設定されている場合はそれを使用
+        let sortedMembers;
+        const memberOrderInput = document.getElementById('memberOrder').value.trim();
+        if (memberOrderInput) {
+            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+            const orderedMembers = orderList.filter(m => members.has(m));
+            const unorderedMembers = Array.from(members).filter(m => !orderedMembers.includes(m)).sort();
+            sortedMembers = [...orderedMembers, ...unorderedMembers];
+        } else {
+            sortedMembers = Array.from(members).sort();
+        }
+        
+        // オプションを生成（最初の選択肢を残す）
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">担当者を選択...</option>';
+        sortedMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member;
+            option.textContent = member;
+            select.appendChild(option);
+        });
+        
+        // 前回選択していた値を復元
+        if (currentValue && sortedMembers.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
+
+    function updateQuickTasksByMember() {
+        const selectedMember = document.getElementById('quickMemberSelect').value;
+        currentQuickMember = selectedMember;
+        
+        const taskSelectArea = document.getElementById('quickTaskSelectArea');
+        const memberOverride = document.getElementById('quickMemberOverride');
+        
+        if (!selectedMember) {
+            taskSelectArea.style.display = 'none';
+            return;
+        }
+        
+        // エリアを表示
+        taskSelectArea.style.display = 'block';
+        
+        // 担当変更用のセレクトボックスを更新
+        const allMembers = new Set();
+        estimates.forEach(e => allMembers.add(e.member));
+        memberOverride.innerHTML = '<option value="">（変更なし）</option>';
+        Array.from(allMembers).sort().forEach(member => {
+            if (member !== selectedMember) {
+                const option = document.createElement('option');
+                option.value = member;
+                option.textContent = member;
+                memberOverride.appendChild(option);
+            }
+        });
+        
+        // 入力欄をクリア
+        document.getElementById('quickTaskSearch').value = '';
+        document.getElementById('quickTaskDisplay').value = '';
+        selectedQuickTask = null;
+        
+        // ドロップダウンを表示（担当者の対応のみ）
+        filterQuickTaskListByMember();
     }
 
     function showQuickTaskDropdown() {
-        filterQuickTaskList();
+        if (currentQuickMember) {
+            filterQuickTaskListByMember();
+        }
     }
 
     function hideQuickTaskDropdown() {
@@ -1147,13 +1246,17 @@
         }, 200);
     }
 
-    function filterQuickTaskList() {
+    function filterQuickTaskListByMember() {
+        if (!currentQuickMember) return;
+        
         const searchText = document.getElementById('quickTaskSearch').value.toLowerCase();
         const dropdown = document.getElementById('quickTaskDropdown');
         
-        let filtered = allQuickTasks;
+        // 選択中の担当者のタスクのみ表示
+        let filtered = allQuickTasks.filter(taskInfo => taskInfo.member === currentQuickMember);
+        
         if (searchText) {
-            filtered = allQuickTasks.filter(taskInfo => 
+            filtered = filtered.filter(taskInfo => 
                 taskInfo.display.toLowerCase().includes(searchText)
             );
         }
@@ -1163,41 +1266,33 @@
         } else {
             dropdown.innerHTML = filtered.map(taskInfo => {
                 const value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
-                return `<div class="custom-dropdown-item" onmousedown="selectQuickTask('${value.replace(/'/g, "\\'")}', '${taskInfo.display.replace(/'/g, "\\'")}', '${taskInfo.member}')">${taskInfo.display}</div>`;
+                return `<div class="custom-dropdown-item" onmousedown="selectQuickTaskNew('${value.replace(/'/g, "\\'")}', '${taskInfo.display.replace(/'/g, "\\'")}')">${taskInfo.display}</div>`;
             }).join('');
         }
         
         dropdown.style.display = 'block';
     }
 
-    function selectQuickTask(value, display, member) {
+    function selectQuickTaskNew(value, display) {
         selectedQuickTask = value;
         document.getElementById('quickTaskSearch').value = display;
-        document.getElementById('quickMemberDisplay').value = member;
+        document.getElementById('quickTaskDisplay').value = display;
         document.getElementById('quickTaskDropdown').style.display = 'none';
-    }
-
-    function autoFillTaskInfo() {
-        // この関数は互換性のために残す（使用されていない）
     }
 
     function quickAddActual() {
         const hours = parseFloat(document.getElementById('quickHours').value);
+        const memberOverride = document.getElementById('quickMemberOverride').value;
         
         if (!selectedQuickTask || !hours) {
             alert('対応と実績工数を入力してください');
             return;
         }
 
-        const [version, task, process, member] = selectedQuickTask.split('|');
-        const estimate = estimates.find(e => 
-            e.version === version && e.task === task && e.process === process && e.member === member
-        );
-
-        if (!estimate) {
-            alert('見積データが見つかりません');
-            return;
-        }
+        const [version, task, process, originalMember] = selectedQuickTask.split('|');
+        
+        // 担当者の変更があればそれを使用、なければ元の担当者
+        const finalMember = memberOverride || originalMember;
 
         actuals.push({
             id: Date.now(),
@@ -1205,13 +1300,20 @@
             version: version,
             task: task,
             process: process,
-            member: estimate.member,
+            member: finalMember,
             hours: hours,
             createdAt: new Date().toISOString()
         });
 
         saveData();
+        
+        // 入力欄をクリア（担当者は維持）
+        document.getElementById('quickTaskSearch').value = '';
+        document.getElementById('quickTaskDisplay').value = '';
         document.getElementById('quickHours').value = '';
+        document.getElementById('quickMemberOverride').value = '';
+        selectedQuickTask = null;
+        
         updateMonthOptions();
         updateActualMonthOptions();
         updateMemberOptions();
