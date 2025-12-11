@@ -241,6 +241,11 @@
         background: #fff3cd;
     }
 
+    /* 版数合計行（グレー背景） */
+    table tr[style*="f5f5f5"] td:first-child {
+        background: #f5f5f5;
+    }
+
     /* 総合計行（濃いグレー） */
     table tr[style*="2c3e50"] td:first-child,
     table tr[style*="2c3e50"] td[rowspan] {
@@ -1591,11 +1596,13 @@
                     processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
                 );
                 
-                // 対応名を「:」で分割してレスポンシブ表示
+                // 対応名を「:」または「：」で分割してレスポンシブ表示
                 let taskDisplayHtml = taskGroup.task;
-                if (taskGroup.task.includes(':')) {
-                    const parts = taskGroup.task.split(':');
-                    taskDisplayHtml = `<span class="task-name-desktop">${taskGroup.task}</span><span class="task-name-mobile">${parts[0]}:<wbr>${parts.slice(1).join(':')}</span>`;
+                if (taskGroup.task.includes(':') || taskGroup.task.includes('：')) {
+                    // 半角と全角の両方に対応
+                    const separator = taskGroup.task.includes(':') ? ':' : '：';
+                    const parts = taskGroup.task.split(separator);
+                    taskDisplayHtml = `<span class="task-name-desktop">${taskGroup.task}</span><span class="task-name-mobile">${parts[0]}${separator}<wbr>${parts.slice(1).join(separator)}</span>`;
                 }
                 
                 sortedProcesses.forEach((proc, index) => {
@@ -1627,7 +1634,8 @@
             const versionMonths = versionTotal / 8 / workingDaysPerMonth;
             
             html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
-            html += `<td colspan="3" style="text-align: right; padding-right: 20px;">${version} 合計</td>`;
+            html += `<td style="text-align: right; padding-right: 20px;">${version} 合計</td>`;
+            html += `<td colspan="2"></td>`;
             html += `<td style="text-align: right;">${formatNumber(versionTotal, 1)}h</td>`;
             html += `<td style="text-align: right;">
                 <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
