@@ -183,40 +183,76 @@
         z-index: 2;
     }
 
-    /* rowspan固定列の改善 */
+    /* rowspan固定列の改善 - デスクトップでは改行しない */
     table td[rowspan] {
-        white-space: normal;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        max-width: 200px;
+        white-space: nowrap;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+    }
+
+    /* タブレット以下で改行を許可 */
+    @media (max-width: 1024px) {
+        table td[rowspan] {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 20vw; /* 画面幅の20% */
+        }
+        
+        table tr td:first-child {
+            max-width: 20vw;
+            white-space: normal;
+            word-wrap: break-word;
+        }
     }
 
     /* モバイル用の固定列の幅制限 */
     @media (max-width: 768px) {
-        table tr td:first-child {
-            max-width: 150px;
-            white-space: normal;
-            word-wrap: break-word;
+        table td[rowspan] {
+            max-width: 25vw; /* 画面幅の25% */
         }
         
-        table td[rowspan] {
-            max-width: 150px;
+        table tr td:first-child {
+            max-width: 25vw;
         }
     }
 
-    /* 週末・祝日の行 */
-    table tr[style*="ffebee"] td:first-child {
+    /* 小型モバイル */
+    @media (max-width: 480px) {
+        table td[rowspan] {
+            max-width: 30vw; /* 画面幅の30% */
+        }
+        
+        table tr td:first-child {
+            max-width: 30vw;
+        }
+    }
+
+    /* 週末・祝日の行の固定列背景色 */
+    table tr[style*="ffebee"] td:first-child,
+    table tr[style*="ffebee"] td[rowspan] {
         background: #ffebee;
     }
 
     /* 小計行 */
-    table tr[style*="fff3cd"] td:first-child {
+    table tr[style*="fff3cd"] td:first-child,
+    table tr[style*="fff3cd"] td[rowspan] {
         background: #fff3cd;
     }
 
-    /* 総合計行 */
-    table tr[style*="2c3e50"] td:first-child {
+    /* 総合計行（濃いグレー） */
+    table tr[style*="2c3e50"] td:first-child,
+    table tr[style*="2c3e50"] td[rowspan] {
         background: #2c3e50;
+        color: white;
+    }
+
+    /* 総合計行（青） */
+    table tr[style*="1565c0"] td:first-child,
+    table tr[style*="1565c0"] td[rowspan],
+    table tr[style*="1565c0"] th:first-child {
+        background: #1565c0;
         color: white;
     }
 
@@ -710,6 +746,22 @@
             <h2>⚙️ 設定</h2>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>自動バックアップ</h3>
+                <p style="color: #666; margin-bottom: 15px;">データ保存時に自動的にJSONファイルをダウンロードします。</p>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="autoBackupEnabled" onchange="saveAutoBackupSetting()" style="width: auto; margin-right: 10px;">
+                        <span>自動バックアップを有効にする</span>
+                    </label>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        ・オンにすると、実績や見積の登録・編集時に自動でバックアップファイルがダウンロードされます<br>
+                        ・オフにしても、手動バックアップボタンは使用できます
+                    </small>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3>担当者表示順</h3>
                 <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。</p>
                 
@@ -849,9 +901,11 @@
 <script>
     let estimates = [];
     let actuals = [];
+    let autoBackupEnabled = false; // 自動バックアップの設定
 
     document.addEventListener('DOMContentLoaded', function() {
         loadData();
+        loadAutoBackupSetting(); // 自動バックアップ設定を読み込み
         updateMonthOptions();
         updateActualMonthOptions();
         updateMemberOptions();
@@ -863,6 +917,17 @@
         updateReport();
     });
 
+    function loadAutoBackupSetting() {
+        const saved = localStorage.getItem('autoBackupEnabled');
+        autoBackupEnabled = saved === 'true';
+        document.getElementById('autoBackupEnabled').checked = autoBackupEnabled;
+    }
+
+    function saveAutoBackupSetting() {
+        autoBackupEnabled = document.getElementById('autoBackupEnabled').checked;
+        localStorage.setItem('autoBackupEnabled', autoBackupEnabled);
+    }
+
     function saveData(skipAutoBackup = false) {
         localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
         localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
@@ -873,11 +938,10 @@
             localStorage.setItem('manhour_memberOrder', memberOrder);
         }
         
-        // 復元時など、自動バックアップをスキップする場合
-        // 自動バックアップは無効化（手動バックアップのみ）
-        // if (!skipAutoBackup) {
-        //     autoBackup();
-        // }
+        // 自動バックアップが有効な場合のみ実行
+        if (!skipAutoBackup && autoBackupEnabled) {
+            autoBackup();
+        }
     }
 
     function updateMemberOptions() {
@@ -1767,7 +1831,7 @@
         }
         
         html += '<div class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
-        html += '<tr><th style="min-width: 120px; position: static;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
+        html += '<tr><th style="min-width: 120px;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
         
         allDates.forEach(date => {
             const dateObj = new Date(date);
@@ -1788,7 +1852,7 @@
             
             if (dayActuals.length === 0) {
                 html += `<tr style="background: ${bgColor};">`;
-                html += `<td style="font-weight: 500; ${dateColor} position: static;">${dateDisplay}</td>`;
+                html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
                 html += `<td style="color: #999;">-</td>`;
                 html += `<td style="text-align: center; color: #999;">-</td>`;
                 html += `</tr>`;
@@ -1796,7 +1860,7 @@
                 dayActuals.forEach((actual, index) => {
                     if (index === 0) {
                         html += `<tr style="background: ${bgColor};">`;
-                        html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px; position: static;">${dateDisplay}</td>`;
+                        html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px;">${dateDisplay}</td>`;
                     } else {
                         html += `<tr style="background: ${bgColor};">`;
                     }
