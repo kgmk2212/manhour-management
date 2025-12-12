@@ -543,6 +543,23 @@
             th, td {
                 padding: 8px;
             }
+            
+            /* 作業月割り当てモードのモバイル対応 */
+            #workMonthAssignmentMode > div {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            
+            #workMonthAssignmentMode > div > div,
+            #workMonthAssignmentMode > div > button {
+                width: 100%;
+            }
+            
+            #selectedWorkHours {
+                margin-left: 0 !important;
+                margin-top: 10px;
+                text-align: center;
+            }
         }
         
         /* テーマカラー用CSS */
@@ -853,17 +870,21 @@
                     </div>
                 </div>
                 
-                <!-- 作業月割り当てモード -->
-                <div id="workMonthAssignmentMode" style="display: none; background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <!-- 作業月割り当てモード（スクロール時も固定表示） -->
+                <div id="workMonthAssignmentMode" style="display: none; background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%); padding: 18px; border-radius: 8px; margin-bottom: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-left: 4px solid #ffc107;">
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                        <div>
-                            <label style="margin-right: 8px; font-weight: 600;">割り当て先:</label>
-                            <select id="assignWorkMonth" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="font-weight: 600; color: #856404;">割り当て先:</label>
+                            <select id="assignWorkMonth" style="padding: 8px 12px; border: 2px solid #ffc107; border-radius: 6px; font-weight: 500; font-size: 14px; background: white;">
                             </select>
                         </div>
-                        <button class="btn btn-success" onclick="executeWorkMonthAssignment()" style="margin: 0;">割り当て実行</button>
-                        <button class="btn" onclick="cancelWorkMonthSelection()" style="margin: 0; background: #6c757d; color: white;">選択解除</button>
-                        <div id="selectedWorkHours" style="margin-left: auto; font-weight: 600; color: #1976d2;">
+                        <button class="btn btn-success" onclick="executeWorkMonthAssignment()" style="margin: 0; font-weight: 600; padding: 8px 20px;">
+                            ✓ 割り当て実行
+                        </button>
+                        <button class="btn" onclick="cancelWorkMonthSelection()" style="margin: 0; background: #6c757d; color: white; padding: 8px 16px;">
+                            選択解除
+                        </button>
+                        <div id="selectedWorkHours" style="margin-left: auto; font-weight: 700; font-size: 16px; color: #ffffff; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(25,118,210,0.3); white-space: nowrap;">
                             選択中: 0h (0人日 / 0人月)
                         </div>
                     </div>
