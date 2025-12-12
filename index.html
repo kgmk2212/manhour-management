@@ -1943,7 +1943,7 @@
             
             // 選択モードの場合、選択列を追加
             if (workMonthSelectionMode) {
-                html += '<tr><th style="min-width: 50px; position: sticky; left: 0; z-index: 10; background: #34495e;">選択</th><th style="min-width: 200px; position: sticky; left: 50px; z-index: 10; background: #34495e;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
+                html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
             } else {
                 html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
             }
@@ -2000,17 +2000,14 @@
                     if (workMonthSelectionMode) {
                         if (index === 0) {
                             // 対応名の行: 対応全体の選択チェックボックス
-                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer; position: sticky; left: 0; z-index: 5; background: white;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
+                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
                                 <input type="checkbox" ${allSelected ? 'checked' : ''} style="width: auto; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
                             </td>`;
                         }
                     }
                     
                     if (index === 0) {
-                        const leftPosition = workMonthSelectionMode ? '50px' : '0';
-                        const bgStyle = workMonthSelectionMode ? 'background: white;' : '';
-                        const stickyStyle = workMonthSelectionMode ? `position: sticky; left: ${leftPosition}; z-index: 5; ${bgStyle}` : '';
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600; ${stickyStyle}">${taskDisplayHtml}</td>`;
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                     }
                     
                     // 選択モードではないときは通常の工程バッジ
