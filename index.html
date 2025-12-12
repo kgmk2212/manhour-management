@@ -1933,7 +1933,7 @@
         // 版数ごとに表示
         Object.keys(versionGroups).sort().forEach(version => {
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
             html += '<div class="table-wrapper"><table>';
             
             // 選択モードの場合、選択列を追加
@@ -3186,6 +3186,10 @@
         const summaryCards = document.querySelectorAll('.stats-grid .stat-card');
         summaryCards.forEach(card => updateElementTheme(card));
         
+        // 版数ヘッダー
+        const versionHeaders = document.querySelectorAll('.version-header');
+        versionHeaders.forEach(header => updateElementTheme(header));
+        
         // アクティブタブ
         const activeTab = document.querySelector('.tab.active');
         if (activeTab) {
@@ -3364,7 +3368,7 @@
         // 版数ごとに表示
         Object.keys(versionGroups).sort().forEach(version => {
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
             html += '<div class="table-wrapper"><table>';
             html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
             
@@ -3478,7 +3482,7 @@
         // 版数ごとに表示
         Object.keys(versionGroups).sort().forEach(version => {
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
             html += '<div class="table-wrapper"><table>';
             html += '<tr><th style="min-width: 200px;">対応名</th>';
             processOrder.forEach(proc => {
