@@ -130,7 +130,6 @@
     }
 
     .quick-input {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 20px;
         border-radius: 10px;
         color: white;
@@ -496,7 +495,6 @@
     }
 
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 20px;
         border-radius: 10px;
         color: white;
@@ -566,6 +564,8 @@
     /* テーマカラー用CSS */
     .theme-bg {
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
     
     /* 色の定義 */
@@ -3123,7 +3123,7 @@
         }
         
         // レポートサマリーカード
-        const summaryCards = document.querySelectorAll('#reportSummary > div');
+        const summaryCards = document.querySelectorAll('.stats-grid .stat-card');
         summaryCards.forEach(card => updateElementTheme(card));
         
         // アクティブタブ
