@@ -902,7 +902,12 @@
             
             <!-- 作業月割り当てモード（フロート表示） -->
             <div id="workMonthAssignmentMode" style="display: none; background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%); padding: 18px; border-radius: 8px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-left: 4px solid #ffc107; max-width: 90vw;">
-                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <!-- ドラッグハンドル -->
+                <div id="dragHandle" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;"></div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <label style="font-weight: 600; color: #856404;">割り当て先:</label>
                         <select id="assignWorkMonth" style="padding: 8px 12px; border: 2px solid #ffc107; border-radius: 6px; font-weight: 500; font-size: 14px; background: white;">
@@ -3689,12 +3694,100 @@
             modePanel.style.display = 'block';
             selectedEstimateIds.clear();
             updateSelectedWorkHours();
+            initDragHandle(); // ドラッグ機能を初期化
         } else {
             modePanel.style.display = 'none';
             selectedEstimateIds.clear();
         }
         
         renderEstimateList();
+    }
+    
+    // ドラッグ機能の初期化
+    function initDragHandle() {
+        const dragHandle = document.getElementById('dragHandle');
+        const panel = document.getElementById('workMonthAssignmentMode');
+        
+        if (!dragHandle || !panel) return;
+        
+        let isDragging = false;
+        let startY = 0;
+        let startBottom = 20; // 初期位置
+        
+        // 保存された位置を復元
+        const savedBottom = localStorage.getItem('manhour_panelBottom');
+        if (savedBottom) {
+            startBottom = parseInt(savedBottom);
+            panel.style.bottom = startBottom + 'px';
+        }
+        
+        // マウスイベント
+        dragHandle.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startY = e.clientY;
+            const currentBottom = parseInt(panel.style.bottom) || 20;
+            startBottom = currentBottom;
+            dragHandle.style.background = 'rgba(0,0,0,0.2)';
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            
+            const deltaY = startY - e.clientY;
+            let newBottom = startBottom + deltaY;
+            
+            // 画面内に制限（最小10px、最大は画面高さ-パネル高さ-10px）
+            const panelHeight = panel.offsetHeight;
+            const maxBottom = window.innerHeight - panelHeight - 10;
+            newBottom = Math.max(10, Math.min(newBottom, maxBottom));
+            
+            panel.style.bottom = newBottom + 'px';
+        });
+        
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                dragHandle.style.background = 'rgba(0,0,0,0.1)';
+                // 位置を保存
+                const currentBottom = parseInt(panel.style.bottom) || 20;
+                localStorage.setItem('manhour_panelBottom', currentBottom);
+            }
+        });
+        
+        // タッチイベント
+        dragHandle.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            startY = e.touches[0].clientY;
+            const currentBottom = parseInt(panel.style.bottom) || 20;
+            startBottom = currentBottom;
+            dragHandle.style.background = 'rgba(0,0,0,0.2)';
+            e.preventDefault();
+        });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            
+            const deltaY = startY - e.touches[0].clientY;
+            let newBottom = startBottom + deltaY;
+            
+            // 画面内に制限
+            const panelHeight = panel.offsetHeight;
+            const maxBottom = window.innerHeight - panelHeight - 10;
+            newBottom = Math.max(10, Math.min(newBottom, maxBottom));
+            
+            panel.style.bottom = newBottom + 'px';
+        });
+        
+        document.addEventListener('touchend', function() {
+            if (isDragging) {
+                isDragging = false;
+                dragHandle.style.background = 'rgba(0,0,0,0.1)';
+                // 位置を保存
+                const currentBottom = parseInt(panel.style.bottom) || 20;
+                localStorage.setItem('manhour_panelBottom', currentBottom);
+            }
+        });
     }
 
     function toggleEstimateSelection(id, event) {
