@@ -1996,18 +1996,24 @@
                 sortedProcesses.forEach((proc, index) => {
                     html += '<tr>';
                     
-                    // 選択モードの場合、チェックボックスを追加
+                    // 選択モードの場合、各行にチェックボックスを追加
                     if (workMonthSelectionMode) {
+                        // 各行に対応全体の選択チェックボックスを表示
+                        html += `<td style="text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
+                            <input type="checkbox" ${allSelected ? 'checked' : ''} style="width: auto; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
+                        </td>`;
+                        
+                        // 各行に対応名を表示（初回のみ太字、以降は空）
                         if (index === 0) {
-                            // 対応名の行: 対応全体の選択チェックボックス
-                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
-                                <input type="checkbox" ${allSelected ? 'checked' : ''} style="width: auto; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
-                            </td>`;
+                            html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                        } else {
+                            html += `<td style="color: #999; font-size: 12px;">${taskDisplayHtml}</td>`;
                         }
-                    }
-                    
-                    if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
+                    } else {
+                        // 通常モード: rowspanを使用
+                        if (index === 0) {
+                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
+                        }
                     }
                     
                     // 選択モードではないときは通常の工程バッジ
@@ -2024,11 +2030,24 @@
                     
                     html += `<td>${proc.member}</td>`;
                     html += `<td style="text-align: right;">${proc.hours}h</td>`;
-                    if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
-                            <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
-                            <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
-                        </td>`;
+                    
+                    // 対応合計も選択モードでは各行に表示
+                    if (workMonthSelectionMode) {
+                        if (index === 0) {
+                            html += `<td>
+                                <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
+                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                            </td>`;
+                        } else {
+                            html += `<td></td>`;
+                        }
+                    } else {
+                        if (index === 0) {
+                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
+                                <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
+                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                            </td>`;
+                        }
                     }
                     html += `<td>
                         <button class="btn btn-primary btn-small" onclick="editEstimate(${proc.id})" style="margin-right: 5px;">編集</button>
