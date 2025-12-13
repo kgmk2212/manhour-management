@@ -3401,13 +3401,61 @@
             filteredEstimates = estimates.filter(e => e.workMonth === selectedMonth);
         }
         
+        // デバッグ情報（コンソール出力）
+        if (selectedMonth !== 'all') {
+            console.log('=== レポート集計デバッグ ===');
+            console.log('選択月:', selectedMonth);
+            console.log('全見積数:', estimates.length);
+            console.log('フィルタ後見積数:', filteredEstimates.length);
+            console.log('全実績数:', actuals.length);
+            console.log('フィルタ後実績数:', filteredActuals.length);
+            
+            // 作業予定月が未設定または空文字の見積を確認
+            const noWorkMonthEstimates = estimates.filter(e => !e.workMonth || e.workMonth === '');
+            if (noWorkMonthEstimates.length > 0) {
+                console.log('⚠️ 作業予定月が未設定の見積:', noWorkMonthEstimates.length, '件');
+                console.log('  これらの見積は月別集計に含まれません');
+                console.log('  詳細:', noWorkMonthEstimates.map(e => ({
+                    version: e.version,
+                    task: e.task,
+                    workMonth: e.workMonth
+                })));
+            }
+            
+            // 選択月とは異なる作業予定月の見積を確認
+            const otherMonthEstimates = estimates.filter(e => e.workMonth && e.workMonth !== '' && e.workMonth !== selectedMonth);
+            if (otherMonthEstimates.length > 0) {
+                console.log('ℹ️ 他の月に予定されている見積:', otherMonthEstimates.length, '件');
+                const monthCounts = {};
+                otherMonthEstimates.forEach(e => {
+                    monthCounts[e.workMonth] = (monthCounts[e.workMonth] || 0) + 1;
+                });
+                console.log('  月別内訳:', monthCounts);
+            }
+            
+            // 選択月の実績があるが見積がない対応を確認
+            const actualTasks = new Set(filteredActuals.map(a => `${a.version}-${a.task}`));
+            const estimateTasks = new Set(filteredEstimates.map(e => `${e.version}-${e.task}`));
+            const actualOnlyTasks = [...actualTasks].filter(t => !estimateTasks.has(t));
+            if (actualOnlyTasks.length > 0) {
+                console.log('ℹ️ 実績のみで見積がない対応:', actualOnlyTasks);
+                console.log('  理由: 見積の作業予定月が設定されていないか、別の月に設定されています');
+            }
+            
+            // 選択月の見積があるが実績がない対応を確認
+            const estimateOnlyTasks = [...estimateTasks].filter(t => !actualTasks.has(t));
+            if (estimateOnlyTasks.length > 0) {
+                console.log('ℹ️ 見積のみで実績がない対応:', estimateOnlyTasks);
+            }
+        }
+        
         // タイトル更新
         const titleElement = document.getElementById('reportPeriodTitle');
         if (selectedMonth === 'all') {
             titleElement.textContent = '全期間の集計';
         } else {
             const [year, month] = selectedMonth.split('-');
-            titleElement.textContent = `${year}年${month}月の集計`;
+            titleElement.textContent = `${year}年${parseInt(month)}月の集計`;
         }
         
         const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
@@ -3512,16 +3560,22 @@
                 
                 if (sortedProcesses.length === 0) return;
                 
+                // 先に合計を計算
                 let totalEst = 0;
                 let totalAct = 0;
+                sortedProcesses.forEach(proc => {
+                    const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
+                    const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
+                    totalEst += est.hours;
+                    totalAct += act.hours;
+                });
+                const totalDiff = totalAct - totalEst;
                 
+                // 行を表示
                 sortedProcesses.forEach((proc, index) => {
                     const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
                     const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                     const diff = act.hours - est.hours;
-                    
-                    totalEst += est.hours;
-                    totalAct += act.hours;
                     
                     // 実績ベースで担当者を表示（実績がなければ見積）
                     let memberDisplay = '-';
@@ -3541,7 +3595,6 @@
                     html += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                     html += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
                     if (index === 0) {
-                        const totalDiff = totalAct - totalEst;
                         html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                             <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
                             <div style="font-weight: 600;">実績: ${totalAct.toFixed(1)}h</div>
