@@ -997,10 +997,12 @@
                 <div class="stat-card theme-bg theme-purple">
                     <h3>総見積工数</h3>
                     <div class="value" id="totalEstimate">0h</div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;" id="totalEstimateManpower"></div>
                 </div>
                 <div class="stat-card theme-bg theme-purple">
                     <h3>総実績工数</h3>
                     <div class="value" id="totalActual">0h</div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;" id="totalActualManpower"></div>
                 </div>
                 <div class="stat-card theme-bg theme-purple">
                     <h3>差異</h3>
@@ -3412,11 +3414,21 @@
         const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
         const diff = totalAct - totalEst;
         const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
+        
+        // 人日と人月の計算
+        const estManDays = (totalEst / 8).toFixed(1);
+        const estManMonths = (totalEst / 160).toFixed(2);
+        const actManDays = (totalAct / 8).toFixed(1);
+        const actManMonths = (totalAct / 160).toFixed(2);
 
         document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
         document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
         document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'h';
         document.getElementById('actualRate').textContent = rate + '%';
+        
+        // 補足情報として人日・人月を表示
+        document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
+        document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
 
         // 詳細ビュー表示
         if (viewType === 'grouped') {
