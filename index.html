@@ -1087,6 +1087,27 @@
                         </small>
                     </div>
                     
+                    <div class="form-group">
+                        <label>背景色</label>
+                        <select id="themeBackgroundColor" onchange="applyTheme()">
+                            <option value="same">メインカラーと同じ</option>
+                            <option value="purple">紫</option>
+                            <option value="deep-blue">ディープブルー</option>
+                            <option value="teal">ティール</option>
+                            <option value="cyan">シアン</option>
+                            <option value="ocean">オーシャン</option>
+                            <option value="sky">スカイブルー</option>
+                            <option value="indigo">インディゴ</option>
+                            <option value="navy">ネイビー</option>
+                            <option value="slate">スレート</option>
+                            <option value="green">グリーン</option>
+                            <option value="emerald">エメラルド</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ページ全体の背景色を個別に設定できます
+                        </small>
+                    </div>
+                    
                     <!-- プレビュー -->
                     <div style="margin: 20px 0;">
                         <label style="display: block; margin-bottom: 10px; font-weight: 600;">プレビュー</label>
@@ -1264,6 +1285,7 @@
         let currentThemeColor = 'purple';
         let currentThemePattern = 'none';
         let currentTabColor = 'same'; // タブの色（'same'=メインカラーと同じ、'default'=青、または色名）
+        let currentBackgroundColor = 'same'; // 背景色（'same'=メインカラーと同じ、または色名）
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
@@ -1301,6 +1323,7 @@
                     themeColor: currentThemeColor,
                     themePattern: currentThemePattern,
                     themeTabColor: currentTabColor,
+                    themeBackgroundColor: currentBackgroundColor,
                     autoBackup: autoBackupEnabled
                 }
             };
@@ -1410,6 +1433,7 @@
                 if (settings.themeColor) currentThemeColor = settings.themeColor;
                 if (settings.themePattern) currentThemePattern = settings.themePattern;
                 if (settings.themeTabColor) currentTabColor = settings.themeTabColor;
+                if (settings.themeBackgroundColor) currentBackgroundColor = settings.themeBackgroundColor;
                 if (settings.autoBackup !== undefined) autoBackupEnabled = settings.autoBackup;
             } else {
                 // 旧形式の設定を読み込み（後方互換性）
@@ -2629,9 +2653,11 @@
                 const [year, m, day] = date.split('-');
                 const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
                 // 祝日の場合、クラスで制御して画面幅に応じて表示を変える
+                const monthNum = parseInt(m);
+                const dayNum = parseInt(day);
                 const dateDisplay = isHoliday
-                    ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
-                    : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+                    ? `${monthNum}/${dayNum} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
+                    : `${monthNum}/${dayNum} (${dayOfWeek})`;
                 html += `<td style="font-weight: 500; ${dateColor}">
                     ${dateDisplay}
                 </td>`;
@@ -3222,23 +3248,46 @@
         
         // テーマ関連の関数
         function loadThemeSettings() {
-            const savedColor = localStorage.getItem('manhour_themeColor');
-            const savedPattern = localStorage.getItem('manhour_themePattern');
-            const savedTabColor = localStorage.getItem('manhour_themeTabColor');
-            
-            if (savedColor) {
-                currentThemeColor = savedColor;
-                document.getElementById('themeColor').value = savedColor;
-            }
-            
-            if (savedPattern) {
-                currentThemePattern = savedPattern;
-                document.getElementById('themePattern').value = savedPattern;
-            }
-            
-            if (savedTabColor) {
-                currentTabColor = savedTabColor;
-                document.getElementById('themeTabColor').value = savedTabColor;
+            // データから読み込み（優先）
+            const savedSettings = localStorage.getItem('manhour_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (settings.themeColor) {
+                    currentThemeColor = settings.themeColor;
+                    document.getElementById('themeColor').value = settings.themeColor;
+                }
+                if (settings.themePattern) {
+                    currentThemePattern = settings.themePattern;
+                    document.getElementById('themePattern').value = settings.themePattern;
+                }
+                if (settings.themeTabColor) {
+                    currentTabColor = settings.themeTabColor;
+                    document.getElementById('themeTabColor').value = settings.themeTabColor;
+                }
+                if (settings.themeBackgroundColor) {
+                    currentBackgroundColor = settings.themeBackgroundColor;
+                    document.getElementById('themeBackgroundColor').value = settings.themeBackgroundColor;
+                }
+            } else {
+                // 旧形式から読み込み（後方互換性）
+                const savedColor = localStorage.getItem('manhour_themeColor');
+                const savedPattern = localStorage.getItem('manhour_themePattern');
+                const savedTabColor = localStorage.getItem('manhour_themeTabColor');
+                
+                if (savedColor) {
+                    currentThemeColor = savedColor;
+                    document.getElementById('themeColor').value = savedColor;
+                }
+                
+                if (savedPattern) {
+                    currentThemePattern = savedPattern;
+                    document.getElementById('themePattern').value = savedPattern;
+                }
+                
+                if (savedTabColor) {
+                    currentTabColor = savedTabColor;
+                    document.getElementById('themeTabColor').value = savedTabColor;
+                }
             }
             
             applyTheme();
@@ -3248,10 +3297,12 @@
             const color = document.getElementById('themeColor').value;
             const pattern = document.getElementById('themePattern').value;
             const tabColor = document.getElementById('themeTabColor').value;
+            const backgroundColor = document.getElementById('themeBackgroundColor').value;
             
             currentThemeColor = color;
             currentThemePattern = pattern;
             currentTabColor = tabColor;
+            currentBackgroundColor = backgroundColor;
             
             // プレビューを更新
             updateThemePreview();
@@ -3316,7 +3367,9 @@
                 'emerald': 'linear-gradient(135deg, #059669 0%, #34d399 100%)'
             };
             
-            const gradient = colorGradients[currentThemeColor] || colorGradients['purple'];
+            // 背景色を決定
+            const bgColorToUse = currentBackgroundColor === 'same' ? currentThemeColor : currentBackgroundColor;
+            const gradient = colorGradients[bgColorToUse] || colorGradients['purple'];
             document.body.style.background = gradient;
         }
         
