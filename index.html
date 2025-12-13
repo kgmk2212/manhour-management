@@ -15,7 +15,6 @@
 
         body {
             font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 10px;
         }
@@ -958,14 +957,15 @@
                             <option value="list">リスト形式</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>表示期間</label>
-                        <div id="monthTabsContainer" style="margin-top: 10px;"></div>
-                        <select id="actualMonthFilter" onchange="renderActualList()" style="display: none;">
-                            <option value="all">全期間</option>
-                        </select>
-                    </div>
+                </div>
+                
+                <!-- 表示期間選択（表のすぐ上） -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">表示期間</label>
+                    <div id="monthTabsContainer" style="margin-top: 10px;"></div>
+                    <select id="actualMonthFilter" onchange="renderActualList()" style="display: none;">
+                        <option value="all">全期間</option>
+                    </select>
                 </div>
                 
                 <div id="actualList"></div>
@@ -2384,11 +2384,14 @@
             let html = `<h3 style="margin-bottom: 10px;">${selectedMember}の実績カレンダー</h3>`;
             
             if (selectedMonth !== 'all') {
-                const [year, month] = selectedMonth.split('-');
-                html += `<div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-                    <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(1)}h</p>
-                </div>`;
+                const monthParts = selectedMonth.split('-');
+                if (monthParts.length === 2) {
+                    const [year, month] = monthParts;
+                    html += `<div style="margin-bottom: 15px;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
+                        <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(1)}h</p>
+                    </div>`;
+                }
             }
             
             html += '<div class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
@@ -2536,15 +2539,18 @@
             
             // 月の合計を最上部に表示（月選択時のみ）
             if (selectedMonth !== 'all') {
-                const [year, month] = selectedMonth.split('-');
-                
-                // 稼働日数を計算（実績が入力されている日数）
-                const workedDays = new Set(filteredActuals.map(a => a.date)).size;
-                
-                html += `<div style="margin-bottom: 15px;">
-                    <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
-                    <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日</p>
-                </div>`;
+                const monthParts = selectedMonth.split('-');
+                if (monthParts.length === 2) {
+                    const [year, month] = monthParts;
+                    
+                    // 稼働日数を計算（実績が入力されている日数）
+                    const workedDays = new Set(filteredActuals.map(a => a.date)).size;
+                    
+                    html += `<div style="margin-bottom: 15px;">
+                        <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
+                        <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日</p>
+                    </div>`;
+                }
                 
                 // 同じtable-wrapper内に合計表を配置
                 html += '<div class="table-wrapper"><table>';
@@ -3271,6 +3277,9 @@
         }
         
         function updateThemeElements() {
+            // ページ全体の背景
+            updateBodyBackground();
+            
             // クイック入力エリア
             const quickInput = document.querySelector('.quick-input');
             if (quickInput) {
@@ -3290,6 +3299,25 @@
             if (activeTab) {
                 updateElementTheme(activeTab);
             }
+        }
+        
+        function updateBodyBackground() {
+            const colorGradients = {
+                'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                'teal': 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+                'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
+                'sky': 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                'green': 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
+                'emerald': 'linear-gradient(135deg, #059669 0%, #34d399 100%)'
+            };
+            
+            const gradient = colorGradients[currentThemeColor] || colorGradients['purple'];
+            document.body.style.background = gradient;
         }
         
         function updateElementTheme(element) {
