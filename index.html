@@ -892,6 +892,35 @@
                     
                     <div id="monthSplitPanel" style="display: none; margin-top: 15px;">
                         <div class="form-group">
+                            <label>分割する工程を選択</label>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="splitUI" class="split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>UI</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="splitPG" class="split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>PG</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="splitPT" class="split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>PT</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="splitIT" class="split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>IT</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="splitST" class="split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>ST</span>
+                                </label>
+                            </div>
+                            <small style="color: #666; display: block; margin-top: 5px;">
+                                ※ チェックした工程のみが月分割されます。チェックしていない工程は通常通り登録されます。
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
                             <label>総工数</label>
                             <input type="number" id="totalHours" step="0.1" min="0" placeholder="例: 80" oninput="updateMonthPreview()">
                             <span style="margin-left: 5px;">時間</span>
@@ -1722,8 +1751,21 @@
         const monthSplitEnabled = document.getElementById('enableMonthSplit').checked;
         
         if (monthSplitEnabled) {
+            // どの工程を分割するかチェック
+            const splitProcesses = [];
+            processes.forEach(proc => {
+                if (document.getElementById(`split${proc}`).checked) {
+                    splitProcesses.push(proc);
+                }
+            });
+            
+            if (splitProcesses.length === 0) {
+                alert('分割する工程を選択してください');
+                return;
+            }
+            
             // 月分割モード
-            addEstimateWithMonthSplit(version, task, processes);
+            addEstimateWithMonthSplit(version, task, processes, splitProcesses);
         } else {
             // 通常モード
             processes.forEach(proc => {
@@ -1756,7 +1798,7 @@
         alert('見積を登録しました');
     }
 
-    function addEstimateWithMonthSplit(version, task, processes) {
+    function addEstimateWithMonthSplit(version, task, processes, splitProcesses) {
         const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
         const startMonth = document.getElementById('startMonth').value;
         const endMonth = document.getElementById('endMonth').value;
@@ -1769,49 +1811,70 @@
         
         const months = generateMonthRange(startMonth, endMonth);
         
+        // 月別工数を計算
+        const monthlyHours = {};
+        
+        if (method === 'equal') {
+            const hoursPerMonth = totalHours / months.length;
+            months.forEach(month => {
+                monthlyHours[month] = hoursPerMonth;
+            });
+        } else {
+            // 手動設定の場合
+            let total = 0;
+            months.forEach((month, index) => {
+                const input = document.getElementById(`monthHours_${index}`);
+                const hours = input ? parseFloat(input.value) || 0 : 0;
+                monthlyHours[month] = hours;
+                total += hours;
+            });
+            
+            // 合計チェック
+            if (Math.abs(total - totalHours) > 0.01) {
+                alert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${totalHours}h)と一致しません`);
+                return;
+            }
+        }
+        
         // 工程ごとに見積を作成
         processes.forEach(proc => {
             const member = document.getElementById(`est${proc}_member`).value;
+            const hours = parseFloat(document.getElementById(`est${proc}`).value);
+            
             if (!member) return;
             
-            // 月別工数を計算
-            const monthlyHours = {};
-            
-            if (method === 'equal') {
-                const hoursPerMonth = totalHours / months.length;
-                months.forEach(month => {
-                    monthlyHours[month] = hoursPerMonth;
+            // この工程が分割対象かチェック
+            if (splitProcesses.includes(proc)) {
+                // 月分割見積を作成
+                estimates.push({
+                    id: Date.now() + Math.random(),
+                    version: version,
+                    task: task,
+                    process: proc,
+                    member: member,
+                    hours: totalHours,
+                    workMonth: startMonth,
+                    workMonths: months,
+                    monthlyHours: monthlyHours,
+                    createdAt: new Date().toISOString()
                 });
             } else {
-                // 手動設定の場合
-                let total = 0;
-                months.forEach((month, index) => {
-                    const input = document.getElementById(`monthHours_${index}`);
-                    const hours = input ? parseFloat(input.value) || 0 : 0;
-                    monthlyHours[month] = hours;
-                    total += hours;
-                });
-                
-                // 合計チェック
-                if (Math.abs(total - totalHours) > 0.01) {
-                    alert(`${proc}工程: 月別工数の合計(${total}h)が総工数(${totalHours}h)と一致しません`);
-                    return;
+                // 通常の見積を作成（工数入力があれば）
+                if (hours > 0) {
+                    estimates.push({
+                        id: Date.now() + Math.random(),
+                        version: version,
+                        task: task,
+                        process: proc,
+                        member: member,
+                        hours: hours,
+                        workMonth: '',
+                        workMonths: [],
+                        monthlyHours: {},
+                        createdAt: new Date().toISOString()
+                    });
                 }
             }
-            
-            // 見積を作成
-            estimates.push({
-                id: Date.now() + Math.random(),
-                version: version,
-                task: task,
-                process: proc,
-                member: member,
-                hours: totalHours,
-                workMonth: startMonth,
-                workMonths: months,
-                monthlyHours: monthlyHours,
-                createdAt: new Date().toISOString()
-            });
         });
     }
 
@@ -1828,27 +1891,11 @@
             generateMonthOptions('startMonth', currentMonth);
             generateMonthOptions('endMonth', currentMonth);
             
-            // 通常の工数入力を無効化
-            ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
-                const input = document.getElementById(`est${proc}`);
-                if (input) {
-                    input.disabled = true;
-                    input.style.background = '#f0f0f0';
-                }
-            });
+            // 通常の工数入力は有効のまま（分割しない工程用）
             
             updateMonthPreview();
         } else {
             panel.style.display = 'none';
-            
-            // 通常の工数入力を有効化
-            ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
-                const input = document.getElementById(`est${proc}`);
-                if (input) {
-                    input.disabled = false;
-                    input.style.background = '';
-                }
-            });
         }
     }
 
@@ -2139,6 +2186,11 @@
         ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
             document.getElementById(`est${proc}`).value = '';
             document.getElementById(`est${proc}_member`).value = '';
+            // 工程チェックボックスもクリア
+            const checkbox = document.getElementById(`split${proc}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
         });
         
         // 月分割アシスタントをクリア
