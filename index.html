@@ -877,6 +877,53 @@
                         <input type="number" id="estST" placeholder="時間" step="0.5" style="margin-top: 5px;">
                     </div>
                 </div>
+                
+                <!-- 月分割アシスタント -->
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196f3;">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="enableMonthSplit" onchange="toggleMonthSplit()" style="width: auto; margin-right: 10px;">
+                            <span style="font-weight: 600; color: #1976d2;">📅 複数月に分割して登録</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            一つの工程を複数月で作業する場合に、月別の工数を設定できます
+                        </small>
+                    </div>
+                    
+                    <div id="monthSplitPanel" style="display: none; margin-top: 15px;">
+                        <div class="form-group">
+                            <label>総工数</label>
+                            <input type="number" id="totalHours" step="0.1" min="0" placeholder="例: 80" oninput="updateMonthPreview()">
+                            <span style="margin-left: 5px;">時間</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>作業期間</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="startMonth" onchange="updateMonthPreview()"></select>
+                                <span>〜</span>
+                                <select id="endMonth" onchange="updateMonthPreview()"></select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>分割方法</label>
+                            <div style="display: flex; gap: 20px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="splitMethod" value="equal" checked onchange="updateMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <span>均等分割</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="splitMethod" value="manual" onchange="updateMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <span>手動設定</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="monthPreview" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+                
                 <button class="btn btn-primary" onclick="addEstimate()" style="margin-top: 15px;">登録</button>
             </div>
 
@@ -1618,23 +1665,33 @@
         }
 
         const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+        const monthSplitEnabled = document.getElementById('enableMonthSplit').checked;
         
-        processes.forEach(proc => {
-            const hours = parseFloat(document.getElementById(`est${proc}`).value);
-            const member = document.getElementById(`est${proc}_member`).value;
-            
-            if (hours > 0 && member) {
-                estimates.push({
-                    id: Date.now() + Math.random(),
-                    version: version,
-                    task: task,
-                    process: proc,
-                    member: member,
-                    hours: hours,
-                    createdAt: new Date().toISOString()
-                });
-            }
-        });
+        if (monthSplitEnabled) {
+            // 月分割モード
+            addEstimateWithMonthSplit(version, task, processes);
+        } else {
+            // 通常モード
+            processes.forEach(proc => {
+                const hours = parseFloat(document.getElementById(`est${proc}`).value);
+                const member = document.getElementById(`est${proc}_member`).value;
+                
+                if (hours > 0 && member) {
+                    estimates.push({
+                        id: Date.now() + Math.random(),
+                        version: version,
+                        task: task,
+                        process: proc,
+                        member: member,
+                        hours: hours,
+                        workMonth: '',
+                        workMonths: [],
+                        monthlyHours: {},
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            });
+        }
 
         saveData();
         clearEstimateForm();
@@ -1645,6 +1702,188 @@
         alert('見積を登録しました');
     }
 
+    function addEstimateWithMonthSplit(version, task, processes) {
+        const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        const method = document.querySelector('input[name="splitMethod"]:checked').value;
+        
+        if (totalHours <= 0 || !startMonth || !endMonth) {
+            alert('総工数と作業期間を入力してください');
+            return;
+        }
+        
+        const months = generateMonthRange(startMonth, endMonth);
+        
+        // 工程ごとに見積を作成
+        processes.forEach(proc => {
+            const member = document.getElementById(`est${proc}_member`).value;
+            if (!member) return;
+            
+            // 月別工数を計算
+            const monthlyHours = {};
+            
+            if (method === 'equal') {
+                const hoursPerMonth = totalHours / months.length;
+                months.forEach(month => {
+                    monthlyHours[month] = hoursPerMonth;
+                });
+            } else {
+                // 手動設定の場合
+                let total = 0;
+                months.forEach((month, index) => {
+                    const input = document.getElementById(`monthHours_${index}`);
+                    const hours = input ? parseFloat(input.value) || 0 : 0;
+                    monthlyHours[month] = hours;
+                    total += hours;
+                });
+                
+                // 合計チェック
+                if (Math.abs(total - totalHours) > 0.01) {
+                    alert(`${proc}工程: 月別工数の合計(${total}h)が総工数(${totalHours}h)と一致しません`);
+                    return;
+                }
+            }
+            
+            // 見積を作成
+            estimates.push({
+                id: Date.now() + Math.random(),
+                version: version,
+                task: task,
+                process: proc,
+                member: member,
+                hours: totalHours,
+                workMonth: startMonth,
+                workMonths: months,
+                monthlyHours: monthlyHours,
+                createdAt: new Date().toISOString()
+            });
+        });
+    }
+
+    function toggleMonthSplit() {
+        const enabled = document.getElementById('enableMonthSplit').checked;
+        const panel = document.getElementById('monthSplitPanel');
+        
+        if (enabled) {
+            panel.style.display = 'block';
+            
+            // 月選択肢を初期化
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            generateMonthOptions('startMonth', currentMonth);
+            generateMonthOptions('endMonth', currentMonth);
+            
+            // 通常の工数入力を無効化
+            ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
+                const input = document.getElementById(`est${proc}`);
+                if (input) {
+                    input.disabled = true;
+                    input.style.background = '#f0f0f0';
+                }
+            });
+            
+            updateMonthPreview();
+        } else {
+            panel.style.display = 'none';
+            
+            // 通常の工数入力を有効化
+            ['UI', 'PG', 'PT', 'IT', 'ST'].forEach(proc => {
+                const input = document.getElementById(`est${proc}`);
+                if (input) {
+                    input.disabled = false;
+                    input.style.background = '';
+                }
+            });
+        }
+    }
+
+    function updateMonthPreview() {
+        const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        const method = document.querySelector('input[name="splitMethod"]:checked').value;
+        const preview = document.getElementById('monthPreview');
+        
+        if (!startMonth || !endMonth || totalHours <= 0) {
+            preview.innerHTML = '<p style="color: #999; font-size: 14px;">総工数と作業期間を入力してください</p>';
+            return;
+        }
+        
+        if (startMonth > endMonth) {
+            preview.innerHTML = '<p style="color: #e74c3c; font-size: 14px;">⚠️ 開始月は終了月より前にしてください</p>';
+            return;
+        }
+        
+        const months = generateMonthRange(startMonth, endMonth);
+        let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #2196f3;">';
+        html += '<strong style="color: #1976d2;">📋 プレビュー</strong><br>';
+        html += '<div style="margin-top: 10px;">';
+        
+        if (method === 'equal') {
+            const hoursPerMonth = (totalHours / months.length).toFixed(1);
+            months.forEach(month => {
+                const [y, m] = month.split('-');
+                html += `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">`;
+                html += `${y}年${parseInt(m)}月: <strong>${hoursPerMonth}h</strong>`;
+                html += `</div>`;
+            });
+            html += `<div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #2196f3; font-weight: 600;">`;
+            html += `合計: ${totalHours}h (${months.length}ヶ月)`;
+            html += `</div>`;
+        } else {
+            // 手動設定UI
+            let manualTotal = 0;
+            months.forEach((month, index) => {
+                const [y, m] = month.split('-');
+                html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
+                html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
+                html += `<input type="number" id="monthHours_${index}" value="0" step="0.1" min="0" `;
+                html += `onchange="updateManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
+                html += `</div>`;
+            });
+            html += `<div id="manualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #2196f3; font-weight: 600;">`;
+            html += `合計: 0h / 目標: ${totalHours}h`;
+            html += `</div>`;
+        }
+        
+        html += '</div></div>';
+        preview.innerHTML = html;
+    }
+
+    function updateManualTotal() {
+        const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        
+        if (!startMonth || !endMonth) return;
+        
+        const months = generateMonthRange(startMonth, endMonth);
+        let total = 0;
+        
+        months.forEach((month, index) => {
+            const input = document.getElementById(`monthHours_${index}`);
+            if (input) {
+                total += parseFloat(input.value) || 0;
+            }
+        });
+        
+        const manualTotalDiv = document.getElementById('manualTotal');
+        if (manualTotalDiv) {
+            const diff = total - totalHours;
+            const color = Math.abs(diff) < 0.01 ? '#27ae60' : (diff > 0 ? '#e74c3c' : '#f39c12');
+            manualTotalDiv.innerHTML = `合計: <span style="color: ${color};">${total.toFixed(1)}h</span> / 目標: ${totalHours}h`;
+            
+            if (Math.abs(diff) < 0.01) {
+                manualTotalDiv.innerHTML += ' <span style="color: #27ae60;">✓</span>';
+            } else if (diff > 0) {
+                manualTotalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
+            } else {
+                manualTotalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
+            }
+        }
+    }
+
     function clearEstimateForm() {
         document.getElementById('estVersion').value = '';
         document.getElementById('estTask').value = '';
@@ -1652,6 +1891,10 @@
             document.getElementById(`est${proc}`).value = '';
             document.getElementById(`est${proc}_member`).value = '';
         });
+        
+        // 月分割アシスタントをクリア
+        document.getElementById('enableMonthSplit').checked = false;
+        toggleMonthSplit();
     }
 
     // クイック入力用の変数
@@ -1662,6 +1905,88 @@
     // 作業月割り当て用の変数
     let workMonthSelectionMode = false;
     let selectedEstimateIds = new Set(); // 選択された見積IDのセット
+
+    // 月分割モード用の変数
+    let monthSplitEnabled = false;
+
+    // 見積データの正規化（旧形式→新形式）
+    function normalizeEstimate(e) {
+        // 新形式がすでにある場合
+        if (e.workMonths && e.monthlyHours) {
+            return e;
+        }
+        
+        // 旧形式（workMonthのみ）を新形式に変換
+        if (e.workMonth && !e.workMonths) {
+            return {
+                ...e,
+                workMonths: [e.workMonth],
+                monthlyHours: { [e.workMonth]: e.hours }
+            };
+        }
+        
+        // workMonthもworkMonthsもない場合（未設定）
+        if (!e.workMonth && !e.workMonths) {
+            return {
+                ...e,
+                workMonths: [],
+                monthlyHours: {}
+            };
+        }
+        
+        return e;
+    }
+
+    // 月の範囲を生成（YYYY-MM形式）
+    function generateMonthRange(startMonth, endMonth) {
+        const months = [];
+        let current = startMonth;
+        
+        while (current <= endMonth) {
+            months.push(current);
+            const [y, m] = current.split('-').map(Number);
+            const nextDate = new Date(y, m, 1); // 次の月の1日
+            const nextYear = nextDate.getFullYear();
+            const nextMonth = nextDate.getMonth() + 1;
+            current = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+        }
+        
+        return months;
+    }
+
+    // 月選択肢を生成
+    function generateMonthOptions(selectId, selectedValue = '') {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        
+        select.innerHTML = '';
+        
+        // 過去1年から未来2年まで
+        const now = new Date();
+        const startDate = new Date(now.getFullYear() - 1, 0, 1);
+        const endDate = new Date(now.getFullYear() + 2, 11, 31);
+        
+        const months = [];
+        let current = new Date(startDate);
+        
+        while (current <= endDate) {
+            const year = current.getFullYear();
+            const month = current.getMonth() + 1;
+            const value = `${year}-${String(month).padStart(2, '0')}`;
+            months.push({ value, label: `${year}年${month}月` });
+            current.setMonth(current.getMonth() + 1);
+        }
+        
+        months.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m.value;
+            option.textContent = m.label;
+            if (m.value === selectedValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    }
 
     function updateQuickTaskList() {
         // 見積データから一意のタスクを抽出（担当者情報も含む）
@@ -2199,19 +2524,44 @@
     function renderEstimateDetailList() {
         const container = document.getElementById('estimateList');
         
-        let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>操作</th></tr>';
+        let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>作業予定月</th><th>操作</th></tr>';
         
         estimates.forEach(e => {
+            const est = normalizeEstimate(e);
+            
+            // 作業予定月の表示
+            let workMonthDisplay = '-';
+            if (est.workMonths.length > 0) {
+                if (est.workMonths.length === 1) {
+                    const [y, m] = est.workMonths[0].split('-');
+                    workMonthDisplay = `${y}年${parseInt(m)}月`;
+                } else {
+                    const [y1, m1] = est.workMonths[0].split('-');
+                    const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                    workMonthDisplay = `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`;
+                    // 月別内訳を表示
+                    workMonthDisplay += '<br><small style="color: #666;">';
+                    est.workMonths.forEach((month, idx) => {
+                        const [y, m] = month.split('-');
+                        const hours = est.monthlyHours[month] || 0;
+                        if (idx > 0) workMonthDisplay += ', ';
+                        workMonthDisplay += `${parseInt(m)}月:${hours.toFixed(1)}h`;
+                    });
+                    workMonthDisplay += '</small>';
+                }
+            }
+            
             html += `
                 <tr>
-                    <td>${e.version}</td>
-                    <td>${e.task}</td>
-                    <td><span class="badge badge-${e.process.toLowerCase()}">${e.process}</span></td>
-                    <td>${e.member}</td>
-                    <td>${e.hours}h</td>
+                    <td>${est.version}</td>
+                    <td>${est.task}</td>
+                    <td><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></td>
+                    <td>${est.member}</td>
+                    <td>${est.hours.toFixed(1)}h</td>
+                    <td>${workMonthDisplay}</td>
                     <td>
-                        <button class="btn btn-primary btn-small" onclick="editEstimate(${e.id})" style="margin-right: 5px;">編集</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${e.id})">削除</button>
+                        <button class="btn btn-primary btn-small" onclick="editEstimate(${est.id})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${est.id})">削除</button>
                     </td>
                 </tr>
             `;
@@ -3411,8 +3761,21 @@
         // 見積のフィルタリング（作業予定月で絞り込み）
         let filteredEstimates = estimates;
         if (selectedMonth !== 'all') {
-            // 選択月に作業予定月が設定されている見積のみ
-            filteredEstimates = estimates.filter(e => e.workMonth === selectedMonth);
+            // 複数月対応: workMonthsに含まれる見積をフィルタ
+            filteredEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.includes(selectedMonth);
+            }).map(e => {
+                // 月別工数を使用
+                const est = normalizeEstimate(e);
+                return {
+                    ...est,
+                    hours: est.monthlyHours[selectedMonth] || est.hours
+                };
+            });
+        } else {
+            // 全期間の場合は正規化のみ
+            filteredEstimates = estimates.map(e => normalizeEstimate(e));
         }
         
         // デバッグ情報（コンソール出力）
@@ -3425,26 +3788,48 @@
             console.log('フィルタ後実績数:', filteredActuals.length);
             
             // 作業予定月が未設定または空文字の見積を確認
-            const noWorkMonthEstimates = estimates.filter(e => !e.workMonth || e.workMonth === '');
+            const noWorkMonthEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.length === 0;
+            });
             if (noWorkMonthEstimates.length > 0) {
                 console.log('⚠️ 作業予定月が未設定の見積:', noWorkMonthEstimates.length, '件');
                 console.log('  これらの見積は月別集計に含まれません');
                 console.log('  詳細:', noWorkMonthEstimates.map(e => ({
                     version: e.version,
                     task: e.task,
-                    workMonth: e.workMonth
+                    workMonths: normalizeEstimate(e).workMonths
                 })));
             }
             
             // 選択月とは異なる作業予定月の見積を確認
-            const otherMonthEstimates = estimates.filter(e => e.workMonth && e.workMonth !== '' && e.workMonth !== selectedMonth);
+            const otherMonthEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.length > 0 && !est.workMonths.includes(selectedMonth);
+            });
             if (otherMonthEstimates.length > 0) {
                 console.log('ℹ️ 他の月に予定されている見積:', otherMonthEstimates.length, '件');
                 const monthCounts = {};
                 otherMonthEstimates.forEach(e => {
-                    monthCounts[e.workMonth] = (monthCounts[e.workMonth] || 0) + 1;
+                    const est = normalizeEstimate(e);
+                    est.workMonths.forEach(m => {
+                        monthCounts[m] = (monthCounts[m] || 0) + 1;
+                    });
                 });
                 console.log('  月別内訳:', monthCounts);
+            }
+            
+            // 複数月見積の情報
+            const multiMonthEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.length > 1 && est.workMonths.includes(selectedMonth);
+            });
+            if (multiMonthEstimates.length > 0) {
+                console.log('📅 複数月見積（選択月を含む）:', multiMonthEstimates.length, '件');
+                multiMonthEstimates.forEach(e => {
+                    const est = normalizeEstimate(e);
+                    console.log(`  ${est.version} - ${est.task} [${est.process}]:`, est.monthlyHours);
+                });
             }
             
             // 選択月の実績があるが見積がない対応を確認
