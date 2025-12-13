@@ -2435,10 +2435,12 @@
                 const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
                 
                 const [year, m, day] = date.split('-');
+                const monthNum = parseInt(m);
+                const dayNum = parseInt(day);
                 // 祝日の場合、クラスで制御して画面幅に応じて表示を変える
                 const dateDisplay = isHoliday 
-                    ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
-                    : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+                    ? `${monthNum}/${dayNum} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
+                    : `${monthNum}/${dayNum} (${dayOfWeek})`;
                 
                 if (dayActuals.length === 0) {
                     html += `<tr style="background: ${bgColor};">`;
@@ -2614,7 +2616,7 @@
             
             let currentMonth = '';
             let monthTotals = {};
-            members.forEach(m => monthTotals[m] = 0);
+            members.forEach(member => monthTotals[member] = 0);
             let monthTotal = 0;
             
             // 日付ごとの行
@@ -2639,7 +2641,7 @@
                     html += '</tr>';
                     
                     // リセット
-                    members.forEach(m => monthTotals[m] = 0);
+                    members.forEach(member => monthTotals[member] = 0);
                     monthTotal = 0;
                 }
                 
