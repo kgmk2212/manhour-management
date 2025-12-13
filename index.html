@@ -2403,7 +2403,13 @@
                     } else {
                         html += `<tr style="background: ${bgColor};">`;
                     }
-                    html += `<td>${actual.version} - ${actual.task} [${actual.process}]</td>`;
+                    // HTMLエスケープ関数
+                    const escapeHtml = (str) => {
+                        const div = document.createElement('div');
+                        div.textContent = str;
+                        return div.innerHTML;
+                    };
+                    html += `<td style="font-size: 14px;">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${actual.process}]</td>`;
                     html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
                     html += `</tr>`;
                 });
@@ -2667,7 +2673,8 @@
         
         // 詳細リスト（削除用）
         html += '<h3 style="margin-top: 30px;">詳細データ（削除用）</h3>';
-        html += '<div class="table-wrapper"><table><tr><th>日付</th><th>担当者</th><th>版数</th><th>対応名</th><th>工程</th><th>実績工数</th><th>操作</th></tr>';
+        html += '<div class="table-wrapper"><table>';
+        html += '<tr><th>日付</th><th>担当者</th><th>版数</th><th>対応名</th><th>工程</th><th>実績工数</th><th>操作</th></tr>';
         
         const sortedActuals = [...filteredActuals].sort((a, b) => {
             if (a.date !== b.date) return b.date.localeCompare(a.date);
@@ -2675,12 +2682,19 @@
         });
         
         sortedActuals.forEach(a => {
+            // HTMLエスケープ関数
+            const escapeHtml = (str) => {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            };
+            
             html += `
                 <tr>
                     <td>${a.date}</td>
-                    <td>${a.member}</td>
-                    <td>${a.version}</td>
-                    <td>${a.task}</td>
+                    <td>${escapeHtml(a.member)}</td>
+                    <td>${escapeHtml(a.version)}</td>
+                    <td>${escapeHtml(a.task)}</td>
                     <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
                     <td>${a.hours}h</td>
                     <td>
