@@ -2666,24 +2666,20 @@
                     const estimate = estimates.find(e => e.id === proc.id);
                     const est = normalizeEstimate(estimate);
                     
-                    // 作業月の表示を生成
-                    let processWorkMonthDisplay = '';
-                    let processWorkMonthDisplayBlock = ''; // 工程の下に表示するバージョン
+                    // 作業月の表示を生成（工程の下に表示）
+                    let processWorkMonthDisplayBlock = '';
                     
                     if (est.workMonths.length > 0) {
                         if (est.workMonths.length === 1) {
                             const [y, m] = est.workMonths[0].split('-');
-                            processWorkMonthDisplay = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
-                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">${y}年${parseInt(m)}月</span></div>`;
+                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
                         } else {
                             const [y1, m1] = est.workMonths[0].split('-');
                             const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
-                            processWorkMonthDisplay = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
-                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
+                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
                         }
                     } else {
-                        processWorkMonthDisplay = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">未設定</span>`;
-                        processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">未設定</span></div>`;
+                        processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
                     }
                     
                     html += '<tr>';
@@ -2710,7 +2706,6 @@
                             <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <div>
                                 <span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
-                                ${processWorkMonthDisplay}
                             </div>
                             ${processWorkMonthDisplayBlock}
                         </td>`;
