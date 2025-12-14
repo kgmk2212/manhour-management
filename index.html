@@ -2578,14 +2578,37 @@
     function renderEstimateGrouped() {
         const container = document.getElementById('estimateList');
         
+        // 対応全体の作業月を計算する関数
+        function getTaskWorkMonths(version, task) {
+            // この対応の全工程を取得
+            const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
+            
+            // 全工程の作業月を収集（重複なし）
+            const allMonths = new Set();
+            taskEstimates.forEach(e => {
+                const est = normalizeEstimate(e);
+                est.workMonths.forEach(month => allMonths.add(month));
+            });
+            
+            return Array.from(allMonths).sort();
+        }
+        
         // 作業予定月フィルタを適用
         const workMonthFilter = document.getElementById('estimateWorkMonthFilter').value;
         let filteredEstimates = estimates;
         
         if (workMonthFilter === 'unassigned') {
-            filteredEstimates = estimates.filter(e => !e.workMonth);
+            // 未割り当て: 対応全体として作業月がない
+            filteredEstimates = estimates.filter(e => {
+                const taskMonths = getTaskWorkMonths(e.version, e.task);
+                return taskMonths.length === 0;
+            });
         } else if (workMonthFilter !== 'all') {
-            filteredEstimates = estimates.filter(e => e.workMonth === workMonthFilter);
+            // 特定月: 対応全体として指定月を含む
+            filteredEstimates = estimates.filter(e => {
+                const taskMonths = getTaskWorkMonths(e.version, e.task);
+                return taskMonths.includes(workMonthFilter);
+            });
         }
         
         if (filteredEstimates.length === 0) {
@@ -2645,14 +2668,22 @@
                     processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
                 );
                 
-                // 作業月の表示
-                const workMonthBadge = taskGroup.processes[0] && estimates.find(e => e.id === taskGroup.processes[0].id)?.workMonth
-                    ? (() => {
-                        const wm = estimates.find(e => e.id === taskGroup.processes[0].id).workMonth;
-                        const [y, m] = wm.split('-');
-                        return ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">${y}年${parseInt(m)}月</span>`;
-                    })()
-                    : ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">未設定</span>';
+                // 対応全体の作業月を計算
+                const taskWorkMonths = getTaskWorkMonths(version, taskGroup.task);
+                
+                // 作業月バッジの生成
+                let workMonthBadge = '';
+                if (taskWorkMonths.length === 0) {
+                    workMonthBadge = ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">未設定</span>';
+                } else if (taskWorkMonths.length === 1) {
+                    const [y, m] = taskWorkMonths[0].split('-');
+                    workMonthBadge = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">${y}年${parseInt(m)}月</span>`;
+                } else {
+                    // 複数月の場合
+                    const [y1, m1] = taskWorkMonths[0].split('-');
+                    const [y2, m2] = taskWorkMonths[taskWorkMonths.length - 1].split('-');
+                    workMonthBadge = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                }
                 
                 // 対応名を「:」または「：」で分割してレスポンシブ表示（祝日と同じ方式）
                 let taskDisplayHtml = taskGroup.task;
