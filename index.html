@@ -991,6 +991,12 @@
                         <option value="all">全て</option>
                         <option value="unassigned">未設定のみ</option>
                     </select>
+                    <div style="margin-top: 8px; display: none;" id="showOutOfFilterOption">
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 13px;">
+                            <input type="checkbox" id="showOutOfFilterProcesses" onchange="renderEstimateList()" style="width: auto; margin-right: 6px;">
+                            <span>フィルタ外の工程も表示（グレー表示）</span>
+                        </label>
+                    </div>
                 </div>
             </div>
             
@@ -2595,30 +2601,54 @@
         
         // 作業予定月フィルタを適用
         const workMonthFilter = document.getElementById('estimateWorkMonthFilter').value;
-        let filteredEstimates = estimates;
+        const showOutOfFilter = document.getElementById('showOutOfFilterProcesses').checked;
         
-        if (workMonthFilter === 'unassigned') {
-            // 未割り当て: 対応全体として作業月がない
-            filteredEstimates = estimates.filter(e => {
-                const taskMonths = getTaskWorkMonths(e.version, e.task);
-                return taskMonths.length === 0;
-            });
-        } else if (workMonthFilter !== 'all') {
-            // 特定月: 対応全体として指定月を含む
-            filteredEstimates = estimates.filter(e => {
-                const taskMonths = getTaskWorkMonths(e.version, e.task);
-                return taskMonths.includes(workMonthFilter);
-            });
+        // フィルタ外工程表示オプションの表示/非表示
+        const showOutOfFilterOption = document.getElementById('showOutOfFilterOption');
+        if (workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
+            showOutOfFilterOption.style.display = 'block';
+        } else {
+            showOutOfFilterOption.style.display = 'none';
         }
         
-        if (filteredEstimates.length === 0) {
+        let filteredEstimates = estimates;
+        let outOfFilterEstimates = []; // フィルタ外の工程
+        
+        if (workMonthFilter === 'unassigned') {
+            // 未割り当て: 工程自体が作業月を持たない
+            filteredEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.length === 0;
+            });
+        } else if (workMonthFilter !== 'all') {
+            // 特定月: その月に割り当たっている工程のみ表示
+            filteredEstimates = estimates.filter(e => {
+                const est = normalizeEstimate(e);
+                return est.workMonths.includes(workMonthFilter);
+            });
+            
+            // フィルタ外工程表示オプションが有効な場合
+            if (showOutOfFilter) {
+                // フィルタ外の工程を取得
+                outOfFilterEstimates = estimates.filter(e => {
+                    const est = normalizeEstimate(e);
+                    return !est.workMonths.includes(workMonthFilter);
+                });
+            }
+        }
+        
+        // フィルタ内の工程がない場合でも、フィルタ外表示がONなら全て表示
+        if (filteredEstimates.length === 0 && !showOutOfFilter) {
             container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当する見積データがありません</p>';
             return;
         }
         
+        // 表示する全ての見積（フィルタ内 + フィルタ外）
+        const allDisplayEstimates = [...filteredEstimates, ...outOfFilterEstimates];
+        
         // 版数ごとにグループ化
         const versionGroups = {};
-        filteredEstimates.forEach(e => {
+        allDisplayEstimates.forEach(e => {
             if (!versionGroups[e.version]) {
                 versionGroups[e.version] = {};
             }
@@ -2629,11 +2659,18 @@
                     processes: []
                 };
             }
+            
+            // フィルタ外かどうかを記録
+            const isOutOfFilter = outOfFilterEstimates.some(oe => oe.id === e.id);
+            
             versionGroups[e.version][taskKey].processes.push({
                 process: e.process,
                 member: e.member,
                 hours: e.hours,
-                id: e.id
+                id: e.id,
+                isOutOfFilter: isOutOfFilter
+            });
+        });
             });
         });
         
@@ -2716,6 +2753,11 @@
                     const estimate = estimates.find(e => e.id === proc.id);
                     const est = normalizeEstimate(estimate);
                     
+                    // フィルタ外かどうか
+                    const isOutOfFilter = proc.isOutOfFilter || false;
+                    const grayStyle = isOutOfFilter ? 'opacity: 0.4; color: #999;' : '';
+                    const grayPrefix = isOutOfFilter ? '○ ' : '';
+                    
                     // 作業月の表示を生成（レスポンシブ対応）
                     let processWorkMonthInline = ''; // 広い画面用（1行表示）
                     let processWorkMonthBlock = ''; // 狭い画面用（2行表示）
@@ -2736,7 +2778,7 @@
                         processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
                     }
                     
-                    html += '<tr>';
+                    html += `<tr style="${grayStyle}">`;
                     
                     // 選択モードの場合、チェックボックスを追加
                     if (workMonthSelectionMode) {
@@ -2759,13 +2801,13 @@
                         html += `<td style="cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <div>
-                                <span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
+                                <span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
                                 <span class="work-month-inline">${processWorkMonthInline}</span>
                             </div>
                             <div class="work-month-block">${processWorkMonthBlock}</div>
                         </td>`;
                     } else {
-                        html += `<td><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
+                        html += `<td><span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
                     }
                     
                     html += `<td>${proc.member}</td>`;
