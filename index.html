@@ -14,7 +14,6 @@
             box-sizing: border-box;
         }
 
- 
     body {
         font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
         min-height: 100vh;
@@ -1690,12 +1689,24 @@
         const isAndroid = /Android/.test(navigator.userAgent);
         
         if (isIOS) {
-            // iOS: Data URLを新しいタブで開く
-            const dataUrl = URL.createObjectURL(blob);
-            const newWindow = window.open(dataUrl, '_blank');
-            if (newWindow) {
-                setTimeout(() => URL.revokeObjectURL(dataUrl), 100);
-            }
+            // iOS: Data URLを使用して新しいタブで開く
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const newWindow = window.open('', '_blank');
+                if (newWindow) {
+                    newWindow.document.write('<html><head><title>バックアップ</title></head><body>');
+                    newWindow.document.write('<h2>バックアップファイル</h2>');
+                    newWindow.document.write('<p>以下のリンクを長押しして「ダウンロード」を選択してください</p>');
+                    newWindow.document.write(`<p><a href="${dataUrl}" download="${filename}">${filename}</a></p>`);
+                    newWindow.document.write('<p>または、このページのテキストを全選択してコピーし、メモアプリなどに貼り付けてください</p>');
+                    newWindow.document.write('<hr>');
+                    newWindow.document.write(`<pre style="white-space: pre-wrap; word-wrap: break-word;">${jsonString}</pre>`);
+                    newWindow.document.write('</body></html>');
+                    newWindow.document.close();
+                }
+            };
+            reader.readAsDataURL(blob);
         } else if (isAndroid) {
             // Android: 標準のダウンロード方式
             const url = URL.createObjectURL(blob);
@@ -2689,6 +2700,25 @@
                 const allSelected = taskIds.every(id => selectedEstimateIds.has(id));
                 
                 sortedProcesses.forEach((proc, index) => {
+                    // この工程の見積データを取得
+                    const estimate = estimates.find(e => e.id === proc.id);
+                    const est = normalizeEstimate(estimate);
+                    
+                    // 作業月の表示を生成
+                    let processWorkMonthDisplay = '';
+                    if (est.workMonths.length > 0) {
+                        if (est.workMonths.length === 1) {
+                            const [y, m] = est.workMonths[0].split('-');
+                            processWorkMonthDisplay = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">${y}年${parseInt(m)}月</span>`;
+                        } else {
+                            const [y1, m1] = est.workMonths[0].split('-');
+                            const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                            processWorkMonthDisplay = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                        }
+                    } else {
+                        processWorkMonthDisplay = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">未設定</span>`;
+                    }
+                    
                     html += '<tr>';
                     
                     // 選択モードの場合、チェックボックスを追加
@@ -2712,6 +2742,7 @@
                         html += `<td style="cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
+                            ${processWorkMonthDisplay}
                         </td>`;
                     } else {
                         html += `<td><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
