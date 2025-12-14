@@ -739,6 +739,25 @@
         background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
         pointer-events: none;
     }
+    
+    /* 作業月表示のレスポンシブ対応 */
+    /* デフォルト（広い画面）: 1行表示 */
+    .work-month-inline {
+        display: inline;
+    }
+    .work-month-block {
+        display: none;
+    }
+    
+    /* 狭い画面（1024px以下）: 2行表示 */
+    @media (max-width: 1024px) {
+        .work-month-inline {
+            display: none;
+        }
+        .work-month-block {
+            display: block;
+        }
+    }
 </style>
 
 </head>
@@ -2666,20 +2685,24 @@
                     const estimate = estimates.find(e => e.id === proc.id);
                     const est = normalizeEstimate(estimate);
                     
-                    // 作業月の表示を生成（工程の下に表示）
-                    let processWorkMonthDisplayBlock = '';
+                    // 作業月の表示を生成（レスポンシブ対応）
+                    let processWorkMonthInline = ''; // 広い画面用（1行表示）
+                    let processWorkMonthBlock = ''; // 狭い画面用（2行表示）
                     
                     if (est.workMonths.length > 0) {
                         if (est.workMonths.length === 1) {
                             const [y, m] = est.workMonths[0].split('-');
-                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
+                            processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
+                            processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
                         } else {
                             const [y1, m1] = est.workMonths[0].split('-');
                             const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
-                            processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
+                            processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                            processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
                         }
                     } else {
-                        processWorkMonthDisplayBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
+                        processWorkMonthInline = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">未設定</span>`;
+                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
                     }
                     
                     html += '<tr>';
@@ -2706,8 +2729,9 @@
                             <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                             <div>
                                 <span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
+                                <span class="work-month-inline">${processWorkMonthInline}</span>
                             </div>
-                            ${processWorkMonthDisplayBlock}
+                            <div class="work-month-block">${processWorkMonthBlock}</div>
                         </td>`;
                     } else {
                         html += `<td><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
