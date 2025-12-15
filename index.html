@@ -5072,7 +5072,33 @@
                 }
                 
                 // 担当者一覧を取得（表示順を考慮）
-                const members = getOrderedMembers();
+                let members = [...new Set(actuals.map(a => a.member))];
+                
+                // 表示順が指定されている場合
+                const memberOrderInput = localStorage.getItem('memberOrder');
+                if (memberOrderInput) {
+                    const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                    const orderedMembers = [];
+                    const unorderedMembers = [];
+                    
+                    // 指定された順序で追加
+                    orderList.forEach(name => {
+                        if (members.includes(name)) {
+                            orderedMembers.push(name);
+                        }
+                    });
+                    
+                    // 指定されていない担当者を後ろに追加
+                    members.forEach(m => {
+                        if (!orderedMembers.includes(m)) {
+                            unorderedMembers.push(m);
+                        }
+                    });
+                    
+                    members = [...orderedMembers, ...unorderedMembers.sort()];
+                } else {
+                    members.sort();
+                }
                 
                 // 担当者ごとに実績シートを作成
                 members.forEach(member => {
