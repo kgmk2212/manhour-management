@@ -758,6 +758,32 @@
             display: block;
         }
     }
+    
+    /* その他作業モーダル用スタイル */
+    .other-work-tab {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .other-work-tab.active {
+        color: #3498db;
+        border-bottom-color: #3498db;
+        font-weight: 600;
+    }
+    
+    .other-work-tab:hover {
+        color: #3498db;
+    }
+    
+    .other-work-form {
+        animation: fadeIn 0.3s;
+    }
 </style>
 
 </head>
@@ -819,42 +845,7 @@
                         </div>
                     </div>
                     <button class="btn btn-success" onclick="quickAddActual()">追加</button>
-                </div>
-                
-                <!-- 打ち合わせ・その他作業登録 -->
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(255,255,255,0.3);">
-                    <h4 style="color: white; margin-bottom: 15px;">その他作業</h4>
-                    
-                    <!-- 打ち合わせ -->
-                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <label style="color: white; font-weight: 600; min-width: 80px;">打ち合わせ:</label>
-                            <input type="number" id="meetingHours" step="0.5" min="0" placeholder="工数(h)" style="width: 100px;">
-                            <button class="btn btn-success" onclick="addMeeting()">全員分追加</button>
-                            <small style="color: rgba(255,255,255,0.8); font-size: 11px;">※ 全担当者に同じ工数で登録されます</small>
-                        </div>
-                    </div>
-                    
-                    <!-- その他作業 -->
-                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 100px auto; gap: 10px; align-items: end;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="color: white;">作業名</label>
-                                <input type="text" id="otherWorkName" placeholder="例: 環境構築">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="color: white;">担当</label>
-                                <select id="otherWorkMember">
-                                    <option value="">選択...</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="color: white;">工数(h)</label>
-                                <input type="number" id="otherWorkHours" step="0.5" min="0">
-                            </div>
-                            <button class="btn btn-success" onclick="addOtherWork()">追加</button>
-                        </div>
-                    </div>
+                    <button class="btn" onclick="openOtherWorkModal()" style="background: rgba(255,255,255,0.2); color: white; margin-left: 10px;">その他</button>
                 </div>
             </div>
 
@@ -1482,6 +1473,52 @@
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="executeSplitEstimate()">分割を適用</button>
                 <button class="btn" onclick="closeSplitEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- その他作業モーダル -->
+<div id="otherWorkModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>その他作業の登録</h3>
+            <button class="modal-close" onclick="closeOtherWorkModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- タブ切り替え -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                <button id="meetingTab" class="other-work-tab active" onclick="switchOtherWorkTab('meeting')">打ち合わせ</button>
+                <button id="customTab" class="other-work-tab" onclick="switchOtherWorkTab('custom')">任意作業</button>
+            </div>
+            
+            <!-- 打ち合わせタブ -->
+            <div id="meetingForm" class="other-work-form">
+                <p style="color: #666; margin-bottom: 15px;">全担当者に同じ工数で登録されます。</p>
+                <div class="form-group">
+                    <label>工数 (h)</label>
+                    <input type="number" id="meetingHours" step="0.5" min="0" placeholder="例: 2">
+                </div>
+                <button class="btn btn-success" onclick="addMeeting()">全員分追加</button>
+            </div>
+            
+            <!-- 任意作業タブ -->
+            <div id="customForm" class="other-work-form" style="display: none;">
+                <div class="form-group">
+                    <label>作業名</label>
+                    <input type="text" id="otherWorkName" placeholder="例: 環境構築、ドキュメント作成">
+                </div>
+                <div class="form-group">
+                    <label>担当</label>
+                    <select id="otherWorkMember">
+                        <option value="">選択...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>工数 (h)</label>
+                    <input type="number" id="otherWorkHours" step="0.5" min="0" placeholder="例: 4">
+                </div>
+                <button class="btn btn-success" onclick="addOtherWork()">追加</button>
             </div>
         </div>
     </div>
@@ -5405,8 +5442,9 @@
         renderTodayActuals();
         updateReport();
         
-        // 入力欄をクリア
+        // 入力欄をクリアしてモーダルを閉じる
         document.getElementById('meetingHours').value = '';
+        closeOtherWorkModal();
         
         alert(`打ち合わせを${members.size}名分登録しました`);
     }
@@ -5454,12 +5492,45 @@
         renderTodayActuals();
         updateReport();
         
-        // 入力欄をクリア
+        // 入力欄をクリアしてモーダルを閉じる
         document.getElementById('otherWorkName').value = '';
         document.getElementById('otherWorkMember').value = '';
         document.getElementById('otherWorkHours').value = '';
+        closeOtherWorkModal();
         
         alert('その他作業を登録しました');
+    }
+    
+    // その他作業モーダルを開く
+    function openOtherWorkModal() {
+        document.getElementById('otherWorkModal').style.display = 'flex';
+        // 打ち合わせタブをアクティブにする
+        switchOtherWorkTab('meeting');
+    }
+    
+    // その他作業モーダルを閉じる
+    function closeOtherWorkModal() {
+        document.getElementById('otherWorkModal').style.display = 'none';
+    }
+    
+    // その他作業モーダルのタブを切り替え
+    function switchOtherWorkTab(tab) {
+        const meetingTab = document.getElementById('meetingTab');
+        const customTab = document.getElementById('customTab');
+        const meetingForm = document.getElementById('meetingForm');
+        const customForm = document.getElementById('customForm');
+        
+        if (tab === 'meeting') {
+            meetingTab.classList.add('active');
+            customTab.classList.remove('active');
+            meetingForm.style.display = 'block';
+            customForm.style.display = 'none';
+        } else {
+            meetingTab.classList.remove('active');
+            customTab.classList.add('active');
+            meetingForm.style.display = 'none';
+            customForm.style.display = 'block';
+        }
     }
 </script>
 
