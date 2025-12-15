@@ -5128,11 +5128,8 @@
                         const weekday = ['日', '月', '火', '水', '木', '金', '土'][currentDate.getDay()];
                         
                         // 祝日チェック
-                        let note = '';
-                        if (holiday_jp.isHoliday(currentDate)) {
-                            const holidayName = holiday_jp.between(currentDate, currentDate)[0]?.name || '祝日';
-                            note = holidayName;
-                        }
+                        const holiday = getHoliday(dateStr);
+                        const note = holiday || '';
                         
                         // この日付のこの担当者の実績を取得
                         const dayActuals = actuals.filter(a => 
@@ -5185,7 +5182,8 @@
                     const checkDate = new Date(minDate);
                     while (checkDate <= maxDate) {
                         const day = checkDate.getDay();
-                        const isHoliday = holiday_jp.isHoliday(checkDate);
+                        const dateStr = checkDate.toISOString().split('T')[0];
+                        const isHoliday = getHoliday(dateStr) !== null;
                         
                         // この日付の行数を取得
                         const dateStr = checkDate.toISOString().split('T')[0];
