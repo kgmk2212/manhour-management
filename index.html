@@ -5186,7 +5186,6 @@
                         const isHoliday = getHoliday(dateStr) !== null;
                         
                         // この日付の行数を取得
-                        const dateStr = checkDate.toISOString().split('T')[0];
                         const dayActuals = actuals.filter(a => 
                             a.date === dateStr && a.member === member
                         );
