@@ -5399,16 +5399,16 @@
     
     // 打ち合わせを全員分追加
     function addMeeting() {
+        console.log('addMeeting called');
         const hours = parseFloat(document.getElementById('meetingHours').value);
-        const date = document.getElementById('quickDate').value;
+        // 今日の日付を取得
+        const today = new Date();
+        const date = today.toISOString().split('T')[0];
+        
+        console.log('hours:', hours, 'date:', date);
         
         if (!hours || hours <= 0) {
             alert('工数を入力してください');
-            return;
-        }
-        
-        if (!date) {
-            alert('日付を選択してください');
             return;
         }
         
@@ -5416,6 +5416,8 @@
         const members = new Set();
         estimates.forEach(e => members.add(e.member));
         actuals.forEach(a => members.add(a.member));
+        
+        console.log('members:', Array.from(members));
         
         if (members.size === 0) {
             alert('担当者が登録されていません。先に見積または実績を登録してください。');
@@ -5437,6 +5439,8 @@
             count++;
         });
         
+        console.log('actuals added, count:', count);
+        
         saveData();
         renderActualList();
         renderTodayActuals();
@@ -5446,15 +5450,20 @@
         document.getElementById('meetingHours').value = '';
         closeOtherWorkModal();
         
-        alert(`打ち合わせを${members.size}名分登録しました`);
+        alert(`打ち合わせを${members.size}名分登録しました（${date}）`);
     }
     
     // その他作業を追加
     function addOtherWork() {
+        console.log('addOtherWork called');
         const workName = document.getElementById('otherWorkName').value.trim();
         const member = document.getElementById('otherWorkMember').value;
         const hours = parseFloat(document.getElementById('otherWorkHours').value);
-        const date = document.getElementById('quickDate').value;
+        // 今日の日付を取得
+        const today = new Date();
+        const date = today.toISOString().split('T')[0];
+        
+        console.log('workName:', workName, 'member:', member, 'hours:', hours, 'date:', date);
         
         if (!workName) {
             alert('作業名を入力してください');
@@ -5471,11 +5480,6 @@
             return;
         }
         
-        if (!date) {
-            alert('日付を選択してください');
-            return;
-        }
-        
         // その他作業を追加
         actuals.push({
             id: Date.now(),
@@ -5486,6 +5490,8 @@
             member: member,
             hours: hours
         });
+        
+        console.log('other work added');
         
         saveData();
         renderActualList();
@@ -5498,11 +5504,53 @@
         document.getElementById('otherWorkHours').value = '';
         closeOtherWorkModal();
         
-        alert('その他作業を登録しました');
+        alert(`その他作業を登録しました（${date}）`);
     }
     
     // その他作業モーダルを開く
     function openOtherWorkModal() {
+        // 担当者リストを更新
+        const otherWorkMemberSelect = document.getElementById('otherWorkMember');
+        if (otherWorkMemberSelect) {
+            // 担当者を抽出
+            const members = new Set();
+            estimates.forEach(e => members.add(e.member));
+            actuals.forEach(a => members.add(a.member));
+            
+            // 表示順でソート
+            let sortedMembers;
+            const memberOrderInput = document.getElementById('memberOrder').value.trim();
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const orderedMembers = [];
+                const unorderedMembers = [];
+                
+                orderList.forEach(name => {
+                    if (members.has(name)) {
+                        orderedMembers.push(name);
+                    }
+                });
+                
+                Array.from(members).forEach(m => {
+                    if (!orderedMembers.includes(m)) {
+                        unorderedMembers.push(m);
+                    }
+                });
+                
+                sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
+            } else {
+                sortedMembers = Array.from(members).sort();
+            }
+            
+            otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
+            sortedMembers.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member;
+                option.textContent = member;
+                otherWorkMemberSelect.appendChild(option);
+            });
+        }
+        
         document.getElementById('otherWorkModal').style.display = 'flex';
         // 打ち合わせタブをアクティブにする
         switchOtherWorkTab('meeting');
