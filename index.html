@@ -1777,21 +1777,20 @@
     }
 
     function setDefaultActualMonth() {
-        // 前月を計算
+        // 現在月を計算
         const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const defaultMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+        const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
         
         const select = document.getElementById('actualMonthFilter');
         
-        // 前月のオプションが存在するか確認
+        // 現在月のオプションが存在するか確認
         const options = Array.from(select.options);
-        const hasDefaultMonth = options.some(opt => opt.value === defaultMonth);
+        const hasCurrentMonth = options.some(opt => opt.value === currentMonth);
         
-        if (hasDefaultMonth) {
-            select.value = defaultMonth;
+        if (hasCurrentMonth) {
+            select.value = currentMonth;
         } else if (options.length > 1) {
-            // 前月のデータがない場合は、最新月を選択
+            // 現在月のデータがない場合は、最新月を選択
             select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
         }
     }
@@ -3667,7 +3666,6 @@
             '2025-11-03': '文化の日',
             '2025-11-23': '勤労感謝の日',
             '2025-11-24': '振替休日',
-            '2025-12-23': '天皇誕生日',
             // 2026年
             '2026-01-01': '元日',
             '2026-01-12': '成人の日',
@@ -3797,8 +3795,12 @@
                         <div class="work-item-hours">${actual.hours}h</div>
                     </div>
                     <div class="work-item-details">
-                        <span><strong>版数:</strong> ${actual.version}</span>
-                        <span><strong>工程:</strong> <span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span></span>
+                        <span><strong>版数:</strong> ${actual.version || '(なし)'}</span>
+                        <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span>` : '(なし)'}</span>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-primary btn-small" onclick="editActualFromModal(${actual.id})">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteActualFromModal(${actual.id}, '${member}', '${date}')">削除</button>
                     </div>
                 </div>
             `;
@@ -3817,6 +3819,31 @@
 
     function closeWorkModal() {
         document.getElementById('workModal').style.display = 'none';
+    }
+    
+    // 作業詳細モーダルから編集
+    function editActualFromModal(id) {
+        closeWorkModal();
+        editActual(id);
+    }
+    
+    // 作業詳細モーダルから削除
+    function deleteActualFromModal(id, member, date) {
+        if (confirm('この実績を削除しますか？')) {
+            actuals = actuals.filter(a => a.id !== id);
+            saveData();
+            renderActualList();
+            renderTodayActuals();
+            updateReport();
+            
+            // モーダルを更新（まだ他の作業がある場合）
+            const remainingActuals = actuals.filter(a => a.member === member && a.date === date);
+            if (remainingActuals.length > 0) {
+                showWorkDetail(member, date);
+            } else {
+                closeWorkModal();
+            }
+        }
     }
 
     function editActual(id) {
