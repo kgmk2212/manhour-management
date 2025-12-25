@@ -3798,9 +3798,9 @@
                         <span><strong>版数:</strong> ${actual.version || '(なし)'}</span>
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span>` : '(なし)'}</span>
                     </div>
-                    <div style="margin-top: 10px;">
-                        <button class="btn btn-primary btn-small" onclick="editActualFromModal(${actual.id})">編集</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteActualFromModal(${actual.id}, '${member}', '${date}')">削除</button>
+                    <div style="margin-top: 8px; text-align: right;">
+                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: #3498db; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
+                        <button onclick="deleteActualFromModal(${actual.id}, '${member}', '${date}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
             `;
