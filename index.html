@@ -1674,17 +1674,55 @@
             if (otherWorkMemberSelect) {
                 const currentValue = otherWorkMemberSelect.value;
                 otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
-                
+
                 sortedMembers.forEach(member => {
                     const option = document.createElement('option');
                     option.value = member;
                     option.textContent = member;
                     otherWorkMemberSelect.appendChild(option);
                 });
-                
+
                 // 以前の選択を復元
                 if (currentValue && sortedMembers.includes(currentValue)) {
                     otherWorkMemberSelect.value = currentValue;
+                }
+            }
+
+            // 実績編集モーダルの担当者選択肢を更新
+            const editActualMemberSelect = document.getElementById('editActualMember');
+            if (editActualMemberSelect) {
+                const currentValue = editActualMemberSelect.value;
+                editActualMemberSelect.innerHTML = '';
+
+                sortedMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member;
+                    option.textContent = member;
+                    editActualMemberSelect.appendChild(option);
+                });
+
+                // 以前の選択を復元
+                if (currentValue && sortedMembers.includes(currentValue)) {
+                    editActualMemberSelect.value = currentValue;
+                }
+            }
+
+            // 見積編集モーダルの担当者選択肢を更新
+            const editEstimateMemberSelect = document.getElementById('editEstimateMember');
+            if (editEstimateMemberSelect) {
+                const currentValue = editEstimateMemberSelect.value;
+                editEstimateMemberSelect.innerHTML = '';
+
+                sortedMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member;
+                    option.textContent = member;
+                    editEstimateMemberSelect.appendChild(option);
+                });
+
+                // 以前の選択を復元
+                if (currentValue && sortedMembers.includes(currentValue)) {
+                    editEstimateMemberSelect.value = currentValue;
                 }
             }
         }
