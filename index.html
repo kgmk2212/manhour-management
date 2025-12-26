@@ -3842,7 +3842,54 @@
             const [year, month, day] = date.split('-');
             modalTitle.textContent = `実績を新規登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
             
+            // この担当者の未完了対応を取得してdatalistに設定
+            updateEditActualTaskList(member);
+            
             document.getElementById('editActualModal').style.display = 'flex';
+        }
+        
+        // 実績編集モーダルの対応名リストを更新（担当者に応じた未完了対応）
+        function updateEditActualTaskList(member) {
+            const datalist = document.getElementById('editActualTaskList');
+            
+            // この担当者の見積データを取得
+            const memberEstimates = estimates.filter(e => e.member === member);
+            
+            // 実績工数を集計
+            const actualTotals = {};
+            actuals.forEach(a => {
+                const key = `${a.version}_${a.task}_${a.process}`;
+                actualTotals[key] = (actualTotals[key] || 0) + a.hours;
+            });
+            
+            // 未完了対応を抽出
+            const incompleteTasks = [];
+            memberEstimates.forEach(est => {
+                const key = `${est.version}_${est.task}_${est.process}`;
+                const actualHours = actualTotals[key] || 0;
+                
+                if (actualHours < est.hours) {
+                    const remaining = est.hours - actualHours;
+                    incompleteTasks.push({
+                        version: est.version,
+                        task: est.task,
+                        process: est.process,
+                        remaining: remaining,
+                        display: `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`
+                    });
+                }
+            });
+            
+            // datalistを更新
+            datalist.innerHTML = '';
+            incompleteTasks.forEach(task => {
+                const option = document.createElement('option');
+                option.value = task.task;
+                option.setAttribute('data-version', task.version);
+                option.setAttribute('data-process', task.process);
+                option.textContent = task.display;
+                datalist.appendChild(option);
+            });
         }
         
         // 作業詳細モーダルから編集
@@ -4099,7 +4146,26 @@
         }
 
         function handleActualTaskInput() {
-            // 対応名入力時の処理（将来的に拡張可能）
+            const input = document.getElementById('editActualTaskSearch');
+            const datalist = document.getElementById('editActualTaskList');
+            const options = datalist.querySelectorAll('option');
+            
+            // 入力値に一致するoptionを探す
+            for (let option of options) {
+                if (option.value === input.value) {
+                    // 版数と工程を自動入力
+                    const version = option.getAttribute('data-version');
+                    const process = option.getAttribute('data-process');
+                    
+                    if (version) {
+                        document.getElementById('editActualVersion').value = version;
+                    }
+                    if (process) {
+                        document.getElementById('editActualProcess').value = process;
+                    }
+                    break;
+                }
+            }
         }
 
         function handleEstimateTaskInput() {
