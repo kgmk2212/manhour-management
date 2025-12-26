@@ -857,7 +857,9 @@
                     <h3>新規見積登録</h3>
                     <div class="form-group">
                         <label>版数</label>
-                        <input type="text" id="estVersion" placeholder="第2025.11版">
+                        <select id="estVersion" onchange="handleVersionChange('estVersion')">
+                            <option value="">-- 版数を選択 --</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>対応名</label>
@@ -1335,7 +1337,9 @@
                 </div>
                 <div class="form-group">
                     <label>版数</label>
-                    <input type="text" id="editActualVersion" placeholder="第2025.12版">
+                    <select id="editActualVersion" onchange="handleVersionChange('editActualVersion')">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
@@ -1384,7 +1388,9 @@
                 <input type="hidden" id="editEstimateId">
                 <div class="form-group">
                     <label>版数</label>
-                    <input type="text" id="editEstimateVersion" placeholder="第2025.12版">
+                    <select id="editEstimateVersion" onchange="handleVersionChange('editEstimateVersion')">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
@@ -1539,6 +1545,7 @@
             updateMonthOptions();
             updateActualMonthOptions();
             updateMemberOptions();
+            updateVersionOptions(); // 版数選択肢を更新
             updateQuickTaskList();
             updateWorkMonthOptions(); // 作業月選択肢を更新
             renderEstimateList();
@@ -1575,10 +1582,13 @@
             localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
             localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
             localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
-            
+
             // 作業月選択肢を更新
             updateWorkMonthOptions();
-            
+
+            // 版数選択肢を更新
+            updateVersionOptions();
+
             // 自動バックアップが有効な場合のみ実行
             if (!skipAutoBackup && autoBackupEnabled) {
                 autoBackup();
@@ -1675,6 +1685,73 @@
                 // 以前の選択を復元
                 if (currentValue && sortedMembers.includes(currentValue)) {
                     otherWorkMemberSelect.value = currentValue;
+                }
+            }
+        }
+
+        // 版数選択肢を更新する関数
+        function updateVersionOptions() {
+            // 見積と実績データから版数を抽出
+            const versions = new Set();
+            estimates.forEach(e => {
+                if (e.version) versions.add(e.version);
+            });
+            actuals.forEach(a => {
+                if (a.version) versions.add(a.version);
+            });
+
+            // 版数をソート（降順：新しいものが上）
+            const sortedVersions = Array.from(versions).sort().reverse();
+
+            // 各版数セレクトボックスを更新
+            const versionSelects = [
+                'estVersion',           // 新規見積登録
+                'editActualVersion',    // 実績編集/新規モーダル
+                'editEstimateVersion'   // 見積編集モーダル
+            ];
+
+            versionSelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">-- 版数を選択 --</option>';
+
+                    // 「新規追加」オプション
+                    const newOption = document.createElement('option');
+                    newOption.value = '__new__';
+                    newOption.textContent = '+ 新しい版数を追加...';
+                    select.appendChild(newOption);
+
+                    // 既存の版数
+                    sortedVersions.forEach(version => {
+                        const option = document.createElement('option');
+                        option.value = version;
+                        option.textContent = version;
+                        select.appendChild(option);
+                    });
+
+                    // 以前の選択を復元
+                    if (currentValue && currentValue !== '__new__') {
+                        select.value = currentValue;
+                    }
+                }
+            });
+        }
+
+        // 版数選択時の処理（新規追加対応）
+        function handleVersionChange(selectId) {
+            const select = document.getElementById(selectId);
+            if (select.value === '__new__') {
+                const newVersion = prompt('新しい版数を入力してください（例: 第2025.12版）');
+                if (newVersion && newVersion.trim()) {
+                    // 新しい版数をオプションに追加
+                    const option = document.createElement('option');
+                    option.value = newVersion.trim();
+                    option.textContent = newVersion.trim();
+                    select.insertBefore(option, select.options[2]); // 「新規追加」の次に挿入
+                    select.value = newVersion.trim();
+                } else {
+                    select.value = '';
                 }
             }
         }
