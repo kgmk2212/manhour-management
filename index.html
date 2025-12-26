@@ -3943,7 +3943,16 @@
             // 実績編集モーダルを開く（新規登録モード）
             document.getElementById('editActualId').value = '';
             document.getElementById('editActualDate').value = date;
-            document.getElementById('editActualVersion').value = '';
+
+            // 版数を最新のものにデフォルト設定
+            const versionSelect = document.getElementById('editActualVersion');
+            if (versionSelect.options.length > 2) {
+                // options[0]="-- 版数を選択 --", options[1]="+ 新しい版数を追加...", options[2]以降が実際の版数
+                versionSelect.value = versionSelect.options[2].value;
+            } else {
+                versionSelect.value = '';
+            }
+
             document.getElementById('editActualTaskSearch').value = '';
             document.getElementById('editActualProcess').value = 'UI';
             
