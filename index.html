@@ -31,49 +31,49 @@
         header {
             background: #2c3e50;
             color: white;
-            padding: 20px;
+            padding: 15px;
         }
 
         h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 22px;
+            margin-bottom: 8px;
         }
 
         .header-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .tabs {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             background: #ecf0f1;
-            padding: 10px;
+            padding: 8px;
             overflow-x: auto;
         }
 
         .tab {
-            padding: 12px 20px;
+            padding: 10px 16px;
             background: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             white-space: nowrap;
         }
 
         .tab.active {
             color: white;
         }
-        
+
         /* テーマが適用されていないアクティブタブのフォールバック */
         .tab.active:not([class*="tab-theme-"]) {
             background: #3498db;
         }
 
         .content {
-            padding: 20px;
+            padding: 15px;
         }
 
         .tab-content {
@@ -85,7 +85,7 @@
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -114,34 +114,58 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             font-weight: 500;
+            font-size: 13px;
         }
 
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             border: 2px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
         }
 
         .quick-input {
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             color: white;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .quick-form {
             display: grid;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        /* 見積テーブル用スタイル */
+        .estimate-table {
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .estimate-table th {
+            background: #f5f5f5;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .estimate-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .estimate-table select,
+        .estimate-table input {
+            padding: 6px 8px;
+            font-size: 13px;
         }
 
         .table-wrapper {
@@ -529,12 +553,18 @@
                 flex-direction: column;
             }
 
-            .btn {
+            .header-buttons .btn {
                 width: 100%;
             }
 
             .quick-form {
                 grid-template-columns: 1fr;
+            }
+
+            /* 見積テーブルのモバイル対応 */
+            .estimate-table th,
+            .estimate-table td {
+                padding: 4px 6px;
             }
 
             table {
@@ -842,8 +872,10 @@
                                 <input type="number" id="quickHours" step="0.5" min="0">
                             </div>
                         </div>
-                        <button class="btn btn-success" onclick="quickAddActual()">追加</button>
-                        <button class="btn" onclick="openOtherWorkModal()" style="background: rgba(255,255,255,0.2); color: white; margin-left: 10px;">その他</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-success" onclick="quickAddActual()" style="flex: 2;">追加</button>
+                            <button class="btn" onclick="openOtherWorkModal()" style="flex: 1; background: rgba(255,255,255,0.2); color: white;">その他</button>
+                        </div>
                     </div>
                 </div>
 
@@ -865,64 +897,43 @@
                         <label>対応名</label>
                         <input type="text" id="estTask" placeholder="帳票A_X対応">
                     </div>
-                    <h4>各工程の見積</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                        <div class="form-group">
-                            <label>UI (担当)</label>
-                            <select id="estUI_member">
-                                <option value="">-</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
-                            <input type="number" id="estUI" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                        </div>
-                        <div class="form-group">
-                            <label>PG (担当)</label>
-                            <select id="estPG_member">
-                                <option value="">-</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
-                            <input type="number" id="estPG" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                        </div>
-                        <div class="form-group">
-                            <label>PT (担当)</label>
-                            <select id="estPT_member">
-                                <option value="">-</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
-                            <input type="number" id="estPT" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                        </div>
-                        <div class="form-group">
-                            <label>IT (担当)</label>
-                            <select id="estIT_member">
-                                <option value="">-</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
-                            <input type="number" id="estIT" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                        </div>
-                        <div class="form-group">
-                            <label>ST (担当)</label>
-                            <select id="estST_member">
-                                <option value="">-</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
-                            <input type="number" id="estST" placeholder="時間" step="0.5" style="margin-top: 5px;">
-                        </div>
-                    </div>
+                    <h4 style="margin-bottom: 10px;">各工程の見積</h4>
+                    <table class="estimate-table" style="width: 100%; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
+                                <th style="padding: 8px;">担当</th>
+                                <th style="width: 100px; padding: 8px;">時間</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                <td><select id="estUI_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="estUI" placeholder="h" step="0.5" style="margin: 0;"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
+                                <td><select id="estPG_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="estPG" placeholder="h" step="0.5" style="margin: 0;"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
+                                <td><select id="estPT_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="estPT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
+                                <td><select id="estIT_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="estIT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
+                                <td><select id="estST_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="estST" placeholder="h" step="0.5" style="margin: 0;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
                     
                     <!-- 月分割アシスタント -->
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196f3;">
