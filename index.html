@@ -152,9 +152,11 @@
         }
 
         .estimate-table th {
-            background: #f5f5f5;
+            background: #34495e;
+            color: white;
             font-size: 12px;
             font-weight: 600;
+            padding: 8px;
         }
 
         .estimate-table td {
@@ -404,14 +406,31 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 12px 12px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
+        /* モーダルヘッダーのデフォルト色（テーマ適用前） */
+        .modal-header:not([class*="modal-theme-"]) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* モーダル用テーマ色 */
+        .modal-theme-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .modal-theme-deep-blue { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+        .modal-theme-teal { background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); }
+        .modal-theme-cyan { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
+        .modal-theme-ocean { background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%); }
+        .modal-theme-sky { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); }
+        .modal-theme-indigo { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
+        .modal-theme-navy { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
+        .modal-theme-slate { background: linear-gradient(135deg, #334155 0%, #475569 100%); }
+        .modal-theme-green { background: linear-gradient(135deg, #047857 0%, #10b981 100%); }
+        .modal-theme-emerald { background: linear-gradient(135deg, #059669 0%, #34d399 100%); }
 
         .modal-header h3 {
             margin: 0;
@@ -4412,26 +4431,34 @@
         function updateThemeElements() {
             // ページ全体の背景
             updateBodyBackground();
-            
+
             // クイック入力エリア
             const quickInput = document.querySelector('.quick-input');
             if (quickInput) {
                 updateElementTheme(quickInput);
             }
-            
+
             // レポートサマリーカード
             const summaryCards = document.querySelectorAll('.stats-grid .stat-card');
             summaryCards.forEach(card => updateElementTheme(card));
-            
+
             // 版数ヘッダー
             const versionHeaders = document.querySelectorAll('.version-header');
             versionHeaders.forEach(header => updateElementTheme(header));
-            
+
             // アクティブタブ
             const activeTab = document.querySelector('.tab.active');
             if (activeTab) {
                 updateElementTheme(activeTab);
             }
+
+            // モーダルヘッダー
+            const modalHeaders = document.querySelectorAll('.modal-header');
+            modalHeaders.forEach(header => {
+                // 既存のモーダルテーマクラスを削除
+                header.className = header.className.replace(/modal-theme-\w+/g, '').trim();
+                header.classList.add('modal-header', `modal-theme-${currentThemeColor}`);
+            });
         }
         
         function updateBodyBackground() {
