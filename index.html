@@ -152,11 +152,12 @@
         }
 
         .estimate-table th {
-            background: #34495e;
-            color: white;
+            background: #e8f4fd;
+            color: #2c3e50;
             font-size: 12px;
             font-weight: 600;
             padding: 8px;
+            border-bottom: 2px solid #3498db;
         }
 
         .estimate-table td {
@@ -1402,6 +1403,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveActualEdit()">保存</button>
+                    <button class="btn" id="editActualOtherBtn" onclick="openOtherWorkFromCalendar()" style="background: #9b59b6; color: white; display: none;">その他作業</button>
                     <button class="btn" onclick="closeEditActualModal()" style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
@@ -3995,16 +3997,77 @@
             memberDisplay.textContent = member;
 
             document.getElementById('editActualHours').value = '';
-            
+
             // モーダルのタイトルを変更
             const modalTitle = document.querySelector('#editActualModal .modal-header h3');
             const [year, month, day] = date.split('-');
             modalTitle.textContent = `実績を新規登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
-            
+
             // この担当者の未完了対応を取得してdatalistに設定
             updateEditActualTaskList(member);
-            
+
+            // 「その他作業」ボタンを表示し、データを保持
+            document.getElementById('editActualOtherBtn').style.display = 'block';
+            document.getElementById('editActualModal').dataset.calendarMember = member;
+            document.getElementById('editActualModal').dataset.calendarDate = date;
+
             document.getElementById('editActualModal').style.display = 'flex';
+        }
+
+        // カレンダーからその他作業モーダルを開く
+        function openOtherWorkFromCalendar() {
+            const modal = document.getElementById('editActualModal');
+            const member = modal.dataset.calendarMember;
+            const date = modal.dataset.calendarDate;
+
+            // 実績編集モーダルを閉じる
+            closeEditActualModal();
+
+            // その他作業モーダルを開き、担当者と日付を設定
+            openOtherWorkModalWithContext(member, date);
+        }
+
+        // コンテキスト付きでその他作業モーダルを開く
+        function openOtherWorkModalWithContext(member, date) {
+            // 担当者選択肢を更新
+            const otherWorkMemberSelect = document.getElementById('otherWorkMember');
+            if (otherWorkMemberSelect) {
+                const allMembers = new Set();
+                estimates.forEach(e => allMembers.add(e.member));
+                actuals.forEach(a => allMembers.add(a.member));
+
+                let sortedMembers;
+                const memberOrderInput = document.getElementById('memberOrder').value.trim();
+                if (memberOrderInput) {
+                    const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                    const orderedMembers = orderList.filter(name => allMembers.has(name));
+                    const unorderedMembers = Array.from(allMembers).filter(m => !orderedMembers.includes(m)).sort();
+                    sortedMembers = [...orderedMembers, ...unorderedMembers];
+                } else {
+                    sortedMembers = Array.from(allMembers).sort();
+                }
+
+                otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
+                sortedMembers.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = m;
+                    otherWorkMemberSelect.appendChild(option);
+                });
+
+                // 担当者を選択
+                otherWorkMemberSelect.value = member;
+            }
+
+            // 日付を保持（保存時に使用）
+            document.getElementById('otherWorkModal').dataset.calendarDate = date;
+
+            // モーダルのタイトルを更新
+            const [year, month, day] = date.split('-');
+            document.querySelector('#otherWorkModal .modal-header h3').textContent =
+                `その他作業を登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
+
+            document.getElementById('otherWorkModal').style.display = 'flex';
         }
         
         // 実績編集モーダルの対応名リストを更新（担当者に応じた未完了対応）
@@ -4144,7 +4207,10 @@
             // 編集時はセレクトを表示、表示用spanを非表示
             memberSelect.style.display = 'block';
             document.getElementById('editActualMemberDisplay').style.display = 'none';
-            
+
+            // 編集時は「その他作業」ボタンを非表示
+            document.getElementById('editActualOtherBtn').style.display = 'none';
+
             // モーダルを表示
             document.getElementById('editActualModal').style.display = 'block';
         }
@@ -5689,9 +5755,16 @@
         function addMeeting() {
             console.log('addMeeting called');
             const hours = parseFloat(document.getElementById('meetingHours').value);
-            // 今日の日付を取得
-            const today = new Date();
-            const date = today.toISOString().split('T')[0];
+
+            // カレンダーからの日付があればそれを使用、なければ今日の日付
+            const modal = document.getElementById('otherWorkModal');
+            let date;
+            if (modal.dataset.calendarDate) {
+                date = modal.dataset.calendarDate;
+            } else {
+                const today = new Date();
+                date = today.toISOString().split('T')[0];
+            }
             
             console.log('hours:', hours, 'date:', date);
             
@@ -5747,9 +5820,16 @@
             const workName = document.getElementById('otherWorkName').value.trim();
             const member = document.getElementById('otherWorkMember').value;
             const hours = parseFloat(document.getElementById('otherWorkHours').value);
-            // 今日の日付を取得
-            const today = new Date();
-            const date = today.toISOString().split('T')[0];
+
+            // カレンダーからの日付があればそれを使用、なければ今日の日付
+            const modal = document.getElementById('otherWorkModal');
+            let date;
+            if (modal.dataset.calendarDate) {
+                date = modal.dataset.calendarDate;
+            } else {
+                const today = new Date();
+                date = today.toISOString().split('T')[0];
+            }
             
             console.log('workName:', workName, 'member:', member, 'hours:', hours, 'date:', date);
             
@@ -5846,7 +5926,14 @@
         
         // その他作業モーダルを閉じる
         function closeOtherWorkModal() {
-            document.getElementById('otherWorkModal').style.display = 'none';
+            const modal = document.getElementById('otherWorkModal');
+            modal.style.display = 'none';
+
+            // カレンダー日付データをクリア
+            delete modal.dataset.calendarDate;
+
+            // モーダルタイトルをリセット
+            document.querySelector('#otherWorkModal .modal-header h3').textContent = 'その他作業を登録';
         }
         
         // その他作業モーダルのタブを切り替え
