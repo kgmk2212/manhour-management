@@ -1374,11 +1374,12 @@
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
-                    <input type="text" id="editActualTaskSearch" placeholder="検索または新規入力" list="editActualTaskList" oninput="handleActualTaskInput()">
-                    <datalist id="editActualTaskList">
-                    </datalist>
+                    <select id="editActualTaskSelect" onchange="handleActualTaskSelect()" style="margin-bottom: 10px;">
+                        <option value="">-- 対応を選択 --</option>
+                    </select>
+                    <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
                     <small style="color: #666; display: block; margin-top: 5px;">
-                        ↑ 既存の対応名を選択、または新しい名前を入力
+                        ↑ 未完了の対応を選択、または「新規入力」で新しい対応を追加
                     </small>
                 </div>
                 <div class="form-group">
@@ -3991,6 +3992,10 @@
                 versionSelect.value = '';
             }
 
+            // 対応名のselect/inputを初期化
+            document.getElementById('editActualTaskSelect').style.display = 'block';
+            document.getElementById('editActualTaskSelect').value = '';
+            document.getElementById('editActualTaskSearch').style.display = 'none';
             document.getElementById('editActualTaskSearch').value = '';
             document.getElementById('editActualProcess').value = 'UI';
             
@@ -4078,24 +4083,24 @@
         
         // 実績編集モーダルの対応名リストを更新（担当者に応じた未完了対応）
         function updateEditActualTaskList(member) {
-            const datalist = document.getElementById('editActualTaskList');
-            
+            const select = document.getElementById('editActualTaskSelect');
+
             // この担当者の見積データを取得
             const memberEstimates = estimates.filter(e => e.member === member);
-            
+
             // 実績工数を集計
             const actualTotals = {};
             actuals.forEach(a => {
                 const key = `${a.version}_${a.task}_${a.process}`;
                 actualTotals[key] = (actualTotals[key] || 0) + a.hours;
             });
-            
+
             // 未完了対応を抽出
             const incompleteTasks = [];
             memberEstimates.forEach(est => {
                 const key = `${est.version}_${est.task}_${est.process}`;
                 const actualHours = actualTotals[key] || 0;
-                
+
                 if (actualHours < est.hours) {
                     const remaining = est.hours - actualHours;
                     incompleteTasks.push({
@@ -4107,17 +4112,23 @@
                     });
                 }
             });
-            
-            // datalistを更新
-            datalist.innerHTML = '';
+
+            // selectを更新
+            select.innerHTML = '<option value="">-- 対応を選択 --</option>';
             incompleteTasks.forEach(task => {
                 const option = document.createElement('option');
                 option.value = task.task;
                 option.setAttribute('data-version', task.version);
                 option.setAttribute('data-process', task.process);
                 option.textContent = task.display;
-                datalist.appendChild(option);
+                select.appendChild(option);
             });
+
+            // 「新規入力」オプションを追加
+            const newOption = document.createElement('option');
+            newOption.value = '__NEW__';
+            newOption.textContent = '新規入力...';
+            select.appendChild(newOption);
         }
         
         // 作業詳細モーダルから編集
@@ -4156,19 +4167,14 @@
             document.getElementById('editActualId').value = id;
             document.getElementById('editActualDate').value = actual.date;
             document.getElementById('editActualVersion').value = actual.version;
+
+            // 既存の実績を編集する場合は、入力欄を表示して値を設定
+            document.getElementById('editActualTaskSelect').style.display = 'none';
+            document.getElementById('editActualTaskSearch').style.display = 'block';
             document.getElementById('editActualTaskSearch').value = actual.task;
+
             document.getElementById('editActualProcess').value = actual.process;
             document.getElementById('editActualHours').value = actual.hours;
-            
-            // 対応名リストを生成
-            const taskDatalist = document.getElementById('editActualTaskList');
-            taskDatalist.innerHTML = '';
-            const uniqueTasks = [...new Set([...estimates.map(e => e.task), ...actuals.map(a => a.task)])];
-            uniqueTasks.sort().forEach(task => {
-                const option = document.createElement('option');
-                option.value = task;
-                taskDatalist.appendChild(option);
-            });
             
             // 担当者選択肢を更新
             const memberSelect = document.getElementById('editActualMember');
@@ -4229,7 +4235,14 @@
             const id = parseFloat(document.getElementById('editActualId').value);
             const date = document.getElementById('editActualDate').value;
             const version = document.getElementById('editActualVersion').value;
-            const task = document.getElementById('editActualTaskSearch').value;
+
+            // selectまたはinputから対応名を取得
+            const taskSelect = document.getElementById('editActualTaskSelect');
+            const taskInput = document.getElementById('editActualTaskSearch');
+            const task = taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__'
+                ? taskSelect.value
+                : taskInput.value;
+
             const process = document.getElementById('editActualProcess').value;
             const member = document.getElementById('editActualMember').value;
             const hours = parseFloat(document.getElementById('editActualHours').value);
@@ -4380,27 +4393,33 @@
             }
         }
 
-        function handleActualTaskInput() {
+        function handleActualTaskSelect() {
+            const select = document.getElementById('editActualTaskSelect');
             const input = document.getElementById('editActualTaskSearch');
-            const datalist = document.getElementById('editActualTaskList');
-            const options = datalist.querySelectorAll('option');
-            
-            // 入力値に一致するoptionを探す
-            for (let option of options) {
-                if (option.value === input.value) {
-                    // 版数と工程を自動入力
-                    const version = option.getAttribute('data-version');
-                    const process = option.getAttribute('data-process');
-                    
-                    if (version) {
-                        document.getElementById('editActualVersion').value = version;
-                    }
-                    if (process) {
-                        document.getElementById('editActualProcess').value = process;
-                    }
-                    break;
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (select.value === '__NEW__') {
+                // 新規入力モード
+                select.style.display = 'none';
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+            } else if (select.value) {
+                // 既存の対応を選択
+                const version = selectedOption.getAttribute('data-version');
+                const process = selectedOption.getAttribute('data-process');
+
+                if (version) {
+                    document.getElementById('editActualVersion').value = version;
+                }
+                if (process) {
+                    document.getElementById('editActualProcess').value = process;
                 }
             }
+        }
+
+        function handleActualTaskInput() {
+            // 新規入力時の処理（将来的に拡張可能）
         }
 
         function handleEstimateTaskInput() {
