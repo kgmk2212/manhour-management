@@ -152,12 +152,12 @@
         }
 
         .estimate-table th {
-            background: #e8f4fd;
+            background: #e8f5e9;
             color: #2c3e50;
             font-size: 12px;
             font-weight: 600;
             padding: 8px;
-            border-bottom: 2px solid #3498db;
+            border-bottom: 2px solid #4caf50;
         }
 
         .estimate-table td {
@@ -922,7 +922,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
-                                <th style="padding: 8px;">担当</th>
+                                <th style="width: 120px; padding: 8px;">担当</th>
                                 <th style="width: 100px; padding: 8px;">時間</th>
                             </tr>
                         </thead>
@@ -3960,8 +3960,14 @@
                     <strong style="font-size: 16px;">合計: ${totalHours.toFixed(1)}時間</strong>
                     <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
                 </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button onclick="addActualFromCalendar('${member}', '${date}'); closeWorkModal();"
+                            style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        + 新しい実績を追加
+                    </button>
+                </div>
             `;
-            
+
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('workModal').style.display = 'block';
         }
