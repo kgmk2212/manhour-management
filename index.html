@@ -4251,12 +4251,41 @@
                 alert('すべての項目を入力してください');
                 return;
             }
-            
-            // データを更新
-            const actualIndex = actuals.findIndex(a => a.id === id);
-            if (actualIndex !== -1) {
-                actuals[actualIndex] = {
-                    ...actuals[actualIndex],
+
+            // 新規登録か既存データの更新かを判定
+            if (id && !isNaN(id)) {
+                // 既存データの更新
+                const actualIndex = actuals.findIndex(a => a.id === id);
+                if (actualIndex !== -1) {
+                    actuals[actualIndex] = {
+                        ...actuals[actualIndex],
+                        date: date,
+                        version: version,
+                        task: task,
+                        process: process,
+                        member: member,
+                        hours: hours
+                    };
+
+                    saveData();
+                    closeEditActualModal();
+
+                    updateMonthOptions();
+                    updateActualMonthOptions();
+                    updateMemberOptions();
+                    updateQuickTaskList();
+                    renderTodayActuals();
+                    renderActualList();
+                    updateReport();
+
+                    alert('実績データを更新しました');
+                } else {
+                    alert('データの更新に失敗しました');
+                }
+            } else {
+                // 新規登録
+                const newActual = {
+                    id: Date.now() + Math.random(),
                     date: date,
                     version: version,
                     task: task,
@@ -4264,10 +4293,12 @@
                     member: member,
                     hours: hours
                 };
-                
+
+                actuals.push(newActual);
+
                 saveData();
                 closeEditActualModal();
-                
+
                 updateMonthOptions();
                 updateActualMonthOptions();
                 updateMemberOptions();
@@ -4275,10 +4306,8 @@
                 renderTodayActuals();
                 renderActualList();
                 updateReport();
-                
-                alert('実績データを更新しました');
-            } else {
-                alert('データの更新に失敗しました');
+
+                alert('実績を登録しました');
             }
         }
 
@@ -4655,8 +4684,31 @@
             }
         }
         
-        window.onclick = handleModalClose;
-        window.ontouchend = handleModalClose;
+        // モーダル外クリック/タップで閉じる
+        window.onclick = function(event) {
+            handleModalClose(event);
+            handleWorkMonthPanelClose(event);
+        };
+        window.ontouchend = function(event) {
+            handleModalClose(event);
+            handleWorkMonthPanelClose(event);
+        };
+
+        // 作業月割り当てパネルの外側クリックで閉じる
+        function handleWorkMonthPanelClose(event) {
+            const panel = document.getElementById('workMonthAssignmentMode');
+            const checkbox = document.getElementById('workMonthSelectionMode');
+
+            if (panel && panel.style.display === 'block') {
+                // パネルの外側をクリックした場合
+                if (!panel.contains(event.target)) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    checkbox.checked = false;
+                    toggleWorkMonthSelectionMode();
+                }
+            }
+        }
 
         function updateReport() {
             const selectedMonth = document.getElementById('reportMonth').value;
