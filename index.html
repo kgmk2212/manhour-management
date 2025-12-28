@@ -4606,15 +4606,33 @@
             const workModal = document.getElementById('workModal');
             const editActualModal = document.getElementById('editActualModal');
             const editEstimateModal = document.getElementById('editEstimateModal');
-            
+            const splitEstimateModal = document.getElementById('splitEstimateModal');
+            const otherWorkModal = document.getElementById('otherWorkModal');
+
             if (event.target === workModal) {
+                event.stopPropagation();
+                event.preventDefault();
                 closeWorkModal();
             }
             if (event.target === editActualModal) {
+                event.stopPropagation();
+                event.preventDefault();
                 closeEditActualModal();
             }
             if (event.target === editEstimateModal) {
+                event.stopPropagation();
+                event.preventDefault();
                 closeEditEstimateModal();
+            }
+            if (event.target === splitEstimateModal) {
+                event.stopPropagation();
+                event.preventDefault();
+                closeSplitEstimateModal();
+            }
+            if (event.target === otherWorkModal) {
+                event.stopPropagation();
+                event.preventDefault();
+                closeOtherWorkModal();
             }
         }
         
