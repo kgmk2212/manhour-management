@@ -582,10 +582,16 @@
             }
 
             /* 見積テーブルのモバイル対応 */
+            .estimate-table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
             .estimate-table {
                 display: table;
                 table-layout: fixed;
                 width: 100%;
+                min-width: 100%;
             }
 
             .estimate-table th,
@@ -613,12 +619,14 @@
                 font-size: 12px;
                 padding: 4px 6px;
                 width: 100%;
+                box-sizing: border-box;
             }
 
             .estimate-table td:nth-child(3) input {
                 font-size: 12px;
                 padding: 4px 6px;
                 width: 100%;
+                box-sizing: border-box;
             }
 
             table {
@@ -952,42 +960,44 @@
                         <input type="text" id="estTask" placeholder="帳票A_X対応">
                     </div>
                     <h4 style="margin-bottom: 10px;">各工程の見積</h4>
-                    <table class="estimate-table" style="width: 100%; margin: 0;">
-                        <thead>
-                            <tr>
-                                <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
-                                <th style="width: 120px; padding: 8px;">担当</th>
-                                <th style="width: 100px; padding: 8px;">時間</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
-                                <td><select id="estUI_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="estUI" placeholder="h" step="0.5" style="margin: 0;"></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                <td><select id="estPG_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="estPG" placeholder="h" step="0.5" style="margin: 0;"></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                <td><select id="estPT_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="estPT" placeholder="h" step="0.5" style="margin: 0;"></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                <td><select id="estIT_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="estIT" placeholder="h" step="0.5" style="margin: 0;"></td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                <td><select id="estST_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="estST" placeholder="h" step="0.5" style="margin: 0;"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="estimate-table-wrapper">
+                        <table class="estimate-table" style="width: 100%; margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
+                                    <th style="width: 120px; padding: 8px;">担当</th>
+                                    <th style="width: 100px; padding: 8px;">時間</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                    <td><select id="estUI_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="estUI" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
+                                    <td><select id="estPG_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="estPG" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
+                                    <td><select id="estPT_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="estPT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
+                                    <td><select id="estIT_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="estIT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
+                                    <td><select id="estST_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="estST" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     
                     <!-- 月分割アシスタント -->
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196f3;">
