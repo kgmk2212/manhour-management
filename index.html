@@ -587,6 +587,16 @@
                 padding: 4px 6px;
             }
 
+            /* 見積登録の担当列をモバイルで短縮 */
+            .estimate-table th:nth-child(2) {
+                width: 60px !important;
+            }
+
+            .estimate-table td:nth-child(2) select {
+                font-size: 12px;
+                padding: 4px;
+            }
+
             table {
                 font-size: 13px;
             }
@@ -1061,10 +1071,13 @@
                 <!-- 作業月割り当てモード（フロート表示） -->
                 <div id="workMonthAssignmentMode" style="display: none; background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%); padding: 18px; border-radius: 8px; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-left: 4px solid #ffc107; max-width: 90vw;">
                     <!-- ドラッグハンドル -->
-                    <div id="dragHandle" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center;">
+                    <div id="dragHandle" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center; z-index: 1;">
                         <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;"></div>
                     </div>
-                    
+
+                    <!-- 閉じるボタン -->
+                    <button onclick="closeWorkMonthAssignmentMode()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); border: 2px solid #856404; font-size: 20px; font-weight: bold; color: #856404; cursor: pointer; padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onmouseover="this.style.background='#856404'; this.style.color='white';" onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.color='#856404';">&times;</button>
+
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 8px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="font-weight: 600; color: #856404;">割り当て先:</label>
@@ -4684,30 +4697,14 @@
             }
         }
         
-        // モーダル外クリック/タップで閉じる
-        window.onclick = function(event) {
-            handleModalClose(event);
-            handleWorkMonthPanelClose(event);
-        };
-        window.ontouchend = function(event) {
-            handleModalClose(event);
-            handleWorkMonthPanelClose(event);
-        };
+        window.onclick = handleModalClose;
+        window.ontouchend = handleModalClose;
 
-        // 作業月割り当てパネルの外側クリックで閉じる
-        function handleWorkMonthPanelClose(event) {
-            const panel = document.getElementById('workMonthAssignmentMode');
+        // 作業月割り当てモードを閉じる
+        function closeWorkMonthAssignmentMode() {
             const checkbox = document.getElementById('workMonthSelectionMode');
-
-            if (panel && panel.style.display === 'block') {
-                // パネルの外側をクリックした場合
-                if (!panel.contains(event.target)) {
-                    event.stopPropagation();
-                    event.preventDefault();
-                    checkbox.checked = false;
-                    toggleWorkMonthSelectionMode();
-                }
-            }
+            checkbox.checked = false;
+            toggleWorkMonthSelectionMode();
         }
 
         function updateReport() {
