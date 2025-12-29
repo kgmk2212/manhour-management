@@ -582,19 +582,43 @@
             }
 
             /* 見積テーブルのモバイル対応 */
+            .estimate-table {
+                display: table;
+                table-layout: fixed;
+                width: 100%;
+            }
+
             .estimate-table th,
             .estimate-table td {
                 padding: 4px 6px;
             }
 
-            /* 見積登録の担当列をモバイルで短縮 */
-            .estimate-table th:nth-child(2) {
-                width: 60px !important;
+            /* 見積登録の各列幅をモバイル用に調整 */
+            .estimate-table th:nth-child(1),
+            .estimate-table td:nth-child(1) {
+                width: 20%;
+            }
+
+            .estimate-table th:nth-child(2),
+            .estimate-table td:nth-child(2) {
+                width: 42%;
+            }
+
+            .estimate-table th:nth-child(3),
+            .estimate-table td:nth-child(3) {
+                width: 38%;
             }
 
             .estimate-table td:nth-child(2) select {
                 font-size: 12px;
-                padding: 4px;
+                padding: 4px 6px;
+                width: 100%;
+            }
+
+            .estimate-table td:nth-child(3) input {
+                font-size: 12px;
+                padding: 4px 6px;
+                width: 100%;
             }
 
             table {
