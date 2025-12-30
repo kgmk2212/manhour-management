@@ -1634,7 +1634,54 @@
             renderActualList();
             renderTodayActuals();
             updateReport();
+
+            // モバイルでタブのスワイプ切り替え機能を追加
+            initTabSwipe();
         });
+
+        // タブのスワイプ切り替え機能を初期化
+        function initTabSwipe() {
+            const content = document.querySelector('.content');
+            if (!content) return;
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+
+            const minSwipeDistance = 50; // 最小スワイプ距離（ピクセル）
+            const maxVerticalDistance = 100; // 縦方向の最大移動距離（これ以上動くとスワイプと判定しない）
+
+            content.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            content.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleSwipe();
+            }, { passive: true });
+
+            function handleSwipe() {
+                const diffX = touchEndX - touchStartX;
+                const diffY = Math.abs(touchEndY - touchStartY);
+
+                // 縦方向の移動が大きい場合はスワイプと判定しない（スクロールと判断）
+                if (diffY > maxVerticalDistance) {
+                    return;
+                }
+
+                // 左スワイプ（次のタブへ）
+                if (diffX < -minSwipeDistance) {
+                    nextTab();
+                }
+                // 右スワイプ（前のタブへ）
+                else if (diffX > minSwipeDistance) {
+                    prevTab();
+                }
+            }
+        }
 
         function loadAutoBackupSetting() {
             const saved = localStorage.getItem('autoBackupEnabled');
@@ -2018,6 +2065,9 @@
             URL.revokeObjectURL(url);
         }
 
+        // タブの順序を定義
+        const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
+
         function showTab(tabName) {
             // 全タブからactiveクラスとテーマクラスを削除
             document.querySelectorAll('.tab').forEach(t => {
@@ -2031,13 +2081,42 @@
                 });
             });
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            // クリックされたタブにactiveクラスを追加
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
+
+            // 対象のタブボタンを見つけてactiveクラスを追加
+            const tabButtons = document.querySelectorAll('.tab');
+            const tabIndex = TAB_ORDER.indexOf(tabName);
+            if (tabIndex !== -1 && tabButtons[tabIndex]) {
+                tabButtons[tabIndex].classList.add('active');
+            }
+
+            // タブコンテンツを表示
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
             // アクティブタブにテーマを適用
             updateThemeElements();
+        }
+
+        // 次のタブに切り替え
+        function nextTab() {
+            const currentIndex = TAB_ORDER.findIndex(tab =>
+                document.getElementById(tab).classList.contains('active')
+            );
+            if (currentIndex !== -1 && currentIndex < TAB_ORDER.length - 1) {
+                showTab(TAB_ORDER[currentIndex + 1]);
+            }
+        }
+
+        // 前のタブに切り替え
+        function prevTab() {
+            const currentIndex = TAB_ORDER.findIndex(tab =>
+                document.getElementById(tab).classList.contains('active')
+            );
+            if (currentIndex > 0) {
+                showTab(TAB_ORDER[currentIndex - 1]);
+            }
         }
 
         function addEstimate() {
