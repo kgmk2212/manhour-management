@@ -2251,8 +2251,8 @@
                 }
             });
 
-            // 月を降順でソート（最新月が先）
-            const sortedMonths = Array.from(months).sort().reverse();
+            // 月を昇順でソート（古い月→新しい月）
+            const sortedMonths = Array.from(months).sort();
 
             // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
@@ -2417,8 +2417,8 @@
             if (hasCurrentMonth) {
                 return currentMonth;
             } else if (options.length > 1) {
-                // 現在月のデータがない場合は、最新月を返す
-                return options[1].value; // options[0]は「全期間」なので、options[1]が最新月
+                // 現在月のデータがない場合は、最新月を返す（昇順なので最後の要素）
+                return options[options.length - 1].value;
             }
             return 'all'; // デフォルトは全期間
         }
