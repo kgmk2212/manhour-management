@@ -3811,13 +3811,15 @@
                 });
             }
 
-            // 対応ごとにグループ化
-            const taskGroups = {};
+            // 版数ごとにグループ化
+            const versionGroups = {};
             filteredEstimates.forEach(e => {
-                const key = `${e.version}|||${e.task}`;
-                if (!taskGroups[key]) {
-                    taskGroups[key] = {
-                        version: e.version,
+                if (!versionGroups[e.version]) {
+                    versionGroups[e.version] = {};
+                }
+                const taskKey = e.task;
+                if (!versionGroups[e.version][taskKey]) {
+                    versionGroups[e.version][taskKey] = {
                         task: e.task,
                         processes: {}
                     };
@@ -3830,52 +3832,69 @@
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
-                taskGroups[key].processes[e.process] = {
+                versionGroups[e.version][taskKey].processes[e.process] = {
                     member: e.member,
                     hours: displayHours,
                     id: e.id
                 };
             });
-            
+
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
-            
-            let html = '<div class="table-wrapper"><table>';
-            html += '<tr><th style="min-width: 120px;">版数</th><th style="min-width: 200px;">対応名</th>';
-            processOrder.forEach(proc => {
-                html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
-            });
-            html += '<th style="min-width: 80px; text-align: center;">合計</th><th style="min-width: 150px;">操作</th></tr>';
-            
-            Object.values(taskGroups).forEach(group => {
-                html += '<tr>';
-                html += `<td style="font-weight: 600;">${group.version}</td>`;
-                html += `<td>${group.task}</td>`;
-                
-                let total = 0;
-                let firstId = null;
+
+            let html = '<div style="margin-bottom: 30px;">';
+
+            // 版数ごとに表示
+            Object.keys(versionGroups).sort().forEach(version => {
+                html += `<div style="margin-bottom: 30px;">`;
+                html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+                html += '<div class="table-wrapper"><table>';
+                html += '<tr><th style="min-width: 200px;">対応名</th>';
                 processOrder.forEach(proc => {
-                    if (group.processes[proc]) {
-                        const p = group.processes[proc];
-                        total += p.hours;
-                        if (!firstId) firstId = p.id;
-                        html += `<td style="text-align: center;">
-                            <div style="font-weight: 600;">${p.hours}h</div>
-                            <div style="font-size: 12px; color: #666;">(${p.member})</div>
-                        </td>`;
-                    } else {
-                        html += `<td style="text-align: center; color: #ccc;">-</td>`;
-                    }
+                    html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
                 });
-                
-                html += `<td style="text-align: center; font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</td>`;
-                html += `<td>
-                    <button class="btn btn-primary btn-small" onclick="editEstimate(${firstId})" style="margin-right: 5px;">編集</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteEstimate(${firstId})">削除</button>
-                </td>`;
-                html += '</tr>';
+                html += '<th style="min-width: 80px; text-align: center;">合計</th><th style="min-width: 150px;">操作</th></tr>';
+
+                Object.values(versionGroups[version]).forEach(group => {
+                    // 対応名を「：」（全角コロン）で分割して2行表示
+                    let taskDisplayHtml = group.task;
+                    if (group.task.includes('：')) {
+                        const parts = group.task.split('：');
+                        const restPart = parts.slice(1).join('：');
+                        taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                    }
+
+                    html += '<tr>';
+                    html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+
+                    let total = 0;
+                    let firstId = null;
+                    processOrder.forEach(proc => {
+                        if (group.processes[proc]) {
+                            const p = group.processes[proc];
+                            total += p.hours;
+                            if (!firstId) firstId = p.id;
+                            html += `<td style="text-align: center;">
+                                <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
+                                <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                            </td>`;
+                        } else {
+                            html += `<td style="text-align: center; color: #ccc;">-</td>`;
+                        }
+                    });
+
+                    html += `<td style="text-align: center; font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</td>`;
+                    html += `<td>
+                        <button class="btn btn-primary btn-small" onclick="editEstimate(${firstId})" style="margin-right: 5px;">編集</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${firstId})">削除</button>
+                    </td>`;
+                    html += '</tr>';
+                });
+
+                html += '</table></div>';
+                html += '</div>';
             });
-            
-            html += '</table></div>';
+
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -6675,7 +6694,14 @@
 
                         tableBody += '<tr>';
                         if (index === 0) {
-                            tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
+                            // 対応名を「：」（全角コロン）で分割して2行表示
+                            let taskDisplayHtml = taskGroup.task;
+                            if (taskGroup.task.includes('：')) {
+                                const parts = taskGroup.task.split('：');
+                                const restPart = parts.slice(1).join('：');
+                                taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                            }
+                            tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                         }
                         tableBody += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
                         tableBody += `<td style="word-break: break-word;">${memberDisplay}</td>`;
@@ -6840,8 +6866,16 @@
                         versionTotalEst += totalEst;
                         versionTotalAct += totalAct;
 
+                        // 対応名を「：」（全角コロン）で分割して2行表示
+                        let taskDisplayHtml = taskGroup.task;
+                        if (taskGroup.task.includes('：')) {
+                            const parts = taskGroup.task.split('：');
+                            const restPart = parts.slice(1).join('：');
+                            taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                        }
+
                         tableBody += '<tr>';
-                        tableBody += `<td style="font-weight: 600;">${taskGroup.task}</td>`;
+                        tableBody += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
 
                         displayProcesses.forEach(proc => {
                             const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
