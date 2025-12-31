@@ -1093,6 +1093,13 @@
                     </div>
                 </div>
 
+                <!-- 担当者別合計表示 -->
+                <div id="estimateMemberSummary" style="background: #f8f9fa; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
+                    <div style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 10px;">担当者別合計</div>
+                    <div id="estimateMemberSummaryContent" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    </div>
+                </div>
+
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="estimateFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
@@ -3360,6 +3367,9 @@
                 const totalManpowerElement = document.getElementById('estimateTotalManpower');
                 if (totalHoursElement) totalHoursElement.textContent = '0h';
                 if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
+                // 担当者別合計を非表示
+                const memberSummaryContainer = document.getElementById('estimateMemberSummary');
+                if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
                 return;
             }
 
@@ -3417,6 +3427,66 @@
                     'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
                 };
                 totalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
+            }
+
+            // 担当者別の合計を集計
+            const memberSummary = {};
+            filteredEstimates.forEach(e => {
+                const est = normalizeEstimate(e);
+                const member = est.member || '未設定';
+
+                if (!memberSummary[member]) {
+                    memberSummary[member] = 0;
+                }
+
+                // 月フィルタが適用されている場合は分割後の工数を使用
+                if (monthFilter === 'all') {
+                    memberSummary[member] += est.hours;
+                } else if (est.monthlyHours[monthFilter]) {
+                    memberSummary[member] += est.monthlyHours[monthFilter];
+                }
+            });
+
+            // 担当者別合計を表示
+            const memberSummaryContainer = document.getElementById('estimateMemberSummary');
+            const memberSummaryContent = document.getElementById('estimateMemberSummaryContent');
+            if (memberSummaryContainer && memberSummaryContent) {
+                const members = Object.keys(memberSummary).sort();
+                if (members.length > 0) {
+                    memberSummaryContainer.style.display = 'block';
+                    // テーマカラーを取得
+                    const themeColors = {
+                        'purple': '#667eea',
+                        'deep-blue': '#1e3c72',
+                        'teal': '#0f766e',
+                        'cyan': '#0891b2',
+                        'ocean': '#0c4a6e',
+                        'sky': '#0369a1',
+                        'indigo': '#4338ca',
+                        'navy': '#1e40af',
+                        'slate': '#334155',
+                        'green': '#047857',
+                        'emerald': '#059669'
+                    };
+                    const borderColor = themeColors[currentThemeColor] || '#667eea';
+
+                    let memberHtml = '';
+                    members.forEach(member => {
+                        const hours = memberSummary[member];
+                        const days = (hours / 8).toFixed(1);
+                        const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
+                        memberHtml += `
+                            <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
+                                <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
+                                <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
+                                <div style="font-size: 11px; color: #999;">${days}人日 / ${months}人月</div>
+                            </div>
+                        `;
+                    });
+                    memberSummaryContent.innerHTML = memberHtml;
+                } else {
+                    memberSummaryContainer.style.display = 'none';
+                }
             }
 
             if (viewType === 'grouped') {
