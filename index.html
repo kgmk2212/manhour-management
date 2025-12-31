@@ -6105,17 +6105,19 @@
                     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
                     filteredEstimates.forEach(e => {
-                        if (!processSummary[e.process]) {
-                            processSummary[e.process] = { estimate: 0, actual: 0 };
+                        const processKey = processOrder.includes(e.process) ? e.process : 'その他';
+                        if (!processSummary[processKey]) {
+                            processSummary[processKey] = { estimate: 0, actual: 0 };
                         }
-                        processSummary[e.process].estimate += e.hours;
+                        processSummary[processKey].estimate += e.hours;
                     });
 
                     filteredActuals.forEach(a => {
-                        if (!processSummary[a.process]) {
-                            processSummary[a.process] = { estimate: 0, actual: 0 };
+                        const processKey = processOrder.includes(a.process) ? a.process : 'その他';
+                        if (!processSummary[processKey]) {
+                            processSummary[processKey] = { estimate: 0, actual: 0 };
                         }
-                        processSummary[a.process].actual += a.hours;
+                        processSummary[processKey].actual += a.hours;
                     });
 
                     html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
@@ -6124,7 +6126,7 @@
 
                     const sortedProcesses = [
                         ...processOrder.filter(p => processSummary[p]),
-                        ...Object.keys(processSummary).filter(p => !processOrder.includes(p))
+                        ...(processSummary['その他'] ? ['その他'] : [])
                     ];
 
                     sortedProcesses.forEach(proc => {
@@ -6257,17 +6259,19 @@
                     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
                     filteredEstimates.forEach(e => {
-                        if (!processSummary[e.process]) {
-                            processSummary[e.process] = { estimate: 0, actual: 0 };
+                        const processKey = processOrder.includes(e.process) ? e.process : 'その他';
+                        if (!processSummary[processKey]) {
+                            processSummary[processKey] = { estimate: 0, actual: 0 };
                         }
-                        processSummary[e.process].estimate += e.hours;
+                        processSummary[processKey].estimate += e.hours;
                     });
 
                     filteredActuals.forEach(a => {
-                        if (!processSummary[a.process]) {
-                            processSummary[a.process] = { estimate: 0, actual: 0 };
+                        const processKey = processOrder.includes(a.process) ? a.process : 'その他';
+                        if (!processSummary[processKey]) {
+                            processSummary[processKey] = { estimate: 0, actual: 0 };
                         }
-                        processSummary[a.process].actual += a.hours;
+                        processSummary[processKey].actual += a.hours;
                     });
 
                     const maxHours = Math.max(...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
@@ -6277,7 +6281,7 @@
 
                     const sortedProcesses = [
                         ...processOrder.filter(p => processSummary[p]),
-                        ...Object.keys(processSummary).filter(p => !processOrder.includes(p))
+                        ...(processSummary['その他'] ? ['その他'] : [])
                     ];
 
                     sortedProcesses.forEach(proc => {
