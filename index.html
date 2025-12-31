@@ -1751,8 +1751,8 @@
             let touchEndY = 0;
             let touchStartTarget = null;
 
-            const minSwipeDistance = 50; // 最小スワイプ距離（ピクセル）
-            const maxVerticalDistance = 100; // 縦方向の最大移動距離（これ以上動くとスワイプと判定しない）
+            const minSwipeDistance = 100; // 最小スワイプ距離（ピクセル）
+            const maxVerticalDistance = 50; // 縦方向の最大移動距離（これ以上動くとスワイプと判定しない）
 
             // スワイプを無効にすべき要素かどうかを判定
             function shouldDisableSwipe(target) {
@@ -1789,9 +1789,15 @@
 
                 const diffX = touchEndX - touchStartX;
                 const diffY = Math.abs(touchEndY - touchStartY);
+                const absDiffX = Math.abs(diffX);
 
                 // 縦方向の移動が大きい場合はスワイプと判定しない（スクロールと判断）
                 if (diffY > maxVerticalDistance) {
+                    return;
+                }
+
+                // 縦方向の移動が横方向の移動より大きい場合はスワイプと判定しない
+                if (diffY > absDiffX) {
                     return;
                 }
 
