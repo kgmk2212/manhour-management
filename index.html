@@ -5767,7 +5767,9 @@
 
                     // 合計行を追加
                     html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
-                    html += `<td colspan="3" style="text-align: right; padding: 12px;">${version} 合計:</td>`;
+                    html += `<td style="padding: 12px; position: sticky; left: 0; background: #f5f5f5; z-index: 1;">合計</td>`;
+                    html += '<td></td>';
+                    html += '<td></td>';
                     html += `<td style="text-align: right;">${versionTotalEst.toFixed(1)}h</td>`;
                     html += `<td style="text-align: right;">${versionTotalAct.toFixed(1)}h</td>`;
                     html += `<td style="text-align: right; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}h</td>`;
@@ -5944,7 +5946,7 @@
 
                     // 合計行を追加
                     html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
-                    html += `<td style="text-align: right; padding: 12px;">${version} 合計:</td>`;
+                    html += `<td style="padding: 12px; position: sticky; left: 0; background: #f5f5f5; z-index: 1;">合計</td>`;
                     // 各工程の列を空にする
                     displayProcesses.forEach(() => {
                         html += '<td></td>';
