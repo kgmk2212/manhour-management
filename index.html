@@ -1479,6 +1479,63 @@
                         </small>
                     </div>
                 </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>📊 レポート分析機能</h3>
+                    <p style="color: #666; margin-bottom: 15px;">レポートに表示する分析機能を選択できます。</p>
+
+                    <div class="form-group">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1: 即効性の高い改善</label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportAccuracyEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>見積精度の%表示（工程別、版数別）</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportAnomalyEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>異常値のハイライト表示（50%超過を強調）</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportWarningTasksEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>要注意タスクのリスト表示</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2: 視覚化の強化</label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportChartEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>棒グラフ表示（版数別、工程別）</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportTrendEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>月別推移の表示</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 3: 高度な分析</label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportMemberAnalysisEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>担当者別の詳細分析</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportInsightsEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <span>インサイト・推奨アクションの表示</span>
+                        </label>
+                    </div>
+
+                    <small style="color: #666; display: block; margin-top: 10px;">
+                        ・設定は自動的に保存されます<br>
+                        ・不要な機能をオフにすることで、シンプルなレポート表示にできます
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -1709,6 +1766,17 @@
     <script>
         let estimates = [];
         let actuals = [];
+
+        // レポート分析機能の設定
+        let reportSettings = {
+            accuracyEnabled: true,
+            anomalyEnabled: true,
+            warningTasksEnabled: true,
+            chartEnabled: true,
+            trendEnabled: true,
+            memberAnalysisEnabled: true,
+            insightsEnabled: true
+        };
         let autoBackupEnabled = false; // 自動バックアップの設定
 
         // テーマ設定
@@ -1724,6 +1792,7 @@
             loadData();
             loadAutoBackupSetting(); // 自動バックアップ設定を読み込み
             loadThemeSettings(); // テーマ設定を読み込み
+            loadReportSettings(); // レポート分析設定を読み込み
             updateMonthOptions();
             updateActualMonthOptions();
             updateMemberOptions();
@@ -1826,6 +1895,32 @@
         function saveAutoBackupSetting() {
             autoBackupEnabled = document.getElementById('autoBackupEnabled').checked;
             localStorage.setItem('autoBackupEnabled', autoBackupEnabled);
+        }
+
+        function loadReportSettings() {
+            const saved = localStorage.getItem('reportSettings');
+            if (saved) {
+                reportSettings = JSON.parse(saved);
+            }
+            // UIに反映
+            document.getElementById('reportAccuracyEnabled').checked = reportSettings.accuracyEnabled;
+            document.getElementById('reportAnomalyEnabled').checked = reportSettings.anomalyEnabled;
+            document.getElementById('reportWarningTasksEnabled').checked = reportSettings.warningTasksEnabled;
+            document.getElementById('reportChartEnabled').checked = reportSettings.chartEnabled;
+            document.getElementById('reportTrendEnabled').checked = reportSettings.trendEnabled;
+            document.getElementById('reportMemberAnalysisEnabled').checked = reportSettings.memberAnalysisEnabled;
+            document.getElementById('reportInsightsEnabled').checked = reportSettings.insightsEnabled;
+        }
+
+        function saveReportSettings() {
+            reportSettings.accuracyEnabled = document.getElementById('reportAccuracyEnabled').checked;
+            reportSettings.anomalyEnabled = document.getElementById('reportAnomalyEnabled').checked;
+            reportSettings.warningTasksEnabled = document.getElementById('reportWarningTasksEnabled').checked;
+            reportSettings.chartEnabled = document.getElementById('reportChartEnabled').checked;
+            reportSettings.trendEnabled = document.getElementById('reportTrendEnabled').checked;
+            reportSettings.memberAnalysisEnabled = document.getElementById('reportMemberAnalysisEnabled').checked;
+            reportSettings.insightsEnabled = document.getElementById('reportInsightsEnabled').checked;
+            localStorage.setItem('reportSettings', JSON.stringify(reportSettings));
         }
 
         function saveData(skipAutoBackup = false) {
