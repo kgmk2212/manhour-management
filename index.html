@@ -1235,7 +1235,7 @@
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                         <select id="reportViewType" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="summary">サマリー</option>
-                            <option value="grouped">グループ</option>
+                            <option value="grouped" selected>グループ</option>
                             <option value="matrix">マトリクス</option>
                         </select>
                     </div>
@@ -1730,8 +1730,13 @@
             updateVersionOptions(); // 版数選択肢を更新
             updateQuickTaskList();
             updateWorkMonthOptions(); // 作業月選択肢を更新
+
+            // 各タブのデフォルト月を設定
+            setDefaultEstimateMonth(); // 見積タブ
+            setDefaultActualMonth(); // 実績タブ
+            setDefaultReportMonth(); // レポートタブ
+
             renderEstimateList();
-            setDefaultActualMonth(); // 前月をデフォルト表示
             renderActualList();
             renderTodayActuals();
             updateReport();
@@ -2217,26 +2222,48 @@
             );
         }
 
-        function setDefaultActualMonth() {
+        // 現在月または最新の登録月を取得する汎用関数
+        function getDefaultMonth(selectElement) {
             // 現在月を計算
             const today = new Date();
             const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
-            const select = document.getElementById('actualMonthFilter');
-            const select2 = document.getElementById('actualMonthFilter2');
-
-            // 現在月のオプションが存在するか確認
-            const options = Array.from(select.options);
+            // selectElementのオプションを確認
+            const options = Array.from(selectElement.options);
             const hasCurrentMonth = options.some(opt => opt.value === currentMonth);
 
             if (hasCurrentMonth) {
-                select.value = currentMonth;
-                if (select2) select2.value = currentMonth;
+                return currentMonth;
             } else if (options.length > 1) {
-                // 現在月のデータがない場合は、最新月を選択
-                select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
-                if (select2) select2.value = options[1].value;
+                // 現在月のデータがない場合は、最新月を返す
+                return options[1].value; // options[0]は「全期間」なので、options[1]が最新月
             }
+            return 'all'; // デフォルトは全期間
+        }
+
+        function setDefaultActualMonth() {
+            const select = document.getElementById('actualMonthFilter');
+            const select2 = document.getElementById('actualMonthFilter2');
+
+            const defaultMonth = getDefaultMonth(select);
+            select.value = defaultMonth;
+            if (select2) select2.value = defaultMonth;
+        }
+
+        function setDefaultReportMonth() {
+            const select = document.getElementById('reportMonth');
+            const select2 = document.getElementById('reportMonth2');
+
+            const defaultMonth = getDefaultMonth(select);
+            select.value = defaultMonth;
+            if (select2) select2.value = defaultMonth;
+        }
+
+        function setDefaultEstimateMonth() {
+            const select = document.getElementById('estimateWorkMonthFilter');
+
+            const defaultMonth = getDefaultMonth(select);
+            select.value = defaultMonth;
         }
 
         function autoBackup() {
