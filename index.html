@@ -3159,7 +3159,14 @@
             const now = new Date();
             return getWorkingDays(now.getFullYear(), now.getMonth() + 1);
         }
-        
+
+        // 実績または見積が「その他付随作業」かどうかを判定
+        function isOtherWork(item) {
+            const hasVersion = item.version && item.version.trim() !== '';
+            const hasTask = item.task && item.task.trim() !== '';
+            return !hasVersion || !hasTask;
+        }
+
         // 数値を整数表示（小数点以下が0の場合）または小数表示
         function formatNumber(num, decimals = 1) {
             const rounded = parseFloat(num.toFixed(decimals));
@@ -5418,7 +5425,15 @@
             // 実績のフィルタリング
             let filteredActuals = actuals;
             if (selectedMonth !== 'all') {
-                filteredActuals = actuals.filter(a => a.date && a.date.startsWith(selectedMonth));
+                // 選択月の実績 + その月の「その他付随作業」を含める
+                filteredActuals = actuals.filter(a => {
+                    // その他付随作業は日付が選択月のものを含める
+                    if (isOtherWork(a)) {
+                        return a.date && a.date.startsWith(selectedMonth);
+                    }
+                    // 通常の作業は日付が選択月のものを含める
+                    return a.date && a.date.startsWith(selectedMonth);
+                });
             }
             
             // 見積のフィルタリング（作業予定月で絞り込み）
@@ -5574,35 +5589,51 @@
             
             // 見積データを追加（フィルタ済み）
             filteredEstimates.forEach(e => {
-                if (!versionGroups[e.version]) {
-                    versionGroups[e.version] = {};
+                // 版数または対応名が未設定の場合は「その他付随作業」として扱う
+                let version, taskKey;
+                if (isOtherWork(e)) {
+                    version = 'その他付随作業';
+                    taskKey = e.task && e.task.trim() !== '' ? e.task : '未分類作業';
+                } else {
+                    version = e.version;
+                    taskKey = e.task;
                 }
-                const taskKey = e.task;
-                if (!versionGroups[e.version][taskKey]) {
-                    versionGroups[e.version][taskKey] = {
-                        task: e.task,
+
+                if (!versionGroups[version]) {
+                    versionGroups[version] = {};
+                }
+                if (!versionGroups[version][taskKey]) {
+                    versionGroups[version][taskKey] = {
+                        task: taskKey,
                         estimates: {},
                         actuals: {}
                     };
                 }
-                if (!versionGroups[e.version][taskKey].estimates[e.process]) {
-                    versionGroups[e.version][taskKey].estimates[e.process] = { members: new Set(), hours: 0 };
+                if (!versionGroups[version][taskKey].estimates[e.process]) {
+                    versionGroups[version][taskKey].estimates[e.process] = { members: new Set(), hours: 0 };
                 }
-                versionGroups[e.version][taskKey].estimates[e.process].members.add(e.member);
-                versionGroups[e.version][taskKey].estimates[e.process].hours += e.hours;
+                versionGroups[version][taskKey].estimates[e.process].members.add(e.member);
+                versionGroups[version][taskKey].estimates[e.process].hours += e.hours;
             });
             
             // 実績データを追加（担当者も集計）
             filteredActuals.forEach(a => {
-                // 版数が未設定の場合は「版数未設定」として扱う
-                const version = (a.version && a.version.trim() !== '') ? a.version : '版数未設定';
+                // 版数または対応名が未設定の場合は「その他付随作業」として扱う
+                let version, taskKey;
+                if (isOtherWork(a)) {
+                    version = 'その他付随作業';
+                    taskKey = a.task && a.task.trim() !== '' ? a.task : '未分類作業';
+                } else {
+                    version = a.version;
+                    taskKey = a.task;
+                }
+
                 if (!versionGroups[version]) {
                     versionGroups[version] = {};
                 }
-                const taskKey = a.task;
                 if (!versionGroups[version][taskKey]) {
                     versionGroups[version][taskKey] = {
-                        task: a.task,
+                        task: taskKey,
                         estimates: {},
                         actuals: {}
                     };
@@ -5704,31 +5735,47 @@
             
             // 見積データを追加（フィルタ済み）
             filteredEstimates.forEach(e => {
-                if (!versionGroups[e.version]) {
-                    versionGroups[e.version] = {};
+                // 版数または対応名が未設定の場合は「その他付随作業」として扱う
+                let version, taskKey;
+                if (isOtherWork(e)) {
+                    version = 'その他付随作業';
+                    taskKey = e.task && e.task.trim() !== '' ? e.task : '未分類作業';
+                } else {
+                    version = e.version;
+                    taskKey = e.task;
                 }
-                const taskKey = e.task;
-                if (!versionGroups[e.version][taskKey]) {
-                    versionGroups[e.version][taskKey] = {
-                        task: e.task,
+
+                if (!versionGroups[version]) {
+                    versionGroups[version] = {};
+                }
+                if (!versionGroups[version][taskKey]) {
+                    versionGroups[version][taskKey] = {
+                        task: taskKey,
                         estimates: {},
                         actuals: {}
                     };
                 }
-                versionGroups[e.version][taskKey].estimates[e.process] = { member: e.member, hours: e.hours };
+                versionGroups[version][taskKey].estimates[e.process] = { member: e.member, hours: e.hours };
             });
             
             // 実績データを追加
             filteredActuals.forEach(a => {
-                // 版数が未設定の場合は「版数未設定」として扱う
-                const version = (a.version && a.version.trim() !== '') ? a.version : '版数未設定';
+                // 版数または対応名が未設定の場合は「その他付随作業」として扱う
+                let version, taskKey;
+                if (isOtherWork(a)) {
+                    version = 'その他付随作業';
+                    taskKey = a.task && a.task.trim() !== '' ? a.task : '未分類作業';
+                } else {
+                    version = a.version;
+                    taskKey = a.task;
+                }
+
                 if (!versionGroups[version]) {
                     versionGroups[version] = {};
                 }
-                const taskKey = a.task;
                 if (!versionGroups[version][taskKey]) {
                     versionGroups[version][taskKey] = {
-                        task: a.task,
+                        task: taskKey,
                         estimates: {},
                         actuals: {}
                     };
