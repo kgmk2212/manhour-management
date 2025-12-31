@@ -1078,26 +1078,56 @@
                 </div>
 
                 <h3>登録済み見積一覧</h3>
-                <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
-                    <div class="form-group" style="max-width: 300px; margin-bottom: 0;">
-                        <label>表示形式</label>
-                        <select id="estimateViewType" onchange="renderEstimateList()">
-                            <option value="grouped">対応別グループ表示</option>
-                            <option value="matrix">対応別マトリクス表示</option>
-                            <option value="list">詳細リスト表示</option>
+
+                <!-- 合計工数表示 -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">合計工数</div>
+                            <div style="font-size: 28px; font-weight: bold;" id="estimateTotalHours">0h</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">人日 / 人月</div>
+                            <div style="font-size: 18px; font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- バージョン1: 横並びコンパクトレイアウト -->
+                <div id="estimateFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="grouped">グループ</option>
+                            <option value="matrix">マトリクス</option>
+                            <option value="list">リスト</option>
                         </select>
                     </div>
-                    <div class="form-group" style="max-width: 300px; margin-bottom: 0;">
-                        <label>作業予定月フィルタ</label>
-                        <select id="estimateWorkMonthFilter" onchange="renderEstimateList()">
-                            <option value="all">全て</option>
-                            <option value="unassigned">未設定のみ</option>
+
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全期間</option>
                         </select>
-                        <div style="margin-top: 8px; display: none;" id="showOutOfFilterOption">
-                            <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal; font-size: 13px;">
-                                <input type="checkbox" id="showOutOfFilterProcesses" onchange="renderEstimateList()" style="width: auto; margin-right: 6px;">
-                                <span>フィルタ外の工程も表示（グレー表示）</span>
-                            </label>
+                    </div>
+                </div>
+
+                <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
+                <div id="estimateFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" style="padding: 6px 14px; border: none; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">グループ</button>
+                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="padding: 6px 14px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">マトリクス</button>
+                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="padding: 6px 14px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">リスト</button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1453,7 +1483,19 @@
 
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>📐 表示形式レイアウト</h3>
-                    <p style="color: #666; margin-bottom: 15px;">実績一覧とレポートの表示形式選択UIのレイアウトを変更できます。</p>
+                    <p style="color: #666; margin-bottom: 15px;">見積一覧、実績一覧、レポートの表示形式選択UIのレイアウトを変更できます。</p>
+
+                    <div class="form-group">
+                        <label>見積一覧のレイアウト</label>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button onclick="toggleFilterLayout('estimate', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('estimate', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            横並び: コンパクトな横並びレイアウト<br>
+                            セグメント: セグメントボタンを使った見やすいレイアウト
+                        </small>
+                    </div>
 
                     <div class="form-group">
                         <label>実績一覧のレイアウト</label>
@@ -1785,6 +1827,7 @@
         let currentTabColor = 'same'; // タブの色（'same'=メインカラーと同じ、'default'=青、または色名）
 
         // レイアウト設定
+        let estimateLayout = 'compact'; // 見積一覧のレイアウト（'compact' or 'segmented'）
         let actualLayout = 'compact'; // 実績一覧のレイアウト（'compact' or 'segmented'）
         let reportLayout = 'compact'; // レポートのレイアウト（'compact' or 'segmented'）
 
@@ -1794,6 +1837,7 @@
             loadThemeSettings(); // テーマ設定を読み込み
             loadReportSettings(); // レポート分析設定を読み込み
             updateMonthOptions();
+            updateEstimateMonthOptions(); // 見積一覧の月選択肢を更新
             updateActualMonthOptions();
             updateMemberOptions();
             updateVersionOptions(); // 版数選択肢を更新
@@ -1933,6 +1977,7 @@
                     themePattern: currentThemePattern,
                     themeTabColor: currentTabColor,
                     autoBackup: autoBackupEnabled,
+                    estimateLayout: estimateLayout,
                     actualLayout: actualLayout,
                     reportLayout: reportLayout
                 }
@@ -2171,6 +2216,7 @@
                 if (settings.themePattern) currentThemePattern = settings.themePattern;
                 if (settings.themeTabColor) currentTabColor = settings.themeTabColor;
                 if (settings.autoBackup !== undefined) autoBackupEnabled = settings.autoBackup;
+                if (settings.estimateLayout) estimateLayout = settings.estimateLayout;
                 if (settings.actualLayout) actualLayout = settings.actualLayout;
                 if (settings.reportLayout) reportLayout = settings.reportLayout;
             } else {
@@ -2257,6 +2303,56 @@
                 currentValue,
                 8, // 最大8個までセグメントボタン表示
                 handleReportMonthChange
+            );
+        }
+
+        function updateEstimateMonthOptions() {
+            const select = document.getElementById('estimateMonthFilter');
+            const months = new Set();
+
+            // 見積データから作業予定月を抽出
+            estimates.forEach(e => {
+                const est = normalizeEstimate(e);
+                est.workMonths.forEach(month => {
+                    if (month && month !== 'unassigned') {
+                        months.add(month);
+                    }
+                });
+            });
+
+            // 月を降順でソート（最新が上）
+            const sortedMonths = Array.from(months).sort().reverse();
+
+            // 選択肢を生成
+            select.innerHTML = '<option value="all">全期間</option>';
+
+            sortedMonths.forEach(month => {
+                const [year, monthNum] = month.split('-');
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = `${year}年${parseInt(monthNum)}月`;
+                select.appendChild(option);
+            });
+
+            // セグメントボタン版を生成
+            const items = [
+                { value: 'all', label: '全期間' },
+                ...sortedMonths.slice().reverse().map(month => {
+                    const [year, monthNum] = month.split('-');
+                    return {
+                        value: month,
+                        label: `${year}/${parseInt(monthNum)}`
+                    };
+                })
+            ];
+            const currentValue = select.value || 'all';
+            createSegmentButtons(
+                'estimateMonthButtons2',
+                'estimateMonthFilter',
+                items,
+                currentValue,
+                8, // 最大8個までセグメントボタン表示
+                handleEstimateMonthChange
             );
         }
 
@@ -3241,11 +3337,50 @@
         function renderEstimateList() {
             const container = document.getElementById('estimateList');
             const viewType = document.getElementById('estimateViewType').value;
-            
+            const monthFilter = document.getElementById('estimateMonthFilter').value;
+
             if (estimates.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
+                // 合計を0にリセット
+                document.getElementById('estimateTotalHours').textContent = '0h';
+                document.getElementById('estimateTotalManpower').textContent = '0人日 / 0人月';
                 return;
             }
+
+            // 月フィルタを適用
+            let filteredEstimates = estimates;
+            if (monthFilter !== 'all') {
+                filteredEstimates = estimates.filter(e => {
+                    const est = normalizeEstimate(e);
+                    return est.workMonths.includes(monthFilter);
+                });
+            }
+
+            // 合計工数を計算
+            let totalHours = 0;
+            if (monthFilter === 'all') {
+                totalHours = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
+            } else {
+                filteredEstimates.forEach(e => {
+                    const est = normalizeEstimate(e);
+                    if (est.monthlyHours[monthFilter]) {
+                        totalHours += est.monthlyHours[monthFilter];
+                    }
+                });
+            }
+
+            // 人日・人月を計算
+            let workingDaysPerMonth = 20; // デフォルト
+            if (monthFilter !== 'all') {
+                const [year, month] = monthFilter.split('-');
+                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+            }
+            const totalManDays = (totalHours / 8).toFixed(1);
+            const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
+
+            // 合計を表示
+            document.getElementById('estimateTotalHours').textContent = totalHours.toFixed(1) + 'h';
+            document.getElementById('estimateTotalManpower').textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
             if (viewType === 'grouped') {
                 renderEstimateGrouped();
@@ -5152,6 +5287,17 @@
         function updateLayoutToggleButtons() {
             const themeColor = getThemeColor();
 
+            // 見積一覧のボタン
+            const estimateButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'estimate\'"]');
+            if (estimateButtons.length >= 2) {
+                const estimateCompact = document.getElementById('estimateFiltersCompact');
+                const isCompactActive = estimateCompact && estimateCompact.style.display !== 'none';
+                estimateButtons[0].style.background = isCompactActive ? themeColor : 'white';
+                estimateButtons[0].style.color = isCompactActive ? 'white' : '#333';
+                estimateButtons[1].style.background = !isCompactActive ? themeColor : 'white';
+                estimateButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+            }
+
             // 実績一覧のボタン
             const actualButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'actual\'"]');
             if (actualButtons.length >= 2) {
@@ -5178,6 +5324,29 @@
         // セグメントボタンの色を更新
         function updateSegmentedButtons() {
             const themeColor = getThemeColor();
+
+            // 見積一覧のセグメントボタン（表示形式）
+            const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
+            const btnEstimateMatrix = document.getElementById('btnEstimateMatrix');
+            const btnEstimateList = document.getElementById('btnEstimateList');
+            if (btnEstimateGrouped && btnEstimateMatrix && btnEstimateList) {
+                const estimateViewType = document.getElementById('estimateViewType').value;
+                btnEstimateGrouped.style.background = estimateViewType === 'grouped' ? themeColor : 'white';
+                btnEstimateGrouped.style.color = estimateViewType === 'grouped' ? 'white' : '#333';
+                btnEstimateMatrix.style.background = estimateViewType === 'matrix' ? themeColor : 'white';
+                btnEstimateMatrix.style.color = estimateViewType === 'matrix' ? 'white' : '#333';
+                btnEstimateList.style.background = estimateViewType === 'list' ? themeColor : 'white';
+                btnEstimateList.style.color = estimateViewType === 'list' ? 'white' : '#333';
+            }
+
+            // 見積一覧のセグメントボタン（表示月）
+            const estimateMonthButtons = document.getElementById('estimateMonthButtons2');
+            if (estimateMonthButtons) {
+                const estimateMonthFilter = document.getElementById('estimateMonthFilter');
+                if (estimateMonthFilter) {
+                    updateSegmentButtonSelection('estimateMonthButtons2', estimateMonthFilter.value);
+                }
+            }
 
             // 実績一覧のセグメントボタン（表示形式）
             const btnActualMatrix = document.getElementById('btnActualMatrix');
@@ -5359,6 +5528,13 @@
             renderActualList();
         }
 
+        // 見積一覧の月選択ハンドラー
+        function handleEstimateMonthChange(value, containerId) {
+            document.getElementById('estimateMonthFilter').value = value;
+            updateSegmentButtonSelection(containerId, value);
+            renderEstimateList();
+        }
+
         // レポートの月選択ハンドラー
         function handleReportMonthChange(value, containerId) {
             document.getElementById('reportMonth').value = value;
@@ -5383,6 +5559,25 @@
                 'emerald': '#059669'
             };
             return themeColors[currentThemeColor] || '#667eea';
+        }
+
+        // セグメントボタン用の関数（見積一覧）
+        function setEstimateViewType(type) {
+            document.getElementById('estimateViewType').value = type;
+            // ボタンのスタイルを更新
+            const themeColor = getThemeColor();
+            const btnGrouped = document.getElementById('btnEstimateGrouped');
+            const btnMatrix = document.getElementById('btnEstimateMatrix');
+            const btnList = document.getElementById('btnEstimateList');
+
+            btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
+            btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
+            btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
+            btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+            btnList.style.background = type === 'list' ? themeColor : 'white';
+            btnList.style.color = type === 'list' ? 'white' : '#333';
+
+            renderEstimateList();
         }
 
         // セグメントボタン用の関数（実績一覧）
@@ -5425,6 +5620,17 @@
 
         // レイアウト設定を適用
         function applyLayoutSettings() {
+            // 見積一覧のレイアウトを適用
+            const estimateCompact = document.getElementById('estimateFiltersCompact');
+            const estimateSegmented = document.getElementById('estimateFiltersSegmented');
+            if (estimateLayout === 'compact') {
+                if (estimateCompact) estimateCompact.style.display = 'flex';
+                if (estimateSegmented) estimateSegmented.style.display = 'none';
+            } else {
+                if (estimateCompact) estimateCompact.style.display = 'none';
+                if (estimateSegmented) estimateSegmented.style.display = 'block';
+            }
+
             // 実績一覧のレイアウトを適用
             const actualCompact = document.getElementById('actualFiltersCompact');
             const actualSegmented = document.getElementById('actualFiltersSegmented');
@@ -5455,7 +5661,37 @@
         function toggleFilterLayout(page, version) {
             const themeColor = getThemeColor();
 
-            if (page === 'actual') {
+            if (page === 'estimate') {
+                const compact = document.getElementById('estimateFiltersCompact');
+                const segmented = document.getElementById('estimateFiltersSegmented');
+
+                // 設定タブのボタンを更新
+                const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'estimate\'"]');
+                const btnCompact = settingsButtons[0];
+                const btnSegmented = settingsButtons[1];
+
+                if (version === 'compact') {
+                    compact.style.display = 'flex';
+                    segmented.style.display = 'none';
+                    btnCompact.style.background = themeColor;
+                    btnCompact.style.color = 'white';
+                    btnSegmented.style.background = 'white';
+                    btnSegmented.style.color = '#333';
+                    estimateLayout = 'compact';
+                    renderEstimateList();
+                } else {
+                    const viewType = document.getElementById('estimateViewType').value;
+                    setEstimateViewType(viewType);
+                    compact.style.display = 'none';
+                    segmented.style.display = 'block';
+                    btnCompact.style.background = 'white';
+                    btnCompact.style.color = '#333';
+                    btnSegmented.style.background = themeColor;
+                    btnSegmented.style.color = 'white';
+                    estimateLayout = 'segmented';
+                }
+                saveData(true);
+            } else if (page === 'actual') {
                 const compact = document.getElementById('actualFiltersCompact');
                 const segmented = document.getElementById('actualFiltersSegmented');
 
