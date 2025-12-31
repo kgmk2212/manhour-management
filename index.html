@@ -3451,8 +3451,22 @@
             const memberSummaryContainer = document.getElementById('estimateMemberSummary');
             const memberSummaryContent = document.getElementById('estimateMemberSummaryContent');
             if (memberSummaryContainer && memberSummaryContent) {
-                const members = Object.keys(memberSummary).sort();
-                if (members.length > 0) {
+                // memberOrderの順序に従ってソート
+                const memberSet = new Set(Object.keys(memberSummary));
+                let sortedMembers = [];
+                const memberOrderElement = document.getElementById('memberOrder');
+                const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
+
+                if (memberOrderInput) {
+                    const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                    const orderedMembers = orderList.filter(m => memberSet.has(m));
+                    const unorderedMembers = Array.from(memberSet).filter(m => !orderedMembers.includes(m)).sort();
+                    sortedMembers = [...orderedMembers, ...unorderedMembers];
+                } else {
+                    sortedMembers = Array.from(memberSet).sort();
+                }
+
+                if (sortedMembers.length > 0) {
                     memberSummaryContainer.style.display = 'block';
                     // テーマカラーを取得
                     const themeColors = {
@@ -3471,7 +3485,7 @@
                     const borderColor = themeColors[currentThemeColor] || '#667eea';
 
                     let memberHtml = '';
-                    members.forEach(member => {
+                    sortedMembers.forEach(member => {
                         const hours = memberSummary[member];
                         const days = (hours / 8).toFixed(1);
                         const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
