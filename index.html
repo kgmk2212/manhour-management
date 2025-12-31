@@ -2308,6 +2308,8 @@
 
         function updateEstimateMonthOptions() {
             const select = document.getElementById('estimateMonthFilter');
+            if (!select) return;
+
             const months = new Set();
 
             // 見積データから作業予定月を抽出
@@ -3336,14 +3338,23 @@
 
         function renderEstimateList() {
             const container = document.getElementById('estimateList');
-            const viewType = document.getElementById('estimateViewType').value;
-            const monthFilter = document.getElementById('estimateMonthFilter').value;
+            if (!container) return;
+
+            const viewTypeElement = document.getElementById('estimateViewType');
+            const monthFilterElement = document.getElementById('estimateMonthFilter');
+
+            if (!viewTypeElement || !monthFilterElement) return;
+
+            const viewType = viewTypeElement.value;
+            const monthFilter = monthFilterElement.value;
 
             if (estimates.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
                 // 合計を0にリセット
-                document.getElementById('estimateTotalHours').textContent = '0h';
-                document.getElementById('estimateTotalManpower').textContent = '0人日 / 0人月';
+                const totalHoursElement = document.getElementById('estimateTotalHours');
+                const totalManpowerElement = document.getElementById('estimateTotalManpower');
+                if (totalHoursElement) totalHoursElement.textContent = '0h';
+                if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
                 return;
             }
 
@@ -3379,8 +3390,10 @@
             const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
 
             // 合計を表示
-            document.getElementById('estimateTotalHours').textContent = totalHours.toFixed(1) + 'h';
-            document.getElementById('estimateTotalManpower').textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
+            const totalHoursElement = document.getElementById('estimateTotalHours');
+            const totalManpowerElement = document.getElementById('estimateTotalManpower');
+            if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
+            if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
             if (viewType === 'grouped') {
                 renderEstimateGrouped();
@@ -5530,7 +5543,10 @@
 
         // 見積一覧の月選択ハンドラー
         function handleEstimateMonthChange(value, containerId) {
-            document.getElementById('estimateMonthFilter').value = value;
+            const filterElement = document.getElementById('estimateMonthFilter');
+            if (filterElement) {
+                filterElement.value = value;
+            }
             updateSegmentButtonSelection(containerId, value);
             renderEstimateList();
         }
@@ -5563,19 +5579,29 @@
 
         // セグメントボタン用の関数（見積一覧）
         function setEstimateViewType(type) {
-            document.getElementById('estimateViewType').value = type;
+            const viewTypeElement = document.getElementById('estimateViewType');
+            if (viewTypeElement) {
+                viewTypeElement.value = type;
+            }
+
             // ボタンのスタイルを更新
             const themeColor = getThemeColor();
             const btnGrouped = document.getElementById('btnEstimateGrouped');
             const btnMatrix = document.getElementById('btnEstimateMatrix');
             const btnList = document.getElementById('btnEstimateList');
 
-            btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
-            btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-            btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-            btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-            btnList.style.background = type === 'list' ? themeColor : 'white';
-            btnList.style.color = type === 'list' ? 'white' : '#333';
+            if (btnGrouped) {
+                btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
+                btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
+            }
+            if (btnMatrix) {
+                btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
+                btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+            }
+            if (btnList) {
+                btnList.style.background = type === 'list' ? themeColor : 'white';
+                btnList.style.color = type === 'list' ? 'white' : '#333';
+            }
 
             renderEstimateList();
         }
