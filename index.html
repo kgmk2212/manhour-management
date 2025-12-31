@@ -1648,13 +1648,30 @@
             let touchStartY = 0;
             let touchEndX = 0;
             let touchEndY = 0;
+            let touchStartTarget = null;
 
             const minSwipeDistance = 50; // 最小スワイプ距離（ピクセル）
             const maxVerticalDistance = 100; // 縦方向の最大移動距離（これ以上動くとスワイプと判定しない）
 
+            // スワイプを無効にすべき要素かどうかを判定
+            function shouldDisableSwipe(target) {
+                if (!target) return false;
+
+                // 入力要素系でのスワイプは無効
+                const tagName = target.tagName;
+                if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+                    return true;
+                }
+
+                // 特定のクラスやその親要素でのスワイプは無効
+                const element = target.closest('.table-wrapper, .estimate-table-wrapper, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
+                return element !== null;
+            }
+
             content.addEventListener('touchstart', function(e) {
                 touchStartX = e.changedTouches[0].screenX;
                 touchStartY = e.changedTouches[0].screenY;
+                touchStartTarget = e.target;
             }, { passive: true });
 
             content.addEventListener('touchend', function(e) {
@@ -1664,6 +1681,11 @@
             }, { passive: true });
 
             function handleSwipe() {
+                // スワイプを無効にすべき要素でタッチが開始された場合は処理しない
+                if (shouldDisableSwipe(touchStartTarget)) {
+                    return;
+                }
+
                 const diffX = touchEndX - touchStartX;
                 const diffY = Math.abs(touchEndY - touchStartY);
 
