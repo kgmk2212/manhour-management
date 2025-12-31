@@ -2141,7 +2141,7 @@
             // セグメントボタン版を生成（レポートセグメントレイアウト用）
             const items = [
                 { value: 'all', label: '全期間' },
-                ...sortedMonths.slice().reverse().map(month => {
+                ...sortedMonths.slice().map(month => {
                     const [year, monthNum] = month.split('-');
                     return {
                         value: month,
@@ -3256,13 +3256,10 @@
                     isOutOfFilter: isOutOfFilter
                 });
             });
-            
-            // 人月計算は月20日固定
-            const workingDaysPerMonth = 20;
-            
+
             let html = '<div style="margin-bottom: 30px;">';
             html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-                <strong>換算基準:</strong> 1人日 = 8h、1人月 = 20人日（版数単位のため固定値）
+                <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${selectedMonth === 'all' ? '全期間はデフォルト20日' : '実働日数ベース'}）
             </div>`;
             
             // 版数ごとに表示
@@ -5520,12 +5517,17 @@
             const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
             const diff = totalAct - totalEst;
             const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
-            
-            // 人日と人月の計算
+
+            // 人日と人月の計算（実働日数ベース）
+            let workingDaysPerMonth = 20; // デフォルト
+            if (selectedMonth !== 'all') {
+                const [year, month] = selectedMonth.split('-');
+                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+            }
             const estManDays = (totalEst / 8).toFixed(1);
-            const estManMonths = (totalEst / 160).toFixed(2);
+            const estManMonths = (totalEst / 8 / workingDaysPerMonth).toFixed(2);
             const actManDays = (totalAct / 8).toFixed(1);
-            const actManMonths = (totalAct / 160).toFixed(2);
+            const actManMonths = (totalAct / 8 / workingDaysPerMonth).toFixed(2);
 
             document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
             document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
@@ -5551,7 +5553,15 @@
 
         function renderReportGrouped(filteredActuals, filteredEstimates) {
             const container = document.getElementById('reportDetailView');
-            
+
+            // 選択月の実働日数を取得
+            const selectedMonth = document.getElementById('reportMonth').value;
+            let workingDaysPerMonth = 20; // デフォルト
+            if (selectedMonth !== 'all') {
+                const [year, month] = selectedMonth.split('-');
+                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+            }
+
             // 版数ごとにグループ化
             const versionGroups = {};
             
@@ -6072,9 +6082,12 @@
             const selectedEstimates = estimates.filter(e => selectedEstimateIds.has(e.id));
             const totalHours = selectedEstimates.reduce((sum, e) => sum + e.hours, 0);
             const days = totalHours / 8;
-            const months = days / 20;
-            
-            document.getElementById('selectedWorkHours').textContent = 
+
+            // 現在の月の実働日数を取得（デフォルト）
+            const workingDaysPerMonth = getCurrentMonthWorkingDays();
+            const months = days / workingDaysPerMonth;
+
+            document.getElementById('selectedWorkHours').textContent =
                 `選択中: ${totalHours.toFixed(1)}h (${days.toFixed(1)}人日 / ${months.toFixed(2)}人月)`;
         }
 
