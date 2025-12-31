@@ -5682,6 +5682,9 @@
             document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
             document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
 
+            // レポート詳細ビューをクリア
+            document.getElementById('reportDetailView').innerHTML = '';
+
             // 分析機能の表示
             renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth);
 
@@ -5690,9 +5693,8 @@
                 renderReportGrouped(filteredActuals, filteredEstimates);
             } else if (viewType === 'matrix') {
                 renderReportMatrix(filteredActuals, filteredEstimates);
-            } else {
-                document.getElementById('reportDetailView').innerHTML = '';
             }
+            // viewTypeがnoneの場合は何もしない（分析パネルは保持される）
 
             renderMemberReport(filteredActuals, filteredEstimates);
             renderVersionReport(filteredActuals, filteredEstimates);
@@ -6139,7 +6141,7 @@
                 html += '</div>';
             }
 
-            container.innerHTML = html + container.innerHTML;
+            container.innerHTML += html;
         }
 
         function renderReportGrouped(filteredActuals, filteredEstimates) {
@@ -6216,7 +6218,7 @@
             
             // データがない場合
             if (Object.keys(versionGroups).length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
+                container.innerHTML += '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
                 return;
             }
             
@@ -6322,9 +6324,9 @@
                     html += '</div>';
                 }
             });
-            
+
             html += '</div>';
-            container.innerHTML = html;
+            container.innerHTML += html;
         }
 
         function renderReportMatrix(filteredActuals, filteredEstimates) {
@@ -6388,7 +6390,7 @@
             
             // データがない場合
             if (Object.keys(versionGroups).length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
+                container.innerHTML += '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
                 return;
             }
             
@@ -6504,9 +6506,9 @@
                     html += '</div>';
                 }
             });
-            
+
             html += '</div>';
-            container.innerHTML = html;
+            container.innerHTML += html;
         }
 
         function renderMemberReport(filteredActuals, filteredEstimates) {
