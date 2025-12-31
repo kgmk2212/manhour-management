@@ -5594,22 +5594,24 @@
             
             // 実績データを追加（担当者も集計）
             filteredActuals.forEach(a => {
-                if (!versionGroups[a.version]) {
-                    versionGroups[a.version] = {};
+                // 版数が未設定の場合は「版数未設定」として扱う
+                const version = (a.version && a.version.trim() !== '') ? a.version : '版数未設定';
+                if (!versionGroups[version]) {
+                    versionGroups[version] = {};
                 }
                 const taskKey = a.task;
-                if (!versionGroups[a.version][taskKey]) {
-                    versionGroups[a.version][taskKey] = {
+                if (!versionGroups[version][taskKey]) {
+                    versionGroups[version][taskKey] = {
                         task: a.task,
                         estimates: {},
                         actuals: {}
                     };
                 }
-                if (!versionGroups[a.version][taskKey].actuals[a.process]) {
-                    versionGroups[a.version][taskKey].actuals[a.process] = { members: new Set(), hours: 0 };
+                if (!versionGroups[version][taskKey].actuals[a.process]) {
+                    versionGroups[version][taskKey].actuals[a.process] = { members: new Set(), hours: 0 };
                 }
-                versionGroups[a.version][taskKey].actuals[a.process].members.add(a.member);
-                versionGroups[a.version][taskKey].actuals[a.process].hours += a.hours;
+                versionGroups[version][taskKey].actuals[a.process].members.add(a.member);
+                versionGroups[version][taskKey].actuals[a.process].hours += a.hours;
             });
             
             // データがない場合
@@ -5623,11 +5625,9 @@
             
             // 版数ごとに表示
             Object.keys(versionGroups).sort().forEach(version => {
-                html += `<div style="margin-bottom: 30px;">`;
-                html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-                html += '<div class="table-wrapper"><table>';
-                html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
-                
+                // 先にテーブル本体を生成して、データがあるかチェック
+                let tableBody = '';
+
                 Object.values(versionGroups[version]).forEach(taskGroup => {
                     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
                     const allProcesses = new Set([...Object.keys(taskGroup.estimates), ...Object.keys(taskGroup.actuals)]);
@@ -5651,7 +5651,7 @@
                         const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
                         const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                         const diff = act.hours - est.hours;
-                        
+
                         // 実績ベースで担当者を表示（実績がなければ見積）
                         let memberDisplay = '-';
                         if (act.members.size > 0) {
@@ -5659,29 +5659,37 @@
                         } else if (est.members.size > 0) {
                             memberDisplay = Array.from(est.members).join(',');
                         }
-                        
-                        html += '<tr>';
+
+                        tableBody += '<tr>';
                         if (index === 0) {
-                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
+                            tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskGroup.task}</td>`;
                         }
-                        html += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
-                        html += `<td style="word-break: break-word;">${memberDisplay}</td>`;
-                        html += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
-                        html += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
-                        html += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
+                        tableBody += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
+                        tableBody += `<td style="word-break: break-word;">${memberDisplay}</td>`;
+                        tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
+                        tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
+                        tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
                         if (index === 0) {
-                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
+                            tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
                                 <div style="font-weight: 600;">実績: ${totalAct.toFixed(1)}h</div>
                                 <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">差異: ${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}h</div>
                             </td>`;
                         }
-                        html += '</tr>';
+                        tableBody += '</tr>';
                     });
                 });
-                
-                html += '</table></div>';
-                html += '</div>';
+
+                // テーブル本体にデータがある場合のみ表示
+                if (tableBody) {
+                    html += `<div style="margin-bottom: 30px;">`;
+                    html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+                    html += '<div class="table-wrapper"><table>';
+                    html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
+                    html += tableBody;
+                    html += '</table></div>';
+                    html += '</div>';
+                }
             });
             
             html += '</div>';
@@ -5712,21 +5720,23 @@
             
             // 実績データを追加
             filteredActuals.forEach(a => {
-                if (!versionGroups[a.version]) {
-                    versionGroups[a.version] = {};
+                // 版数が未設定の場合は「版数未設定」として扱う
+                const version = (a.version && a.version.trim() !== '') ? a.version : '版数未設定';
+                if (!versionGroups[version]) {
+                    versionGroups[version] = {};
                 }
                 const taskKey = a.task;
-                if (!versionGroups[a.version][taskKey]) {
-                    versionGroups[a.version][taskKey] = {
+                if (!versionGroups[version][taskKey]) {
+                    versionGroups[version][taskKey] = {
                         task: a.task,
                         estimates: {},
                         actuals: {}
                     };
                 }
-                if (!versionGroups[a.version][taskKey].actuals[a.process]) {
-                    versionGroups[a.version][taskKey].actuals[a.process] = { member: a.member, hours: 0 };
+                if (!versionGroups[version][taskKey].actuals[a.process]) {
+                    versionGroups[version][taskKey].actuals[a.process] = { member: a.member, hours: 0 };
                 }
-                versionGroups[a.version][taskKey].actuals[a.process].hours += a.hours;
+                versionGroups[version][taskKey].actuals[a.process].hours += a.hours;
             });
             
             // データがない場合
@@ -5742,51 +5752,65 @@
             
             // 版数ごとに表示
             Object.keys(versionGroups).sort().forEach(version => {
-                html += `<div style="margin-bottom: 30px;">`;
-                html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-                html += '<div class="table-wrapper"><table>';
-                html += '<tr><th style="min-width: 200px;">対応名</th>';
-                processOrder.forEach(proc => {
-                    html += `<th style="min-width: 120px; text-align: center;">${proc}<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th>`;
-                });
-                html += '<th style="min-width: 100px; text-align: center;">合計<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th></tr>';
-                
+                // 先にテーブル本体を生成して、データがあるかチェック
+                let tableBody = '';
+
                 Object.values(versionGroups[version]).forEach(taskGroup => {
-                    html += '<tr>';
-                    html += `<td style="font-weight: 600;">${taskGroup.task}</td>`;
-                    
                     let totalEst = 0;
                     let totalAct = 0;
-                    
+
+                    // 先に合計を計算してデータの有無を確認
                     processOrder.forEach(proc => {
                         const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
                         const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
-                        
                         totalEst += est.hours;
                         totalAct += act.hours;
-                        
-                        if (est.hours > 0 || act.hours > 0) {
-                            const diff = act.hours - est.hours;
-                            html += `<td style="text-align: center;">
-                                <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                <div style="font-size: 11px; color: #666;">(${est.member !== '-' ? est.member : act.member})</div>
-                                <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
-                            </td>`;
-                        } else {
-                            html += `<td style="text-align: center; color: #ccc;">-</td>`;
-                        }
                     });
-                    
-                    const totalDiff = totalAct - totalEst;
-                    html += `<td style="text-align: center;">
-                        <div style="font-weight: 700;">${totalEst.toFixed(1)} / ${totalAct.toFixed(1)}</div>
-                        <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
-                    </td>`;
-                    html += '</tr>';
+
+                    // 見積または実績のいずれかにデータがある場合のみ行を追加
+                    if (totalEst > 0 || totalAct > 0) {
+                        tableBody += '<tr>';
+                        tableBody += `<td style="font-weight: 600;">${taskGroup.task}</td>`;
+
+                        processOrder.forEach(proc => {
+                            const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
+                            const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
+
+                            if (est.hours > 0 || act.hours > 0) {
+                                const diff = act.hours - est.hours;
+                                tableBody += `<td style="text-align: center;">
+                                    <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                                    <div style="font-size: 11px; color: #666;">(${est.member !== '-' ? est.member : act.member})</div>
+                                    <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                </td>`;
+                            } else {
+                                tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
+                            }
+                        });
+
+                        const totalDiff = totalAct - totalEst;
+                        tableBody += `<td style="text-align: center;">
+                            <div style="font-weight: 700;">${totalEst.toFixed(1)} / ${totalAct.toFixed(1)}</div>
+                            <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                        </td>`;
+                        tableBody += '</tr>';
+                    }
                 });
-                
-                html += '</table></div>';
-                html += '</div>';
+
+                // テーブル本体にデータがある場合のみ表示
+                if (tableBody) {
+                    html += `<div style="margin-bottom: 30px;">`;
+                    html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+                    html += '<div class="table-wrapper"><table>';
+                    html += '<tr><th style="min-width: 200px;">対応名</th>';
+                    processOrder.forEach(proc => {
+                        html += `<th style="min-width: 120px; text-align: center;">${proc}<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th>`;
+                    });
+                    html += '<th style="min-width: 100px; text-align: center;">合計<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th></tr>';
+                    html += tableBody;
+                    html += '</table></div>';
+                    html += '</div>';
+                }
             });
             
             html += '</div>';
