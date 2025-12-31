@@ -1199,8 +1199,8 @@
                             </select>
                         </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 11px; font-weight: 500; color: #666;">表示形式</label>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
                                 <button onclick="setActualViewType('matrix')" id="btnActualMatrix" style="padding: 4px 12px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">カレンダー</button>
                                 <button onclick="setActualViewType('list')" id="btnActualList" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">リスト</button>
@@ -1256,8 +1256,8 @@
                                 <option value="all">全期間</option>
                             </select>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 11px; font-weight: 500; color: #666;">表示形式</label>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
                                 <button onclick="setReportViewType('summary')" id="btnReportSummary" style="padding: 4px 10px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">サマリー</button>
                                 <button onclick="setReportViewType('grouped')" id="btnReportGrouped" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">グループ</button>
@@ -5009,12 +5009,14 @@
                     btnCompact.style.color = 'white';
                     btnSegmented.style.background = 'white';
                     btnSegmented.style.color = '#333';
+                    // 集計を更新
+                    renderActualList();
                 } else {
                     // コンパクト→セグメントへ切り替え時、値を同期
                     document.getElementById('actualViewMode2').value = document.getElementById('actualViewMode').value;
                     document.getElementById('actualMemberSelect2').value = document.getElementById('actualMemberSelect').value;
                     document.getElementById('actualMonthFilter2').value = document.getElementById('actualMonthFilter').value;
-                    // セグメントボタンの状態を同期
+                    // セグメントボタンの状態を同期（setActualViewType内でrenderActualListが呼ばれる）
                     const viewType = document.getElementById('actualViewType').value;
                     setActualViewType(viewType);
                     compact.style.display = 'none';
@@ -5040,10 +5042,12 @@
                     btnCompact.style.color = 'white';
                     btnSegmented.style.background = 'white';
                     btnSegmented.style.color = '#333';
+                    // 集計を更新
+                    updateReport();
                 } else {
                     // コンパクト→セグメントへ切り替え時、値を同期
                     document.getElementById('reportMonth2').value = document.getElementById('reportMonth').value;
-                    // セグメントボタンの状態を同期
+                    // セグメントボタンの状態を同期（setReportViewType内でupdateReportが呼ばれる）
                     const viewType = document.getElementById('reportViewType').value;
                     setReportViewType(viewType);
                     compact.style.display = 'none';
