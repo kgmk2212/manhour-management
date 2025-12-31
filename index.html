@@ -1151,32 +1151,32 @@
                 </div>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="actualFiltersCompact" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示モード:</label>
-                        <select id="actualViewMode" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                <div id="actualFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示モード:</label>
+                        <select id="actualViewMode" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全担当者</option>
                             <option value="member">担当者別</option>
                         </select>
                     </div>
 
-                    <div id="memberSelectGroup" style="display: none; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
-                        <select id="actualMemberSelect" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                    <div id="memberSelectGroup" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">担当者:</label>
+                        <select id="actualMemberSelect" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
                         </select>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="actualViewType" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
-                            <option value="matrix">カレンダー形式</option>
-                            <option value="list">リスト形式</option>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="actualViewType" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="matrix">カレンダー</option>
+                            <option value="list">リスト</option>
                         </select>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
-                        <select id="actualMonthFilter" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示期間:</label>
+                        <select id="actualMonthFilter" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
@@ -1230,19 +1230,19 @@
                 </div>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="reportFiltersCompact" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="reportMonth" onchange="updateReport()" style="padding: 4px 8px; font-size: 13px;">
+                <div id="reportFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="reportMonth" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="reportViewType" onchange="updateReport()" style="padding: 4px 8px; font-size: 13px;">
-                            <option value="summary">サマリー表示</option>
-                            <option value="grouped">対応別グループ表示</option>
-                            <option value="matrix">対応別マトリクス表示</option>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="reportViewType" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="summary">サマリー</option>
+                            <option value="grouped">グループ</option>
+                            <option value="matrix">マトリクス</option>
                         </select>
                     </div>
                 </div>
