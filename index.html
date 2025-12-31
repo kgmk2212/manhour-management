@@ -5662,8 +5662,13 @@
                 Object.values(versionGroups[version]).forEach(taskGroup => {
                     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
                     const allProcesses = new Set([...Object.keys(taskGroup.estimates), ...Object.keys(taskGroup.actuals)]);
-                    const sortedProcesses = processOrder.filter(p => allProcesses.has(p));
-                    
+
+                    // processOrderに含まれる工程を先に、その後に含まれない工程を追加
+                    const sortedProcesses = [
+                        ...processOrder.filter(p => allProcesses.has(p)),
+                        ...[...allProcesses].filter(p => !processOrder.includes(p))
+                    ];
+
                     if (sortedProcesses.length === 0) return;
                     
                     // 先に合計を計算
@@ -5799,15 +5804,31 @@
             
             // 版数ごとに表示
             Object.keys(versionGroups).sort().forEach(version => {
+                // この版数グループ内の全工程を収集
+                const versionProcesses = new Set();
+                Object.values(versionGroups[version]).forEach(taskGroup => {
+                    Object.keys(taskGroup.estimates).forEach(p => versionProcesses.add(p));
+                    Object.keys(taskGroup.actuals).forEach(p => versionProcesses.add(p));
+                });
+
+                // processOrderに含まれる工程を先に、その後に含まれない工程を追加
+                const displayProcesses = [
+                    ...processOrder.filter(p => versionProcesses.has(p)),
+                    ...[...versionProcesses].filter(p => !processOrder.includes(p))
+                ];
+
                 // 先にテーブル本体を生成して、データがあるかチェック
                 let tableBody = '';
 
                 Object.values(versionGroups[version]).forEach(taskGroup => {
+                    // 全工程を取得
+                    const allProcesses = new Set([...Object.keys(taskGroup.estimates), ...Object.keys(taskGroup.actuals)]);
+
                     let totalEst = 0;
                     let totalAct = 0;
 
                     // 先に合計を計算してデータの有無を確認
-                    processOrder.forEach(proc => {
+                    displayProcesses.forEach(proc => {
                         const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
                         const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
                         totalEst += est.hours;
@@ -5819,7 +5840,7 @@
                         tableBody += '<tr>';
                         tableBody += `<td style="font-weight: 600;">${taskGroup.task}</td>`;
 
-                        processOrder.forEach(proc => {
+                        displayProcesses.forEach(proc => {
                             const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
                             const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
 
@@ -5850,7 +5871,7 @@
                     html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
                     html += '<div class="table-wrapper"><table>';
                     html += '<tr><th style="min-width: 200px;">対応名</th>';
-                    processOrder.forEach(proc => {
+                    displayProcesses.forEach(proc => {
                         html += `<th style="min-width: 120px; text-align: center;">${proc}<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th>`;
                     });
                     html += '<th style="min-width: 100px; text-align: center;">合計<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th></tr>';
