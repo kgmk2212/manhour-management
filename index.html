@@ -2043,8 +2043,9 @@
 
         function updateMonthOptions() {
             const select = document.getElementById('reportMonth');
+            const select2 = document.getElementById('reportMonth2');
             const months = new Set();
-            
+
             // 実績データから月を抽出
             actuals.forEach(a => {
                 if (a.date) {
@@ -2052,41 +2053,53 @@
                     months.add(month);
                 }
             });
-            
+
             // 月を昇順でソート
             const sortedMonths = Array.from(months).sort();
-            
-            // 選択肢を生成
+
+            // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
+            if (select2) select2.innerHTML = '<option value="all">全期間</option>';
+
             sortedMonths.forEach(month => {
                 const [year, monthNum] = month.split('-');
                 const option = document.createElement('option');
                 option.value = month;
                 option.textContent = `${year}年${parseInt(monthNum)}月`;
                 select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = month;
+                    option2.textContent = `${year}年${parseInt(monthNum)}月`;
+                    select2.appendChild(option2);
+                }
             });
-            
+
             // デフォルトで前月を選択
             const today = new Date();
             const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
             const defaultMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-            
+
             // 前月のオプションが存在するか確認
             const options = Array.from(select.options);
             const hasDefaultMonth = options.some(opt => opt.value === defaultMonth);
-            
+
             if (hasDefaultMonth) {
                 select.value = defaultMonth;
+                if (select2) select2.value = defaultMonth;
             } else if (options.length > 1) {
                 // 前月のデータがない場合は、最新月を選択
                 select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
+                if (select2) select2.value = options[1].value;
             }
         }
 
         function updateActualMonthOptions() {
             const select = document.getElementById('actualMonthFilter');
+            const select2 = document.getElementById('actualMonthFilter2');
             const months = new Set();
-            
+
             // 実績データから月を抽出
             actuals.forEach(a => {
                 if (a.date) {
@@ -2094,18 +2107,27 @@
                     months.add(month);
                 }
             });
-            
+
             // 月を降順でソート
             const sortedMonths = Array.from(months).sort().reverse();
-            
-            // 選択肢を生成
+
+            // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
+            if (select2) select2.innerHTML = '<option value="all">全期間</option>';
+
             sortedMonths.forEach(month => {
                 const [year, monthNum] = month.split('-');
                 const option = document.createElement('option');
                 option.value = month;
                 option.textContent = `${year}年${parseInt(monthNum)}月`;
                 select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = month;
+                    option2.textContent = `${year}年${parseInt(monthNum)}月`;
+                    select2.appendChild(option2);
+                }
             });
         }
 
@@ -2113,18 +2135,21 @@
             // 現在月を計算
             const today = new Date();
             const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-            
+
             const select = document.getElementById('actualMonthFilter');
-            
+            const select2 = document.getElementById('actualMonthFilter2');
+
             // 現在月のオプションが存在するか確認
             const options = Array.from(select.options);
             const hasCurrentMonth = options.some(opt => opt.value === currentMonth);
-            
+
             if (hasCurrentMonth) {
                 select.value = currentMonth;
+                if (select2) select2.value = currentMonth;
             } else if (options.length > 1) {
                 // 現在月のデータがない場合は、最新月を選択
                 select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
+                if (select2) select2.value = options[1].value;
             }
         }
 
@@ -3452,14 +3477,17 @@
             const container = document.getElementById('actualList');
             const viewType = document.getElementById('actualViewType').value;
             const viewMode = document.getElementById('actualViewMode').value;
-            
-            // 担当者別モード時は担当者選択を表示
+
+            // 担当者別モード時は担当者選択を表示（両方のレイアウトを同期）
             const memberSelectGroup = document.getElementById('memberSelectGroup');
+            const memberSelectGroup2 = document.getElementById('memberSelectGroup2');
             if (viewMode === 'member') {
-                memberSelectGroup.style.display = 'block';
+                memberSelectGroup.style.display = 'flex';
+                if (memberSelectGroup2) memberSelectGroup2.style.display = 'flex';
                 updateMemberSelectOptions();
             } else {
                 memberSelectGroup.style.display = 'none';
+                if (memberSelectGroup2) memberSelectGroup2.style.display = 'none';
             }
             
             if (actuals.length === 0) {
@@ -3480,13 +3508,14 @@
 
         function updateMemberSelectOptions() {
             const select = document.getElementById('actualMemberSelect');
+            const select2 = document.getElementById('actualMemberSelect2');
             const currentValue = select.value;
-            
+
             // 担当者を抽出
             const allMembers = new Set();
             actuals.forEach(a => allMembers.add(a.member));
             estimates.forEach(e => allMembers.add(e.member));
-            
+
             // 表示順でソート
             let sortedMembers;
             const memberOrderInput = document.getElementById('memberOrder').value.trim();
@@ -3494,37 +3523,49 @@
                 const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
                 const orderedMembers = [];
                 const unorderedMembers = [];
-                
+
                 orderList.forEach(name => {
                     if (allMembers.has(name)) {
                         orderedMembers.push(name);
                     }
                 });
-                
+
                 Array.from(allMembers).forEach(m => {
                     if (!orderedMembers.includes(m)) {
                         unorderedMembers.push(m);
                     }
                 });
-                
+
                 sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
             } else {
                 sortedMembers = Array.from(allMembers).sort();
             }
-            
+
+            // 両方のセレクトボックスを更新
             select.innerHTML = '';
+            if (select2) select2.innerHTML = '';
+
             sortedMembers.forEach(member => {
                 const option = document.createElement('option');
                 option.value = member;
                 option.textContent = member;
                 select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = member;
+                    option2.textContent = member;
+                    select2.appendChild(option2);
+                }
             });
-            
+
             // 以前の選択を復元
             if (currentValue && sortedMembers.includes(currentValue)) {
                 select.value = currentValue;
+                if (select2) select2.value = currentValue;
             } else if (sortedMembers.length > 0) {
                 select.value = sortedMembers[0];
+                if (select2) select2.value = sortedMembers[0];
             }
         }
 
