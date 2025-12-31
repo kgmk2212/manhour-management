@@ -2135,7 +2135,7 @@
             // セグメントボタン版を生成（レポートセグメントレイアウト用）
             const items = [
                 { value: 'all', label: '全期間' },
-                ...sortedMonths.map(month => {
+                ...sortedMonths.slice().reverse().map(month => {
                     const [year, monthNum] = month.split('-');
                     return {
                         value: month,
@@ -2192,7 +2192,7 @@
             // セグメントボタン版を生成（実績一覧セグメントレイアウト用）
             const items = [
                 { value: 'all', label: '全期間' },
-                ...sortedMonths.map(month => {
+                ...sortedMonths.slice().reverse().map(month => {
                     const [year, monthNum] = month.split('-');
                     return {
                         value: month,
