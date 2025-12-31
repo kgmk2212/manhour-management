@@ -1080,7 +1080,7 @@
                 <h3>登録済み見積一覧</h3>
 
                 <!-- 合計工数表示 -->
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div id="estimateTotalCard" style="color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <div>
                             <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">合計工数</div>
@@ -3400,6 +3400,25 @@
             if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
             if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
+            // 合計カードにテーマカラーのグラデーションを適用
+            const totalCard = document.getElementById('estimateTotalCard');
+            if (totalCard) {
+                const gradients = {
+                    'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                    'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                    'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                    'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
+                    'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+                    'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                    'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                    'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                    'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+                    'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+                };
+                totalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
+            }
+
             if (viewType === 'grouped') {
                 renderEstimateGrouped();
             } else if (viewType === 'matrix') {
@@ -3495,7 +3514,7 @@
 
             // 表示する全ての見積
             const allDisplayEstimates = filteredEstimates;
-            
+
             // 版数ごとにグループ化
             const versionGroups = {};
             allDisplayEstimates.forEach(e => {
@@ -3510,10 +3529,17 @@
                     };
                 }
 
+                // 月フィルタが適用されている場合は分割後の工数を使用
+                const est = normalizeEstimate(e);
+                let displayHours = e.hours;
+                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                    displayHours = est.monthlyHours[workMonthFilter];
+                }
+
                 versionGroups[e.version][taskKey].processes.push({
                     process: e.process,
                     member: e.member,
-                    hours: e.hours,
+                    hours: displayHours,
                     id: e.id
                 });
             });
@@ -3705,10 +3731,23 @@
 
         function renderEstimateMatrix() {
             const container = document.getElementById('estimateList');
-            
+
+            // 月フィルタを取得
+            const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
+
+            // フィルタを適用
+            let filteredEstimates = estimates;
+            if (workMonthFilter !== 'all') {
+                filteredEstimates = estimates.filter(e => {
+                    const est = normalizeEstimate(e);
+                    return est.workMonths.includes(workMonthFilter);
+                });
+            }
+
             // 対応ごとにグループ化
             const taskGroups = {};
-            estimates.forEach(e => {
+            filteredEstimates.forEach(e => {
                 const key = `${e.version}|||${e.task}`;
                 if (!taskGroups[key]) {
                     taskGroups[key] = {
@@ -3717,9 +3756,17 @@
                         processes: {}
                     };
                 }
+
+                // 月フィルタが適用されている場合は分割後の工数を使用
+                const est = normalizeEstimate(e);
+                let displayHours = e.hours;
+                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                    displayHours = est.monthlyHours[workMonthFilter];
+                }
+
                 taskGroups[key].processes[e.process] = {
                     member: e.member,
-                    hours: e.hours,
+                    hours: displayHours,
                     id: e.id
                 };
             });
@@ -3768,11 +3815,30 @@
 
         function renderEstimateDetailList() {
             const container = document.getElementById('estimateList');
-            
+
+            // 月フィルタを取得
+            const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
+
+            // フィルタを適用
+            let filteredEstimates = estimates;
+            if (workMonthFilter !== 'all') {
+                filteredEstimates = estimates.filter(e => {
+                    const est = normalizeEstimate(e);
+                    return est.workMonths.includes(workMonthFilter);
+                });
+            }
+
             let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>作業予定月</th><th>操作</th></tr>';
-            
-            estimates.forEach(e => {
+
+            filteredEstimates.forEach(e => {
                 const est = normalizeEstimate(e);
+
+                // 月フィルタが適用されている場合は分割後の工数を表示
+                let displayHours = est.hours;
+                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                    displayHours = est.monthlyHours[workMonthFilter];
+                }
                 
                 // 作業予定月の表示
                 let workMonthDisplay = '-';
@@ -3802,7 +3868,7 @@
                         <td>${est.task}</td>
                         <td><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></td>
                         <td>${est.member}</td>
-                        <td>${est.hours.toFixed(1)}h</td>
+                        <td>${displayHours.toFixed(1)}h</td>
                         <td>${workMonthDisplay}</td>
                         <td>
                             <button class="btn btn-primary btn-small" onclick="editEstimate(${est.id})" style="margin-right: 5px;">編集</button>
@@ -5203,6 +5269,25 @@
 
             // セグメントボタンの色を更新
             updateSegmentedButtons();
+
+            // 見積合計カードの色を更新
+            const estimateTotalCard = document.getElementById('estimateTotalCard');
+            if (estimateTotalCard) {
+                const gradients = {
+                    'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                    'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                    'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                    'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
+                    'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+                    'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                    'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                    'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                    'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+                    'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+                };
+                estimateTotalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
+            }
         }
         
         function updateBodyBackground() {
