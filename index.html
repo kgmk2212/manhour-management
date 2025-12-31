@@ -3168,24 +3168,31 @@
 
         function renderEstimateGrouped() {
             const container = document.getElementById('estimateList');
-            
+
             // 対応全体の作業月を計算する関数
             function getTaskWorkMonths(version, task) {
                 // この対応の全工程を取得
                 const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
-                
+
                 // 全工程の作業月を収集（重複なし）
                 const allMonths = new Set();
                 taskEstimates.forEach(e => {
                     const est = normalizeEstimate(e);
                     est.workMonths.forEach(month => allMonths.add(month));
                 });
-                
+
                 return Array.from(allMonths).sort();
             }
-            
+
             // 作業予定月フィルタを適用
             const workMonthFilter = document.getElementById('estimateWorkMonthFilter').value;
+
+            // 実働日数を取得（人月計算用）
+            let workingDaysPerMonth = 20; // デフォルト
+            if (workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
+                const [year, month] = workMonthFilter.split('-');
+                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+            }
             const showOutOfFilter = document.getElementById('showOutOfFilterProcesses').checked;
             
             // フィルタ外工程表示オプションの表示/非表示
@@ -3259,7 +3266,7 @@
 
             let html = '<div style="margin-bottom: 30px;">';
             html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-                <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${selectedMonth === 'all' ? '全期間はデフォルト20日' : '実働日数ベース'}）
+                <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workMonthFilter === 'all' || workMonthFilter === 'unassigned' ? 'デフォルト20日' : '実働日数ベース'}）
             </div>`;
             
             // 版数ごとに表示
