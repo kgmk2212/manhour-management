@@ -1141,59 +1141,129 @@
             </div>
 
             <div id="actual" class="tab-content">
-                <h2>実績データ一覧</h2>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label>表示モード</label>
-                        <select id="actualViewMode" onchange="renderActualList()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">実績データ一覧</h2>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-size: 11px; color: #666;">レイアウト:</span>
+                        <button onclick="toggleFilterLayout('actual', 'compact')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">横並び</button>
+                        <button onclick="toggleFilterLayout('actual', 'segmented')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: white; color: #333; border-radius: 4px; cursor: pointer;">セグメント</button>
+                    </div>
+                </div>
+
+                <!-- バージョン1: 横並びコンパクトレイアウト -->
+                <div id="actualFiltersCompact" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示モード:</label>
+                        <select id="actualViewMode" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
                             <option value="all">全担当者</option>
                             <option value="member">担当者別</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group" id="memberSelectGroup" style="display: none;">
-                        <label>担当者</label>
-                        <select id="actualMemberSelect" onchange="renderActualList()">
+
+                    <div id="memberSelectGroup" style="display: none; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
+                        <select id="actualMemberSelect" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>表示形式</label>
-                        <select id="actualViewType" onchange="renderActualList()">
+
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="actualViewType" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
                             <option value="matrix">カレンダー形式</option>
                             <option value="list">リスト形式</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>表示期間</label>
-                        <select id="actualMonthFilter" onchange="renderActualList()">
+
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
+                        <select id="actualMonthFilter" onchange="renderActualList()" style="padding: 4px 8px; font-size: 13px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
                 </div>
-                
+
+                <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
+                <div id="actualFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示モード:</label>
+                            <select id="actualViewMode2" onchange="document.getElementById('actualViewMode').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                                <option value="all">全担当者</option>
+                                <option value="member">担当者別</option>
+                            </select>
+                        </div>
+
+                        <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
+                            <select id="actualMemberSelect2" onchange="document.getElementById('actualMemberSelect').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                            </select>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 11px; font-weight: 500; color: #666;">表示形式</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" style="padding: 4px 12px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">カレンダー</button>
+                                <button onclick="setActualViewType('list')" id="btnActualList" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">リスト</button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
+                            <select id="actualMonthFilter2" onchange="document.getElementById('actualMonthFilter').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="actualList"></div>
             </div>
 
             <div id="report" class="tab-content">
-                <h2>工数レポート</h2>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label>表示月を選択</label>
-                        <select id="reportMonth" onchange="updateReport()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">工数レポート</h2>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-size: 11px; color: #666;">レイアウト:</span>
+                        <button onclick="toggleFilterLayout('report', 'compact')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">横並び</button>
+                        <button onclick="toggleFilterLayout('report', 'segmented')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: white; color: #333; border-radius: 4px; cursor: pointer;">セグメント</button>
+                    </div>
+                </div>
+
+                <!-- バージョン1: 横並びコンパクトレイアウト -->
+                <div id="reportFiltersCompact" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="reportMonth" onchange="updateReport()" style="padding: 4px 8px; font-size: 13px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>表示形式</label>
-                        <select id="reportViewType" onchange="updateReport()">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="reportViewType" onchange="updateReport()" style="padding: 4px 8px; font-size: 13px;">
                             <option value="summary">サマリー表示</option>
                             <option value="grouped">対応別グループ表示</option>
                             <option value="matrix">対応別マトリクス表示</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
+                <div id="reportFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; updateReport()" style="padding: 4px 8px; font-size: 13px;">
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 11px; font-weight: 500; color: #666;">表示形式</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button onclick="setReportViewType('summary')" id="btnReportSummary" style="padding: 4px 10px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">サマリー</button>
+                                <button onclick="setReportViewType('grouped')" id="btnReportGrouped" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">グループ</button>
+                                <button onclick="setReportViewType('matrix')" id="btnReportMatrix" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">マトリクス</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -4840,6 +4910,109 @@
             const checkbox = document.getElementById('workMonthSelectionMode');
             checkbox.checked = false;
             toggleWorkMonthSelectionMode();
+        }
+
+        // セグメントボタン用の関数（実績一覧）
+        function setActualViewType(type) {
+            document.getElementById('actualViewType').value = type;
+            // ボタンのスタイルを更新
+            const btnMatrix = document.getElementById('btnActualMatrix');
+            const btnList = document.getElementById('btnActualList');
+            if (type === 'matrix') {
+                btnMatrix.style.background = '#007bff';
+                btnMatrix.style.color = 'white';
+                btnList.style.background = 'white';
+                btnList.style.color = '#333';
+            } else {
+                btnMatrix.style.background = 'white';
+                btnMatrix.style.color = '#333';
+                btnList.style.background = '#007bff';
+                btnList.style.color = 'white';
+            }
+            renderActualList();
+        }
+
+        // セグメントボタン用の関数（レポート）
+        function setReportViewType(type) {
+            document.getElementById('reportViewType').value = type;
+            // ボタンのスタイルを更新
+            const btnSummary = document.getElementById('btnReportSummary');
+            const btnGrouped = document.getElementById('btnReportGrouped');
+            const btnMatrix = document.getElementById('btnReportMatrix');
+            btnSummary.style.background = type === 'summary' ? '#007bff' : 'white';
+            btnSummary.style.color = type === 'summary' ? 'white' : '#333';
+            btnGrouped.style.background = type === 'grouped' ? '#007bff' : 'white';
+            btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
+            btnMatrix.style.background = type === 'matrix' ? '#007bff' : 'white';
+            btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+            updateReport();
+        }
+
+        // レイアウト切り替え関数（開発/比較用）
+        function toggleFilterLayout(page, version) {
+            if (page === 'actual') {
+                const compact = document.getElementById('actualFiltersCompact');
+                const segmented = document.getElementById('actualFiltersSegmented');
+                const parentDiv = compact.parentElement;
+                const btnCompact = parentDiv.querySelectorAll('button')[0];
+                const btnSegmented = parentDiv.querySelectorAll('button')[1];
+
+                if (version === 'compact') {
+                    // セグメント→コンパクトへ切り替え時、値を同期
+                    document.getElementById('actualViewMode').value = document.getElementById('actualViewMode2').value;
+                    document.getElementById('actualMemberSelect').value = document.getElementById('actualMemberSelect2').value;
+                    document.getElementById('actualMonthFilter').value = document.getElementById('actualMonthFilter2').value;
+                    compact.style.display = 'flex';
+                    segmented.style.display = 'none';
+                    btnCompact.style.background = '#007bff';
+                    btnCompact.style.color = 'white';
+                    btnSegmented.style.background = 'white';
+                    btnSegmented.style.color = '#333';
+                } else {
+                    // コンパクト→セグメントへ切り替え時、値を同期
+                    document.getElementById('actualViewMode2').value = document.getElementById('actualViewMode').value;
+                    document.getElementById('actualMemberSelect2').value = document.getElementById('actualMemberSelect').value;
+                    document.getElementById('actualMonthFilter2').value = document.getElementById('actualMonthFilter').value;
+                    // セグメントボタンの状態を同期
+                    const viewType = document.getElementById('actualViewType').value;
+                    setActualViewType(viewType);
+                    compact.style.display = 'none';
+                    segmented.style.display = 'block';
+                    btnCompact.style.background = 'white';
+                    btnCompact.style.color = '#333';
+                    btnSegmented.style.background = '#007bff';
+                    btnSegmented.style.color = 'white';
+                }
+            } else if (page === 'report') {
+                const compact = document.getElementById('reportFiltersCompact');
+                const segmented = document.getElementById('reportFiltersSegmented');
+                const parentDiv = compact.parentElement;
+                const btnCompact = parentDiv.querySelectorAll('button')[0];
+                const btnSegmented = parentDiv.querySelectorAll('button')[1];
+
+                if (version === 'compact') {
+                    // セグメント→コンパクトへ切り替え時、値を同期
+                    document.getElementById('reportMonth').value = document.getElementById('reportMonth2').value;
+                    compact.style.display = 'flex';
+                    segmented.style.display = 'none';
+                    btnCompact.style.background = '#007bff';
+                    btnCompact.style.color = 'white';
+                    btnSegmented.style.background = 'white';
+                    btnSegmented.style.color = '#333';
+                } else {
+                    // コンパクト→セグメントへ切り替え時、値を同期
+                    document.getElementById('reportMonth2').value = document.getElementById('reportMonth').value;
+                    // セグメントボタンの状態を同期
+                    const viewType = document.getElementById('reportViewType').value;
+                    setReportViewType(viewType);
+                    compact.style.display = 'none';
+                    segmented.style.display = 'block';
+                    btnCompact.style.background = 'white';
+                    btnCompact.style.color = '#333';
+                    btnSegmented.style.background = '#007bff';
+                    btnSegmented.style.color = 'white';
+                }
+            }
         }
 
         function updateReport() {
