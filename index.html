@@ -2436,6 +2436,8 @@
 
         function setDefaultActualMonth() {
             const select = document.getElementById('actualMonthFilter');
+            if (!select) return;
+
             const select2 = document.getElementById('actualMonthFilter2');
 
             const defaultMonth = getDefaultMonth(select);
@@ -2445,6 +2447,8 @@
 
         function setDefaultReportMonth() {
             const select = document.getElementById('reportMonth');
+            if (!select) return;
+
             const select2 = document.getElementById('reportMonth2');
 
             const defaultMonth = getDefaultMonth(select);
@@ -2453,7 +2457,8 @@
         }
 
         function setDefaultEstimateMonth() {
-            const select = document.getElementById('estimateWorkMonthFilter');
+            const select = document.getElementById('estimateMonthFilter');
+            if (!select) return;
 
             const defaultMonth = getDefaultMonth(select);
             select.value = defaultMonth;
