@@ -2251,8 +2251,8 @@
                 }
             });
 
-            // 月を昇順でソート
-            const sortedMonths = Array.from(months).sort();
+            // 月を降順でソート（最新月が先）
+            const sortedMonths = Array.from(months).sort().reverse();
 
             // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
@@ -2272,24 +2272,6 @@
                     select2.appendChild(option2);
                 }
             });
-
-            // デフォルトで前月を選択
-            const today = new Date();
-            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            const defaultMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-
-            // 前月のオプションが存在するか確認
-            const options = Array.from(select.options);
-            const hasDefaultMonth = options.some(opt => opt.value === defaultMonth);
-
-            if (hasDefaultMonth) {
-                select.value = defaultMonth;
-                if (select2) select2.value = defaultMonth;
-            } else if (options.length > 1) {
-                // 前月のデータがない場合は、最新月を選択
-                select.value = options[1].value; // options[0]は「全期間」なので、options[1]が最新月
-                if (select2) select2.value = options[1].value;
-            }
 
             // セグメントボタン版を生成（レポートセグメントレイアウト用）
             const items = [
