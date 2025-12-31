@@ -1141,14 +1141,7 @@
             </div>
 
             <div id="actual" class="tab-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="margin: 0;">実績データ一覧</h2>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <span style="font-size: 11px; color: #666;">レイアウト:</span>
-                        <button onclick="toggleFilterLayout('actual', 'compact')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">横並び</button>
-                        <button onclick="toggleFilterLayout('actual', 'segmented')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: white; color: #333; border-radius: 4px; cursor: pointer;">セグメント</button>
-                    </div>
-                </div>
+                <h2>実績データ一覧</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="actualFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
@@ -1220,14 +1213,7 @@
             </div>
 
             <div id="report" class="tab-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="margin: 0;">工数レポート</h2>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <span style="font-size: 11px; color: #666;">レイアウト:</span>
-                        <button onclick="toggleFilterLayout('report', 'compact')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">横並び</button>
-                        <button onclick="toggleFilterLayout('report', 'segmented')" style="padding: 4px 10px; font-size: 11px; border: 1px solid #dee2e6; background: white; color: #333; border-radius: 4px; cursor: pointer;">セグメント</button>
-                    </div>
-                </div>
+                <h2>工数レポート</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="reportFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
@@ -1451,6 +1437,35 @@
                     </div>
                     
                     <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>📐 表示形式レイアウト</h3>
+                    <p style="color: #666; margin-bottom: 15px;">実績一覧とレポートの表示形式選択UIのレイアウトを変更できます。</p>
+
+                    <div class="form-group">
+                        <label>実績一覧のレイアウト</label>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button onclick="toggleFilterLayout('actual', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('actual', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            横並び: コンパクトな横並びレイアウト<br>
+                            セグメント: セグメントボタンを使った見やすいレイアウト
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>レポートのレイアウト</label>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button onclick="toggleFilterLayout('report', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('report', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            横並び: コンパクトな横並びレイアウト<br>
+                            セグメント: セグメントボタンを使った見やすいレイアウト
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1683,11 +1698,15 @@
         let estimates = [];
         let actuals = [];
         let autoBackupEnabled = false; // 自動バックアップの設定
-        
+
         // テーマ設定
         let currentThemeColor = 'purple';
         let currentThemePattern = 'none';
         let currentTabColor = 'same'; // タブの色（'same'=メインカラーと同じ、'default'=青、または色名）
+
+        // レイアウト設定
+        let actualLayout = 'compact'; // 実績一覧のレイアウト（'compact' or 'segmented'）
+        let reportLayout = 'compact'; // レポートのレイアウト（'compact' or 'segmented'）
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
@@ -1795,7 +1814,9 @@
                     themeColor: currentThemeColor,
                     themePattern: currentThemePattern,
                     themeTabColor: currentTabColor,
-                    autoBackup: autoBackupEnabled
+                    autoBackup: autoBackupEnabled,
+                    actualLayout: actualLayout,
+                    reportLayout: reportLayout
                 }
             };
             
@@ -2032,6 +2053,8 @@
                 if (settings.themePattern) currentThemePattern = settings.themePattern;
                 if (settings.themeTabColor) currentTabColor = settings.themeTabColor;
                 if (settings.autoBackup !== undefined) autoBackupEnabled = settings.autoBackup;
+                if (settings.actualLayout) actualLayout = settings.actualLayout;
+                if (settings.reportLayout) reportLayout = settings.reportLayout;
             } else {
                 // 旧形式の設定を読み込み（後方互換性）
                 const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
@@ -2039,6 +2062,9 @@
                     document.getElementById('memberOrder').value = savedMemberOrder;
                 }
             }
+
+            // レイアウト設定を適用
+            applyLayoutSettings();
         }
 
         function updateMonthOptions() {
@@ -4838,6 +4864,12 @@
                 header.className = header.className.replace(/modal-theme-\w+/g, '').trim();
                 header.classList.add('modal-header', `modal-theme-${currentThemeColor}`);
             });
+
+            // 設定タブのレイアウト切り替えボタン
+            updateLayoutToggleButtons();
+
+            // セグメントボタンの色を更新
+            updateSegmentedButtons();
         }
         
         function updateBodyBackground() {
@@ -4908,6 +4940,63 @@
             }
         }
 
+        // 設定タブのレイアウト切り替えボタンの色を更新
+        function updateLayoutToggleButtons() {
+            const themeColor = getThemeColor();
+
+            // 実績一覧のボタン
+            const actualButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'actual\'"]');
+            if (actualButtons.length >= 2) {
+                const actualCompact = document.getElementById('actualFiltersCompact');
+                const isCompactActive = actualCompact && actualCompact.style.display !== 'none';
+                actualButtons[0].style.background = isCompactActive ? themeColor : 'white';
+                actualButtons[0].style.color = isCompactActive ? 'white' : '#333';
+                actualButtons[1].style.background = !isCompactActive ? themeColor : 'white';
+                actualButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+            }
+
+            // レポートのボタン
+            const reportButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'report\'"]');
+            if (reportButtons.length >= 2) {
+                const reportCompact = document.getElementById('reportFiltersCompact');
+                const isCompactActive = reportCompact && reportCompact.style.display !== 'none';
+                reportButtons[0].style.background = isCompactActive ? themeColor : 'white';
+                reportButtons[0].style.color = isCompactActive ? 'white' : '#333';
+                reportButtons[1].style.background = !isCompactActive ? themeColor : 'white';
+                reportButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+            }
+        }
+
+        // セグメントボタンの色を更新
+        function updateSegmentedButtons() {
+            const themeColor = getThemeColor();
+
+            // 実績一覧のセグメントボタン
+            const btnActualMatrix = document.getElementById('btnActualMatrix');
+            const btnActualList = document.getElementById('btnActualList');
+            if (btnActualMatrix && btnActualList) {
+                const actualViewType = document.getElementById('actualViewType').value;
+                btnActualMatrix.style.background = actualViewType === 'matrix' ? themeColor : 'white';
+                btnActualMatrix.style.color = actualViewType === 'matrix' ? 'white' : '#333';
+                btnActualList.style.background = actualViewType === 'list' ? themeColor : 'white';
+                btnActualList.style.color = actualViewType === 'list' ? 'white' : '#333';
+            }
+
+            // レポートのセグメントボタン
+            const btnReportSummary = document.getElementById('btnReportSummary');
+            const btnReportGrouped = document.getElementById('btnReportGrouped');
+            const btnReportMatrix = document.getElementById('btnReportMatrix');
+            if (btnReportSummary && btnReportGrouped && btnReportMatrix) {
+                const reportViewType = document.getElementById('reportViewType').value;
+                btnReportSummary.style.background = reportViewType === 'summary' ? themeColor : 'white';
+                btnReportSummary.style.color = reportViewType === 'summary' ? 'white' : '#333';
+                btnReportGrouped.style.background = reportViewType === 'grouped' ? themeColor : 'white';
+                btnReportGrouped.style.color = reportViewType === 'grouped' ? 'white' : '#333';
+                btnReportMatrix.style.background = reportViewType === 'matrix' ? themeColor : 'white';
+                btnReportMatrix.style.color = reportViewType === 'matrix' ? 'white' : '#333';
+            }
+        }
+
         // モーダル外をクリック/タップで閉じる
         function handleModalClose(event) {
             const workModal = document.getElementById('workModal');
@@ -4953,21 +5042,40 @@
             toggleWorkMonthSelectionMode();
         }
 
+        // テーマカラーから実際の色を取得するヘルパー関数
+        function getThemeColor() {
+            const themeColors = {
+                'purple': '#667eea',
+                'deep-blue': '#1e3c72',
+                'teal': '#0f766e',
+                'cyan': '#0891b2',
+                'ocean': '#0c4a6e',
+                'sky': '#0369a1',
+                'indigo': '#4338ca',
+                'navy': '#1e40af',
+                'slate': '#334155',
+                'green': '#047857',
+                'emerald': '#059669'
+            };
+            return themeColors[currentThemeColor] || '#667eea';
+        }
+
         // セグメントボタン用の関数（実績一覧）
         function setActualViewType(type) {
             document.getElementById('actualViewType').value = type;
             // ボタンのスタイルを更新
+            const themeColor = getThemeColor();
             const btnMatrix = document.getElementById('btnActualMatrix');
             const btnList = document.getElementById('btnActualList');
             if (type === 'matrix') {
-                btnMatrix.style.background = '#007bff';
+                btnMatrix.style.background = themeColor;
                 btnMatrix.style.color = 'white';
                 btnList.style.background = 'white';
                 btnList.style.color = '#333';
             } else {
                 btnMatrix.style.background = 'white';
                 btnMatrix.style.color = '#333';
-                btnList.style.background = '#007bff';
+                btnList.style.background = themeColor;
                 btnList.style.color = 'white';
             }
             renderActualList();
@@ -4977,26 +5085,59 @@
         function setReportViewType(type) {
             document.getElementById('reportViewType').value = type;
             // ボタンのスタイルを更新
+            const themeColor = getThemeColor();
             const btnSummary = document.getElementById('btnReportSummary');
             const btnGrouped = document.getElementById('btnReportGrouped');
             const btnMatrix = document.getElementById('btnReportMatrix');
-            btnSummary.style.background = type === 'summary' ? '#007bff' : 'white';
+            btnSummary.style.background = type === 'summary' ? themeColor : 'white';
             btnSummary.style.color = type === 'summary' ? 'white' : '#333';
-            btnGrouped.style.background = type === 'grouped' ? '#007bff' : 'white';
+            btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
             btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-            btnMatrix.style.background = type === 'matrix' ? '#007bff' : 'white';
+            btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
             btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
             updateReport();
         }
 
+        // レイアウト設定を適用
+        function applyLayoutSettings() {
+            // 実績一覧のレイアウトを適用
+            const actualCompact = document.getElementById('actualFiltersCompact');
+            const actualSegmented = document.getElementById('actualFiltersSegmented');
+            if (actualLayout === 'compact') {
+                if (actualCompact) actualCompact.style.display = 'flex';
+                if (actualSegmented) actualSegmented.style.display = 'none';
+            } else {
+                if (actualCompact) actualCompact.style.display = 'none';
+                if (actualSegmented) actualSegmented.style.display = 'block';
+            }
+
+            // レポートのレイアウトを適用
+            const reportCompact = document.getElementById('reportFiltersCompact');
+            const reportSegmented = document.getElementById('reportFiltersSegmented');
+            if (reportLayout === 'compact') {
+                if (reportCompact) reportCompact.style.display = 'flex';
+                if (reportSegmented) reportSegmented.style.display = 'none';
+            } else {
+                if (reportCompact) reportCompact.style.display = 'none';
+                if (reportSegmented) reportSegmented.style.display = 'block';
+            }
+
+            // 設定タブのボタンの状態を更新
+            updateLayoutToggleButtons();
+        }
+
         // レイアウト切り替え関数（開発/比較用）
         function toggleFilterLayout(page, version) {
+            const themeColor = getThemeColor();
+
             if (page === 'actual') {
                 const compact = document.getElementById('actualFiltersCompact');
                 const segmented = document.getElementById('actualFiltersSegmented');
-                const parentDiv = compact.parentElement;
-                const btnCompact = parentDiv.querySelectorAll('button')[0];
-                const btnSegmented = parentDiv.querySelectorAll('button')[1];
+
+                // 設定タブのボタンを更新
+                const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'actual\'"]');
+                const btnCompact = settingsButtons[0];
+                const btnSegmented = settingsButtons[1];
 
                 if (version === 'compact') {
                     // セグメント→コンパクトへ切り替え時、値を同期
@@ -5005,10 +5146,12 @@
                     document.getElementById('actualMonthFilter').value = document.getElementById('actualMonthFilter2').value;
                     compact.style.display = 'flex';
                     segmented.style.display = 'none';
-                    btnCompact.style.background = '#007bff';
+                    btnCompact.style.background = themeColor;
                     btnCompact.style.color = 'white';
                     btnSegmented.style.background = 'white';
                     btnSegmented.style.color = '#333';
+                    // グローバル変数を更新
+                    actualLayout = 'compact';
                     // 集計を更新
                     renderActualList();
                 } else {
@@ -5023,25 +5166,33 @@
                     segmented.style.display = 'block';
                     btnCompact.style.background = 'white';
                     btnCompact.style.color = '#333';
-                    btnSegmented.style.background = '#007bff';
+                    btnSegmented.style.background = themeColor;
                     btnSegmented.style.color = 'white';
+                    // グローバル変数を更新
+                    actualLayout = 'segmented';
                 }
+                // 設定を保存
+                saveData(true);
             } else if (page === 'report') {
                 const compact = document.getElementById('reportFiltersCompact');
                 const segmented = document.getElementById('reportFiltersSegmented');
-                const parentDiv = compact.parentElement;
-                const btnCompact = parentDiv.querySelectorAll('button')[0];
-                const btnSegmented = parentDiv.querySelectorAll('button')[1];
+
+                // 設定タブのボタンを更新
+                const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'report\'"]');
+                const btnCompact = settingsButtons[0];
+                const btnSegmented = settingsButtons[1];
 
                 if (version === 'compact') {
                     // セグメント→コンパクトへ切り替え時、値を同期
                     document.getElementById('reportMonth').value = document.getElementById('reportMonth2').value;
                     compact.style.display = 'flex';
                     segmented.style.display = 'none';
-                    btnCompact.style.background = '#007bff';
+                    btnCompact.style.background = themeColor;
                     btnCompact.style.color = 'white';
                     btnSegmented.style.background = 'white';
                     btnSegmented.style.color = '#333';
+                    // グローバル変数を更新
+                    reportLayout = 'compact';
                     // 集計を更新
                     updateReport();
                 } else {
@@ -5054,9 +5205,13 @@
                     segmented.style.display = 'block';
                     btnCompact.style.background = 'white';
                     btnCompact.style.color = '#333';
-                    btnSegmented.style.background = '#007bff';
+                    btnSegmented.style.background = themeColor;
                     btnSegmented.style.color = 'white';
+                    // グローバル変数を更新
+                    reportLayout = 'segmented';
                 }
+                // 設定を保存
+                saveData(true);
             }
         }
 
