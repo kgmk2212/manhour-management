@@ -5682,6 +5682,9 @@
             document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
             document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
 
+            // 分析機能の表示
+            renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth);
+
             // 詳細ビュー表示
             if (viewType === 'grouped') {
                 renderReportGrouped(filteredActuals, filteredEstimates);
@@ -5693,6 +5696,450 @@
 
             renderMemberReport(filteredActuals, filteredEstimates);
             renderVersionReport(filteredActuals, filteredEstimates);
+        }
+
+        function renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth) {
+            const container = document.getElementById('reportDetailView');
+            let html = '';
+
+            // Phase 1: 見積精度と異常値表示
+            if (reportSettings.accuracyEnabled || reportSettings.anomalyEnabled || reportSettings.warningTasksEnabled) {
+                html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += '<h3 style="margin: 0 0 15px 0; color: white;">📊 Phase 1: 見積精度分析</h3>';
+
+                // 工程別の精度計算
+                if (reportSettings.accuracyEnabled) {
+                    const processSummary = {};
+                    const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+
+                    filteredEstimates.forEach(e => {
+                        if (!processSummary[e.process]) {
+                            processSummary[e.process] = { estimate: 0, actual: 0 };
+                        }
+                        processSummary[e.process].estimate += e.hours;
+                    });
+
+                    filteredActuals.forEach(a => {
+                        if (!processSummary[a.process]) {
+                            processSummary[a.process] = { estimate: 0, actual: 0 };
+                        }
+                        processSummary[a.process].actual += a.hours;
+                    });
+
+                    html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+                    html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">工程別見積精度</h4>';
+                    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">';
+
+                    const sortedProcesses = [
+                        ...processOrder.filter(p => processSummary[p]),
+                        ...Object.keys(processSummary).filter(p => !processOrder.includes(p))
+                    ];
+
+                    sortedProcesses.forEach(proc => {
+                        const data = processSummary[proc];
+                        const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(1) : 0;
+                        const isOverrun = accuracy > 150;
+                        const isGood = accuracy >= 80 && accuracy <= 120;
+
+                        html += '<div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; text-align: center;">';
+                        html += `<div style="font-weight: 600; margin-bottom: 5px;">${proc}</div>`;
+                        html += `<div style="font-size: 20px; font-weight: bold; color: ${isOverrun ? '#ff6b6b' : isGood ? '#51cf66' : '#ffd43b'};">${accuracy}%</div>`;
+                        html += `<div style="font-size: 12px; opacity: 0.9;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
+                        html += '</div>';
+                    });
+
+                    html += '</div></div>';
+                }
+
+                // 異常値の強調表示
+                if (reportSettings.anomalyEnabled) {
+                    const anomalies = [];
+                    const taskSummary = {};
+
+                    filteredEstimates.forEach(e => {
+                        const key = `${e.version}-${e.task}-${e.process}`;
+                        if (!taskSummary[key]) {
+                            taskSummary[key] = { version: e.version, task: e.task, process: e.process, estimate: 0, actual: 0 };
+                        }
+                        taskSummary[key].estimate += e.hours;
+                    });
+
+                    filteredActuals.forEach(a => {
+                        const key = `${a.version}-${a.task}-${a.process}`;
+                        if (!taskSummary[key]) {
+                            taskSummary[key] = { version: a.version, task: a.task, process: a.process, estimate: 0, actual: 0 };
+                        }
+                        taskSummary[key].actual += a.hours;
+                    });
+
+                    Object.values(taskSummary).forEach(task => {
+                        const overrun = task.estimate > 0 ? ((task.actual - task.estimate) / task.estimate * 100) : 0;
+                        if (overrun > 50) {
+                            anomalies.push({ ...task, overrun });
+                        }
+                    });
+
+                    if (anomalies.length > 0) {
+                        anomalies.sort((a, b) => b.overrun - a.overrun);
+
+                        html += '<div style="background: rgba(255, 107, 107, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid rgba(255, 107, 107, 0.4);">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">⚠️ 異常値検出（50%以上超過）</h4>';
+                        html += `<div style="color: white; font-size: 14px; margin-bottom: 10px;">検出数: ${anomalies.length}件</div>`;
+                        html += '<div style="max-height: 200px; overflow-y: auto;">';
+
+                        anomalies.slice(0, 10).forEach(anomaly => {
+                            html += '<div style="background: rgba(255,255,255,0.15); padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 13px;">';
+                            html += `<div style="font-weight: 600;">${anomaly.version} - ${anomaly.task} [${anomaly.process}]</div>`;
+                            html += `<div>見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #ff6b6b; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
+                            html += '</div>';
+                        });
+
+                        if (anomalies.length > 10) {
+                            html += `<div style="text-align: center; padding: 5px; color: rgba(255,255,255,0.7);">他 ${anomalies.length - 10}件...</div>`;
+                        }
+
+                        html += '</div></div>';
+                    }
+                }
+
+                // 警告タスク一覧
+                if (reportSettings.warningTasksEnabled) {
+                    const warnings = [];
+                    const taskSummary = {};
+
+                    filteredEstimates.forEach(e => {
+                        const key = `${e.version}-${e.task}`;
+                        if (!taskSummary[key]) {
+                            taskSummary[key] = { version: e.version, task: e.task, estimate: 0, actual: 0, processes: new Set() };
+                        }
+                        taskSummary[key].estimate += e.hours;
+                        taskSummary[key].processes.add(e.process);
+                    });
+
+                    filteredActuals.forEach(a => {
+                        const key = `${a.version}-${a.task}`;
+                        if (!taskSummary[key]) {
+                            taskSummary[key] = { version: a.version, task: a.task, estimate: 0, actual: 0, processes: new Set() };
+                        }
+                        taskSummary[key].actual += a.hours;
+                        taskSummary[key].processes.add(a.process);
+                    });
+
+                    Object.values(taskSummary).forEach(task => {
+                        const overrun = task.estimate > 0 ? ((task.actual - task.estimate) / task.estimate * 100) : 0;
+                        if (overrun > 50) {
+                            warnings.push({ ...task, overrun, processCount: task.processes.size });
+                        }
+                    });
+
+                    if (warnings.length > 0) {
+                        warnings.sort((a, b) => b.overrun - a.overrun);
+
+                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">🚨 要注意タスク</h4>';
+                        html += '<div style="max-height: 150px; overflow-y: auto;">';
+
+                        warnings.slice(0, 5).forEach((warning, idx) => {
+                            html += '<div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-bottom: 5px;">';
+                            html += `<div style="font-weight: 600;">#${idx + 1} ${warning.version} - ${warning.task}</div>`;
+                            html += `<div style="font-size: 13px;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #ff6b6b; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
+                            html += `<div style="font-size: 12px; opacity: 0.8;">工程数: ${warning.processCount}</div>`;
+                            html += '</div>';
+                        });
+
+                        html += '</div></div>';
+                    }
+                }
+
+                html += '</div>';
+            }
+
+            // Phase 2: グラフと月別推移
+            if (reportSettings.chartEnabled || reportSettings.trendEnabled) {
+                html += '<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += '<h3 style="margin: 0 0 15px 0; color: white;">📈 Phase 2: ビジュアル分析</h3>';
+
+                // 工程別バーチャート
+                if (reportSettings.chartEnabled) {
+                    const processSummary = {};
+                    const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+
+                    filteredEstimates.forEach(e => {
+                        if (!processSummary[e.process]) {
+                            processSummary[e.process] = { estimate: 0, actual: 0 };
+                        }
+                        processSummary[e.process].estimate += e.hours;
+                    });
+
+                    filteredActuals.forEach(a => {
+                        if (!processSummary[a.process]) {
+                            processSummary[a.process] = { estimate: 0, actual: 0 };
+                        }
+                        processSummary[a.process].actual += a.hours;
+                    });
+
+                    const maxHours = Math.max(...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
+
+                    html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+                    html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">工程別見積vs実績</h4>';
+
+                    const sortedProcesses = [
+                        ...processOrder.filter(p => processSummary[p]),
+                        ...Object.keys(processSummary).filter(p => !processOrder.includes(p))
+                    ];
+
+                    sortedProcesses.forEach(proc => {
+                        const data = processSummary[proc];
+                        const estWidth = (data.estimate / maxHours * 100).toFixed(1);
+                        const actWidth = (data.actual / maxHours * 100).toFixed(1);
+
+                        html += '<div style="margin-bottom: 15px;">';
+                        html += `<div style="font-weight: 600; margin-bottom: 5px;">${proc}</div>`;
+                        html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
+                        html += '<div style="text-align: right; font-size: 13px;">見積</div>';
+                        html += `<div style="background: rgba(255,255,255,0.3); border-radius: 4px; height: 20px; position: relative;">`;
+                        html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
+                        html += `<span style="font-size: 12px; font-weight: 600;">${data.estimate.toFixed(1)}h</span>`;
+                        html += '</div></div>';
+                        html += '<div style="text-align: right; font-size: 13px;">実績</div>';
+                        html += `<div style="background: rgba(255,255,255,0.3); border-radius: 4px; height: 20px;">`;
+                        html += `<div style="background: ${data.actual > data.estimate ? '#ff6b6b' : '#51cf66'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
+                        html += `<span style="font-size: 12px; font-weight: 600;">${data.actual.toFixed(1)}h</span>`;
+                        html += '</div></div>';
+                        html += '</div></div>';
+                    });
+
+                    html += '</div>';
+                }
+
+                // 月別推移分析
+                if (reportSettings.trendEnabled && selectedMonth === 'all') {
+                    const monthlyData = {};
+
+                    filteredEstimates.forEach(e => {
+                        const est = normalizeEstimate(e);
+                        est.workMonths.forEach(month => {
+                            if (!monthlyData[month]) {
+                                monthlyData[month] = { estimate: 0, actual: 0 };
+                            }
+                            const monthlyHours = est.monthlyHours[month] || 0;
+                            monthlyData[month].estimate += monthlyHours;
+                        });
+                    });
+
+                    filteredActuals.forEach(a => {
+                        const month = a.workMonth;
+                        if (!monthlyData[month]) {
+                            monthlyData[month] = { estimate: 0, actual: 0 };
+                        }
+                        monthlyData[month].actual += a.hours;
+                    });
+
+                    const sortedMonths = Object.keys(monthlyData).sort();
+
+                    if (sortedMonths.length > 1) {
+                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">月別推移</h4>';
+
+                        const maxMonthlyHours = Math.max(...Object.values(monthlyData).map(m => Math.max(m.estimate, m.actual)));
+
+                        sortedMonths.slice(-6).forEach(month => {
+                            const data = monthlyData[month];
+                            const [year, monthNum] = month.split('-');
+                            const estWidth = (data.estimate / maxMonthlyHours * 100).toFixed(1);
+                            const actWidth = (data.actual / maxMonthlyHours * 100).toFixed(1);
+                            const diff = data.actual - data.estimate;
+
+                            html += '<div style="margin-bottom: 12px;">';
+                            html += `<div style="font-weight: 600; margin-bottom: 5px;">${year}年${parseInt(monthNum)}月</div>`;
+                            html += '<div style="display: flex; gap: 5px; align-items: center;">';
+                            html += `<div style="flex: 1; background: rgba(255,255,255,0.3); border-radius: 4px; height: 24px; position: relative;">`;
+                            html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
+                            html += '</div>';
+                            html += `<div style="flex: 1; background: rgba(255,255,255,0.3); border-radius: 4px; height: 24px;">`;
+                            html += `<div style="background: ${data.actual > data.estimate ? '#ff6b6b' : '#51cf66'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
+                            html += '</div>';
+                            html += `<div style="min-width: 80px; text-align: right; font-size: 13px;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+                            html += '</div></div>';
+                        });
+
+                        html += '</div>';
+                    }
+                }
+
+                html += '</div>';
+            }
+
+            // Phase 3: 担当者別分析とインサイト
+            if (reportSettings.memberAnalysisEnabled || reportSettings.insightsEnabled) {
+                html += '<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += '<h3 style="margin: 0 0 15px 0; color: white;">👥 Phase 3: 担当者分析とインサイト</h3>';
+
+                // 担当者別パフォーマンス
+                if (reportSettings.memberAnalysisEnabled) {
+                    const memberSummary = {};
+
+                    filteredEstimates.forEach(e => {
+                        if (!memberSummary[e.member]) {
+                            memberSummary[e.member] = { estimate: 0, actual: 0, tasks: new Set() };
+                        }
+                        memberSummary[e.member].estimate += e.hours;
+                        memberSummary[e.member].tasks.add(`${e.version}-${e.task}`);
+                    });
+
+                    filteredActuals.forEach(a => {
+                        if (!memberSummary[a.member]) {
+                            memberSummary[a.member] = { estimate: 0, actual: 0, tasks: new Set() };
+                        }
+                        memberSummary[a.member].actual += a.hours;
+                        memberSummary[a.member].tasks.add(`${a.version}-${a.task}`);
+                    });
+
+                    const members = Object.keys(memberSummary).sort((a, b) =>
+                        memberSummary[b].actual - memberSummary[a].actual
+                    );
+
+                    if (members.length > 0) {
+                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">担当者別パフォーマンス</h4>';
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
+
+                        members.forEach(member => {
+                            const data = memberSummary[member];
+                            const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(1) : 0;
+                            const diff = data.actual - data.estimate;
+                            const manDays = (data.actual / 8).toFixed(1);
+
+                            html += '<div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 6px;">';
+                            html += `<div style="font-weight: 600; margin-bottom: 5px;">${member}</div>`;
+                            html += `<div style="font-size: 13px;">実績: ${data.actual.toFixed(1)}h (${manDays}人日)</div>`;
+                            html += `<div style="font-size: 13px;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
+                            html += `<div style="font-size: 13px;">差分: <span style="color: ${diff > 0 ? '#ff6b6b' : '#51cf66'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
+                            html += `<div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">担当タスク: ${data.tasks.size}件</div>`;
+                            html += '</div>';
+                        });
+
+                        html += '</div></div>';
+                    }
+                }
+
+                // AIライクなインサイト
+                if (reportSettings.insightsEnabled) {
+                    const insights = [];
+
+                    // 全体の精度チェック
+                    const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
+                    const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+                    const overallAccuracy = totalEst > 0 ? (totalAct / totalEst * 100) : 0;
+
+                    if (overallAccuracy > 120) {
+                        insights.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            title: '見積精度に課題',
+                            message: `全体で見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
+                        });
+                    } else if (overallAccuracy >= 90 && overallAccuracy <= 110) {
+                        insights.push({
+                            type: 'success',
+                            icon: '✅',
+                            title: '優れた見積精度',
+                            message: `見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
+                        });
+                    }
+
+                    // 最も効率的な工程
+                    const processSummary = {};
+                    filteredEstimates.forEach(e => {
+                        if (!processSummary[e.process]) processSummary[e.process] = { estimate: 0, actual: 0 };
+                        processSummary[e.process].estimate += e.hours;
+                    });
+                    filteredActuals.forEach(a => {
+                        if (!processSummary[a.process]) processSummary[a.process] = { estimate: 0, actual: 0 };
+                        processSummary[a.process].actual += a.hours;
+                    });
+
+                    let bestProcess = null;
+                    let bestAccuracy = 1000;
+                    Object.entries(processSummary).forEach(([proc, data]) => {
+                        if (data.estimate > 0) {
+                            const accuracy = Math.abs(100 - (data.actual / data.estimate * 100));
+                            if (accuracy < bestAccuracy) {
+                                bestAccuracy = accuracy;
+                                bestProcess = proc;
+                            }
+                        }
+                    });
+
+                    if (bestProcess) {
+                        insights.push({
+                            type: 'info',
+                            icon: '🌟',
+                            title: '最適な工程',
+                            message: `${bestProcess}工程の見積精度が最も高く、計画通りに進行しています。`
+                        });
+                    }
+
+                    // 担当者の負荷チェック
+                    const memberSummary = {};
+                    filteredActuals.forEach(a => {
+                        if (!memberSummary[a.member]) memberSummary[a.member] = 0;
+                        memberSummary[a.member] += a.hours;
+                    });
+
+                    const maxMember = Object.entries(memberSummary).sort((a, b) => b[1] - a[1])[0];
+                    if (maxMember && selectedMonth !== 'all') {
+                        const manDays = (maxMember[1] / 8).toFixed(1);
+                        const manMonths = (maxMember[1] / 8 / workingDaysPerMonth).toFixed(2);
+                        if (manMonths > 1.2) {
+                            insights.push({
+                                type: 'warning',
+                                icon: '🔥',
+                                title: '高負荷担当者あり',
+                                message: `${maxMember[0]}さんの作業量が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
+                            });
+                        }
+                    }
+
+                    // タスク完了率
+                    const estimatedTasks = new Set(filteredEstimates.map(e => `${e.version}-${e.task}`));
+                    const actualTasks = new Set(filteredActuals.map(a => `${a.version}-${a.task}`));
+                    const completedTasks = [...estimatedTasks].filter(t => actualTasks.has(t));
+                    const completionRate = estimatedTasks.size > 0 ? (completedTasks.length / estimatedTasks.size * 100).toFixed(0) : 0;
+
+                    if (completionRate < 100 && selectedMonth !== 'all') {
+                        const pendingCount = estimatedTasks.size - completedTasks.length;
+                        insights.push({
+                            type: 'info',
+                            icon: '📋',
+                            title: '未完了タスクあり',
+                            message: `見積済みタスクのうち${pendingCount}件が未完了です。進捗を確認してください。`
+                        });
+                    }
+
+                    if (insights.length > 0) {
+                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">💡 インサイト</h4>';
+
+                        insights.forEach(insight => {
+                            const bgColor = insight.type === 'warning' ? 'rgba(255, 107, 107, 0.3)' :
+                                          insight.type === 'success' ? 'rgba(81, 207, 102, 0.3)' :
+                                          'rgba(74, 144, 226, 0.3)';
+
+                            html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px;">`;
+                            html += `<div style="font-weight: 600; margin-bottom: 3px;">${insight.icon} ${insight.title}</div>`;
+                            html += `<div style="font-size: 13px;">${insight.message}</div>`;
+                            html += '</div>';
+                        });
+
+                        html += '</div>';
+                    }
+                }
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html + container.innerHTML;
         }
 
         function renderReportGrouped(filteredActuals, filteredEstimates) {
