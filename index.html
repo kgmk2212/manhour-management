@@ -3706,19 +3706,24 @@
                     
                     // 対応全体の作業月を計算
                     const taskWorkMonths = getTaskWorkMonths(version, taskGroup.task);
-                    
-                    // 作業月バッジの生成
-                    let workMonthBadge = '';
+
+                    // 作業月バッジの生成（レスポンシブ対応）
+                    let workMonthBadgeInline = ''; // 広い画面用（1行表示）
+                    let workMonthBadgeBlock = ''; // 狭い画面用（改行表示）
+
                     if (taskWorkMonths.length === 0) {
-                        workMonthBadge = ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">未設定</span>';
+                        workMonthBadgeInline = ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">未設定</span>';
+                        workMonthBadgeBlock = '<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">未設定</span></div>';
                     } else if (taskWorkMonths.length === 1) {
                         const [y, m] = taskWorkMonths[0].split('-');
-                        workMonthBadge = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">${y}年${parseInt(m)}月</span>`;
+                        workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
+                        workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
                     } else {
                         // 複数月の場合
                         const [y1, m1] = taskWorkMonths[0].split('-');
                         const [y2, m2] = taskWorkMonths[taskWorkMonths.length - 1].split('-');
-                        workMonthBadge = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                        workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                        workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
                     }
                     
                     // 対応名を「:」または「：」で分割してレスポンシブ表示（祝日と同じ方式）
@@ -3740,8 +3745,8 @@
                         taskDisplayHtml = `${parts[0]}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
                     }
                     
-                    // 作業月バッジを追加
-                    taskDisplayHtml += workMonthBadge;
+                    // 作業月バッジを追加（レスポンシブ対応）
+                    taskDisplayHtml += `<span class="work-month-inline">${workMonthBadgeInline}</span><span class="work-month-block">${workMonthBadgeBlock}</span>`;
                     
                     // 対応の全工程が選択されているかチェック
                     const taskIds = taskGroup.processes.map(p => p.id);
