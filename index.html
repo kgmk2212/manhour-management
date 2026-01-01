@@ -3722,8 +3722,10 @@
                         // 複数月の場合
                         const [y1, m1] = taskWorkMonths[0].split('-');
                         const [y2, m2] = taskWorkMonths[taskWorkMonths.length - 1].split('-');
+                        // 広い画面用: 1行表示
                         workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
-                        workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
+                        // 狭い画面用: 〜の前で改行可能にするため2つのバッジに分割
+                        workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">〜${y2}年${parseInt(m2)}月</span></div>`;
                     }
                     
                     // 対応名を「:」または「：」で分割してレスポンシブ表示（祝日と同じ方式）
