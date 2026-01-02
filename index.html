@@ -941,6 +941,45 @@
         .other-work-form {
             animation: fadeIn 0.3s;
         }
+
+        /* セグメントボタンコンテナのスクロールバースタイル */
+        #estimateMonthButtons2,
+        #actualMemberButtons2,
+        #actualMonthButtons2,
+        #reportMonthButtons2 {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f1f5f9;
+        }
+
+        #estimateMonthButtons2::-webkit-scrollbar,
+        #actualMemberButtons2::-webkit-scrollbar,
+        #actualMonthButtons2::-webkit-scrollbar,
+        #reportMonthButtons2::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        #estimateMonthButtons2::-webkit-scrollbar-track,
+        #actualMemberButtons2::-webkit-scrollbar-track,
+        #actualMonthButtons2::-webkit-scrollbar-track,
+        #reportMonthButtons2::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        #estimateMonthButtons2::-webkit-scrollbar-thumb,
+        #actualMemberButtons2::-webkit-scrollbar-thumb,
+        #actualMonthButtons2::-webkit-scrollbar-thumb,
+        #reportMonthButtons2::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        #estimateMonthButtons2::-webkit-scrollbar-thumb:hover,
+        #actualMemberButtons2::-webkit-scrollbar-thumb:hover,
+        #actualMonthButtons2::-webkit-scrollbar-thumb:hover,
+        #reportMonthButtons2::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body>
@@ -5687,15 +5726,10 @@
 
             if (!container || !select) return;
 
-            // 要素数が多い場合はselectを表示
-            if (items.length > maxItems) {
-                container.style.display = 'none';
-                select.style.display = 'block';
-                return;
-            }
-
-            // セグメントボタンを表示
-            container.style.display = 'inline-flex';
+            // セグメントボタンを表示（横スクロール対応）
+            container.style.display = 'flex';
+            container.style.overflowX = 'auto';
+            container.style.gap = '0';
             select.style.display = 'none';
             container.innerHTML = '';
 
@@ -5710,6 +5744,7 @@
                     cursor: pointer;
                     transition: all 0.2s;
                     white-space: nowrap;
+                    flex-shrink: 0;
                     ${index > 0 ? 'border-left: 1px solid #dee2e6;' : ''}
                 `;
 
