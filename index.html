@@ -1237,6 +1237,10 @@
                             <option value="all">全期間</option>
                         </select>
                     </div>
+
+                    <button id="workMonthAssignmentBtnCompact" onclick="toggleWorkMonthSelectionMode()" style="padding: 6px 12px; border: 2px solid #007bff; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; font-size: 12px; white-space: nowrap; flex-shrink: 0;">
+                        作業月割り当て
+                    </button>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
@@ -1256,6 +1260,10 @@
                             <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
                             </div>
                         </div>
+
+                        <button id="workMonthAssignmentBtnSegmented" onclick="toggleWorkMonthSelectionMode()" style="padding: 8px 16px; border: 2px solid #007bff; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                            作業月割り当て
+                        </button>
                     </div>
                 </div>
                 
@@ -4236,12 +4244,7 @@
             html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
                 <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workMonthFilter === 'all' || workMonthFilter === 'unassigned' ? 'デフォルト20日' : '実働日数ベース'}）
             </div>`;
-            html += `<div style="text-align: right; margin-bottom: 15px;">
-                <button id="workMonthAssignmentBtn" onclick="toggleWorkMonthSelectionMode()" style="padding: 8px 16px; border: 2px solid #007bff; border-radius: 6px; background: ${workMonthSelectionMode ? '#ffc107' : '#007bff'}; color: ${workMonthSelectionMode ? '#856404' : 'white'}; font-weight: 600; cursor: pointer; ${workMonthSelectionMode ? 'box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);' : ''}">
-                    作業月割り当て
-                </button>
-            </div>`;
-            
+
             // 版数ごとに表示
             Object.keys(versionGroups).sort().forEach(version => {
                 html += `<div style="margin-bottom: 30px;">`;
@@ -7726,14 +7729,42 @@
             workMonthSelectionMode = !workMonthSelectionMode;
             const modePanel = document.getElementById('workMonthAssignmentMode');
 
+            // ボタンの状態を更新
+            const btnCompact = document.getElementById('workMonthAssignmentBtnCompact');
+            const btnSegmented = document.getElementById('workMonthAssignmentBtnSegmented');
+
             if (workMonthSelectionMode) {
                 modePanel.style.display = 'block';
                 selectedEstimateIds.clear();
                 updateSelectedWorkHours();
                 initDragHandle(); // ドラッグ機能を初期化
+
+                // ボタンをON状態にする
+                if (btnCompact) {
+                    btnCompact.style.background = '#ffc107';
+                    btnCompact.style.color = '#856404';
+                    btnCompact.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+                }
+                if (btnSegmented) {
+                    btnSegmented.style.background = '#ffc107';
+                    btnSegmented.style.color = '#856404';
+                    btnSegmented.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+                }
             } else {
                 modePanel.style.display = 'none';
                 selectedEstimateIds.clear();
+
+                // ボタンをOFF状態にする
+                if (btnCompact) {
+                    btnCompact.style.background = '#007bff';
+                    btnCompact.style.color = 'white';
+                    btnCompact.style.boxShadow = '';
+                }
+                if (btnSegmented) {
+                    btnSegmented.style.background = '#007bff';
+                    btnSegmented.style.color = 'white';
+                    btnSegmented.style.boxShadow = '';
+                }
             }
 
             renderEstimateList();
