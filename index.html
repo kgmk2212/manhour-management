@@ -1238,9 +1238,12 @@
                         </select>
                     </div>
 
-                    <button id="workMonthAssignmentBtnCompact" onclick="toggleWorkMonthSelectionMode()" style="padding: 6px 12px; border: 2px solid #007bff; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; font-size: 12px; white-space: nowrap; flex-shrink: 0;">
-                        作業月割り当て
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                            <span>作業月割り当て</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
@@ -1261,9 +1264,12 @@
                             </div>
                         </div>
 
-                        <button id="workMonthAssignmentBtnSegmented" onclick="toggleWorkMonthSelectionMode()" style="padding: 8px 16px; border: 2px solid #007bff; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; font-size: 13px; white-space: nowrap;">
-                            作業月割り当て
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                                <input type="checkbox" id="workMonthSelectionMode2" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                                <span>作業月割り当て</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 
@@ -4241,8 +4247,16 @@
             });
 
             let html = '<div style="margin-bottom: 30px;">';
+
+            // 換算基準の表示を生成
+            let workDaysLabel = 'デフォルト20日';
+            if (workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
+                const [year, month] = workMonthFilter.split('-');
+                workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+            }
+
             html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-                <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workMonthFilter === 'all' || workMonthFilter === 'unassigned' ? 'デフォルト20日' : '実働日数ベース'}）
+                <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）
             </div>`;
 
             // 版数ごとに表示
@@ -6239,6 +6253,10 @@
         // 作業月割り当てモードを閉じる
         function closeWorkMonthAssignmentMode() {
             if (workMonthSelectionMode) {
+                const checkbox1 = document.getElementById('workMonthSelectionMode');
+                const checkbox2 = document.getElementById('workMonthSelectionMode2');
+                if (checkbox1) checkbox1.checked = false;
+                if (checkbox2) checkbox2.checked = false;
                 toggleWorkMonthSelectionMode();
             }
         }
@@ -7726,45 +7744,36 @@
         }
 
         function toggleWorkMonthSelectionMode() {
-            workMonthSelectionMode = !workMonthSelectionMode;
-            const modePanel = document.getElementById('workMonthAssignmentMode');
+            const checkbox1 = document.getElementById('workMonthSelectionMode');
+            const checkbox2 = document.getElementById('workMonthSelectionMode2');
 
-            // ボタンの状態を更新
-            const btnCompact = document.getElementById('workMonthAssignmentBtnCompact');
-            const btnSegmented = document.getElementById('workMonthAssignmentBtnSegmented');
+            // どちらかのチェックボックスから呼ばれた場合、状態を同期
+            if (checkbox1 && checkbox2) {
+                if (event && event.target === checkbox1) {
+                    checkbox2.checked = checkbox1.checked;
+                    workMonthSelectionMode = checkbox1.checked;
+                } else if (event && event.target === checkbox2) {
+                    checkbox1.checked = checkbox2.checked;
+                    workMonthSelectionMode = checkbox2.checked;
+                } else {
+                    // イベントがない場合（プログラムから呼ばれた場合）
+                    workMonthSelectionMode = checkbox1.checked;
+                    checkbox2.checked = checkbox1.checked;
+                }
+            } else if (checkbox1) {
+                workMonthSelectionMode = checkbox1.checked;
+            }
+
+            const modePanel = document.getElementById('workMonthAssignmentMode');
 
             if (workMonthSelectionMode) {
                 modePanel.style.display = 'block';
                 selectedEstimateIds.clear();
                 updateSelectedWorkHours();
                 initDragHandle(); // ドラッグ機能を初期化
-
-                // ボタンをON状態にする
-                if (btnCompact) {
-                    btnCompact.style.background = '#ffc107';
-                    btnCompact.style.color = '#856404';
-                    btnCompact.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
-                }
-                if (btnSegmented) {
-                    btnSegmented.style.background = '#ffc107';
-                    btnSegmented.style.color = '#856404';
-                    btnSegmented.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
-                }
             } else {
                 modePanel.style.display = 'none';
                 selectedEstimateIds.clear();
-
-                // ボタンをOFF状態にする
-                if (btnCompact) {
-                    btnCompact.style.background = '#007bff';
-                    btnCompact.style.color = 'white';
-                    btnCompact.style.boxShadow = '';
-                }
-                if (btnSegmented) {
-                    btnSegmented.style.background = '#007bff';
-                    btnSegmented.style.color = 'white';
-                    btnSegmented.style.boxShadow = '';
-                }
             }
 
             renderEstimateList();
