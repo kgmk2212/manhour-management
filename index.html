@@ -1068,10 +1068,27 @@
                         </div>
                         <div class="form-group">
                             <label>作業月</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <select id="quickEstStartMonth" onchange="updateQuickEstWorkMonthUI()"></select>
-                                <span id="quickEstMonthSeparator" style="display: none;">〜</span>
-                                <select id="quickEstEndMonth" onchange="updateQuickEstWorkMonthUI()" style="display: none;"></select>
+                            <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="quickEstMonthType" value="single" checked onchange="switchQuickEstMonthType()" style="width: auto; margin-right: 4px;">
+                                    <span style="color: rgba(255,255,255,0.75); font-size: 11px;">単一月</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="quickEstMonthType" value="multi" onchange="switchQuickEstMonthType()" style="width: auto; margin-right: 4px;">
+                                    <span style="color: rgba(255,255,255,0.75); font-size: 11px;">複数月</span>
+                                </label>
+                            </div>
+                            <div id="quickEstMonthInputs">
+                                <div id="quickEstSingleMonthInput" style="display: block;">
+                                    <select id="quickEstStartMonth" onchange="updateQuickEstWorkMonthUI()"></select>
+                                </div>
+                                <div id="quickEstMultiMonthInput" style="display: none;">
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <select id="quickEstStartMonthMulti" onchange="updateQuickEstWorkMonthUI()"></select>
+                                        <span>〜</span>
+                                        <select id="quickEstEndMonth" onchange="updateQuickEstWorkMonthUI()"></select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <h4 style="margin-bottom: 10px; color: rgba(255,255,255,0.9);">各工程の見積</h4>
@@ -3547,26 +3564,55 @@
             }
         }
 
-        // 作業月UIの更新（単一月/複数月の切り替え）
-        function updateQuickEstWorkMonthUI() {
-            const startMonth = document.getElementById('quickEstStartMonth').value;
-            const endMonthSelect = document.getElementById('quickEstEndMonth');
-            const separator = document.getElementById('quickEstMonthSeparator');
+        // 作業月タイプの切り替え（単一月/複数月）
+        function switchQuickEstMonthType() {
+            const monthType = document.querySelector('input[name="quickEstMonthType"]:checked').value;
+            const singleMonthInput = document.getElementById('quickEstSingleMonthInput');
+            const multiMonthInput = document.getElementById('quickEstMultiMonthInput');
 
-            if (!startMonth) return;
-
-            // 終了月セレクトと区切り文字の表示を切り替え
-            if (endMonthSelect.options.length === 0 || endMonthSelect.value === '' || startMonth === endMonthSelect.value) {
-                // 単一月モード
-                separator.style.display = 'none';
-                endMonthSelect.style.display = 'none';
+            if (monthType === 'single') {
+                singleMonthInput.style.display = 'block';
+                multiMonthInput.style.display = 'none';
                 updateQuickEstimateTableHeader(false);
             } else {
-                // 複数月モード
-                separator.style.display = 'inline';
-                endMonthSelect.style.display = 'inline-block';
+                singleMonthInput.style.display = 'none';
+                multiMonthInput.style.display = 'block';
                 updateQuickEstimateTableHeader(true);
-                updateDefaultProcessMonths(startMonth, endMonthSelect.value);
+
+                // 複数月モードの場合、開始月と終了月を同期
+                const startMonth = document.getElementById('quickEstStartMonth').value;
+                const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
+                const endMonth = document.getElementById('quickEstEndMonth');
+
+                if (startMonth && startMonthMulti) {
+                    startMonthMulti.value = startMonth;
+                    if (endMonth && !endMonth.value) {
+                        endMonth.value = startMonth;
+                    }
+                }
+                updateDefaultProcessMonths(startMonthMulti.value, endMonth.value);
+            }
+        }
+
+        // 作業月UIの更新（単一月/複数月の切り替え）
+        function updateQuickEstWorkMonthUI() {
+            const monthType = document.querySelector('input[name="quickEstMonthType"]:checked')?.value || 'single';
+
+            if (monthType === 'single') {
+                // 単一月モードでは何もしない
+                return;
+            }
+
+            // 複数月モードの場合のみ処理
+            const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
+            const endMonth = document.getElementById('quickEstEndMonth');
+
+            if (!startMonthMulti || !endMonth) return;
+            if (!startMonthMulti.value) return;
+
+            // 工程別のデフォルト作業月を更新
+            if (endMonth.value && startMonthMulti.value !== endMonth.value) {
+                updateDefaultProcessMonths(startMonthMulti.value, endMonth.value);
             }
         }
 
@@ -3665,8 +3711,18 @@
         function addQuickEstimate() {
             const version = document.getElementById('quickEstVersion').value;
             const task = document.getElementById('quickEstTask').value.trim();
-            const startMonth = document.getElementById('quickEstStartMonth').value;
-            const endMonth = document.getElementById('quickEstEndMonth');
+
+            // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
+            const monthType = document.querySelector('input[name="quickEstMonthType"]:checked').value;
+            let startMonth, endMonth;
+
+            if (monthType === 'single') {
+                startMonth = document.getElementById('quickEstStartMonth').value;
+                endMonth = null;
+            } else {
+                startMonth = document.getElementById('quickEstStartMonthMulti').value;
+                endMonth = document.getElementById('quickEstEndMonth');
+            }
 
             if (!version || version === '新規追加') {
                 alert('版数を選択してください');
@@ -3939,13 +3995,10 @@
 
             // 作業月セレクトボックスの初期化
             generateMonthOptions('quickEstStartMonth', currentMonth);
+            generateMonthOptions('quickEstStartMonthMulti', currentMonth);
             generateMonthOptions('quickEstEndMonth', currentMonth);
             generateMonthOptions('quickStartMonth', currentMonth);
             generateMonthOptions('quickEndMonth', currentMonth);
-
-            // 終了月セレクトを最初は非表示に
-            document.getElementById('quickEstEndMonth').style.display = 'none';
-            document.getElementById('quickEstMonthSeparator').style.display = 'none';
 
             // 前回モードを記憶する設定の読み込み
             const savedRememberMode = localStorage.getItem('rememberQuickInputMode');
