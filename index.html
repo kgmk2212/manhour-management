@@ -630,8 +630,7 @@
 
             /* 見積テーブルのモバイル対応 */
             .estimate-table-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                /* overflow-x削除で全列表示 */
             }
 
             .estimate-table {
@@ -1007,8 +1006,8 @@
 
                     <!-- セグメントボタン -->
                     <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.1); margin-bottom: 20px;">
-                        <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 10px 24px; border: none; background: rgba(255,255,255,0.9); color: #7b3ff2; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">実績入力</button>
-                        <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 10px 24px; border: none; background: transparent; color: rgba(255,255,255,0.9); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">見積登録</button>
+                        <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 10px 24px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">実績入力</button>
+                        <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 10px 24px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">見積登録</button>
                     </div>
 
                     <!-- 実績入力フォーム -->
@@ -1118,7 +1117,7 @@
                             <div class="form-group" style="margin-bottom: 10px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="checkbox" id="quickEnableMonthSplit" onchange="toggleQuickMonthSplit()" style="width: auto; margin-right: 10px;">
-                                    <span style="font-weight: 600; color: rgba(255,255,255,0.9);">複数月に分割して登録</span>
+                                    <span style="font-weight: 600; color: #1976d2;">複数月に分割して登録</span>
                                 </label>
                                 <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px;">
                                     一つの工程を複数月で作業する場合に、月別の工数を設定できます
@@ -3524,9 +3523,9 @@
                 document.getElementById('todayActuals').style.display = 'block';
 
                 actualBtn.style.background = 'rgba(255,255,255,0.9)';
-                actualBtn.style.color = '#7b3ff2';
+                actualBtn.style.color = 'rgba(0,0,0,0.85)';
                 estimateBtn.style.background = 'transparent';
-                estimateBtn.style.color = 'rgba(255,255,255,0.9)';
+                estimateBtn.style.color = 'rgba(255,255,255,0.85)';
             } else {
                 actualForm.style.display = 'none';
                 estimateForm.style.display = 'block';
@@ -3535,9 +3534,9 @@
                 document.getElementById('todayActuals').style.display = 'none';
 
                 actualBtn.style.background = 'transparent';
-                actualBtn.style.color = 'rgba(255,255,255,0.9)';
+                actualBtn.style.color = 'rgba(255,255,255,0.85)';
                 estimateBtn.style.background = 'rgba(255,255,255,0.9)';
-                estimateBtn.style.color = '#7b3ff2';
+                estimateBtn.style.color = 'rgba(0,0,0,0.85)';
             }
 
             // 設定で記憶が有効な場合、localStorageに保存
@@ -4592,7 +4591,7 @@
                             const [y, m] = month.split('-');
                             const hours = est.monthlyHours[month] || 0;
                             if (idx > 0) workMonthDisplay += ', ';
-                            workMonthDisplay += `${parseInt(m)}月:${hours.toFixed(1)}h`;
+                            workMonthDisplay += `${y}年${parseInt(m)}月:${hours.toFixed(1)}h`;
                         });
                         workMonthDisplay += '</small>';
                     }
