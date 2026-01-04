@@ -628,6 +628,12 @@
                 grid-template-columns: 1fr;
             }
 
+            /* モバイルでのモーダル余白を縮小 */
+            .modal-content {
+                margin: 2% auto;
+                width: 95%;
+            }
+
             /* 見積テーブルのモバイル対応 */
             .estimate-table-wrapper {
                 /* overflow-x削除で全列表示 */
@@ -1773,7 +1779,7 @@
                 <input type="hidden" id="editActualId">
                 <div class="form-group">
                     <label>日付</label>
-                    <input type="date" id="editActualDate">
+                    <input type="date" id="editActualDate" style="max-width: 200px;">
                 </div>
                 <div class="form-group">
                     <label>版数</label>
@@ -5475,7 +5481,15 @@
             // 担当者を設定（カレンダーからの場合は表示のみ）
             const memberSelect = document.getElementById('editActualMember');
             const memberDisplay = document.getElementById('editActualMemberDisplay');
+
+            // optionを追加してから値を設定
+            memberSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = member;
+            option.textContent = member;
+            memberSelect.appendChild(option);
             memberSelect.value = member;
+
             memberSelect.style.display = 'none';
             memberDisplay.style.display = 'block';
             memberDisplay.textContent = member;
@@ -5641,10 +5655,33 @@
             document.getElementById('editActualDate').value = actual.date;
             document.getElementById('editActualVersion').value = actual.version;
 
-            // 既存の実績を編集する場合は、入力欄を表示して値を設定
-            document.getElementById('editActualTaskSelect').style.display = 'none';
-            document.getElementById('editActualTaskSearch').style.display = 'block';
-            document.getElementById('editActualTaskSearch').value = actual.task;
+            // 編集時も未完了対応のリストを更新して選択できるようにする
+            updateEditActualTaskList(actual.member);
+
+            // 対応名をセレクトボックスで選択できるように
+            const taskSelect = document.getElementById('editActualTaskSelect');
+            const taskInput = document.getElementById('editActualTaskSearch');
+
+            // 既存の対応名と一致するoptionがあれば選択、なければ「新規入力」を選択して入力欄を表示
+            let foundMatch = false;
+            for (let i = 0; i < taskSelect.options.length; i++) {
+                if (taskSelect.options[i].value === actual.task) {
+                    taskSelect.value = actual.task;
+                    foundMatch = true;
+                    break;
+                }
+            }
+
+            if (foundMatch) {
+                taskSelect.style.display = 'block';
+                taskInput.style.display = 'none';
+            } else {
+                // 一致する対応名がない場合は新規入力モード
+                taskSelect.value = '__NEW__';
+                taskSelect.style.display = 'none';
+                taskInput.style.display = 'block';
+                taskInput.value = actual.task;
+            }
 
             document.getElementById('editActualProcess').value = actual.process;
             document.getElementById('editActualHours').value = actual.hours;
