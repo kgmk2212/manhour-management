@@ -1002,14 +1002,12 @@
         <div class="content">
             <div id="quick" class="tab-content active">
                 <div class="quick-input theme-bg theme-purple">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 id="quickModeTitle" style="margin: 0;">今日の実績を入力</h2>
+                    <h2 id="quickModeTitle">今日の実績を入力</h2>
 
-                        <!-- セグメントボタン -->
-                        <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
-                            <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
-                            <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
-                        </div>
+                    <!-- セグメントボタン -->
+                    <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1); margin-bottom: 20px;">
+                        <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
+                        <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
                     </div>
 
                     <!-- 実績入力フォーム -->
@@ -5459,9 +5457,10 @@
 
             // 版数を最新のものにデフォルト設定
             const versionSelect = document.getElementById('editActualVersion');
+            // 最後のオプション（最新の版数）を選択
+            // options[0]="-- 版数を選択 --", options[1]="+ 新しい版数を追加...", 以降が実際の版数
             if (versionSelect.options.length > 2) {
-                // options[0]="-- 版数を選択 --", options[1]="+ 新しい版数を追加...", options[2]以降が実際の版数
-                versionSelect.value = versionSelect.options[2].value;
+                versionSelect.value = versionSelect.options[versionSelect.options.length - 1].value;
             } else {
                 versionSelect.value = '';
             }
@@ -5636,7 +5635,7 @@
                 alert('データが見つかりません');
                 return;
             }
-            
+
             // フォームに既存データを設定
             document.getElementById('editActualId').value = id;
             document.getElementById('editActualDate').value = actual.date;
@@ -5649,6 +5648,11 @@
 
             document.getElementById('editActualProcess').value = actual.process;
             document.getElementById('editActualHours').value = actual.hours;
+
+            // モーダルのタイトルを更新
+            const modalTitle = document.querySelector('#editActualModal .modal-header h3');
+            const [year, month, day] = actual.date.split('-');
+            modalTitle.textContent = `実績データを編集 - ${actual.member} (${year}/${parseInt(month)}/${parseInt(day)})`;
             
             // 担当者選択肢を更新
             const memberSelect = document.getElementById('editActualMember');
@@ -5698,7 +5702,7 @@
             document.getElementById('editActualOtherBtn').style.display = 'none';
 
             // モーダルを表示
-            document.getElementById('editActualModal').style.display = 'block';
+            document.getElementById('editActualModal').style.display = 'flex';
         }
 
         function closeEditActualModal() {
