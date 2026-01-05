@@ -740,25 +740,30 @@
                 min-width: 100% !important;
             }
 
-            /* 対応名列を縮小 */
-            #estimateList table th:first-child,
-            #estimateList table td:first-child {
-                min-width: 100px !important;
-                max-width: 120px !important;
+            #estimateList table th,
+            #estimateList table td {
+                padding: 4px 3px !important;
             }
 
-            /* 工程列、担当列、工数列を縮小 */
-            #estimateList table th:not(:first-child):not(:nth-last-child(2)):not(:last-child),
-            #estimateList table td:not(:first-child):not([rowspan]):not(:last-child) {
-                min-width: 50px !important;
-                max-width: 70px !important;
-                padding: 4px 2px !important;
-            }
-
-            /* 対応合計列 */
-            #estimateList table td[rowspan] {
+            /* 対応名列（rowspan） */
+            #estimateList table td[rowspan]:first-child,
+            #estimateList table td[rowspan]:nth-child(2) {
+                min-width: 90px !important;
+                max-width: 110px !important;
                 padding: 6px 4px !important;
-                min-width: 80px !important;
+            }
+
+            /* 工程、担当、工数の通常セル */
+            #estimateList table td:not([rowspan]):not(:last-child) {
+                min-width: 55px !important;
+                max-width: 65px !important;
+            }
+
+            /* 対応合計列（rowspan、最後から2番目） */
+            #estimateList table td[rowspan]:nth-last-child(2) {
+                padding: 6px 4px !important;
+                min-width: 75px !important;
+                max-width: 85px !important;
             }
 
             /* 対応合計のフォントサイズを縮小 */
@@ -770,10 +775,10 @@
                 font-size: 10px !important;
             }
 
-            /* 操作列を縮小 */
-            #estimateList table th:last-child,
+            /* 操作列 */
             #estimateList table td:last-child {
-                min-width: 80px !important;
+                min-width: 85px !important;
+                max-width: 95px !important;
             }
 
             /* コンテンツエリアのパディングを縮小 */
