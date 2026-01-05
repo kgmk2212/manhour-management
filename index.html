@@ -735,6 +735,21 @@
                 font-size: 13px;
             }
 
+            /* 担当者別合計カードのモバイル最適化 */
+            .member-summary-card {
+                min-width: 110px !important;
+                padding: 8px 12px !important;
+            }
+
+            #estimateMemberSummaryContent {
+                gap: 8px !important;
+            }
+
+            /* 人日/人月を縦に並べる */
+            .member-manpower {
+                white-space: pre-line;
+            }
+
             /* コンテンツエリアのパディングを縮小 */
             .content {
                 padding: 10px;
@@ -4217,10 +4232,11 @@
                         const days = (hours / 8).toFixed(1);
                         const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
                         memberHtml += `
-                            <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
+                            <div class="member-summary-card" style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
                                 <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
                                 <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
-                                <div style="font-size: 11px; color: #999;">${days}人日 / ${months}人月</div>
+                                <div class="member-manpower" style="font-size: 11px; color: #999;">${days}人日
+${months}人月</div>
                             </div>
                         `;
                     });
