@@ -735,18 +735,13 @@
                 font-size: 13px;
             }
 
-            /* 担当者別合計カードのモバイル最適化 */
-            .member-summary-card {
-                min-width: 110px !important;
-                padding: 8px 12px !important;
+            /* 見積一覧グループ表示の対応合計をモバイル最適化 */
+            #estimateList table td[rowspan] {
+                padding: 8px 6px !important;
             }
 
-            #estimateMemberSummaryContent {
-                gap: 8px !important;
-            }
-
-            /* 人日/人月を縦に並べる */
-            .member-manpower {
+            #estimateList table td[rowspan] > div:last-child {
+                font-size: 11px !important;
                 white-space: pre-line;
             }
 
@@ -4232,11 +4227,10 @@
                         const days = (hours / 8).toFixed(1);
                         const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
                         memberHtml += `
-                            <div class="member-summary-card" style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
+                            <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
                                 <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
                                 <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
-                                <div class="member-manpower" style="font-size: 11px; color: #999;">${days}人日
-${months}人月</div>
+                                <div style="font-size: 11px; color: #999;">${days}人日 / ${months}人月</div>
                             </div>
                         `;
                     });
@@ -4531,7 +4525,8 @@ ${months}人月</div>
                             // 対応合計（グレーなし）
                             html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
-                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日
+${formatNumber(months, 2)}人月</div>
                             </td>`;
                         }
                         
