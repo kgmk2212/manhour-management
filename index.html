@@ -2560,8 +2560,8 @@
                 });
             });
 
-            // 月を昇順でソート（古い→新しい）
-            const sortedMonths = Array.from(months).sort();
+            // 月を降順でソート（最新が上）
+            const sortedMonths = Array.from(months).sort().reverse();
 
             // 選択肢を生成
             select.innerHTML = '<option value="all">全期間</option>';
@@ -2609,8 +2609,8 @@
                 }
             });
 
-            // 月を昇順でソート（古い→新しい）
-            const sortedMonths = Array.from(months).sort();
+            // 月を降順でソート（最新が上）
+            const sortedMonths = Array.from(months).sort().reverse();
 
             // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
@@ -2632,9 +2632,10 @@
             });
 
             // セグメントボタン版を生成（実績一覧セグメントレイアウト用）
+            // セグメントボタンは昇順で表示（古い→新しい）
             const items = [
                 { value: 'all', label: '全期間' },
-                ...sortedMonths.map(month => {
+                ...sortedMonths.slice().reverse().map(month => {
                     const [year, monthNum] = month.split('-');
                     return {
                         value: month,
@@ -2658,12 +2659,12 @@
             // selectElementのオプションを確認
             const options = Array.from(selectElement.options);
 
-            // 'all'以外のオプションを取得（昇順で並んでいるので最後が最新月）
+            // 'all'以外のオプションを取得（降順で並んでいるので最初が最新月）
             const monthOptions = options.filter(opt => opt.value !== 'all');
 
             if (monthOptions.length > 0) {
-                // 最後の月（最新月）を返す
-                return monthOptions[monthOptions.length - 1].value;
+                // 最初の月（最新月）を返す
+                return monthOptions[0].value;
             }
 
             return 'all'; // デフォルトは全期間
