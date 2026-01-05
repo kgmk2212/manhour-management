@@ -735,20 +735,45 @@
                 font-size: 13px;
             }
 
-            /* 見積一覧グループ表示の対応合計をモバイル最適化 */
+            /* 見積一覧グループ表示をモバイル最適化 */
+            #estimateList table {
+                min-width: 100% !important;
+            }
+
+            /* 対応名列を縮小 */
+            #estimateList table th:first-child,
+            #estimateList table td:first-child {
+                min-width: 100px !important;
+                max-width: 120px !important;
+            }
+
+            /* 工程列、担当列、工数列を縮小 */
+            #estimateList table th:not(:first-child):not(:nth-last-child(2)):not(:last-child),
+            #estimateList table td:not(:first-child):not([rowspan]):not(:last-child) {
+                min-width: 50px !important;
+                max-width: 70px !important;
+                padding: 4px 2px !important;
+            }
+
+            /* 対応合計列 */
             #estimateList table td[rowspan] {
                 padding: 6px 4px !important;
+                min-width: 80px !important;
             }
 
-            /* モバイルでは人日/人月表示を非表示にして合計工数のみ表示 */
-            #estimateList table td[rowspan] > div:last-child {
-                display: none !important;
-            }
-
-            /* 対応合計のフォントサイズを調整 */
+            /* 対応合計のフォントサイズを縮小 */
             #estimateList table td[rowspan] > div:first-child {
                 font-size: 14px !important;
-                margin-bottom: 0 !important;
+            }
+
+            #estimateList table td[rowspan] > div:last-child {
+                font-size: 10px !important;
+            }
+
+            /* 操作列を縮小 */
+            #estimateList table th:last-child,
+            #estimateList table td:last-child {
+                min-width: 80px !important;
             }
 
             /* コンテンツエリアのパディングを縮小 */
