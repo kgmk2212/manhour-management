@@ -237,23 +237,29 @@
 
         /* モバイル用の固定列の幅制限 */
         @media (max-width: 768px) {
+            /* 日別合計列を非表示にしてスペースを節約 */
+            .daily-total {
+                display: none !important;
+            }
+
             /* すべてのth, tdのmin-widthをリセットしてコンパクトに */
             table th,
             table td {
                 min-width: auto !important;
-                padding: 6px 8px;
+                padding: 4px 6px;
+                font-size: 12px;
             }
 
             table td[rowspan] {
-                max-width: 18vw; /* 画面幅の18% (20%→18%) */
-                padding: 8px 6px;
+                max-width: 16vw; /* 画面幅の16% (18%→16%) */
+                padding: 6px 4px;
             }
 
             table tr td:first-child,
             table tr th:first-child {
-                max-width: 18vw;
-                min-width: 80px !important; /* 固定列の最小幅を80pxに制限 */
-                padding: 8px 6px;
+                max-width: 16vw;
+                min-width: 70px !important; /* 固定列の最小幅を70pxに制限 (80→70) */
+                padding: 6px 4px;
             }
         }
 
@@ -262,20 +268,21 @@
             /* パディングをさらに縮小 */
             table th,
             table td {
-                padding: 4px 6px;
-                font-size: 12px;
+                padding: 3px 4px;
+                font-size: 11px;
             }
 
             table td[rowspan] {
-                max-width: 25vw; /* 画面幅の25% */
-                padding: 6px 4px;
+                max-width: 20vw; /* 画面幅の20% (25%→20%) */
+                padding: 4px 3px;
             }
 
             table tr td:first-child,
             table tr th:first-child {
-                max-width: 25vw;
-                min-width: 70px !important; /* 固定列の最小幅を70pxに制限 */
-                padding: 6px 4px;
+                max-width: 20vw;
+                min-width: 60px !important; /* 固定列の最小幅を60pxに制限 (70→60) */
+                padding: 4px 3px;
+                font-size: 10px;
             }
 
             /* コンテンツエリアをさらに縮小 */
@@ -601,6 +608,52 @@
         .stat-card .value {
             font-size: 32px;
             font-weight: 700;
+        }
+
+        /* モバイル用レポート集計カードの最適化 */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+
+            .stat-card {
+                padding: 12px;
+                border-radius: 8px;
+            }
+
+            .stat-card h3 {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            .stat-card .value {
+                font-size: 22px;
+            }
+
+            .stat-card > div:last-child {
+                font-size: 10px !important;
+            }
+
+            /* レポート分析パネルのモバイル最適化 */
+            #reportDetailView > div {
+                margin: 15px 0 !important;
+                padding: 15px !important;
+            }
+
+            #reportDetailView h3 {
+                font-size: 15px !important;
+            }
+
+            #reportDetailView h4 {
+                font-size: 14px !important;
+            }
+
+            /* 担当者パフォーマンスグリッドの最小幅を調整 */
+            #reportDetailView [style*="grid-template-columns"] {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+            }
         }
 
         @media (max-width: 768px) {
@@ -1008,12 +1061,15 @@
         <div class="content">
             <div id="quick" class="tab-content active">
                 <div class="quick-input theme-bg theme-purple">
-                    <h2 id="quickModeTitle">今日の実績を入力</h2>
+                    <!-- タイトルとセグメントボタンを横並びに -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 id="quickModeTitle" style="margin: 0;">今日の実績を入力</h2>
 
-                    <!-- セグメントボタン -->
-                    <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1); margin-bottom: 20px;">
-                        <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
-                        <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
+                        <!-- セグメントボタン -->
+                        <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
+                            <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
+                            <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
+                        </div>
                     </div>
 
                     <!-- 実績入力フォーム -->
@@ -1136,13 +1192,13 @@
                         </div>
 
                         <!-- 月分割アシスタント -->
-                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid rgba(255,255,255,0.3);">
+                        <div style="background: rgba(251, 146, 60, 0.15); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb923c;">
                             <div class="form-group" style="margin-bottom: 10px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="checkbox" id="quickEnableMonthSplit" onchange="toggleQuickMonthSplit()" style="width: auto; margin-right: 10px;">
-                                    <span style="font-weight: 600; color: #1976d2;">複数月に分割して登録</span>
+                                    <span style="font-weight: 600; color: #ea580c;">📅 複数月に分割して登録</span>
                                 </label>
-                                <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px;">
+                                <small style="color: rgba(255,255,255,0.8); display: block; margin-top: 5px;">
                                     一つの工程を複数月で作業する場合に、月別の工数を設定できます
                                 </small>
                             </div>
@@ -2554,8 +2610,8 @@
                 }
             });
 
-            // 月を降順でソート
-            const sortedMonths = Array.from(months).sort().reverse();
+            // 月を昇順でソート（古い→新しい）
+            const sortedMonths = Array.from(months).sort();
 
             // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
@@ -2579,7 +2635,7 @@
             // セグメントボタン版を生成（実績一覧セグメントレイアウト用）
             const items = [
                 { value: 'all', label: '全期間' },
-                ...sortedMonths.slice().reverse().map(month => {
+                ...sortedMonths.map(month => {
                     const [year, monthNum] = month.split('-');
                     return {
                         value: month,
@@ -2598,22 +2654,19 @@
             );
         }
 
-        // 現在月または最新の登録月を取得する汎用関数
+        // 最新の登録月を取得する汎用関数
         function getDefaultMonth(selectElement) {
-            // 現在月を計算
-            const today = new Date();
-            const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
             // selectElementのオプションを確認
             const options = Array.from(selectElement.options);
-            const hasCurrentMonth = options.some(opt => opt.value === currentMonth);
 
-            if (hasCurrentMonth) {
-                return currentMonth;
-            } else if (options.length > 1) {
-                // 現在月のデータがない場合は、最新月を返す（昇順なので最後の要素）
-                return options[options.length - 1].value;
+            // 'all'以外のオプションを取得（昇順で並んでいるので最後が最新月）
+            const monthOptions = options.filter(opt => opt.value !== 'all');
+
+            if (monthOptions.length > 0) {
+                // 最後の月（最新月）を返す
+                return monthOptions[monthOptions.length - 1].value;
             }
+
             return 'all'; // デフォルトは全期間
         }
 
@@ -5028,7 +5081,7 @@
                     html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(1)}h</th>`;
                 });
                 
-                html += `<th style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
+                html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
                 html += '</tr>';
                 
                 // ヘッダー行（通常の色）
@@ -5038,7 +5091,7 @@
                 members.forEach(member => {
                     html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
                 });
-                html += '<th style="min-width: 80px; text-align: center;">日別合計</th></tr>';
+                html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
             } else {
                 // 全期間表示の場合は通常通りヘッダーのみ
                 html += '<div class="table-wrapper"><table>';
@@ -5048,7 +5101,7 @@
                 members.forEach(member => {
                     html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
                 });
-                html += '<th style="min-width: 80px; text-align: center;">日別合計</th></tr>';
+                html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
             }
             
             let currentMonth = '';
@@ -5074,7 +5127,7 @@
                     members.forEach(member => {
                         html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
                     });
-                    html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
+                    html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
                     html += '</tr>';
                     
                     // リセット
@@ -5126,9 +5179,9 @@
                 
                 // 日別合計
                 if (dayTotal > 0) {
-                    html += `<td style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(1)}h</td>`;
+                    html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(1)}h</td>`;
                 } else {
-                    html += `<td style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
+                    html += `<td class="daily-total" style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
                 }
                 
                 html += '</tr>';
@@ -5156,7 +5209,7 @@
                 html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
             });
             
-            html += `<td style="background: #ffc107; text-align: center;">${grandTotal.toFixed(1)}h</td>`;
+            html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${grandTotal.toFixed(1)}h</td>`;
             html += '</tr>';
             
             html += '</table></div>';
@@ -6855,13 +6908,78 @@
             renderVersionReport(filteredActuals, filteredEstimates);
         }
 
+        // テーマカラーに応じた分析パネルのグラデーションを取得
+        function getAnalysisGradients() {
+            const gradients = {
+                'purple': {
+                    phase1: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    phase2: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    phase3: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+                },
+                'deep-blue': {
+                    phase1: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                    phase2: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
+                },
+                'teal': {
+                    phase1: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+                    phase2: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
+                },
+                'cyan': {
+                    phase1: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                    phase2: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)',
+                    phase3: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+                },
+                'ocean': {
+                    phase1: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
+                    phase2: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #34d399 100%)'
+                },
+                'sky': {
+                    phase1: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                    phase2: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)',
+                    phase3: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'
+                },
+                'indigo': {
+                    phase1: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                    phase2: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
+                },
+                'navy': {
+                    phase1: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                    phase2: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)'
+                },
+                'slate': {
+                    phase1: 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                    phase2: 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
+                },
+                'green': {
+                    phase1: 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
+                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #14b8a6 100%)'
+                },
+                'emerald': {
+                    phase1: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
+                }
+            };
+            return gradients[currentThemeColor] || gradients['purple'];
+        }
+
         function renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth) {
             const container = document.getElementById('reportDetailView');
             let html = '';
 
+            // テーマカラーに応じたグラデーションを取得
+            const colors = getAnalysisGradients();
+
             // Phase 1: 見積精度と異常値表示
             if (reportSettings.accuracyEnabled || reportSettings.anomalyEnabled || reportSettings.warningTasksEnabled) {
-                html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += `<div style="background: ${colors.phase1}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
                 html += '<h3 style="margin: 0 0 15px 0; color: white;">📊 Phase 1: 見積精度分析</h3>';
 
                 // 工程別の精度計算
@@ -7015,7 +7133,7 @@
 
             // Phase 2: グラフと月別推移
             if (reportSettings.chartEnabled || reportSettings.trendEnabled) {
-                html += '<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += `<div style="background: ${colors.phase2}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
                 html += '<h3 style="margin: 0 0 15px 0; color: white;">📈 Phase 2: ビジュアル分析</h3>';
 
                 // 工程別バーチャート
@@ -7133,7 +7251,7 @@
 
             // Phase 3: 担当者別分析とインサイト
             if (reportSettings.memberAnalysisEnabled || reportSettings.insightsEnabled) {
-                html += '<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">';
+                html += `<div style="background: ${colors.phase3}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
                 html += '<h3 style="margin: 0 0 15px 0; color: white;">👥 Phase 3: 担当者分析とインサイト</h3>';
 
                 // 担当者別パフォーマンス
