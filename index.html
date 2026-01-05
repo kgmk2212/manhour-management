@@ -775,6 +775,13 @@
                 font-size: 10px !important;
             }
 
+            /* 対応合計の人日/人月を縦並びにする */
+            #estimateList .manpower-display {
+                display: flex !important;
+                flex-direction: column !important;
+                line-height: 1.4 !important;
+            }
+
             /* 操作列 */
             #estimateList table td:last-child {
                 min-width: 85px !important;
@@ -1362,6 +1369,13 @@
                         <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                            <span>編集モード</span>
                         </label>
                     </div>
                 </div>
@@ -3298,6 +3312,9 @@
         let workMonthSelectionMode = false;
         let selectedEstimateIds = new Set(); // 選択された見積IDのセット
 
+        // 編集モード用の変数
+        let estimateEditMode = false;
+
         // 月分割モード用の変数
         let monthSplitEnabled = false;
 
@@ -4422,9 +4439,17 @@
                 
                 // 選択モードの場合、選択列を追加
                 if (workMonthSelectionMode) {
-                    html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
+                    if (estimateEditMode) {
+                        html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 100px;">操作</th></tr>';
+                    } else {
+                        html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+                    }
                 } else {
-                    html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 150px;">操作</th></tr>';
+                    if (estimateEditMode) {
+                        html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 100px;">操作</th></tr>';
+                    } else {
+                        html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+                    }
                 }
                 
                 Object.values(versionGroups[version]).forEach(taskGroup => {
@@ -4561,15 +4586,17 @@
                             // 対応合計（グレーなし）
                             html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
-                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                                <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
                             </td>`;
                         }
-                        
-                        // 操作ボタン（グレーなし）
-                        html += `<td>
-                            <button class="btn btn-primary btn-small" onclick="editEstimate(${proc.id})" style="margin-right: 5px;">編集</button>
-                            <button class="btn btn-danger btn-small" onclick="deleteEstimate(${proc.id})">削除</button>
-                        </td>`;
+
+                        // 操作ボタン（編集モード時のみ表示）
+                        if (estimateEditMode) {
+                            html += `<td style="text-align: center;">
+                                <span onclick="editEstimate(${proc.id})" style="cursor: pointer; font-size: 18px; margin-right: 10px;" title="編集">✏️</span>
+                                <span onclick="deleteEstimate(${proc.id})" style="cursor: pointer; font-size: 18px; color: #dc3545;" title="削除">🗑️</span>
+                            </td>`;
+                        }
                         html += '</tr>';
                     });
                 });
@@ -4590,7 +4617,9 @@
                 html += `<td style="text-align: right;">
                     <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
                 </td>`;
-                html += `<td></td>`;
+                if (estimateEditMode) {
+                    html += `<td></td>`;
+                }
                 html += `</tr>`;
                 
                 html += '</table></div>';
@@ -7938,7 +7967,19 @@
         }
 
         function deleteEstimate(id) {
-            if (!confirm('この見積を削除しますか?')) return;
+            // 見積データを取得
+            const estimate = estimates.find(e => e.id === id);
+            if (!estimate) return;
+
+            // 1段階目：詳細情報付きの確認
+            const detail = `この見積を削除しますか？\n\n対応名: ${estimate.task}\n工程: ${estimate.process}\n工数: ${estimate.hours}h\n担当: ${estimate.member}`;
+            if (!confirm(detail)) return;
+
+            // 2段階目：最終警告
+            const warning = '【警告】この操作は取り消せません。\n本当に削除してもよろしいですか？';
+            if (!confirm(warning)) return;
+
+            // 削除実行
             estimates = estimates.filter(e => e.id !== id);
             saveData();
             renderEstimateList();
@@ -7998,6 +8039,14 @@
                 });
                 filter.value = currentFilterValue;
             }
+        }
+
+        function toggleEstimateEditMode() {
+            const checkbox = document.getElementById('estimateEditMode');
+            estimateEditMode = checkbox ? checkbox.checked : false;
+
+            // 見積一覧を再描画
+            renderEstimateList();
         }
 
         function toggleWorkMonthSelectionMode() {
