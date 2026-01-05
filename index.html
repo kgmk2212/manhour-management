@@ -1061,11 +1061,10 @@
         <div class="content">
             <div id="quick" class="tab-content active">
                 <div class="quick-input theme-bg theme-purple">
-                    <!-- タイトルとセグメントボタンを横並びに -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 id="quickModeTitle" style="margin: 0;">今日の実績を入力</h2>
+                    <h2 id="quickModeTitle">今日の実績を入力</h2>
 
-                        <!-- セグメントボタン -->
+                    <!-- セグメントボタンを右側に配置 -->
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
                         <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
                             <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
                             <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
