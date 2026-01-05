@@ -748,22 +748,50 @@
             /* 対応名列（rowspan） */
             #estimateList table td[rowspan]:first-child,
             #estimateList table td[rowspan]:nth-child(2) {
-                min-width: 90px !important;
-                max-width: 110px !important;
+                width: 85px !important;
+                min-width: 85px !important;
+                max-width: 85px !important;
                 padding: 6px 4px !important;
             }
 
-            /* 工程、担当、工数の通常セル */
-            #estimateList table td:not([rowspan]):not(:last-child) {
-                min-width: 55px !important;
-                max-width: 65px !important;
+            /* 工程列 */
+            #estimateList table td:not([rowspan]):nth-child(2),
+            #estimateList table td:not([rowspan]):nth-child(3) {
+                width: 50px !important;
+                min-width: 50px !important;
+                max-width: 50px !important;
             }
 
-            /* 対応合計列（rowspan、最後から2番目） */
-            #estimateList table td[rowspan]:nth-last-child(2) {
+            /* 担当列 */
+            #estimateList table td:not([rowspan]):nth-child(3),
+            #estimateList table td:not([rowspan]):nth-child(4) {
+                width: 50px !important;
+                min-width: 50px !important;
+                max-width: 50px !important;
+            }
+
+            /* 工数列 */
+            #estimateList table td:not([rowspan]):nth-child(4),
+            #estimateList table td:not([rowspan]):nth-child(5) {
+                width: 45px !important;
+                min-width: 45px !important;
+                max-width: 45px !important;
+            }
+
+            /* 対応合計列（rowspan、編集モードOFF時は最後の列） */
+            #estimateList table td[rowspan]:nth-last-child(1) {
+                width: 75px !important;
                 padding: 6px 4px !important;
                 min-width: 75px !important;
-                max-width: 85px !important;
+                max-width: 75px !important;
+            }
+
+            /* 対応合計列（rowspan、編集モードON時は最後から2番目の列） */
+            #estimateList table td[rowspan]:nth-last-child(2) {
+                width: 75px !important;
+                padding: 6px 4px !important;
+                min-width: 75px !important;
+                max-width: 75px !important;
             }
 
             /* 対応合計のフォントサイズを縮小 */
@@ -782,10 +810,11 @@
                 line-height: 1.4 !important;
             }
 
-            /* 操作列 */
+            /* 操作列（編集モードON時のみ表示） */
             #estimateList table td:last-child {
-                min-width: 85px !important;
-                max-width: 95px !important;
+                width: 65px !important;
+                min-width: 65px !important;
+                max-width: 65px !important;
             }
 
             /* コンテンツエリアのパディングを縮小 */
@@ -1402,6 +1431,13 @@
                             <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
                                 <input type="checkbox" id="workMonthSelectionMode2" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
                                 <span>作業月割り当て</span>
+                            </label>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                                <input type="checkbox" id="estimateEditMode2" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                                <span>編集モード</span>
                             </label>
                         </div>
                     </div>
@@ -8042,8 +8078,16 @@
         }
 
         function toggleEstimateEditMode() {
-            const checkbox = document.getElementById('estimateEditMode');
-            estimateEditMode = checkbox ? checkbox.checked : false;
+            const checkbox1 = document.getElementById('estimateEditMode');
+            const checkbox2 = document.getElementById('estimateEditMode2');
+
+            // イベント元のチェックボックスの状態を取得
+            const isChecked = checkbox1?.checked || checkbox2?.checked || false;
+            estimateEditMode = isChecked;
+
+            // 両方のチェックボックスを同期
+            if (checkbox1) checkbox1.checked = isChecked;
+            if (checkbox2) checkbox2.checked = isChecked;
 
             // 見積一覧を再描画
             renderEstimateList();
