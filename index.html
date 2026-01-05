@@ -737,12 +737,18 @@
 
             /* 見積一覧グループ表示の対応合計をモバイル最適化 */
             #estimateList table td[rowspan] {
-                padding: 8px 6px !important;
+                padding: 6px 4px !important;
             }
 
+            /* モバイルでは人日/人月表示を非表示にして合計工数のみ表示 */
             #estimateList table td[rowspan] > div:last-child {
-                font-size: 11px !important;
-                white-space: pre-line;
+                display: none !important;
+            }
+
+            /* 対応合計のフォントサイズを調整 */
+            #estimateList table td[rowspan] > div:first-child {
+                font-size: 14px !important;
+                margin-bottom: 0 !important;
             }
 
             /* コンテンツエリアのパディングを縮小 */
@@ -4525,8 +4531,7 @@
                             // 対応合計（グレーなし）
                             html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
-                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日
-${formatNumber(months, 2)}人月</div>
+                                <div style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
                             </td>`;
                         }
                         
