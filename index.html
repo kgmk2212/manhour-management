@@ -745,6 +745,34 @@
                 padding: 4px 3px !important;
             }
 
+            /* 実績一覧カレンダー表示をモバイル最適化 */
+            #actualList table {
+                min-width: 100% !important;
+            }
+
+            #actualList table th,
+            #actualList table td {
+                padding: 4px 3px !important;
+            }
+
+            /* 日付列（固定列） */
+            #actualList table th:first-child,
+            #actualList table td:first-child {
+                width: 70px !important;
+                min-width: 70px !important;
+                max-width: 70px !important;
+                padding: 4px 3px !important;
+            }
+
+            /* 担当者列・合計列 */
+            #actualList table th:not(:first-child),
+            #actualList table td:not(:first-child) {
+                width: 55px !important;
+                min-width: 55px !important;
+                max-width: 55px !important;
+                text-align: center !important;
+            }
+
             /* 対応名列（rowspan） */
             #estimateList table td[rowspan]:first-child,
             #estimateList table td[rowspan]:nth-child(2) {
@@ -1147,6 +1175,7 @@
                         <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
                             <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
                             <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
+                            <button id="quickVacationModeBtn" onclick="switchQuickInputMode('vacation')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">休暇登録</button>
                         </div>
                     </div>
 
@@ -1345,6 +1374,37 @@
                         </div>
 
                         <button class="btn" onclick="addQuickEstimate()" style="margin-top: 15px; background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
+                    </div>
+
+                    <!-- 休暇登録フォーム -->
+                    <div id="quickVacationForm" class="quick-form" style="display: none;">
+                        <div class="form-group">
+                            <label>担当者</label>
+                            <select id="quickVacationMember">
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>日付</label>
+                            <input type="date" id="quickVacationDate">
+                        </div>
+                        <div class="form-group">
+                            <label>休暇タイプ</label>
+                            <select id="quickVacationType" onchange="handleVacationTypeChange()">
+                                <option value="有休">有給休暇（有休）</option>
+                                <option value="特休">特別休暇（特休）</option>
+                                <option value="代休">代休（代休）</option>
+                                <option value="振休">振替休日（振休）</option>
+                                <option value="時間休">時間休</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="quickVacationHoursGroup">
+                            <label>時間数 (h)</label>
+                            <input type="number" id="quickVacationHours" step="1" min="1" placeholder="1" value="8">
+                            <small style="color: rgba(255,255,255,0.8); display: block; margin-top: 5px;">
+                                時間休は1h単位で入力してください。全日休暇は8hです。
+                            </small>
+                        </div>
+                        <button class="btn" onclick="addQuickVacation()" style="background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
                     </div>
                 </div>
 
@@ -1898,6 +1958,31 @@
                         ・不要な機能をオフにすることで、シンプルなレポート表示にできます
                     </small>
                 </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>🏢 会社休日設定</h3>
+                    <p style="color: #666; margin-bottom: 15px;">会社の夏季休暇、年末年始休暇などを登録できます。実働日数の計算に反映されます。</p>
+
+                    <div class="form-group">
+                        <label>休日名</label>
+                        <input type="text" id="companyHolidayName" placeholder="例: 夏季休暇">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>開始日</label>
+                            <input type="date" id="companyHolidayStartDate">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>終了日</label>
+                            <input type="date" id="companyHolidayEndDate">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="addCompanyHoliday()" style="margin-bottom: 20px;">休日を追加</button>
+
+                    <div id="companyHolidayList"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -2128,6 +2213,10 @@
     <script>
         let estimates = [];
         let actuals = [];
+        let companyHolidays = []; // 会社休日データ
+        let vacations = []; // 個人休暇データ
+        let nextCompanyHolidayId = 1;
+        let nextVacationId = 1;
 
         // レポート分析機能の設定
         let reportSettings = {
@@ -2150,6 +2239,153 @@
         let estimateLayout = 'compact'; // 見積一覧のレイアウト（'compact' or 'segmented'）
         let actualLayout = 'compact'; // 実績一覧のレイアウト（'compact' or 'segmented'）
         let reportLayout = 'compact'; // レポートのレイアウト（'compact' or 'segmented'）
+
+        // 会社休日管理関数
+        function addCompanyHoliday() {
+            const name = document.getElementById('companyHolidayName').value.trim();
+            const startDate = document.getElementById('companyHolidayStartDate').value;
+            const endDate = document.getElementById('companyHolidayEndDate').value;
+
+            if (!name || !startDate || !endDate) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+
+            if (startDate > endDate) {
+                alert('終了日は開始日以降の日付を指定してください');
+                return;
+            }
+
+            const holiday = {
+                id: nextCompanyHolidayId++,
+                name: name,
+                startDate: startDate,
+                endDate: endDate
+            };
+
+            companyHolidays.push(holiday);
+            saveData();
+            renderCompanyHolidayList();
+
+            // フォームをクリア
+            document.getElementById('companyHolidayName').value = '';
+            document.getElementById('companyHolidayStartDate').value = '';
+            document.getElementById('companyHolidayEndDate').value = '';
+        }
+
+        function deleteCompanyHoliday(id) {
+            if (!confirm('この会社休日を削除しますか？')) return;
+            companyHolidays = companyHolidays.filter(h => h.id !== id);
+            saveData();
+            renderCompanyHolidayList();
+            updateAllDisplays();
+        }
+
+        function renderCompanyHolidayList() {
+            const container = document.getElementById('companyHolidayList');
+            if (companyHolidays.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">会社休日が登録されていません</p>';
+                return;
+            }
+
+            let html = '<div class="table-wrapper"><table style="min-width: 0;">';
+            html += '<tr><th>休日名</th><th>期間</th><th>操作</th></tr>';
+
+            companyHolidays.forEach(h => {
+                html += `
+                    <tr>
+                        <td>${h.name}</td>
+                        <td>${h.startDate} ～ ${h.endDate}</td>
+                        <td>
+                            <button class="btn btn-danger btn-small" onclick="deleteCompanyHoliday(${h.id})">削除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</table></div>';
+            container.innerHTML = html;
+        }
+
+        // 休暇タイプ変更時のハンドラ
+        function handleVacationTypeChange() {
+            const vacationType = document.getElementById('quickVacationType').value;
+            const hoursInput = document.getElementById('quickVacationHours');
+
+            if (vacationType === '時間休') {
+                hoursInput.value = 1;
+                hoursInput.max = 8;
+            } else {
+                hoursInput.value = 8;
+                hoursInput.removeAttribute('max');
+            }
+        }
+
+        // 個人休暇管理関数
+        function addQuickVacation() {
+            const member = document.getElementById('quickVacationMember').value;
+            const date = document.getElementById('quickVacationDate').value;
+            const vacationType = document.getElementById('quickVacationType').value;
+            const hours = parseFloat(document.getElementById('quickVacationHours').value);
+
+            if (!member || !date || !vacationType || !hours) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+
+            if (hours <= 0 || hours > 8) {
+                alert('時間数は1～8の範囲で入力してください');
+                return;
+            }
+
+            const vacation = {
+                id: nextVacationId++,
+                member: member,
+                date: date,
+                vacationType: vacationType,
+                hours: hours
+            };
+
+            vacations.push(vacation);
+            saveData();
+            renderActualList();
+            alert('休暇を登録しました');
+
+            // フォームをリセット
+            document.getElementById('quickVacationHours').value = 8;
+        }
+
+        function deleteVacation(id) {
+            if (!confirm('この休暇を削除しますか？')) return;
+            vacations = vacations.filter(v => v.id !== id);
+            saveData();
+            renderActualList();
+        }
+
+        function deleteVacationFromModal(id, member, date) {
+            if (!confirm('この休暇を削除しますか？')) return;
+            vacations = vacations.filter(v => v.id !== id);
+            saveData();
+            renderActualList();
+            // モーダルを再表示
+            showWorkDetail(member, date);
+        }
+
+        // 指定日が会社休日かどうかをチェック
+        function isCompanyHoliday(dateStr) {
+            return companyHolidays.some(h => dateStr >= h.startDate && dateStr <= h.endDate);
+        }
+
+        // 指定日の会社休日名を取得
+        function getCompanyHolidayName(dateStr) {
+            const holiday = companyHolidays.find(h => dateStr >= h.startDate && dateStr <= h.endDate);
+            return holiday ? holiday.name : null;
+        }
+
+        // 指定日の休暇情報を取得
+        function getVacation(member, dateStr) {
+            return vacations.filter(v => v.member === member && v.date === dateStr);
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
@@ -2176,6 +2412,7 @@
             renderActualList();
             renderTodayActuals();
             updateReport();
+            renderCompanyHolidayList();
 
             // モバイルでタブのスワイプ切り替え機能を追加
             initTabSwipe();
@@ -2299,6 +2536,8 @@
             const data = {
                 estimates: estimates,
                 actuals: actuals,
+                companyHolidays: companyHolidays,
+                vacations: vacations,
                 settings: {
                     memberOrder: document.getElementById('memberOrder').value.trim(),
                     themeColor: currentThemeColor,
@@ -2310,9 +2549,11 @@
                     reportLayout: reportLayout
                 }
             };
-            
+
             localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
             localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+            localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
+            localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
             localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
 
             // 作業月選択肢を更新
@@ -2459,6 +2700,27 @@
                 }
             }
 
+            // 休暇登録フォームの担当者選択肢を更新
+            const quickVacationMemberSelect = document.getElementById('quickVacationMember');
+            if (quickVacationMemberSelect) {
+                const currentValue = quickVacationMemberSelect.value;
+                quickVacationMemberSelect.innerHTML = '';
+
+                sortedMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member;
+                    option.textContent = member;
+                    quickVacationMemberSelect.appendChild(option);
+                });
+
+                // 以前の選択を復元、または最初の担当者を選択
+                if (currentValue && sortedMembers.includes(currentValue)) {
+                    quickVacationMemberSelect.value = currentValue;
+                } else if (sortedMembers.length > 0) {
+                    quickVacationMemberSelect.value = sortedMembers[0];
+                }
+            }
+
             // 見積編集モーダルの担当者選択肢を更新
             const editEstimateMemberSelect = document.getElementById('editEstimateMember');
             if (editEstimateMemberSelect) {
@@ -2550,11 +2812,23 @@
         function loadData() {
             const savedEstimates = localStorage.getItem('manhour_estimates');
             const savedActuals = localStorage.getItem('manhour_actuals');
+            const savedCompanyHolidays = localStorage.getItem('manhour_companyHolidays');
+            const savedVacations = localStorage.getItem('manhour_vacations');
             const savedSettings = localStorage.getItem('manhour_settings');
-            
+
             if (savedEstimates) estimates = JSON.parse(savedEstimates);
             if (savedActuals) actuals = JSON.parse(savedActuals);
-            
+            if (savedCompanyHolidays) companyHolidays = JSON.parse(savedCompanyHolidays);
+            if (savedVacations) vacations = JSON.parse(savedVacations);
+
+            // 次のIDを設定
+            if (companyHolidays.length > 0) {
+                nextCompanyHolidayId = Math.max(...companyHolidays.map(h => h.id)) + 1;
+            }
+            if (vacations.length > 0) {
+                nextVacationId = Math.max(...vacations.map(v => v.id)) + 1;
+            }
+
             // 設定を読み込み
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
@@ -2789,15 +3063,16 @@
             const select = document.getElementById('estimateMonthFilter');
             if (!select) return;
 
-            // 見積一覧は作業予定月でフィルタするため、データがない月が選択される可能性がある
-            // 安全のため、初期値は'all'（全期間）に設定
-            select.value = 'all';
+            const defaultMonth = getDefaultMonth(select);
+            select.value = defaultMonth;
         }
 
         function autoBackup() {
             const data = {
                 estimates: estimates,
                 actuals: actuals,
+                companyHolidays: companyHolidays,
+                vacations: vacations,
                 memberOrder: document.getElementById('memberOrder').value.trim(),
                 timestamp: new Date().toISOString(),
                 version: '1.0'
@@ -3682,34 +3957,50 @@
 
             const actualForm = document.getElementById('quickActualForm');
             const estimateForm = document.getElementById('quickEstimateForm');
+            const vacationForm = document.getElementById('quickVacationForm');
             const modeTitle = document.getElementById('quickModeTitle');
             const bottomTitle = document.getElementById('quickBottomTitle');
             const actualBtn = document.getElementById('quickActualModeBtn');
             const estimateBtn = document.getElementById('quickEstimateModeBtn');
+            const vacationBtn = document.getElementById('quickVacationModeBtn');
+
+            // 全てのフォームとボタンをリセット
+            actualForm.style.display = 'none';
+            estimateForm.style.display = 'none';
+            vacationForm.style.display = 'none';
+            actualBtn.style.background = 'transparent';
+            actualBtn.style.color = 'rgba(255,255,255,0.85)';
+            estimateBtn.style.background = 'transparent';
+            estimateBtn.style.color = 'rgba(255,255,255,0.85)';
+            vacationBtn.style.background = 'transparent';
+            vacationBtn.style.color = 'rgba(255,255,255,0.85)';
 
             if (mode === 'actual') {
                 actualForm.style.display = 'block';
-                estimateForm.style.display = 'none';
                 modeTitle.textContent = '今日の実績を入力';
                 bottomTitle.textContent = '今日の入力済み実績';
                 bottomTitle.style.display = 'block';
                 document.getElementById('todayActuals').style.display = 'block';
-
                 actualBtn.style.background = 'rgba(255,255,255,0.9)';
                 actualBtn.style.color = 'rgba(0,0,0,0.85)';
-                estimateBtn.style.background = 'transparent';
-                estimateBtn.style.color = 'rgba(255,255,255,0.85)';
-            } else {
-                actualForm.style.display = 'none';
+            } else if (mode === 'estimate') {
                 estimateForm.style.display = 'block';
                 modeTitle.textContent = '新規見積登録';
                 bottomTitle.style.display = 'none';
                 document.getElementById('todayActuals').style.display = 'none';
-
-                actualBtn.style.background = 'transparent';
-                actualBtn.style.color = 'rgba(255,255,255,0.85)';
                 estimateBtn.style.background = 'rgba(255,255,255,0.9)';
                 estimateBtn.style.color = 'rgba(0,0,0,0.85)';
+            } else if (mode === 'vacation') {
+                vacationForm.style.display = 'block';
+                modeTitle.textContent = '休暇登録';
+                bottomTitle.style.display = 'none';
+                document.getElementById('todayActuals').style.display = 'none';
+                vacationBtn.style.background = 'rgba(255,255,255,0.9)';
+                vacationBtn.style.color = 'rgba(0,0,0,0.85)';
+
+                // 休暇登録フォームの日付を今日に設定
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('quickVacationDate').value = today;
             }
 
             // 設定で記憶が有効な場合、localStorageに保存
@@ -4338,23 +4629,24 @@
             }
         }
 
-        // 月の実働日数を計算（土日祝日を除く）
+        // 月の実働日数を計算（土日祝日・会社休日を除く）
         function getWorkingDays(year, month) {
             const lastDay = new Date(year, month, 0).getDate();
             let workingDays = 0;
-            
+
             for (let day = 1; day <= lastDay; day++) {
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const date = new Date(year, month - 1, day);
                 const dayOfWeek = date.getDay();
                 const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); // 日曜or土曜
                 const holiday = getHoliday(dateStr);
-                
-                if (!isWeekend && !holiday) {
+                const companyHol = isCompanyHoliday(dateStr);
+
+                if (!isWeekend && !holiday && !companyHol) {
                     workingDays++;
                 }
             }
-            
+
             return workingDays;
         }
         
@@ -5245,18 +5537,38 @@
                 }
                 
                 currentMonth = month;
-                
-                // 日付行（祝日または週末）
-                const bgColor = (isWeekend || isHoliday) ? '#ffebee' : 'white';
+
+                // 会社休日判定
+                const companyHolidayName = getCompanyHolidayName(date);
+                const isCompanyHol = companyHolidayName !== null;
+
+                // 日付行（祝日・会社休日・週末）
+                let bgColor = 'white';
+                if (isWeekend || isHoliday) {
+                    bgColor = '#ffebee';
+                } else if (isCompanyHol) {
+                    bgColor = '#fff9c4';
+                }
                 html += `<tr style="background: ${bgColor};">`;
-                
+
                 // 日付セル
                 const [year, m, day] = date.split('-');
-                const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
-                // 祝日の場合、クラスで制御して画面幅に応じて表示を変える
-                const dateDisplay = isHoliday
-                    ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
-                    : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+                let dateColor = '';
+                let dateDisplay = '';
+
+                if (isHoliday) {
+                    dateColor = 'color: #c62828;';
+                    dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`;
+                } else if (isCompanyHol) {
+                    dateColor = 'color: #f57c00;';
+                    dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${companyHolidayName}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${companyHolidayName}</span></span>`;
+                } else if (isWeekend) {
+                    dateColor = 'color: #c62828;';
+                    dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+                } else {
+                    dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+                }
+
                 html += `<td style="font-weight: 500; ${dateColor}">
                     ${dateDisplay}
                 </td>`;
@@ -5267,21 +5579,39 @@
                 members.forEach(member => {
                     const dayActuals = filteredActuals.filter(a => a.member === member && a.date === date);
                     const memberDayTotal = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+                    const memberVacations = getVacation(member, date);
+
                     dayTotal += memberDayTotal;
                     monthTotals[member] += memberDayTotal;
-                    
+
+                    let cellContent = '';
+                    let bgColor = '#fafafa';
+                    let onclick = `addActualFromCalendar('${member}', '${date}')`;
+                    let title = '実績を登録';
+
                     if (memberDayTotal > 0) {
-                        // クリックで詳細表示
-                        html += `<td style="background: #e3f2fd; text-align: center; cursor: pointer;" 
-                                    onclick="showWorkDetail('${member}', '${date}')">
-                            <strong>${memberDayTotal.toFixed(1)}</strong>
-                        </td>`;
+                        bgColor = '#e3f2fd';
+                        onclick = `showWorkDetail('${member}', '${date}')`;
+                        cellContent = `<strong>${memberDayTotal.toFixed(1)}</strong>`;
+                        title = '';
+                    } else if (memberVacations.length > 0) {
+                        bgColor = '#fff3e0';
+                        onclick = `showWorkDetail('${member}', '${date}')`;
+                        const vacationLabels = memberVacations.map(v => v.vacationType).join(',');
+                        const totalVacationHours = memberVacations.reduce((sum, v) => sum + v.hours, 0);
+                        cellContent = `<span style="color: #f57c00; font-weight: 600;">${vacationLabels}</span>`;
+                        if (totalVacationHours < 8) {
+                            cellContent += `<br><span style="font-size: 10px; color: #666;">${totalVacationHours}h</span>`;
+                        }
+                        title = '休暇';
                     } else {
-                        // クリックで新規登録
-                        html += `<td style="background: #fafafa; text-align: center; color: #ccc; cursor: pointer;" 
-                                    onclick="addActualFromCalendar('${member}', '${date}')" 
-                                    title="実績を登録">-</td>`;
+                        cellContent = '<span style="color: #ccc;">-</span>';
                     }
+
+                    html += `<td style="background: ${bgColor}; text-align: center; cursor: pointer;"
+                                onclick="${onclick}" title="${title}">
+                        ${cellContent}
+                    </td>`;
                 });
                 
                 monthTotal += dayTotal;
@@ -5562,20 +5892,41 @@
 
         function showWorkDetail(member, date) {
             const dayActuals = actuals.filter(a => a.member === member && a.date === date);
-            
-            if (dayActuals.length === 0) return;
-            
+            const memberVacations = getVacation(member, date);
+
+            if (dayActuals.length === 0 && memberVacations.length === 0) return;
+
             const dateObj = new Date(date);
             const [year, month, day] = date.split('-');
             const dayOfWeek = getDayOfWeek(date);
-            
+
             // モーダルタイトル
-            document.getElementById('modalTitle').textContent = 
+            document.getElementById('modalTitle').textContent =
                 `${member}さんの作業 - ${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
-            
+
             // モーダル本文
             let html = '';
             const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+
+            // 休暇情報を表示
+            if (memberVacations.length > 0) {
+                html += '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f57c00;">';
+                html += '<div style="font-weight: 600; color: #f57c00; margin-bottom: 10px;">🏖️ 休暇</div>';
+                memberVacations.forEach(vacation => {
+                    html += `
+                        <div style="margin-bottom: 8px; padding: 10px; background: white; border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${vacation.vacationType}</strong>
+                                    <span style="color: #666; font-size: 14px; margin-left: 10px;">${vacation.hours}h</span>
+                                </div>
+                                <button onclick="deleteVacationFromModal(${vacation.id}, '${member}', '${date}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
             
             dayActuals.forEach(actual => {
                 html += `
@@ -7021,59 +7372,59 @@
         function getAnalysisGradients() {
             const gradients = {
                 'purple': {
-                    phase1: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    phase2: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                    phase3: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+                    phase1: 'linear-gradient(135deg, #e9d5ff 0%, #ddd6fe 100%)',
+                    phase2: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                    phase3: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
                 },
                 'deep-blue': {
-                    phase1: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-                    phase2: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
+                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    phase2: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
                 },
                 'teal': {
-                    phase1: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
-                    phase2: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
+                    phase1: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
+                    phase2: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
                 },
                 'cyan': {
-                    phase1: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-                    phase2: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)',
-                    phase3: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+                    phase1: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)',
+                    phase2: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
+                    phase3: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)'
                 },
                 'ocean': {
-                    phase1: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
-                    phase2: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
-                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #34d399 100%)'
+                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    phase2: 'linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%)',
+                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
                 },
                 'sky': {
-                    phase1: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
-                    phase2: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)',
-                    phase3: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'
+                    phase1: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                    phase2: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)',
+                    phase3: 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)'
                 },
                 'indigo': {
-                    phase1: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-                    phase2: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
+                    phase1: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                    phase2: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
                 },
                 'navy': {
-                    phase1: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-                    phase2: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
-                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)'
+                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    phase2: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
                 },
                 'slate': {
-                    phase1: 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-                    phase2: 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
-                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
+                    phase1: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
+                    phase2: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
                 },
                 'green': {
-                    phase1: 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
-                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
-                    phase3: 'linear-gradient(135deg, #0891b2 0%, #14b8a6 100%)'
+                    phase1: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                    phase2: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
                 },
                 'emerald': {
-                    phase1: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
-                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
+                    phase1: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                    phase2: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
                 }
             };
             return gradients[currentThemeColor] || gradients['purple'];
@@ -8340,15 +8691,25 @@
                         if (confirm('現在のデータを復元したデータで上書きしますか？')) {
                             estimates = data.estimates || [];
                             actuals = data.actuals || [];
-                            
+                            companyHolidays = data.companyHolidays || [];
+                            vacations = data.vacations || [];
+
+                            // 次のIDを設定
+                            if (companyHolidays.length > 0) {
+                                nextCompanyHolidayId = Math.max(...companyHolidays.map(h => h.id)) + 1;
+                            }
+                            if (vacations.length > 0) {
+                                nextVacationId = Math.max(...vacations.map(v => v.id)) + 1;
+                            }
+
                             // 担当者表示順を復元
                             if (data.memberOrder) {
                                 document.getElementById('memberOrder').value = data.memberOrder;
                                 localStorage.setItem('manhour_memberOrder', data.memberOrder);
                             }
-                            
+
                             saveData(true); // 復元時は自動バックアップをスキップ
-                            
+
                             updateMonthOptions();
                             updateActualMonthOptions();
                             updateMemberOptions();
@@ -8357,7 +8718,8 @@
                             renderActualList();
                             renderTodayActuals();
                             updateReport();
-                            
+                            renderCompanyHolidayList();
+
                             alert('データを復元しました');
                         }
                     } catch (error) {
