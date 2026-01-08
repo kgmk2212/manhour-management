@@ -1385,7 +1385,7 @@
                         </div>
                         <div class="form-group">
                             <label>日付</label>
-                            <input type="date" id="quickVacationDate">
+                            <input type="date" id="quickVacationDate" style="max-width: 200px;">
                         </div>
                         <div class="form-group">
                             <label>休暇タイプ</label>
@@ -4495,8 +4495,22 @@
             if (monthFilter !== 'all') {
                 filteredEstimates = estimates.filter(e => {
                     const est = normalizeEstimate(e);
-                    return est.workMonths.includes(monthFilter);
+                    return est.workMonths && est.workMonths.includes(monthFilter);
                 });
+            }
+
+            // フィルタ後にデータがない場合
+            if (filteredEstimates.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に見積データがありません</p>';
+                // 合計を0にリセット
+                const totalHoursElement = document.getElementById('estimateTotalHours');
+                const totalManpowerElement = document.getElementById('estimateTotalManpower');
+                if (totalHoursElement) totalHoursElement.textContent = '0h';
+                if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
+                // 担当者別合計を非表示
+                const memberSummaryContainer = document.getElementById('estimateMemberSummary');
+                if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
+                return;
             }
 
             // 合計工数を計算
@@ -7372,59 +7386,59 @@
         function getAnalysisGradients() {
             const gradients = {
                 'purple': {
-                    phase1: 'linear-gradient(135deg, #e9d5ff 0%, #ddd6fe 100%)',
-                    phase2: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                    phase3: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
+                    phase1: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    phase2: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    phase3: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
                 },
                 'deep-blue': {
-                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                    phase2: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
+                    phase1: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                    phase2: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
                 },
                 'teal': {
-                    phase1: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
-                    phase2: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
+                    phase1: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+                    phase2: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
                 },
                 'cyan': {
-                    phase1: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)',
-                    phase2: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
-                    phase3: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)'
+                    phase1: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                    phase2: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)',
+                    phase3: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
                 },
                 'ocean': {
-                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                    phase2: 'linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%)',
-                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
+                    phase1: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
+                    phase2: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #34d399 100%)'
                 },
                 'sky': {
-                    phase1: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
-                    phase2: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)',
-                    phase3: 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)'
+                    phase1: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                    phase2: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)',
+                    phase3: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'
                 },
                 'indigo': {
-                    phase1: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-                    phase2: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
-                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
+                    phase1: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                    phase2: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
                 },
                 'navy': {
-                    phase1: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                    phase2: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
+                    phase1: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                    phase2: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+                    phase3: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)'
                 },
                 'slate': {
-                    phase1: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
-                    phase2: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
+                    phase1: 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                    phase2: 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
                 },
                 'green': {
-                    phase1: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                    phase2: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%)',
-                    phase3: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)'
+                    phase1: 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
+                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #0891b2 0%, #14b8a6 100%)'
                 },
                 'emerald': {
-                    phase1: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                    phase2: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%)',
-                    phase3: 'linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)'
+                    phase1: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
+                    phase3: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
                 }
             };
             return gradients[currentThemeColor] || gradients['purple'];
