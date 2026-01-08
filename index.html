@@ -4495,7 +4495,11 @@
             if (monthFilter !== 'all') {
                 filteredEstimates = estimates.filter(e => {
                     const est = normalizeEstimate(e);
-                    return est.workMonths && est.workMonths.includes(monthFilter);
+                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                    if (!est.workMonths || est.workMonths.length === 0) {
+                        return true;
+                    }
+                    return est.workMonths.includes(monthFilter);
                 });
             }
 
@@ -4520,8 +4524,13 @@
             } else {
                 filteredEstimates.forEach(e => {
                     const est = normalizeEstimate(e);
-                    if (est.monthlyHours[monthFilter]) {
+                    // 月別工数が設定されている場合はそれを使用
+                    if (est.monthlyHours && est.monthlyHours[monthFilter]) {
                         totalHours += est.monthlyHours[monthFilter];
+                    }
+                    // workMonthsが空（作業月未設定）の場合は全工数を含める
+                    else if (!est.workMonths || est.workMonths.length === 0) {
+                        totalHours += est.hours;
                     }
                 });
             }
@@ -4573,8 +4582,12 @@
                 // 月フィルタが適用されている場合は分割後の工数を使用
                 if (monthFilter === 'all') {
                     memberSummary[member] += est.hours;
-                } else if (est.monthlyHours[monthFilter]) {
+                } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
                     memberSummary[member] += est.monthlyHours[monthFilter];
+                }
+                // workMonthsが空（作業月未設定）の場合は全工数を含める
+                else if (!est.workMonths || est.workMonths.length === 0) {
+                    memberSummary[member] += est.hours;
                 }
             });
 
