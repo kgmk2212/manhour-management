@@ -4539,7 +4539,9 @@
             let workingDaysPerMonth = 20; // デフォルト
             if (monthFilter !== 'all') {
                 const [year, month] = monthFilter.split('-');
-                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+                const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+                // 0で割るのを防ぐため、最小値を1に設定
+                workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
             }
             const totalManDays = (totalHours / 8).toFixed(1);
             const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
@@ -4708,7 +4710,9 @@
                 const allMonths = new Set();
                 taskEstimates.forEach(e => {
                     const est = normalizeEstimate(e);
-                    est.workMonths.forEach(month => allMonths.add(month));
+                    if (est.workMonths && est.workMonths.length > 0) {
+                        est.workMonths.forEach(month => allMonths.add(month));
+                    }
                 });
 
                 return Array.from(allMonths).sort();
@@ -4722,7 +4726,9 @@
             let workingDaysPerMonth = 20; // デフォルト
             if (workMonthFilter !== 'all') {
                 const [year, month] = workMonthFilter.split('-');
-                workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+                const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+                // 0で割るのを防ぐため、最小値を1に設定
+                workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
             }
 
             let filteredEstimates = estimates;
@@ -4731,6 +4737,10 @@
                 // 特定月: その月に割り当たっている工程のみ表示
                 filteredEstimates = estimates.filter(e => {
                     const est = normalizeEstimate(e);
+                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                    if (!est.workMonths || est.workMonths.length === 0) {
+                        return true;
+                    }
                     return est.workMonths.includes(workMonthFilter);
                 });
             }
@@ -4761,7 +4771,7 @@
                 // 月フィルタが適用されている場合は分割後の工数を使用
                 const est = normalizeEstimate(e);
                 let displayHours = e.hours;
-                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
@@ -4997,6 +5007,10 @@
             if (workMonthFilter !== 'all') {
                 filteredEstimates = estimates.filter(e => {
                     const est = normalizeEstimate(e);
+                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                    if (!est.workMonths || est.workMonths.length === 0) {
+                        return true;
+                    }
                     return est.workMonths.includes(workMonthFilter);
                 });
             }
@@ -5018,7 +5032,7 @@
                 // 月フィルタが適用されている場合は分割後の工数を使用
                 const est = normalizeEstimate(e);
                 let displayHours = e.hours;
-                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
@@ -5100,6 +5114,10 @@
             if (workMonthFilter !== 'all') {
                 filteredEstimates = estimates.filter(e => {
                     const est = normalizeEstimate(e);
+                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                    if (!est.workMonths || est.workMonths.length === 0) {
+                        return true;
+                    }
                     return est.workMonths.includes(workMonthFilter);
                 });
             }
