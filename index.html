@@ -745,6 +745,34 @@
                 padding: 4px 3px !important;
             }
 
+            /* 実績一覧カレンダー表示専用のモバイル最適化 */
+            table.actual-matrix {
+                min-width: 100% !important;
+            }
+
+            table.actual-matrix th,
+            table.actual-matrix td {
+                padding: 4px 3px !important;
+            }
+
+            /* 日付列（固定幅） */
+            table.actual-matrix th:first-child,
+            table.actual-matrix td:first-child {
+                width: 70px !important;
+                min-width: 70px !important;
+                max-width: 70px !important;
+                padding: 4px 3px !important;
+            }
+
+            /* 担当者列・合計列 */
+            table.actual-matrix th:not(:first-child),
+            table.actual-matrix td:not(:first-child) {
+                width: 55px !important;
+                min-width: 55px !important;
+                max-width: 55px !important;
+                text-align: center !important;
+            }
+
             /* 対応名列（rowspan） */
             #estimateList table td[rowspan]:first-child,
             #estimateList table td[rowspan]:nth-child(2) {
@@ -5487,8 +5515,8 @@
                 </div>`;
                 
                 // 同じtable-wrapper内に合計表を配置
-                html += '<div class="table-wrapper"><table>';
-                
+                html += '<div class="table-wrapper"><table class="actual-matrix">';
+
                 // 合計行（濃い青色）
                 html += '<tr style="background: #1565c0; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
                 
@@ -5512,7 +5540,7 @@
                 html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
             } else {
                 // 全期間表示の場合は通常通りヘッダーのみ
-                html += '<div class="table-wrapper"><table>';
+                html += '<div class="table-wrapper"><table class="actual-matrix">';
                 html += '<tr><th style="min-width: 100px;">日付</th>';
                 
                 // 担当者ヘッダー
