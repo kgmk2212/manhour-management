@@ -735,13 +735,16 @@
                 font-size: 13px;
             }
 
-            /* 見積一覧グループ表示をモバイル最適化 */
-            #estimateList table {
+            /* 見積一覧グループ・マトリクス表示専用のモバイル最適化 */
+            table.estimate-grouped,
+            table.estimate-matrix {
                 min-width: 100% !important;
             }
 
-            #estimateList table th,
-            #estimateList table td {
+            table.estimate-grouped th,
+            table.estimate-grouped td,
+            table.estimate-matrix th,
+            table.estimate-matrix td {
                 padding: 4px 3px !important;
             }
 
@@ -773,61 +776,61 @@
                 text-align: center !important;
             }
 
-            /* 対応名列（rowspan） */
-            #estimateList table td[rowspan]:first-child,
-            #estimateList table td[rowspan]:nth-child(2) {
+            /* 対応名列（rowspan） - グループ表示専用 */
+            table.estimate-grouped td[rowspan]:first-child,
+            table.estimate-grouped td[rowspan]:nth-child(2) {
                 width: 85px !important;
                 min-width: 85px !important;
                 max-width: 85px !important;
                 padding: 6px 4px !important;
             }
 
-            /* 工程列 */
-            #estimateList table td:not([rowspan]):nth-child(2),
-            #estimateList table td:not([rowspan]):nth-child(3) {
+            /* 工程列 - グループ表示専用 */
+            table.estimate-grouped td:not([rowspan]):nth-child(2),
+            table.estimate-grouped td:not([rowspan]):nth-child(3) {
                 width: 50px !important;
                 min-width: 50px !important;
                 max-width: 50px !important;
             }
 
-            /* 担当列 */
-            #estimateList table td:not([rowspan]):nth-child(3),
-            #estimateList table td:not([rowspan]):nth-child(4) {
+            /* 担当列 - グループ表示専用 */
+            table.estimate-grouped td:not([rowspan]):nth-child(3),
+            table.estimate-grouped td:not([rowspan]):nth-child(4) {
                 width: 50px !important;
                 min-width: 50px !important;
                 max-width: 50px !important;
             }
 
-            /* 工数列 */
-            #estimateList table td:not([rowspan]):nth-child(4),
-            #estimateList table td:not([rowspan]):nth-child(5) {
+            /* 工数列 - グループ表示専用 */
+            table.estimate-grouped td:not([rowspan]):nth-child(4),
+            table.estimate-grouped td:not([rowspan]):nth-child(5) {
                 width: 45px !important;
                 min-width: 45px !important;
                 max-width: 45px !important;
             }
 
-            /* 対応合計列（rowspan、編集モードOFF時は最後の列） */
-            #estimateList table td[rowspan]:nth-last-child(1) {
+            /* 対応合計列（rowspan、編集モードOFF時は最後の列） - グループ表示専用 */
+            table.estimate-grouped td[rowspan]:nth-last-child(1) {
                 width: 75px !important;
                 padding: 6px 4px !important;
                 min-width: 75px !important;
                 max-width: 75px !important;
             }
 
-            /* 対応合計列（rowspan、編集モードON時は最後から2番目の列） */
-            #estimateList table td[rowspan]:nth-last-child(2) {
+            /* 対応合計列（rowspan、編集モードON時は最後から2番目の列） - グループ表示専用 */
+            table.estimate-grouped td[rowspan]:nth-last-child(2) {
                 width: 75px !important;
                 padding: 6px 4px !important;
                 min-width: 75px !important;
                 max-width: 75px !important;
             }
 
-            /* 対応合計のフォントサイズを縮小 */
-            #estimateList table td[rowspan] > div:first-child {
+            /* 対応合計のフォントサイズを縮小 - グループ表示専用 */
+            table.estimate-grouped td[rowspan] > div:first-child {
                 font-size: 14px !important;
             }
 
-            #estimateList table td[rowspan] > div:last-child {
+            table.estimate-grouped td[rowspan] > div:last-child {
                 font-size: 10px !important;
             }
 
@@ -838,8 +841,8 @@
                 line-height: 1.4 !important;
             }
 
-            /* 操作列（編集モードON時のみ表示） */
-            #estimateList table td:last-child {
+            /* 操作列（編集モードON時のみ表示） - グループ表示専用 */
+            table.estimate-grouped td:last-child {
                 width: 65px !important;
                 min-width: 65px !important;
                 max-width: 65px !important;
@@ -4800,8 +4803,8 @@
             Object.keys(versionGroups).sort().forEach(version => {
                 html += `<div style="margin-bottom: 30px;">`;
                 html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-                html += '<div class="table-wrapper"><table>';
-                
+                html += '<div class="table-wrapper"><table class="estimate-grouped">';
+
                 // 選択モードの場合、選択列を追加
                 if (workMonthSelectionMode) {
                     if (estimateEditMode) {
@@ -5051,7 +5054,7 @@
             Object.keys(versionGroups).sort().forEach(version => {
                 html += `<div style="margin-bottom: 30px;">`;
                 html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-                html += '<div class="table-wrapper"><table>';
+                html += '<div class="table-wrapper"><table class="estimate-matrix">';
                 html += '<tr><th style="min-width: 200px;">対応名</th>';
                 processOrder.forEach(proc => {
                     html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
@@ -8477,13 +8480,24 @@
             const checkbox1 = document.getElementById('estimateEditMode');
             const checkbox2 = document.getElementById('estimateEditMode2');
 
-            // イベント元のチェックボックスの状態を取得
-            const isChecked = checkbox1?.checked || checkbox2?.checked || false;
-            estimateEditMode = isChecked;
-
-            // 両方のチェックボックスを同期
-            if (checkbox1) checkbox1.checked = isChecked;
-            if (checkbox2) checkbox2.checked = isChecked;
+            // イベント元のチェックボックスを特定して状態を同期
+            if (checkbox1 && checkbox2) {
+                if (event && event.target === checkbox1) {
+                    checkbox2.checked = checkbox1.checked;
+                    estimateEditMode = checkbox1.checked;
+                } else if (event && event.target === checkbox2) {
+                    checkbox1.checked = checkbox2.checked;
+                    estimateEditMode = checkbox2.checked;
+                } else {
+                    // イベントがない場合（プログラムから呼ばれた場合）
+                    estimateEditMode = checkbox1.checked;
+                    checkbox2.checked = checkbox1.checked;
+                }
+            } else if (checkbox1) {
+                estimateEditMode = checkbox1.checked;
+            } else if (checkbox2) {
+                estimateEditMode = checkbox2.checked;
+            }
 
             // 見積一覧を再描画
             renderEstimateList();
