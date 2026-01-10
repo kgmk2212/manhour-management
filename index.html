@@ -114,7 +114,7 @@
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         label {
@@ -448,21 +448,18 @@
 
         .modal-content {
             background-color: white;
-            margin: 5% auto;
+            margin: 3% auto;
             padding: 0;
             border-radius: 12px;
             width: 90%;
             max-width: 600px;
-            max-height: 90vh;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: slideIn 0.3s;
-            display: flex;
-            flex-direction: column;
         }
 
         .modal-header {
             color: white;
-            padding: 15px 20px;
+            padding: 12px 20px;
             border-radius: 12px 12px 0 0;
             display: flex;
             justify-content: space-between;
@@ -511,9 +508,9 @@
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 15px 20px;
             overflow-y: auto;
-            flex: 1;
+            max-height: 75vh;
         }
 
         .work-item {
@@ -2142,7 +2139,7 @@
                     </div>
                     <small style="color: #666; display: block; margin-top: 5px;">この対応にあと何時間で完了予定か入力（0=完了）</small>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <button class="btn btn-primary" onclick="saveActualEdit()">保存</button>
                     <button class="btn" id="editActualOtherBtn" onclick="openOtherWorkFromCalendar()" style="background: #9b59b6; color: white; display: none;">その他作業</button>
                     <button class="btn" id="editActualVacationBtn" onclick="openVacationFromCalendar()" style="background: #27ae60; color: white; display: none;">休暇登録</button>
