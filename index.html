@@ -4058,15 +4058,13 @@
                 };
             }
 
-            // 複数月の場合
-            const firstMonth = workMonths[0].split('-')[1];
-            const lastMonth = workMonths[workMonths.length - 1].split('-')[1];
+            // 複数月の場合 - 斜線ストライプパターンで表示
             const [y1, m1] = workMonths[0].split('-');
             const [y2, m2] = workMonths[workMonths.length - 1].split('-');
 
             return {
-                bg: `linear-gradient(135deg, ${monthColors[firstMonth]?.bg || 'rgba(200,200,200,0.3)'} 0%, ${monthColors[lastMonth]?.bg || 'rgba(200,200,200,0.3)'} 100%)`,
-                tooltip: `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`,
+                bg: 'repeating-linear-gradient(45deg, rgba(100, 100, 100, 0.1), rgba(100, 100, 100, 0.1) 4px, rgba(200, 200, 200, 0.15) 4px, rgba(200, 200, 200, 0.15) 8px)',
+                tooltip: `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月（複数月）`,
                 isMultiple: true
             };
         }
@@ -4091,8 +4089,14 @@
                 }
             });
 
-            // 未設定の凡例
+            // 複数月の凡例
             html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;">
+                <span style="width: 16px; height: 16px; background: repeating-linear-gradient(45deg, rgba(100, 100, 100, 0.1), rgba(100, 100, 100, 0.1) 2px, rgba(200, 200, 200, 0.15) 2px, rgba(200, 200, 200, 0.15) 4px); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
+                <span style="color: #666;">複数月</span>
+            </span>`;
+
+            // 未設定の凡例
+            html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 5px;">
                 <span style="width: 16px; height: 16px; background: rgba(150, 150, 150, 0.15); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
                 <span style="color: #999;">未設定</span>
             </span>`;
