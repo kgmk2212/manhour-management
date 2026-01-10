@@ -1875,10 +1875,10 @@
                     </small>
                 </div>
 
-                <!-- マトリックス表示の月色分け設定 -->
+                <!-- マトリクス表示の月色分け設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3>📊 マトリックス表示</h3>
-                    <p style="color: #666; margin-bottom: 15px;">見積一覧・レポートのマトリックス表示に関する設定です。</p>
+                    <h3>📊 マトリクス表示</h3>
+                    <p style="color: #666; margin-bottom: 15px;">見積一覧・レポートのマトリクス表示に関する設定です。</p>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -4048,21 +4048,20 @@
         // 月分割モード用の変数
         let monthSplitEnabled = false;
 
-        // 月別カラーマップ（隣り合う月が調和する色）
-        // 色相環を滑らかに移動: 青→シアン→緑→黄緑→黄→橙→赤→ピンク→紫→青紫→紺→青灰
+        // 月別カラーマップ（季節のイメージに合わせた色）
         const monthColors = {
-            '01': { bg: 'rgba(70, 130, 200, 0.18)', rgb: '70, 130, 200', name: '1月', label: '1月' },   // 青
-            '02': { bg: 'rgba(60, 160, 190, 0.18)', rgb: '60, 160, 190', name: '2月', label: '2月' },   // シアンブルー
-            '03': { bg: 'rgba(50, 180, 140, 0.18)', rgb: '50, 180, 140', name: '3月', label: '3月' },   // ティール
-            '04': { bg: 'rgba(80, 190, 100, 0.18)', rgb: '80, 190, 100', name: '4月', label: '4月' },   // グリーン
-            '05': { bg: 'rgba(160, 200, 60, 0.18)', rgb: '160, 200, 60', name: '5月', label: '5月' },   // 黄緑
-            '06': { bg: 'rgba(230, 190, 50, 0.18)', rgb: '230, 190, 50', name: '6月', label: '6月' },   // 黄
-            '07': { bg: 'rgba(240, 150, 60, 0.18)', rgb: '240, 150, 60', name: '7月', label: '7月' },   // オレンジ
-            '08': { bg: 'rgba(230, 100, 100, 0.18)', rgb: '230, 100, 100', name: '8月', label: '8月' }, // コーラル
-            '09': { bg: 'rgba(210, 90, 150, 0.18)', rgb: '210, 90, 150', name: '9月', label: '9月' },   // ローズ
-            '10': { bg: 'rgba(170, 90, 190, 0.18)', rgb: '170, 90, 190', name: '10月', label: '10月' }, // パープル
-            '11': { bg: 'rgba(120, 100, 200, 0.18)', rgb: '120, 100, 200', name: '11月', label: '11月' }, // 青紫
-            '12': { bg: 'rgba(90, 110, 180, 0.18)', rgb: '90, 110, 180', name: '12月', label: '12月' }  // 紺
+            '01': { bg: 'rgba(200, 220, 240, 0.25)', rgb: '200, 220, 240', name: '1月', label: '1月' },   // 雪・冬空
+            '02': { bg: 'rgba(180, 140, 180, 0.20)', rgb: '180, 140, 180', name: '2月', label: '2月' },   // 梅
+            '03': { bg: 'rgba(255, 180, 200, 0.20)', rgb: '255, 180, 200', name: '3月', label: '3月' },   // 桃・早咲き桜
+            '04': { bg: 'rgba(255, 200, 210, 0.20)', rgb: '255, 200, 210', name: '4月', label: '4月' },   // 桜
+            '05': { bg: 'rgba(120, 200, 120, 0.20)', rgb: '120, 200, 120', name: '5月', label: '5月' },   // 新緑
+            '06': { bg: 'rgba(130, 160, 210, 0.20)', rgb: '130, 160, 210', name: '6月', label: '6月' },   // 紫陽花・梅雨
+            '07': { bg: 'rgba(100, 180, 220, 0.20)', rgb: '100, 180, 220', name: '7月', label: '7月' },   // 海・空
+            '08': { bg: 'rgba(255, 180, 80, 0.20)', rgb: '255, 180, 80', name: '8月', label: '8月' },     // 向日葵・太陽
+            '09': { bg: 'rgba(210, 160, 130, 0.20)', rgb: '210, 160, 130', name: '9月', label: '9月' },   // 秋の始まり
+            '10': { bg: 'rgba(230, 120, 80, 0.20)', rgb: '230, 120, 80', name: '10月', label: '10月' },   // 紅葉
+            '11': { bg: 'rgba(180, 120, 80, 0.20)', rgb: '180, 120, 80', name: '11月', label: '11月' },   // 枯葉
+            '12': { bg: 'rgba(160, 180, 210, 0.22)', rgb: '160, 180, 210', name: '12月', label: '12月' }  // 冬・クリスマス
         };
 
         // 月別色付け設定
@@ -6276,42 +6275,7 @@
             html += '</tr>';
             
             html += '</table></div>';
-            
-            // 詳細リスト（削除用）
-            html += '<h3 style="margin-top: 30px;">詳細データ（削除用）</h3>';
-            html += '<div class="table-wrapper"><table>';
-            html += '<tr><th>日付</th><th>担当者</th><th>版数</th><th>対応名</th><th>工程</th><th>実績工数</th><th>操作</th></tr>';
-            
-            const sortedActuals = [...filteredActuals].sort((a, b) => {
-                if (a.date !== b.date) return b.date.localeCompare(a.date);
-                return a.member.localeCompare(b.member);
-            });
-            
-            sortedActuals.forEach(a => {
-                // HTMLエスケープ関数
-                const escapeHtml = (str) => {
-                    const div = document.createElement('div');
-                    div.textContent = str;
-                    return div.innerHTML;
-                };
-                
-                html += `
-                    <tr>
-                        <td>${a.date}</td>
-                        <td>${escapeHtml(a.member)}</td>
-                        <td>${escapeHtml(a.version)}</td>
-                        <td>${escapeHtml(a.task)}</td>
-                        <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
-                        <td>${a.hours}h</td>
-                        <td>
-                            <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
-                            <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            html += '</table></div>';
+
             container.innerHTML = html;
         }
 
