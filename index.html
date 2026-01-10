@@ -1607,9 +1607,22 @@
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="reportFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                        <select id="reportFilterType" onchange="handleReportFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="month">月別</option>
+                            <option value="version">版数別</option>
+                        </select>
+                    </div>
+                    <div id="reportMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
                         <select id="reportMonth" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
+                        </select>
+                    </div>
+                    <div id="reportVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
+                        <select id="reportVersion" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全版数</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
@@ -1626,6 +1639,13 @@
                 <div id="reportFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">月別</button>
+                                <button onclick="setReportFilterType('version')" id="btnFilterVersion" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">版数別</button>
+                            </div>
+                        </div>
+                        <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
                             <div id="reportMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
@@ -1633,6 +1653,16 @@
                             <!-- Select版（要素数が多い場合） -->
                             <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; updateReport()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
+                            </select>
+                        </div>
+                        <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <!-- セグメントボタン版 -->
+                            <div id="reportVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            </div>
+                            <!-- Select版（要素数が多い場合） -->
+                            <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; updateReport()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全版数</option>
                             </select>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -2796,6 +2826,93 @@
                     }
                 }
             });
+
+            // レポート用の版数フィルター更新
+            updateReportVersionOptions(sortedVersions);
+        }
+
+        // レポート用の版数フィルターオプションを更新する関数
+        function updateReportVersionOptions(sortedVersions) {
+            // sortedVersionsが渡されない場合は再計算
+            if (!sortedVersions) {
+                const versions = new Set();
+                estimates.forEach(e => {
+                    if (e.version && e.version.trim() !== '') {
+                        versions.add(e.version);
+                    }
+                });
+                actuals.forEach(a => {
+                    if (a.version && a.version.trim() !== '') {
+                        versions.add(a.version);
+                    }
+                });
+
+                // versionOrderに従ってソート
+                sortedVersions = Array.from(versions).sort((a, b) => {
+                    const indexA = versionOrder.indexOf(a);
+                    const indexB = versionOrder.indexOf(b);
+                    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+            } else {
+                // versionOrderに従って再ソート
+                sortedVersions = sortedVersions.slice().sort((a, b) => {
+                    const indexA = versionOrder.indexOf(a);
+                    const indexB = versionOrder.indexOf(b);
+                    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+            }
+
+            const select = document.getElementById('reportVersion');
+            const select2 = document.getElementById('reportVersion2');
+
+            if (!select) return;
+
+            const currentValue = select.value || 'all';
+
+            // 選択肢を生成
+            select.innerHTML = '<option value="all">全版数</option>';
+            if (select2) select2.innerHTML = '<option value="all">全版数</option>';
+
+            sortedVersions.forEach(version => {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = version;
+                    option2.textContent = version;
+                    select2.appendChild(option2);
+                }
+            });
+
+            // 以前の選択を復元
+            select.value = currentValue;
+            if (select2) select2.value = currentValue;
+
+            // セグメントボタン版を生成
+            const items = [
+                { value: 'all', label: '全版数' },
+                ...sortedVersions.map(version => ({
+                    value: version,
+                    label: version
+                }))
+            ];
+            createSegmentButtons(
+                'reportVersionButtons2',
+                'reportVersion2',
+                items,
+                currentValue,
+                8,
+                handleReportVersionChange
+            );
         }
 
         // 版数選択時の処理（新規追加対応）
@@ -7017,6 +7134,63 @@
             updateReport();
         }
 
+        // レポートの版数選択ハンドラー
+        function handleReportVersionChange(value, containerId) {
+            document.getElementById('reportVersion').value = value;
+            const versionSelect2 = document.getElementById('reportVersion2');
+            if (versionSelect2) versionSelect2.value = value;
+            updateSegmentButtonSelection(containerId, value);
+            updateReport();
+        }
+
+        // レポートのフィルタタイプ変更ハンドラー（コンパクト版）
+        function handleReportFilterTypeChange() {
+            const filterType = document.getElementById('reportFilterType').value;
+            const monthFilterCompact = document.getElementById('reportMonthFilterCompact');
+            const versionFilterCompact = document.getElementById('reportVersionFilterCompact');
+            const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
+            const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
+
+            if (filterType === 'month') {
+                monthFilterCompact.style.display = 'flex';
+                versionFilterCompact.style.display = 'none';
+                if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+            } else {
+                monthFilterCompact.style.display = 'none';
+                versionFilterCompact.style.display = 'flex';
+                if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
+                if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+            }
+
+            // フィルタタイプ切り替えボタンの状態更新
+            updateFilterTypeButtons(filterType);
+
+            updateReport();
+        }
+
+        // レポートのフィルタタイプ設定（セグメント版）
+        function setReportFilterType(type) {
+            document.getElementById('reportFilterType').value = type;
+            handleReportFilterTypeChange();
+        }
+
+        // フィルタタイプボタンの表示状態を更新
+        function updateFilterTypeButtons(type) {
+            const themeColor = getThemeColor();
+            const btnMonth = document.getElementById('btnFilterMonth');
+            const btnVersion = document.getElementById('btnFilterVersion');
+
+            if (btnMonth) {
+                btnMonth.style.background = type === 'month' ? themeColor : 'white';
+                btnMonth.style.color = type === 'month' ? 'white' : '#333';
+            }
+            if (btnVersion) {
+                btnVersion.style.background = type === 'version' ? themeColor : 'white';
+                btnVersion.style.color = type === 'version' ? 'white' : '#333';
+            }
+        }
+
         // テーマカラーから実際の色を取得するヘルパー関数
         function getThemeColor() {
             const themeColors = {
@@ -7261,41 +7435,51 @@
         }
 
         function updateReport() {
+            const filterType = document.getElementById('reportFilterType').value;
             const selectedMonth = document.getElementById('reportMonth').value;
+            const selectedVersion = document.getElementById('reportVersion').value;
             const viewType = document.getElementById('reportViewType').value;
-            
-            // 実績のフィルタリング
+
             let filteredActuals = actuals;
-            if (selectedMonth !== 'all') {
-                // 選択月の実績 + その月の「その他付随作業」を含める
-                filteredActuals = actuals.filter(a => {
-                    // その他付随作業は日付が選択月のものを含める
-                    if (isOtherWork(a)) {
-                        return a.date && a.date.startsWith(selectedMonth);
-                    }
-                    // 通常の作業は日付が選択月のものを含める
-                    return a.date && a.date.startsWith(selectedMonth);
-                });
-            }
-            
-            // 見積のフィルタリング（作業予定月で絞り込み）
             let filteredEstimates = estimates;
-            if (selectedMonth !== 'all') {
-                // 複数月対応: workMonthsに含まれる見積をフィルタ
-                filteredEstimates = estimates.filter(e => {
-                    const est = normalizeEstimate(e);
-                    return est.workMonths.includes(selectedMonth);
-                }).map(e => {
-                    // 月別工数を使用
-                    const est = normalizeEstimate(e);
-                    return {
-                        ...est,
-                        hours: est.monthlyHours[selectedMonth] || est.hours
-                    };
-                });
+
+            if (filterType === 'month') {
+                // 月別フィルタリング
+                if (selectedMonth !== 'all') {
+                    // 選択月の実績 + その月の「その他付随作業」を含める
+                    filteredActuals = actuals.filter(a => {
+                        // その他付随作業は日付が選択月のものを含める
+                        if (isOtherWork(a)) {
+                            return a.date && a.date.startsWith(selectedMonth);
+                        }
+                        // 通常の作業は日付が選択月のものを含める
+                        return a.date && a.date.startsWith(selectedMonth);
+                    });
+
+                    // 複数月対応: workMonthsに含まれる見積をフィルタ
+                    filteredEstimates = estimates.filter(e => {
+                        const est = normalizeEstimate(e);
+                        return est.workMonths.includes(selectedMonth);
+                    }).map(e => {
+                        // 月別工数を使用
+                        const est = normalizeEstimate(e);
+                        return {
+                            ...est,
+                            hours: est.monthlyHours[selectedMonth] || est.hours
+                        };
+                    });
+                } else {
+                    // 全期間の場合は正規化のみ
+                    filteredEstimates = estimates.map(e => normalizeEstimate(e));
+                }
             } else {
-                // 全期間の場合は正規化のみ
-                filteredEstimates = estimates.map(e => normalizeEstimate(e));
+                // 版数別フィルタリング
+                if (selectedVersion !== 'all') {
+                    filteredActuals = actuals.filter(a => a.version === selectedVersion);
+                    filteredEstimates = estimates.filter(e => e.version === selectedVersion).map(e => normalizeEstimate(e));
+                } else {
+                    filteredEstimates = estimates.map(e => normalizeEstimate(e));
+                }
             }
             
             // デバッグ情報（コンソール出力）
@@ -7370,11 +7554,19 @@
             
             // タイトル更新
             const titleElement = document.getElementById('reportPeriodTitle');
-            if (selectedMonth === 'all') {
-                titleElement.textContent = '全期間の集計';
+            if (filterType === 'month') {
+                if (selectedMonth === 'all') {
+                    titleElement.textContent = '全期間の集計';
+                } else {
+                    const [year, month] = selectedMonth.split('-');
+                    titleElement.textContent = `${year}年${parseInt(month)}月の集計`;
+                }
             } else {
-                const [year, month] = selectedMonth.split('-');
-                titleElement.textContent = `${year}年${parseInt(month)}月の集計`;
+                if (selectedVersion === 'all') {
+                    titleElement.textContent = '全版数の集計';
+                } else {
+                    titleElement.textContent = `${selectedVersion} の集計`;
+                }
             }
             
             const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
@@ -7384,7 +7576,7 @@
 
             // 人日と人月の計算（実働日数ベース）
             let workingDaysPerMonth = 20; // デフォルト
-            if (selectedMonth !== 'all') {
+            if (filterType === 'month' && selectedMonth !== 'all') {
                 const [year, month] = selectedMonth.split('-');
                 workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
             }
