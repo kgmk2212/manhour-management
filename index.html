@@ -389,6 +389,10 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.2s;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 3%;
+            box-sizing: border-box;
         }
 
         .custom-dropdown {
@@ -448,7 +452,6 @@
 
         .modal-content {
             background-color: white;
-            margin: 3% auto;
             padding: 0;
             border-radius: 12px;
             width: 90%;
@@ -2083,8 +2086,8 @@
     </div>
 
     <!-- 実績編集モーダル -->
-    <div id="editActualModal" class="modal">
-        <div class="modal-content">
+    <div id="editActualModal" class="modal" onclick="closeEditActualModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>実績データを編集</h3>
                 <button class="modal-close" onclick="closeEditActualModal()">&times;</button>
@@ -2192,8 +2195,8 @@
     </div>
 
     <!-- 休暇登録モーダル -->
-    <div id="vacationModal" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
+    <div id="vacationModal" class="modal" onclick="closeVacationModal()">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
             <div class="modal-header" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">
                 <h3 style="color: white;">休暇を登録</h3>
                 <button class="modal-close" onclick="closeVacationModal()" style="color: white;">&times;</button>
