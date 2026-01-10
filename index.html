@@ -1874,7 +1874,24 @@
                         ・ページをリロードしても設定は保持されます
                     </small>
                 </div>
-                
+
+                <!-- マトリックス表示の月色分け設定 -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>📊 マトリックス表示</h3>
+                    <p style="color: #666; margin-bottom: 15px;">見積一覧・レポートのマトリックス表示に関する設定です。</p>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="showMonthColorsCheckbox" onchange="toggleMonthColorsSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <span>全期間表示で月ごとに色分けする</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ・オン: 全期間表示時に工程の割当月に応じてセルを色分けします<br>
+                            ・オフ: 色分けを無効にします
+                        </small>
+                    </div>
+                </div>
+
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>自動バックアップ</h3>
                     <p style="color: #666; margin-bottom: 15px;">データ保存時に自動的にJSONファイルをダウンロードします。</p>
@@ -2846,7 +2863,8 @@
                     autoBackup: autoBackupEnabled,
                     estimateLayout: estimateLayout,
                     actualLayout: actualLayout,
-                    reportLayout: reportLayout
+                    reportLayout: reportLayout,
+                    showMonthColors: showMonthColorsSetting
                 }
             };
 
@@ -3229,6 +3247,11 @@
                 if (settings.estimateLayout) estimateLayout = settings.estimateLayout;
                 if (settings.actualLayout) actualLayout = settings.actualLayout;
                 if (settings.reportLayout) reportLayout = settings.reportLayout;
+                if (settings.showMonthColors !== undefined) {
+                    showMonthColorsSetting = settings.showMonthColors;
+                    const checkbox = document.getElementById('showMonthColorsCheckbox');
+                    if (checkbox) checkbox.checked = showMonthColorsSetting;
+                }
             } else {
                 // 旧形式の設定を読み込み（後方互換性）
                 const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
@@ -4028,19 +4051,30 @@
         // 月別カラーマップ（隣り合う月が調和する色）
         // 色相環を滑らかに移動: 青→シアン→緑→黄緑→黄→橙→赤→ピンク→紫→青紫→紺→青灰
         const monthColors = {
-            '01': { bg: 'rgba(70, 130, 200, 0.30)', rgb: '70, 130, 200', name: '1月', label: '1月' },   // 青
-            '02': { bg: 'rgba(60, 160, 190, 0.30)', rgb: '60, 160, 190', name: '2月', label: '2月' },   // シアンブルー
-            '03': { bg: 'rgba(50, 180, 140, 0.30)', rgb: '50, 180, 140', name: '3月', label: '3月' },   // ティール
-            '04': { bg: 'rgba(80, 190, 100, 0.30)', rgb: '80, 190, 100', name: '4月', label: '4月' },   // グリーン
-            '05': { bg: 'rgba(160, 200, 60, 0.30)', rgb: '160, 200, 60', name: '5月', label: '5月' },   // 黄緑
-            '06': { bg: 'rgba(230, 190, 50, 0.30)', rgb: '230, 190, 50', name: '6月', label: '6月' },   // 黄
-            '07': { bg: 'rgba(240, 150, 60, 0.30)', rgb: '240, 150, 60', name: '7月', label: '7月' },   // オレンジ
-            '08': { bg: 'rgba(230, 100, 100, 0.30)', rgb: '230, 100, 100', name: '8月', label: '8月' }, // コーラル
-            '09': { bg: 'rgba(210, 90, 150, 0.30)', rgb: '210, 90, 150', name: '9月', label: '9月' },   // ローズ
-            '10': { bg: 'rgba(170, 90, 190, 0.30)', rgb: '170, 90, 190', name: '10月', label: '10月' }, // パープル
-            '11': { bg: 'rgba(120, 100, 200, 0.30)', rgb: '120, 100, 200', name: '11月', label: '11月' }, // 青紫
-            '12': { bg: 'rgba(90, 110, 180, 0.30)', rgb: '90, 110, 180', name: '12月', label: '12月' }  // 紺
+            '01': { bg: 'rgba(70, 130, 200, 0.18)', rgb: '70, 130, 200', name: '1月', label: '1月' },   // 青
+            '02': { bg: 'rgba(60, 160, 190, 0.18)', rgb: '60, 160, 190', name: '2月', label: '2月' },   // シアンブルー
+            '03': { bg: 'rgba(50, 180, 140, 0.18)', rgb: '50, 180, 140', name: '3月', label: '3月' },   // ティール
+            '04': { bg: 'rgba(80, 190, 100, 0.18)', rgb: '80, 190, 100', name: '4月', label: '4月' },   // グリーン
+            '05': { bg: 'rgba(160, 200, 60, 0.18)', rgb: '160, 200, 60', name: '5月', label: '5月' },   // 黄緑
+            '06': { bg: 'rgba(230, 190, 50, 0.18)', rgb: '230, 190, 50', name: '6月', label: '6月' },   // 黄
+            '07': { bg: 'rgba(240, 150, 60, 0.18)', rgb: '240, 150, 60', name: '7月', label: '7月' },   // オレンジ
+            '08': { bg: 'rgba(230, 100, 100, 0.18)', rgb: '230, 100, 100', name: '8月', label: '8月' }, // コーラル
+            '09': { bg: 'rgba(210, 90, 150, 0.18)', rgb: '210, 90, 150', name: '9月', label: '9月' },   // ローズ
+            '10': { bg: 'rgba(170, 90, 190, 0.18)', rgb: '170, 90, 190', name: '10月', label: '10月' }, // パープル
+            '11': { bg: 'rgba(120, 100, 200, 0.18)', rgb: '120, 100, 200', name: '11月', label: '11月' }, // 青紫
+            '12': { bg: 'rgba(90, 110, 180, 0.18)', rgb: '90, 110, 180', name: '12月', label: '12月' }  // 紺
         };
+
+        // 月別色付け設定
+        let showMonthColorsSetting = true;
+
+        // 月別色付け設定のトグル
+        function toggleMonthColorsSetting() {
+            showMonthColorsSetting = document.getElementById('showMonthColorsCheckbox').checked;
+            saveData(true);
+            renderEstimates();
+            updateReportMatrix();
+        }
 
         // 月から背景色を取得
         function getMonthColor(workMonths) {
@@ -4069,7 +4103,7 @@
             const color2 = monthColors[lastMonth]?.rgb || '150, 150, 150';
 
             return {
-                bg: `repeating-linear-gradient(-45deg, rgba(${color1}, 0.35) 0px, rgba(${color1}, 0.35) 6px, rgba(${color2}, 0.35) 6px, rgba(${color2}, 0.35) 12px)`,
+                bg: `repeating-linear-gradient(-45deg, rgba(${color1}, 0.20) 0px, rgba(${color1}, 0.20) 6px, rgba(${color2}, 0.20) 6px, rgba(${color2}, 0.20) 12px)`,
                 tooltip: `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`,
                 isMultiple: true
             };
@@ -5562,12 +5596,12 @@
 
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
-            // 全期間の時のみ色付けする
-            const showMonthColors = workMonthFilter === 'all';
+            // 全期間かつ設定がオンの時のみ色付けする
+            const showMonthColors = workMonthFilter === 'all' && showMonthColorsSetting;
 
             let html = '<div style="margin-bottom: 30px;">';
 
-            // 月カラー凡例を追加（全期間の時のみ）
+            // 月カラー凡例を追加（全期間かつ設定がオンの時のみ）
             if (showMonthColors) {
                 html += generateMonthColorLegend(usedMonths);
             }
@@ -9482,8 +9516,8 @@
         function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
             const container = document.getElementById('reportDetailView');
 
-            // 全期間の時のみ色付けする
-            const showMonthColors = selectedMonth === 'all';
+            // 全期間かつ設定がオンの時のみ色付けする
+            const showMonthColors = selectedMonth === 'all' && showMonthColorsSetting;
 
             // 使用されている月を収集（凡例用）
             const usedMonths = new Set();
