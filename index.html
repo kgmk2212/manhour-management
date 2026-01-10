@@ -2215,6 +2215,26 @@
             memberAnalysisEnabled: true,
             insightsEnabled: true
         };
+
+        // Phaseセクションの折り畳み状態
+        let phaseCollapsed = {
+            phase1: false,
+            phase2: false,
+            phase3: false
+        };
+
+        function togglePhaseCollapse(phaseId) {
+            phaseCollapsed[phaseId] = !phaseCollapsed[phaseId];
+            const content = document.getElementById(phaseId + '-content');
+            const arrow = document.getElementById(phaseId + '-arrow');
+            if (content) {
+                content.style.display = phaseCollapsed[phaseId] ? 'none' : 'block';
+            }
+            if (arrow) {
+                arrow.textContent = phaseCollapsed[phaseId] ? '▶' : '▼';
+            }
+        }
+
         let autoBackupEnabled = false; // 自動バックアップの設定
 
         // テーマ設定
@@ -7472,7 +7492,10 @@
             // Phase 1: 見積精度と異常値表示
             if (reportSettings.accuracyEnabled || reportSettings.anomalyEnabled || reportSettings.warningTasksEnabled) {
                 html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 1: 見積精度分析</h3>';
+                html += `<h3 onclick="togglePhaseCollapse('phase1')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+                html += `<span id="phase1-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase1 ? '▶' : '▼'}</span>`;
+                html += 'Phase 1: 見積精度分析</h3>';
+                html += `<div id="phase1-content" style="display: ${phaseCollapsed.phase1 ? 'none' : 'block'}; margin-top: 15px;">`;
 
                 // 工程別の精度計算
                 if (reportSettings.accuracyEnabled) {
@@ -7620,13 +7643,17 @@
                     }
                 }
 
+                html += '</div>'; // close phase1-content
                 html += '</div>';
             }
 
             // Phase 2: グラフと月別推移
             if (reportSettings.chartEnabled || reportSettings.trendEnabled) {
                 html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 2: ビジュアル分析</h3>';
+                html += `<h3 onclick="togglePhaseCollapse('phase2')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+                html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
+                html += 'Phase 2: ビジュアル分析</h3>';
+                html += `<div id="phase2-content" style="display: ${phaseCollapsed.phase2 ? 'none' : 'block'}; margin-top: 15px;">`;
 
                 // 工程別バーチャート
                 if (reportSettings.chartEnabled) {
@@ -7738,13 +7765,17 @@
                     }
                 }
 
+                html += '</div>'; // close phase2-content
                 html += '</div>';
             }
 
             // Phase 3: 担当者別分析とインサイト
             if (reportSettings.memberAnalysisEnabled || reportSettings.insightsEnabled) {
                 html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 3: 担当者分析とインサイト</h3>';
+                html += `<h3 onclick="togglePhaseCollapse('phase3')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+                html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
+                html += 'Phase 3: 担当者分析とインサイト</h3>';
+                html += `<div id="phase3-content" style="display: ${phaseCollapsed.phase3 ? 'none' : 'block'}; margin-top: 15px;">`;
 
                 // 担当者別パフォーマンス
                 if (reportSettings.memberAnalysisEnabled) {
@@ -7913,6 +7944,7 @@
                     }
                 }
 
+                html += '</div>'; // close phase3-content
                 html += '</div>';
             }
 
