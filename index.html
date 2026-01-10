@@ -4025,20 +4025,21 @@
         // 月分割モード用の変数
         let monthSplitEnabled = false;
 
-        // 月別カラーマップ（12ヶ月分の区別しやすい色）
+        // 月別カラーマップ（隣り合う月が調和する色）
+        // 色相環を滑らかに移動: 青→シアン→緑→黄緑→黄→橙→赤→ピンク→紫→青紫→紺→青灰
         const monthColors = {
-            '01': { bg: 'rgba(100, 149, 237, 0.25)', name: '1月', label: '1月' },  // コーンフラワーブルー
-            '02': { bg: 'rgba(0, 191, 255, 0.25)', name: '2月', label: '2月' },    // ディープスカイブルー
-            '03': { bg: 'rgba(60, 179, 113, 0.25)', name: '3月', label: '3月' },   // ミディアムシーグリーン
-            '04': { bg: 'rgba(144, 238, 144, 0.30)', name: '4月', label: '4月' },  // ライトグリーン
-            '05': { bg: 'rgba(255, 215, 0, 0.25)', name: '5月', label: '5月' },    // ゴールド
-            '06': { bg: 'rgba(255, 165, 0, 0.25)', name: '6月', label: '6月' },    // オレンジ
-            '07': { bg: 'rgba(255, 99, 71, 0.25)', name: '7月', label: '7月' },    // トマト
-            '08': { bg: 'rgba(255, 105, 180, 0.25)', name: '8月', label: '8月' },  // ホットピンク
-            '09': { bg: 'rgba(186, 85, 211, 0.25)', name: '9月', label: '9月' },   // ミディアムオーキッド
-            '10': { bg: 'rgba(147, 112, 219, 0.25)', name: '10月', label: '10月' }, // ミディアムパープル
-            '11': { bg: 'rgba(70, 130, 180, 0.25)', name: '11月', label: '11月' },  // スチールブルー
-            '12': { bg: 'rgba(119, 136, 153, 0.25)', name: '12月', label: '12月' }  // ライトスレートグレー
+            '01': { bg: 'rgba(70, 130, 200, 0.30)', rgb: '70, 130, 200', name: '1月', label: '1月' },   // 青
+            '02': { bg: 'rgba(60, 160, 190, 0.30)', rgb: '60, 160, 190', name: '2月', label: '2月' },   // シアンブルー
+            '03': { bg: 'rgba(50, 180, 140, 0.30)', rgb: '50, 180, 140', name: '3月', label: '3月' },   // ティール
+            '04': { bg: 'rgba(80, 190, 100, 0.30)', rgb: '80, 190, 100', name: '4月', label: '4月' },   // グリーン
+            '05': { bg: 'rgba(160, 200, 60, 0.30)', rgb: '160, 200, 60', name: '5月', label: '5月' },   // 黄緑
+            '06': { bg: 'rgba(230, 190, 50, 0.30)', rgb: '230, 190, 50', name: '6月', label: '6月' },   // 黄
+            '07': { bg: 'rgba(240, 150, 60, 0.30)', rgb: '240, 150, 60', name: '7月', label: '7月' },   // オレンジ
+            '08': { bg: 'rgba(230, 100, 100, 0.30)', rgb: '230, 100, 100', name: '8月', label: '8月' }, // コーラル
+            '09': { bg: 'rgba(210, 90, 150, 0.30)', rgb: '210, 90, 150', name: '9月', label: '9月' },   // ローズ
+            '10': { bg: 'rgba(170, 90, 190, 0.30)', rgb: '170, 90, 190', name: '10月', label: '10月' }, // パープル
+            '11': { bg: 'rgba(120, 100, 200, 0.30)', rgb: '120, 100, 200', name: '11月', label: '11月' }, // 青紫
+            '12': { bg: 'rgba(90, 110, 180, 0.30)', rgb: '90, 110, 180', name: '12月', label: '12月' }  // 紺
         };
 
         // 月から背景色を取得
@@ -4058,13 +4059,18 @@
                 };
             }
 
-            // 複数月の場合 - 斜線ストライプパターンで表示
+            // 複数月の場合 - 逆斜線ストライプで開始月と終了月の色を使用
+            const firstMonth = workMonths[0].split('-')[1];
+            const lastMonth = workMonths[workMonths.length - 1].split('-')[1];
             const [y1, m1] = workMonths[0].split('-');
             const [y2, m2] = workMonths[workMonths.length - 1].split('-');
 
+            const color1 = monthColors[firstMonth]?.rgb || '150, 150, 150';
+            const color2 = monthColors[lastMonth]?.rgb || '150, 150, 150';
+
             return {
-                bg: 'repeating-linear-gradient(45deg, rgba(100, 100, 100, 0.1), rgba(100, 100, 100, 0.1) 4px, rgba(200, 200, 200, 0.15) 4px, rgba(200, 200, 200, 0.15) 8px)',
-                tooltip: `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月（複数月）`,
+                bg: `repeating-linear-gradient(-45deg, rgba(${color1}, 0.35) 0px, rgba(${color1}, 0.35) 6px, rgba(${color2}, 0.35) 6px, rgba(${color2}, 0.35) 12px)`,
+                tooltip: `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`,
                 isMultiple: true
             };
         }
@@ -4089,9 +4095,9 @@
                 }
             });
 
-            // 複数月の凡例
+            // 複数月の凡例（例として1月と3月の色を使用）
             html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;">
-                <span style="width: 16px; height: 16px; background: repeating-linear-gradient(45deg, rgba(100, 100, 100, 0.1), rgba(100, 100, 100, 0.1) 2px, rgba(200, 200, 200, 0.15) 2px, rgba(200, 200, 200, 0.15) 4px); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
+                <span style="width: 16px; height: 16px; background: repeating-linear-gradient(-45deg, rgba(70, 130, 200, 0.35) 0px, rgba(70, 130, 200, 0.35) 3px, rgba(50, 180, 140, 0.35) 3px, rgba(50, 180, 140, 0.35) 6px); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
                 <span style="color: #666;">複数月</span>
             </span>`;
 
@@ -5556,10 +5562,15 @@
 
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
+            // 全期間の時のみ色付けする
+            const showMonthColors = workMonthFilter === 'all';
+
             let html = '<div style="margin-bottom: 30px;">';
 
-            // 月カラー凡例を追加
-            html += generateMonthColorLegend(usedMonths);
+            // 月カラー凡例を追加（全期間の時のみ）
+            if (showMonthColors) {
+                html += generateMonthColorLegend(usedMonths);
+            }
 
             // 版数ごとに表示
             Object.keys(versionGroups).sort().forEach(version => {
@@ -5590,25 +5601,23 @@
                             const p = group.processes[proc];
                             total += p.hours;
 
-                            // 月に基づく背景色を取得
-                            const monthColor = getMonthColor(p.workMonths);
-                            const bgStyle = monthColor.isMultiple
-                                ? `background: ${monthColor.bg};`
-                                : `background: ${monthColor.bg};`;
+                            // 全期間の時のみ月に基づく背景色を適用
+                            const monthColor = showMonthColors ? getMonthColor(p.workMonths) : { bg: '', tooltip: '' };
+                            const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
                             // 編集モード時はクリック可能なセルにする
                             if (estimateEditMode) {
                                 html += `<td style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
                                     onclick="editEstimate(${p.id})"
-                                    title="${monthColor.tooltip}"
+                                    ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
                                     onmouseover="this.style.background='#e3f2fd'"
-                                    onmouseout="this.style.background='${monthColor.bg}'">
+                                    onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
                                     <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
                                     <div style="font-size: 12px; color: #666;">(${p.member})</div>
                                     <div style="font-size: 10px; color: #1976d2; margin-top: 2px;">✏️ 編集</div>
                                 </td>`;
                             } else {
-                                html += `<td style="text-align: center; ${bgStyle}" title="${monthColor.tooltip}">
+                                html += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
                                     <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
                                     <div style="font-size: 12px; color: #666;">(${p.member})</div>
                                 </td>`;
@@ -8738,7 +8747,7 @@
             if (viewType === 'grouped') {
                 renderReportGrouped(filteredActuals, filteredEstimates);
             } else if (viewType === 'matrix') {
-                renderReportMatrix(filteredActuals, filteredEstimates);
+                renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth);
             }
             // viewTypeがnoneの場合は何もしない（分析パネルは保持される）
 
@@ -9470,8 +9479,11 @@
             container.innerHTML += html;
         }
 
-        function renderReportMatrix(filteredActuals, filteredEstimates) {
+        function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
             const container = document.getElementById('reportDetailView');
+
+            // 全期間の時のみ色付けする
+            const showMonthColors = selectedMonth === 'all';
 
             // 使用されている月を収集（凡例用）
             const usedMonths = new Set();
@@ -9553,8 +9565,10 @@
 
             let html = '<h3 style="margin-top: 30px;">対応別マトリクス（見積 vs 実績）</h3>';
 
-            // 月カラー凡例を追加
-            html += generateMonthColorLegend(usedMonths);
+            // 月カラー凡例を追加（全期間の時のみ）
+            if (showMonthColors) {
+                html += generateMonthColorLegend(usedMonths);
+            }
 
             html += '<div style="margin-bottom: 30px;">';
 
@@ -9623,11 +9637,11 @@
                             if (est.hours > 0 || act.hours > 0) {
                                 const diff = act.hours - est.hours;
 
-                                // 月に基づく背景色を取得
-                                const monthColor = getMonthColor(est.workMonths || []);
-                                const bgStyle = `background: ${monthColor.bg};`;
+                                // 全期間の時のみ月に基づく背景色を適用
+                                const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
+                                const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
-                                tableBody += `<td style="text-align: center; ${bgStyle}" title="${monthColor.tooltip}">
+                                tableBody += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
                                     <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
                                     <div style="font-size: 11px; color: #666;">(${est.member !== '-' ? est.member : act.member})</div>
                                     <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
