@@ -448,13 +448,16 @@
 
         .modal-content {
             background-color: white;
-            margin: 10% auto;
+            margin: 5% auto;
             padding: 0;
             border-radius: 12px;
             width: 90%;
             max-width: 600px;
+            max-height: 90vh;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: slideIn 0.3s;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-header {
@@ -509,8 +512,8 @@
 
         .modal-body {
             padding: 20px;
-            max-height: 400px;
             overflow-y: auto;
+            flex: 1;
         }
 
         .work-item {
@@ -2139,9 +2142,10 @@
                     </div>
                     <small style="color: #666; display: block; margin-top: 5px;">この対応にあと何時間で完了予定か入力（0=完了）</small>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
                     <button class="btn btn-primary" onclick="saveActualEdit()">保存</button>
                     <button class="btn" id="editActualOtherBtn" onclick="openOtherWorkFromCalendar()" style="background: #9b59b6; color: white; display: none;">その他作業</button>
+                    <button class="btn" id="editActualVacationBtn" onclick="openVacationFromCalendar()" style="background: #27ae60; color: white; display: none;">休暇登録</button>
                     <button class="btn" onclick="closeEditActualModal()" style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
@@ -6610,8 +6614,9 @@
             // この担当者の未完了対応を取得してdatalistに設定
             updateEditActualTaskList(member);
 
-            // 「その他作業」ボタンを表示し、データを保持
+            // 「その他作業」「休暇登録」ボタンを表示し、データを保持
             document.getElementById('editActualOtherBtn').style.display = 'block';
+            document.getElementById('editActualVacationBtn').style.display = 'block';
             document.getElementById('editActualModal').dataset.calendarMember = member;
             document.getElementById('editActualModal').dataset.calendarDate = date;
 
@@ -6629,6 +6634,19 @@
 
             // その他作業モーダルを開き、担当者と日付を設定
             openOtherWorkModalWithContext(member, date);
+        }
+
+        // カレンダーから休暇登録モーダルを開く
+        function openVacationFromCalendar() {
+            const modal = document.getElementById('editActualModal');
+            const member = modal.dataset.calendarMember;
+            const date = modal.dataset.calendarDate;
+
+            // 実績編集モーダルを閉じる
+            closeEditActualModal();
+
+            // 休暇登録モーダルを開く
+            addVacationFromCalendar(member, date);
         }
 
         // コンテキスト付きでその他作業モーダルを開く
@@ -6845,8 +6863,9 @@
             memberSelect.style.display = 'block';
             document.getElementById('editActualMemberDisplay').style.display = 'none';
 
-            // 編集時は「その他作業」ボタンを非表示
+            // 編集時は「その他作業」「休暇登録」ボタンを非表示
             document.getElementById('editActualOtherBtn').style.display = 'none';
+            document.getElementById('editActualVacationBtn').style.display = 'none';
 
             // モーダルを表示
             document.getElementById('editActualModal').style.display = 'flex';
