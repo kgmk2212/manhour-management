@@ -2846,26 +2846,8 @@
                         versions.add(a.version);
                     }
                 });
-
-                // versionOrderに従ってソート
-                sortedVersions = Array.from(versions).sort((a, b) => {
-                    const indexA = versionOrder.indexOf(a);
-                    const indexB = versionOrder.indexOf(b);
-                    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-                    if (indexA === -1) return 1;
-                    if (indexB === -1) return -1;
-                    return indexA - indexB;
-                });
-            } else {
-                // versionOrderに従って再ソート
-                sortedVersions = sortedVersions.slice().sort((a, b) => {
-                    const indexA = versionOrder.indexOf(a);
-                    const indexB = versionOrder.indexOf(b);
-                    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-                    if (indexA === -1) return 1;
-                    if (indexB === -1) return -1;
-                    return indexA - indexB;
-                });
+                // 降順でソート（新しい版数が上）
+                sortedVersions = Array.from(versions).sort().reverse();
             }
 
             const select = document.getElementById('reportVersion');
