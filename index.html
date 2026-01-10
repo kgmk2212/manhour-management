@@ -1265,30 +1265,42 @@
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
                                         <td><select id="quickEstUI_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
                                         <td><select id="quickEstPG_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
                                         <td><select id="quickEstPT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
                                         <td><select id="quickEstIT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
                                         <td><select id="quickEstST_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5" style="margin: 0;"></td>
+                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- 合計表示エリア -->
+                        <div id="quickEstimateTotals" style="background: rgba(25, 118, 210, 0.15); padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <span style="font-weight: 600; color: rgba(255,255,255,0.9);">対応合計:</span>
+                                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                    <span style="color: rgba(255,255,255,0.95);"><strong id="quickEstTotalHours">0.0</strong> h</span>
+                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalDays">0.0</span> 人日)</span>
+                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalMonths">0.00</span> 人月)</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 月分割アシスタント -->
@@ -4753,6 +4765,9 @@
             // 月分割アシスタントをクリア
             document.getElementById('quickEnableMonthSplit').checked = false;
             toggleQuickMonthSplit();
+
+            // 合計表示をリセット
+            updateQuickEstimateTotals();
         }
 
         // 月分割アシスタントの表示切り替え
@@ -4815,6 +4830,29 @@
 
             html += '</div>';
             preview.innerHTML = html;
+        }
+
+        // 見積登録フォームの合計をリアルタイム計算
+        function updateQuickEstimateTotals() {
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            let totalHours = 0;
+
+            processes.forEach(proc => {
+                const input = document.getElementById(`quickEst${proc}`);
+                if (input && input.value) {
+                    totalHours += parseFloat(input.value) || 0;
+                }
+            });
+
+            // 人日・人月を計算（1人日=8h、1人月=20人日）
+            const workingDaysPerMonth = 20;
+            const totalDays = totalHours / 8;
+            const totalMonths = totalDays / workingDaysPerMonth;
+
+            // 表示を更新
+            document.getElementById('quickEstTotalHours').textContent = totalHours.toFixed(1);
+            document.getElementById('quickEstTotalDays').textContent = totalDays.toFixed(1);
+            document.getElementById('quickEstTotalMonths').textContent = totalMonths.toFixed(2);
         }
 
         // クイック入力の見積登録フォーム初期化
