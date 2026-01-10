@@ -2851,8 +2851,8 @@
                     if (a.version) versions.add(a.version);
                 });
 
-                // 版数をソート（降順：新しいものが上）
-                const sortedVersions = Array.from(versions).sort().reverse();
+                // 版数をソート（昇順：版数名順、最新が最後）
+                const sortedVersions = Array.from(versions).sort();
 
                 // 各版数セレクトボックスを更新
                 const versionSelects = [
