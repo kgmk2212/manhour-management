@@ -1065,23 +1065,13 @@
             pointer-events: none;
         }
         
-        /* 作業月表示のレスポンシブ対応 */
-        /* デフォルト（広い画面）: 1行表示 */
+        /* 作業月表示 */
+        /* PC・モバイル共通: 次の行に表示 */
         .work-month-inline {
-            display: inline;
-        }
-        .work-month-block {
             display: none;
         }
-        
-        /* 狭い画面（1024px以下）: 2行表示 */
-        @media (max-width: 1024px) {
-            .work-month-inline {
-                display: none;
-            }
-            .work-month-block {
-                display: block;
-            }
+        .work-month-block {
+            display: block;
         }
         
         /* その他作業モーダル用スタイル */
@@ -1440,31 +1430,29 @@
                 </div>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="estimateFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="grouped">グループ</option>
-                            <option value="matrix">マトリクス</option>
-                            <option value="list">リスト</option>
-                        </select>
-                    </div>
+                <div id="estimateFiltersCompact" style="margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                    <div style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; overflow-x: auto;">
+                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="grouped">グループ</option>
+                                <option value="matrix">マトリクス</option>
+                                <option value="list">リスト</option>
+                            </select>
+                        </div>
 
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全期間</option>
-                        </select>
+                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
                     </div>
-
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 8px;">
                         <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
                             <span>編集モード</span>
@@ -1489,20 +1477,16 @@
                             <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
                             </div>
                         </div>
-
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
-                                <input type="checkbox" id="workMonthSelectionMode2" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
-                                <span>作業月割り当て</span>
-                            </label>
-                        </div>
-
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
-                                <input type="checkbox" id="estimateEditMode2" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
-                                <span>編集モード</span>
-                            </label>
-                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="workMonthSelectionMode2" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                            <span>作業月割り当て</span>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="estimateEditMode2" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                            <span>編集モード</span>
+                        </label>
                     </div>
                 </div>
                 
@@ -7487,8 +7471,8 @@
 
             // Phase 1: 見積精度と異常値表示
             if (reportSettings.accuracyEnabled || reportSettings.anomalyEnabled || reportSettings.warningTasksEnabled) {
-                html += `<div style="background: ${colors.phase1}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: white;">📊 Phase 1: 見積精度分析</h3>';
+                html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
+                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 1: 見積精度分析</h3>';
 
                 // 工程別の精度計算
                 if (reportSettings.accuracyEnabled) {
@@ -7511,8 +7495,8 @@
                         processSummary[processKey].actual += a.hours;
                     });
 
-                    html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-                    html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">工程別見積精度</h4>';
+                    html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
+                    html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">工程別見積精度</h4>';
                     html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">';
 
                     const sortedProcesses = [
@@ -7526,10 +7510,10 @@
                         const isOverrun = accuracy > 150;
                         const isGood = accuracy >= 80 && accuracy <= 120;
 
-                        html += '<div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; text-align: center;">';
-                        html += `<div style="font-weight: 600; margin-bottom: 5px;">${proc}</div>`;
-                        html += `<div style="font-size: 20px; font-weight: bold; color: ${isOverrun ? '#ff6b6b' : isGood ? '#51cf66' : '#ffd43b'};">${accuracy}%</div>`;
-                        html += `<div style="font-size: 12px; opacity: 0.9;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
+                        html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #e9ecef;">';
+                        html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
+                        html += `<div style="font-size: 20px; font-weight: bold; color: ${isOverrun ? '#dc3545' : isGood ? '#28a745' : '#ffc107'};">${accuracy}%</div>`;
+                        html += `<div style="font-size: 12px; color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
                         html += '</div>';
                     });
 
@@ -7567,20 +7551,20 @@
                     if (anomalies.length > 0) {
                         anomalies.sort((a, b) => b.overrun - a.overrun);
 
-                        html += '<div style="background: rgba(255, 107, 107, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid rgba(255, 107, 107, 0.4);">';
-                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">⚠️ 異常値検出（50%以上超過）</h4>';
-                        html += `<div style="color: white; font-size: 14px; margin-bottom: 10px;">検出数: ${anomalies.length}件</div>`;
+                        html += '<div style="background: #fff5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c6cb;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: #721c24; font-size: 16px;">異常値検出（50%以上超過）</h4>';
+                        html += `<div style="color: #856404; font-size: 14px; margin-bottom: 10px;">検出数: ${anomalies.length}件</div>`;
                         html += '<div style="max-height: 200px; overflow-y: auto;">';
 
                         anomalies.slice(0, 10).forEach(anomaly => {
-                            html += '<div style="background: rgba(255,255,255,0.15); padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 13px;">';
-                            html += `<div style="font-weight: 600;">${anomaly.version} - ${anomaly.task} [${anomaly.process}]</div>`;
-                            html += `<div>見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #ff6b6b; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
+                            html += '<div style="background: #ffffff; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 13px; border: 1px solid #f5c6cb;">';
+                            html += `<div style="font-weight: 600; color: #495057;">${anomaly.version} - ${anomaly.task} [${anomaly.process}]</div>`;
+                            html += `<div style="color: #495057;">見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
                             html += '</div>';
                         });
 
                         if (anomalies.length > 10) {
-                            html += `<div style="text-align: center; padding: 5px; color: rgba(255,255,255,0.7);">他 ${anomalies.length - 10}件...</div>`;
+                            html += `<div style="text-align: center; padding: 5px; color: #6c757d;">他 ${anomalies.length - 10}件...</div>`;
                         }
 
                         html += '</div></div>';
@@ -7620,15 +7604,15 @@
                     if (warnings.length > 0) {
                         warnings.sort((a, b) => b.overrun - a.overrun);
 
-                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
-                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">🚨 要注意タスク</h4>';
+                        html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">要注意タスク</h4>';
                         html += '<div style="max-height: 150px; overflow-y: auto;">';
 
                         warnings.slice(0, 5).forEach((warning, idx) => {
-                            html += '<div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-bottom: 5px;">';
-                            html += `<div style="font-weight: 600;">#${idx + 1} ${warning.version} - ${warning.task}</div>`;
-                            html += `<div style="font-size: 13px;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #ff6b6b; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
-                            html += `<div style="font-size: 12px; opacity: 0.8;">工程数: ${warning.processCount}</div>`;
+                            html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e9ecef;">';
+                            html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${warning.version} - ${warning.task}</div>`;
+                            html += `<div style="font-size: 13px; color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d;">工程数: ${warning.processCount}</div>`;
                             html += '</div>';
                         });
 
@@ -7641,8 +7625,8 @@
 
             // Phase 2: グラフと月別推移
             if (reportSettings.chartEnabled || reportSettings.trendEnabled) {
-                html += `<div style="background: ${colors.phase2}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: white;">📈 Phase 2: ビジュアル分析</h3>';
+                html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
+                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 2: ビジュアル分析</h3>';
 
                 // 工程別バーチャート
                 if (reportSettings.chartEnabled) {
@@ -7667,8 +7651,8 @@
 
                     const maxHours = Math.max(...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
 
-                    html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-                    html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">工程別見積vs実績</h4>';
+                    html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
+                    html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">工程別見積vs実績</h4>';
 
                     const sortedProcesses = [
                         ...processOrder.filter(p => processSummary[p]),
@@ -7681,17 +7665,17 @@
                         const actWidth = (data.actual / maxHours * 100).toFixed(1);
 
                         html += '<div style="margin-bottom: 15px;">';
-                        html += `<div style="font-weight: 600; margin-bottom: 5px;">${proc}</div>`;
+                        html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
                         html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
-                        html += '<div style="text-align: right; font-size: 13px;">見積</div>';
-                        html += `<div style="background: rgba(255,255,255,0.3); border-radius: 4px; height: 20px; position: relative;">`;
+                        html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
+                        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
                         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-                        html += `<span style="font-size: 12px; font-weight: 600;">${data.estimate.toFixed(1)}h</span>`;
+                        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
                         html += '</div></div>';
-                        html += '<div style="text-align: right; font-size: 13px;">実績</div>';
-                        html += `<div style="background: rgba(255,255,255,0.3); border-radius: 4px; height: 20px;">`;
-                        html += `<div style="background: ${data.actual > data.estimate ? '#ff6b6b' : '#51cf66'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-                        html += `<span style="font-size: 12px; font-weight: 600;">${data.actual.toFixed(1)}h</span>`;
+                        html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
+                        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
+                        html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
+                        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
                         html += '</div></div>';
                         html += '</div></div>';
                     });
@@ -7725,8 +7709,8 @@
                     const sortedMonths = Object.keys(monthlyData).sort();
 
                     if (sortedMonths.length > 1) {
-                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
-                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">月別推移</h4>';
+                        html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">月別推移</h4>';
 
                         const maxMonthlyHours = Math.max(...Object.values(monthlyData).map(m => Math.max(m.estimate, m.actual)));
 
@@ -7738,15 +7722,15 @@
                             const diff = data.actual - data.estimate;
 
                             html += '<div style="margin-bottom: 12px;">';
-                            html += `<div style="font-weight: 600; margin-bottom: 5px;">${year}年${parseInt(monthNum)}月</div>`;
+                            html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${year}年${parseInt(monthNum)}月</div>`;
                             html += '<div style="display: flex; gap: 5px; align-items: center;">';
-                            html += `<div style="flex: 1; background: rgba(255,255,255,0.3); border-radius: 4px; height: 24px; position: relative;">`;
+                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 24px; position: relative;">`;
                             html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
                             html += '</div>';
-                            html += `<div style="flex: 1; background: rgba(255,255,255,0.3); border-radius: 4px; height: 24px;">`;
-                            html += `<div style="background: ${data.actual > data.estimate ? '#ff6b6b' : '#51cf66'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
+                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 24px;">`;
+                            html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
                             html += '</div>';
-                            html += `<div style="min-width: 80px; text-align: right; font-size: 13px;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+                            html += `<div style="min-width: 80px; text-align: right; font-size: 13px; color: #495057;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
                             html += '</div></div>';
                         });
 
@@ -7759,8 +7743,8 @@
 
             // Phase 3: 担当者別分析とインサイト
             if (reportSettings.memberAnalysisEnabled || reportSettings.insightsEnabled) {
-                html += `<div style="background: ${colors.phase3}; padding: 20px; border-radius: 12px; margin: 20px 0; color: white;">`;
-                html += '<h3 style="margin: 0 0 15px 0; color: white;">👥 Phase 3: 担当者分析とインサイト</h3>';
+                html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
+                html += '<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">Phase 3: 担当者分析とインサイト</h3>';
 
                 // 担当者別パフォーマンス
                 if (reportSettings.memberAnalysisEnabled) {
@@ -7787,8 +7771,8 @@
                     );
 
                     if (members.length > 0) {
-                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">担当者別パフォーマンス</h4>';
+                        html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">担当者別パフォーマンス</h4>';
                         html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
 
                         members.forEach(member => {
@@ -7797,12 +7781,12 @@
                             const diff = data.actual - data.estimate;
                             const manDays = (data.actual / 8).toFixed(1);
 
-                            html += '<div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 6px;">';
-                            html += `<div style="font-weight: 600; margin-bottom: 5px;">${member}</div>`;
-                            html += `<div style="font-size: 13px;">実績: ${data.actual.toFixed(1)}h (${manDays}人日)</div>`;
-                            html += `<div style="font-size: 13px;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
-                            html += `<div style="font-size: 13px;">差分: <span style="color: ${diff > 0 ? '#ff6b6b' : '#51cf66'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
-                            html += `<div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">担当タスク: ${data.tasks.size}件</div>`;
+                            html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
+                            html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${member}</div>`;
+                            html += `<div style="font-size: 13px; color: #495057;">実績: ${data.actual.toFixed(1)}h (${manDays}人日)</div>`;
+                            html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
+                            html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${data.tasks.size}件</div>`;
                             html += '</div>';
                         });
 
@@ -7822,14 +7806,14 @@
                     if (overallAccuracy > 120) {
                         insights.push({
                             type: 'warning',
-                            icon: '⚠️',
+                            icon: '',
                             title: '見積精度に課題',
                             message: `全体で見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
                         });
                     } else if (overallAccuracy >= 90 && overallAccuracy <= 110) {
                         insights.push({
                             type: 'success',
-                            icon: '✅',
+                            icon: '',
                             title: '優れた見積精度',
                             message: `見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
                         });
@@ -7861,7 +7845,7 @@
                     if (bestProcess) {
                         insights.push({
                             type: 'info',
-                            icon: '🌟',
+                            icon: '',
                             title: '最適な工程',
                             message: `${bestProcess}工程の見積精度が最も高く、計画通りに進行しています。`
                         });
@@ -7881,7 +7865,7 @@
                         if (manMonths > 1.2) {
                             insights.push({
                                 type: 'warning',
-                                icon: '🔥',
+                                icon: '',
                                 title: '高負荷担当者あり',
                                 message: `${maxMember[0]}さんの作業量が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
                             });
@@ -7898,24 +7882,30 @@
                         const pendingCount = estimatedTasks.size - completedTasks.length;
                         insights.push({
                             type: 'info',
-                            icon: '📋',
+                            icon: '',
                             title: '未完了タスクあり',
                             message: `見積済みタスクのうち${pendingCount}件が未完了です。進捗を確認してください。`
                         });
                     }
 
                     if (insights.length > 0) {
-                        html += '<div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">';
-                        html += '<h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">💡 インサイト</h4>';
+                        html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">';
+                        html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">インサイト</h4>';
 
                         insights.forEach(insight => {
-                            const bgColor = insight.type === 'warning' ? 'rgba(255, 107, 107, 0.3)' :
-                                          insight.type === 'success' ? 'rgba(81, 207, 102, 0.3)' :
-                                          'rgba(74, 144, 226, 0.3)';
+                            const bgColor = insight.type === 'warning' ? '#fff5f5' :
+                                          insight.type === 'success' ? '#d4edda' :
+                                          '#cce5ff';
+                            const borderColor = insight.type === 'warning' ? '#f5c6cb' :
+                                          insight.type === 'success' ? '#c3e6cb' :
+                                          '#b8daff';
+                            const textColor = insight.type === 'warning' ? '#721c24' :
+                                          insight.type === 'success' ? '#155724' :
+                                          '#004085';
 
-                            html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px;">`;
-                            html += `<div style="font-weight: 600; margin-bottom: 3px;">${insight.icon} ${insight.title}</div>`;
-                            html += `<div style="font-size: 13px;">${insight.message}</div>`;
+                            html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid ${borderColor};">`;
+                            html += `<div style="font-weight: 600; margin-bottom: 3px; color: ${textColor};">${insight.title}</div>`;
+                            html += `<div style="font-size: 13px; color: ${textColor};">${insight.message}</div>`;
                             html += '</div>';
                         });
 
