@@ -5935,7 +5935,7 @@
                 </div>`;
             }
             
-            html += '<div class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
+            html += '<div id="calendarTableWrapper" class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
             html += '<tr><th style="min-width: 120px;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
             
             allDates.forEach(date => {
@@ -5993,6 +5993,56 @@
             
             html += '</table></div>';
             container.innerHTML = html;
+
+            // スワイプで月切り替え機能を設定
+            setupCalendarSwipe();
+        }
+
+        // カレンダースワイプ機能のセットアップ
+        function setupCalendarSwipe() {
+            const wrapper = document.getElementById('calendarTableWrapper');
+            if (!wrapper) return;
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+
+            wrapper.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleCalendarSwipe();
+            }, { passive: true });
+
+            function handleCalendarSwipe() {
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+
+                // 横スワイプが縦スワイプより大きく、かつ50px以上の場合のみ反応
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                    const monthSelect = document.getElementById('actualMonthFilter');
+                    const currentIndex = monthSelect.selectedIndex;
+
+                    if (diffX > 0) {
+                        // 右スワイプ → 前の月へ
+                        if (currentIndex > 0) {
+                            monthSelect.selectedIndex = currentIndex - 1;
+                            monthSelect.dispatchEvent(new Event('change'));
+                        }
+                    } else {
+                        // 左スワイプ → 次の月へ
+                        if (currentIndex < monthSelect.options.length - 1) {
+                            monthSelect.selectedIndex = currentIndex + 1;
+                            monthSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }
+            }
         }
 
         function renderActualMatrix() {
