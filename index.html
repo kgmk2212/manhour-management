@@ -8946,9 +8946,9 @@
                 
                 // 担当者一覧を取得（表示順を考慮）
                 let members = [...new Set(actuals.map(a => a.member))];
-                
-                // 表示順が指定されている場合
-                const memberOrderInput = localStorage.getItem('memberOrder');
+
+                // 表示順が指定されている場合（設定で定めた順序を使用）
+                const memberOrderInput = document.getElementById('memberOrder').value.trim();
                 if (memberOrderInput) {
                     const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
                     const orderedMembers = [];
