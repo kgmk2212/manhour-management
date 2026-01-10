@@ -2912,8 +2912,11 @@
                             versions.add(a.version);
                         }
                     });
-                    // 降順でソート（新しい版数が上）
-                    sortedVersions = Array.from(versions).sort().reverse();
+                    // 昇順でソート（版数名順）
+                    sortedVersions = Array.from(versions).sort();
+                } else {
+                    // 渡された配列を昇順にソートし直す
+                    sortedVersions = sortedVersions.slice().sort();
                 }
 
                 const select = document.getElementById('reportVersion');
@@ -2921,7 +2924,10 @@
 
                 if (!select) return;
 
-                const currentValue = select.value || 'all';
+                // 初回表示時は最後の版数をデフォルト選択、それ以外は以前の選択を復元
+                const isFirstLoad = !select.dataset.initialized;
+                const lastVersion = sortedVersions.length > 0 ? sortedVersions[sortedVersions.length - 1] : 'all';
+                const currentValue = isFirstLoad ? lastVersion : (select.value || 'all');
 
                 // 選択肢を生成
                 select.innerHTML = '<option value="all">全版数</option>';
@@ -2941,9 +2947,10 @@
                     }
                 });
 
-                // 以前の選択を復元
+                // 選択を設定
                 select.value = currentValue;
                 if (select2) select2.value = currentValue;
+                select.dataset.initialized = 'true';
 
                 // セグメントボタン版を生成
                 const items = [
