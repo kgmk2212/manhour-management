@@ -1580,7 +1580,7 @@
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" style="padding: 4px 12px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">カレンダー</button>
+                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">カレンダー</button>
                                 <button onclick="setActualViewType('list')" id="btnActualList" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">リスト</button>
                             </div>
                         </div>
@@ -1641,7 +1641,7 @@
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">月別</button>
+                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">月別</button>
                                 <button onclick="setReportFilterType('version')" id="btnFilterVersion" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">版数別</button>
                             </div>
                         </div>
@@ -1668,7 +1668,7 @@
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setReportViewType('summary')" id="btnReportSummary" style="padding: 4px 10px; font-size: 12px; border: none; background: #007bff; color: white; cursor: pointer; transition: all 0.2s;">サマリー</button>
+                                <button onclick="setReportViewType('summary')" id="btnReportSummary" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">サマリー</button>
                                 <button onclick="setReportViewType('grouped')" id="btnReportGrouped" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">グループ</button>
                                 <button onclick="setReportViewType('matrix')" id="btnReportMatrix" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">マトリクス</button>
                             </div>
@@ -2451,9 +2451,70 @@
             updateReport();
             renderCompanyHolidayList();
 
+            // セグメントボタンの初期色をテーマカラーに設定
+            initSegmentButtonColors();
+
             // モバイルでタブのスワイプ切り替え機能を追加
             initTabSwipe();
         });
+
+        // セグメントボタンの初期色をテーマカラーに設定
+        function initSegmentButtonColors() {
+            try {
+                const themeColor = getThemeColor();
+
+                // レポートフィルタタイプボタン（月別がデフォルト選択）
+                const btnFilterMonth = document.getElementById('btnFilterMonth');
+                if (btnFilterMonth) {
+                    btnFilterMonth.style.background = themeColor;
+                    btnFilterMonth.style.color = 'white';
+                }
+
+                // レポート表示形式ボタン（現在の選択に応じて）
+                const reportViewType = document.getElementById('reportViewType');
+                const btnReportSummary = document.getElementById('btnReportSummary');
+                const btnReportGrouped = document.getElementById('btnReportGrouped');
+                const btnReportMatrix = document.getElementById('btnReportMatrix');
+                if (reportViewType && btnReportSummary && btnReportGrouped && btnReportMatrix) {
+                    const type = reportViewType.value;
+                    btnReportSummary.style.background = type === 'summary' ? themeColor : 'white';
+                    btnReportSummary.style.color = type === 'summary' ? 'white' : '#333';
+                    btnReportGrouped.style.background = type === 'grouped' ? themeColor : 'white';
+                    btnReportGrouped.style.color = type === 'grouped' ? 'white' : '#333';
+                    btnReportMatrix.style.background = type === 'matrix' ? themeColor : 'white';
+                    btnReportMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+                }
+
+                // 実績一覧表示形式ボタン（現在の選択に応じて）
+                const actualViewType = document.getElementById('actualViewType');
+                const btnActualMatrix = document.getElementById('btnActualMatrix');
+                const btnActualList = document.getElementById('btnActualList');
+                if (actualViewType && btnActualMatrix && btnActualList) {
+                    const type = actualViewType.value;
+                    btnActualMatrix.style.background = type === 'matrix' ? themeColor : 'white';
+                    btnActualMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+                    btnActualList.style.background = type === 'list' ? themeColor : 'white';
+                    btnActualList.style.color = type === 'list' ? 'white' : '#333';
+                }
+
+                // 見積一覧表示形式ボタン（現在の選択に応じて）
+                const estimateViewType = document.getElementById('estimateViewType');
+                const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
+                const btnEstimateMatrix = document.getElementById('btnEstimateMatrix');
+                const btnEstimateList = document.getElementById('btnEstimateList');
+                if (estimateViewType && btnEstimateGrouped && btnEstimateMatrix && btnEstimateList) {
+                    const type = estimateViewType.value;
+                    btnEstimateGrouped.style.background = type === 'grouped' ? themeColor : 'white';
+                    btnEstimateGrouped.style.color = type === 'grouped' ? 'white' : '#333';
+                    btnEstimateMatrix.style.background = type === 'matrix' ? themeColor : 'white';
+                    btnEstimateMatrix.style.color = type === 'matrix' ? 'white' : '#333';
+                    btnEstimateList.style.background = type === 'list' ? themeColor : 'white';
+                    btnEstimateList.style.color = type === 'list' ? 'white' : '#333';
+                }
+            } catch (e) {
+                console.error('initSegmentButtonColors error:', e);
+            }
+        }
 
         // タブのスワイプ切り替え機能を初期化
         function initTabSwipe() {
@@ -2780,121 +2841,129 @@
 
         // 版数選択肢を更新する関数
         function updateVersionOptions() {
-            // 見積と実績データから版数を抽出
-            const versions = new Set();
-            estimates.forEach(e => {
-                if (e.version) versions.add(e.version);
-            });
-            actuals.forEach(a => {
-                if (a.version) versions.add(a.version);
-            });
+            try {
+                // 見積と実績データから版数を抽出
+                const versions = new Set();
+                estimates.forEach(e => {
+                    if (e.version) versions.add(e.version);
+                });
+                actuals.forEach(a => {
+                    if (a.version) versions.add(a.version);
+                });
 
-            // 版数をソート（降順：新しいものが上）
-            const sortedVersions = Array.from(versions).sort().reverse();
+                // 版数をソート（降順：新しいものが上）
+                const sortedVersions = Array.from(versions).sort().reverse();
 
-            // 各版数セレクトボックスを更新
-            const versionSelects = [
-                'estVersion',           // 新規見積登録（削除済みだが念のため残す）
-                'quickEstVersion',      // クイック入力の見積登録
-                'editActualVersion',    // 実績編集/新規モーダル
-                'editEstimateVersion'   // 見積編集モーダル
-            ];
+                // 各版数セレクトボックスを更新
+                const versionSelects = [
+                    'estVersion',           // 新規見積登録（削除済みだが念のため残す）
+                    'quickEstVersion',      // クイック入力の見積登録
+                    'editActualVersion',    // 実績編集/新規モーダル
+                    'editEstimateVersion'   // 見積編集モーダル
+                ];
 
-            versionSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    const currentValue = select.value;
-                    select.innerHTML = '<option value="">-- 版数を選択 --</option>';
+                versionSelects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        const currentValue = select.value;
+                        select.innerHTML = '<option value="">-- 版数を選択 --</option>';
 
-                    // 「新規追加」オプション
-                    const newOption = document.createElement('option');
-                    newOption.value = '__new__';
-                    newOption.textContent = '+ 新しい版数を追加...';
-                    select.appendChild(newOption);
+                        // 「新規追加」オプション
+                        const newOption = document.createElement('option');
+                        newOption.value = '__new__';
+                        newOption.textContent = '+ 新しい版数を追加...';
+                        select.appendChild(newOption);
 
-                    // 既存の版数
-                    sortedVersions.forEach(version => {
-                        const option = document.createElement('option');
-                        option.value = version;
-                        option.textContent = version;
-                        select.appendChild(option);
-                    });
+                        // 既存の版数
+                        sortedVersions.forEach(version => {
+                            const option = document.createElement('option');
+                            option.value = version;
+                            option.textContent = version;
+                            select.appendChild(option);
+                        });
 
-                    // 以前の選択を復元
-                    if (currentValue && currentValue !== '__new__') {
-                        select.value = currentValue;
+                        // 以前の選択を復元
+                        if (currentValue && currentValue !== '__new__') {
+                            select.value = currentValue;
+                        }
                     }
-                }
-            });
+                });
 
-            // レポート用の版数フィルター更新
-            updateReportVersionOptions(sortedVersions);
+                // レポート用の版数フィルター更新
+                updateReportVersionOptions(sortedVersions);
+            } catch (e) {
+                console.error('updateVersionOptions error:', e);
+            }
         }
 
         // レポート用の版数フィルターオプションを更新する関数
         function updateReportVersionOptions(sortedVersions) {
-            // sortedVersionsが渡されない場合は再計算
-            if (!sortedVersions) {
-                const versions = new Set();
-                estimates.forEach(e => {
-                    if (e.version && e.version.trim() !== '') {
-                        versions.add(e.version);
-                    }
-                });
-                actuals.forEach(a => {
-                    if (a.version && a.version.trim() !== '') {
-                        versions.add(a.version);
-                    }
-                });
-                // 降順でソート（新しい版数が上）
-                sortedVersions = Array.from(versions).sort().reverse();
-            }
-
-            const select = document.getElementById('reportVersion');
-            const select2 = document.getElementById('reportVersion2');
-
-            if (!select) return;
-
-            const currentValue = select.value || 'all';
-
-            // 選択肢を生成
-            select.innerHTML = '<option value="all">全版数</option>';
-            if (select2) select2.innerHTML = '<option value="all">全版数</option>';
-
-            sortedVersions.forEach(version => {
-                const option = document.createElement('option');
-                option.value = version;
-                option.textContent = version;
-                select.appendChild(option);
-
-                if (select2) {
-                    const option2 = document.createElement('option');
-                    option2.value = version;
-                    option2.textContent = version;
-                    select2.appendChild(option2);
+            try {
+                // sortedVersionsが渡されない場合は再計算
+                if (!sortedVersions) {
+                    const versions = new Set();
+                    estimates.forEach(e => {
+                        if (e.version && e.version.trim() !== '') {
+                            versions.add(e.version);
+                        }
+                    });
+                    actuals.forEach(a => {
+                        if (a.version && a.version.trim() !== '') {
+                            versions.add(a.version);
+                        }
+                    });
+                    // 降順でソート（新しい版数が上）
+                    sortedVersions = Array.from(versions).sort().reverse();
                 }
-            });
 
-            // 以前の選択を復元
-            select.value = currentValue;
-            if (select2) select2.value = currentValue;
+                const select = document.getElementById('reportVersion');
+                const select2 = document.getElementById('reportVersion2');
 
-            // セグメントボタン版を生成
-            const items = [
-                { value: 'all', label: '全版数' },
-                ...sortedVersions.map(version => ({
-                    value: version,
-                    label: version
-                }))
-            ];
-            createSegmentButtons(
-                'reportVersionButtons2',
-                'reportVersion2',
-                items,
-                currentValue,
-                8,
-                handleReportVersionChange
-            );
+                if (!select) return;
+
+                const currentValue = select.value || 'all';
+
+                // 選択肢を生成
+                select.innerHTML = '<option value="all">全版数</option>';
+                if (select2) select2.innerHTML = '<option value="all">全版数</option>';
+
+                sortedVersions.forEach(version => {
+                    const option = document.createElement('option');
+                    option.value = version;
+                    option.textContent = version;
+                    select.appendChild(option);
+
+                    if (select2) {
+                        const option2 = document.createElement('option');
+                        option2.value = version;
+                        option2.textContent = version;
+                        select2.appendChild(option2);
+                    }
+                });
+
+                // 以前の選択を復元
+                select.value = currentValue;
+                if (select2) select2.value = currentValue;
+
+                // セグメントボタン版を生成
+                const items = [
+                    { value: 'all', label: '全版数' },
+                    ...sortedVersions.map(version => ({
+                        value: version,
+                        label: version
+                    }))
+                ];
+                createSegmentButtons(
+                    'reportVersionButtons2',
+                    'reportVersion2',
+                    items,
+                    currentValue,
+                    8,
+                    handleReportVersionChange
+                );
+            } catch (e) {
+                console.error('updateReportVersionOptions error:', e);
+            }
         }
 
         // 版数選択時の処理（新規追加対応）
@@ -7127,34 +7196,46 @@
 
         // レポートのフィルタタイプ変更ハンドラー（コンパクト版）
         function handleReportFilterTypeChange() {
-            const filterType = document.getElementById('reportFilterType').value;
-            const monthFilterCompact = document.getElementById('reportMonthFilterCompact');
-            const versionFilterCompact = document.getElementById('reportVersionFilterCompact');
-            const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
-            const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
+            try {
+                const filterTypeEl = document.getElementById('reportFilterType');
+                if (!filterTypeEl) return;
 
-            if (filterType === 'month') {
-                monthFilterCompact.style.display = 'flex';
-                versionFilterCompact.style.display = 'none';
-                if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
-                if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
-            } else {
-                monthFilterCompact.style.display = 'none';
-                versionFilterCompact.style.display = 'flex';
-                if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
-                if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+                const filterType = filterTypeEl.value;
+                const monthFilterCompact = document.getElementById('reportMonthFilterCompact');
+                const versionFilterCompact = document.getElementById('reportVersionFilterCompact');
+                const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
+                const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
+
+                if (filterType === 'month') {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'none';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+                } else {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'none';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+                }
+
+                // フィルタタイプ切り替えボタンの状態更新
+                updateFilterTypeButtons(filterType);
+
+                updateReport();
+            } catch (e) {
+                console.error('handleReportFilterTypeChange error:', e);
             }
-
-            // フィルタタイプ切り替えボタンの状態更新
-            updateFilterTypeButtons(filterType);
-
-            updateReport();
         }
 
         // レポートのフィルタタイプ設定（セグメント版）
         function setReportFilterType(type) {
-            document.getElementById('reportFilterType').value = type;
-            handleReportFilterTypeChange();
+            try {
+                const filterTypeEl = document.getElementById('reportFilterType');
+                if (filterTypeEl) filterTypeEl.value = type;
+                handleReportFilterTypeChange();
+            } catch (e) {
+                console.error('setReportFilterType error:', e);
+            }
         }
 
         // フィルタタイプボタンの表示状態を更新
