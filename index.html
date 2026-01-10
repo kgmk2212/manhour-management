@@ -2161,6 +2161,47 @@
         </div>
     </div>
 
+    <!-- 休暇登録モーダル -->
+    <div id="vacationModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">
+                <h3 style="color: white;">休暇を登録</h3>
+                <button class="modal-close" onclick="closeVacationModal()" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="vacationModalMember">
+                <input type="hidden" id="vacationModalDate">
+                <div class="form-group">
+                    <label>担当者</label>
+                    <div id="vacationModalMemberDisplay" style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
+                </div>
+                <div class="form-group">
+                    <label>日付</label>
+                    <div id="vacationModalDateDisplay" style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
+                </div>
+                <div class="form-group">
+                    <label>休暇タイプ</label>
+                    <select id="vacationModalType" onchange="handleVacationModalTypeChange()">
+                        <option value="有休">有給休暇（有休）</option>
+                        <option value="特休">特別休暇（特休）</option>
+                        <option value="代休">代休（代休）</option>
+                        <option value="振休">振替休日（振休）</option>
+                        <option value="時間休">時間休</option>
+                    </select>
+                </div>
+                <div class="form-group" id="vacationModalHoursGroup">
+                    <label>時間数 (h)</label>
+                    <input type="number" id="vacationModalHours" step="1" min="1" max="8" value="8">
+                    <small style="color: #666; display: block; margin-top: 5px;">時間休は1h単位で入力。全日休暇は8h。</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="saveVacationFromModal()" style="background: #f57c00;">登録</button>
+                    <button class="btn" onclick="closeVacationModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 見積編集モーダル -->
     <div id="editEstimateModal" class="modal">
         <div class="modal-content">
@@ -2492,6 +2533,69 @@
             renderActualList();
             // モーダルを再表示
             showWorkDetail(member, date);
+        }
+
+        // カレンダーから休暇登録モーダルを開く
+        function addVacationFromCalendar(member, date) {
+            document.getElementById('vacationModalMember').value = member;
+            document.getElementById('vacationModalDate').value = date;
+            document.getElementById('vacationModalMemberDisplay').textContent = member;
+
+            const [year, month, day] = date.split('-');
+            const dateObj = new Date(date);
+            const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+            document.getElementById('vacationModalDateDisplay').textContent = `${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
+
+            document.getElementById('vacationModalType').value = '有休';
+            document.getElementById('vacationModalHours').value = 8;
+            handleVacationModalTypeChange();
+
+            document.getElementById('vacationModal').style.display = 'flex';
+        }
+
+        function closeVacationModal() {
+            document.getElementById('vacationModal').style.display = 'none';
+        }
+
+        function handleVacationModalTypeChange() {
+            const type = document.getElementById('vacationModalType').value;
+            const hoursInput = document.getElementById('vacationModalHours');
+            if (type === '時間休') {
+                hoursInput.value = 1;
+            } else {
+                hoursInput.value = 8;
+            }
+        }
+
+        function saveVacationFromModal() {
+            const member = document.getElementById('vacationModalMember').value;
+            const date = document.getElementById('vacationModalDate').value;
+            const vacationType = document.getElementById('vacationModalType').value;
+            const hours = parseFloat(document.getElementById('vacationModalHours').value);
+
+            if (!member || !date || !vacationType || !hours) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+
+            if (hours <= 0 || hours > 8) {
+                alert('時間数は1～8の範囲で入力してください');
+                return;
+            }
+
+            const vacation = {
+                id: nextVacationId++,
+                member: member,
+                date: date,
+                vacationType: vacationType,
+                hours: hours
+            };
+
+            vacations.push(vacation);
+            saveData();
+            closeVacationModal();
+            renderActualList();
+            alert('休暇を登録しました');
         }
 
         // 指定日が会社休日かどうかをチェック
@@ -3237,6 +3341,10 @@
         function updateActualMonthOptions() {
             const select = document.getElementById('actualMonthFilter');
             const select2 = document.getElementById('actualMonthFilter2');
+
+            // 現在の選択値を保存（再構築前に取得）
+            const currentValue = select ? select.value : 'all';
+
             const months = new Set();
 
             // 実績データから月を抽出
@@ -3269,6 +3377,11 @@
                 }
             });
 
+            // 保存していた選択値を復元（オプションに存在する場合のみ）
+            const validValue = sortedMonths.includes(currentValue) || currentValue === 'all' ? currentValue : 'all';
+            select.value = validValue;
+            if (select2) select2.value = validValue;
+
             // セグメントボタン版を生成（実績一覧セグメントレイアウト用）
             // セグメントボタンは昇順で表示（古い→新しい）
             const items = [
@@ -3281,12 +3394,11 @@
                     };
                 })
             ];
-            const currentValue = select.value || 'all';
             createSegmentButtons(
                 'actualMonthButtons2',
                 'actualMonthFilter2',
                 items,
-                currentValue,
+                validValue,
                 8, // 最大8個までセグメントボタン表示
                 handleActualMonthChange
             );
@@ -5328,7 +5440,7 @@
                 processOrder.forEach(proc => {
                     html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
                 });
-                html += '<th style="min-width: 80px; text-align: center;">合計</th><th style="min-width: 150px;">操作</th></tr>';
+                html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
 
                 Object.values(versionGroups[version]).forEach(group => {
                     // 対応名を「：」（全角コロン）で分割して2行表示
@@ -5343,26 +5455,32 @@
                     html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
 
                     let total = 0;
-                    let firstId = null;
                     processOrder.forEach(proc => {
                         if (group.processes[proc]) {
                             const p = group.processes[proc];
                             total += p.hours;
-                            if (!firstId) firstId = p.id;
-                            html += `<td style="text-align: center;">
-                                <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                                <div style="font-size: 12px; color: #666;">(${p.member})</div>
-                            </td>`;
+                            // 編集モード時はクリック可能なセルにする
+                            if (estimateEditMode) {
+                                html += `<td style="text-align: center; cursor: pointer; transition: background 0.2s;"
+                                    onclick="editEstimate(${p.id})"
+                                    onmouseover="this.style.background='#e3f2fd'"
+                                    onmouseout="this.style.background=''">
+                                    <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
+                                    <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                                    <div style="font-size: 10px; color: #1976d2; margin-top: 2px;">✏️ 編集</div>
+                                </td>`;
+                            } else {
+                                html += `<td style="text-align: center;">
+                                    <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
+                                    <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                                </td>`;
+                            }
                         } else {
                             html += `<td style="text-align: center; color: #ccc;">-</td>`;
                         }
                     });
 
                     html += `<td style="text-align: center; font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</td>`;
-                    html += `<td>
-                        <button class="btn btn-primary btn-small" onclick="editEstimate(${firstId})" style="margin-right: 5px;">編集</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteEstimate(${firstId})">削除</button>
-                    </td>`;
                     html += '</tr>';
                 });
 
@@ -6269,10 +6387,14 @@
                     <strong style="font-size: 16px;">合計: ${totalHours.toFixed(1)}時間</strong>
                     <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
                 </div>
-                <div style="margin-top: 15px; text-align: center;">
+                <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                     <button onclick="addActualFromCalendar('${member}', '${date}'); closeWorkModal();"
                             style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
                         + 新しい実績を追加
+                    </button>
+                    <button onclick="addVacationFromCalendar('${member}', '${date}'); closeWorkModal();"
+                            style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        + 休暇を追加
                     </button>
                 </div>
             `;
@@ -7436,15 +7558,29 @@
             // データを更新
             const estimateIndex = estimates.findIndex(e => e.id === id);
             if (estimateIndex !== -1) {
+                const oldEstimate = estimates[estimateIndex];
+                const oldHours = oldEstimate.hours;
+
+                // 月分割設定がある場合、比率を維持して再計算
+                let updatedMonthlyHours = oldEstimate.monthlyHours;
+                if (oldEstimate.monthlyHours && oldHours > 0 && hours !== oldHours) {
+                    updatedMonthlyHours = {};
+                    const ratio = hours / oldHours;
+                    Object.keys(oldEstimate.monthlyHours).forEach(month => {
+                        updatedMonthlyHours[month] = Math.round(oldEstimate.monthlyHours[month] * ratio * 10) / 10;
+                    });
+                }
+
                 estimates[estimateIndex] = {
                     ...estimates[estimateIndex],
                     version: version,
                     task: task,
                     process: process,
                     member: member,
-                    hours: hours
+                    hours: hours,
+                    monthlyHours: updatedMonthlyHours
                 };
-                
+
                 saveData();
                 closeEditEstimateModal();
                 
@@ -9515,9 +9651,9 @@
                 }
             });
             
-            // 現在月から6ヶ月分を追加
+            // 現在月の3ヶ月前から6ヶ月後までを追加
             const now = new Date();
-            for (let i = -1; i <= 6; i++) {
+            for (let i = -3; i <= 6; i++) {
                 const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
                 const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 months.add(monthStr);
