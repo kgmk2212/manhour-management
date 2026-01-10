@@ -7288,25 +7288,25 @@
             });
 
             container.innerHTML = `
-                <div class="stat-card theme-bg theme-purple">
+                <div class="stat-card theme-bg theme-${currentThemeColor}">
                     <h3>全体進捗率</h3>
                     <div class="value">${overallProgress.toFixed(1)}%</div>
                     <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;">
                         ${completedTasks}/${totalTasks} 対応完了
                     </div>
                 </div>
-                <div class="stat-card theme-bg theme-purple">
+                <div class="stat-card theme-bg theme-${currentThemeColor}">
                     <h3>予測総工数</h3>
                     <div class="value">${totalEac.toFixed(1)}h</div>
                     <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;">
                         見積: ${totalEstimated.toFixed(1)}h / 差異: ${variance >= 0 ? '+' : ''}${variance.toFixed(1)}h
                     </div>
                 </div>
-                <div class="stat-card theme-bg theme-purple">
+                <div class="stat-card theme-bg theme-${currentThemeColor}">
                     <h3>実績 / 残存</h3>
                     <div class="value">${totalActual.toFixed(1)}h / ${totalRemaining.toFixed(1)}h</div>
                 </div>
-                <div class="stat-card theme-bg theme-purple">
+                <div class="stat-card theme-bg theme-${currentThemeColor}">
                     <h3>状態別</h3>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
                         <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: 12px;">
