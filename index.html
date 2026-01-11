@@ -7725,12 +7725,12 @@
                 selectedVersion = versionSelect ? versionSelect.value : null;
             }
 
-            // この担当者の見積データを取得
-            let memberEstimates = estimates.filter(e => e.member === member);
+            // すべての見積データを取得（担当者フィルタリングなし）
+            let allEstimates = [...estimates];
 
             // 版数が選択されている場合は、その版数の作業のみに絞る
             if (selectedVersion && selectedVersion !== '') {
-                memberEstimates = memberEstimates.filter(e => e.version === selectedVersion);
+                allEstimates = allEstimates.filter(e => e.version === selectedVersion);
             }
 
             // 実績工数を集計
@@ -7740,9 +7740,9 @@
                 actualTotals[key] = (actualTotals[key] || 0) + a.hours;
             });
 
-            // 対応を抽出
-            const tasks = [];
-            memberEstimates.forEach(est => {
+            // 担当者別に対応を抽出してグループ化
+            const tasksByMember = {};
+            allEstimates.forEach(est => {
                 const key = `${est.version}_${est.task}_${est.process}`;
                 const actualHours = actualTotals[key] || 0;
                 const remaining = est.hours - actualHours;
@@ -7759,7 +7759,11 @@
                         displayText = `${est.task} [${est.process}] (完了)`;
                     }
 
-                    tasks.push({
+                    if (!tasksByMember[est.member]) {
+                        tasksByMember[est.member] = [];
+                    }
+
+                    tasksByMember[est.member].push({
                         version: est.version,
                         task: est.task,
                         process: est.process,
@@ -7771,13 +7775,37 @@
 
             // selectを更新
             select.innerHTML = '<option value="">-- 対応を選択 --</option>';
-            tasks.forEach(task => {
-                const option = document.createElement('option');
-                option.value = task.task;
-                option.setAttribute('data-version', task.version);
-                option.setAttribute('data-process', task.process);
-                option.textContent = task.display;
-                select.appendChild(option);
+
+            // 現在の担当者のグループを最初に表示
+            if (tasksByMember[member] && tasksByMember[member].length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `${member}の対応`;
+                tasksByMember[member].forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task.task;
+                    option.setAttribute('data-version', task.version);
+                    option.setAttribute('data-process', task.process);
+                    option.textContent = task.display;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+
+            // 他の担当者のグループを表示
+            Object.keys(tasksByMember).sort().forEach(otherMember => {
+                if (otherMember !== member && tasksByMember[otherMember].length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = `${otherMember}の対応`;
+                    tasksByMember[otherMember].forEach(task => {
+                        const option = document.createElement('option');
+                        option.value = task.task;
+                        option.setAttribute('data-version', task.version);
+                        option.setAttribute('data-process', task.process);
+                        option.textContent = task.display;
+                        optgroup.appendChild(option);
+                    });
+                    select.appendChild(optgroup);
+                }
             });
 
             // 「新規入力」オプションを追加
