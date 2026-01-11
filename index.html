@@ -10906,7 +10906,7 @@
             const allMembers = new Set();
             filteredEstimates.forEach(e => allMembers.add(e.member));
             filteredActuals.forEach(a => allMembers.add(a.member));
-            
+
             // 表示順が設定されている場合はそれを使用
             let members;
             const memberOrderInput = document.getElementById('memberOrder').value.trim();
@@ -10914,35 +10914,75 @@
                 const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
                 const orderedMembers = [];
                 const unorderedMembers = [];
-                
+
                 // 指定された順序で追加
                 orderList.forEach(name => {
                     if (allMembers.has(name)) {
                         orderedMembers.push(name);
                     }
                 });
-                
+
                 // 指定されていない担当者を後ろに追加
                 Array.from(allMembers).forEach(m => {
                     if (!orderedMembers.includes(m)) {
                         unorderedMembers.push(m);
                     }
                 });
-                
+
                 members = [...orderedMembers, ...unorderedMembers.sort()];
             } else {
                 members = Array.from(allMembers).sort();
             }
-            
+
             if (members.length === 0) {
                 document.getElementById('memberReport').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">データがありません</p>';
                 return;
             }
-            
+
+            // 自動分割ロジック：見積担当者以外の実績を考慮して見積を再配分
+            const adjustedEstimates = {};
+
+            // 各担当者の見積工数を初期化
+            members.forEach(member => {
+                adjustedEstimates[member] = 0;
+            });
+
+            // 見積ごとに処理
+            filteredEstimates.forEach(estimate => {
+                const key = `${estimate.version}_${estimate.task}_${estimate.process}`;
+
+                // この見積に対する実績を取得
+                const relatedActuals = filteredActuals.filter(a =>
+                    a.version === estimate.version &&
+                    a.task === estimate.task &&
+                    a.process === estimate.process
+                );
+
+                // 元の担当者以外の実績を集計
+                let otherMembersActualHours = 0;
+                const otherMembersHours = {};
+
+                relatedActuals.forEach(actual => {
+                    if (actual.member !== estimate.member) {
+                        otherMembersActualHours += actual.hours;
+                        otherMembersHours[actual.member] = (otherMembersHours[actual.member] || 0) + actual.hours;
+                    }
+                });
+
+                // 元の担当者の見積から他の担当者の実績を引く
+                const originalMemberEstimate = Math.max(0, estimate.hours - otherMembersActualHours);
+                adjustedEstimates[estimate.member] = (adjustedEstimates[estimate.member] || 0) + originalMemberEstimate;
+
+                // 他の担当者には実績分の見積を追加
+                Object.keys(otherMembersHours).forEach(otherMember => {
+                    adjustedEstimates[otherMember] = (adjustedEstimates[otherMember] || 0) + otherMembersHours[otherMember];
+                });
+            });
+
             let html = '<div class="table-wrapper"><table><tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th></tr>';
 
             members.forEach(member => {
-                const est = filteredEstimates.filter(e => e.member === member).reduce((sum, e) => sum + e.hours, 0);
+                const est = adjustedEstimates[member] || 0;
                 const act = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
                 const diff = act - est;
                 const rate = est > 0 ? ((diff / est) * 100).toFixed(1) : 0;
