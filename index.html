@@ -4404,28 +4404,31 @@
         }
 
         // 月選択肢を生成
-        function generateMonthOptions(selectId, selectedValue = '') {
+        function generateMonthOptions(selectId, selectedValue = '', minValue = null) {
             const select = document.getElementById(selectId);
             if (!select) return;
-            
+
             select.innerHTML = '';
-            
+
             // 過去1年から未来2年まで
             const now = new Date();
             const startDate = new Date(now.getFullYear() - 1, 0, 1);
             const endDate = new Date(now.getFullYear() + 2, 11, 31);
-            
+
             const months = [];
             let current = new Date(startDate);
-            
+
             while (current <= endDate) {
                 const year = current.getFullYear();
                 const month = current.getMonth() + 1;
                 const value = `${year}-${String(month).padStart(2, '0')}`;
-                months.push({ value, label: `${year}年${month}月` });
+                // minValueが指定されている場合、それより後の月のみを含める
+                if (!minValue || value > minValue) {
+                    months.push({ value, label: `${year}年${month}月` });
+                }
                 current.setMonth(current.getMonth() + 1);
             }
-            
+
             months.forEach(m => {
                 const option = document.createElement('option');
                 option.value = m.value;
@@ -5267,7 +5270,12 @@
             const startMonthMulti = document.getElementById('addEstStartMonthMulti');
             const endMonth = document.getElementById('addEstEndMonth');
             if (startMonthMulti) {
-                startMonthMulti.addEventListener('change', updateAddEstWorkMonthUI);
+                startMonthMulti.addEventListener('change', function() {
+                    // 開始月が変更されたら、終了月の選択肢を更新（開始月より後の月のみ）
+                    const currentEndValue = endMonth.value;
+                    generateMonthOptions('addEstEndMonth', currentEndValue, startMonthMulti.value);
+                    updateAddEstWorkMonthUI();
+                });
             }
             if (endMonth) {
                 endMonth.addEventListener('change', updateAddEstWorkMonthUI);
@@ -5319,6 +5327,9 @@
 
                 if (startMonth && startMonthMulti) {
                     startMonthMulti.value = startMonth;
+                    // 終了月の選択肢を開始月より後の月のみに更新
+                    const currentEndValue = endMonth ? endMonth.value : '';
+                    generateMonthOptions('addEstEndMonth', currentEndValue, startMonth);
                     if (endMonth && !endMonth.value) {
                         endMonth.value = startMonth;
                     }
