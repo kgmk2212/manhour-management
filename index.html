@@ -2293,13 +2293,16 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>対応名</label>
-                    <input type="text" id="editEstimateTaskSearch" placeholder="検索または新規入力" list="editEstimateTaskList" oninput="handleEstimateTaskInput()">
-                    <datalist id="editEstimateTaskList">
+                    <label>帳票名</label>
+                    <input type="text" id="editEstimateFormName" list="editEstimateFormNameList" placeholder="帳票A">
+                    <datalist id="editEstimateFormNameList">
                     </datalist>
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        ↑ 既存の対応名を選択、または新しい名前を入力
-                    </small>
+                    <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
+                </div>
+                <div class="form-group">
+                    <label>対応名</label>
+                    <input type="text" id="editEstimateTaskName" placeholder="X対応">
+                    <small style="color: #666; display: block; margin-top: 5px;">帳票名と対応名は自動的に「：」で結合されます</small>
                     <label style="display: flex; align-items: center; margin-top: 10px; cursor: pointer; user-select: none;">
                         <input type="checkbox" id="editEstimateApplyToAll" style="width: auto; margin-right: 8px;">
                         <span style="font-size: 13px; font-weight: 600; color: #e67e22;">この対応のすべての工程に適用（UI、PG、PT、IT、ST）</span>
@@ -8658,54 +8661,83 @@
                 alert('データが見つかりません');
                 return;
             }
-            
+
             // フォームに既存データを設定
             document.getElementById('editEstimateId').value = id;
             document.getElementById('editEstimateVersion').value = estimate.version;
-            document.getElementById('editEstimateTaskSearch').value = estimate.task;
+
+            // 対応名を帳票名と対応名に分割
+            let formName = '';
+            let taskName = '';
+            if (estimate.task.includes('：')) {
+                // 全角コロンで分割
+                const parts = estimate.task.split('：');
+                formName = parts[0];
+                taskName = parts.slice(1).join('：');
+            } else if (estimate.task.includes('_')) {
+                // アンダーバーで分割（旧形式）
+                const parts = estimate.task.split('_');
+                formName = parts[0];
+                taskName = parts.slice(1).join('_');
+            } else {
+                // 分割できない場合は全体を対応名とする
+                taskName = estimate.task;
+            }
+
+            document.getElementById('editEstimateFormName').value = formName;
+            document.getElementById('editEstimateTaskName').value = taskName;
             document.getElementById('editEstimateProcess').value = estimate.process;
             document.getElementById('editEstimateHours').value = estimate.hours;
-            
-            // 対応名リストを生成
-            const taskDatalist = document.getElementById('editEstimateTaskList');
-            taskDatalist.innerHTML = '';
-            const uniqueTasks = [...new Set([...estimates.map(e => e.task), ...actuals.map(a => a.task)])];
-            uniqueTasks.sort().forEach(task => {
-                const option = document.createElement('option');
-                option.value = task;
-                taskDatalist.appendChild(option);
+
+            // 帳票名リストを生成
+            const formNameDatalist = document.getElementById('editEstimateFormNameList');
+            formNameDatalist.innerHTML = '';
+            const uniqueFormNames = new Set();
+            [...estimates, ...actuals].forEach(item => {
+                if (item.task.includes('：')) {
+                    const parts = item.task.split('：');
+                    uniqueFormNames.add(parts[0]);
+                } else if (item.task.includes('_')) {
+                    const parts = item.task.split('_');
+                    uniqueFormNames.add(parts[0]);
+                }
             });
-            
+            Array.from(uniqueFormNames).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                formNameDatalist.appendChild(option);
+            });
+
             // 担当者選択肢を更新
             const memberSelect = document.getElementById('editEstimateMember');
             const allMembers = new Set();
             estimates.forEach(e => allMembers.add(e.member));
             actuals.forEach(a => allMembers.add(a.member));
-            
+
             let sortedMembers;
             const memberOrderInput = document.getElementById('memberOrder').value.trim();
             if (memberOrderInput) {
                 const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
                 const orderedMembers = [];
                 const unorderedMembers = [];
-                
+
                 orderList.forEach(name => {
                     if (allMembers.has(name)) {
                         orderedMembers.push(name);
                     }
                 });
-                
+
                 Array.from(allMembers).forEach(m => {
                     if (!orderedMembers.includes(m)) {
                         unorderedMembers.push(m);
                     }
                 });
-                
+
                 sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
             } else {
                 sortedMembers = Array.from(allMembers).sort();
             }
-            
+
             memberSelect.innerHTML = '';
             sortedMembers.forEach(member => {
                 const option = document.createElement('option');
@@ -8713,7 +8745,7 @@
                 option.textContent = member;
                 memberSelect.appendChild(option);
             });
-            
+
             memberSelect.value = estimate.member;
 
             // 「すべての工程に適用」チェックボックスを初期化（デフォルトはオフ）
@@ -8730,16 +8762,20 @@
         function saveEstimateEdit() {
             const id = parseFloat(document.getElementById('editEstimateId').value);
             const version = document.getElementById('editEstimateVersion').value;
-            const task = document.getElementById('editEstimateTaskSearch').value;
+            const formName = document.getElementById('editEstimateFormName').value.trim();
+            const taskName = document.getElementById('editEstimateTaskName').value.trim();
             const process = document.getElementById('editEstimateProcess').value;
             const member = document.getElementById('editEstimateMember').value;
             const hours = parseFloat(document.getElementById('editEstimateHours').value);
             const applyToAll = document.getElementById('editEstimateApplyToAll').checked;
 
-            if (!version || !task || !process || !member || !hours) {
+            if (!version || !formName || !taskName || !process || !member || !hours) {
                 alert('すべての項目を入力してください');
                 return;
             }
+
+            // 帳票名と対応名を結合
+            const task = `${formName}：${taskName}`;
 
             // データを更新
             const estimateIndex = estimates.findIndex(e => e.id === id);
