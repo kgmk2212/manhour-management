@@ -10762,13 +10762,17 @@
                     est.workMonths.forEach(m => usedMonths.add(m));
                 }
 
-                versionGroups[version][taskKey].estimates[e.process] = {
-                    member: e.member,
-                    hours: e.hours,
-                    workMonths: est.workMonths || []
-                };
+                if (!versionGroups[version][taskKey].estimates[e.process]) {
+                    versionGroups[version][taskKey].estimates[e.process] = {
+                        members: new Set(),
+                        hours: 0,
+                        workMonths: est.workMonths || []
+                    };
+                }
+                versionGroups[version][taskKey].estimates[e.process].members.add(e.member);
+                versionGroups[version][taskKey].estimates[e.process].hours += e.hours;
             });
-            
+
             // 実績データを追加
             filteredActuals.forEach(a => {
                 // 版数または対応名が未設定の場合は「その他付随作業」として扱う
@@ -10792,8 +10796,9 @@
                     };
                 }
                 if (!versionGroups[version][taskKey].actuals[a.process]) {
-                    versionGroups[version][taskKey].actuals[a.process] = { member: a.member, hours: 0 };
+                    versionGroups[version][taskKey].actuals[a.process] = { members: new Set(), hours: 0 };
                 }
+                versionGroups[version][taskKey].actuals[a.process].members.add(a.member);
                 versionGroups[version][taskKey].actuals[a.process].hours += a.hours;
             });
             
@@ -10849,8 +10854,8 @@
 
                     // 先に合計を計算してデータの有無を確認
                     displayProcesses.forEach(proc => {
-                        const est = taskGroup.estimates[proc] || { member: '-', hours: 0 };
-                        const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
+                        const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
+                        const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                         totalEst += est.hours;
                         totalAct += act.hours;
                     });
@@ -10873,11 +10878,19 @@
                         tableBody += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
 
                         displayProcesses.forEach(proc => {
-                            const est = taskGroup.estimates[proc] || { member: '-', hours: 0, workMonths: [] };
-                            const act = taskGroup.actuals[proc] || { member: '-', hours: 0 };
+                            const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0, workMonths: [] };
+                            const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
 
                             if (est.hours > 0 || act.hours > 0) {
                                 const diff = act.hours - est.hours;
+
+                                // 担当者を実績ベースで表示（実績がなければ見積）
+                                let memberDisplay = '-';
+                                if (act.members.size > 0) {
+                                    memberDisplay = Array.from(act.members).join(',');
+                                } else if (est.members.size > 0) {
+                                    memberDisplay = Array.from(est.members).join(',');
+                                }
 
                                 // 全期間の時のみ月に基づく背景色を適用
                                 const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
@@ -10885,7 +10898,7 @@
 
                                 tableBody += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
                                     <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                    <div style="font-size: 11px; color: #666;">(${est.member !== '-' ? est.member : act.member})</div>
+                                    <div style="font-size: 11px; color: #666;">(${memberDisplay})</div>
                                     <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
                                 </td>`;
                             } else {
@@ -10928,9 +10941,12 @@
                     displayProcesses.forEach(() => {
                         html += '<td></td>';
                     });
-                    // 合計列
+                    // 合計列（人日・人月を追加）
+                    const totalEstDays = (versionTotalEst / 8).toFixed(1);
+                    const totalEstMonths = (versionTotalEst / 8 / 20).toFixed(2);
                     html += `<td style="text-align: center;">`;
                     html += `<div style="font-weight: 700;">${versionTotalEst.toFixed(1)} / ${versionTotalAct.toFixed(1)}</div>`;
+                    html += `<div style="font-size: 10px; color: #666;">${totalEstDays}人日 / ${totalEstMonths}人月</div>`;
                     html += `<div style="font-weight: 700; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>`;
                     html += '</td>';
                     html += '</tr>';
