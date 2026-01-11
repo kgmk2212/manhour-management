@@ -1452,9 +1452,14 @@
                 </div>
 
                 <!-- 新規登録ボタン -->
-                <button class="btn btn-primary" onclick="openAddEstimateModal()" style="margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                    <span style="font-size: 16px;">+</span> 新規登録
-                </button>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="openAddEstimateModal()" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 16px;">+</span> 新規登録
+                    </button>
+                    <button class="btn" onclick="openBulkEditTaskModal()" style="background: #6c757d; color: white; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 16px;">✎</span> 対応名一括編集
+                    </button>
+                </div>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="estimateFiltersCompact" style="margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
@@ -2323,6 +2328,48 @@
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
                     <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 対応名一括編集モーダル -->
+    <div id="bulkEditTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>対応名一括編集</h3>
+                <button class="modal-close" onclick="closeBulkEditTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="bulkEditVersion" onchange="updateBulkEditTaskList()">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>変更する対応名</label>
+                    <select id="bulkEditTaskSelect">
+                        <option value="">-- 対応を選択 --</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        この対応のすべての工程の対応名が一括で変更されます
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>新しい対応名</label>
+                    <input type="text" id="bulkEditNewTaskName" placeholder="帳票A：X対応">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        💡 全角コロン「：」で帳票名と対応名を区切ると、一覧で2行表示されます
+                    </small>
+                </div>
+                <div id="bulkEditPreview" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; display: none;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #495057;">変更対象:</div>
+                    <div id="bulkEditPreviewContent" style="font-size: 13px; color: #666;"></div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="saveBulkEditTask()">一括変更</button>
+                    <button class="btn" onclick="closeBulkEditTaskModal()" style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -8801,6 +8848,159 @@
 
         function handleEstimateTaskInput() {
             // 対応名入力時の処理（将来的に拡張可能）
+        }
+
+        // 対応名一括編集モーダルを開く
+        function openBulkEditTaskModal() {
+            // 版数リストを更新
+            const versionSelect = document.getElementById('bulkEditVersion');
+            const versions = [...new Set(estimates.map(e => e.version))].sort();
+
+            versionSelect.innerHTML = '<option value="">-- 版数を選択 --</option>';
+            versions.forEach(version => {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                versionSelect.appendChild(option);
+            });
+
+            // フォームをリセット
+            document.getElementById('bulkEditTaskSelect').innerHTML = '<option value="">-- 対応を選択 --</option>';
+            document.getElementById('bulkEditNewTaskName').value = '';
+            document.getElementById('bulkEditPreview').style.display = 'none';
+
+            // モーダルを表示
+            document.getElementById('bulkEditTaskModal').style.display = 'flex';
+        }
+
+        // 対応名一括編集モーダルを閉じる
+        function closeBulkEditTaskModal() {
+            document.getElementById('bulkEditTaskModal').style.display = 'none';
+        }
+
+        // 版数に基づいて対応名リストを更新
+        function updateBulkEditTaskList() {
+            const version = document.getElementById('bulkEditVersion').value;
+            const taskSelect = document.getElementById('bulkEditTaskSelect');
+
+            if (!version) {
+                taskSelect.innerHTML = '<option value="">-- 対応を選択 --</option>';
+                document.getElementById('bulkEditPreview').style.display = 'none';
+                return;
+            }
+
+            // その版数の対応名を抽出（重複を除く）
+            const tasks = [...new Set(estimates
+                .filter(e => e.version === version)
+                .map(e => e.task)
+            )].sort();
+
+            taskSelect.innerHTML = '<option value="">-- 対応を選択 --</option>';
+            tasks.forEach(task => {
+                const option = document.createElement('option');
+                option.value = task;
+                option.textContent = task;
+                taskSelect.appendChild(option);
+            });
+
+            // 対応が選択されたときのイベントリスナーを追加
+            taskSelect.onchange = showBulkEditPreview;
+
+            document.getElementById('bulkEditPreview').style.display = 'none';
+        }
+
+        // 変更対象のプレビューを表示
+        function showBulkEditPreview() {
+            const version = document.getElementById('bulkEditVersion').value;
+            const task = document.getElementById('bulkEditTaskSelect').value;
+            const preview = document.getElementById('bulkEditPreview');
+            const previewContent = document.getElementById('bulkEditPreviewContent');
+
+            if (!version || !task) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            // 該当する見積データを取得
+            const targetEstimates = estimates.filter(e => e.version === version && e.task === task);
+
+            if (targetEstimates.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            // プレビュー表示
+            let html = `<div style="margin-bottom: 8px;"><strong>${targetEstimates.length}件</strong>の見積データが変更されます：</div>`;
+            html += '<ul style="margin: 0; padding-left: 20px;">';
+            targetEstimates.forEach(est => {
+                html += `<li>${est.process} - ${est.member} (${est.hours}h)</li>`;
+            });
+            html += '</ul>';
+
+            previewContent.innerHTML = html;
+            preview.style.display = 'block';
+
+            // 新しい対応名の入力欄に現在の対応名を初期値として設定
+            document.getElementById('bulkEditNewTaskName').value = task;
+        }
+
+        // 対応名一括変更を保存
+        function saveBulkEditTask() {
+            const version = document.getElementById('bulkEditVersion').value;
+            const oldTaskName = document.getElementById('bulkEditTaskSelect').value;
+            const newTaskName = document.getElementById('bulkEditNewTaskName').value.trim();
+
+            if (!version || !oldTaskName || !newTaskName) {
+                alert('すべての項目を入力してください');
+                return;
+            }
+
+            if (oldTaskName === newTaskName) {
+                alert('対応名が変更されていません');
+                return;
+            }
+
+            // 該当する見積データを更新
+            let updatedCount = 0;
+            estimates.forEach((est, index) => {
+                if (est.version === version && est.task === oldTaskName) {
+                    estimates[index] = {
+                        ...est,
+                        task: newTaskName
+                    };
+                    updatedCount++;
+                }
+            });
+
+            // 該当する実績データも更新（オプション）
+            let updatedActualCount = 0;
+            actuals.forEach((act, index) => {
+                if (act.version === version && act.task === oldTaskName) {
+                    actuals[index] = {
+                        ...act,
+                        task: newTaskName
+                    };
+                    updatedActualCount++;
+                }
+            });
+
+            if (updatedCount > 0) {
+                saveData();
+                closeBulkEditTaskModal();
+
+                updateMemberOptions();
+                updateQuickTaskList();
+                renderEstimateList();
+                updateReport();
+
+                let message = `${updatedCount}件の見積データの対応名を変更しました`;
+                if (updatedActualCount > 0) {
+                    message += `\n${updatedActualCount}件の実績データも変更しました`;
+                }
+                alert(message);
+            } else {
+                alert('変更対象のデータが見つかりませんでした');
+            }
         }
 
         function showMemberOrderHelp() {
