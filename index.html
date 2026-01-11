@@ -1907,6 +1907,36 @@
                     </div>
                 </div>
 
+                <!-- デフォルト表示形式設定 -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>📋 デフォルト表示形式</h3>
+                    <p style="color: #666; margin-bottom: 15px;">見積一覧とレポートを開いたときに表示される初期表示形式を設定できます。</p>
+
+                    <div class="form-group">
+                        <label>見積一覧のデフォルト表示</label>
+                        <select id="defaultEstimateViewType" onchange="saveDefaultViewTypeSetting()">
+                            <option value="grouped">グループ</option>
+                            <option value="matrix">マトリクス</option>
+                            <option value="list">リスト</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            見積一覧タブを開いたとき、または画面を読み込んだときの初期表示形式です。
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>レポートのデフォルト表示</label>
+                        <select id="defaultReportViewType" onchange="saveDefaultViewTypeSetting()">
+                            <option value="summary">サマリー</option>
+                            <option value="grouped">グループ</option>
+                            <option value="matrix">マトリクス</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            レポートタブを開いたとき、または画面を読み込んだときの初期表示形式です。
+                        </small>
+                    </div>
+                </div>
+
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>自動バックアップ</h3>
                     <p style="color: #666; margin-bottom: 15px;">データ保存時に自動的にJSONファイルをダウンロードします。</p>
@@ -2138,7 +2168,7 @@
                 </div>
                 <div class="form-group">
                     <label>担当</label>
-                    <select id="editActualMember">
+                    <select id="editActualMember" onchange="handleEditActualMemberChange()">
                     </select>
                     <span id="editActualMemberDisplay" style="display: none; padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></span>
                 </div>
@@ -2634,6 +2664,10 @@
         let actualLayout = 'compact'; // 実績一覧のレイアウト（'compact' or 'segmented'）
         let reportLayout = 'compact'; // レポートのレイアウト（'compact' or 'segmented'）
 
+        // タブの初回表示フラグ
+        let isEstimateTabFirstView = true;
+        let isReportTabFirstView = true;
+
         // 会社休日管理関数
         function addCompanyHoliday() {
             const name = document.getElementById('companyHolidayName').value.trim();
@@ -3066,7 +3100,9 @@
                     estimateLayout: estimateLayout,
                     actualLayout: actualLayout,
                     reportLayout: reportLayout,
-                    showMonthColors: showMonthColorsSetting
+                    showMonthColors: showMonthColorsSetting,
+                    defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
+                    defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped'
                 }
             };
 
@@ -3473,6 +3509,40 @@
                     select.value = '';
                 }
             }
+
+            // 実績編集モーダルの版数が変更された場合、対応名リストを更新
+            if (selectId === 'editActualVersion') {
+                const modal = document.getElementById('editActualModal');
+                const memberSelect = document.getElementById('editActualMember');
+                let member = memberSelect ? memberSelect.value : null;
+
+                // 担当者が取得できない場合は、datasetから取得（新規登録時）
+                if (!member && modal && modal.dataset.calendarMember) {
+                    member = modal.dataset.calendarMember;
+                }
+
+                if (member) {
+                    // 編集モードかどうかを判定（editActualIdに値があれば編集モード）
+                    const editIdInput = document.getElementById('editActualId');
+                    const isEditMode = editIdInput && editIdInput.value !== '';
+                    updateEditActualTaskList(member, isEditMode, select.value);
+                }
+            }
+        }
+
+        // 実績編集モーダルの担当者選択時の処理
+        function handleEditActualMemberChange() {
+            const memberSelect = document.getElementById('editActualMember');
+            const versionSelect = document.getElementById('editActualVersion');
+            const member = memberSelect ? memberSelect.value : null;
+            const version = versionSelect ? versionSelect.value : null;
+
+            if (member) {
+                // 編集モードかどうかを判定（editActualIdに値があれば編集モード）
+                const editIdInput = document.getElementById('editActualId');
+                const isEditMode = editIdInput && editIdInput.value !== '';
+                updateEditActualTaskList(member, isEditMode, version);
+            }
         }
 
         function loadData() {
@@ -3514,6 +3584,19 @@
                     showMonthColorsSetting = settings.showMonthColors;
                     const checkbox = document.getElementById('showMonthColorsCheckbox');
                     if (checkbox) checkbox.checked = showMonthColorsSetting;
+                }
+                // デフォルト表示形式の設定を読み込み
+                if (settings.defaultEstimateViewType) {
+                    const estimateViewTypeSelect = document.getElementById('defaultEstimateViewType');
+                    if (estimateViewTypeSelect) {
+                        estimateViewTypeSelect.value = settings.defaultEstimateViewType;
+                    }
+                }
+                if (settings.defaultReportViewType) {
+                    const reportViewTypeSelect = document.getElementById('defaultReportViewType');
+                    if (reportViewTypeSelect) {
+                        reportViewTypeSelect.value = settings.defaultReportViewType;
+                    }
                 }
             } else {
                 // 旧形式の設定を読み込み（後方互換性）
@@ -3816,6 +3899,13 @@
 
             // アクティブタブにテーマを適用
             updateThemeElements();
+
+            // 見積一覧タブまたはレポートタブの場合、デフォルト表示形式を適用
+            if (tabName === 'estimate') {
+                applyDefaultEstimateViewType();
+            } else if (tabName === 'report') {
+                applyDefaultReportViewType();
+            }
         }
 
         // 次のタブに切り替え
@@ -4340,6 +4430,51 @@
             saveData(true);
             renderEstimates();
             updateReportMatrix();
+        }
+
+        // デフォルト表示形式設定の保存
+        function saveDefaultViewTypeSetting() {
+            saveData(true);
+        }
+
+        // 見積一覧タブのデフォルト表示形式を適用
+        function applyDefaultEstimateViewType() {
+            if (!isEstimateTabFirstView) {
+                return; // 初回表示以外は何もしない
+            }
+            isEstimateTabFirstView = false;
+
+            const savedSettings = localStorage.getItem('manhour_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                const defaultViewType = settings.defaultEstimateViewType || 'grouped';
+                const estimateViewTypeElement = document.getElementById('estimateViewType');
+                if (estimateViewTypeElement && estimateViewTypeElement.value !== defaultViewType) {
+                    estimateViewTypeElement.value = defaultViewType;
+                    // セグメントボタンの状態も更新
+                    setEstimateViewType(defaultViewType);
+                }
+            }
+        }
+
+        // レポートタブのデフォルト表示形式を適用
+        function applyDefaultReportViewType() {
+            if (!isReportTabFirstView) {
+                return; // 初回表示以外は何もしない
+            }
+            isReportTabFirstView = false;
+
+            const savedSettings = localStorage.getItem('manhour_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                const defaultViewType = settings.defaultReportViewType || 'grouped';
+                const reportViewTypeElement = document.getElementById('reportViewType');
+                if (reportViewTypeElement && reportViewTypeElement.value !== defaultViewType) {
+                    reportViewTypeElement.value = defaultViewType;
+                    // セグメントボタンの状態も更新
+                    setReportViewType(defaultViewType);
+                }
+            }
         }
 
         // 月から背景色を取得
@@ -7456,7 +7591,8 @@
             modalTitle.textContent = `実績を新規登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
 
             // この担当者の未完了対応を取得してdatalistに設定
-            updateEditActualTaskList(member);
+            // 新規登録時なのでisEditMode=false、選択した版数を渡す
+            updateEditActualTaskList(member, false, versionSelect.value);
 
             // 「その他作業」「休暇登録」ボタンを表示し、データを保持
             document.getElementById('editActualOtherBtn').style.display = 'block';
@@ -7536,12 +7672,23 @@
             document.getElementById('otherWorkModal').style.display = 'flex';
         }
         
-        // 実績編集モーダルの対応名リストを更新（担当者に応じた未完了対応）
-        function updateEditActualTaskList(member) {
+        // 実績編集モーダルの対応名リストを更新（担当者と版数に応じた対応）
+        function updateEditActualTaskList(member, isEditMode = false, selectedVersion = null) {
             const select = document.getElementById('editActualTaskSelect');
 
+            // 版数が選択されていない場合は、editActualVersionから取得
+            if (!selectedVersion) {
+                const versionSelect = document.getElementById('editActualVersion');
+                selectedVersion = versionSelect ? versionSelect.value : null;
+            }
+
             // この担当者の見積データを取得
-            const memberEstimates = estimates.filter(e => e.member === member);
+            let memberEstimates = estimates.filter(e => e.member === member);
+
+            // 版数が選択されている場合は、その版数の作業のみに絞る
+            if (selectedVersion && selectedVersion !== '') {
+                memberEstimates = memberEstimates.filter(e => e.version === selectedVersion);
+            }
 
             // 実績工数を集計
             const actualTotals = {};
@@ -7550,27 +7697,38 @@
                 actualTotals[key] = (actualTotals[key] || 0) + a.hours;
             });
 
-            // 未完了対応を抽出
-            const incompleteTasks = [];
+            // 対応を抽出
+            const tasks = [];
             memberEstimates.forEach(est => {
                 const key = `${est.version}_${est.task}_${est.process}`;
                 const actualHours = actualTotals[key] || 0;
+                const remaining = est.hours - actualHours;
 
-                if (actualHours < est.hours) {
-                    const remaining = est.hours - actualHours;
-                    incompleteTasks.push({
+                // 編集モードの場合はすべての対応を含める
+                // 新規入力モードの場合は未完了のみ
+                if (isEditMode || actualHours < est.hours) {
+                    let displayText;
+                    if (remaining > 0) {
+                        displayText = `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`;
+                    } else if (remaining < 0) {
+                        displayText = `${est.task} [${est.process}] (超過: ${Math.abs(remaining).toFixed(1)}h)`;
+                    } else {
+                        displayText = `${est.task} [${est.process}] (完了)`;
+                    }
+
+                    tasks.push({
                         version: est.version,
                         task: est.task,
                         process: est.process,
                         remaining: remaining,
-                        display: `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`
+                        display: displayText
                     });
                 }
             });
 
             // selectを更新
             select.innerHTML = '<option value="">-- 対応を選択 --</option>';
-            incompleteTasks.forEach(task => {
+            tasks.forEach(task => {
                 const option = document.createElement('option');
                 option.value = task.task;
                 option.setAttribute('data-version', task.version);
@@ -7623,8 +7781,9 @@
             document.getElementById('editActualDate').value = actual.date;
             document.getElementById('editActualVersion').value = actual.version;
 
-            // 編集時も未完了対応のリストを更新して選択できるようにする
-            updateEditActualTaskList(actual.member);
+            // 編集時はすべての対応（完了済み含む）のリストを更新して選択できるようにする
+            // 選択した版数の作業のみを表示
+            updateEditActualTaskList(actual.member, true, actual.version);
 
             // 対応名をセレクトボックスで選択できるように
             const taskSelect = document.getElementById('editActualTaskSelect');
