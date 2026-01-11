@@ -5311,7 +5311,6 @@
             } else {
                 singleMonthInput.style.display = 'none';
                 multiMonthInput.style.display = 'block';
-                updateAddEstimateTableHeader(true);
 
                 // 複数月モードの場合、開始月と終了月を同期
                 const startMonth = document.getElementById('addEstStartMonth').value;
@@ -5324,13 +5323,17 @@
                         endMonth.value = startMonth;
                     }
                 }
-                updateDefaultAddProcessMonths(startMonthMulti.value, endMonth.value);
+
+                // テーブルに作業月列を追加（内部で選択肢も設定される）
+                updateAddEstimateTableHeader(true);
             }
         }
 
         // 工程表のヘッダーと作業月列を更新（見積登録モーダル用）
         function updateAddEstimateTableHeader(showWorkMonthColumn) {
             const table = document.getElementById('addEstimateTable');
+            if (!table) return;
+
             const headerRow = table.querySelector('thead tr');
             const bodyRows = table.querySelectorAll('tbody tr');
 
@@ -5359,6 +5362,15 @@
                         row.appendChild(td);
                     }
                 });
+
+                // DOM更新後に選択肢を設定
+                setTimeout(() => {
+                    const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+                    const endMonth = document.getElementById('addEstEndMonth');
+                    if (startMonthMulti && endMonth && startMonthMulti.value && endMonth.value) {
+                        updateDefaultAddProcessMonths(startMonthMulti.value, endMonth.value);
+                    }
+                }, 0);
             } else {
                 // 作業月列を削除
                 if (headerRow.children.length === 4) {
