@@ -1444,6 +1444,11 @@
                     </div>
                 </div>
 
+                <!-- 新規登録ボタン -->
+                <button class="btn btn-primary" onclick="openAddEstimateModal()" style="margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 16px;">+</span> 新規登録
+                </button>
+
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="estimateFiltersCompact" style="margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; overflow-x: auto;">
@@ -2281,6 +2286,184 @@
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
                     <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 見積もり新規登録モーダル -->
+    <div id="addEstimateModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>📝 見積もり登録</h3>
+                <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>対応名</label>
+                    <input type="text" id="addEstTask" placeholder="帳票A_X対応">
+                </div>
+                <div class="form-group">
+                    <label>作業月</label>
+                    <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="addEstMonthType" value="single" checked onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
+                            <span style="font-size: 14px;">単一月</span>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
+                            <span style="font-size: 14px;">複数月</span>
+                        </label>
+                    </div>
+                    <div id="addEstMonthInputs">
+                        <div id="addEstSingleMonthInput" style="display: block;">
+                            <select id="addEstStartMonth"></select>
+                        </div>
+                        <div id="addEstMultiMonthInput" style="display: none;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="addEstStartMonthMulti"></select>
+                                <span>〜</span>
+                                <select id="addEstEndMonth"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h4 style="margin-bottom: 10px; margin-top: 20px;">各工程の見積</h4>
+                <div class="estimate-table-wrapper">
+                    <table class="estimate-table" id="addEstimateTable" style="width: 100%; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
+                                <th style="width: 120px; padding: 8px;">担当</th>
+                                <th style="width: 100px; padding: 8px;">時間</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                <td><select id="addEstUI_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
+                                <td><select id="addEstPG_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
+                                <td><select id="addEstPT_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
+                                <td><select id="addEstIT_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
+                                <td><select id="addEstST_member" style="margin: 0;"></select></td>
+                                <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 合計表示エリア -->
+                <div id="addEstimateTotals" style="background: #e3f2fd; padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span style="font-weight: 600; color: #1565c0;">対応合計:</span>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
+                            <span style="color: #1976d2;">(<span id="addEstTotalDays">0.0</span> 人日)</span>
+                            <span style="color: #1976d2;">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 月分割アシスタント -->
+                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb8c00;">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="addEnableMonthSplit" onchange="toggleAddMonthSplit()" style="width: auto; margin-right: 10px;">
+                            <span style="font-weight: 600; color: #e65100;">📅 複数月に分割して登録</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            一つの工程を複数月で作業する場合に、月別の工数を設定できます
+                        </small>
+                    </div>
+
+                    <div id="addMonthSplitPanel" style="display: none; margin-top: 15px;">
+                        <div class="form-group">
+                            <label>分割する工程を選択</label>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="addSplitUI" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>UI</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="addSplitPG" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>PG</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="addSplitPT" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>PT</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="addSplitIT" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>IT</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="addSplitST" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <span>ST</span>
+                                </label>
+                            </div>
+                            <small style="color: #666; display: block; margin-top: 5px;">
+                                チェックした工程のみが月分割されます。チェックしていない工程は通常通り登録されます。
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>総工数</label>
+                            <input type="number" id="addTotalHours" step="0.1" min="0" placeholder="例: 80" oninput="updateAddMonthPreview()">
+                            <span style="margin-left: 5px;">時間</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>作業期間</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="addStartMonth" onchange="updateAddMonthPreview()"></select>
+                                <span>〜</span>
+                                <select id="addEndMonth" onchange="updateAddMonthPreview()"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>分割方法</label>
+                            <div style="display: flex; gap: 20px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="addSplitMethod" value="equal" checked onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <span>均等分割</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="addSplitMethod" value="manual" onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <span>手動設定</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="addMonthPreview" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="addEstimateFromModal()">登録</button>
+                    <button class="btn" onclick="closeAddEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -3866,7 +4049,7 @@
             updateSplitPreview();
             
             // モーダルを表示
-            document.getElementById('splitEstimateModal').style.display = 'block';
+            document.getElementById('splitEstimateModal').style.display = 'flex';
         }
 
         function closeSplitEstimateModal() {
@@ -5013,6 +5196,350 @@
                 }
             }
         }
+
+        // ========== 見積もり新規登録モーダル関連関数 ==========
+
+        function openAddEstimateModal() {
+            initAddEstimateForm();
+            document.getElementById('addEstimateModal').style.display = 'flex';
+        }
+
+        function closeAddEstimateModal() {
+            document.getElementById('addEstimateModal').style.display = 'none';
+            // フォームをリセット
+            document.getElementById('addEstVersion').value = '';
+            document.getElementById('addEstTask').value = '';
+            document.querySelector('input[name="addEstMonthType"][value="single"]').checked = true;
+            switchAddEstMonthType();
+
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            processes.forEach(proc => {
+                document.getElementById(`addEst${proc}_member`).value = '';
+                document.getElementById(`addEst${proc}`).value = '';
+            });
+
+            document.getElementById('addEnableMonthSplit').checked = false;
+            toggleAddMonthSplit();
+            updateAddEstimateTotals();
+        }
+
+        function initAddEstimateForm() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // 版数オプションを生成
+            updateVersionOptions('addEstVersion');
+
+            // 担当者オプションを生成
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            processes.forEach(proc => {
+                updateMemberSelectOptions(`addEst${proc}_member`);
+            });
+
+            // 作業月セレクトボックスの初期化
+            generateMonthOptions('addEstStartMonth', currentMonth);
+            generateMonthOptions('addEstStartMonthMulti', currentMonth);
+            generateMonthOptions('addEstEndMonth', currentMonth);
+            generateMonthOptions('addStartMonth', currentMonth);
+            generateMonthOptions('addEndMonth', currentMonth);
+        }
+
+        function switchAddEstMonthType() {
+            const monthType = document.querySelector('input[name="addEstMonthType"]:checked').value;
+            const singleMonthInput = document.getElementById('addEstSingleMonthInput');
+            const multiMonthInput = document.getElementById('addEstMultiMonthInput');
+
+            if (monthType === 'single') {
+                singleMonthInput.style.display = 'block';
+                multiMonthInput.style.display = 'none';
+            } else {
+                singleMonthInput.style.display = 'none';
+                multiMonthInput.style.display = 'block';
+            }
+        }
+
+        function toggleAddMonthSplit() {
+            const enabled = document.getElementById('addEnableMonthSplit').checked;
+            const panel = document.getElementById('addMonthSplitPanel');
+
+            if (enabled) {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function updateAddEstimateTotals() {
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            let totalHours = 0;
+
+            processes.forEach(proc => {
+                const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
+                totalHours += hours;
+            });
+
+            const totalDays = (totalHours / 8).toFixed(1);
+            const totalMonths = (totalHours / 160).toFixed(2);
+
+            document.getElementById('addEstTotalHours').textContent = totalHours.toFixed(1);
+            document.getElementById('addEstTotalDays').textContent = totalDays;
+            document.getElementById('addEstTotalMonths').textContent = totalMonths;
+        }
+
+        function updateAddMonthPreview() {
+            const startMonth = document.getElementById('addStartMonth').value;
+            const endMonth = document.getElementById('addEndMonth').value;
+            const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
+            const method = document.querySelector('input[name="addSplitMethod"]:checked').value;
+            const preview = document.getElementById('addMonthPreview');
+
+            if (!startMonth || !endMonth || totalHours <= 0) {
+                preview.innerHTML = '';
+                return;
+            }
+
+            const months = generateMonthRange(startMonth, endMonth);
+            let html = '<div style="background: #f0f0f0; padding: 10px; border-radius: 5px;">';
+            html += '<strong>分割プレビュー:</strong><br>';
+
+            if (method === 'equal') {
+                const hoursPerMonth = (totalHours / months.length).toFixed(1);
+                months.forEach(month => {
+                    html += `<div style="margin-top: 5px;">${month}: ${hoursPerMonth}h</div>`;
+                });
+            } else {
+                months.forEach(month => {
+                    html += `<div style="margin-top: 5px; display: flex; align-items: center; gap: 10px;">`;
+                    html += `<span style="min-width: 100px;">${month}:</span>`;
+                    html += `<input type="number" id="addMonthHours_${month}" step="0.1" min="0" placeholder="0" style="width: 80px; padding: 4px;" oninput="checkAddMonthTotal()"> h`;
+                    html += `</div>`;
+                });
+            }
+
+            html += '</div>';
+            preview.innerHTML = html;
+        }
+
+        function checkAddMonthTotal() {
+            const startMonth = document.getElementById('addStartMonth').value;
+            const endMonth = document.getElementById('addEndMonth').value;
+            const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
+
+            if (!startMonth || !endMonth) return;
+
+            const months = generateMonthRange(startMonth, endMonth);
+            let sum = 0;
+
+            months.forEach(month => {
+                const input = document.getElementById(`addMonthHours_${month}`);
+                if (input) {
+                    sum += parseFloat(input.value) || 0;
+                }
+            });
+
+            const preview = document.getElementById('addMonthPreview');
+            const existingWarning = preview.querySelector('.total-warning');
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+
+            if (Math.abs(sum - totalHours) > 0.01) {
+                const warning = document.createElement('div');
+                warning.className = 'total-warning';
+                warning.style.cssText = 'color: #d32f2f; margin-top: 10px; font-weight: 600;';
+                warning.textContent = `⚠️ 合計: ${sum.toFixed(1)}h（総工数: ${totalHours.toFixed(1)}h）`;
+                preview.appendChild(warning);
+            }
+        }
+
+        function addEstimateFromModal() {
+            const version = document.getElementById('addEstVersion').value;
+            const task = document.getElementById('addEstTask').value.trim();
+
+            // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
+            const monthType = document.querySelector('input[name="addEstMonthType"]:checked').value;
+            let startMonth, endMonth;
+
+            if (monthType === 'single') {
+                startMonth = document.getElementById('addEstStartMonth').value;
+                endMonth = null;
+            } else {
+                startMonth = document.getElementById('addEstStartMonthMulti').value;
+                endMonth = document.getElementById('addEstEndMonth').value;
+            }
+
+            if (!version || version === '新規追加') {
+                alert('版数を選択してください');
+                return;
+            }
+
+            if (!task) {
+                alert('対応名を入力してください');
+                return;
+            }
+
+            if (!startMonth) {
+                alert('作業月を選択してください');
+                return;
+            }
+
+            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+            const monthSplitEnabled = document.getElementById('addEnableMonthSplit').checked;
+
+            if (monthSplitEnabled) {
+                // 月分割モード
+                const splitProcesses = [];
+                processes.forEach(proc => {
+                    if (document.getElementById(`addSplit${proc}`).checked) {
+                        splitProcesses.push(proc);
+                    }
+                });
+
+                if (splitProcesses.length === 0) {
+                    alert('分割する工程を少なくとも一つ選択してください');
+                    return;
+                }
+
+                addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses);
+            } else {
+                // 通常モード
+                addEstimateFromModalNormal(version, task, processes, startMonth, endMonth);
+            }
+        }
+
+        function addEstimateFromModalNormal(version, task, processes, startMonth, endMonth) {
+            const isSingleMonth = !endMonth || startMonth === endMonth;
+
+            processes.forEach(proc => {
+                const member = document.getElementById(`addEst${proc}_member`).value;
+                const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
+
+                if (hours > 0) {
+                    let workMonths, monthlyHours, workMonth;
+
+                    if (isSingleMonth) {
+                        // 単一月モード
+                        workMonth = startMonth;
+                        workMonths = [startMonth];
+                        monthlyHours = { [startMonth]: hours };
+                    } else {
+                        // 複数月モード
+                        const months = generateMonthRange(startMonth, endMonth);
+                        workMonth = startMonth;
+                        workMonths = months;
+                        monthlyHours = {};
+                        months.forEach(m => {
+                            monthlyHours[m] = hours / months.length;
+                        });
+                    }
+
+                    const est = {
+                        id: Date.now() + Math.random(),
+                        version: version,
+                        task: task,
+                        process: proc,
+                        member: member,
+                        hours: hours,
+                        workMonth: workMonth,
+                        workMonths: workMonths,
+                        monthlyHours: monthlyHours,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    estimates.push(est);
+                }
+            });
+
+            saveData();
+            renderEstimateList();
+            updateReport();
+            closeAddEstimateModal();
+            alert('見積もりを登録しました');
+        }
+
+        function addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses) {
+            const startMonth = document.getElementById('addStartMonth').value;
+            const endMonth = document.getElementById('addEndMonth').value;
+            const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
+            const method = document.querySelector('input[name="addSplitMethod"]:checked').value;
+
+            if (!startMonth || !endMonth) {
+                alert('作業期間を選択してください');
+                return;
+            }
+
+            if (totalHours <= 0) {
+                alert('総工数を入力してください');
+                return;
+            }
+
+            const months = generateMonthRange(startMonth, endMonth);
+
+            if (months.length === 0) {
+                alert('有効な作業期間を選択してください');
+                return;
+            }
+
+            let monthlyHours = {};
+
+            if (method === 'equal') {
+                const hoursPerMonth = totalHours / months.length;
+                months.forEach(month => {
+                    monthlyHours[month] = hoursPerMonth;
+                });
+            } else {
+                let total = 0;
+                months.forEach(month => {
+                    const input = document.getElementById(`addMonthHours_${month}`);
+                    const hours = parseFloat(input.value) || 0;
+                    monthlyHours[month] = hours;
+                    total += hours;
+                });
+
+                if (Math.abs(total - totalHours) > 0.01) {
+                    alert(`月別工数の合計（${total}h）が総工数（${totalHours}h）と一致しません`);
+                    return;
+                }
+            }
+
+            processes.forEach(proc => {
+                const member = document.getElementById(`addEst${proc}_member`).value;
+                const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
+
+                if (hours > 0) {
+                    const est = {
+                        id: Date.now() + Math.random(),
+                        version: version,
+                        task: task,
+                        process: proc,
+                        member: member,
+                        hours: totalHours,
+                        workMonth: startMonth,
+                        workMonths: months,
+                        monthlyHours: monthlyHours,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    if (splitProcesses.includes(proc)) {
+                        estimates.push(est);
+                    } else {
+                        // 分割対象外の工程は通常通り登録
+                        est.hours = hours;
+                        est.monthlyHours = { [startMonth]: hours };
+                        est.workMonths = [startMonth];
+                        estimates.push(est);
+                    }
+                }
+            });
+
+            saveData();
+            renderEstimateList();
+            updateReport();
+            closeAddEstimateModal();
+            alert('見積もりを登録しました');
+        }
+
+        // ========== ここまで見積もり新規登録モーダル関連関数 ==========
 
         function renderEstimateList() {
             const container = document.getElementById('estimateList');
@@ -6611,7 +7138,7 @@
             `;
 
             document.getElementById('modalBody').innerHTML = html;
-            document.getElementById('workModal').style.display = 'block';
+            document.getElementById('workModal').style.display = 'flex';
         }
 
         function closeWorkModal() {
@@ -7761,7 +8288,7 @@
             memberSelect.value = estimate.member;
             
             // モーダルを表示
-            document.getElementById('editEstimateModal').style.display = 'block';
+            document.getElementById('editEstimateModal').style.display = 'flex';
         }
 
         function closeEditEstimateModal() {
