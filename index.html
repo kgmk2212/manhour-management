@@ -2291,11 +2291,11 @@
         </div>
     </div>
 
-    <!-- 見積もり新規登録モーダル -->
-    <div id="addEstimateModal" class="modal">
+    <!-- 見積登録モーダル -->
+    <div id="addEstimateModal" class="modal" onclick="handleAddModalClick(event)">
         <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
-                <h3>📝 見積もり登録</h3>
+                <h3>📝 見積登録</h3>
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -3145,6 +3145,25 @@
                         quickEstSelect.value = currentValue;
                     }
                 }
+
+                // 見積登録モーダルの担当者選択肢も更新
+                const addEstSelect = document.getElementById(`addEst${process}_member`);
+                if (addEstSelect) {
+                    const currentValue = addEstSelect.value;
+                    addEstSelect.innerHTML = '<option value="">-</option>';
+
+                    sortedMembers.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member;
+                        option.textContent = member;
+                        addEstSelect.appendChild(option);
+                    });
+
+                    // 以前の選択を復元
+                    if (currentValue && sortedMembers.includes(currentValue)) {
+                        addEstSelect.value = currentValue;
+                    }
+                }
             });
             
             // クイック入力の担当者選択肢も更新
@@ -3267,7 +3286,8 @@
                     'estVersion',           // 新規見積登録（削除済みだが念のため残す）
                     'quickEstVersion',      // クイック入力の見積登録
                     'editActualVersion',    // 実績編集/新規モーダル
-                    'editEstimateVersion'   // 見積編集モーダル
+                    'editEstimateVersion',  // 見積編集モーダル
+                    'addEstVersion'         // 見積登録モーダル
                 ];
 
                 versionSelects.forEach(selectId => {
@@ -3290,9 +3310,12 @@
                             select.appendChild(option);
                         });
 
-                        // 以前の選択を復元
+                        // 以前の選択を復元、なければ最新版数をデフォルトに
                         if (currentValue && currentValue !== '__new__') {
                             select.value = currentValue;
+                        } else if (sortedVersions.length > 0 && selectId === 'addEstVersion') {
+                            // 見積登録モーダルは最新版数をデフォルトに
+                            select.value = sortedVersions[sortedVersions.length - 1];
                         }
                     }
                 });
@@ -5227,14 +5250,11 @@
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-            // 版数オプションを生成
-            updateVersionOptions('addEstVersion');
+            // 版数オプションを生成（updateVersionOptionsで全てのセレクトが更新される）
+            updateVersionOptions();
 
-            // 担当者オプションを生成
-            const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
-            processes.forEach(proc => {
-                updateMemberSelectOptions(`addEst${proc}_member`);
-            });
+            // 担当者オプションを生成（updateMemberOptionsで全てのセレクトが更新される）
+            updateMemberOptions();
 
             // 作業月セレクトボックスの初期化
             generateMonthOptions('addEstStartMonth', currentMonth);
@@ -5252,9 +5272,101 @@
             if (monthType === 'single') {
                 singleMonthInput.style.display = 'block';
                 multiMonthInput.style.display = 'none';
+                updateAddEstimateTableHeader(false);
             } else {
                 singleMonthInput.style.display = 'none';
                 multiMonthInput.style.display = 'block';
+                updateAddEstimateTableHeader(true);
+
+                // 複数月モードの場合、開始月と終了月を同期
+                const startMonth = document.getElementById('addEstStartMonth').value;
+                const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+                const endMonth = document.getElementById('addEstEndMonth');
+
+                if (startMonth && startMonthMulti) {
+                    startMonthMulti.value = startMonth;
+                    if (endMonth && !endMonth.value) {
+                        endMonth.value = startMonth;
+                    }
+                }
+                updateDefaultAddProcessMonths(startMonthMulti.value, endMonth.value);
+            }
+        }
+
+        // 工程表のヘッダーと作業月列を更新（見積登録モーダル用）
+        function updateAddEstimateTableHeader(showWorkMonthColumn) {
+            const table = document.getElementById('addEstimateTable');
+            const headerRow = table.querySelector('thead tr');
+            const bodyRows = table.querySelectorAll('tbody tr');
+
+            if (showWorkMonthColumn) {
+                // 作業月列を追加
+                if (headerRow.children.length === 3) {
+                    const th = document.createElement('th');
+                    th.style.width = '150px';
+                    th.style.padding = '8px';
+                    th.textContent = '作業月';
+                    headerRow.appendChild(th);
+                }
+
+                bodyRows.forEach((row, index) => {
+                    if (row.children.length === 3) {
+                        const td = document.createElement('td');
+                        const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+                        const processName = processes[index];
+                        td.innerHTML = `
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <select id="addEst${processName}_startMonth" style="margin: 0; flex: 1;"></select>
+                                <span>〜</span>
+                                <select id="addEst${processName}_endMonth" style="margin: 0; flex: 1;"></select>
+                            </div>
+                        `;
+                        row.appendChild(td);
+                    }
+                });
+            } else {
+                // 作業月列を削除
+                if (headerRow.children.length === 4) {
+                    headerRow.removeChild(headerRow.lastChild);
+                }
+
+                bodyRows.forEach(row => {
+                    if (row.children.length === 4) {
+                        row.removeChild(row.lastChild);
+                    }
+                });
+            }
+        }
+
+        // 各工程のデフォルト作業月を設定（見積登録モーダル用）
+        function updateDefaultAddProcessMonths(startMonth, endMonth) {
+            const defaults = calculateDefaultWorkMonths(startMonth, endMonth);
+            const months = generateMonthRange(startMonth, endMonth);
+
+            defaults.forEach(item => {
+                const startSelect = document.getElementById(`addEst${item.process}_startMonth`);
+                const endSelect = document.getElementById(`addEst${item.process}_endMonth`);
+
+                if (startSelect && endSelect) {
+                    // セレクトボックスに選択肢を設定（年なし表示）
+                    startSelect.innerHTML = '';
+                    endSelect.innerHTML = '';
+                    months.forEach(month => {
+                        startSelect.innerHTML += `<option value="${month}">${parseInt(month.substring(5))}月</option>`;
+                        endSelect.innerHTML += `<option value="${month}">${parseInt(month.substring(5))}月</option>`;
+                    });
+
+                    // デフォルト値を設定
+                    startSelect.value = item.startMonth;
+                    endSelect.value = item.endMonth;
+                }
+            });
+        }
+
+        // モーダル外クリックで閉じる
+        function handleAddModalClick(event) {
+            if (event.target.id === 'addEstimateModal') {
+                closeAddEstimateModal();
             }
         }
 
@@ -5423,14 +5535,34 @@
                         workMonths = [startMonth];
                         monthlyHours = { [startMonth]: hours };
                     } else {
-                        // 複数月モード
-                        const months = generateMonthRange(startMonth, endMonth);
-                        workMonth = startMonth;
-                        workMonths = months;
-                        monthlyHours = {};
-                        months.forEach(m => {
-                            monthlyHours[m] = hours / months.length;
-                        });
+                        // 複数月モード: 各工程の作業月を取得
+                        const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
+                        const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
+
+                        if (procStartMonth && procEndMonth) {
+                            if (procStartMonth === procEndMonth) {
+                                workMonth = procStartMonth;
+                                workMonths = [procStartMonth];
+                                monthlyHours = { [procStartMonth]: hours };
+                            } else {
+                                const months = generateMonthRange(procStartMonth, procEndMonth);
+                                workMonth = procStartMonth;
+                                workMonths = months;
+                                monthlyHours = {};
+                                months.forEach(m => {
+                                    monthlyHours[m] = hours / months.length;
+                                });
+                            }
+                        } else {
+                            // 工程別作業月が設定されていない場合は全期間
+                            const months = generateMonthRange(startMonth, endMonth);
+                            workMonth = startMonth;
+                            workMonths = months;
+                            monthlyHours = {};
+                            months.forEach(m => {
+                                monthlyHours[m] = hours / months.length;
+                            });
+                        }
                     }
 
                     const est = {
@@ -5454,7 +5586,7 @@
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
-            alert('見積もりを登録しました');
+            alert('見積登録しました');
         }
 
         function addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses) {
@@ -5536,7 +5668,7 @@
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
-            alert('見積もりを登録しました');
+            alert('見積登録しました');
         }
 
         // ========== ここまで見積もり新規登録モーダル関連関数 ==========
