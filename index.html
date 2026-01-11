@@ -2333,8 +2333,14 @@
                 <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editTaskVersion">
+                <input type="hidden" id="editTaskOldVersion">
                 <input type="hidden" id="editTaskOldName">
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="editTaskVersion" onchange="handleVersionChange('editTaskVersion')">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label>帳票名</label>
                     <input type="text" id="editTaskFormName" list="editTaskFormNameList" placeholder="帳票A">
@@ -2347,7 +2353,7 @@
                 </div>
                 <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 6px;">
                     <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
-                    <div style="font-size: 13px; color: #856404;">この対応のすべての工程（UI、PG、PT、IT、ST）の対応名が変更されます。関連する実績データも自動的に更新されます。</div>
+                    <div style="font-size: 13px; color: #856404;">この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveTaskEdit()">保存</button>
@@ -8842,8 +8848,20 @@
 
         // 対応名をクリックして編集
         function editTask(version, taskName) {
-            document.getElementById('editTaskVersion').value = version;
+            document.getElementById('editTaskOldVersion').value = version;
             document.getElementById('editTaskOldName').value = taskName;
+
+            // 版数リストを更新
+            const versionSelect = document.getElementById('editTaskVersion');
+            const versions = [...new Set(estimates.map(e => e.version))].sort();
+            versionSelect.innerHTML = '<option value="">-- 版数を選択 --</option>';
+            versions.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v;
+                option.textContent = v;
+                versionSelect.appendChild(option);
+            });
+            versionSelect.value = version;
 
             // 対応名を帳票名と対応名に分割
             let formName = '';
@@ -8891,30 +8909,32 @@
         }
 
         function saveTaskEdit() {
-            const version = document.getElementById('editTaskVersion').value;
+            const oldVersion = document.getElementById('editTaskOldVersion').value;
             const oldTaskName = document.getElementById('editTaskOldName').value;
+            const newVersion = document.getElementById('editTaskVersion').value;
             const formName = document.getElementById('editTaskFormName').value.trim();
             const taskName = document.getElementById('editTaskName').value.trim();
 
-            if (!formName || !taskName) {
-                alert('帳票名と対応名を入力してください');
+            if (!newVersion || !formName || !taskName) {
+                alert('すべての項目を入力してください');
                 return;
             }
 
             // 帳票名と対応名を結合
             const newTaskName = `${formName}：${taskName}`;
 
-            if (oldTaskName === newTaskName) {
-                alert('対応名が変更されていません');
+            if (oldVersion === newVersion && oldTaskName === newTaskName) {
+                alert('版数と対応名が変更されていません');
                 return;
             }
 
             // 該当する見積データを更新
             let updatedCount = 0;
             estimates.forEach((est, index) => {
-                if (est.version === version && est.task === oldTaskName) {
+                if (est.version === oldVersion && est.task === oldTaskName) {
                     estimates[index] = {
                         ...est,
+                        version: newVersion,
                         task: newTaskName
                     };
                     updatedCount++;
@@ -8924,9 +8944,10 @@
             // 実績データも更新
             let actualUpdateCount = 0;
             actuals.forEach((act, index) => {
-                if (act.version === version && act.task === oldTaskName) {
+                if (act.version === oldVersion && act.task === oldTaskName) {
                     actuals[index] = {
                         ...act,
+                        version: newVersion,
                         task: newTaskName
                     };
                     actualUpdateCount++;
@@ -8942,7 +8963,7 @@
                 renderEstimateList();
                 updateReport();
 
-                let message = `${updatedCount}件の見積データの対応名を変更しました`;
+                let message = `${updatedCount}件の見積データを変更しました`;
                 if (actualUpdateCount > 0) {
                     message += `\n${actualUpdateCount}件の実績データも変更しました`;
                 }
