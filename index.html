@@ -5262,6 +5262,41 @@
             generateMonthOptions('addEstEndMonth', currentMonth);
             generateMonthOptions('addStartMonth', currentMonth);
             generateMonthOptions('addEndMonth', currentMonth);
+
+            // 複数月選択の期間変更時にリアルタイム更新
+            const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+            const endMonth = document.getElementById('addEstEndMonth');
+            if (startMonthMulti) {
+                startMonthMulti.addEventListener('change', updateAddEstWorkMonthUI);
+            }
+            if (endMonth) {
+                endMonth.addEventListener('change', updateAddEstWorkMonthUI);
+            }
+        }
+
+        // 作業月UIの更新（見積登録モーダル用）
+        function updateAddEstWorkMonthUI() {
+            const monthType = document.querySelector('input[name="addEstMonthType"]:checked')?.value || 'single';
+
+            if (monthType === 'single') {
+                // 単一月モードでは何もしない
+                return;
+            }
+
+            // 複数月モードの場合のみ処理
+            const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+            const endMonth = document.getElementById('addEstEndMonth');
+
+            if (!startMonthMulti || !endMonth) return;
+            if (!startMonthMulti.value) return;
+
+            // 工程別のデフォルト作業月を更新
+            if (endMonth.value && startMonthMulti.value !== endMonth.value) {
+                updateDefaultAddProcessMonths(startMonthMulti.value, endMonth.value);
+            } else if (endMonth.value === startMonthMulti.value) {
+                // 開始月と終了月が同じ場合も更新
+                updateDefaultAddProcessMonths(startMonthMulti.value, endMonth.value);
+            }
         }
 
         function switchAddEstMonthType() {
