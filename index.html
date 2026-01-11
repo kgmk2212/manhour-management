@@ -7828,30 +7828,11 @@
             // 選択した版数の作業のみを表示
             updateEditActualTaskList(actual.member, true, actual.version);
 
-            // 対応名をセレクトボックスで選択できるように
+            // 対応名をセレクトボックスで選択
             const taskSelect = document.getElementById('editActualTaskSelect');
-            const taskInput = document.getElementById('editActualTaskSearch');
-
-            // 既存の対応名と一致するoptionがあれば選択、なければ「新規入力」を選択して入力欄を表示
-            let foundMatch = false;
-            for (let i = 0; i < taskSelect.options.length; i++) {
-                if (taskSelect.options[i].value === actual.task) {
-                    taskSelect.value = actual.task;
-                    foundMatch = true;
-                    break;
-                }
-            }
-
-            if (foundMatch) {
-                taskSelect.style.display = 'block';
-                taskInput.style.display = 'none';
-            } else {
-                // 一致する対応名がない場合は新規入力モード
-                taskSelect.value = '__NEW__';
-                taskSelect.style.display = 'none';
-                taskInput.style.display = 'block';
-                taskInput.value = actual.task;
-            }
+            taskSelect.style.display = 'block';
+            document.getElementById('editActualTaskSearch').style.display = 'none';
+            taskSelect.value = actual.task;
 
             document.getElementById('editActualProcess').value = actual.process;
             document.getElementById('editActualHours').value = actual.hours;
