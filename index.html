@@ -2363,6 +2363,19 @@
         </div>
     </div>
 
+    <!-- 工程内訳表示モーダル -->
+    <div id="processBreakdownModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="breakdownModalTitle">工程内訳</h3>
+                <button class="modal-close" onclick="closeProcessBreakdownModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="breakdownModalContent"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 見積登録モーダル -->
     <div id="addEstimateModal" class="modal" onclick="handleAddModalClick(event)">
         <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
@@ -8982,6 +8995,92 @@
             }
         }
 
+        // 工程内訳モーダルを表示
+        function showProcessBreakdown(version, task, process, filteredActuals, filteredEstimates) {
+            const modal = document.getElementById('processBreakdownModal');
+            const title = document.getElementById('breakdownModalTitle');
+            const content = document.getElementById('breakdownModalContent');
+
+            // タイトルを設定
+            title.textContent = `${version} - ${task} [${process}] の内訳`;
+
+            // 担当者別にデータを集計
+            const memberData = {};
+
+            // 見積データを集計
+            filteredEstimates.forEach(e => {
+                if (e.version === version && e.task === task && e.process === process) {
+                    if (!memberData[e.member]) {
+                        memberData[e.member] = { estimate: 0, actual: 0 };
+                    }
+                    memberData[e.member].estimate += e.hours;
+                }
+            });
+
+            // 実績データを集計
+            filteredActuals.forEach(a => {
+                if (a.version === version && a.task === task && a.process === process) {
+                    if (!memberData[a.member]) {
+                        memberData[a.member] = { estimate: 0, actual: 0 };
+                    }
+                    memberData[a.member].actual += a.hours;
+                }
+            });
+
+            // 担当者が複数いる場合のみ内訳を表示
+            const members = Object.keys(memberData);
+            if (members.length === 0) {
+                content.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+                modal.style.display = 'flex';
+                return;
+            }
+
+            if (members.length === 1) {
+                content.innerHTML = '<p style="text-align: center; color: #999;">この工程は1人が担当しています</p>';
+                modal.style.display = 'flex';
+                return;
+            }
+
+            // テーブルを生成
+            let html = '<div class="table-wrapper"><table>';
+            html += '<tr><th>担当者</th><th>見積</th><th>実績</th><th>差異</th></tr>';
+
+            let totalEst = 0;
+            let totalAct = 0;
+
+            members.sort().forEach(member => {
+                const data = memberData[member];
+                const diff = data.actual - data.estimate;
+                totalEst += data.estimate;
+                totalAct += data.actual;
+
+                html += '<tr>';
+                html += `<td><strong>${member}</strong></td>`;
+                html += `<td style="text-align: right;">${data.estimate.toFixed(1)}h</td>`;
+                html += `<td style="text-align: right;">${data.actual.toFixed(1)}h</td>`;
+                html += `<td style="text-align: right; color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>`;
+                html += '</tr>';
+            });
+
+            // 合計行
+            const totalDiff = totalAct - totalEst;
+            html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
+            html += '<td>合計</td>';
+            html += `<td style="text-align: right;">${totalEst.toFixed(1)}h</td>`;
+            html += `<td style="text-align: right;">${totalAct.toFixed(1)}h</td>`;
+            html += `<td style="text-align: right; color: ${totalDiff >= 0 ? '#e74c3c' : '#27ae60'}">${(totalDiff >= 0 ? '+' : '')}${totalDiff.toFixed(1)}h</td>`;
+            html += '</tr>';
+
+            html += '</table></div>';
+            content.innerHTML = html;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeProcessBreakdownModal() {
+            document.getElementById('processBreakdownModal').style.display = 'none';
+        }
+
         function showMemberOrderHelp() {
             alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
         }
@@ -10658,11 +10757,21 @@
 
                         // 実績ベースで担当者を表示（実績がなければ見積）
                         let memberDisplay = '-';
+                        const allMembers = new Set([...est.members, ...act.members]);
                         if (act.members.size > 0) {
                             memberDisplay = Array.from(act.members).join(',');
                         } else if (est.members.size > 0) {
                             memberDisplay = Array.from(est.members).join(',');
                         }
+
+                        // 複数担当者がいる場合はクリック可能に
+                        const isMultipleMember = allMembers.size > 1;
+                        const memberCellStyle = isMultipleMember ?
+                            'word-break: break-word; cursor: pointer; color: #3498db; text-decoration: underline;' :
+                            'word-break: break-word;';
+                        const memberOnclick = isMultipleMember ?
+                            `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
+                            '';
 
                         tableBody += '<tr>';
                         if (index === 0) {
@@ -10676,7 +10785,7 @@
                             tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                         }
                         tableBody += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
-                        tableBody += `<td style="word-break: break-word;">${memberDisplay}</td>`;
+                        tableBody += `<td style="${memberCellStyle}" ${memberOnclick}>${memberDisplay}</td>`;
                         tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
@@ -10886,11 +10995,21 @@
 
                                 // 担当者を実績ベースで表示（実績がなければ見積）
                                 let memberDisplay = '-';
+                                const allMembers = new Set([...est.members, ...act.members]);
                                 if (act.members.size > 0) {
                                     memberDisplay = Array.from(act.members).join(',');
                                 } else if (est.members.size > 0) {
                                     memberDisplay = Array.from(est.members).join(',');
                                 }
+
+                                // 複数担当者がいる場合はクリック可能に
+                                const isMultipleMember = allMembers.size > 1;
+                                const memberStyle = isMultipleMember ?
+                                    'cursor: pointer; color: #3498db; text-decoration: underline;' :
+                                    '';
+                                const memberOnclick = isMultipleMember ?
+                                    `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
+                                    '';
 
                                 // 全期間の時のみ月に基づく背景色を適用
                                 const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
@@ -10898,7 +11017,7 @@
 
                                 tableBody += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
                                     <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                    <div style="font-size: 11px; color: #666;">(${memberDisplay})</div>
+                                    <div style="font-size: 11px; color: #666; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
                                     <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
                                 </td>`;
                             } else {
