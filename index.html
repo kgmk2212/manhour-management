@@ -7779,7 +7779,7 @@
             // 現在の担当者のグループを最初に表示
             if (tasksByMember[member] && tasksByMember[member].length > 0) {
                 const optgroup = document.createElement('optgroup');
-                optgroup.label = `${member}の対応`;
+                optgroup.label = `担当：${member}`;
                 tasksByMember[member].forEach(task => {
                     const option = document.createElement('option');
                     option.value = task.task;
@@ -7795,7 +7795,7 @@
             Object.keys(tasksByMember).sort().forEach(otherMember => {
                 if (otherMember !== member && tasksByMember[otherMember].length > 0) {
                     const optgroup = document.createElement('optgroup');
-                    optgroup.label = `${otherMember}の対応`;
+                    optgroup.label = `担当：${otherMember}`;
                     tasksByMember[otherMember].forEach(task => {
                         const option = document.createElement('option');
                         option.value = task.task;
