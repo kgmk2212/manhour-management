@@ -2293,23 +2293,10 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>帳票名</label>
-                    <input type="text" id="editEstimateFormName" list="editEstimateFormNameList" placeholder="帳票A">
-                    <datalist id="editEstimateFormNameList">
-                    </datalist>
-                    <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
-                </div>
-                <div class="form-group">
                     <label>対応名</label>
-                    <input type="text" id="editEstimateTaskName" placeholder="X対応">
-                    <small style="color: #666; display: block; margin-top: 5px;">帳票名と対応名は自動的に「：」で結合されます</small>
-                    <label style="display: flex; align-items: center; margin-top: 10px; cursor: pointer; user-select: none;">
-                        <input type="checkbox" id="editEstimateApplyToAll" style="width: auto; margin-right: 8px;">
-                        <span style="font-size: 13px; font-weight: 600; color: #e67e22;">この対応のすべての工程に適用（UI、PG、PT、IT、ST）</span>
-                    </label>
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        ✓ チェックすると、同じ版数・同じ対応名のすべての工程が一括で変更されます
-                    </small>
+                    <input type="text" id="editEstimateTaskSearch" placeholder="検索または新規入力" list="editEstimateTaskList" oninput="handleEstimateTaskInput()">
+                    <datalist id="editEstimateTaskList">
+                    </datalist>
                 </div>
                 <div class="form-group">
                     <label>工程</label>
@@ -2333,6 +2320,38 @@
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
                     <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 対応編集モーダル -->
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>対応名を編集</h3>
+                <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editTaskVersion">
+                <input type="hidden" id="editTaskOldName">
+                <div class="form-group">
+                    <label>帳票名</label>
+                    <input type="text" id="editTaskFormName" list="editTaskFormNameList" placeholder="帳票A">
+                    <datalist id="editTaskFormNameList">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>対応名</label>
+                    <input type="text" id="editTaskName" placeholder="X対応">
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+                    <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
+                    <div style="font-size: 13px; color: #856404;">この対応のすべての工程（UI、PG、PT、IT、ST）の対応名が変更されます。関連する実績データも自動的に更新されます。</div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="saveTaskEdit()">保存</button>
+                    <button class="btn" onclick="closeEditTaskModal()" style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -6405,7 +6424,11 @@
                         
                         if (index === 0) {
                             // 対応名（グレーなし）
-                            html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
+                            if (estimateEditMode) {
+                                html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</td>`;
+                            } else {
+                                html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
+                            }
                         }
                         
                         // 選択モードではないときは通常の工程バッジ
@@ -6569,7 +6592,11 @@
                     }
 
                     html += '<tr>';
-                    html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                    if (estimateEditMode) {
+                        html += `<td style="font-weight: 600; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${group.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</td>`;
+                    } else {
+                        html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                    }
 
                     let total = 0;
                     processOrder.forEach(proc => {
@@ -8665,47 +8692,18 @@
             // フォームに既存データを設定
             document.getElementById('editEstimateId').value = id;
             document.getElementById('editEstimateVersion').value = estimate.version;
-
-            // 対応名を帳票名と対応名に分割
-            let formName = '';
-            let taskName = '';
-            if (estimate.task.includes('：')) {
-                // 全角コロンで分割
-                const parts = estimate.task.split('：');
-                formName = parts[0];
-                taskName = parts.slice(1).join('：');
-            } else if (estimate.task.includes('_')) {
-                // アンダーバーで分割（旧形式）
-                const parts = estimate.task.split('_');
-                formName = parts[0];
-                taskName = parts.slice(1).join('_');
-            } else {
-                // 分割できない場合は全体を対応名とする
-                taskName = estimate.task;
-            }
-
-            document.getElementById('editEstimateFormName').value = formName;
-            document.getElementById('editEstimateTaskName').value = taskName;
+            document.getElementById('editEstimateTaskSearch').value = estimate.task;
             document.getElementById('editEstimateProcess').value = estimate.process;
             document.getElementById('editEstimateHours').value = estimate.hours;
 
-            // 帳票名リストを生成
-            const formNameDatalist = document.getElementById('editEstimateFormNameList');
-            formNameDatalist.innerHTML = '';
-            const uniqueFormNames = new Set();
-            [...estimates, ...actuals].forEach(item => {
-                if (item.task.includes('：')) {
-                    const parts = item.task.split('：');
-                    uniqueFormNames.add(parts[0]);
-                } else if (item.task.includes('_')) {
-                    const parts = item.task.split('_');
-                    uniqueFormNames.add(parts[0]);
-                }
-            });
-            Array.from(uniqueFormNames).sort().forEach(name => {
+            // 対応名リストを生成
+            const taskDatalist = document.getElementById('editEstimateTaskList');
+            taskDatalist.innerHTML = '';
+            const uniqueTasks = [...new Set([...estimates.map(e => e.task), ...actuals.map(a => a.task)])];
+            uniqueTasks.sort().forEach(task => {
                 const option = document.createElement('option');
-                option.value = name;
-                formNameDatalist.appendChild(option);
+                option.value = task;
+                taskDatalist.appendChild(option);
             });
 
             // 担当者選択肢を更新
@@ -8748,9 +8746,6 @@
 
             memberSelect.value = estimate.member;
 
-            // 「すべての工程に適用」チェックボックスを初期化（デフォルトはオフ）
-            document.getElementById('editEstimateApplyToAll').checked = false;
-
             // モーダルを表示
             document.getElementById('editEstimateModal').style.display = 'flex';
         }
@@ -8762,27 +8757,20 @@
         function saveEstimateEdit() {
             const id = parseFloat(document.getElementById('editEstimateId').value);
             const version = document.getElementById('editEstimateVersion').value;
-            const formName = document.getElementById('editEstimateFormName').value.trim();
-            const taskName = document.getElementById('editEstimateTaskName').value.trim();
+            const task = document.getElementById('editEstimateTaskSearch').value;
             const process = document.getElementById('editEstimateProcess').value;
             const member = document.getElementById('editEstimateMember').value;
             const hours = parseFloat(document.getElementById('editEstimateHours').value);
-            const applyToAll = document.getElementById('editEstimateApplyToAll').checked;
 
-            if (!version || !formName || !taskName || !process || !member || !hours) {
+            if (!version || !task || !process || !member || !hours) {
                 alert('すべての項目を入力してください');
                 return;
             }
-
-            // 帳票名と対応名を結合
-            const task = `${formName}：${taskName}`;
 
             // データを更新
             const estimateIndex = estimates.findIndex(e => e.id === id);
             if (estimateIndex !== -1) {
                 const oldEstimate = estimates[estimateIndex];
-                const oldTask = oldEstimate.task;
-                const oldVersion = oldEstimate.version;
                 const oldHours = oldEstimate.hours;
 
                 // 月分割設定がある場合、比率を維持して再計算
@@ -8795,7 +8783,6 @@
                     });
                 }
 
-                // この見積データを更新
                 estimates[estimateIndex] = {
                     ...estimates[estimateIndex],
                     version: version,
@@ -8806,36 +8793,6 @@
                     monthlyHours: updatedMonthlyHours
                 };
 
-                // 「すべての工程に適用」がチェックされていて、対応名が変更された場合
-                let bulkUpdateCount = 0;
-                let actualUpdateCount = 0;
-
-                if (applyToAll && oldTask !== task) {
-                    // 同じ版数・同じ旧対応名の他の見積データも一括更新
-                    estimates.forEach((est, index) => {
-                        if (index !== estimateIndex &&
-                            est.version === oldVersion &&
-                            est.task === oldTask) {
-                            estimates[index] = {
-                                ...est,
-                                task: task
-                            };
-                            bulkUpdateCount++;
-                        }
-                    });
-
-                    // 実績データも更新
-                    actuals.forEach((act, index) => {
-                        if (act.version === oldVersion && act.task === oldTask) {
-                            actuals[index] = {
-                                ...act,
-                                task: task
-                            };
-                            actualUpdateCount++;
-                        }
-                    });
-                }
-
                 saveData();
                 closeEditEstimateModal();
 
@@ -8844,14 +8801,7 @@
                 renderEstimateList();
                 updateReport();
 
-                let message = '見積データを更新しました';
-                if (bulkUpdateCount > 0) {
-                    message += `\n対応名を一括変更: ${bulkUpdateCount + 1}件の見積データ`;
-                    if (actualUpdateCount > 0) {
-                        message += `、${actualUpdateCount}件の実績データ`;
-                    }
-                }
-                alert(message);
+                alert('見積データを更新しました');
             } else {
                 alert('データの更新に失敗しました');
             }
@@ -8888,6 +8838,118 @@
 
         function handleEstimateTaskInput() {
             // 対応名入力時の処理（将来的に拡張可能）
+        }
+
+        // 対応名をクリックして編集
+        function editTask(version, taskName) {
+            document.getElementById('editTaskVersion').value = version;
+            document.getElementById('editTaskOldName').value = taskName;
+
+            // 対応名を帳票名と対応名に分割
+            let formName = '';
+            let task = '';
+            if (taskName.includes('：')) {
+                const parts = taskName.split('：');
+                formName = parts[0];
+                task = parts.slice(1).join('：');
+            } else if (taskName.includes('_')) {
+                const parts = taskName.split('_');
+                formName = parts[0];
+                task = parts.slice(1).join('_');
+            } else {
+                task = taskName;
+            }
+
+            document.getElementById('editTaskFormName').value = formName;
+            document.getElementById('editTaskName').value = task;
+
+            // 帳票名リストを生成
+            const formNameDatalist = document.getElementById('editTaskFormNameList');
+            formNameDatalist.innerHTML = '';
+            const uniqueFormNames = new Set();
+            [...estimates, ...actuals].forEach(item => {
+                if (item.task.includes('：')) {
+                    const parts = item.task.split('：');
+                    uniqueFormNames.add(parts[0]);
+                } else if (item.task.includes('_')) {
+                    const parts = item.task.split('_');
+                    uniqueFormNames.add(parts[0]);
+                }
+            });
+            Array.from(uniqueFormNames).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                formNameDatalist.appendChild(option);
+            });
+
+            // モーダルを表示
+            document.getElementById('editTaskModal').style.display = 'flex';
+        }
+
+        function closeEditTaskModal() {
+            document.getElementById('editTaskModal').style.display = 'none';
+        }
+
+        function saveTaskEdit() {
+            const version = document.getElementById('editTaskVersion').value;
+            const oldTaskName = document.getElementById('editTaskOldName').value;
+            const formName = document.getElementById('editTaskFormName').value.trim();
+            const taskName = document.getElementById('editTaskName').value.trim();
+
+            if (!formName || !taskName) {
+                alert('帳票名と対応名を入力してください');
+                return;
+            }
+
+            // 帳票名と対応名を結合
+            const newTaskName = `${formName}：${taskName}`;
+
+            if (oldTaskName === newTaskName) {
+                alert('対応名が変更されていません');
+                return;
+            }
+
+            // 該当する見積データを更新
+            let updatedCount = 0;
+            estimates.forEach((est, index) => {
+                if (est.version === version && est.task === oldTaskName) {
+                    estimates[index] = {
+                        ...est,
+                        task: newTaskName
+                    };
+                    updatedCount++;
+                }
+            });
+
+            // 実績データも更新
+            let actualUpdateCount = 0;
+            actuals.forEach((act, index) => {
+                if (act.version === version && act.task === oldTaskName) {
+                    actuals[index] = {
+                        ...act,
+                        task: newTaskName
+                    };
+                    actualUpdateCount++;
+                }
+            });
+
+            if (updatedCount > 0) {
+                saveData();
+                closeEditTaskModal();
+
+                updateMemberOptions();
+                updateQuickTaskList();
+                renderEstimateList();
+                updateReport();
+
+                let message = `${updatedCount}件の見積データの対応名を変更しました`;
+                if (actualUpdateCount > 0) {
+                    message += `\n${actualUpdateCount}件の実績データも変更しました`;
+                }
+                alert(message);
+            } else {
+                alert('変更対象のデータが見つかりませんでした');
+            }
         }
 
         function showMemberOrderHelp() {
