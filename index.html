@@ -10315,21 +10315,63 @@
                 // 担当者別パフォーマンス
                 if (reportSettings.memberAnalysisEnabled) {
                     const memberSummary = {};
+                    const memberTasks = {};
 
-                    filteredEstimates.forEach(e => {
-                        if (!memberSummary[e.member]) {
-                            memberSummary[e.member] = { estimate: 0, actual: 0, tasks: new Set() };
-                        }
-                        memberSummary[e.member].estimate += e.hours;
-                        memberSummary[e.member].tasks.add(`${e.version}-${e.task}`);
+                    // 全担当者を抽出
+                    const allMembers = new Set();
+                    filteredEstimates.forEach(e => allMembers.add(e.member));
+                    filteredActuals.forEach(a => allMembers.add(a.member));
+
+                    // 初期化
+                    allMembers.forEach(member => {
+                        memberSummary[member] = { estimate: 0, actual: 0 };
+                        memberTasks[member] = new Set();
                     });
 
+                    // 自動分割ロジック：見積担当者以外の実績を考慮して見積を再配分
+                    filteredEstimates.forEach(estimate => {
+                        // この見積に対する実績を取得
+                        const relatedActuals = filteredActuals.filter(a =>
+                            a.version === estimate.version &&
+                            a.task === estimate.task &&
+                            a.process === estimate.process
+                        );
+
+                        // 元の担当者以外の実績を集計
+                        let otherMembersActualHours = 0;
+                        const otherMembersHours = {};
+
+                        relatedActuals.forEach(actual => {
+                            if (actual.member !== estimate.member) {
+                                otherMembersActualHours += actual.hours;
+                                otherMembersHours[actual.member] = (otherMembersHours[actual.member] || 0) + actual.hours;
+                            }
+                        });
+
+                        // 元の担当者の見積から他の担当者の実績を引く
+                        const originalMemberEstimate = Math.max(0, estimate.hours - otherMembersActualHours);
+                        memberSummary[estimate.member].estimate += originalMemberEstimate;
+                        memberTasks[estimate.member].add(`${estimate.version}-${estimate.task}`);
+
+                        // 他の担当者には実績分の見積を追加
+                        Object.keys(otherMembersHours).forEach(otherMember => {
+                            if (!memberSummary[otherMember]) {
+                                memberSummary[otherMember] = { estimate: 0, actual: 0 };
+                                memberTasks[otherMember] = new Set();
+                            }
+                            memberSummary[otherMember].estimate += otherMembersHours[otherMember];
+                            memberTasks[otherMember].add(`${estimate.version}-${estimate.task}`);
+                        });
+                    });
+
+                    // 実績を集計
                     filteredActuals.forEach(a => {
                         if (!memberSummary[a.member]) {
-                            memberSummary[a.member] = { estimate: 0, actual: 0, tasks: new Set() };
+                            memberSummary[a.member] = { estimate: 0, actual: 0 };
+                            memberTasks[a.member] = new Set();
                         }
                         memberSummary[a.member].actual += a.hours;
-                        memberSummary[a.member].tasks.add(`${a.version}-${a.task}`);
+                        memberTasks[a.member].add(`${a.version}-${a.task}`);
                     });
 
                     const members = Object.keys(memberSummary).sort((a, b) =>
@@ -10346,13 +10388,14 @@
                             const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(1) : 0;
                             const diff = data.actual - data.estimate;
                             const manDays = (data.actual / 8).toFixed(1);
+                            const taskCount = memberTasks[member] ? memberTasks[member].size : 0;
 
                             html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
                             html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${member}</div>`;
                             html += `<div style="font-size: 13px; color: #495057;">実績: ${data.actual.toFixed(1)}h (${manDays}人日)</div>`;
                             html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
                             html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
-                            html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${data.tasks.size}件</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
                             html += '</div>';
                         });
 
