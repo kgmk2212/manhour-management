@@ -1226,8 +1226,15 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>帳票名</label>
+                            <input type="text" id="quickEstFormName" list="quickEstFormNameList" placeholder="帳票A" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                            <datalist id="quickEstFormNameList">
+                            </datalist>
+                            <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
+                        </div>
+                        <div class="form-group">
                             <label>対応名</label>
-                            <input type="text" id="quickEstTask" placeholder="帳票A_X対応">
+                            <input type="text" id="quickEstTask" placeholder="X対応" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
                         </div>
                         <div class="form-group">
                             <label>作業月</label>
@@ -2306,8 +2313,15 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>帳票名</label>
+                    <input type="text" id="addEstFormName" list="addEstFormNameList" placeholder="帳票A">
+                    <datalist id="addEstFormNameList">
+                    </datalist>
+                    <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
+                </div>
+                <div class="form-group">
                     <label>対応名</label>
-                    <input type="text" id="addEstTask" placeholder="帳票A_X対応">
+                    <input type="text" id="addEstTask" placeholder="X対応">
                 </div>
                 <div class="form-group">
                     <label>作業月</label>
@@ -2840,6 +2854,7 @@
             updateActualMonthOptions();
             updateMemberOptions();
             updateVersionOptions(); // 版数選択肢を更新
+            updateFormNameOptions(); // 帳票名リストを更新
             updateQuickTaskList();
             updateWorkMonthOptions(); // 作業月選択肢を更新
 
@@ -3067,6 +3082,9 @@
 
             // 版数選択肢を更新
             updateVersionOptions();
+
+            // 帳票名リストを更新
+            updateFormNameOptions();
 
             // 自動バックアップが有効な場合のみ実行
             if (!skipAutoBackup && autoBackupEnabled) {
@@ -3324,6 +3342,41 @@
                 updateReportVersionOptions(sortedVersions);
             } catch (e) {
                 console.error('updateVersionOptions error:', e);
+            }
+        }
+
+        // 帳票名リストを更新（見積データから抽出）
+        function updateFormNameOptions() {
+            try {
+                // 見積データから帳票名を抽出（アンダーバーの左側）
+                const formNames = new Set();
+                estimates.forEach(e => {
+                    if (e.task && e.task.includes('_')) {
+                        const formName = e.task.split('_')[0];
+                        if (formName.trim()) {
+                            formNames.add(formName.trim());
+                        }
+                    }
+                });
+
+                // アルファベット順にソート
+                const sortedFormNames = Array.from(formNames).sort();
+
+                // datalistを更新
+                const datalistIds = ['quickEstFormNameList', 'addEstFormNameList'];
+                datalistIds.forEach(listId => {
+                    const datalist = document.getElementById(listId);
+                    if (datalist) {
+                        datalist.innerHTML = '';
+                        sortedFormNames.forEach(formName => {
+                            const option = document.createElement('option');
+                            option.value = formName;
+                            datalist.appendChild(option);
+                        });
+                    }
+                });
+            } catch (e) {
+                console.error('updateFormNameOptions error:', e);
             }
         }
 
@@ -4887,7 +4940,8 @@
         // 見積登録関数（クイック入力タブ用）
         function addQuickEstimate() {
             const version = document.getElementById('quickEstVersion').value;
-            const task = document.getElementById('quickEstTask').value.trim();
+            const formName = document.getElementById('quickEstFormName').value.trim();
+            const taskName = document.getElementById('quickEstTask').value.trim();
 
             // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
             const monthType = document.querySelector('input[name="quickEstMonthType"]:checked').value;
@@ -4906,10 +4960,18 @@
                 return;
             }
 
-            if (!task) {
+            if (!formName) {
+                alert('帳票名を入力してください');
+                return;
+            }
+
+            if (!taskName) {
                 alert('対応名を入力してください');
                 return;
             }
+
+            // 帳票名と対応名を結合
+            const task = `${formName}_${taskName}`;
 
             if (!startMonth) {
                 alert('作業月を選択してください');
@@ -5091,6 +5153,7 @@
 
         // 見積フォームのクリア
         function clearQuickEstimateForm() {
+            document.getElementById('quickEstFormName').value = '';
             document.getElementById('quickEstTask').value = '';
 
             const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -5234,6 +5297,7 @@
             document.getElementById('addEstimateModal').style.display = 'none';
             // フォームをリセット
             document.getElementById('addEstVersion').value = '';
+            document.getElementById('addEstFormName').value = '';
             document.getElementById('addEstTask').value = '';
             document.querySelector('input[name="addEstMonthType"][value="single"]').checked = true;
             switchAddEstMonthType();
@@ -5524,7 +5588,8 @@
 
         function addEstimateFromModal() {
             const version = document.getElementById('addEstVersion').value;
-            const task = document.getElementById('addEstTask').value.trim();
+            const formName = document.getElementById('addEstFormName').value.trim();
+            const taskName = document.getElementById('addEstTask').value.trim();
 
             // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
             const monthType = document.querySelector('input[name="addEstMonthType"]:checked').value;
@@ -5543,10 +5608,18 @@
                 return;
             }
 
-            if (!task) {
+            if (!formName) {
+                alert('帳票名を入力してください');
+                return;
+            }
+
+            if (!taskName) {
                 alert('対応名を入力してください');
                 return;
             }
+
+            // 帳票名と対応名を結合
+            const task = `${formName}_${taskName}`;
 
             if (!startMonth) {
                 alert('作業月を選択してください');
