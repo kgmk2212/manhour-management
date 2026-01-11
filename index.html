@@ -2147,14 +2147,14 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>帳票名</label>
+                    <input type="text" id="editActualFormName" list="editActualFormNameList" placeholder="帳票A">
+                    <datalist id="editActualFormNameList">
+                    </datalist>
+                </div>
+                <div class="form-group">
                     <label>対応名</label>
-                    <select id="editActualTaskSelect" onchange="handleActualTaskSelect()" style="margin-bottom: 10px;">
-                        <option value="">-- 対応を選択 --</option>
-                    </select>
-                    <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        ↑ 未完了の対応を選択、または「新規入力」で新しい対応を追加
-                    </small>
+                    <input type="text" id="editActualTaskName" placeholder="X対応">
                 </div>
                 <div class="form-group">
                     <label>工程</label>
@@ -7824,34 +7824,42 @@
             document.getElementById('editActualDate').value = actual.date;
             document.getElementById('editActualVersion').value = actual.version;
 
-            // 編集時はすべての対応（完了済み含む）のリストを更新して選択できるようにする
-            // 選択した版数の作業のみを表示
-            updateEditActualTaskList(actual.member, true, actual.version);
-
-            // 対応名をセレクトボックスで選択できるように
-            const taskSelect = document.getElementById('editActualTaskSelect');
-            const taskInput = document.getElementById('editActualTaskSearch');
-
-            // 既存の対応名と一致するoptionがあれば選択、なければ「新規入力」を選択して入力欄を表示
-            let foundMatch = false;
-            for (let i = 0; i < taskSelect.options.length; i++) {
-                if (taskSelect.options[i].value === actual.task) {
-                    taskSelect.value = actual.task;
-                    foundMatch = true;
-                    break;
-                }
-            }
-
-            if (foundMatch) {
-                taskSelect.style.display = 'block';
-                taskInput.style.display = 'none';
+            // 対応名を帳票名と対応名に分割
+            let formName = '';
+            let taskName = '';
+            if (actual.task.includes('：')) {
+                const parts = actual.task.split('：');
+                formName = parts[0];
+                taskName = parts.slice(1).join('：');
+            } else if (actual.task.includes('_')) {
+                const parts = actual.task.split('_');
+                formName = parts[0];
+                taskName = parts.slice(1).join('_');
             } else {
-                // 一致する対応名がない場合は新規入力モード
-                taskSelect.value = '__NEW__';
-                taskSelect.style.display = 'none';
-                taskInput.style.display = 'block';
-                taskInput.value = actual.task;
+                taskName = actual.task;
             }
+
+            document.getElementById('editActualFormName').value = formName;
+            document.getElementById('editActualTaskName').value = taskName;
+
+            // 帳票名リストを生成
+            const formNameDatalist = document.getElementById('editActualFormNameList');
+            formNameDatalist.innerHTML = '';
+            const uniqueFormNames = new Set();
+            [...estimates, ...actuals].forEach(item => {
+                if (item.task.includes('：')) {
+                    const parts = item.task.split('：');
+                    uniqueFormNames.add(parts[0]);
+                } else if (item.task.includes('_')) {
+                    const parts = item.task.split('_');
+                    uniqueFormNames.add(parts[0]);
+                }
+            });
+            Array.from(uniqueFormNames).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                formNameDatalist.appendChild(option);
+            });
 
             document.getElementById('editActualProcess').value = actual.process;
             document.getElementById('editActualHours').value = actual.hours;
@@ -7925,24 +7933,21 @@
             const id = parseFloat(document.getElementById('editActualId').value);
             const date = document.getElementById('editActualDate').value;
             const version = document.getElementById('editActualVersion').value;
-
-            // selectまたはinputから対応名を取得
-            const taskSelect = document.getElementById('editActualTaskSelect');
-            const taskInput = document.getElementById('editActualTaskSearch');
-            const task = taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__'
-                ? taskSelect.value
-                : taskInput.value;
-
+            const formName = document.getElementById('editActualFormName').value.trim();
+            const taskName = document.getElementById('editActualTaskName').value.trim();
             const process = document.getElementById('editActualProcess').value;
             const member = document.getElementById('editActualMember').value;
             const hours = parseFloat(document.getElementById('editActualHours').value);
             const remainingHoursInput = document.getElementById('editActualRemainingHours');
             const remainingHours = remainingHoursInput.value !== '' ? parseFloat(remainingHoursInput.value) : null;
 
-            if (!date || !version || !task || !process || !member || !hours) {
+            if (!date || !version || !formName || !taskName || !process || !member || !hours) {
                 alert('すべての項目を入力してください');
                 return;
             }
+
+            // 帳票名と対応名を結合
+            const task = `${formName}：${taskName}`;
 
             // 新規登録か既存データの更新かを判定
             if (id && !isNaN(id)) {
