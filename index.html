@@ -11496,20 +11496,41 @@
 
             const total = processes.reduce((sum, p) => sum + processHours[p], 0);
 
-            // カラーパレット
-            const colors = [
+            // 工程別の色マッピング（工程バッジの色に対応）
+            const processColors = {
+                'UI': '#1976d2',
+                'PG': '#7b1fa2',
+                'PT': '#f57c00',
+                'IT': '#388e3c',
+                'ST': '#c2185b'
+            };
+
+            // フォールバックカラー（定義されていない工程用）
+            const fallbackColors = [
                 '#667eea', '#f093fb', '#4facfe', '#43e97b',
-                '#fa709a', '#fee140', '#30cfd0', '#a8edea',
-                '#fbc2eb', '#a6c1ee', '#ffecd2', '#fcb69f'
+                '#fa709a', '#30cfd0', '#a8edea', '#fbc2eb'
             ];
+
+            // 工程の色を取得する関数
+            const getProcessColor = (process) => {
+                // 工程名を大文字に変換して照合
+                const upperProcess = process.toUpperCase();
+                if (processColors[upperProcess]) {
+                    return processColors[upperProcess];
+                }
+                // 定義されていない工程はフォールバック色を使用
+                const unknownProcesses = processes.filter(p => !processColors[p.toUpperCase()]);
+                const index = unknownProcesses.indexOf(process);
+                return fallbackColors[index % fallbackColors.length];
+            };
 
             // ドーナツを描画
             let startAngle = -Math.PI / 2;
-            processes.forEach((process, index) => {
+            processes.forEach((process) => {
                 const angle = (processHours[process] / total) * 2 * Math.PI;
                 const endAngle = startAngle + angle;
 
-                ctx.fillStyle = colors[index % colors.length];
+                ctx.fillStyle = getProcessColor(process);
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
@@ -11535,10 +11556,10 @@
             ctx.textBaseline = 'middle';
             ctx.font = '11px sans-serif';
 
-            processes.forEach((process, index) => {
+            processes.forEach((process) => {
                 const percentage = (processHours[process] / total * 100).toFixed(1);
 
-                ctx.fillStyle = colors[index % colors.length];
+                ctx.fillStyle = getProcessColor(process);
                 ctx.fillRect(legendX, legendY, 10, 10);
 
                 ctx.fillStyle = '#495057';
