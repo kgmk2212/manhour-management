@@ -11177,10 +11177,10 @@
                         html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: 14px; font-weight: 600;">担当者別 工数内訳</h5>';
                         html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">';
 
-                        members.forEach(member => {
+                        members.forEach((member, index) => {
                             html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center;">';
                             html += `<div style="font-weight: 600; margin-bottom: 10px; color: #495057;">${member}</div>`;
-                            html += `<canvas id="memberDonutChart_${member.replace(/[^a-zA-Z0-9]/g, '_')}" style="max-width: 100%; height: 200px;"></canvas>`;
+                            html += `<canvas id="memberDonutChart_${index}" style="max-width: 100%; height: 200px;"></canvas>`;
                             html += '</div>';
                         });
 
@@ -11198,8 +11198,8 @@
                         // グラフを描画するための遅延実行
                         setTimeout(() => {
                             drawMemberComparisonChart(chartData.members, chartData.memberSummary);
-                            chartData.members.forEach(member => {
-                                drawMemberDonutChart(member, chartData.filteredEstimates, chartData.filteredActuals);
+                            chartData.members.forEach((member, index) => {
+                                drawMemberDonutChart(member, index, chartData.filteredEstimates, chartData.filteredActuals);
                             });
                         }, 100);
                     }
@@ -11433,8 +11433,8 @@
         }
 
         // 担当者別工数内訳ドーナツグラフを描画
-        function drawMemberDonutChart(member, filteredEstimates, filteredActuals) {
-            const canvasId = `memberDonutChart_${member.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals) {
+            const canvasId = `memberDonutChart_${index}`;
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
 
