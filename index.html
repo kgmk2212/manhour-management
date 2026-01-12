@@ -11465,11 +11465,19 @@
 
             const processes = Object.keys(processHours);
             if (processes.length === 0) {
-                // データがない場合
-                ctx.fillStyle = '#495057';
-                ctx.font = '13px sans-serif';
+                // データがない場合 - より目立つように表示
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('実績データなし', centerX, centerY);
+                ctx.textBaseline = 'middle';
+                ctx.fillText('実績データなし', centerX, centerY - 10);
+
+                ctx.font = '12px sans-serif';
+                ctx.fillStyle = '#adb5bd';
+                ctx.fillText('(見積のみ)', centerX, centerY + 10);
                 return;
             }
 
