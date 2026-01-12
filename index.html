@@ -1476,7 +1476,7 @@
                         </div>
                         <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <select id="estimateVersionFilter" onchange="handleEstimateVersionFilterChange()" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -1529,7 +1529,7 @@
                             <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; handleEstimateVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -1686,7 +1686,7 @@
                     </div>
                     <div id="reportVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                        <select id="reportVersion" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportVersion" onchange="handleReportVersionFilterChange()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全版数</option>
                         </select>
                     </div>
@@ -1726,7 +1726,7 @@
                             <div id="reportVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; updateReport()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; handleReportVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -4081,6 +4081,9 @@
                 if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
                 if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
             }
+
+            // レポートのフィルタタイプも同期
+            syncFilterTypeToReport(filterType);
 
             renderEstimateList();
         }
@@ -10087,6 +10090,46 @@
             }
         }
 
+        // フィルタタイプ同期ヘルパー関数：見積一覧→レポート
+        function syncFilterTypeToReport(type) {
+            const reportFilterType = document.getElementById('reportFilterType');
+            if (reportFilterType) reportFilterType.value = type;
+        }
+
+        // フィルタタイプ同期ヘルパー関数：レポート→見積一覧
+        function syncFilterTypeToEstimate(type) {
+            const estimateFilterType = document.getElementById('estimateFilterType');
+            if (estimateFilterType) estimateFilterType.value = type;
+        }
+
+        // 版数選択同期ヘルパー関数：見積一覧→レポート
+        function syncVersionToReport(value) {
+            const reportVersion = document.getElementById('reportVersion');
+            const reportVersion2 = document.getElementById('reportVersion2');
+            if (reportVersion) reportVersion.value = value;
+            if (reportVersion2) reportVersion2.value = value;
+
+            // セグメントボタンの選択状態も更新
+            const reportVersionButtons2 = document.getElementById('reportVersionButtons2');
+            if (reportVersionButtons2) {
+                updateSegmentButtonSelection('reportVersionButtons2', value);
+            }
+        }
+
+        // 版数選択同期ヘルパー関数：レポート→見積一覧
+        function syncVersionToEstimate(value) {
+            const estimateVersionFilter = document.getElementById('estimateVersionFilter');
+            const estimateVersionFilter2 = document.getElementById('estimateVersionFilter2');
+            if (estimateVersionFilter) estimateVersionFilter.value = value;
+            if (estimateVersionFilter2) estimateVersionFilter2.value = value;
+
+            // セグメントボタンの選択状態も更新
+            const estimateVersionButtons2 = document.getElementById('estimateVersionButtons2');
+            if (estimateVersionButtons2) {
+                updateSegmentButtonSelection('estimateVersionButtons2', value);
+            }
+        }
+
         // 見積一覧の月選択フィルタ変更ハンドラー（select要素用）
         function handleEstimateMonthFilterChange() {
             const value = document.getElementById('estimateMonthFilter').value;
@@ -10103,6 +10146,26 @@
 
             // 見積一覧の月選択も同期
             syncMonthToEstimate(value);
+
+            updateReport();
+        }
+
+        // 見積一覧の版数選択フィルタ変更ハンドラー（select要素用）
+        function handleEstimateVersionFilterChange() {
+            const value = document.getElementById('estimateVersionFilter').value;
+
+            // レポートの版数選択も同期
+            syncVersionToReport(value);
+
+            renderEstimateList();
+        }
+
+        // レポートの版数選択フィルタ変更ハンドラー（select要素用）
+        function handleReportVersionFilterChange() {
+            const value = document.getElementById('reportVersion').value;
+
+            // 見積一覧の版数選択も同期
+            syncVersionToEstimate(value);
 
             updateReport();
         }
@@ -10128,6 +10191,10 @@
                 filterElement.value = value;
             }
             updateSegmentButtonSelection(containerId, value);
+
+            // レポートの版数選択も同期
+            syncVersionToReport(value);
+
             renderEstimateList();
         }
 
@@ -10149,6 +10216,10 @@
             const versionSelect2 = document.getElementById('reportVersion2');
             if (versionSelect2) versionSelect2.value = value;
             updateSegmentButtonSelection(containerId, value);
+
+            // 見積一覧の版数選択も同期
+            syncVersionToEstimate(value);
+
             updateReport();
         }
 
@@ -10178,6 +10249,9 @@
 
                 // フィルタタイプ切り替えボタンの状態更新
                 updateFilterTypeButtons(filterType);
+
+                // 見積一覧のフィルタタイプも同期
+                syncFilterTypeToEstimate(filterType);
 
                 updateReport();
             } catch (e) {
