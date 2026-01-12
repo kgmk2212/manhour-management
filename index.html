@@ -1459,63 +1459,49 @@
                 </button>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="estimateFiltersCompact" style="margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px;">
-                    <div style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; overflow-x: auto;">
-                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                                <option value="grouped">グループ</option>
-                                <option value="matrix">マトリクス</option>
-                                <option value="list">リスト</option>
-                            </select>
-                        </div>
-
-                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
-                                <option value="month">月別</option>
-                                <option value="version">版数別</option>
-                            </select>
-                        </div>
-
-                        <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                            <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                                <option value="all">全期間</option>
-                            </select>
-                        </div>
-
-                        <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                                <option value="all">全版数</option>
-                            </select>
-                        </div>
+                <div id="estimateFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                        <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="month">月別</option>
+                            <option value="version">版数別</option>
+                        </select>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 8px;">
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
-                            <span>作業月割り当て</span>
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
-                            <span>編集モード</span>
-                        </label>
+                    <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全期間</option>
+                        </select>
                     </div>
+                    <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
+                        <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全版数</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="grouped">グループ</option>
+                            <option value="matrix">マトリクス</option>
+                            <option value="list">リスト</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                        <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                        <span>作業月割り当て</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                        <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                        <span>編集モード</span>
+                    </label>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
                 <div id="estimateFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" style="padding: 6px 14px; border: none; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">グループ</button>
-                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="padding: 6px 14px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">マトリクス</button>
-                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="padding: 6px 14px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s;">リスト</button>
-                            </div>
-                        </div>
-
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
                             <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
@@ -1527,7 +1513,7 @@
                         <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
+                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1538,12 +1524,21 @@
                         <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
+                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" style="padding: 4px 10px; font-size: 12px; border: none; background: white; cursor: pointer; transition: all 0.2s;">グループ</button>
+                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="padding: 4px 10px; font-size: 12px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; transition: all 0.2s;">マトリクス</button>
+                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="padding: 4px 10px; font-size: 12px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; transition: all 0.2s;">リスト</button>
+                            </div>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
