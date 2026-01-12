@@ -1281,22 +1281,22 @@
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                        <td><select id="quickEstPG_member" style="margin: 0;"></select></td>
+                                        <td><select id="quickEstPG_member" style="margin: 0;" onchange="autoFillMember('quickEstPG_member')"></select></td>
                                         <td><input type="number" id="quickEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                        <td><select id="quickEstPT_member" style="margin: 0;"></select></td>
+                                        <td><select id="quickEstPT_member" style="margin: 0;" onchange="autoFillMember('quickEstPT_member')"></select></td>
                                         <td><input type="number" id="quickEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                        <td><select id="quickEstIT_member" style="margin: 0;"></select></td>
+                                        <td><select id="quickEstIT_member" style="margin: 0;" onchange="autoFillMember('quickEstIT_member')"></select></td>
                                         <td><input type="number" id="quickEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                        <td><select id="quickEstST_member" style="margin: 0;"></select></td>
+                                        <td><select id="quickEstST_member" style="margin: 0;" onchange="autoFillMember('quickEstST_member')"></select></td>
                                         <td><input type="number" id="quickEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
                                     </tr>
                                 </tbody>
@@ -2455,22 +2455,22 @@
                             </tr>
                             <tr>
                                 <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                <td><select id="addEstPG_member" style="margin: 0;"></select></td>
+                                <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
                                 <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
                                 <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                <td><select id="addEstPT_member" style="margin: 0;"></select></td>
+                                <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
                                 <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
                                 <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                <td><select id="addEstIT_member" style="margin: 0;"></select></td>
+                                <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
                                 <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
                                 <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                <td><select id="addEstST_member" style="margin: 0;"></select></td>
+                                <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
                                 <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                             </tr>
                         </tbody>
@@ -5619,6 +5619,38 @@
             document.getElementById('addEnableMonthSplit').checked = false;
             toggleAddMonthSplit();
             updateAddEstimateTotals();
+        }
+
+        // 担当者の自動コピー機能（PG↔PT、IT↔ST）
+        function autoFillMember(changedFieldId) {
+            // フィールドIDからプレフィックス（add/quick）と工程を抽出
+            const match = changedFieldId.match(/^(add|quick)Est(\w+)_member$/);
+            if (!match) return;
+
+            const prefix = match[1];
+            const changedProcess = match[2];
+
+            // 変更されたフィールドの値を取得
+            const changedValue = document.getElementById(changedFieldId).value;
+            if (!changedValue) return; // 空の場合は何もしない
+
+            // コピー先の工程を決定（PG↔PT、IT↔ST）
+            let targetProcess = null;
+            if (changedProcess === 'PG') targetProcess = 'PT';
+            else if (changedProcess === 'PT') targetProcess = 'PG';
+            else if (changedProcess === 'IT') targetProcess = 'ST';
+            else if (changedProcess === 'ST') targetProcess = 'IT';
+
+            if (!targetProcess) return; // 対象外の工程
+
+            // コピー先フィールドを取得
+            const targetFieldId = `${prefix}Est${targetProcess}_member`;
+            const targetField = document.getElementById(targetFieldId);
+
+            // コピー先が空の場合のみ自動コピー
+            if (targetField && !targetField.value) {
+                targetField.value = changedValue;
+            }
         }
 
         function initAddEstimateForm() {
