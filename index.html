@@ -3060,6 +3060,14 @@
             if (filterTypeElement) {
                 filterTypeElement.value = 'version';
                 setEstimateFilterType('version');
+
+                // レポートのフィルタタイプも同期
+                const reportFilterType = document.getElementById('reportFilterType');
+                if (reportFilterType) {
+                    reportFilterType.value = 'version';
+                    // フィルタタイプ変更ハンドラーを呼び出してUIを更新
+                    handleReportFilterTypeChange();
+                }
             }
 
             // クイック入力の見積登録フォームを初期化
@@ -3088,11 +3096,16 @@
             try {
                 const themeColor = getThemeColor();
 
-                // レポートフィルタタイプボタン（月別がデフォルト選択）
+                // レポートフィルタタイプボタン（版数別がデフォルト選択）
+                const reportFilterType = document.getElementById('reportFilterType');
                 const btnFilterMonth = document.getElementById('btnFilterMonth');
-                if (btnFilterMonth) {
-                    btnFilterMonth.style.background = themeColor;
-                    btnFilterMonth.style.color = 'white';
+                const btnFilterVersion = document.getElementById('btnFilterVersion');
+                if (reportFilterType && btnFilterMonth && btnFilterVersion) {
+                    const type = reportFilterType.value;
+                    btnFilterMonth.style.background = type === 'month' ? themeColor : 'white';
+                    btnFilterMonth.style.color = type === 'month' ? 'white' : '#333';
+                    btnFilterVersion.style.background = type === 'version' ? themeColor : 'white';
+                    btnFilterVersion.style.color = type === 'version' ? 'white' : '#333';
                 }
 
                 // 見積一覧フィルタタイプボタン（版数別がデフォルト選択）
