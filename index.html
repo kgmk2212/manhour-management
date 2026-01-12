@@ -1471,9 +1471,24 @@
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="month">月別</option>
+                                <option value="version">版数別</option>
+                            </select>
+                        </div>
+
+                        <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="all">全期間</option>
+                            </select>
+                        </div>
+
+                        <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="all">全版数</option>
                             </select>
                         </div>
                     </div>
@@ -1502,6 +1517,14 @@
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
+                                <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">月別</button>
+                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">版数別</button>
+                            </div>
+                        </div>
+
+                        <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
                             <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
@@ -1509,6 +1532,13 @@
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
+                            </select>
+                        </div>
+
+                        <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px;">
+                                <option value="all">全版数</option>
                             </select>
                         </div>
                     </div>
@@ -2944,12 +2974,20 @@
             loadReportSettings(); // レポート分析設定を読み込み
             updateMonthOptions();
             updateEstimateMonthOptions(); // 見積一覧の月選択肢を更新
+            updateEstimateVersionOptions(); // 見積一覧の版数選択肢を更新
             updateActualMonthOptions();
             updateMemberOptions();
             updateVersionOptions(); // 版数選択肢を更新
             updateFormNameOptions(); // 帳票名リストを更新
             updateQuickTaskList();
             updateWorkMonthOptions(); // 作業月選択肢を更新
+
+            // 見積一覧のデフォルトを版数別の最新版数に設定
+            const filterTypeElement = document.getElementById('estimateFilterType');
+            if (filterTypeElement) {
+                filterTypeElement.value = 'version';
+                setEstimateFilterType('version');
+            }
 
             // クイック入力の見積登録フォームを初期化
             initQuickEstimateForm();
@@ -3855,6 +3893,94 @@
                 8, // 最大8個までセグメントボタン表示
                 handleEstimateMonthChange
             );
+        }
+
+        function updateEstimateVersionOptions() {
+            const select = document.getElementById('estimateVersionFilter');
+            const select2 = document.getElementById('estimateVersionFilter2');
+            if (!select) return;
+
+            const versions = new Set();
+
+            // 見積データから版数を抽出
+            estimates.forEach(e => {
+                if (e.version) {
+                    versions.add(e.version);
+                }
+            });
+
+            // 版数を降順でソート（最新が上）
+            const sortedVersions = Array.from(versions).sort().reverse();
+
+            // 選択肢を生成（両方のセレクトボックス）
+            select.innerHTML = '<option value="all">全版数</option>';
+            if (select2) select2.innerHTML = '<option value="all">全版数</option>';
+
+            sortedVersions.forEach(version => {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = version;
+                    option2.textContent = version;
+                    select2.appendChild(option2);
+                }
+            });
+
+            // デフォルトで最新の版数を選択
+            if (sortedVersions.length > 0) {
+                select.value = sortedVersions[0];
+                if (select2) select2.value = sortedVersions[0];
+            }
+        }
+
+        function handleEstimateFilterTypeChange() {
+            const filterType = document.getElementById('estimateFilterType').value;
+            const monthFilterCompact = document.getElementById('estimateMonthFilterCompact');
+            const versionFilterCompact = document.getElementById('estimateVersionFilterCompact');
+            const monthFilterSegmented = document.getElementById('estimateMonthFilterSegmented');
+            const versionFilterSegmented = document.getElementById('estimateVersionFilterSegmented');
+
+            if (filterType === 'month') {
+                // 月別フィルタを表示
+                if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
+                if (versionFilterCompact) versionFilterCompact.style.display = 'none';
+                if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+            } else {
+                // 版数別フィルタを表示
+                if (monthFilterCompact) monthFilterCompact.style.display = 'none';
+                if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
+                if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
+                if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+            }
+
+            renderEstimateList();
+        }
+
+        function setEstimateFilterType(type) {
+            document.getElementById('estimateFilterType').value = type;
+
+            // セグメントボタンのスタイル更新
+            const btnMonth = document.getElementById('btnEstimateFilterMonth');
+            const btnVersion = document.getElementById('btnEstimateFilterVersion');
+
+            if (type === 'month') {
+                btnMonth.style.background = '#007bff';
+                btnMonth.style.color = 'white';
+                btnVersion.style.background = 'white';
+                btnVersion.style.color = '#333';
+            } else {
+                btnMonth.style.background = 'white';
+                btnMonth.style.color = '#333';
+                btnVersion.style.background = '#007bff';
+                btnVersion.style.color = 'white';
+            }
+
+            handleEstimateFilterTypeChange();
         }
 
         function updateActualMonthOptions() {
@@ -5350,6 +5476,7 @@
             saveData();
             clearQuickEstimateForm();
             updateMonthOptions();
+            updateEstimateVersionOptions(); // 版数選択肢を更新
             updateQuickTaskList();
             updateMemberOptions();
             renderEstimateList();
@@ -5437,6 +5564,7 @@
             saveData();
             clearQuickEstimateForm();
             updateMonthOptions();
+            updateEstimateVersionOptions(); // 版数選択肢を更新
             updateQuickTaskList();
             updateMemberOptions();
             renderEstimateList();
@@ -6052,6 +6180,7 @@
             });
 
             saveData();
+            updateEstimateVersionOptions(); // 版数選択肢を更新
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
@@ -6134,6 +6263,7 @@
             });
 
             saveData();
+            updateEstimateVersionOptions(); // 版数選択肢を更新
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
@@ -6148,11 +6278,15 @@
 
             const viewTypeElement = document.getElementById('estimateViewType');
             const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const filterTypeElement = document.getElementById('estimateFilterType');
+            const versionFilterElement = document.getElementById('estimateVersionFilter');
 
             if (!viewTypeElement || !monthFilterElement) return;
 
             const viewType = viewTypeElement.value;
+            const filterType = filterTypeElement ? filterTypeElement.value : 'month';
             const monthFilter = monthFilterElement.value;
+            const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';
 
             if (estimates.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
@@ -6167,17 +6301,26 @@
                 return;
             }
 
-            // 月フィルタを適用
+            // フィルタを適用
             let filteredEstimates = estimates;
-            if (monthFilter !== 'all') {
-                filteredEstimates = estimates.filter(e => {
-                    const est = normalizeEstimate(e);
-                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
-                    if (!est.workMonths || est.workMonths.length === 0) {
-                        return true;
-                    }
-                    return est.workMonths.includes(monthFilter);
-                });
+
+            if (filterType === 'version') {
+                // 版数別フィルタ
+                if (versionFilter !== 'all') {
+                    filteredEstimates = estimates.filter(e => e.version === versionFilter);
+                }
+            } else {
+                // 月別フィルタ
+                if (monthFilter !== 'all') {
+                    filteredEstimates = estimates.filter(e => {
+                        const est = normalizeEstimate(e);
+                        // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                        if (!est.workMonths || est.workMonths.length === 0) {
+                            return true;
+                        }
+                        return est.workMonths.includes(monthFilter);
+                    });
+                }
             }
 
             // フィルタ後にデータがない場合
@@ -11422,6 +11565,7 @@
             // 削除実行
             estimates = estimates.filter(e => e.id !== id);
             saveData();
+            updateEstimateVersionOptions(); // 版数選択肢を更新
             renderEstimateList();
             updateQuickTaskList();
             updateReport();
