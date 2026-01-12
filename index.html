@@ -6444,7 +6444,12 @@
                         if (index === 0) {
                             // 対応名（グレーなし）
                             if (estimateEditMode) {
-                                html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</td>`;
+                                html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">
+                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                        <div style="flex: 1; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</div>
+                                        <span onclick="deleteTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer; font-size: 18px; color: #dc3545; flex-shrink: 0;" title="対応ごと削除">🗑️</span>
+                                    </div>
+                                </td>`;
                             } else {
                                 html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                             }
@@ -6612,7 +6617,12 @@
 
                     html += '<tr>';
                     if (estimateEditMode) {
-                        html += `<td style="font-weight: 600; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${group.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</td>`;
+                        html += `<td style="font-weight: 600;">
+                            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                <div style="flex: 1; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${group.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</div>
+                                <span onclick="deleteTask('${version}', '${group.task.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer; font-size: 18px; color: #dc3545; flex-shrink: 0;" title="対応ごと削除">🗑️</span>
+                            </div>
+                        </td>`;
                     } else {
                         html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
                     }
@@ -11229,6 +11239,32 @@
             updateQuickTaskList();
             updateReport();
             alert('見積を削除しました');
+        }
+
+        function deleteTask(version, task) {
+            // 対応に紐づく全ての見積データを取得
+            const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
+            if (taskEstimates.length === 0) return;
+
+            // 工程リストと合計工数を計算
+            const processes = taskEstimates.map(e => e.process).join(', ');
+            const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
+
+            // 1段階目：詳細情報付きの確認
+            const detail = `この対応を削除しますか？\n\n版数: ${version}\n対応名: ${task}\n工程数: ${taskEstimates.length}件\n工程: ${processes}\n合計工数: ${totalHours}h`;
+            if (!confirm(detail)) return;
+
+            // 2段階目：最終警告
+            const warning = '【警告】この操作は取り消せません。\nこの対応に含まれる全ての工程が削除されます。\n本当に削除してもよろしいですか？';
+            if (!confirm(warning)) return;
+
+            // 削除実行（対応に紐づく全ての見積を削除）
+            estimates = estimates.filter(e => !(e.version === version && e.task === task));
+            saveData();
+            renderEstimateList();
+            updateQuickTaskList();
+            updateReport();
+            alert('対応を削除しました');
         }
 
         // 作業月関連の関数
