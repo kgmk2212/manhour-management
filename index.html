@@ -1227,9 +1227,11 @@
                         </div>
                         <div class="form-group">
                             <label>帳票名</label>
-                            <input type="text" id="quickEstFormName" list="quickEstFormNameList" placeholder="帳票A" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
-                            <datalist id="quickEstFormNameList">
-                            </datalist>
+                            <select id="quickEstFormNameSelect" onchange="handleQuickFormNameChange()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                                <option value="">-- 帳票名を選択 --</option>
+                                <option value="__new__">新規入力</option>
+                            </select>
+                            <input type="text" id="quickEstFormName" placeholder="帳票A" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; display: none;">
                             <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
                         </div>
                         <div class="form-group">
@@ -2348,9 +2350,11 @@
                 </div>
                 <div class="form-group">
                     <label>帳票名</label>
-                    <input type="text" id="editTaskFormName" list="editTaskFormNameList" placeholder="帳票A">
-                    <datalist id="editTaskFormNameList">
-                    </datalist>
+                    <select id="editTaskFormNameSelect" onchange="handleEditFormNameChange()">
+                        <option value="">-- 帳票名を選択 --</option>
+                        <option value="__new__">新規入力</option>
+                    </select>
+                    <input type="text" id="editTaskFormName" placeholder="帳票A" style="display: none;">
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
@@ -2397,9 +2401,11 @@
                 </div>
                 <div class="form-group">
                     <label>帳票名</label>
-                    <input type="text" id="addEstFormName" list="addEstFormNameList" placeholder="帳票A">
-                    <datalist id="addEstFormNameList">
-                    </datalist>
+                    <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
+                        <option value="">-- 帳票名を選択 --</option>
+                        <option value="__new__">新規入力</option>
+                    </select>
+                    <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
                     <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
                 </div>
                 <div class="form-group">
@@ -3437,13 +3443,20 @@
         // 帳票名リストを更新（見積データから抽出）
         function updateFormNameOptions() {
             try {
-                // 見積データから帳票名を抽出（アンダーバーの左側）
+                // 見積データから帳票名を抽出（アンダーバーまたは全角コロンの左側）
                 const formNames = new Set();
                 estimates.forEach(e => {
-                    if (e.task && e.task.includes('_')) {
-                        const formName = e.task.split('_')[0];
-                        if (formName.trim()) {
-                            formNames.add(formName.trim());
+                    if (e.task) {
+                        if (e.task.includes('_')) {
+                            const formName = e.task.split('_')[0];
+                            if (formName.trim()) {
+                                formNames.add(formName.trim());
+                            }
+                        } else if (e.task.includes('：')) {
+                            const formName = e.task.split('：')[0];
+                            if (formName.trim()) {
+                                formNames.add(formName.trim());
+                            }
                         }
                     }
                 });
@@ -3451,17 +3464,35 @@
                 // アルファベット順にソート
                 const sortedFormNames = Array.from(formNames).sort();
 
-                // datalistを更新
-                const datalistIds = ['quickEstFormNameList', 'addEstFormNameList'];
-                datalistIds.forEach(listId => {
-                    const datalist = document.getElementById(listId);
-                    if (datalist) {
-                        datalist.innerHTML = '';
+                // selectを更新
+                const selectIds = ['quickEstFormNameSelect', 'addEstFormNameSelect', 'editTaskFormNameSelect'];
+                selectIds.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        // 現在の選択値を保存
+                        const currentValue = select.value;
+
+                        // 基本オプションのみ残す
+                        select.innerHTML = '<option value="">-- 帳票名を選択 --</option>';
+
+                        // 帳票名オプションを追加
                         sortedFormNames.forEach(formName => {
                             const option = document.createElement('option');
                             option.value = formName;
-                            datalist.appendChild(option);
+                            option.textContent = formName;
+                            select.appendChild(option);
                         });
+
+                        // 新規入力オプションを追加
+                        const newOption = document.createElement('option');
+                        newOption.value = '__new__';
+                        newOption.textContent = '新規入力';
+                        select.appendChild(newOption);
+
+                        // 選択値を復元（存在する場合）
+                        if (currentValue && (currentValue === '__new__' || sortedFormNames.includes(currentValue))) {
+                            select.value = currentValue;
+                        }
                     }
                 });
             } catch (e) {
@@ -3543,6 +3574,51 @@
                 );
             } catch (e) {
                 console.error('updateReportVersionOptions error:', e);
+            }
+        }
+
+        // 帳票名選択時の処理（クイック入力用）
+        function handleQuickFormNameChange() {
+            const select = document.getElementById('quickEstFormNameSelect');
+            const input = document.getElementById('quickEstFormName');
+
+            if (select.value === '__new__') {
+                select.style.display = 'none';
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+            } else {
+                input.value = select.value;
+            }
+        }
+
+        // 帳票名選択時の処理（見積登録モーダル用）
+        function handleAddFormNameChange() {
+            const select = document.getElementById('addEstFormNameSelect');
+            const input = document.getElementById('addEstFormName');
+
+            if (select.value === '__new__') {
+                select.style.display = 'none';
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+            } else {
+                input.value = select.value;
+            }
+        }
+
+        // 帳票名選択時の処理（対応編集モーダル用）
+        function handleEditFormNameChange() {
+            const select = document.getElementById('editTaskFormNameSelect');
+            const input = document.getElementById('editTaskFormName');
+
+            if (select.value === '__new__') {
+                select.style.display = 'none';
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+            } else {
+                input.value = select.value;
             }
         }
 
@@ -5152,7 +5228,12 @@
         // 見積登録関数（クイック入力タブ用）
         function addQuickEstimate() {
             const version = document.getElementById('quickEstVersion').value;
-            const formName = document.getElementById('quickEstFormName').value.trim();
+
+            // 帳票名を取得（selectまたはinputから）
+            const formNameSelect = document.getElementById('quickEstFormNameSelect');
+            const formNameInput = document.getElementById('quickEstFormName');
+            const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+
             const taskName = document.getElementById('quickEstTask').value.trim();
 
             // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
@@ -5365,7 +5446,14 @@
 
         // 見積フォームのクリア
         function clearQuickEstimateForm() {
-            document.getElementById('quickEstFormName').value = '';
+            // 帳票名のselectとinputをリセット
+            const formNameSelect = document.getElementById('quickEstFormNameSelect');
+            const formNameInput = document.getElementById('quickEstFormName');
+            formNameSelect.value = '';
+            formNameSelect.style.display = 'block';
+            formNameInput.value = '';
+            formNameInput.style.display = 'none';
+
             document.getElementById('quickEstTask').value = '';
 
             const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -5509,7 +5597,15 @@
             document.getElementById('addEstimateModal').style.display = 'none';
             // フォームをリセット
             document.getElementById('addEstVersion').value = '';
-            document.getElementById('addEstFormName').value = '';
+
+            // 帳票名のselectとinputをリセット
+            const formNameSelect = document.getElementById('addEstFormNameSelect');
+            const formNameInput = document.getElementById('addEstFormName');
+            formNameSelect.value = '';
+            formNameSelect.style.display = 'block';
+            formNameInput.value = '';
+            formNameInput.style.display = 'none';
+
             document.getElementById('addEstTask').value = '';
             document.querySelector('input[name="addEstMonthType"][value="single"]').checked = true;
             switchAddEstMonthType();
@@ -5800,7 +5896,12 @@
 
         function addEstimateFromModal() {
             const version = document.getElementById('addEstVersion').value;
-            const formName = document.getElementById('addEstFormName').value.trim();
+
+            // 帳票名を取得（selectまたはinputから）
+            const formNameSelect = document.getElementById('addEstFormNameSelect');
+            const formNameInput = document.getElementById('addEstFormName');
+            const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+
             const taskName = document.getElementById('addEstTask').value.trim();
 
             // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
@@ -8939,27 +9040,34 @@
                 task = taskName;
             }
 
-            document.getElementById('editTaskFormName').value = formName;
-            document.getElementById('editTaskName').value = task;
+            // 帳票名をselectに設定（既存の帳票名なら選択、なければ新規入力モード）
+            const formNameSelect = document.getElementById('editTaskFormNameSelect');
+            const formNameInput = document.getElementById('editTaskFormName');
 
-            // 帳票名リストを生成
-            const formNameDatalist = document.getElementById('editTaskFormNameList');
-            formNameDatalist.innerHTML = '';
-            const uniqueFormNames = new Set();
-            [...estimates, ...actuals].forEach(item => {
-                if (item.task.includes('：')) {
-                    const parts = item.task.split('：');
-                    uniqueFormNames.add(parts[0]);
-                } else if (item.task.includes('_')) {
-                    const parts = item.task.split('_');
-                    uniqueFormNames.add(parts[0]);
+            // selectに既に帳票名オプションが存在するか確認
+            let formNameExists = false;
+            for (let i = 0; i < formNameSelect.options.length; i++) {
+                if (formNameSelect.options[i].value === formName) {
+                    formNameExists = true;
+                    break;
                 }
-            });
-            Array.from(uniqueFormNames).sort().forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                formNameDatalist.appendChild(option);
-            });
+            }
+
+            if (formNameExists) {
+                // 既存の帳票名を選択
+                formNameSelect.value = formName;
+                formNameSelect.style.display = 'block';
+                formNameInput.style.display = 'none';
+                formNameInput.value = formName;
+            } else {
+                // 新規入力モード
+                formNameSelect.value = '__new__';
+                formNameSelect.style.display = 'none';
+                formNameInput.style.display = 'block';
+                formNameInput.value = formName;
+            }
+
+            document.getElementById('editTaskName').value = task;
 
             // モーダルを表示
             document.getElementById('editTaskModal').style.display = 'flex';
@@ -8973,7 +9081,12 @@
             const oldVersion = document.getElementById('editTaskOldVersion').value;
             const oldTaskName = document.getElementById('editTaskOldName').value;
             const newVersion = document.getElementById('editTaskVersion').value;
-            const formName = document.getElementById('editTaskFormName').value.trim();
+
+            // 帳票名を取得（selectまたはinputから）
+            const formNameSelect = document.getElementById('editTaskFormNameSelect');
+            const formNameInput = document.getElementById('editTaskFormName');
+            const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+
             const taskName = document.getElementById('editTaskName').value.trim();
 
             if (!newVersion || !formName || !taskName) {
