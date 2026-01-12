@@ -4827,7 +4827,7 @@
         }
 
         // 月カラー凡例を生成
-        function generateMonthColorLegend(usedMonths) {
+        function generateMonthColorLegend(usedMonths, hasMultipleMonths = false, hasUnassigned = false) {
             if (!usedMonths || usedMonths.size === 0) return '';
 
             let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 12px;">';
@@ -4846,17 +4846,21 @@
                 }
             });
 
-            // 複数月の凡例（例として1月と3月の色を使用）
-            html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;">
-                <span style="width: 16px; height: 16px; background: repeating-linear-gradient(-45deg, rgba(70, 130, 200, 0.35) 0px, rgba(70, 130, 200, 0.35) 3px, rgba(50, 180, 140, 0.35) 3px, rgba(50, 180, 140, 0.35) 6px); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
-                <span style="color: #666;">複数月</span>
-            </span>`;
+            // 複数月の凡例（表示中のデータに存在する場合のみ）
+            if (hasMultipleMonths) {
+                html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;">
+                    <span style="width: 16px; height: 16px; background: repeating-linear-gradient(-45deg, rgba(70, 130, 200, 0.35) 0px, rgba(70, 130, 200, 0.35) 3px, rgba(50, 180, 140, 0.35) 3px, rgba(50, 180, 140, 0.35) 6px); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
+                    <span style="color: #666;">複数月</span>
+                </span>`;
+            }
 
-            // 未設定の凡例
-            html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 5px;">
-                <span style="width: 16px; height: 16px; background: rgba(150, 150, 150, 0.15); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
-                <span style="color: #999;">未設定</span>
-            </span>`;
+            // 未設定の凡例（表示中のデータに存在する場合のみ）
+            if (hasUnassigned) {
+                html += `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 5px;">
+                    <span style="width: 16px; height: 16px; background: rgba(150, 150, 150, 0.15); border: 1px solid rgba(0,0,0,0.1); border-radius: 3px;"></span>
+                    <span style="color: #999;">未設定</span>
+                </span>`;
+            }
 
             html += '</div>';
             return html;
@@ -6873,6 +6877,8 @@
 
             // 使用されている月を収集（凡例用）
             const usedMonths = new Set();
+            let hasMultipleMonths = false;
+            let hasUnassigned = false;
 
             // 版数ごとにグループ化
             const versionGroups = {};
@@ -6895,9 +6901,14 @@
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
-                // 使用されている月を収集
+                // 使用されている月を収集 & 複数月・未設定の判定
                 if (est.workMonths && est.workMonths.length > 0) {
                     est.workMonths.forEach(m => usedMonths.add(m));
+                    if (est.workMonths.length > 1) {
+                        hasMultipleMonths = true;
+                    }
+                } else {
+                    hasUnassigned = true;
                 }
 
                 versionGroups[e.version][taskKey].processes[e.process] = {
@@ -6917,7 +6928,7 @@
 
             // 月カラー凡例を追加（設定がオンの時のみ）
             if (showMonthColors) {
-                html += generateMonthColorLegend(usedMonths);
+                html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
             }
 
             // 版数ごとに表示
@@ -11227,6 +11238,8 @@
 
             // 使用されている月を収集（凡例用）
             const usedMonths = new Set();
+            let hasMultipleMonths = false;
+            let hasUnassigned = false;
 
             // 版数ごとにグループ化
             const versionGroups = {};
@@ -11254,10 +11267,15 @@
                     };
                 }
 
-                // 正規化してworkMonthsを取得
+                // 正規化してworkMonthsを取得 & 複数月・未設定の判定
                 const est = normalizeEstimate(e);
                 if (est.workMonths && est.workMonths.length > 0) {
                     est.workMonths.forEach(m => usedMonths.add(m));
+                    if (est.workMonths.length > 1) {
+                        hasMultipleMonths = true;
+                    }
+                } else {
+                    hasUnassigned = true;
                 }
 
                 if (!versionGroups[version][taskKey].estimates[e.process]) {
@@ -11312,7 +11330,7 @@
 
             // 月カラー凡例を追加（全期間の時のみ）
             if (showMonthColors) {
-                html += generateMonthColorLegend(usedMonths);
+                html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
             }
 
             html += '<div style="margin-bottom: 30px;">';
