@@ -1501,8 +1501,13 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <!-- セグメントボタン版 -->
                             <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
                             </div>
+                            <!-- Select版（セグメントボタン生成用に必要） -->
+                            <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全期間</option>
+                            </select>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
@@ -3717,6 +3722,7 @@
 
         function updateEstimateMonthOptions() {
             const select = document.getElementById('estimateMonthFilter');
+            const select2 = document.getElementById('estimateMonthFilter2');
             if (!select) return;
 
             const months = new Set();
@@ -3734,8 +3740,9 @@
             // 月を降順でソート（最新が上）
             const sortedMonths = Array.from(months).sort().reverse();
 
-            // 選択肢を生成
+            // 選択肢を生成（両方のセレクトボックス）
             select.innerHTML = '<option value="all">全期間</option>';
+            if (select2) select2.innerHTML = '<option value="all">全期間</option>';
 
             sortedMonths.forEach(month => {
                 const [year, monthNum] = month.split('-');
@@ -3743,6 +3750,13 @@
                 option.value = month;
                 option.textContent = `${year}年${parseInt(monthNum)}月`;
                 select.appendChild(option);
+
+                if (select2) {
+                    const option2 = document.createElement('option');
+                    option2.value = month;
+                    option2.textContent = `${year}年${parseInt(monthNum)}月`;
+                    select2.appendChild(option2);
+                }
             });
 
             // セグメントボタン版を生成
@@ -3759,7 +3773,7 @@
             const currentValue = select.value || 'all';
             createSegmentButtons(
                 'estimateMonthButtons2',
-                'estimateMonthFilter',
+                'estimateMonthFilter2',
                 items,
                 currentValue,
                 8, // 最大8個までセグメントボタン表示
