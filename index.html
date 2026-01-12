@@ -2081,7 +2081,7 @@
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>担当者表示順</h3>
                     <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。</p>
-                    
+
                     <div class="form-group">
                         <label>表示順序 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db; font-size: 18px;">ℹ️</button></label>
                         <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="updateAllDisplays()">
@@ -2092,8 +2092,79 @@
                             ・設定は自動的に保存されます
                         </small>
                     </div>
-                    
+
                     <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
+                </div>
+
+                <!-- グラフカラーパターン設定 -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>🎨 グラフカラーパターン</h3>
+                    <p style="color: #666; margin-bottom: 15px;">レポートの担当者分析グラフ（見積・実績の棒グラフと工数内訳ドーナツグラフ）の配色を変更できます。</p>
+
+                    <div class="form-group">
+                        <label>カラーパターン</label>
+                        <select id="chartColorScheme" onchange="saveChartColorScheme()">
+                            <option value="current">現在の色（変更前）</option>
+                            <option value="blue">青系</option>
+                            <option value="green">緑系</option>
+                            <option value="purple">紫系</option>
+                            <option value="orange">オレンジ系</option>
+                            <option value="pink">ピンク系</option>
+                            <option value="gray">グレー系</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ・各カラーパターンは、テーマカラーに合わせた統一感のある配色です<br>
+                            ・「現在の色」は変更前の配色です<br>
+                            ・設定は自動的に保存され、レポートの担当者分析グラフに適用されます
+                        </small>
+                    </div>
+
+                    <!-- プレビュー -->
+                    <div style="margin: 20px 0;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 600;">プレビュー</label>
+
+                        <!-- 棒グラフプレビュー -->
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">見積 vs 実績の棒グラフ</div>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div id="chartPreviewEstimateBar" style="width: 40px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">見積</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div id="chartPreviewActualBar" style="width: 40px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">実績</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ドーナツグラフプレビュー -->
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">工数内訳ドーナツグラフ</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div id="chartPreviewUI" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">UI</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div id="chartPreviewPG" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">PG</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div id="chartPreviewPT" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">PT</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div id="chartPreviewIT" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">IT</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div id="chartPreviewST" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <span style="font-size: 12px; color: #495057;">ST</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -2225,8 +2296,8 @@
     <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;" onchange="handleFileImport(event)">
 
     <!-- 作業詳細モーダル -->
-    <div id="workModal" class="modal" onclick="closeWorkModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="workModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">作業詳細</h3>
                 <button class="modal-close" onclick="closeWorkModal()">&times;</button>
@@ -2237,8 +2308,8 @@
     </div>
 
     <!-- 実績編集モーダル -->
-    <div id="editActualModal" class="modal" onclick="closeEditActualModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="editActualModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>実績データを編集</h3>
                 <button class="modal-close" onclick="closeEditActualModal()">&times;</button>
@@ -2304,8 +2375,8 @@
     </div>
 
     <!-- 見込残存時間一括編集モーダル -->
-    <div id="bulkRemainingModal" class="modal" onclick="closeBulkRemainingModal()">
-        <div class="modal-content" style="max-width: 1000px; max-height: 85vh;" onclick="event.stopPropagation()">
+    <div id="bulkRemainingModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; max-height: 85vh;">
             <div class="modal-header">
                 <h3>見込残存時間の一括編集</h3>
                 <button class="modal-close" onclick="closeBulkRemainingModal()">&times;</button>
@@ -2346,8 +2417,8 @@
     </div>
 
     <!-- 休暇登録モーダル -->
-    <div id="vacationModal" class="modal" onclick="closeVacationModal()">
-        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+    <div id="vacationModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">
                 <h3 style="color: white;">休暇を登録</h3>
                 <button class="modal-close" onclick="closeVacationModal()" style="color: white;">&times;</button>
@@ -2387,8 +2458,8 @@
     </div>
 
     <!-- 見積編集モーダル -->
-    <div id="editEstimateModal" class="modal" onclick="closeEditEstimateModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="editEstimateModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>見積データを編集</h3>
                 <button class="modal-close" onclick="closeEditEstimateModal()">&times;</button>
@@ -2435,8 +2506,8 @@
     </div>
 
     <!-- 対応編集モーダル -->
-    <div id="editTaskModal" class="modal" onclick="closeEditTaskModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>対応名を編集</h3>
                 <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
@@ -2475,8 +2546,8 @@
     </div>
 
     <!-- 工程内訳表示モーダル -->
-    <div id="processBreakdownModal" class="modal" onclick="closeProcessBreakdownModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="processBreakdownModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 id="breakdownModalTitle">工程内訳</h3>
                 <button class="modal-close" onclick="closeProcessBreakdownModal()">&times;</button>
@@ -2488,8 +2559,8 @@
     </div>
 
     <!-- 見積登録モーダル -->
-    <div id="addEstimateModal" class="modal" onclick="closeAddEstimateModal()">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+    <div id="addEstimateModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
                 <h3>📝 見積登録</h3>
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
@@ -2675,8 +2746,8 @@
     </div>
 
     <!-- 既存見積の月分割モーダル -->
-    <div id="splitEstimateModal" class="modal" onclick="closeSplitEstimateModal()">
-        <div class="modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+    <div id="splitEstimateModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>📅 見積を複数月に分割</h3>
                 <button class="modal-close" onclick="closeSplitEstimateModal()">&times;</button>
@@ -2729,8 +2800,8 @@
     </div>
 
     <!-- その他作業モーダル -->
-    <div id="otherWorkModal" class="modal" onclick="closeOtherWorkModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="otherWorkModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>その他作業の登録</h3>
                 <button class="modal-close" onclick="closeOtherWorkModal()">&times;</button>
@@ -2795,12 +2866,124 @@
             insightsEnabled: true
         };
 
+        // グラフカラースキーム定義
+        const chartColorSchemes = {
+            'blue': {
+                name: '青',
+                themeColor: '#1976d2',
+                barColors: {
+                    estimate: '#1976d2',
+                    actual: '#42a5f5'
+                },
+                processColors: {
+                    'UI': '#0d47a1',
+                    'PG': '#1565c0',
+                    'PT': '#1976d2',
+                    'IT': '#1e88e5',
+                    'ST': '#42a5f5'
+                }
+            },
+            'green': {
+                name: '緑',
+                themeColor: '#388e3c',
+                barColors: {
+                    estimate: '#388e3c',
+                    actual: '#66bb6a'
+                },
+                processColors: {
+                    'UI': '#1b5e20',
+                    'PG': '#2e7d32',
+                    'PT': '#388e3c',
+                    'IT': '#43a047',
+                    'ST': '#66bb6a'
+                }
+            },
+            'purple': {
+                name: '紫',
+                themeColor: '#7b1fa2',
+                barColors: {
+                    estimate: '#7b1fa2',
+                    actual: '#ab47bc'
+                },
+                processColors: {
+                    'UI': '#4a148c',
+                    'PG': '#6a1b9a',
+                    'PT': '#7b1fa2',
+                    'IT': '#8e24aa',
+                    'ST': '#ab47bc'
+                }
+            },
+            'orange': {
+                name: 'オレンジ',
+                themeColor: '#ff9800',
+                barColors: {
+                    estimate: '#ff9800',
+                    actual: '#ffb74d'
+                },
+                processColors: {
+                    'UI': '#e65100',
+                    'PG': '#f57c00',
+                    'PT': '#ff9800',
+                    'IT': '#ffa726',
+                    'ST': '#ffb74d'
+                }
+            },
+            'pink': {
+                name: 'ピンク',
+                themeColor: '#e91e63',
+                barColors: {
+                    estimate: '#e91e63',
+                    actual: '#ec407a'
+                },
+                processColors: {
+                    'UI': '#880e4f',
+                    'PG': '#c2185b',
+                    'PT': '#e91e63',
+                    'IT': '#ec407a',
+                    'ST': '#f06292'
+                }
+            },
+            'gray': {
+                name: 'グレー',
+                themeColor: '#607d8b',
+                barColors: {
+                    estimate: '#607d8b',
+                    actual: '#78909c'
+                },
+                processColors: {
+                    'UI': '#37474f',
+                    'PG': '#455a64',
+                    'PT': '#546e7a',
+                    'IT': '#607d8b',
+                    'ST': '#78909c'
+                }
+            },
+            'current': {
+                name: '現在の色（変更前）',
+                themeColor: null,
+                barColors: {
+                    estimate: '#667eea',
+                    actual: '#f093fb'
+                },
+                processColors: {
+                    'UI': '#1976d2',
+                    'PG': '#7b1fa2',
+                    'PT': '#f57c00',
+                    'IT': '#388e3c',
+                    'ST': '#c2185b'
+                }
+            }
+        };
+
         // Phaseセクションの折り畳み状態
         let phaseCollapsed = {
             phase1: false,
             phase2: false,
             phase3: false
         };
+
+        // 選択されているグラフカラースキーム
+        let selectedChartColorScheme = 'current';
 
         function togglePhaseCollapse(phaseId) {
             phaseCollapsed[phaseId] = !phaseCollapsed[phaseId];
@@ -3045,6 +3228,7 @@
             loadAutoBackupSetting(); // 自動バックアップ設定を読み込み
             loadThemeSettings(); // テーマ設定を読み込み
             loadReportSettings(); // レポート分析設定を読み込み
+            loadChartColorScheme(); // グラフカラースキームを読み込み
             updateMonthOptions();
             updateEstimateMonthOptions(); // 見積一覧の月選択肢を更新
             updateEstimateVersionOptions(); // 見積一覧の版数選択肢を更新
@@ -3089,7 +3273,53 @@
 
             // モバイルでタブのスワイプ切り替え機能を追加
             initTabSwipe();
+
+            // モーダルのクリックハンドラーをセットアップ
+            setupModalHandlers();
         });
+
+        // モーダルのクリック・ドラッグハンドラーをセットアップ
+        function setupModalHandlers() {
+            // モーダルIDと閉じる関数のマッピング
+            const modals = [
+                { id: 'workModal', closeFunc: closeWorkModal },
+                { id: 'editActualModal', closeFunc: closeEditActualModal },
+                { id: 'bulkRemainingModal', closeFunc: closeBulkRemainingModal },
+                { id: 'vacationModal', closeFunc: closeVacationModal },
+                { id: 'editEstimateModal', closeFunc: closeEditEstimateModal },
+                { id: 'editTaskModal', closeFunc: closeEditTaskModal },
+                { id: 'processBreakdownModal', closeFunc: closeProcessBreakdownModal },
+                { id: 'addEstimateModal', closeFunc: closeAddEstimateModal },
+                { id: 'splitEstimateModal', closeFunc: closeSplitEstimateModal },
+                { id: 'otherWorkModal', closeFunc: closeOtherWorkModal }
+            ];
+
+            modals.forEach(modal => {
+                const modalElement = document.getElementById(modal.id);
+                if (!modalElement) return;
+
+                let mouseDownTarget = null;
+
+                // mousedownイベントで開始位置を記録
+                modalElement.addEventListener('mousedown', (e) => {
+                    mouseDownTarget = e.target;
+                });
+
+                // mouseupイベントで終了位置を確認
+                modalElement.addEventListener('mouseup', (e) => {
+                    // mousedownとmouseupの両方がモーダル背景（.modal）だった場合のみ閉じる
+                    if (mouseDownTarget === modalElement && e.target === modalElement) {
+                        modal.closeFunc();
+                    }
+                    mouseDownTarget = null;
+                });
+
+                // マウスがモーダル外に出た場合、リセット
+                modalElement.addEventListener('mouseleave', () => {
+                    mouseDownTarget = null;
+                });
+            });
+        }
 
         // セグメントボタンの初期色をテーマカラーに設定
         function initSegmentButtonColors() {
@@ -3300,7 +3530,8 @@
                     matrixEstActFormat: matrixEstActFormat,
                     matrixDayMonthFormat: matrixDayMonthFormat,
                     defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
-                    defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped'
+                    defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+                    chartColorScheme: selectedChartColorScheme
                 }
             };
 
@@ -4891,6 +5122,61 @@
                 saveData(true);
                 updateReportMatrix();
             }
+        }
+
+        // グラフカラースキームの保存
+        function saveChartColorScheme() {
+            const selector = document.getElementById('chartColorScheme');
+            if (selector) {
+                selectedChartColorScheme = selector.value;
+                saveData(true);
+                updateChartColorPreview();
+                // レポートが表示されている場合、グラフを再描画
+                if (document.getElementById('report').style.display !== 'none') {
+                    updateReportMatrix();
+                }
+            }
+        }
+
+        // グラフカラープレビューの更新
+        function updateChartColorPreview() {
+            const scheme = chartColorSchemes[selectedChartColorScheme];
+            if (!scheme) return;
+
+            // 棒グラフプレビュー
+            const estimateBar = document.getElementById('chartPreviewEstimateBar');
+            const actualBar = document.getElementById('chartPreviewActualBar');
+            if (estimateBar) estimateBar.style.backgroundColor = scheme.barColors.estimate;
+            if (actualBar) actualBar.style.backgroundColor = scheme.barColors.actual;
+
+            // ドーナツグラフプレビュー
+            const uiPreview = document.getElementById('chartPreviewUI');
+            const pgPreview = document.getElementById('chartPreviewPG');
+            const ptPreview = document.getElementById('chartPreviewPT');
+            const itPreview = document.getElementById('chartPreviewIT');
+            const stPreview = document.getElementById('chartPreviewST');
+
+            if (uiPreview) uiPreview.style.backgroundColor = scheme.processColors['UI'];
+            if (pgPreview) pgPreview.style.backgroundColor = scheme.processColors['PG'];
+            if (ptPreview) ptPreview.style.backgroundColor = scheme.processColors['PT'];
+            if (itPreview) itPreview.style.backgroundColor = scheme.processColors['IT'];
+            if (stPreview) stPreview.style.backgroundColor = scheme.processColors['ST'];
+        }
+
+        // グラフカラースキームの読み込み
+        function loadChartColorScheme() {
+            const savedSettings = localStorage.getItem('manhour_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (settings.chartColorScheme) {
+                    selectedChartColorScheme = settings.chartColorScheme;
+                    const selector = document.getElementById('chartColorScheme');
+                    if (selector) {
+                        selector.value = selectedChartColorScheme;
+                    }
+                }
+            }
+            updateChartColorPreview();
         }
 
         // 見積一覧タブのデフォルト表示形式を適用
@@ -11400,18 +11686,21 @@
             const barWidth = chartWidth / members.length / 2.5;
             const groupWidth = chartWidth / members.length;
 
+            // カラースキームを取得
+            const colorScheme = chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['current'];
+
             members.forEach((member, index) => {
                 const data = memberSummary[member];
                 const x = padding.left + groupWidth * index + groupWidth / 2;
 
                 // 見積のバー
                 const estimateHeight = (data.estimate / maxValue) * chartHeight;
-                ctx.fillStyle = '#667eea';
+                ctx.fillStyle = colorScheme.barColors.estimate;
                 ctx.fillRect(x - barWidth - 5, padding.top + chartHeight - estimateHeight, barWidth, estimateHeight);
 
                 // 実績のバー
                 const actualHeight = (data.actual / maxValue) * chartHeight;
-                ctx.fillStyle = '#f093fb';
+                ctx.fillStyle = colorScheme.barColors.actual;
                 ctx.fillRect(x + 5, padding.top + chartHeight - actualHeight, barWidth, actualHeight);
 
                 // X軸ラベル（担当者名）
@@ -11426,14 +11715,14 @@
             });
 
             // 凡例を描画
-            ctx.fillStyle = '#667eea';
+            ctx.fillStyle = colorScheme.barColors.estimate;
             ctx.fillRect(padding.left + chartWidth + 10, padding.top, 15, 15);
             ctx.fillStyle = '#495057';
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('見積', padding.left + chartWidth + 30, padding.top + 12);
 
-            ctx.fillStyle = '#f093fb';
+            ctx.fillStyle = colorScheme.barColors.actual;
             ctx.fillRect(padding.left + chartWidth + 10, padding.top + 25, 15, 15);
             ctx.fillStyle = '#495057';
             ctx.fillText('実績', padding.left + chartWidth + 30, padding.top + 37);
@@ -11496,14 +11785,8 @@
 
             const total = processes.reduce((sum, p) => sum + processHours[p], 0);
 
-            // 工程別の色マッピング（工程バッジの色に対応）
-            const processColors = {
-                'UI': '#1976d2',
-                'PG': '#7b1fa2',
-                'PT': '#f57c00',
-                'IT': '#388e3c',
-                'ST': '#c2185b'
-            };
+            // カラースキームを取得
+            const colorScheme = chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['current'];
 
             // フォールバックカラー（定義されていない工程用）
             const fallbackColors = [
@@ -11515,11 +11798,11 @@
             const getProcessColor = (process) => {
                 // 工程名を大文字に変換して照合
                 const upperProcess = process.toUpperCase();
-                if (processColors[upperProcess]) {
-                    return processColors[upperProcess];
+                if (colorScheme.processColors[upperProcess]) {
+                    return colorScheme.processColors[upperProcess];
                 }
                 // 定義されていない工程はフォールバック色を使用
-                const unknownProcesses = processes.filter(p => !processColors[p.toUpperCase()]);
+                const unknownProcesses = processes.filter(p => !colorScheme.processColors[p.toUpperCase()]);
                 const index = unknownProcesses.indexOf(process);
                 return fallbackColors[index % fallbackColors.length];
             };
