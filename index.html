@@ -1943,6 +1943,40 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="showDeviationColorsCheckbox" onchange="toggleDeviationColorsSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <span>レポートで乖離率に応じた背景色を表示する</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ・オン: レポートのマトリクス表示で見積と実績の乖離率に応じて背景色をグラデーション表示します<br>
+                            ・オフ: 背景色を無効にします（白背景）
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">見積と実績の表示形式（レポートのマトリクス）</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="matrixEstActFormat" value="twoRows" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px;" checked>
+                                <span>
+                                    <strong>2行表示</strong><br>
+                                    <small style="color: #666;">見積と実績を2行で表示（見積は細字、実績は太字）</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="matrixEstActFormat" value="slash" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px;">
+                                <span>
+                                    <strong>スラッシュ横並び</strong><br>
+                                    <small style="color: #666;">例: 10.0 / 15.5</small>
+                                </span>
+                            </label>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            レポートタブのマトリクス表示で、見積と実績をどのように表示するか選択できます
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">人日/人月の表示形式（レポートの合計列）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
@@ -3247,6 +3281,8 @@
                     actualLayout: actualLayout,
                     reportLayout: reportLayout,
                     showMonthColors: showMonthColorsSetting,
+                    showDeviationColors: showDeviationColorsSetting,
+                    matrixEstActFormat: matrixEstActFormat,
                     matrixDayMonthFormat: matrixDayMonthFormat,
                     defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
                     defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped'
@@ -3801,6 +3837,18 @@
                     showMonthColorsSetting = settings.showMonthColors;
                     const checkbox = document.getElementById('showMonthColorsCheckbox');
                     if (checkbox) checkbox.checked = showMonthColorsSetting;
+                }
+                // 乖離率背景色の設定を読み込み
+                if (settings.showDeviationColors !== undefined) {
+                    showDeviationColorsSetting = settings.showDeviationColors;
+                    const checkbox = document.getElementById('showDeviationColorsCheckbox');
+                    if (checkbox) checkbox.checked = showDeviationColorsSetting;
+                }
+                // 見積と実績の表示形式の設定を読み込み
+                if (settings.matrixEstActFormat) {
+                    matrixEstActFormat = settings.matrixEstActFormat;
+                    const radioButton = document.querySelector(`input[name="matrixEstActFormat"][value="${settings.matrixEstActFormat}"]`);
+                    if (radioButton) radioButton.checked = true;
                 }
                 // 人日/人月表示形式の設定を読み込み
                 if (settings.matrixDayMonthFormat) {
@@ -4783,6 +4831,8 @@
 
         // 月別色付け設定
         let showMonthColorsSetting = true;
+        let showDeviationColorsSetting = true; // 乖離率背景色の表示設定
+        let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
         let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
 
         // 月別色付け設定のトグル
@@ -4791,6 +4841,23 @@
             saveData(true);
             renderEstimates();
             updateReportMatrix();
+        }
+
+        // 乖離率背景色設定のトグル
+        function toggleDeviationColorsSetting() {
+            showDeviationColorsSetting = document.getElementById('showDeviationColorsCheckbox').checked;
+            saveData(true);
+            updateReportMatrix();
+        }
+
+        // 見積と実績の表示形式の保存
+        function saveMatrixEstActFormat() {
+            const selectedFormat = document.querySelector('input[name="matrixEstActFormat"]:checked');
+            if (selectedFormat) {
+                matrixEstActFormat = selectedFormat.value;
+                saveData(true);
+                updateReportMatrix();
+            }
         }
 
         // デフォルト表示形式設定の保存
@@ -11287,6 +11354,11 @@
 
         // 見積と実績の乖離率に基づいて背景色を計算
         function getDeviationColor(estimate, actual) {
+            // 設定がオフの場合は白を返す
+            if (!showDeviationColorsSetting) {
+                return '#ffffff';
+            }
+
             if (estimate === 0 && actual === 0) {
                 return '#ffffff'; // 両方0は白
             }
@@ -11299,23 +11371,35 @@
 
             const deviation = ((actual - estimate) / estimate) * 100;
 
-            if (Math.abs(deviation) < 5) {
-                return '#ffffff'; // ±5%以内は白
+            if (Math.abs(deviation) < 3) {
+                return '#ffffff'; // ±3%以内は白
             }
 
             if (deviation > 0) {
-                // 実績 > 見積：赤系
-                if (deviation < 15) return '#fff0f0';
-                if (deviation < 30) return '#ffe0e0';
-                if (deviation < 50) return '#ffc0c0';
-                return '#ff9999';
+                // 実績 > 見積：赤系（10段階）
+                if (deviation < 5) return '#fff8f8';
+                if (deviation < 8) return '#fff0f0';
+                if (deviation < 12) return '#ffe8e8';
+                if (deviation < 18) return '#ffe0e0';
+                if (deviation < 25) return '#ffd0d0';
+                if (deviation < 35) return '#ffc0c0';
+                if (deviation < 50) return '#ffb0b0';
+                if (deviation < 70) return '#ffa0a0';
+                if (deviation < 100) return '#ff9090';
+                return '#ff8080';
             } else {
-                // 実績 < 見積：緑系
+                // 実績 < 見積：緑系（10段階）
                 const absDeviation = Math.abs(deviation);
-                if (absDeviation < 15) return '#f0fff0';
-                if (absDeviation < 30) return '#e0ffe0';
-                if (absDeviation < 50) return '#c0ffc0';
-                return '#99ff99';
+                if (absDeviation < 5) return '#f8fff8';
+                if (absDeviation < 8) return '#f0fff0';
+                if (absDeviation < 12) return '#e8ffe8';
+                if (absDeviation < 18) return '#e0ffe0';
+                if (absDeviation < 25) return '#d0ffd0';
+                if (absDeviation < 35) return '#c0ffc0';
+                if (absDeviation < 50) return '#b0ffb0';
+                if (absDeviation < 70) return '#a0ffa0';
+                if (absDeviation < 100) return '#90ff90';
+                return '#80ff80';
             }
         }
 
@@ -11514,12 +11598,26 @@
                                 const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
                                 const bgColor = showMonthColors ? monthColor.bg : deviationBgColor;
 
-                                tableBody += `<td style="text-align: center; background: ${bgColor}; padding: 8px;" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
-                                    <div style="font-size: 0.85em; font-weight: 300; color: #666;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
-                                    <div style="font-weight: 600; margin-top: 2px;">${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                    <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
-                                    <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
-                                </td>`;
+                                // 見積と実績の表示形式に応じて分岐
+                                let cellHtml = '';
+                                if (matrixEstActFormat === 'twoRows') {
+                                    // 2行表示
+                                    cellHtml = `
+                                        <div style="font-size: 0.85em; font-weight: 300; color: #666;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
+                                        <div style="font-weight: 600; margin-top: 2px;">${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                                        <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
+                                        <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                    `;
+                                } else {
+                                    // スラッシュ横並び
+                                    cellHtml = `
+                                        <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                                        <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
+                                        <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                    `;
+                                }
+
+                                tableBody += `<td style="text-align: center; background: ${bgColor}; padding: 8px;" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                             } else {
                                 tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
                             }
@@ -11535,41 +11633,52 @@
                         // 合計列の背景色
                         const totalBgColor = getDeviationColor(totalEst, totalAct);
 
-                        // 人日/人月の表示形式に応じて分岐
+                        // 見積と実績の表示形式 & 人日/人月の表示形式に応じて分岐
                         let totalCellHtml = '';
-                        if (matrixDayMonthFormat === 'inline') {
-                            // 案1: 横に括弧で表示（デフォルト）
+                        if (matrixEstActFormat === 'slash') {
+                            // スラッシュ横並び表示の場合は案1形式
                             totalCellHtml = `
-                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">${totalEst.toFixed(1)} <span style="font-size: 0.9em;">(${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月)</span></div>
-                                <div style="font-weight: 600; margin-top: 2px;">${totalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月)</span></div>
+                                <div style="font-weight: 600;">${totalEst.toFixed(1)} / ${totalAct.toFixed(1)}</div>
+                                <div style="font-size: 0.85em; color: #666; margin-top: 2px;">${estDays.toFixed(1)}人日/${actDays.toFixed(1)}人日</div>
+                                <div style="font-size: 0.85em; color: #666;">${estMonths.toFixed(2)}人月/${actMonths.toFixed(2)}人月</div>
                                 <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
                             `;
-                        } else if (matrixDayMonthFormat === 'separate') {
-                            // 案2: 別行で表示
-                            totalCellHtml = `
-                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積: ${totalEst.toFixed(1)} / 実績: ${totalAct.toFixed(1)}</div>
-                                <div style="font-size: 0.75em; color: #666; margin-top: 2px;">見積: ${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</div>
-                                <div style="font-size: 0.75em; color: #666;">実績: ${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</div>
-                                <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
-                            `;
-                        } else if (matrixDayMonthFormat === 'side') {
-                            // 案3: 右側に表示
-                            totalCellHtml = `
-                                <div style="display: flex; justify-content: space-between; font-size: 0.85em; font-weight: 300; color: #666;">
-                                    <span>見積 ${totalEst.toFixed(1)}</span><span style="font-size: 0.9em;">${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 2px;">
-                                    <span>実績 ${totalAct.toFixed(1)}</span><span style="font-size: 0.9em; font-weight: 400;">${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</span>
-                                </div>
-                                <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
-                            `;
-                        } else if (matrixDayMonthFormat === 'arrow') {
-                            // 案4: 矢印で表示
-                            totalCellHtml = `
-                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積 ${totalEst.toFixed(1)} → ${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</div>
-                                <div style="font-weight: 600; margin-top: 2px;">実績 ${totalAct.toFixed(1)} → ${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</div>
-                                <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
-                            `;
+                        } else {
+                            // 2行表示の場合は既存の人日/人月表示形式設定に従う
+                            if (matrixDayMonthFormat === 'inline') {
+                                // 案1: 横に括弧で表示（デフォルト）
+                                totalCellHtml = `
+                                    <div style="font-size: 0.85em; font-weight: 300; color: #666;">${totalEst.toFixed(1)} <span style="font-size: 0.9em;">(${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月)</span></div>
+                                    <div style="font-weight: 600; margin-top: 2px;">${totalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月)</span></div>
+                                    <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                                `;
+                            } else if (matrixDayMonthFormat === 'separate') {
+                                // 案2: 別行で表示
+                                totalCellHtml = `
+                                    <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積: ${totalEst.toFixed(1)} / 実績: ${totalAct.toFixed(1)}</div>
+                                    <div style="font-size: 0.75em; color: #666; margin-top: 2px;">見積: ${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</div>
+                                    <div style="font-size: 0.75em; color: #666;">実績: ${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</div>
+                                    <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                                `;
+                            } else if (matrixDayMonthFormat === 'side') {
+                                // 案3: 右側に表示
+                                totalCellHtml = `
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85em; font-weight: 300; color: #666;">
+                                        <span>見積 ${totalEst.toFixed(1)}</span><span style="font-size: 0.9em;">${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 2px;">
+                                        <span>実績 ${totalAct.toFixed(1)}</span><span style="font-size: 0.9em; font-weight: 400;">${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</span>
+                                    </div>
+                                    <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                                `;
+                            } else if (matrixDayMonthFormat === 'arrow') {
+                                // 案4: 矢印で表示
+                                totalCellHtml = `
+                                    <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積 ${totalEst.toFixed(1)} → ${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月</div>
+                                    <div style="font-weight: 600; margin-top: 2px;">実績 ${totalAct.toFixed(1)} → ${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月</div>
+                                    <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                                `;
+                            }
                         }
 
                         tableBody += `<td style="text-align: center; background: ${totalBgColor}; padding: 8px;">${totalCellHtml}</td>`;
@@ -11605,41 +11714,52 @@
                     const totalActMonths = (versionTotalAct / 8 / 20).toFixed(2);
                     const versionTotalBgColor = getDeviationColor(versionTotalEst, versionTotalAct);
 
-                    // 人日/人月の表示形式に応じて分岐
+                    // 見積と実績の表示形式 & 人日/人月の表示形式に応じて分岐
                     let versionTotalCellHtml = '';
-                    if (matrixDayMonthFormat === 'inline') {
-                        // 案1: 横に括弧で表示（デフォルト）
+                    if (matrixEstActFormat === 'slash') {
+                        // スラッシュ横並び表示の場合は案1形式
                         versionTotalCellHtml = `
-                            <div style="font-size: 0.85em; font-weight: 300; color: #666;">${versionTotalEst.toFixed(1)} <span style="font-size: 0.9em;">(${totalEstDays}人日/${totalEstMonths}人月)</span></div>
-                            <div style="font-weight: 600; margin-top: 2px;">${versionTotalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${totalActDays}人日/${totalActMonths}人月)</span></div>
+                            <div style="font-weight: 600;">${versionTotalEst.toFixed(1)} / ${versionTotalAct.toFixed(1)}</div>
+                            <div style="font-size: 0.85em; color: #666; margin-top: 2px;">${totalEstDays}人日/${totalActDays}人日</div>
+                            <div style="font-size: 0.85em; color: #666;">${totalEstMonths}人月/${totalActMonths}人月</div>
                             <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
                         `;
-                    } else if (matrixDayMonthFormat === 'separate') {
-                        // 案2: 別行で表示
-                        versionTotalCellHtml = `
-                            <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積: ${versionTotalEst.toFixed(1)} / 実績: ${versionTotalAct.toFixed(1)}</div>
-                            <div style="font-size: 0.75em; color: #666; margin-top: 2px;">見積: ${totalEstDays}人日/${totalEstMonths}人月</div>
-                            <div style="font-size: 0.75em; color: #666;">実績: ${totalActDays}人日/${totalActMonths}人月</div>
-                            <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
-                        `;
-                    } else if (matrixDayMonthFormat === 'side') {
-                        // 案3: 右側に表示
-                        versionTotalCellHtml = `
-                            <div style="display: flex; justify-content: space-between; font-size: 0.85em; font-weight: 300; color: #666;">
-                                <span>見積 ${versionTotalEst.toFixed(1)}</span><span style="font-size: 0.9em;">${totalEstDays}人日/${totalEstMonths}人月</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 2px;">
-                                <span>実績 ${versionTotalAct.toFixed(1)}</span><span style="font-size: 0.9em; font-weight: 400;">${totalActDays}人日/${totalActMonths}人月</span>
-                            </div>
-                            <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
-                        `;
-                    } else if (matrixDayMonthFormat === 'arrow') {
-                        // 案4: 矢印で表示
-                        versionTotalCellHtml = `
-                            <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積 ${versionTotalEst.toFixed(1)} → ${totalEstDays}人日/${totalEstMonths}人月</div>
-                            <div style="font-weight: 600; margin-top: 2px;">実績 ${versionTotalAct.toFixed(1)} → ${totalActDays}人日/${totalActMonths}人月</div>
-                            <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
-                        `;
+                    } else {
+                        // 2行表示の場合は既存の人日/人月表示形式設定に従う
+                        if (matrixDayMonthFormat === 'inline') {
+                            // 案1: 横に括弧で表示（デフォルト）
+                            versionTotalCellHtml = `
+                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">${versionTotalEst.toFixed(1)} <span style="font-size: 0.9em;">(${totalEstDays}人日/${totalEstMonths}人月)</span></div>
+                                <div style="font-weight: 600; margin-top: 2px;">${versionTotalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${totalActDays}人日/${totalActMonths}人月)</span></div>
+                                <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+                            `;
+                        } else if (matrixDayMonthFormat === 'separate') {
+                            // 案2: 別行で表示
+                            versionTotalCellHtml = `
+                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積: ${versionTotalEst.toFixed(1)} / 実績: ${versionTotalAct.toFixed(1)}</div>
+                                <div style="font-size: 0.75em; color: #666; margin-top: 2px;">見積: ${totalEstDays}人日/${totalEstMonths}人月</div>
+                                <div style="font-size: 0.75em; color: #666;">実績: ${totalActDays}人日/${totalActMonths}人月</div>
+                                <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+                            `;
+                        } else if (matrixDayMonthFormat === 'side') {
+                            // 案3: 右側に表示
+                            versionTotalCellHtml = `
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85em; font-weight: 300; color: #666;">
+                                    <span>見積 ${versionTotalEst.toFixed(1)}</span><span style="font-size: 0.9em;">${totalEstDays}人日/${totalEstMonths}人月</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-weight: 600; margin-top: 2px;">
+                                    <span>実績 ${versionTotalAct.toFixed(1)}</span><span style="font-size: 0.9em; font-weight: 400;">${totalActDays}人日/${totalActMonths}人月</span>
+                                </div>
+                                <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+                            `;
+                        } else if (matrixDayMonthFormat === 'arrow') {
+                            // 案4: 矢印で表示
+                            versionTotalCellHtml = `
+                                <div style="font-size: 0.85em; font-weight: 300; color: #666;">見積 ${versionTotalEst.toFixed(1)} → ${totalEstDays}人日/${totalEstMonths}人月</div>
+                                <div style="font-weight: 600; margin-top: 2px;">実績 ${versionTotalAct.toFixed(1)} → ${totalActDays}人日/${totalActMonths}人月</div>
+                                <div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+                            `;
+                        }
                     }
 
                     html += `<td style="text-align: center; background: ${versionTotalBgColor}; padding: 8px;">${versionTotalCellHtml}</td>`;
