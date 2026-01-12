@@ -3898,13 +3898,28 @@
         }
 
         function autoBackup() {
+            // 現在の設定を取得
+            const settings = {
+                themeColor: currentThemeColor,
+                themePattern: currentThemePattern,
+                themeTabColor: currentTabColor,
+                themeBackgroundColor: currentBackgroundColor,
+                estimateLayout: estimateLayout,
+                actualLayout: actualLayout,
+                reportLayout: reportLayout,
+                showMonthColors: showMonthColorsSetting,
+                defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
+                defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+                memberOrder: document.getElementById('memberOrder').value.trim()
+            };
+
             const data = {
                 estimates: estimates,
                 actuals: actuals,
                 companyHolidays: companyHolidays,
                 vacations: vacations,
                 remainingEstimates: remainingEstimates,
-                memberOrder: document.getElementById('memberOrder').value.trim(),
+                settings: settings,
                 timestamp: new Date().toISOString(),
                 version: '1.0'
             };
@@ -9254,6 +9269,12 @@
                 };
                 estimateTotalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
             }
+
+            // 見積一覧の担当者別合計カードの色を更新（見積タブがアクティブな場合のみ）
+            const estimateTab = document.getElementById('estimate');
+            if (estimateTab && estimateTab.classList.contains('active')) {
+                renderEstimateList();
+            }
         }
         
         function updateBodyBackground() {
@@ -9438,6 +9459,20 @@
                 const reportMonth = document.getElementById('reportMonth');
                 if (reportMonth) {
                     updateSegmentButtonSelection('reportMonthButtons2', reportMonth.value);
+                }
+            }
+
+            // レポートのフィルタタイプボタン（月別/版数別）
+            const reportFilterType = document.getElementById('reportFilterType');
+            if (reportFilterType) {
+                const btnFilterMonth = document.getElementById('btnFilterMonth');
+                const btnFilterVersion = document.getElementById('btnFilterVersion');
+                if (btnFilterMonth && btnFilterVersion) {
+                    const type = reportFilterType.value;
+                    btnFilterMonth.style.background = type === 'month' ? themeColor : 'white';
+                    btnFilterMonth.style.color = type === 'month' ? 'white' : '#333';
+                    btnFilterVersion.style.background = type === 'version' ? themeColor : 'white';
+                    btnFilterVersion.style.color = type === 'version' ? 'white' : '#333';
                 }
             }
         }
@@ -11620,13 +11655,64 @@
                                 nextVacationId = Math.max(...vacations.map(v => v.id)) + 1;
                             }
 
-                            // 担当者表示順を復元
-                            if (data.memberOrder) {
+                            // 設定を復元
+                            if (data.settings) {
+                                // テーマ設定を復元
+                                if (data.settings.themeColor) {
+                                    currentThemeColor = data.settings.themeColor;
+                                    document.getElementById('themeColor').value = data.settings.themeColor;
+                                }
+                                if (data.settings.themePattern) {
+                                    currentThemePattern = data.settings.themePattern;
+                                    document.getElementById('themePattern').value = data.settings.themePattern;
+                                }
+                                if (data.settings.themeTabColor) {
+                                    currentTabColor = data.settings.themeTabColor;
+                                    document.getElementById('themeTabColor').value = data.settings.themeTabColor;
+                                }
+                                if (data.settings.themeBackgroundColor) {
+                                    currentBackgroundColor = data.settings.themeBackgroundColor;
+                                    document.getElementById('themeBackgroundColor').value = data.settings.themeBackgroundColor;
+                                }
+
+                                // レイアウト設定を復元
+                                if (data.settings.estimateLayout) estimateLayout = data.settings.estimateLayout;
+                                if (data.settings.actualLayout) actualLayout = data.settings.actualLayout;
+                                if (data.settings.reportLayout) reportLayout = data.settings.reportLayout;
+
+                                // 月色分け設定を復元
+                                if (data.settings.showMonthColors !== undefined) {
+                                    showMonthColorsSetting = data.settings.showMonthColors;
+                                    const checkbox = document.getElementById('showMonthColorsCheckbox');
+                                    if (checkbox) checkbox.checked = data.settings.showMonthColors;
+                                }
+
+                                // デフォルト表示形式を復元
+                                if (data.settings.defaultEstimateViewType) {
+                                    const select = document.getElementById('defaultEstimateViewType');
+                                    if (select) select.value = data.settings.defaultEstimateViewType;
+                                }
+                                if (data.settings.defaultReportViewType) {
+                                    const select = document.getElementById('defaultReportViewType');
+                                    if (select) select.value = data.settings.defaultReportViewType;
+                                }
+
+                                // 担当者表示順を復元
+                                if (data.settings.memberOrder) {
+                                    document.getElementById('memberOrder').value = data.settings.memberOrder;
+                                }
+                            } else if (data.memberOrder) {
+                                // 旧形式（settingsがない場合）の後方互換性
                                 document.getElementById('memberOrder').value = data.memberOrder;
-                                localStorage.setItem('manhour_memberOrder', data.memberOrder);
                             }
 
                             saveData(true); // 復元時は自動バックアップをスキップ
+
+                            // テーマを適用
+                            applyTheme();
+
+                            // レイアウトを適用
+                            applyLayoutSettings();
 
                             updateMonthOptions();
                             updateActualMonthOptions();
