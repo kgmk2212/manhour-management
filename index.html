@@ -11127,9 +11127,18 @@
                         memberTasks[a.member].add(`${a.version}-${a.task}`);
                     });
 
-                    const members = Object.keys(memberSummary).sort((a, b) =>
-                        memberSummary[b].actual - memberSummary[a].actual
-                    );
+                    // 担当者を設定された表示順でソート
+                    let members;
+                    const memberOrderInput = document.getElementById('memberOrder').value.trim();
+                    if (memberOrderInput) {
+                        const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                        const memberSet = new Set(Object.keys(memberSummary));
+                        const orderedMembers = orderList.filter(m => memberSet.has(m));
+                        const unorderedMembers = Object.keys(memberSummary).filter(m => !orderedMembers.includes(m)).sort();
+                        members = [...orderedMembers, ...unorderedMembers];
+                    } else {
+                        members = Object.keys(memberSummary).sort();
+                    }
 
                     if (members.length > 0) {
                         html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
