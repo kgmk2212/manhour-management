@@ -1947,70 +1947,70 @@
                     <div class="form-group" style="margin-top: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="showDeviationColorsCheckbox" onchange="toggleDeviationColorsSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
-                            <span style="word-break: break-word;">レポートで乖離率に応じた背景色を表示する</span>
+                            <span>レポートで乖離率に応じた背景色を表示する</span>
                         </label>
-                        <small style="color: #666; display: block; margin-top: 5px; word-break: break-word;">
+                        <small style="color: #666; display: block; margin-top: 5px;">
                             ・オン: レポートのマトリクス表示で見積と実績の乖離率に応じて背景色をグラデーション表示します<br>
                             ・オフ: 背景色を無効にします（白背景）
                         </small>
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block; word-break: break-word;">見積と実績の表示形式（レポートのマトリクス）</label>
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">見積と実績の表示形式（レポートのマトリクス）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixEstActFormat" value="twoRows" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>2行表示</strong><br>
-                                    <small style="color: #666; word-break: break-word;">見積と実績を2行で表示（見積は細字、実績は太字）</small>
+                                    <small style="color: #666;">見積と実績を2行で表示（見積は細字、実績は太字）</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixEstActFormat" value="slash" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>スラッシュ横並び</strong><br>
-                                    <small style="color: #666; word-break: break-word;">例: 10.0 / 15.5</small>
+                                    <small style="color: #666;">例: 10.0 / 15.5</small>
                                 </span>
                             </label>
                         </div>
-                        <small style="color: #666; display: block; margin-top: 10px; word-break: break-word;">
+                        <small style="color: #666; display: block; margin-top: 10px;">
                             レポートタブのマトリクス表示で、見積と実績をどのように表示するか選択できます
                         </small>
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block; word-break: break-word;">人日/人月の表示形式（レポートの合計列）</label>
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">人日/人月の表示形式（レポートの合計列）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixDayMonthFormat" value="inline" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>横に括弧で表示</strong><br>
-                                    <small style="color: #666; word-break: break-word;">例: 10.0 (2.0人日/0.10人月)</small>
+                                    <small style="color: #666;">例: 10.0 (2.0人日/0.10人月)</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixDayMonthFormat" value="separate" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>別行で表示</strong><br>
-                                    <small style="color: #666; word-break: break-word;">見積: 10.0 / 実績: 15.5<br>見積: 2.0人日/0.10人月 / 実績: 3.1人日/0.16人月</small>
+                                    <small style="color: #666;">見積: 10.0 / 実績: 15.5<br>見積: 2.0人日/0.10人月 / 実績: 3.1人日/0.16人月</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixDayMonthFormat" value="side" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>右側に表示</strong><br>
-                                    <small style="color: #666; word-break: break-word;">見積 10.0　　　　2.0人日/0.10人月</small>
+                                    <small style="color: #666;">見積 10.0　　　　2.0人日/0.10人月</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                                 <input type="radio" name="matrixDayMonthFormat" value="arrow" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="word-break: break-word; flex: 1;">
+                                <span style="flex: 1;">
                                     <strong>矢印で表示</strong><br>
-                                    <small style="color: #666; word-break: break-word;">見積 10.0 → 2.0人日/0.10人月</small>
+                                    <small style="color: #666;">見積 10.0 → 2.0人日/0.10人月</small>
                                 </span>
                             </label>
                         </div>
-                        <small style="color: #666; display: block; margin-top: 10px; word-break: break-word;">
+                        <small style="color: #666; display: block; margin-top: 10px;">
                             レポートタブのマトリクス表示で、合計列に表示される人日/人月の表示形式を選択できます
                         </small>
                     </div>
@@ -2104,17 +2104,22 @@
                     <div class="form-group">
                         <label>カラーパターン</label>
                         <select id="chartColorScheme" onchange="saveChartColorScheme()">
-                            <option value="current">現在の色（変更前）</option>
-                            <option value="blue">青系</option>
-                            <option value="green">緑系</option>
-                            <option value="purple">紫系</option>
-                            <option value="orange">オレンジ系</option>
-                            <option value="pink">ピンク系</option>
-                            <option value="gray">グレー系</option>
+                            <option value="auto">テーマカラーに合わせる（自動）</option>
+                            <option value="purple">紫</option>
+                            <option value="indigo">インディゴ</option>
+                            <option value="deep-blue">ディープブルー</option>
+                            <option value="ocean">オーシャン</option>
+                            <option value="sky">スカイブルー</option>
+                            <option value="navy">ネイビー</option>
+                            <option value="teal">ティール</option>
+                            <option value="cyan">シアン</option>
+                            <option value="green">グリーン</option>
+                            <option value="emerald">エメラルド</option>
+                            <option value="slate">スレート</option>
                         </select>
                         <small style="color: #666; display: block; margin-top: 5px;">
-                            ・各カラーパターンは、テーマカラーに合わせた統一感のある配色です<br>
-                            ・「現在の色」は変更前の配色です<br>
+                            ・「テーマカラーに合わせる（自動）」を選択すると、テーマカラー変更時にグラフの色も自動で変わります<br>
+                            ・特定の色を固定したい場合は、個別のカラーパターンを選択してください<br>
                             ・設定は自動的に保存され、レポートの担当者分析グラフに適用されます
                         </small>
                     </div>
@@ -2497,6 +2502,15 @@
                     <label>見積工数</label>
                     <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
                 </div>
+                <div class="form-group">
+                    <label>作業月</label>
+                    <select id="editEstimateWorkMonth">
+                        <option value="">-- 作業月を選択 --</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        この工程が実際に作業される月を指定します
+                    </small>
+                </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
                     <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
@@ -2866,41 +2880,10 @@
             insightsEnabled: true
         };
 
-        // グラフカラースキーム定義
+        // グラフカラースキーム定義（テーマカラーに対応）
         const chartColorSchemes = {
-            'blue': {
-                name: '青',
-                themeColor: '#1976d2',
-                barColors: {
-                    estimate: '#1976d2',
-                    actual: '#42a5f5'
-                },
-                processColors: {
-                    'UI': '#0d47a1',
-                    'PG': '#1565c0',
-                    'PT': '#1976d2',
-                    'IT': '#1e88e5',
-                    'ST': '#42a5f5'
-                }
-            },
-            'green': {
-                name: '緑',
-                themeColor: '#388e3c',
-                barColors: {
-                    estimate: '#388e3c',
-                    actual: '#66bb6a'
-                },
-                processColors: {
-                    'UI': '#1b5e20',
-                    'PG': '#2e7d32',
-                    'PT': '#388e3c',
-                    'IT': '#43a047',
-                    'ST': '#66bb6a'
-                }
-            },
             'purple': {
                 name: '紫',
-                themeColor: '#7b1fa2',
                 barColors: {
                     estimate: '#7b1fa2',
                     actual: '#ab47bc'
@@ -2913,64 +2896,144 @@
                     'ST': '#ab47bc'
                 }
             },
-            'orange': {
-                name: 'オレンジ',
-                themeColor: '#ff9800',
+            'indigo': {
+                name: 'インディゴ',
                 barColors: {
-                    estimate: '#ff9800',
-                    actual: '#ffb74d'
+                    estimate: '#3f51b5',
+                    actual: '#5c6bc0'
                 },
                 processColors: {
-                    'UI': '#e65100',
-                    'PG': '#f57c00',
-                    'PT': '#ff9800',
-                    'IT': '#ffa726',
-                    'ST': '#ffb74d'
+                    'UI': '#1a237e',
+                    'PG': '#283593',
+                    'PT': '#3f51b5',
+                    'IT': '#5c6bc0',
+                    'ST': '#7986cb'
                 }
             },
-            'pink': {
-                name: 'ピンク',
-                themeColor: '#e91e63',
+            'deep-blue': {
+                name: 'ディープブルー',
                 barColors: {
-                    estimate: '#e91e63',
-                    actual: '#ec407a'
+                    estimate: '#1565c0',
+                    actual: '#1e88e5'
                 },
                 processColors: {
-                    'UI': '#880e4f',
-                    'PG': '#c2185b',
-                    'PT': '#e91e63',
-                    'IT': '#ec407a',
-                    'ST': '#f06292'
+                    'UI': '#0d47a1',
+                    'PG': '#1565c0',
+                    'PT': '#1976d2',
+                    'IT': '#1e88e5',
+                    'ST': '#42a5f5'
                 }
             },
-            'gray': {
-                name: 'グレー',
-                themeColor: '#607d8b',
+            'ocean': {
+                name: 'オーシャン',
                 barColors: {
-                    estimate: '#607d8b',
+                    estimate: '#0277bd',
+                    actual: '#0288d1'
+                },
+                processColors: {
+                    'UI': '#01579b',
+                    'PG': '#0277bd',
+                    'PT': '#0288d1',
+                    'IT': '#039be5',
+                    'ST': '#29b6f6'
+                }
+            },
+            'sky': {
+                name: 'スカイブルー',
+                barColors: {
+                    estimate: '#0288d1',
+                    actual: '#29b6f6'
+                },
+                processColors: {
+                    'UI': '#01579b',
+                    'PG': '#0277bd',
+                    'PT': '#0288d1',
+                    'IT': '#039be5',
+                    'ST': '#29b6f6'
+                }
+            },
+            'navy': {
+                name: 'ネイビー',
+                barColors: {
+                    estimate: '#1a237e',
+                    actual: '#3f51b5'
+                },
+                processColors: {
+                    'UI': '#0d1b4d',
+                    'PG': '#1a237e',
+                    'PT': '#283593',
+                    'IT': '#3f51b5',
+                    'ST': '#5c6bc0'
+                }
+            },
+            'teal': {
+                name: 'ティール',
+                barColors: {
+                    estimate: '#00897b',
+                    actual: '#26a69a'
+                },
+                processColors: {
+                    'UI': '#004d40',
+                    'PG': '#00695c',
+                    'PT': '#00897b',
+                    'IT': '#00acc1',
+                    'ST': '#26a69a'
+                }
+            },
+            'cyan': {
+                name: 'シアン',
+                barColors: {
+                    estimate: '#0097a7',
+                    actual: '#00acc1'
+                },
+                processColors: {
+                    'UI': '#006064',
+                    'PG': '#00838f',
+                    'PT': '#0097a7',
+                    'IT': '#00acc1',
+                    'ST': '#26c6da'
+                }
+            },
+            'green': {
+                name: 'グリーン',
+                barColors: {
+                    estimate: '#388e3c',
+                    actual: '#66bb6a'
+                },
+                processColors: {
+                    'UI': '#1b5e20',
+                    'PG': '#2e7d32',
+                    'PT': '#388e3c',
+                    'IT': '#43a047',
+                    'ST': '#66bb6a'
+                }
+            },
+            'emerald': {
+                name: 'エメラルド',
+                barColors: {
+                    estimate: '#00897b',
+                    actual: '#4db6ac'
+                },
+                processColors: {
+                    'UI': '#004d40',
+                    'PG': '#00695c',
+                    'PT': '#00897b',
+                    'IT': '#26a69a',
+                    'ST': '#4db6ac'
+                }
+            },
+            'slate': {
+                name: 'スレート',
+                barColors: {
+                    estimate: '#546e7a',
                     actual: '#78909c'
                 },
                 processColors: {
-                    'UI': '#37474f',
-                    'PG': '#455a64',
-                    'PT': '#546e7a',
-                    'IT': '#607d8b',
+                    'UI': '#263238',
+                    'PG': '#37474f',
+                    'PT': '#455a64',
+                    'IT': '#546e7a',
                     'ST': '#78909c'
-                }
-            },
-            'current': {
-                name: '現在の色（変更前）',
-                themeColor: null,
-                barColors: {
-                    estimate: '#667eea',
-                    actual: '#f093fb'
-                },
-                processColors: {
-                    'UI': '#1976d2',
-                    'PG': '#7b1fa2',
-                    'PT': '#f57c00',
-                    'IT': '#388e3c',
-                    'ST': '#c2185b'
                 }
             }
         };
@@ -2982,8 +3045,23 @@
             phase3: false
         };
 
-        // 選択されているグラフカラースキーム
-        let selectedChartColorScheme = 'current';
+        // 選択されているグラフカラースキーム（'auto'の場合はテーマカラーに追従）
+        let selectedChartColorScheme = 'auto';
+
+        // グラフカラースキームを取得する関数（'auto'の場合はテーマカラーに対応）
+        function getActiveChartColorScheme() {
+            if (selectedChartColorScheme === 'auto') {
+                // テーマカラーに対応するスキームを返す
+                // currentThemeColorとグラフカラースキームのキーが一致している
+                if (chartColorSchemes[currentThemeColor]) {
+                    return chartColorSchemes[currentThemeColor];
+                }
+                // デフォルトとして紫を返す
+                return chartColorSchemes['purple'];
+            } else {
+                return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['purple'];
+            }
+        }
 
         function togglePhaseCollapse(phaseId) {
             phaseCollapsed[phaseId] = !phaseCollapsed[phaseId];
@@ -5140,7 +5218,7 @@
 
         // グラフカラープレビューの更新
         function updateChartColorPreview() {
-            const scheme = chartColorSchemes[selectedChartColorScheme];
+            const scheme = getActiveChartColorScheme();
             if (!scheme) return;
 
             // 棒グラフプレビュー
@@ -9537,6 +9615,24 @@
 
             memberSelect.value = estimate.member;
 
+            // 作業月の選択肢を更新
+            const workMonthSelect = document.getElementById('editEstimateWorkMonth');
+            workMonthSelect.innerHTML = '<option value="">-- 作業月を選択 --</option>';
+
+            // 見積データから作業月を抽出してソート
+            const workMonths = [...new Set(estimates.map(e => e.workMonth).filter(m => m))];
+            workMonths.sort();
+
+            workMonths.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                workMonthSelect.appendChild(option);
+            });
+
+            // 現在の作業月を設定
+            workMonthSelect.value = estimate.workMonth || '';
+
             // モーダルを表示
             document.getElementById('editEstimateModal').style.display = 'flex';
         }
@@ -9552,6 +9648,7 @@
             const process = document.getElementById('editEstimateProcess').value;
             const member = document.getElementById('editEstimateMember').value;
             const hours = parseFloat(document.getElementById('editEstimateHours').value);
+            const workMonth = document.getElementById('editEstimateWorkMonth').value;
 
             if (!version || !task || !process || !member || !hours) {
                 alert('すべての項目を入力してください');
@@ -9581,6 +9678,7 @@
                     process: process,
                     member: member,
                     hours: hours,
+                    workMonth: workMonth,
                     monthlyHours: updatedMonthlyHours
                 };
 
@@ -9920,18 +10018,28 @@
             const pattern = document.getElementById('themePattern').value;
             const tabColor = document.getElementById('themeTabColor').value;
             const backgroundColor = document.getElementById('themeBackgroundColor').value;
-            
+
             currentThemeColor = color;
             currentThemePattern = pattern;
             currentTabColor = tabColor;
             currentBackgroundColor = backgroundColor;
-            
+
             // プレビューを更新
             updateThemePreview();
-            
+
             // 全ての該当要素にテーマを適用
             updateThemeElements();
-            
+
+            // グラフカラースキームが'auto'の場合、プレビューとグラフを更新
+            if (selectedChartColorScheme === 'auto') {
+                updateChartColorPreview();
+                // レポートタブがアクティブな場合、グラフを再描画
+                const reportTab = document.getElementById('report');
+                if (reportTab && reportTab.classList.contains('active')) {
+                    updateReportMatrix();
+                }
+            }
+
             // データに保存
             saveData(true); // 自動バックアップはスキップ
         }
@@ -11687,7 +11795,7 @@
             const groupWidth = chartWidth / members.length;
 
             // カラースキームを取得
-            const colorScheme = chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['current'];
+            const colorScheme = getActiveChartColorScheme();
 
             members.forEach((member, index) => {
                 const data = memberSummary[member];
@@ -11786,7 +11894,7 @@
             const total = processes.reduce((sum, p) => sum + processHours[p], 0);
 
             // カラースキームを取得
-            const colorScheme = chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['current'];
+            const colorScheme = getActiveChartColorScheme();
 
             // フォールバックカラー（定義されていない工程用）
             const fallbackColors = [
