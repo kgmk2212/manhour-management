@@ -1537,7 +1537,11 @@
 
                         <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px;">
+                            <!-- セグメントボタン版 -->
+                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
+                            </div>
+                            <!-- Select版（セグメントボタン生成用に必要） -->
+                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -3022,6 +3026,18 @@
                     btnFilterMonth.style.color = 'white';
                 }
 
+                // 見積一覧フィルタタイプボタン（版数別がデフォルト選択）
+                const estimateFilterType = document.getElementById('estimateFilterType');
+                const btnEstimateFilterMonth = document.getElementById('btnEstimateFilterMonth');
+                const btnEstimateFilterVersion = document.getElementById('btnEstimateFilterVersion');
+                if (estimateFilterType && btnEstimateFilterMonth && btnEstimateFilterVersion) {
+                    const type = estimateFilterType.value;
+                    btnEstimateFilterMonth.style.background = type === 'month' ? themeColor : 'white';
+                    btnEstimateFilterMonth.style.color = type === 'month' ? 'white' : '#333';
+                    btnEstimateFilterVersion.style.background = type === 'version' ? themeColor : 'white';
+                    btnEstimateFilterVersion.style.color = type === 'version' ? 'white' : '#333';
+                }
+
                 // レポート表示形式ボタン（現在の選択に応じて）
                 const reportViewType = document.getElementById('reportViewType');
                 const btnReportSummary = document.getElementById('btnReportSummary');
@@ -3931,10 +3947,31 @@
             });
 
             // デフォルトで最新の版数を選択
+            const defaultValue = sortedVersions.length > 0 ? sortedVersions[0] : 'all';
             if (sortedVersions.length > 0) {
-                select.value = sortedVersions[0];
-                if (select2) select2.value = sortedVersions[0];
+                select.value = defaultValue;
+                if (select2) select2.value = defaultValue;
             }
+
+            // セグメントボタン版を生成
+            const items = [
+                { value: 'all', label: '全版数' },
+                ...sortedVersions.slice().reverse().map(version => {
+                    return {
+                        value: version,
+                        label: version
+                    };
+                })
+            ];
+            const currentValue = select.value || 'all';
+            createSegmentButtons(
+                'estimateVersionButtons2',
+                'estimateVersionFilter2',
+                items,
+                currentValue,
+                8, // 最大8個までセグメントボタン表示
+                handleEstimateVersionChange
+            );
         }
 
         function handleEstimateFilterTypeChange() {
@@ -3964,19 +4001,20 @@
         function setEstimateFilterType(type) {
             document.getElementById('estimateFilterType').value = type;
 
-            // セグメントボタンのスタイル更新
+            // セグメントボタンのスタイル更新（テーマカラー適用）
+            const themeColor = getThemeColor();
             const btnMonth = document.getElementById('btnEstimateFilterMonth');
             const btnVersion = document.getElementById('btnEstimateFilterVersion');
 
             if (type === 'month') {
-                btnMonth.style.background = '#007bff';
+                btnMonth.style.background = themeColor;
                 btnMonth.style.color = 'white';
                 btnVersion.style.background = 'white';
                 btnVersion.style.color = '#333';
             } else {
                 btnMonth.style.background = 'white';
                 btnMonth.style.color = '#333';
-                btnVersion.style.background = '#007bff';
+                btnVersion.style.background = themeColor;
                 btnVersion.style.color = 'white';
             }
 
@@ -4078,6 +4116,9 @@
             const defaultMonth = getDefaultMonth(select);
             select.value = defaultMonth;
             if (select2) select2.value = defaultMonth;
+
+            // セグメントボタンの選択状態を更新
+            updateSegmentButtonSelection('actualMonthButtons2', defaultMonth);
         }
 
         function setDefaultReportMonth() {
@@ -4089,6 +4130,9 @@
             const defaultMonth = getDefaultMonth(select);
             select.value = defaultMonth;
             if (select2) select2.value = defaultMonth;
+
+            // セグメントボタンの選択状態を更新
+            updateSegmentButtonSelection('reportMonthButtons2', defaultMonth);
         }
 
         function setDefaultEstimateMonth() {
@@ -9682,12 +9726,33 @@
                 btnEstimateList.style.color = estimateViewType === 'list' ? 'white' : '#333';
             }
 
+            // 見積一覧のセグメントボタン（フィルタタイプ：月別/版数別）
+            const estimateFilterType = document.getElementById('estimateFilterType');
+            const btnEstimateFilterMonth = document.getElementById('btnEstimateFilterMonth');
+            const btnEstimateFilterVersion = document.getElementById('btnEstimateFilterVersion');
+            if (estimateFilterType && btnEstimateFilterMonth && btnEstimateFilterVersion) {
+                const type = estimateFilterType.value;
+                btnEstimateFilterMonth.style.background = type === 'month' ? themeColor : 'white';
+                btnEstimateFilterMonth.style.color = type === 'month' ? 'white' : '#333';
+                btnEstimateFilterVersion.style.background = type === 'version' ? themeColor : 'white';
+                btnEstimateFilterVersion.style.color = type === 'version' ? 'white' : '#333';
+            }
+
             // 見積一覧のセグメントボタン（表示月）
             const estimateMonthButtons = document.getElementById('estimateMonthButtons2');
             if (estimateMonthButtons) {
                 const estimateMonthFilter = document.getElementById('estimateMonthFilter');
                 if (estimateMonthFilter) {
                     updateSegmentButtonSelection('estimateMonthButtons2', estimateMonthFilter.value);
+                }
+            }
+
+            // 見積一覧のセグメントボタン（版数）
+            const estimateVersionButtons = document.getElementById('estimateVersionButtons2');
+            if (estimateVersionButtons) {
+                const estimateVersionFilter = document.getElementById('estimateVersionFilter');
+                if (estimateVersionFilter) {
+                    updateSegmentButtonSelection('estimateVersionButtons2', estimateVersionFilter.value);
                 }
             }
 
@@ -9888,6 +9953,16 @@
         // 見積一覧の月選択ハンドラー
         function handleEstimateMonthChange(value, containerId) {
             const filterElement = document.getElementById('estimateMonthFilter');
+            if (filterElement) {
+                filterElement.value = value;
+            }
+            updateSegmentButtonSelection(containerId, value);
+            renderEstimateList();
+        }
+
+        // 見積一覧の版数選択ハンドラー
+        function handleEstimateVersionChange(value, containerId) {
+            const filterElement = document.getElementById('estimateVersionFilter');
             if (filterElement) {
                 filterElement.value = value;
             }
