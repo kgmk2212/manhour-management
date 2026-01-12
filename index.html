@@ -124,12 +124,19 @@
             font-size: 13px;
         }
 
-        input, select {
+        input:not([type="radio"]):not([type="checkbox"]), select {
             width: 100%;
             padding: 8px 10px;
             border: 2px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
+        }
+
+        input[type="radio"], input[type="checkbox"] {
+            width: auto;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
         }
 
         .quick-input {
@@ -2931,11 +2938,11 @@
                     actual: '#ab47bc'
                 },
                 processColors: {
-                    'UI': '#4a148c',
-                    'PG': '#6a1b9a',
-                    'PT': '#7b1fa2',
-                    'IT': '#8e24aa',
-                    'ST': '#ab47bc'
+                    'UI': '#e91e63',  // ピンク
+                    'PG': '#2196f3',  // 青
+                    'PT': '#009688',  // ティール
+                    'IT': '#ff9800',  // オレンジ
+                    'ST': '#9c27b0'   // 紫
                 }
             },
             'indigo': {
@@ -2945,11 +2952,11 @@
                     actual: '#5c6bc0'
                 },
                 processColors: {
-                    'UI': '#1a237e',
-                    'PG': '#283593',
-                    'PT': '#3f51b5',
-                    'IT': '#5c6bc0',
-                    'ST': '#7986cb'
+                    'UI': '#f44336',  // 赤
+                    'PG': '#2196f3',  // 青
+                    'PT': '#4caf50',  // 緑
+                    'IT': '#ff9800',  // オレンジ
+                    'ST': '#673ab7'   // ディープパープル
                 }
             },
             'deep-blue': {
@@ -2959,11 +2966,11 @@
                     actual: '#1e88e5'
                 },
                 processColors: {
-                    'UI': '#0d47a1',
-                    'PG': '#1565c0',
-                    'PT': '#1976d2',
-                    'IT': '#1e88e5',
-                    'ST': '#42a5f5'
+                    'UI': '#d32f2f',  // 濃い赤
+                    'PG': '#1976d2',  // 濃い青
+                    'PT': '#388e3c',  // 濃い緑
+                    'IT': '#f57c00',  // 濃いオレンジ
+                    'ST': '#7b1fa2'   // 濃い紫
                 }
             },
             'ocean': {
@@ -2973,11 +2980,11 @@
                     actual: '#0288d1'
                 },
                 processColors: {
-                    'UI': '#01579b',
-                    'PG': '#0277bd',
-                    'PT': '#0288d1',
-                    'IT': '#039be5',
-                    'ST': '#29b6f6'
+                    'UI': '#c2185b',  // ピンク
+                    'PG': '#0288d1',  // 水色
+                    'PT': '#00897b',  // ティール
+                    'IT': '#ff6f00',  // 濃いオレンジ
+                    'ST': '#6a1b9a'   // 紫
                 }
             },
             'sky': {
@@ -2987,11 +2994,11 @@
                     actual: '#29b6f6'
                 },
                 processColors: {
-                    'UI': '#01579b',
-                    'PG': '#0277bd',
-                    'PT': '#0288d1',
-                    'IT': '#039be5',
-                    'ST': '#29b6f6'
+                    'UI': '#e91e63',  // ピンク
+                    'PG': '#03a9f4',  // ライトブルー
+                    'PT': '#26a69a',  // ティール
+                    'IT': '#ffa726',  // オレンジ
+                    'ST': '#ab47bc'   // 紫
                 }
             },
             'navy': {
@@ -3001,11 +3008,11 @@
                     actual: '#3f51b5'
                 },
                 processColors: {
-                    'UI': '#0d1b4d',
-                    'PG': '#1a237e',
-                    'PT': '#283593',
-                    'IT': '#3f51b5',
-                    'ST': '#5c6bc0'
+                    'UI': '#c62828',  // 濃い赤
+                    'PG': '#1565c0',  // 濃い青
+                    'PT': '#2e7d32',  // 濃い緑
+                    'IT': '#e65100',  // 濃いオレンジ
+                    'ST': '#4a148c'   // 濃い紫
                 }
             },
             'teal': {
@@ -3015,11 +3022,11 @@
                     actual: '#26a69a'
                 },
                 processColors: {
-                    'UI': '#004d40',
-                    'PG': '#00695c',
-                    'PT': '#00897b',
-                    'IT': '#00acc1',
-                    'ST': '#26a69a'
+                    'UI': '#ec407a',  // ピンク
+                    'PG': '#42a5f5',  // 青
+                    'PT': '#26a69a',  // ティール
+                    'IT': '#ffa726',  // オレンジ
+                    'ST': '#ab47bc'   // 紫
                 }
             },
             'cyan': {
@@ -3029,11 +3036,11 @@
                     actual: '#00acc1'
                 },
                 processColors: {
-                    'UI': '#006064',
-                    'PG': '#00838f',
-                    'PT': '#0097a7',
-                    'IT': '#00acc1',
-                    'ST': '#26c6da'
+                    'UI': '#d81b60',  // ピンク
+                    'PG': '#039be5',  // シアン青
+                    'PT': '#00acc1',  // シアン
+                    'IT': '#fb8c00',  // オレンジ
+                    'ST': '#8e24aa'   // 紫
                 }
             },
             'green': {
@@ -3043,11 +3050,11 @@
                     actual: '#66bb6a'
                 },
                 processColors: {
-                    'UI': '#1b5e20',
-                    'PG': '#2e7d32',
-                    'PT': '#388e3c',
-                    'IT': '#43a047',
-                    'ST': '#66bb6a'
+                    'UI': '#e53935',  // 赤
+                    'PG': '#1e88e5',  // 青
+                    'PT': '#43a047',  // 緑
+                    'IT': '#fb8c00',  // オレンジ
+                    'ST': '#8e24aa'   // 紫
                 }
             },
             'emerald': {
@@ -3057,11 +3064,11 @@
                     actual: '#4db6ac'
                 },
                 processColors: {
-                    'UI': '#004d40',
-                    'PG': '#00695c',
-                    'PT': '#00897b',
-                    'IT': '#26a69a',
-                    'ST': '#4db6ac'
+                    'UI': '#ec407a',  // ピンク
+                    'PG': '#29b6f6',  // ライトブルー
+                    'PT': '#26a69a',  // ティール
+                    'IT': '#ffb74d',  // ライトオレンジ
+                    'ST': '#ba68c8'   // ライトパープル
                 }
             },
             'slate': {
@@ -3071,11 +3078,11 @@
                     actual: '#78909c'
                 },
                 processColors: {
-                    'UI': '#263238',
-                    'PG': '#37474f',
-                    'PT': '#455a64',
-                    'IT': '#546e7a',
-                    'ST': '#78909c'
+                    'UI': '#f44336',  // 赤
+                    'PG': '#2196f3',  // 青
+                    'PT': '#4caf50',  // 緑
+                    'IT': '#ff9800',  // オレンジ
+                    'ST': '#9c27b0'   // 紫
                 }
             }
         };
@@ -4438,12 +4445,32 @@
                 if (versionFilterCompact) versionFilterCompact.style.display = 'none';
                 if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
                 if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+
+                // 月別フィルタに切り替えた時、デフォルト月が選択されていない場合は設定
+                const estimateMonthEl = document.getElementById('estimateMonthFilter');
+                if (estimateMonthEl && !estimateMonthEl.value) {
+                    setDefaultEstimateMonth();
+                }
             } else {
                 // 版数別フィルタを表示
                 if (monthFilterCompact) monthFilterCompact.style.display = 'none';
                 if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
                 if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
                 if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+
+                // 版数別フィルタに切り替えた時、デフォルト版数が選択されていない場合は最新版数を設定
+                const estimateVersionEl = document.getElementById('estimateVersionFilter');
+                if (estimateVersionEl && (!estimateVersionEl.value || estimateVersionEl.value === 'all')) {
+                    const options = estimateVersionEl.options;
+                    if (options.length > 1) {
+                        // 'all'以外の最初の版数を選択（最新版数）
+                        estimateVersionEl.value = options[1].value;
+                        // セグメントボタンも更新
+                        const estimateVersion2El = document.getElementById('estimateVersionFilter2');
+                        if (estimateVersion2El) estimateVersion2El.value = options[1].value;
+                        updateSegmentButtonSelection('estimateVersionButtons2', options[1].value);
+                    }
+                }
             }
 
             // レポートのフィルタタイプも同期
@@ -4682,6 +4709,8 @@
                 applyDefaultEstimateViewType();
             } else if (tabName === 'report') {
                 applyDefaultReportViewType();
+                // レポートタブを開いた時は常にupdateReport()を呼び出してグラフを更新
+                updateReport();
             }
         }
 
@@ -10894,11 +10923,31 @@
                     if (versionFilterCompact) versionFilterCompact.style.display = 'none';
                     if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
                     if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+
+                    // 月別フィルタに切り替えた時、デフォルト月が選択されていない場合は設定
+                    const reportMonthEl = document.getElementById('reportMonth');
+                    if (reportMonthEl && !reportMonthEl.value) {
+                        setDefaultReportMonth();
+                    }
                 } else {
                     if (monthFilterCompact) monthFilterCompact.style.display = 'none';
                     if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
                     if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
                     if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+
+                    // 版数別フィルタに切り替えた時、デフォルト版数が選択されていない場合は最新版数を設定
+                    const reportVersionEl = document.getElementById('reportVersion');
+                    if (reportVersionEl && (!reportVersionEl.value || reportVersionEl.value === 'all')) {
+                        const options = reportVersionEl.options;
+                        if (options.length > 1) {
+                            // 'all'以外の最初の版数を選択（最新版数）
+                            reportVersionEl.value = options[1].value;
+                            // セグメントボタンも更新
+                            const reportVersion2El = document.getElementById('reportVersion2');
+                            if (reportVersion2El) reportVersion2El.value = options[1].value;
+                            updateSegmentButtonSelection('reportVersionButtons2', options[1].value);
+                        }
+                    }
                 }
 
                 // フィルタタイプ切り替えボタンの状態更新
