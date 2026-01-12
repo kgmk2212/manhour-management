@@ -2934,8 +2934,8 @@
             'purple': {
                 name: '紫',
                 barColors: {
-                    estimate: '#7b1fa2',
-                    actual: '#ab47bc'
+                    estimate: '#7b1fa2',  // 紫
+                    actual: '#26a69a'     // ティール（対照色）
                 },
                 processColors: {
                     'UI': '#e91e63',  // ピンク
@@ -2948,8 +2948,8 @@
             'indigo': {
                 name: 'インディゴ',
                 barColors: {
-                    estimate: '#3f51b5',
-                    actual: '#5c6bc0'
+                    estimate: '#3f51b5',  // インディゴ
+                    actual: '#ff9800'     // オレンジ（対照色）
                 },
                 processColors: {
                     'UI': '#f44336',  // 赤
@@ -2962,8 +2962,8 @@
             'deep-blue': {
                 name: 'ディープブルー',
                 barColors: {
-                    estimate: '#1565c0',
-                    actual: '#1e88e5'
+                    estimate: '#1565c0',  // ディープブルー
+                    actual: '#ffa726'     // オレンジ（対照色）
                 },
                 processColors: {
                     'UI': '#d32f2f',  // 濃い赤
@@ -2976,8 +2976,8 @@
             'ocean': {
                 name: 'オーシャン',
                 barColors: {
-                    estimate: '#0277bd',
-                    actual: '#0288d1'
+                    estimate: '#0277bd',  // オーシャンブルー
+                    actual: '#66bb6a'     // 緑（対照色）
                 },
                 processColors: {
                     'UI': '#c2185b',  // ピンク
@@ -2990,8 +2990,8 @@
             'sky': {
                 name: 'スカイブルー',
                 barColors: {
-                    estimate: '#0288d1',
-                    actual: '#29b6f6'
+                    estimate: '#0288d1',  // スカイブルー
+                    actual: '#ec407a'     // ピンク（対照色）
                 },
                 processColors: {
                     'UI': '#e91e63',  // ピンク
@@ -3004,8 +3004,8 @@
             'navy': {
                 name: 'ネイビー',
                 barColors: {
-                    estimate: '#1a237e',
-                    actual: '#3f51b5'
+                    estimate: '#1a237e',  // ネイビー
+                    actual: '#ffa726'     // オレンジ（対照色）
                 },
                 processColors: {
                     'UI': '#c62828',  // 濃い赤
@@ -3018,8 +3018,8 @@
             'teal': {
                 name: 'ティール',
                 barColors: {
-                    estimate: '#00897b',
-                    actual: '#26a69a'
+                    estimate: '#00897b',  // ティール
+                    actual: '#ab47bc'     // 紫（対照色）
                 },
                 processColors: {
                     'UI': '#ec407a',  // ピンク
@@ -3032,8 +3032,8 @@
             'cyan': {
                 name: 'シアン',
                 barColors: {
-                    estimate: '#0097a7',
-                    actual: '#00acc1'
+                    estimate: '#0097a7',  // シアン
+                    actual: '#e91e63'     // ピンク（対照色）
                 },
                 processColors: {
                     'UI': '#d81b60',  // ピンク
@@ -3046,8 +3046,8 @@
             'green': {
                 name: 'グリーン',
                 barColors: {
-                    estimate: '#388e3c',
-                    actual: '#66bb6a'
+                    estimate: '#388e3c',  // 緑
+                    actual: '#2196f3'     // 青（対照色）
                 },
                 processColors: {
                     'UI': '#e53935',  // 赤
@@ -3060,8 +3060,8 @@
             'emerald': {
                 name: 'エメラルド',
                 barColors: {
-                    estimate: '#00897b',
-                    actual: '#4db6ac'
+                    estimate: '#00897b',  // エメラルド
+                    actual: '#ba68c8'     // ライトパープル（対照色）
                 },
                 processColors: {
                     'UI': '#ec407a',  // ピンク
@@ -3074,8 +3074,8 @@
             'slate': {
                 name: 'スレート',
                 barColors: {
-                    estimate: '#546e7a',
-                    actual: '#78909c'
+                    estimate: '#546e7a',  // スレート
+                    actual: '#4caf50'     // 緑（対照色）
                 },
                 processColors: {
                     'UI': '#f44336',  // 赤
@@ -4475,6 +4475,19 @@
 
             // レポートのフィルタタイプも同期
             syncFilterTypeToReport(filterType);
+
+            // 選択値も同期
+            if (filterType === 'month') {
+                const estimateMonthEl = document.getElementById('estimateMonthFilter');
+                if (estimateMonthEl && estimateMonthEl.value) {
+                    syncMonthToReport(estimateMonthEl.value);
+                }
+            } else {
+                const estimateVersionEl = document.getElementById('estimateVersionFilter');
+                if (estimateVersionEl && estimateVersionEl.value) {
+                    syncVersionToReport(estimateVersionEl.value);
+                }
+            }
 
             renderEstimateList();
         }
@@ -10776,13 +10789,79 @@
         // フィルタタイプ同期ヘルパー関数：見積一覧→レポート
         function syncFilterTypeToReport(type) {
             const reportFilterType = document.getElementById('reportFilterType');
-            if (reportFilterType) reportFilterType.value = type;
+            if (reportFilterType && reportFilterType.value !== type) {
+                reportFilterType.value = type;
+                // UIの表示を更新（無限ループを防ぐため、見積一覧への同期は行わない）
+                const monthFilterCompact = document.getElementById('reportMonthFilterCompact');
+                const versionFilterCompact = document.getElementById('reportVersionFilterCompact');
+                const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
+                const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
+
+                if (type === 'month') {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'none';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+                } else {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'none';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+                }
+
+                // フィルタタイプボタンの状態更新
+                updateFilterTypeButtons(type);
+            }
         }
 
         // フィルタタイプ同期ヘルパー関数：レポート→見積一覧
         function syncFilterTypeToEstimate(type) {
             const estimateFilterType = document.getElementById('estimateFilterType');
-            if (estimateFilterType) estimateFilterType.value = type;
+            if (estimateFilterType && estimateFilterType.value !== type) {
+                estimateFilterType.value = type;
+                // UIの表示を更新（無限ループを防ぐため、レポートへの同期は行わない）
+                const monthFilterCompact = document.getElementById('estimateMonthFilterCompact');
+                const versionFilterCompact = document.getElementById('estimateVersionFilterCompact');
+                const monthFilterSegmented = document.getElementById('estimateMonthFilterSegmented');
+                const versionFilterSegmented = document.getElementById('estimateVersionFilterSegmented');
+
+                if (type === 'month') {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'none';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+                } else {
+                    if (monthFilterCompact) monthFilterCompact.style.display = 'none';
+                    if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
+                    if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
+                    if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
+                }
+
+                // セグメントボタンの状態更新
+                const themeColor = getThemeColor();
+                const btnMonth = document.getElementById('btnEstimateFilterMonth');
+                const btnVersion = document.getElementById('btnEstimateFilterVersion');
+
+                if (type === 'month') {
+                    if (btnMonth) {
+                        btnMonth.style.background = themeColor;
+                        btnMonth.style.color = 'white';
+                    }
+                    if (btnVersion) {
+                        btnVersion.style.background = 'white';
+                        btnVersion.style.color = '#333';
+                    }
+                } else {
+                    if (btnMonth) {
+                        btnMonth.style.background = 'white';
+                        btnMonth.style.color = '#333';
+                    }
+                    if (btnVersion) {
+                        btnVersion.style.background = themeColor;
+                        btnVersion.style.color = 'white';
+                    }
+                }
+            }
         }
 
         // 版数選択同期ヘルパー関数：見積一覧→レポート
@@ -10955,6 +11034,19 @@
 
                 // 見積一覧のフィルタタイプも同期
                 syncFilterTypeToEstimate(filterType);
+
+                // 選択値も同期
+                if (filterType === 'month') {
+                    const reportMonthEl = document.getElementById('reportMonth');
+                    if (reportMonthEl && reportMonthEl.value) {
+                        syncMonthToEstimate(reportMonthEl.value);
+                    }
+                } else {
+                    const reportVersionEl = document.getElementById('reportVersion');
+                    if (reportVersionEl && reportVersionEl.value) {
+                        syncVersionToEstimate(reportVersionEl.value);
+                    }
+                }
 
                 updateReport();
             } catch (e) {
