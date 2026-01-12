@@ -5016,9 +5016,9 @@
                 alert('データが見つかりません');
                 return;
             }
-            
+
             const est = normalizeEstimate(estimate);
-            
+
             // モーダルに情報を設定
             document.getElementById('splitEstimateId').value = id;
             document.getElementById('splitEstimateInfo').innerHTML = `
@@ -5026,28 +5026,32 @@
                 現在の工数: ${est.hours.toFixed(1)}h
             `;
             document.getElementById('splitTotalHours').value = est.hours;
-            
+
+            // 既存の月別工数データがある場合は先に手動設定モードに切り替え（onchangeイベントが発火する前に）
+            if (est.monthlyHours && Object.keys(est.monthlyHours).length > 0) {
+                document.querySelector('input[name="splitMethodModal"][value="manual"]').checked = true;
+            } else {
+                document.querySelector('input[name="splitMethodModal"][value="equal"]').checked = true;
+            }
+
             // 月選択肢を初期化
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            
+
             // 既存の作業月がある場合はそれを使用
             let defaultStart = currentMonth;
             let defaultEnd = currentMonth;
-            
+
             if (est.workMonths.length > 0) {
                 defaultStart = est.workMonths[0];
                 defaultEnd = est.workMonths[est.workMonths.length - 1];
             }
-            
+
             generateMonthOptions('splitStartMonth', defaultStart);
             generateMonthOptions('splitEndMonth', defaultEnd);
-            
-            // 分割方法をリセット
-            document.querySelector('input[name="splitMethodModal"][value="equal"]').checked = true;
-            
+
             updateSplitPreview();
-            
+
             // モーダルを表示
             document.getElementById('splitEstimateModal').style.display = 'flex';
         }
@@ -5062,22 +5066,29 @@
             const endMonth = document.getElementById('splitEndMonth').value;
             const method = document.querySelector('input[name="splitMethodModal"]:checked').value;
             const preview = document.getElementById('splitPreview');
-            
+
             if (!startMonth || !endMonth || totalHours <= 0) {
                 preview.innerHTML = '<p style="color: #999; font-size: 14px;">作業期間を選択してください</p>';
                 return;
             }
-            
+
             if (startMonth > endMonth) {
                 preview.innerHTML = '<p style="color: #e74c3c; font-size: 14px;">⚠️ 開始月は終了月より前にしてください</p>';
                 return;
             }
-            
+
             const months = generateMonthRange(startMonth, endMonth);
+
+            // 既存の月別工数データを取得（編集中の場合）
+            const estimateId = parseFloat(document.getElementById('splitEstimateId').value);
+            const currentEstimate = estimates.find(e => e.id === estimateId);
+            const normalizedEstimate = normalizeEstimate(currentEstimate);
+            const currentMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
+
             let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #3498db;">';
             html += '<strong style="color: #2c3e50;">📋 分割プレビュー</strong><br>';
             html += '<div style="margin-top: 10px;">';
-            
+
             if (method === 'equal') {
                 const hoursPerMonth = (totalHours / months.length).toFixed(1);
                 months.forEach(month => {
@@ -5091,19 +5102,35 @@
                 html += `</div>`;
             } else {
                 // 手動設定UI
+                let calculatedTotal = 0;
                 months.forEach((month, index) => {
                     const [y, m] = month.split('-');
+                    // 既存データがあればそれを初期値に、なければ0
+                    const existingHours = currentMonthlyHours[month] !== undefined ? currentMonthlyHours[month] : 0;
+                    calculatedTotal += existingHours;
                     html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
                     html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-                    html += `<input type="number" id="splitMonthHours_${index}" value="0" step="0.1" min="0" `;
+                    html += `<input type="number" id="splitMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
                     html += `onchange="updateSplitManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
                     html += `</div>`;
                 });
                 html += `<div id="splitManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
-                html += `合計: 0h / 目標: ${totalHours}h`;
+                const isMatch = Math.abs(calculatedTotal - totalHours) < 0.01;
+                const color = isMatch ? '#27ae60' : '#e74c3c';
+                html += `合計: <span style="color: ${color};">${calculatedTotal.toFixed(1)}h</span> / 目標: ${totalHours}h`;
+                if (Math.abs(calculatedTotal - totalHours) >= 0.01) {
+                    const diff = calculatedTotal - totalHours;
+                    if (diff > 0) {
+                        html += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
+                    } else {
+                        html += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
+                    }
+                } else {
+                    html += ' <span style="color: #27ae60;">✓</span>';
+                }
                 html += `</div>`;
             }
-            
+
             html += '</div></div>';
             preview.innerHTML = html;
         }
@@ -9918,7 +9945,8 @@
             // 既存の月別工数データを取得（編集中の場合）
             const estimateId = parseFloat(document.getElementById('editEstimateId').value);
             const currentEstimate = estimates.find(e => e.id === estimateId);
-            const currentMonthlyHours = currentEstimate && currentEstimate.monthlyHours ? currentEstimate.monthlyHours : {};
+            const normalizedEstimate = normalizeEstimate(currentEstimate);
+            const currentMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
 
             let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #3498db; max-height: 300px; overflow-y: auto;">';
             html += '<strong style="color: #2c3e50;">📋 月別工数</strong><br>';
@@ -9937,28 +9965,24 @@
                 html += `</div>`;
             } else {
                 // 手動設定UI
+                let calculatedTotal = 0;
                 months.forEach((month, index) => {
                     const [y, m] = month.split('-');
-                    // 既存データがあればそれを初期値に
-                    const existingHours = currentMonthlyHours[month] || 0;
+                    // 既存データがあればそれを初期値に、なければ0
+                    const existingHours = currentMonthlyHours[month] !== undefined ? currentMonthlyHours[month] : 0;
+                    calculatedTotal += existingHours;
                     html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
                     html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
                     html += `<input type="number" id="editMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
                     html += `onchange="updateEditManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
                     html += `</div>`;
                 });
+
+                // HTMLを設定
                 html += `<div id="editManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
-
-                // 現在の合計を計算
-                let currentTotal = 0;
-                months.forEach((month, index) => {
-                    const input = document.getElementById(`editMonthHours_${index}`);
-                    if (input) {
-                        currentTotal += parseFloat(input.value) || 0;
-                    }
-                });
-
-                html += `合計: ${currentTotal.toFixed(1)}h / 目標: ${totalHours}h`;
+                const isMatch = Math.abs(calculatedTotal - totalHours) < 0.01;
+                const color = isMatch ? '#27ae60' : '#e74c3c';
+                html += `合計: <span style="color: ${color};">${calculatedTotal.toFixed(1)}h</span> / 目標: ${totalHours}h`;
                 html += `</div>`;
             }
 
