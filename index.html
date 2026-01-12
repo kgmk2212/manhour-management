@@ -3941,9 +3941,10 @@
                 }
             });
 
-            // デフォルトで全版数を選択
-            select.value = 'all';
-            if (select2) select2.value = 'all';
+            // デフォルトで最新の版数を選択
+            const defaultValue = sortedVersions.length > 0 ? sortedVersions[0] : 'all';
+            select.value = defaultValue;
+            if (select2) select2.value = defaultValue;
 
             // セグメントボタン版を生成
             const items = [
@@ -3955,12 +3956,11 @@
                     };
                 })
             ];
-            const currentValue = 'all';
             createSegmentButtons(
                 'estimateVersionButtons2',
                 'estimateVersionFilter2',
                 items,
-                currentValue,
+                defaultValue,
                 8, // 最大8個までセグメントボタン表示
                 handleEstimateVersionChange
             );
