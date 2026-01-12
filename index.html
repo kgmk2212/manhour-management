@@ -11262,14 +11262,14 @@
                         });
                     }
 
-                    // 担当者の負荷チェック
-                    const memberSummary = {};
-                    filteredActuals.forEach(a => {
-                        if (!memberSummary[a.member]) memberSummary[a.member] = 0;
-                        memberSummary[a.member] += a.hours;
+                    // 担当者の負荷チェック（見積工数ベース）
+                    const memberEstimates = {};
+                    filteredEstimates.forEach(e => {
+                        if (!memberEstimates[e.member]) memberEstimates[e.member] = 0;
+                        memberEstimates[e.member] += e.hours;
                     });
 
-                    const maxMember = Object.entries(memberSummary).sort((a, b) => b[1] - a[1])[0];
+                    const maxMember = Object.entries(memberEstimates).sort((a, b) => b[1] - a[1])[0];
                     if (maxMember && selectedMonth !== 'all') {
                         const manDays = (maxMember[1] / 8).toFixed(1);
                         const manMonths = (maxMember[1] / 8 / workingDaysPerMonth).toFixed(2);
@@ -11278,7 +11278,7 @@
                                 type: 'warning',
                                 icon: '',
                                 title: '高負荷担当者あり',
-                                message: `${maxMember[0]}さんの作業量が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
+                                message: `${maxMember[0]}さんの見積工数が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
                             });
                         }
                     }
