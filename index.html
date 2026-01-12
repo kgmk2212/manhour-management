@@ -1459,44 +1459,46 @@
                 </button>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="estimateFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                        <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="month">月別</option>
-                            <option value="version">版数別</option>
-                        </select>
+                <div id="estimateFiltersCompact" style="margin-bottom: 20px;">
+                    <div style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="month">月別</option>
+                                <option value="version">版数別</option>
+                            </select>
+                        </div>
+                        <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <select id="estimateMonthFilter" onchange="handleEstimateMonthFilterChange()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                        <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="all">全版数</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                                <option value="grouped">グループ</option>
+                                <option value="matrix">マトリクス</option>
+                                <option value="list">リスト</option>
+                            </select>
+                        </div>
                     </div>
-                    <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="estimateMonthFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全期間</option>
-                        </select>
+                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                            <span>作業月割り当て</span>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                            <span>編集モード</span>
+                        </label>
                     </div>
-                    <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                        <select id="estimateVersionFilter" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全版数</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="grouped">グループ</option>
-                            <option value="matrix">マトリクス</option>
-                            <option value="list">リスト</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 20px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                        <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
-                        <span>作業月割り当て</span>
-                    </label>
-                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                        <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
-                        <span>編集モード</span>
-                    </label>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
@@ -1516,7 +1518,7 @@
                             <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; renderEstimateList()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; handleEstimateMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -1678,7 +1680,7 @@
                     </div>
                     <div id="reportMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="reportMonth" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportMonth" onchange="handleReportMonthFilterChange()" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
@@ -1714,7 +1716,7 @@
                             <div id="reportMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; updateReport()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; handleReportMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -10057,13 +10059,65 @@
             renderActualList();
         }
 
-        // 見積一覧の月選択ハンドラー
+        // 月選択同期ヘルパー関数：見積一覧→レポート
+        function syncMonthToReport(value) {
+            const reportMonth = document.getElementById('reportMonth');
+            const reportMonth2 = document.getElementById('reportMonth2');
+            if (reportMonth) reportMonth.value = value;
+            if (reportMonth2) reportMonth2.value = value;
+
+            // セグメントボタンの選択状態も更新
+            const reportMonthButtons2 = document.getElementById('reportMonthButtons2');
+            if (reportMonthButtons2) {
+                updateSegmentButtonSelection('reportMonthButtons2', value);
+            }
+        }
+
+        // 月選択同期ヘルパー関数：レポート→見積一覧
+        function syncMonthToEstimate(value) {
+            const estimateMonthFilter = document.getElementById('estimateMonthFilter');
+            const estimateMonthFilter2 = document.getElementById('estimateMonthFilter2');
+            if (estimateMonthFilter) estimateMonthFilter.value = value;
+            if (estimateMonthFilter2) estimateMonthFilter2.value = value;
+
+            // セグメントボタンの選択状態も更新
+            const estimateMonthButtons2 = document.getElementById('estimateMonthButtons2');
+            if (estimateMonthButtons2) {
+                updateSegmentButtonSelection('estimateMonthButtons2', value);
+            }
+        }
+
+        // 見積一覧の月選択フィルタ変更ハンドラー（select要素用）
+        function handleEstimateMonthFilterChange() {
+            const value = document.getElementById('estimateMonthFilter').value;
+
+            // レポートの月選択も同期
+            syncMonthToReport(value);
+
+            renderEstimateList();
+        }
+
+        // レポートの月選択フィルタ変更ハンドラー（select要素用）
+        function handleReportMonthFilterChange() {
+            const value = document.getElementById('reportMonth').value;
+
+            // 見積一覧の月選択も同期
+            syncMonthToEstimate(value);
+
+            updateReport();
+        }
+
+        // 見積一覧の月選択ハンドラー（セグメントボタン用）
         function handleEstimateMonthChange(value, containerId) {
             const filterElement = document.getElementById('estimateMonthFilter');
             if (filterElement) {
                 filterElement.value = value;
             }
             updateSegmentButtonSelection(containerId, value);
+
+            // レポートの月選択も同期
+            syncMonthToReport(value);
+
             renderEstimateList();
         }
 
@@ -10077,11 +10131,15 @@
             renderEstimateList();
         }
 
-        // レポートの月選択ハンドラー
+        // レポートの月選択ハンドラー（セグメントボタン用）
         function handleReportMonthChange(value, containerId) {
             document.getElementById('reportMonth').value = value;
             document.getElementById('reportMonth2').value = value;
             updateSegmentButtonSelection(containerId, value);
+
+            // 見積一覧の月選択も同期
+            syncMonthToEstimate(value);
+
             updateReport();
         }
 
@@ -11002,6 +11060,15 @@
                     if (members.length > 0) {
                         html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
                         html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">担当者別パフォーマンス</h4>';
+
+                        // グラフセクション
+                        html += '<div style="margin-bottom: 20px;">';
+                        html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: 14px; font-weight: 600;">見積 vs 実績 比較</h5>';
+                        html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto;">';
+                        html += '<canvas id="memberComparisonChart" style="max-width: 100%; height: 300px;"></canvas>';
+                        html += '</div>';
+                        html += '</div>';
+
                         html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
 
                         members.forEach(member => {
@@ -11020,7 +11087,38 @@
                             html += '</div>';
                         });
 
+                        html += '</div>';
+
+                        // 内訳ドーナツグラフセクション
+                        html += '<div style="margin-top: 20px;">';
+                        html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: 14px; font-weight: 600;">担当者別 工数内訳</h5>';
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">';
+
+                        members.forEach(member => {
+                            html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center;">';
+                            html += `<div style="font-weight: 600; margin-bottom: 10px; color: #495057;">${member}</div>`;
+                            html += `<canvas id="memberDonutChart_${member.replace(/[^a-zA-Z0-9]/g, '_')}" style="max-width: 100%; height: 200px;"></canvas>`;
+                            html += '</div>';
+                        });
+
                         html += '</div></div>';
+                        html += '</div>';
+
+                        // グラフ描画データを保存（クロージャーで渡す）
+                        const chartData = {
+                            members: members,
+                            memberSummary: memberSummary,
+                            filteredEstimates: filteredEstimates,
+                            filteredActuals: filteredActuals
+                        };
+
+                        // グラフを描画するための遅延実行
+                        setTimeout(() => {
+                            drawMemberComparisonChart(chartData.members, chartData.memberSummary);
+                            chartData.members.forEach(member => {
+                                drawMemberDonutChart(member, chartData.filteredEstimates, chartData.filteredActuals);
+                            });
+                        }, 100);
                     }
                 }
 
@@ -11148,6 +11246,203 @@
             }
 
             container.innerHTML += html;
+        }
+
+        // 担当者別見積vs実績比較グラフを描画
+        function drawMemberComparisonChart(members, memberSummary) {
+            const canvas = document.getElementById('memberComparisonChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            // キャンバスのサイズを設定
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const padding = { top: 40, right: 100, bottom: 60, left: 80 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            // データの最大値を取得
+            let maxValue = 0;
+            members.forEach(member => {
+                const data = memberSummary[member];
+                maxValue = Math.max(maxValue, data.estimate, data.actual);
+            });
+            maxValue = Math.ceil(maxValue * 1.1); // 10%余裕を持たせる
+
+            // 背景を塗りつぶす
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, width, height);
+
+            // グリッド線を描画
+            ctx.strokeStyle = '#dee2e6';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + chartWidth, y);
+                ctx.stroke();
+
+                // Y軸ラベル
+                const value = maxValue - (maxValue / 5) * i;
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(value.toFixed(0) + 'h', padding.left - 10, y + 4);
+            }
+            ctx.setLineDash([]);
+
+            // バーを描画
+            const barWidth = chartWidth / members.length / 2.5;
+            const groupWidth = chartWidth / members.length;
+
+            members.forEach((member, index) => {
+                const data = memberSummary[member];
+                const x = padding.left + groupWidth * index + groupWidth / 2;
+
+                // 見積のバー
+                const estimateHeight = (data.estimate / maxValue) * chartHeight;
+                ctx.fillStyle = '#667eea';
+                ctx.fillRect(x - barWidth - 5, padding.top + chartHeight - estimateHeight, barWidth, estimateHeight);
+
+                // 実績のバー
+                const actualHeight = (data.actual / maxValue) * chartHeight;
+                ctx.fillStyle = '#f093fb';
+                ctx.fillRect(x + 5, padding.top + chartHeight - actualHeight, barWidth, actualHeight);
+
+                // X軸ラベル（担当者名）
+                ctx.fillStyle = '#495057';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.save();
+                ctx.translate(x, padding.top + chartHeight + 15);
+                ctx.rotate(-Math.PI / 6);
+                ctx.fillText(member, 0, 0);
+                ctx.restore();
+            });
+
+            // 凡例を描画
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(padding.left + chartWidth + 10, padding.top, 15, 15);
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('見積', padding.left + chartWidth + 30, padding.top + 12);
+
+            ctx.fillStyle = '#f093fb';
+            ctx.fillRect(padding.left + chartWidth + 10, padding.top + 25, 15, 15);
+            ctx.fillStyle = '#495057';
+            ctx.fillText('実績', padding.left + chartWidth + 30, padding.top + 37);
+
+            // タイトル
+            ctx.fillStyle = '#495057';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('担当者別 見積 vs 実績 (時間)', width / 2, 20);
+        }
+
+        // 担当者別工数内訳ドーナツグラフを描画
+        function drawMemberDonutChart(member, filteredEstimates, filteredActuals) {
+            const canvasId = `memberDonutChart_${member.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            // キャンバスのサイズを設定
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const centerX = width / 2;
+            const centerY = height / 2 - 10;
+            const radius = Math.min(width, height - 40) / 2.5;
+            const innerRadius = radius * 0.5;
+
+            // この担当者の実績を工程別に集計
+            const processHours = {};
+            filteredActuals
+                .filter(a => a.member === member)
+                .forEach(a => {
+                    const process = a.process || 'その他';
+                    processHours[process] = (processHours[process] || 0) + a.hours;
+                });
+
+            const processes = Object.keys(processHours);
+            if (processes.length === 0) {
+                // データがない場合
+                ctx.fillStyle = '#495057';
+                ctx.font = '13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('実績データなし', centerX, centerY);
+                return;
+            }
+
+            const total = processes.reduce((sum, p) => sum + processHours[p], 0);
+
+            // カラーパレット
+            const colors = [
+                '#667eea', '#f093fb', '#4facfe', '#43e97b',
+                '#fa709a', '#fee140', '#30cfd0', '#a8edea',
+                '#fbc2eb', '#a6c1ee', '#ffecd2', '#fcb69f'
+            ];
+
+            // ドーナツを描画
+            let startAngle = -Math.PI / 2;
+            processes.forEach((process, index) => {
+                const angle = (processHours[process] / total) * 2 * Math.PI;
+                const endAngle = startAngle + angle;
+
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+                ctx.closePath();
+                ctx.fill();
+
+                startAngle = endAngle;
+            });
+
+            // 中央に合計を表示
+            ctx.fillStyle = '#495057';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(total.toFixed(1) + 'h', centerX, centerY - 5);
+            ctx.font = '11px sans-serif';
+            ctx.fillText('合計実績', centerX, centerY + 12);
+
+            // 凡例を描画
+            const legendX = 10;
+            let legendY = height - 10 - (processes.length * 16);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.font = '11px sans-serif';
+
+            processes.forEach((process, index) => {
+                const percentage = (processHours[process] / total * 100).toFixed(1);
+
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fillRect(legendX, legendY, 10, 10);
+
+                ctx.fillStyle = '#495057';
+                const label = `${process} (${percentage}%)`;
+                ctx.fillText(label, legendX + 15, legendY + 5);
+
+                legendY += 16;
+            });
         }
 
         function renderReportGrouped(filteredActuals, filteredEstimates) {
