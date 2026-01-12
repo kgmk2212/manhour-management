@@ -11230,6 +11230,40 @@
             container.innerHTML += html;
         }
 
+        // 見積と実績の乖離率に基づいて背景色を計算
+        function getDeviationColor(estimate, actual) {
+            if (estimate === 0 && actual === 0) {
+                return '#ffffff'; // 両方0は白
+            }
+            if (estimate === 0 && actual > 0) {
+                return '#fffef0'; // 見積なし実績あり：薄い黄
+            }
+            if (estimate > 0 && actual === 0) {
+                return '#f0f8ff'; // 見積のみ：薄い青
+            }
+
+            const deviation = ((actual - estimate) / estimate) * 100;
+
+            if (Math.abs(deviation) < 5) {
+                return '#ffffff'; // ±5%以内は白
+            }
+
+            if (deviation > 0) {
+                // 実績 > 見積：赤系
+                if (deviation < 15) return '#fff0f0';
+                if (deviation < 30) return '#ffe0e0';
+                if (deviation < 50) return '#ffc0c0';
+                return '#ff9999';
+            } else {
+                // 実績 < 見積：緑系
+                const absDeviation = Math.abs(deviation);
+                if (absDeviation < 15) return '#f0fff0';
+                if (absDeviation < 30) return '#e0ffe0';
+                if (absDeviation < 50) return '#c0ffc0';
+                return '#99ff99';
+            }
+        }
+
         function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
             const container = document.getElementById('reportDetailView');
 
@@ -11418,14 +11452,18 @@
                                     `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
                                     '';
 
-                                // 設定がオンの時に月に基づく背景色を適用
-                                const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
-                                const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
+                                // 乖離率に基づく背景色を計算
+                                const deviationBgColor = getDeviationColor(est.hours, act.hours);
 
-                                tableBody += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
-                                    <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                    <div style="font-size: 11px; color: #666; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
-                                    <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                // 設定がオンの時に月に基づく背景色を適用（乖離色の代わりに）
+                                const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
+                                const bgColor = showMonthColors ? monthColor.bg : deviationBgColor;
+
+                                tableBody += `<td style="text-align: center; background: ${bgColor}; padding: 8px;" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
+                                    <div style="font-size: 0.85em; font-weight: 300; color: #666;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
+                                    <div style="font-weight: 600; margin-top: 2px;">${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
+                                    <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
                                 </td>`;
                             } else {
                                 tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
@@ -11433,14 +11471,19 @@
                         });
 
                         const totalDiff = totalAct - totalEst;
-                        // 人日・人月を計算（見積ベース）
+                        // 人日・人月を計算（見積・実績それぞれ）
                         const estDays = totalEst / 8;
                         const estMonths = estDays / 20;
+                        const actDays = totalAct / 8;
+                        const actMonths = actDays / 20;
 
-                        tableBody += `<td style="text-align: center;">
-                            <div style="font-weight: 700;">${totalEst.toFixed(1)} / ${totalAct.toFixed(1)}</div>
-                            <div style="font-size: 10px; color: #666;">${estDays.toFixed(1)}人日 / ${estMonths.toFixed(2)}人月</div>
-                            <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
+                        // 合計列の背景色
+                        const totalBgColor = getDeviationColor(totalEst, totalAct);
+
+                        tableBody += `<td style="text-align: center; background: ${totalBgColor}; padding: 8px;">
+                            <div style="font-size: 0.85em; font-weight: 300; color: #666;">${totalEst.toFixed(1)} <span style="font-size: 0.9em;">(${estDays.toFixed(1)}人日/${estMonths.toFixed(2)}人月)</span></div>
+                            <div style="font-weight: 600; margin-top: 2px;">${totalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${actDays.toFixed(1)}人日/${actMonths.toFixed(2)}人月)</span></div>
+                            <div style="font-size: 11px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
                         </td>`;
                         tableBody += '</tr>';
                     }
@@ -11470,10 +11513,13 @@
                     // 合計列（人日・人月を追加）
                     const totalEstDays = (versionTotalEst / 8).toFixed(1);
                     const totalEstMonths = (versionTotalEst / 8 / 20).toFixed(2);
-                    html += `<td style="text-align: center;">`;
-                    html += `<div style="font-weight: 700;">${versionTotalEst.toFixed(1)} / ${versionTotalAct.toFixed(1)}</div>`;
-                    html += `<div style="font-size: 10px; color: #666;">${totalEstDays}人日 / ${totalEstMonths}人月</div>`;
-                    html += `<div style="font-weight: 700; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>`;
+                    const totalActDays = (versionTotalAct / 8).toFixed(1);
+                    const totalActMonths = (versionTotalAct / 8 / 20).toFixed(2);
+                    const versionTotalBgColor = getDeviationColor(versionTotalEst, versionTotalAct);
+                    html += `<td style="text-align: center; background: ${versionTotalBgColor}; padding: 8px;">`;
+                    html += `<div style="font-size: 0.85em; font-weight: 300; color: #666;">${versionTotalEst.toFixed(1)} <span style="font-size: 0.9em;">(${totalEstDays}人日/${totalEstMonths}人月)</span></div>`;
+                    html += `<div style="font-weight: 600; margin-top: 2px;">${versionTotalAct.toFixed(1)} <span style="font-size: 0.9em; font-weight: 400;">(${totalActDays}人日/${totalActMonths}人月)</span></div>`;
+                    html += `<div style="font-size: 11px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>`;
                     html += '</td>';
                     html += '</tr>';
 
