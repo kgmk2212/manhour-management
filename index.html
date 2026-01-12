@@ -2123,8 +2123,8 @@
     <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;" onchange="handleFileImport(event)">
 
     <!-- 作業詳細モーダル -->
-    <div id="workModal" class="modal">
-        <div class="modal-content">
+    <div id="workModal" class="modal" onclick="closeWorkModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="modalTitle">作業詳細</h3>
                 <button class="modal-close" onclick="closeWorkModal()">&times;</button>
@@ -2202,8 +2202,8 @@
     </div>
 
     <!-- 見込残存時間一括編集モーダル -->
-    <div id="bulkRemainingModal" class="modal">
-        <div class="modal-content" style="max-width: 1000px; max-height: 85vh;">
+    <div id="bulkRemainingModal" class="modal" onclick="closeBulkRemainingModal()">
+        <div class="modal-content" style="max-width: 1000px; max-height: 85vh;" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>見込残存時間の一括編集</h3>
                 <button class="modal-close" onclick="closeBulkRemainingModal()">&times;</button>
@@ -2285,8 +2285,8 @@
     </div>
 
     <!-- 見積編集モーダル -->
-    <div id="editEstimateModal" class="modal">
-        <div class="modal-content">
+    <div id="editEstimateModal" class="modal" onclick="closeEditEstimateModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>見積データを編集</h3>
                 <button class="modal-close" onclick="closeEditEstimateModal()">&times;</button>
@@ -2333,8 +2333,8 @@
     </div>
 
     <!-- 対応編集モーダル -->
-    <div id="editTaskModal" class="modal">
-        <div class="modal-content">
+    <div id="editTaskModal" class="modal" onclick="closeEditTaskModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>対応名を編集</h3>
                 <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
@@ -2373,8 +2373,8 @@
     </div>
 
     <!-- 工程内訳表示モーダル -->
-    <div id="processBreakdownModal" class="modal">
-        <div class="modal-content">
+    <div id="processBreakdownModal" class="modal" onclick="closeProcessBreakdownModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="breakdownModalTitle">工程内訳</h3>
                 <button class="modal-close" onclick="closeProcessBreakdownModal()">&times;</button>
@@ -2386,8 +2386,8 @@
     </div>
 
     <!-- 見積登録モーダル -->
-    <div id="addEstimateModal" class="modal" onclick="handleAddModalClick(event)">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+    <div id="addEstimateModal" class="modal" onclick="closeAddEstimateModal()">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>📝 見積登録</h3>
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
@@ -2573,8 +2573,8 @@
     </div>
 
     <!-- 既存見積の月分割モーダル -->
-    <div id="splitEstimateModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+    <div id="splitEstimateModal" class="modal" onclick="closeSplitEstimateModal()">
+        <div class="modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>📅 見積を複数月に分割</h3>
                 <button class="modal-close" onclick="closeSplitEstimateModal()">&times;</button>
@@ -2627,8 +2627,8 @@
     </div>
 
     <!-- その他作業モーダル -->
-    <div id="otherWorkModal" class="modal">
-        <div class="modal-content">
+    <div id="otherWorkModal" class="modal" onclick="closeOtherWorkModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3>その他作業の登録</h3>
                 <button class="modal-close" onclick="closeOtherWorkModal()">&times;</button>
@@ -5823,13 +5823,6 @@
                     endSelect.value = item.endMonth;
                 }
             });
-        }
-
-        // モーダル外クリックで閉じる
-        function handleAddModalClick(event) {
-            if (event.target.id === 'addEstimateModal') {
-                closeAddEstimateModal();
-            }
         }
 
         function toggleAddMonthSplit() {
