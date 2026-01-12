@@ -2112,6 +2112,7 @@
                         <label>カラーパターン</label>
                         <select id="chartColorScheme" onchange="saveChartColorScheme()">
                             <option value="auto">テーマカラーに合わせる（自動）</option>
+                            <option value="classic">クラシック</option>
                             <option value="purple">紫</option>
                             <option value="indigo">インディゴ</option>
                             <option value="deep-blue">ディープブルー</option>
@@ -2931,151 +2932,81 @@
 
         // グラフカラースキーム定義（テーマカラーに対応）
         const chartColorSchemes = {
+            'classic': {
+                name: 'クラシック',
+                barColors: {
+                    estimate: '#667eea',  // クラシック紫青
+                    actual: '#43e97b'     // クラシック緑
+                },
+                processColors: {
+                    'UI': '#667eea',  // クラシック紫青
+                    'PG': '#f093fb',  // クラシックピンク紫
+                    'PT': '#4facfe',  // クラシック青
+                    'IT': '#43e97b',  // クラシック緑
+                    'ST': '#fa709a'   // クラシックピンク
+                }
+            },
             'purple': {
                 name: '紫',
                 barColors: {
-                    estimate: '#7b1fa2',  // 紫
-                    actual: '#26a69a'     // ティール（対照色）
+                    estimate: '#6a1b9a',  // 紫（トーン落とし）
+                    actual: '#00796b'     // ティール（トーン落とし）
                 },
                 processColors: {
-                    'UI': '#1976d2',  // 明確な青（ユーザー視点）
-                    'PG': '#388e3c',  // 明確な緑（実装・コーディング）
-                    'PT': '#f57c00',  // 明確なオレンジ（検証・注意）
-                    'IT': '#d32f2f',  // 明確な赤（重要・クリティカル）
-                    'ST': '#7b1fa2'   // 明確な紫（最終段階・包括的）
+                    'UI': '#1565c0',  // 落ち着いた青
+                    'PG': '#2e7d32',  // 落ち着いた緑
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#c62828',  // 落ち着いた赤
+                    'ST': '#6a1b9a'   // 落ち着いた紫
                 }
             },
             'indigo': {
                 name: 'インディゴ',
                 barColors: {
-                    estimate: '#3f51b5',  // インディゴ
-                    actual: '#ff9800'     // オレンジ（対照色）
+                    estimate: '#303f9f',  // インディゴ（トーン落とし）
+                    actual: '#f57c00'     // オレンジ（トーン落とし）
                 },
                 processColors: {
-                    'UI': '#1e88e5',  // 明るい青
-                    'PG': '#43a047',  // 明るい緑
-                    'PT': '#fb8c00',  // 明るいオレンジ
-                    'IT': '#e53935',  // 明るい赤
-                    'ST': '#8e24aa'   // 明るい紫
+                    'UI': '#1565c0',  // 落ち着いた青
+                    'PG': '#2e7d32',  // 落ち着いた緑
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#c62828',  // 落ち着いた赤
+                    'ST': '#6a1b9a'   // 落ち着いた紫
                 }
             },
             'deep-blue': {
                 name: 'ディープブルー',
                 barColors: {
-                    estimate: '#1565c0',  // ディープブルー
-                    actual: '#ffa726'     // オレンジ（対照色）
+                    estimate: '#0d47a1',  // ディープブルー（トーン落とし）
+                    actual: '#e65100'     // オレンジ（トーン落とし）
                 },
                 processColors: {
-                    'UI': '#1565c0',  // 濃い青
-                    'PG': '#2e7d32',  // 濃い緑
-                    'PT': '#e65100',  // 濃いオレンジ
-                    'IT': '#c62828',  // 濃い赤
-                    'ST': '#6a1b9a'   // 濃い紫
+                    'UI': '#0d47a1',  // 濃い青
+                    'PG': '#1b5e20',  // 濃い緑
+                    'PT': '#bf360c',  // 濃いオレンジ
+                    'IT': '#b71c1c',  // 濃い赤
+                    'ST': '#4a148c'   // 濃い紫
                 }
             },
             'ocean': {
                 name: 'オーシャン',
                 barColors: {
-                    estimate: '#0277bd',  // オーシャンブルー
-                    actual: '#66bb6a'     // 緑（対照色）
+                    estimate: '#01579b',  // オーシャンブルー（トーン落とし）
+                    actual: '#388e3c'     // 緑（トーン落とし）
                 },
                 processColors: {
-                    'UI': '#0288d1',  // 鮮やかな水色
-                    'PG': '#00897b',  // 鮮やかなティール
-                    'PT': '#fb8c00',  // 鮮やかなオレンジ
-                    'IT': '#d81b60',  // 鮮やかなピンク
-                    'ST': '#8e24aa'   // 鮮やかな紫
+                    'UI': '#0277bd',  // 落ち着いた水色
+                    'PG': '#00695c',  // 落ち着いたティール
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#ad1457',  // 落ち着いたピンク
+                    'ST': '#6a1b9a'   // 落ち着いた紫
                 }
             },
             'sky': {
                 name: 'スカイブルー',
                 barColors: {
-                    estimate: '#0288d1',  // スカイブルー
-                    actual: '#ec407a'     // ピンク（対照色）
-                },
-                processColors: {
-                    'UI': '#42a5f5',  // ライトブルー
-                    'PG': '#66bb6a',  // ライトグリーン
-                    'PT': '#ffa726',  // ライトオレンジ
-                    'IT': '#ef5350',  // ライトレッド
-                    'ST': '#ab47bc'   // ライトパープル
-                }
-            },
-            'navy': {
-                name: 'ネイビー',
-                barColors: {
-                    estimate: '#1a237e',  // ネイビー
-                    actual: '#ffa726'     // オレンジ（対照色）
-                },
-                processColors: {
-                    'UI': '#1976d2',  // ミディアムブルー
-                    'PG': '#388e3c',  // ミディアムグリーン
-                    'PT': '#f57c00',  // ミディアムオレンジ
-                    'IT': '#d32f2f',  // ミディアムレッド
-                    'ST': '#7b1fa2'   // ミディアムパープル
-                }
-            },
-            'teal': {
-                name: 'ティール',
-                barColors: {
-                    estimate: '#00897b',  // ティール
-                    actual: '#ab47bc'     // 紫（対照色）
-                },
-                processColors: {
-                    'UI': '#0288d1',  // シアン系ブルー
-                    'PG': '#00897b',  // ティール（実装に合致）
-                    'PT': '#ff9800',  // 鮮やかなオレンジ
-                    'IT': '#e91e63',  // 鮮やかなピンク
-                    'ST': '#9c27b0'   // 鮮やかな紫
-                }
-            },
-            'cyan': {
-                name: 'シアン',
-                barColors: {
-                    estimate: '#0097a7',  // シアン
-                    actual: '#e91e63'     // ピンク（対照色）
-                },
-                processColors: {
-                    'UI': '#00acc1',  // 鮮やかなシアン
-                    'PG': '#26a69a',  // 鮮やかなティール
-                    'PT': '#ffa726',  // 鮮やかなアンバー
-                    'IT': '#ec407a',  // 鮮やかなピンク
-                    'ST': '#8e24aa'   // 鮮やかな紫
-                }
-            },
-            'green': {
-                name: 'グリーン',
-                barColors: {
-                    estimate: '#388e3c',  // 緑
-                    actual: '#2196f3'     // 青（対照色）
-                },
-                processColors: {
-                    'UI': '#1976d2',  // 調和のとれた青
-                    'PG': '#43a047',  // 調和のとれた緑
-                    'PT': '#fb8c00',  // 調和のとれたオレンジ
-                    'IT': '#e53935',  // 調和のとれた赤
-                    'ST': '#8e24aa'   // 調和のとれた紫
-                }
-            },
-            'emerald': {
-                name: 'エメラルド',
-                barColors: {
-                    estimate: '#00897b',  // エメラルド
-                    actual: '#ba68c8'     // ライトパープル（対照色）
-                },
-                processColors: {
-                    'UI': '#29b6f6',  // 明るいスカイブルー
-                    'PG': '#26a69a',  // 明るいティール
-                    'PT': '#ffa726',  // 明るいアンバー
-                    'IT': '#ec407a',  // 明るいピンク
-                    'ST': '#ab47bc'   // 明るいパープル
-                }
-            },
-            'slate': {
-                name: 'スレート',
-                barColors: {
-                    estimate: '#546e7a',  // スレート
-                    actual: '#4caf50'     // 緑（対照色）
+                    estimate: '#0277bd',  // スカイブルー（トーン落とし）
+                    actual: '#c2185b'     // ピンク（トーン落とし）
                 },
                 processColors: {
                     'UI': '#1976d2',  // 落ち着いたブルー
@@ -3083,6 +3014,90 @@
                     'PT': '#f57c00',  // 落ち着いたオレンジ
                     'IT': '#d32f2f',  // 落ち着いたレッド
                     'ST': '#7b1fa2'   // 落ち着いたパープル
+                }
+            },
+            'navy': {
+                name: 'ネイビー',
+                barColors: {
+                    estimate: '#0d47a1',  // ネイビー（トーン落とし）
+                    actual: '#e65100'     // オレンジ（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#1565c0',  // 落ち着いたブルー
+                    'PG': '#2e7d32',  // 落ち着いたグリーン
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#c62828',  // 落ち着いたレッド
+                    'ST': '#6a1b9a'   // 落ち着いたパープル
+                }
+            },
+            'teal': {
+                name: 'ティール',
+                barColors: {
+                    estimate: '#00695c',  // ティール（トーン落とし）
+                    actual: '#7b1fa2'     // 紫（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#0277bd',  // 落ち着いたシアン系ブルー
+                    'PG': '#00695c',  // 落ち着いたティール
+                    'PT': '#f57c00',  // 落ち着いたオレンジ
+                    'IT': '#c2185b',  // 落ち着いたピンク
+                    'ST': '#7b1fa2'   // 落ち着いた紫
+                }
+            },
+            'cyan': {
+                name: 'シアン',
+                barColors: {
+                    estimate: '#00838f',  // シアン（トーン落とし）
+                    actual: '#c2185b'     // ピンク（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#00838f',  // 落ち着いたシアン
+                    'PG': '#00897b',  // 落ち着いたティール
+                    'PT': '#f57c00',  // 落ち着いたアンバー
+                    'IT': '#c2185b',  // 落ち着いたピンク
+                    'ST': '#6a1b9a'   // 落ち着いた紫
+                }
+            },
+            'green': {
+                name: 'グリーン',
+                barColors: {
+                    estimate: '#2e7d32',  // 緑（トーン落とし）
+                    actual: '#1565c0'     // 青（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#1565c0',  // 落ち着いた青
+                    'PG': '#2e7d32',  // 落ち着いた緑
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#c62828',  // 落ち着いた赤
+                    'ST': '#6a1b9a'   // 落ち着いた紫
+                }
+            },
+            'emerald': {
+                name: 'エメラルド',
+                barColors: {
+                    estimate: '#00695c',  // エメラルド（トーン落とし）
+                    actual: '#7b1fa2'     // ライトパープル（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#0277bd',  // 落ち着いたスカイブルー
+                    'PG': '#00897b',  // 落ち着いたティール
+                    'PT': '#f57c00',  // 落ち着いたアンバー
+                    'IT': '#c2185b',  // 落ち着いたピンク
+                    'ST': '#7b1fa2'   // 落ち着いたパープル
+                }
+            },
+            'slate': {
+                name: 'スレート',
+                barColors: {
+                    estimate: '#455a64',  // スレート（トーン落とし）
+                    actual: '#2e7d32'     // 緑（トーン落とし）
+                },
+                processColors: {
+                    'UI': '#1565c0',  // 落ち着いたブルー
+                    'PG': '#2e7d32',  // 落ち着いたグリーン
+                    'PT': '#e65100',  // 落ち着いたオレンジ
+                    'IT': '#c62828',  // 落ち着いたレッド
+                    'ST': '#6a1b9a'   // 落ち着いたパープル
                 }
             }
         };
@@ -12184,7 +12199,11 @@
             ctx.setLineDash([]);
 
             // バーを描画
-            const barWidth = chartWidth / members.length / 2.5;
+            // モバイル対応：バー間隔を調整
+            const barSpacing = isMobile ? 2 : 5;  // 見積と実績の間隔（モバイルでより狭く）
+            const barWidth = isMobile
+                ? (chartWidth / members.length) * 0.35  // モバイル：各バーを細く
+                : chartWidth / members.length / 2.5;
             const groupWidth = chartWidth / members.length;
 
             // カラースキームを取得
@@ -12197,12 +12216,12 @@
                 // 見積のバー
                 const estimateHeight = (data.estimate / maxValue) * chartHeight;
                 ctx.fillStyle = colorScheme.barColors.estimate;
-                ctx.fillRect(x - barWidth - 5, padding.top + chartHeight - estimateHeight, barWidth, estimateHeight);
+                ctx.fillRect(x - barWidth - barSpacing, padding.top + chartHeight - estimateHeight, barWidth, estimateHeight);
 
                 // 実績のバー
                 const actualHeight = (data.actual / maxValue) * chartHeight;
                 ctx.fillStyle = colorScheme.barColors.actual;
-                ctx.fillRect(x + 5, padding.top + chartHeight - actualHeight, barWidth, actualHeight);
+                ctx.fillRect(x + barSpacing, padding.top + chartHeight - actualHeight, barWidth, actualHeight);
 
                 // X軸ラベル（担当者名）
                 ctx.fillStyle = '#495057';
@@ -12271,9 +12290,15 @@
 
             const width = rect.width;
             const height = rect.height;
+
+            // モバイル対応：凡例の高さを考慮してグラフ位置を調整
+            const isMobile = width < 768;
+            const legendHeight = 60;  // 凡例の高さの見積もり
             const centerX = width / 2;
-            const centerY = height / 2 - 10;
-            const radius = Math.min(width, height - 40) / 2.5;
+            const centerY = isMobile ? (height - legendHeight) / 2 : height / 2 - 10;
+            const radius = isMobile
+                ? Math.min(width, height - legendHeight - 40) / 2.5
+                : Math.min(width, height - 40) / 2.5;
             const innerRadius = radius * 0.5;
 
             // この担当者の実績を工程別に集計
@@ -12354,10 +12379,14 @@
 
             // 凡例を描画
             const legendX = 10;
-            let legendY = height - 10 - (processes.length * 16);
+            // モバイル対応：凡例がグラフに被らないよう下部に配置
+            const legendStartY = isMobile
+                ? centerY + radius + 20  // グラフの下から余裕を持って配置
+                : height - 10 - (processes.length * 16);
+            let legendY = legendStartY;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.font = '11px sans-serif';
+            ctx.font = isMobile ? '10px sans-serif' : '11px sans-serif';
 
             processes.forEach((process) => {
                 const percentage = (processHours[process] / total * 100).toFixed(1);
@@ -12369,7 +12398,7 @@
                 const label = `${process} (${percentage}%)`;
                 ctx.fillText(label, legendX + 15, legendY + 5);
 
-                legendY += 16;
+                legendY += isMobile ? 14 : 16;  // モバイルでは行間を詰める
             });
         }
 
