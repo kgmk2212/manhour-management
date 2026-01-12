@@ -1905,10 +1905,10 @@
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="showMonthColorsCheckbox" onchange="toggleMonthColorsSetting()" style="width: auto; margin-right: 10px;" checked>
-                            <span>全期間表示で月ごとに色分けする</span>
+                            <span>見積一覧で月ごとに色分けする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
-                            ・オン: 全期間表示時に工程の割当月に応じてセルを色分けします<br>
+                            ・オン: 見積一覧（全期間表示・月別表示）で工程の割当月に応じてセルを色分けします<br>
                             ・オフ: 色分けを無効にします
                         </small>
                     </div>
@@ -6715,12 +6715,12 @@
 
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
-            // 全期間かつ設定がオンの時のみ色付けする
-            const showMonthColors = workMonthFilter === 'all' && showMonthColorsSetting;
+            // 設定がオンの時に色付けする
+            const showMonthColors = showMonthColorsSetting;
 
             let html = '<div style="margin-bottom: 30px;">';
 
-            // 月カラー凡例を追加（全期間かつ設定がオンの時のみ）
+            // 月カラー凡例を追加（設定がオンの時のみ）
             if (showMonthColors) {
                 html += generateMonthColorLegend(usedMonths);
             }
@@ -6763,7 +6763,7 @@
                             const p = group.processes[proc];
                             total += p.hours;
 
-                            // 全期間の時のみ月に基づく背景色を適用
+                            // 設定がオンの時に月に基づく背景色を適用
                             const monthColor = showMonthColors ? getMonthColor(p.workMonths) : { bg: '', tooltip: '' };
                             const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
@@ -11183,7 +11183,7 @@
                                     `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
                                     '';
 
-                                // 全期間の時のみ月に基づく背景色を適用
+                                // 設定がオンの時に月に基づく背景色を適用
                                 const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
                                 const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
