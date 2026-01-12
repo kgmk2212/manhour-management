@@ -12072,23 +12072,66 @@
                         });
                     }
 
-                    // 担当者の負荷チェック（見積工数ベース）
-                    const memberEstimates = {};
+                    // 担当者別の見積・実績・人月表示
+                    const memberData = {};
                     filteredEstimates.forEach(e => {
-                        if (!memberEstimates[e.member]) memberEstimates[e.member] = 0;
-                        memberEstimates[e.member] += e.hours;
+                        if (!memberData[e.member]) memberData[e.member] = { estimate: 0, actual: 0 };
+                        memberData[e.member].estimate += e.hours;
+                    });
+                    filteredActuals.forEach(a => {
+                        if (!memberData[a.member]) memberData[a.member] = { estimate: 0, actual: 0 };
+                        memberData[a.member].actual += a.hours;
                     });
 
-                    const maxMember = Object.entries(memberEstimates).sort((a, b) => b[1] - a[1])[0];
-                    if (maxMember && selectedMonth !== 'all') {
-                        const manDays = (maxMember[1] / 8).toFixed(1);
-                        const manMonths = (maxMember[1] / 8 / workingDaysPerMonth).toFixed(2);
+                    // 担当者別の工数情報を表示
+                    const memberDataSorted = Object.entries(memberData).sort((a, b) => b[1].estimate - a[1].estimate);
+                    if (memberDataSorted.length > 0) {
+                        let memberDetailsHtml = '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 15px;">';
+                        memberDetailsHtml += '<h4 style="margin: 0 0 12px 0; color: #495057; font-size: 16px;">📊 担当者別工数詳細</h4>';
+                        memberDetailsHtml += '<div style="display: grid; gap: 10px;">';
+
+                        memberDataSorted.forEach(([member, data]) => {
+                            const estManDays = (data.estimate / 8).toFixed(1);
+                            const estManMonths = selectedMonth !== 'all' ? (data.estimate / 8 / workingDaysPerMonth).toFixed(2) : '-';
+                            const actManDays = (data.actual / 8).toFixed(1);
+                            const actManMonths = selectedMonth !== 'all' ? (data.actual / 8 / workingDaysPerMonth).toFixed(2) : '-';
+                            const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(0) : 0;
+
+                            const accuracyColor = accuracy >= 90 && accuracy <= 110 ? '#28a745' :
+                                                accuracy > 110 ? '#dc3545' : '#ffc107';
+
+                            memberDetailsHtml += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 3px solid #007bff;">';
+                            memberDetailsHtml += `<div style="font-weight: 600; margin-bottom: 6px; color: #495057;">${member}</div>`;
+                            memberDetailsHtml += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">';
+                            memberDetailsHtml += `<div><span style="color: #6c757d;">見積:</span> <strong>${data.estimate.toFixed(1)}h</strong> <span style="color: #6c757d;">(${estManDays}人日`;
+                            if (selectedMonth !== 'all') memberDetailsHtml += ` / ${estManMonths}人月`;
+                            memberDetailsHtml += ')</span></div>';
+                            memberDetailsHtml += `<div><span style="color: #6c757d;">実績:</span> <strong>${data.actual.toFixed(1)}h</strong> <span style="color: #6c757d;">(${actManDays}人日`;
+                            if (selectedMonth !== 'all') memberDetailsHtml += ` / ${actManMonths}人月`;
+                            memberDetailsHtml += ')</span></div>';
+                            memberDetailsHtml += '</div>';
+                            if (data.estimate > 0) {
+                                memberDetailsHtml += `<div style="margin-top: 6px; font-size: 12px;"><span style="color: #6c757d;">精度:</span> <strong style="color: ${accuracyColor};">${accuracy}%</strong></div>`;
+                            }
+                            memberDetailsHtml += '</div>';
+                        });
+
+                        memberDetailsHtml += '</div>';
+                        memberDetailsHtml += '</div>';
+                        html += memberDetailsHtml;
+                    }
+
+                    // 高負荷担当者のチェック
+                    const maxEstMember = memberDataSorted[0];
+                    if (maxEstMember && selectedMonth !== 'all') {
+                        const manMonths = (maxEstMember[1].estimate / 8 / workingDaysPerMonth).toFixed(2);
                         if (manMonths > 1.2) {
+                            const manDays = (maxEstMember[1].estimate / 8).toFixed(1);
                             insights.push({
                                 type: 'warning',
                                 icon: '',
                                 title: '高負荷担当者あり',
-                                message: `${maxMember[0]}さんの見積工数が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
+                                message: `${maxEstMember[0]}さんの見積工数が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
                             });
                         }
                     }
