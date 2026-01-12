@@ -2703,6 +2703,7 @@
 
     <script>
         let estimates = [];
+        let filteredEstimates = []; // フィルタリングされた見積データ（renderEstimateList関数で設定）
         let actuals = [];
         let companyHolidays = []; // 会社休日データ
         let vacations = []; // 個人休暇データ
@@ -6337,8 +6338,8 @@
                 return;
             }
 
-            // フィルタを適用
-            let filteredEstimates = estimates;
+            // フィルタを適用（グローバル変数に格納）
+            filteredEstimates = estimates;
 
             if (filterType === 'version') {
                 // 版数別フィルタ
@@ -6375,20 +6376,26 @@
 
             // 合計工数を計算
             let totalHours = 0;
-            if (monthFilter === 'all') {
+            if (filterType === 'version') {
+                // 版数別フィルタの場合は全工数を合計
                 totalHours = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
             } else {
-                filteredEstimates.forEach(e => {
-                    const est = normalizeEstimate(e);
-                    // 月別工数が設定されている場合はそれを使用
-                    if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-                        totalHours += est.monthlyHours[monthFilter];
-                    }
-                    // workMonthsが空（作業月未設定）の場合は全工数を含める
-                    else if (!est.workMonths || est.workMonths.length === 0) {
-                        totalHours += est.hours;
-                    }
-                });
+                // 月別フィルタの場合
+                if (monthFilter === 'all') {
+                    totalHours = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
+                } else {
+                    filteredEstimates.forEach(e => {
+                        const est = normalizeEstimate(e);
+                        // 月別工数が設定されている場合はそれを使用
+                        if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+                            totalHours += est.monthlyHours[monthFilter];
+                        }
+                        // workMonthsが空（作業月未設定）の場合は全工数を含める
+                        else if (!est.workMonths || est.workMonths.length === 0) {
+                            totalHours += est.hours;
+                        }
+                    });
+                }
             }
 
             // 人日・人月を計算
@@ -6437,15 +6444,20 @@
                     memberSummary[member] = 0;
                 }
 
-                // 月フィルタが適用されている場合は分割後の工数を使用
-                if (monthFilter === 'all') {
+                if (filterType === 'version') {
+                    // 版数別フィルタの場合は全工数を加算
                     memberSummary[member] += est.hours;
-                } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-                    memberSummary[member] += est.monthlyHours[monthFilter];
-                }
-                // workMonthsが空（作業月未設定）の場合は全工数を含める
-                else if (!est.workMonths || est.workMonths.length === 0) {
-                    memberSummary[member] += est.hours;
+                } else {
+                    // 月別フィルタの場合は分割後の工数を使用
+                    if (monthFilter === 'all') {
+                        memberSummary[member] += est.hours;
+                    } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+                        memberSummary[member] += est.monthlyHours[monthFilter];
+                    }
+                    // workMonthsが空（作業月未設定）の場合は全工数を含める
+                    else if (!est.workMonths || est.workMonths.length === 0) {
+                        memberSummary[member] += est.hours;
+                    }
                 }
             });
 
@@ -6574,33 +6586,21 @@
                 return Array.from(allMonths).sort();
             }
 
-            // 作業予定月フィルタを適用
-            const monthFilterElement = document.getElementById('estimateMonthFilter');
-            const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
-
             // 実働日数を取得（人月計算用）
+            const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const filterTypeElement = document.getElementById('estimateFilterType');
+            const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
+            const filterType = filterTypeElement ? filterTypeElement.value : 'month';
+
             let workingDaysPerMonth = 20; // デフォルト
-            if (workMonthFilter !== 'all') {
+            if (filterType === 'month' && workMonthFilter !== 'all') {
                 const [year, month] = workMonthFilter.split('-');
                 const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
                 // 0で割るのを防ぐため、最小値を1に設定
                 workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
             }
 
-            let filteredEstimates = estimates;
-
-            if (workMonthFilter !== 'all') {
-                // 特定月: その月に割り当たっている工程のみ表示
-                filteredEstimates = estimates.filter(e => {
-                    const est = normalizeEstimate(e);
-                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
-                    if (!est.workMonths || est.workMonths.length === 0) {
-                        return true;
-                    }
-                    return est.workMonths.includes(workMonthFilter);
-                });
-            }
-
+            // グローバルのfilteredEstimatesを使用（renderEstimateListで設定済み）
             // フィルタ内の工程がない場合
             if (filteredEstimates.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当する見積データがありません</p>';
@@ -6624,10 +6624,10 @@
                     };
                 }
 
-                // 月フィルタが適用されている場合は分割後の工数を使用
+                // 月別フィルタで特定月が選択されている場合は分割後の工数を使用
                 const est = normalizeEstimate(e);
                 let displayHours = e.hours;
-                if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+                if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
@@ -6643,7 +6643,7 @@
 
             // 換算基準の表示を生成
             let workDaysLabel = 'デフォルト20日';
-            if (workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
+            if (filterType === 'month' && workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
                 const [year, month] = workMonthFilter.split('-');
                 workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
             }
@@ -6863,22 +6863,13 @@
         function renderEstimateMatrix() {
             const container = document.getElementById('estimateList');
 
-            // 月フィルタを取得
+            // フィルタタイプと月フィルタを取得
             const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const filterTypeElement = document.getElementById('estimateFilterType');
             const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
+            const filterType = filterTypeElement ? filterTypeElement.value : 'month';
 
-            // フィルタを適用
-            let filteredEstimates = estimates;
-            if (workMonthFilter !== 'all') {
-                filteredEstimates = estimates.filter(e => {
-                    const est = normalizeEstimate(e);
-                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
-                    if (!est.workMonths || est.workMonths.length === 0) {
-                        return true;
-                    }
-                    return est.workMonths.includes(workMonthFilter);
-                });
-            }
+            // グローバルのfilteredEstimatesを使用（renderEstimateListで設定済み）
 
             // 使用されている月を収集（凡例用）
             const usedMonths = new Set();
@@ -6897,10 +6888,10 @@
                     };
                 }
 
-                // 月フィルタが適用されている場合は分割後の工数を使用
+                // 月別フィルタで特定月が選択されている場合は分割後の工数を使用
                 const est = normalizeEstimate(e);
                 let displayHours = e.hours;
-                if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+                if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
 
@@ -7016,31 +7007,22 @@
         function renderEstimateDetailList() {
             const container = document.getElementById('estimateList');
 
-            // 月フィルタを取得
+            // フィルタタイプと月フィルタを取得
             const monthFilterElement = document.getElementById('estimateMonthFilter');
+            const filterTypeElement = document.getElementById('estimateFilterType');
             const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
+            const filterType = filterTypeElement ? filterTypeElement.value : 'month';
 
-            // フィルタを適用
-            let filteredEstimates = estimates;
-            if (workMonthFilter !== 'all') {
-                filteredEstimates = estimates.filter(e => {
-                    const est = normalizeEstimate(e);
-                    // workMonthsが空または未定義の場合は全期間表示（常に表示）
-                    if (!est.workMonths || est.workMonths.length === 0) {
-                        return true;
-                    }
-                    return est.workMonths.includes(workMonthFilter);
-                });
-            }
+            // グローバルのfilteredEstimatesを使用（renderEstimateListで設定済み）
 
             let html = '<div class="table-wrapper"><table><tr><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>見積工数</th><th>作業予定月</th><th>操作</th></tr>';
 
             filteredEstimates.forEach(e => {
                 const est = normalizeEstimate(e);
 
-                // 月フィルタが適用されている場合は分割後の工数を表示
+                // 月別フィルタで特定月が選択されている場合は分割後の工数を表示
                 let displayHours = est.hours;
-                if (workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+                if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
                     displayHours = est.monthlyHours[workMonthFilter];
                 }
                 
