@@ -14323,7 +14323,9 @@
 
         // フィルタ固定表示設定の保存
         function saveStickyFilterSetting() {
-            const enabled = document.getElementById('stickyFilterEnabled').checked;
+            const checkbox = document.getElementById('stickyFilterEnabled');
+            if (!checkbox) return;
+            const enabled = checkbox.checked;
             localStorage.setItem('stickyFilterEnabled', enabled);
         }
 
