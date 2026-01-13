@@ -11445,6 +11445,10 @@
                     // 複数月対応: workMonthsに含まれる見積をフィルタ
                     filteredEstimates = estimates.filter(e => {
                         const est = normalizeEstimate(e);
+                        // workMonthsが空または未定義の場合は全期間表示（常に表示）
+                        if (!est.workMonths || est.workMonths.length === 0) {
+                            return true;
+                        }
                         return est.workMonths.includes(selectedMonth);
                     }).map(e => {
                         // 月別工数を使用
@@ -11483,8 +11487,8 @@
                     return est.workMonths.length === 0;
                 });
                 if (noWorkMonthEstimates.length > 0) {
-                    console.log('⚠️ 作業予定月が未設定の見積:', noWorkMonthEstimates.length, '件');
-                    console.log('  これらの見積は月別集計に含まれません');
+                    console.log('ℹ️ 作業予定月が未設定の見積:', noWorkMonthEstimates.length, '件');
+                    console.log('  これらの見積は全期間として月別集計に含まれます');
                     console.log('  詳細:', noWorkMonthEstimates.map(e => ({
                         version: e.version,
                         task: e.task,
