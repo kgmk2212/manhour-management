@@ -1189,47 +1189,6 @@
         .sticky-placeholder.active {
             display: block;
         }
-
-        /* 固定解除ボタン（控えめなデザイン） */
-        .sticky-unpin-btn {
-            display: none;
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.15);
-            color: #666;
-            border: none;
-            border-radius: 3px;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            line-height: 20px;
-            z-index: 10;
-            transition: all 0.2s;
-            opacity: 0.4;
-        }
-
-        /* ピンに斜線を追加 */
-        .sticky-unpin-btn::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 9px;
-            width: 1.5px;
-            height: 16px;
-            background: #dc3545;
-            transform: rotate(45deg);
-        }
-
-        .sticky-unpin-btn:hover {
-            background: rgba(0, 0, 0, 0.25);
-            opacity: 1;
-        }
-
-        .sticky-filter-container.is-sticky .sticky-unpin-btn {
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -2183,22 +2142,6 @@
                     </div>
 
                     <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
-                </div>
-
-                <!-- UI/UX設定 -->
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3>🖥️ UI/UX設定</h3>
-                    <p style="color: #666; margin-bottom: 15px;">画面表示や操作性に関する設定です。</p>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="stickyFilterEnabled" onchange="saveStickyFilterSetting()" style="width: auto; margin-right: 10px;" checked>
-                            <span>フィルタ固定表示を有効にする</span>
-                        </label>
-                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
-                            見積一覧・レポートのフィルタ設定部分をスクロール時に画面上部に固定表示します。
-                        </small>
-                    </div>
                 </div>
 
                 <!-- グラフカラーパターン設定 -->
@@ -14363,49 +14306,19 @@
         }
 
         // フィルタ部分のSticky表示制御
-        let stickyFilterScrollHandler = null;
-
         function initStickyFilters() {
             const container = document.querySelector('.container');
             if (!container) return;
 
-            // 設定を確認
-            const stickyEnabled = localStorage.getItem('stickyFilterEnabled');
-            const isEnabled = stickyEnabled === null || stickyEnabled === 'true';
-
             // 全てのsticky-filter-containerを取得
             const stickyFilters = document.querySelectorAll('.sticky-filter-container');
 
-            // 各フィルタにプレースホルダーと解除ボタンを作成
-            stickyFilters.forEach((filter, index) => {
-                // プレースホルダー
+            // 各フィルタにプレースホルダーを作成
+            stickyFilters.forEach(filter => {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'sticky-placeholder';
                 filter.parentNode.insertBefore(placeholder, filter);
-
-                // 手動解除ボタン
-                if (!filter.querySelector('.sticky-unpin-btn')) {
-                    const unpinBtn = document.createElement('button');
-                    unpinBtn.className = 'sticky-unpin-btn';
-                    unpinBtn.innerHTML = '📌';
-                    unpinBtn.title = '固定を解除';
-                    unpinBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        unpinStickyFilter(filter);
-                    };
-                    filter.style.position = 'relative';
-                    filter.appendChild(unpinBtn);
-                }
             });
-
-            // 既存のハンドラーを削除
-            if (stickyFilterScrollHandler) {
-                window.removeEventListener('scroll', stickyFilterScrollHandler);
-                stickyFilterScrollHandler = null;
-            }
-
-            // 設定が無効の場合は監視しない
-            if (!isEnabled) return;
 
             // スクロールイベント監視（windowスクロール）
             function handleScroll() {
@@ -14419,54 +14332,31 @@
                     // プレースホルダーの現在位置を取得（元々あった位置）
                     const placeholderRect = placeholder.getBoundingClientRect();
 
-                    // フィルタの高さを取得（固定時と同じサイズを使用）
-                    let filterHeight;
-                    if (filter.classList.contains('is-sticky') && placeholder.dataset.filterHeight) {
-                        filterHeight = parseFloat(placeholder.dataset.filterHeight);
-                    } else {
-                        filterHeight = filter.offsetHeight;
-                    }
-
                     // プレースホルダーが画面上端に達したら固定
                     if (placeholderRect.top <= 0 && !filter.classList.contains('is-sticky')) {
                         // Sticky化
-                        // フィルタの正確な高さを記録（マージン含む）
-                        const computedStyle = window.getComputedStyle(filter);
-                        const marginTop = parseFloat(computedStyle.marginTop) || 0;
-                        const marginBottom = parseFloat(computedStyle.marginBottom) || 0;
-                        const totalHeight = filterHeight + marginTop + marginBottom;
-
-                        placeholder.style.height = totalHeight + 'px';
-                        placeholder.dataset.filterHeight = filterHeight;
+                        const filterHeight = filter.offsetHeight;
+                        placeholder.style.height = filterHeight + 'px';
                         placeholder.classList.add('active');
                         filter.classList.add('is-sticky');
 
-                        // containerの幅と位置に合わせる
+                        // containerの幅に合わせる
                         filter.style.width = containerRect.width + 'px';
                         filter.style.left = containerRect.left + 'px';
                     }
-                    // フィルタ全体が元の位置範囲に収まったら固定解除
-                    else if (filter.classList.contains('is-sticky')) {
-                        // プレースホルダーの下端がフィルタの高さ分下にあるかチェック
-                        const placeholderBottom = placeholderRect.top + filterHeight;
-
-                        // 元の位置範囲全体が画面内に収まっている場合
-                        if (placeholderRect.top >= 0 && placeholderBottom >= 0) {
-                            // Sticky解除
-                            placeholder.classList.remove('active');
-                            placeholder.style.height = '0';
-                            delete placeholder.dataset.filterHeight;
-                            filter.classList.remove('is-sticky');
-                            filter.style.width = '';
-                            filter.style.left = '';
-                        }
+                    // プレースホルダーが画面上端より下にある場合は固定解除
+                    else if (placeholderRect.top > 0 && filter.classList.contains('is-sticky')) {
+                        // Sticky解除
+                        placeholder.classList.remove('active');
+                        placeholder.style.height = '0';
+                        filter.classList.remove('is-sticky');
+                        filter.style.width = '';
+                        filter.style.left = '';
                     }
                 });
             }
 
-            // ハンドラーを保存
-            stickyFilterScrollHandler = handleScroll;
-            window.addEventListener('scroll', stickyFilterScrollHandler);
+            window.addEventListener('scroll', handleScroll);
 
             // ウィンドウリサイズ時の対応
             window.addEventListener('resize', () => {
@@ -14480,43 +14370,8 @@
             });
         }
 
-        // 手動で固定を解除
-        function unpinStickyFilter(filter) {
-            const placeholder = filter.previousElementSibling;
-            if (placeholder && placeholder.classList.contains('sticky-placeholder')) {
-                placeholder.classList.remove('active');
-                placeholder.style.height = '0';
-                delete placeholder.dataset.filterHeight;
-            }
-            filter.classList.remove('is-sticky');
-            filter.style.width = '';
-            filter.style.left = '';
-        }
-
-        // フィルタ固定表示設定の保存
-        function saveStickyFilterSetting() {
-            const enabled = document.getElementById('stickyFilterEnabled').checked;
-            localStorage.setItem('stickyFilterEnabled', enabled);
-
-            // 設定変更時に再初期化
-            initStickyFilters();
-        }
-
-        // フィルタ固定表示設定の読み込み
-        function loadStickyFilterSetting() {
-            const saved = localStorage.getItem('stickyFilterEnabled');
-            const enabled = saved === null || saved === 'true';
-            const checkbox = document.getElementById('stickyFilterEnabled');
-            if (checkbox) {
-                checkbox.checked = enabled;
-            }
-        }
-
         // ページ読み込み時に初期化
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStickyFilterSetting();
-            initStickyFilters();
-        });
+        document.addEventListener('DOMContentLoaded', initStickyFilters);
     </script>
 </body>
 </html>
