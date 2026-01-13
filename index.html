@@ -12112,6 +12112,8 @@
                         memberData[a.member].actual += a.hours;
                     });
 
+                    // 担当者を見積工数でソート
+                    const memberDataSorted = Object.entries(memberData).sort((a, b) => b[1].estimate - a[1].estimate);
 
                     // 高負荷担当者のチェック
                     const maxEstMember = memberDataSorted[0];
