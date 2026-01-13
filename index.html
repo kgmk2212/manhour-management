@@ -11680,28 +11680,17 @@
                 html += 'Phase 1: 見積精度分析</h3>';
                 html += `<div id="phase1-content" style="display: ${phaseCollapsed.phase1 ? 'none' : 'block'}; margin-top: 15px;">`;
 
-                // 工程別の精度計算（完了タスクのみ）
+                // 工程別の精度計算
                 if (reportSettings.accuracyEnabled) {
                     const processSummary = {};
                     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
-                    // 完了タスクの判定：実績データが存在するタスク
-                    const completedTaskKeys = new Set();
-                    filteredActuals.forEach(a => {
-                        const key = `${a.version}-${a.task}-${a.process}`;
-                        completedTaskKeys.add(key);
-                    });
-
-                    // 完了タスクの見積のみを集計
                     filteredEstimates.forEach(e => {
-                        const key = `${e.version}-${e.task}-${e.process}`;
-                        if (completedTaskKeys.has(key)) {
-                            const processKey = processOrder.includes(e.process) ? e.process : 'その他';
-                            if (!processSummary[processKey]) {
-                                processSummary[processKey] = { estimate: 0, actual: 0 };
-                            }
-                            processSummary[processKey].estimate += e.hours;
+                        const processKey = processOrder.includes(e.process) ? e.process : 'その他';
+                        if (!processSummary[processKey]) {
+                            processSummary[processKey] = { estimate: 0, actual: 0 };
                         }
+                        processSummary[processKey].estimate += e.hours;
                     });
 
                     filteredActuals.forEach(a => {
@@ -11987,19 +11976,8 @@
                         memberTasks[member] = new Set();
                     });
 
-                    // 完了タスクの判定：実績データが存在するタスク
-                    const completedTaskKeys = new Set();
-                    filteredActuals.forEach(a => {
-                        const key = `${a.version}-${a.task}-${a.process}`;
-                        completedTaskKeys.add(key);
-                    });
-
-                    // 自動分割ロジック：見積担当者以外の実績を考慮して見積を再配分（完了タスクのみ）
+                    // 自動分割ロジック：見積担当者以外の実績を考慮して見積を再配分
                     filteredEstimates.forEach(estimate => {
-                        const taskKey = `${estimate.version}-${estimate.task}-${estimate.process}`;
-                        // 完了タスクのみ処理
-                        if (!completedTaskKeys.has(taskKey)) return;
-
                         // この見積に対する実績を取得
                         const relatedActuals = filteredActuals.filter(a =>
                             a.version === estimate.version &&
@@ -12131,17 +12109,8 @@
                 if (reportSettings.insightsEnabled) {
                     const insights = [];
 
-                    // 完了タスクの判定：実績データが存在するタスク
-                    const completedTaskKeys = new Set();
-                    filteredActuals.forEach(a => {
-                        const key = `${a.version}-${a.task}-${a.process}`;
-                        completedTaskKeys.add(key);
-                    });
-
-                    // 全体の精度チェック（完了タスクのみ）
-                    const totalEst = filteredEstimates
-                        .filter(e => completedTaskKeys.has(`${e.version}-${e.task}-${e.process}`))
-                        .reduce((sum, e) => sum + e.hours, 0);
+                    // 全体の精度チェック
+                    const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
                     const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
                     const overallAccuracy = totalEst > 0 ? (totalAct / totalEst * 100) : 0;
 
@@ -12150,25 +12119,22 @@
                             type: 'warning',
                             icon: '',
                             title: '見積精度に課題',
-                            message: `完了タスクの見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
+                            message: `全体で見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
                         });
                     } else if (overallAccuracy >= 90 && overallAccuracy <= 110) {
                         insights.push({
                             type: 'success',
                             icon: '',
                             title: '優れた見積精度',
-                            message: `完了タスクの見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
+                            message: `見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
                         });
                     }
 
-                    // 最も効率的な工程（完了タスクのみ）
+                    // 最も効率的な工程
                     const processSummary = {};
                     filteredEstimates.forEach(e => {
-                        const key = `${e.version}-${e.task}-${e.process}`;
-                        if (completedTaskKeys.has(key)) {
-                            if (!processSummary[e.process]) processSummary[e.process] = { estimate: 0, actual: 0 };
-                            processSummary[e.process].estimate += e.hours;
-                        }
+                        if (!processSummary[e.process]) processSummary[e.process] = { estimate: 0, actual: 0 };
+                        processSummary[e.process].estimate += e.hours;
                     });
                     filteredActuals.forEach(a => {
                         if (!processSummary[a.process]) processSummary[a.process] = { estimate: 0, actual: 0 };
