@@ -2144,6 +2144,22 @@
                     <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
                 </div>
 
+                <!-- UI/UX設定 -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>🖥️ UI/UX設定</h3>
+                    <p style="color: #666; margin-bottom: 15px;">画面表示や操作性に関する設定です。</p>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="stickyFilterEnabled" onchange="saveStickyFilterSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <span>フィルタ固定表示を有効にする</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            見積一覧・レポートのフィルタ設定部分をスクロール時に画面上部に固定表示します。
+                        </small>
+                    </div>
+                </div>
+
                 <!-- グラフカラーパターン設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>🎨 グラフカラーパターン</h3>
@@ -14305,8 +14321,30 @@
             }
         }
 
+        // フィルタ固定表示設定の保存
+        function saveStickyFilterSetting() {
+            const enabled = document.getElementById('stickyFilterEnabled').checked;
+            localStorage.setItem('stickyFilterEnabled', enabled);
+        }
+
+        // フィルタ固定表示設定の読み込み
+        function loadStickyFilterSetting() {
+            const saved = localStorage.getItem('stickyFilterEnabled');
+            const enabled = saved === null || saved === 'true';
+            const checkbox = document.getElementById('stickyFilterEnabled');
+            if (checkbox) {
+                checkbox.checked = enabled;
+            }
+            return enabled;
+        }
+
         // フィルタ部分のSticky表示制御
         function initStickyFilters() {
+            // 設定を確認
+            const enabled = loadStickyFilterSetting();
+            if (!enabled) {
+                return; // 無効の場合は何もしない
+            }
             const container = document.querySelector('.container');
             if (!container) return;
 
