@@ -14274,9 +14274,7 @@
         // フィルタ部分のSticky表示制御
         function initStickyFilters() {
             const container = document.querySelector('.container');
-            const contentDiv = document.querySelector('.content');
-
-            if (!container || !contentDiv) return;
+            if (!container) return;
 
             // 全てのsticky-filter-containerを取得
             const stickyFilters = document.querySelectorAll('.sticky-filter-container');
@@ -14286,21 +14284,20 @@
                 const placeholder = document.createElement('div');
                 placeholder.className = 'sticky-placeholder';
                 filter.parentNode.insertBefore(placeholder, filter);
-                filter.dataset.placeholder = placeholder;
             });
 
-            // スクロールイベント監視
-            contentDiv.addEventListener('scroll', () => {
+            // スクロールイベント監視（windowスクロール）
+            function handleScroll() {
                 stickyFilters.forEach(filter => {
                     // 表示されているフィルタのみ処理
                     if (filter.offsetParent === null) return;
 
                     const placeholder = filter.previousElementSibling;
                     const filterRect = filter.getBoundingClientRect();
-                    const contentRect = contentDiv.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
 
-                    // contentDivの上端に達したかチェック
-                    if (filterRect.top <= contentRect.top && !filter.classList.contains('is-sticky')) {
+                    // 画面上端に達したかチェック
+                    if (filterRect.top <= 0 && !filter.classList.contains('is-sticky')) {
                         // Sticky化
                         const filterHeight = filter.offsetHeight;
                         placeholder.style.height = filterHeight + 'px';
@@ -14308,13 +14305,12 @@
                         filter.classList.add('is-sticky');
 
                         // containerの幅に合わせる
-                        const containerRect = container.getBoundingClientRect();
                         filter.style.width = containerRect.width + 'px';
                         filter.style.left = containerRect.left + 'px';
                     } else if (placeholder.classList.contains('active')) {
                         // プレースホルダーの位置をチェック（元の位置に戻ったか）
                         const placeholderRect = placeholder.getBoundingClientRect();
-                        if (placeholderRect.top > contentRect.top) {
+                        if (placeholderRect.top > 0) {
                             // Sticky解除
                             placeholder.classList.remove('active');
                             placeholder.style.height = '0';
@@ -14324,13 +14320,15 @@
                         }
                     }
                 });
-            });
+            }
+
+            window.addEventListener('scroll', handleScroll);
 
             // ウィンドウリサイズ時の対応
             window.addEventListener('resize', () => {
+                const containerRect = container.getBoundingClientRect();
                 stickyFilters.forEach(filter => {
                     if (filter.classList.contains('is-sticky')) {
-                        const containerRect = container.getBoundingClientRect();
                         filter.style.width = containerRect.width + 'px';
                         filter.style.left = containerRect.left + 'px';
                     }
@@ -14338,7 +14336,7 @@
             });
         }
 
-        // ページ読み込み時とタブ切り替え時に初期化
+        // ページ読み込み時に初期化
         document.addEventListener('DOMContentLoaded', initStickyFilters);
     </script>
 </body>
