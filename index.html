@@ -5855,9 +5855,16 @@
             }
 
             let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>工数</th><th>操作</th></tr>';
-            
+
             todayData.forEach(a => {
-                const time = new Date(a.createdAt).toLocaleTimeString('ja-JP');
+                // createdAtが存在しない場合は「-」を表示
+                let time = '-';
+                if (a.createdAt) {
+                    const date = new Date(a.createdAt);
+                    if (!isNaN(date.getTime())) {
+                        time = date.toLocaleTimeString('ja-JP');
+                    }
+                }
                 html += `
                     <tr>
                         <td>${time}</td>
