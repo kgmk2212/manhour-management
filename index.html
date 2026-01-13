@@ -14327,11 +14327,13 @@
                     if (filter.offsetParent === null) return;
 
                     const placeholder = filter.previousElementSibling;
-                    const filterRect = filter.getBoundingClientRect();
                     const containerRect = container.getBoundingClientRect();
 
-                    // 画面上端に達したかチェック
-                    if (filterRect.top <= 0 && !filter.classList.contains('is-sticky')) {
+                    // プレースホルダーの現在位置を取得（元々あった位置）
+                    const placeholderRect = placeholder.getBoundingClientRect();
+
+                    // プレースホルダーが画面上端に達したら固定
+                    if (placeholderRect.top <= 0 && !filter.classList.contains('is-sticky')) {
                         // Sticky化
                         const filterHeight = filter.offsetHeight;
                         placeholder.style.height = filterHeight + 'px';
@@ -14341,17 +14343,15 @@
                         // containerの幅に合わせる
                         filter.style.width = containerRect.width + 'px';
                         filter.style.left = containerRect.left + 'px';
-                    } else if (placeholder.classList.contains('active')) {
-                        // プレースホルダーの位置をチェック（元の位置に戻ったか）
-                        const placeholderRect = placeholder.getBoundingClientRect();
-                        if (placeholderRect.top > 0) {
-                            // Sticky解除
-                            placeholder.classList.remove('active');
-                            placeholder.style.height = '0';
-                            filter.classList.remove('is-sticky');
-                            filter.style.width = '';
-                            filter.style.left = '';
-                        }
+                    }
+                    // プレースホルダーが画面上端より下にある場合は固定解除
+                    else if (placeholderRect.top > 0 && filter.classList.contains('is-sticky')) {
+                        // Sticky解除
+                        placeholder.classList.remove('active');
+                        placeholder.style.height = '0';
+                        filter.classList.remove('is-sticky');
+                        filter.style.width = '';
+                        filter.style.left = '';
                     }
                 });
             }
