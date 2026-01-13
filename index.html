@@ -1162,14 +1162,32 @@
             }
         }
 
-        /* フィルタ部分のSticky表示 */
+        /* フィルタ部分のSticky表示（スクロール監視で動的に適用） */
         .sticky-filter-container {
-            position: sticky;
-            top: 0;
-            z-index: 100;
             background: white;
             padding-bottom: 10px;
             margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .sticky-filter-container.is-sticky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 10px 15px;
+            margin: 0;
+        }
+
+        /* Sticky時のプレースホルダー（レイアウト崩れ防止） */
+        .sticky-placeholder {
+            display: none;
+        }
+
+        .sticky-placeholder.active {
+            display: block;
         }
     </style>
 </head>
@@ -14252,6 +14270,76 @@
                 customForm.style.display = 'block';
             }
         }
+
+        // フィルタ部分のSticky表示制御
+        function initStickyFilters() {
+            const container = document.querySelector('.container');
+            const contentDiv = document.querySelector('.content');
+
+            if (!container || !contentDiv) return;
+
+            // 全てのsticky-filter-containerを取得
+            const stickyFilters = document.querySelectorAll('.sticky-filter-container');
+
+            // 各フィルタにプレースホルダーを作成
+            stickyFilters.forEach(filter => {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'sticky-placeholder';
+                filter.parentNode.insertBefore(placeholder, filter);
+                filter.dataset.placeholder = placeholder;
+            });
+
+            // スクロールイベント監視
+            contentDiv.addEventListener('scroll', () => {
+                stickyFilters.forEach(filter => {
+                    // 表示されているフィルタのみ処理
+                    if (filter.offsetParent === null) return;
+
+                    const placeholder = filter.previousElementSibling;
+                    const filterRect = filter.getBoundingClientRect();
+                    const contentRect = contentDiv.getBoundingClientRect();
+
+                    // contentDivの上端に達したかチェック
+                    if (filterRect.top <= contentRect.top && !filter.classList.contains('is-sticky')) {
+                        // Sticky化
+                        const filterHeight = filter.offsetHeight;
+                        placeholder.style.height = filterHeight + 'px';
+                        placeholder.classList.add('active');
+                        filter.classList.add('is-sticky');
+
+                        // containerの幅に合わせる
+                        const containerRect = container.getBoundingClientRect();
+                        filter.style.width = containerRect.width + 'px';
+                        filter.style.left = containerRect.left + 'px';
+                    } else if (placeholder.classList.contains('active')) {
+                        // プレースホルダーの位置をチェック（元の位置に戻ったか）
+                        const placeholderRect = placeholder.getBoundingClientRect();
+                        if (placeholderRect.top > contentRect.top) {
+                            // Sticky解除
+                            placeholder.classList.remove('active');
+                            placeholder.style.height = '0';
+                            filter.classList.remove('is-sticky');
+                            filter.style.width = '';
+                            filter.style.left = '';
+                        }
+                    }
+                });
+            });
+
+            // ウィンドウリサイズ時の対応
+            window.addEventListener('resize', () => {
+                stickyFilters.forEach(filter => {
+                    if (filter.classList.contains('is-sticky')) {
+                        const containerRect = container.getBoundingClientRect();
+                        filter.style.width = containerRect.width + 'px';
+                        filter.style.left = containerRect.left + 'px';
+                    }
+                });
+            });
+        }
+
+        // ページ読み込み時とタブ切り替え時に初期化
+        document.addEventListener('DOMContentLoaded', initStickyFilters);
     </script>
 </body>
 </html>
