@@ -5068,7 +5068,9 @@
                 defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
                 defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
                 chartColorScheme: selectedChartColorScheme,
-                memberOrder: document.getElementById('memberOrder').value.trim()
+                memberOrder: document.getElementById('memberOrder').value.trim(),
+                stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
+                floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false'
             };
 
             const data = {
@@ -14489,6 +14491,25 @@
                                 // 担当者表示順を復元
                                 if (data.settings.memberOrder) {
                                     document.getElementById('memberOrder').value = data.settings.memberOrder;
+                                }
+
+                                // Stickyフィルタ設定を復元
+                                if (data.settings.stickyFilterEnabled !== undefined) {
+                                    localStorage.setItem('stickyFilterEnabled', data.settings.stickyFilterEnabled);
+                                    const checkbox = document.getElementById('stickyFilterEnabled');
+                                    if (checkbox) checkbox.checked = data.settings.stickyFilterEnabled;
+                                    if (data.settings.stickyFilterEnabled) {
+                                        enableStickyFilters();
+                                    } else {
+                                        disableStickyFilters();
+                                    }
+                                }
+
+                                // フローティングフィルタ設定を復元
+                                if (data.settings.floatingFilterEnabled !== undefined) {
+                                    localStorage.setItem('floatingFilterEnabled', data.settings.floatingFilterEnabled);
+                                    const checkbox = document.getElementById('floatingFilterEnabled');
+                                    if (checkbox) checkbox.checked = data.settings.floatingFilterEnabled;
                                 }
                             } else if (data.memberOrder) {
                                 // 旧形式（settingsがない場合）の後方互換性
