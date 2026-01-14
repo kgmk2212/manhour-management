@@ -4919,7 +4919,7 @@
                 processes.forEach(proc => {
                     const hours = parseFloat(document.getElementById(`est${proc}`).value);
                     const member = document.getElementById(`est${proc}_member`).value;
-                    
+
                     if (hours > 0 && member) {
                         estimates.push({
                             id: Date.now() + Math.random(),
@@ -4933,6 +4933,9 @@
                             monthlyHours: {},
                             createdAt: new Date().toISOString()
                         });
+
+                        // 見込残存時間も自動設定（見積時間と同じ）
+                        saveRemainingEstimate(version, task, proc, member, hours);
                     }
                 });
             }
@@ -4988,9 +4991,9 @@
             processes.forEach(proc => {
                 const member = document.getElementById(`est${proc}_member`).value;
                 const hours = parseFloat(document.getElementById(`est${proc}`).value);
-                
+
                 if (!member) return;
-                
+
                 // この工程が分割対象かチェック
                 if (splitProcesses.includes(proc)) {
                     // 月分割見積を作成
@@ -5006,6 +5009,9 @@
                         monthlyHours: monthlyHours,
                         createdAt: new Date().toISOString()
                     });
+
+                    // 見込残存時間も自動設定（総工数と同じ）
+                    saveRemainingEstimate(version, task, proc, member, totalHours);
                 } else {
                     // 通常の見積を作成（工数入力があれば）
                     if (hours > 0) {
@@ -5021,6 +5027,9 @@
                             monthlyHours: {},
                             createdAt: new Date().toISOString()
                         });
+
+                        // 見込残存時間も自動設定（見積時間と同じ）
+                        saveRemainingEstimate(version, task, proc, member, hours);
                     }
                 }
             });
@@ -7005,6 +7014,9 @@
                     };
 
                     estimates.push(est);
+
+                    // 見込残存時間も自動設定（見積時間と同じ）
+                    saveRemainingEstimate(version, task, proc, member, hours);
                 }
             });
 
@@ -7081,12 +7093,16 @@
 
                     if (splitProcesses.includes(proc)) {
                         estimates.push(est);
+                        // 見込残存時間も自動設定（総工数と同じ）
+                        saveRemainingEstimate(version, task, proc, member, totalHours);
                     } else {
                         // 分割対象外の工程は通常通り登録
                         est.hours = hours;
                         est.monthlyHours = { [startMonth]: hours };
                         est.workMonths = [startMonth];
                         estimates.push(est);
+                        // 見込残存時間も自動設定（見積時間と同じ）
+                        saveRemainingEstimate(version, task, proc, member, hours);
                     }
                 }
             });
@@ -10117,6 +10133,9 @@
                 }
             }
 
+            // 元の見積データを保存（見込残存時間の更新判定に使用）
+            const oldEstimate = estimates[estimateIndex];
+
             // 見積データを更新
             estimates[estimateIndex] = {
                 ...estimates[estimateIndex],
@@ -10129,6 +10148,20 @@
                 workMonths: workMonths,
                 monthlyHours: monthlyHours
             };
+
+            // 見込残存時間の更新判定
+            // 既存の見込残存時間が未入力の場合のみ、新しい見積時間で更新
+            const existingRemaining = remainingEstimates.find(r =>
+                r.version === oldEstimate.version &&
+                r.task === oldEstimate.task &&
+                r.process === oldEstimate.process &&
+                r.member === oldEstimate.member
+            );
+
+            if (!existingRemaining) {
+                // 見込残存時間が未入力の場合、新しい見積時間で設定
+                saveRemainingEstimate(version, task, process, member, hours);
+            }
 
             saveData();
             closeEditEstimateModal();
