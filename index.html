@@ -12895,9 +12895,11 @@
                             const taskCount = memberTasks[member] ? memberTasks[member].size : 0;
 
                             html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
-                            html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${member}</div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">見積: ${data.estimate.toFixed(1)}h <span style="font-size: 11px; color: #6c757d;">(${estManDays}人日 / ${estManMonths}人月)</span></div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">実績: ${data.actual.toFixed(1)}h <span style="font-size: 11px; color: #6c757d;">(${actManDays}人日 / ${actManMonths}人月)</span></div>`;
+                            html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${member}</div>`;
+                            html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
+                            html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
                             html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
                             html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
                             html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
