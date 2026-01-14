@@ -11334,9 +11334,13 @@
                 header.style.background = gradient;
             }
 
-            // アクティブボタンの背景を更新
-            document.querySelectorAll('.floating-filter-buttons button.active, .floating-segment-buttons button.active').forEach(btn => {
-                btn.style.background = gradient;
+            // 全てのボタンの背景をリセットしてから、アクティブボタンのみ更新
+            document.querySelectorAll('.floating-filter-buttons button, .floating-segment-buttons button').forEach(btn => {
+                if (btn.classList.contains('active')) {
+                    btn.style.background = gradient;
+                } else {
+                    btn.style.background = ''; // インラインスタイルをクリア
+                }
             });
         }
         
