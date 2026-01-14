@@ -12,3 +12,17 @@
 - ExcelJS（Excelファイル出力）
 - Chart.js風の独自Canvas描画
 - ローカルストレージによるデータ永続化
+
+## UI/UX方針
+
+### モーダルの操作
+- 基本的にモーダル外クリックで閉じる機能を実装する
+- 例外：確認が必要な重要な操作（削除確認など）や、入力途中で閉じると困るもの
+- 実装方法：
+  ```javascript
+  modalElement.addEventListener('click', function(event) {
+      if (event.target === modalElement) {
+          closeModalFunction();
+      }
+  });
+  ```

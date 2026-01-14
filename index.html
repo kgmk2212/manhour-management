@@ -3518,6 +3518,16 @@
             updateQuickTaskList();
             updateWorkMonthOptions(); // 作業月選択肢を更新
 
+            // 見込残存時間入力モーダル: 外クリックで閉じる
+            const remainingHoursModal = document.getElementById('remainingHoursModal');
+            if (remainingHoursModal) {
+                remainingHoursModal.addEventListener('click', function(event) {
+                    if (event.target === remainingHoursModal) {
+                        closeRemainingHoursModal();
+                    }
+                });
+            }
+
             // 見積一覧のデフォルトを版数別の最新版数に設定
             const filterTypeElement = document.getElementById('estimateFilterType');
             if (filterTypeElement) {
