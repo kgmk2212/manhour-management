@@ -10745,18 +10745,18 @@
         }
 
         // 見込残存時間入力モーダルを開く
-        function openRemainingHoursModal(version, task, process, filteredActuals, filteredEstimates) {
+        function openRemainingHoursModal(version, task, process) {
             // 工程の担当者を取得
             const estMembers = new Set();
             const actMembers = new Set();
 
-            filteredEstimates.forEach(e => {
+            estimates.forEach(e => {
                 if (e.version === version && e.task === task && e.process === process) {
                     estMembers.add(e.member);
                 }
             });
 
-            filteredActuals.forEach(a => {
+            actuals.forEach(a => {
                 if (a.version === version && a.task === task && a.process === process) {
                     actMembers.add(a.member);
                 }
@@ -13502,7 +13502,7 @@
                                     : `text-align: center; background: ${bgColor}; padding: 8px; cursor: pointer;`;
 
                                 // セルクリック時に見込残存時間入力モーダルを開く
-                                const cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)"`;
+                                const cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
 
                                 tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                             } else {
