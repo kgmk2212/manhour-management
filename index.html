@@ -2725,6 +2725,40 @@
         </div>
     </div>
 
+    <!-- 見込残存時間入力モーダル -->
+    <div id="remainingHoursModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>⏱️ 見込残存時間の入力</h3>
+                <button class="modal-close" onclick="closeRemainingHoursModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="remainingHoursInfo" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
+                    <!-- 版数、対応名、工程情報を表示 -->
+                </div>
+
+                <div id="remainingHoursMemberSelect" style="display: none; margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">担当者</label>
+                    <select id="remainingHoursMember" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">見込残存時間 (h)</label>
+                    <input type="number" id="remainingHoursInput" step="0.1" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        0を入力すると完了（100%）として扱われます
+                    </small>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="closeRemainingHoursModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
+                    <button onclick="saveRemainingHoursFromModal()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 見積登録モーダル -->
     <div id="addEstimateModal" class="modal">
         <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
@@ -10693,6 +10727,112 @@
             document.getElementById('processBreakdownModal').style.display = 'none';
         }
 
+        // 見込残存時間入力モーダルを開く
+        function openRemainingHoursModal(version, task, process, filteredActuals, filteredEstimates) {
+            // 工程の担当者を取得
+            const estMembers = new Set();
+            const actMembers = new Set();
+
+            filteredEstimates.forEach(e => {
+                if (e.version === version && e.task === task && e.process === process) {
+                    estMembers.add(e.member);
+                }
+            });
+
+            filteredActuals.forEach(a => {
+                if (a.version === version && a.task === task && a.process === process) {
+                    actMembers.add(a.member);
+                }
+            });
+
+            const allMembers = [...new Set([...estMembers, ...actMembers])].sort();
+
+            // 情報表示エリアを更新
+            document.getElementById('remainingHoursInfo').innerHTML = `
+                <div><strong>版数:</strong> ${version}</div>
+                <div><strong>対応名:</strong> ${task}</div>
+                <div><strong>工程:</strong> ${process}</div>
+            `;
+
+            // 担当者が複数いる場合は選択できるようにする
+            if (allMembers.length > 1) {
+                document.getElementById('remainingHoursMemberSelect').style.display = 'block';
+                const select = document.getElementById('remainingHoursMember');
+                select.innerHTML = allMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                // 最初の担当者の見込残存時間を表示
+                updateRemainingHoursInput(version, task, process, allMembers[0]);
+
+                // 担当者変更時に見込残存時間を更新
+                select.onchange = function() {
+                    updateRemainingHoursInput(version, task, process, this.value);
+                };
+            } else if (allMembers.length === 1) {
+                document.getElementById('remainingHoursMemberSelect').style.display = 'none';
+                document.getElementById('remainingHoursMember').value = allMembers[0];
+                updateRemainingHoursInput(version, task, process, allMembers[0]);
+            } else {
+                // 担当者がいない場合
+                document.getElementById('remainingHoursMemberSelect').style.display = 'none';
+                document.getElementById('remainingHoursInput').value = '';
+            }
+
+            // モーダルにデータを保存
+            document.getElementById('remainingHoursModal').dataset.version = version;
+            document.getElementById('remainingHoursModal').dataset.task = task;
+            document.getElementById('remainingHoursModal').dataset.process = process;
+
+            // モーダルを表示
+            document.getElementById('remainingHoursModal').style.display = 'flex';
+        }
+
+        // 見込残存時間の入力フィールドを更新
+        function updateRemainingHoursInput(version, task, process, member) {
+            const existing = remainingEstimates.find(r =>
+                r.version === version &&
+                r.task === task &&
+                r.process === process &&
+                r.member === member
+            );
+
+            document.getElementById('remainingHoursInput').value = existing ? existing.remainingHours : '';
+        }
+
+        // 見込残存時間モーダルを閉じる
+        function closeRemainingHoursModal() {
+            document.getElementById('remainingHoursModal').style.display = 'none';
+        }
+
+        // 見込残存時間を保存
+        function saveRemainingHoursFromModal() {
+            const modal = document.getElementById('remainingHoursModal');
+            const version = modal.dataset.version;
+            const task = modal.dataset.task;
+            const process = modal.dataset.process;
+            const member = document.getElementById('remainingHoursMember').value;
+            const hours = parseFloat(document.getElementById('remainingHoursInput').value);
+
+            if (!member) {
+                alert('担当者が設定されていません');
+                return;
+            }
+
+            if (isNaN(hours) || hours < 0) {
+                alert('正しい時間を入力してください');
+                return;
+            }
+
+            // 見込残存時間を保存
+            saveRemainingEstimate(version, task, process, member, hours);
+            saveData(true);
+
+            // レポートを更新
+            updateReportMatrix();
+
+            closeRemainingHoursModal();
+            alert('見込残存時間を保存しました');
+        }
+
         function showMemberOrderHelp() {
             alert('担当者の表示順を指定できます。\n\n例:\nA,B,C,D\n山田,佐藤,田中\n\n・カンマ区切りで入力\n・指定した順番で表示されます\n・指定していない担当者は後ろにアルファベット順で表示されます');
         }
@@ -13295,13 +13435,13 @@
                                     memberDisplay = Array.from(est.members).join(',');
                                 }
 
-                                // 複数担当者がいる場合はクリック可能に
+                                // 複数担当者がいる場合はクリック可能に（event.stopPropagation()でセルクリックを防ぐ）
                                 const isMultipleMember = allMembers.size > 1;
                                 const memberStyle = isMultipleMember ?
                                     'cursor: pointer; color: #3498db; text-decoration: underline;' :
                                     '';
                                 const memberOnclick = isMultipleMember ?
-                                    `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
+                                    `onclick="event.stopPropagation(); showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
                                     '';
 
                                 // 乖離率に基づく背景色を計算
@@ -13337,9 +13477,13 @@
 
                                 // 進捗バースタイルに応じてセルスタイルを調整
                                 const matrixCellStyle = progressBarHtml && progressBarStyle === 'bottom'
-                                    ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative;`
-                                    : `text-align: center; background: ${bgColor}; padding: 8px;`;
-                                tableBody += `<td style="${matrixCellStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
+                                    ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative; cursor: pointer;`
+                                    : `text-align: center; background: ${bgColor}; padding: 8px; cursor: pointer;`;
+
+                                // セルクリック時に見込残存時間入力モーダルを開く
+                                const cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)"`;
+
+                                tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                             } else {
                                 tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
                             }
