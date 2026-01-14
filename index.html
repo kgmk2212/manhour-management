@@ -9103,6 +9103,73 @@
             );
         }
 
+        // 進捗率から表示色を取得
+        function getProgressColor(progressRate) {
+            if (progressRate >= 100) {
+                return '#2e7d32'; // ダークグリーン - 完了
+            } else if (progressRate >= 90) {
+                return '#4caf50'; // グリーン - ほぼ完了
+            } else if (progressRate >= 70) {
+                return '#66bb6a'; // ライトグリーン - 完了間近
+            } else if (progressRate >= 30) {
+                return '#42a5f5'; // ブルー - 進行中
+            } else if (progressRate >= 10) {
+                return '#90caf9'; // ライトブルー - 開始
+            } else {
+                return '#e0e0e0'; // 薄いグレー - 未着手
+            }
+        }
+
+        // 進捗率とバーHTMLを生成（マトリクス表示用）
+        function generateProgressBar(version, task, process) {
+            // 実績を集計
+            let actualHours = actuals
+                .filter(a => a.version === version && a.task === task && a.process === process)
+                .reduce((sum, a) => sum + a.hours, 0);
+
+            // 見込残存時間を集計
+            let remainingHours = remainingEstimates
+                .filter(r => r.version === version && r.task === task && r.process === process)
+                .reduce((sum, r) => sum + r.remainingHours, 0);
+
+            // 進捗率を計算
+            let progressRate = 0;
+            let hasRemainingData = false;
+
+            if (remainingHours === 0 && actualHours > 0) {
+                // 見込残存が0で実績があれば100%
+                progressRate = 100;
+                hasRemainingData = true;
+            } else if (actualHours + remainingHours > 0) {
+                // 見込残存データがあれば計算
+                progressRate = (actualHours / (actualHours + remainingHours)) * 100;
+                hasRemainingData = true;
+            }
+            // remainingHoursが未入力（データなし）かつactualHoursも0なら0%のまま
+
+            // プログレスバーのHTMLを生成
+            if (!hasRemainingData) {
+                // 見込残存データがない場合はバーを表示しない
+                return '';
+            }
+
+            const barColor = getProgressColor(progressRate);
+            const barWidth = Math.min(progressRate, 100); // 100%を超えても表示は100%まで
+            const displayRate = progressRate.toFixed(0);
+            const remainingDisplay = remainingHours.toFixed(1);
+
+            const progressBarHtml = `
+                <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                    <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>
+                </div>
+            `;
+
+            return progressBarHtml;
+        }
+
         // 対応単位での進捗情報を計算
         function calculateProgress(version, task, process = null, member = null) {
             // 見積工数を集計
@@ -12784,6 +12851,9 @@
                             `onclick="showProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}', actuals, estimates)" title="クリックして内訳を表示"` :
                             '';
 
+                        // 進捗バーを生成
+                        const progressBarHtml = generateProgressBar(version, taskGroup.task, proc);
+
                         tableBody += '<tr>';
                         if (index === 0) {
                             // 対応名を「：」（全角コロン）で分割して2行表示
@@ -12800,6 +12870,7 @@
                         tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
+                        tableBody += `<td style="min-width: 100px; padding: 8px;">${progressBarHtml || '<span style="color: #ccc; font-size: 11px;">-</span>'}</td>`;
                         if (index === 0) {
                             tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
@@ -12818,7 +12889,7 @@
                     html += `<div style="margin-bottom: 30px;">`;
                     html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
                     html += '<div class="table-wrapper"><table>';
-                    html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">対応合計</th></tr>';
+                    html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">進捗</th><th style="min-width: 100px;">対応合計</th></tr>';
                     html += tableBody;
 
                     // 合計行を追加
@@ -12829,7 +12900,8 @@
                     html += `<td style="text-align: right;">${versionTotalEst.toFixed(1)}h</td>`;
                     html += `<td style="text-align: right;">${versionTotalAct.toFixed(1)}h</td>`;
                     html += `<td style="text-align: right; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}h</td>`;
-                    html += '<td></td>';
+                    html += '<td></td>'; // 進捗列
+                    html += '<td></td>'; // 対応合計列
                     html += '</tr>';
 
                     html += '</table></div>';
@@ -13087,6 +13159,9 @@
                                 const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
                                 const bgColor = showMonthColors ? monthColor.bg : deviationBgColor;
 
+                                // 進捗バーを生成
+                                const progressBarHtml = generateProgressBar(version, taskGroup.task, proc);
+
                                 // 見積と実績の表示形式に応じて分岐
                                 let cellHtml = '';
                                 if (matrixEstActFormat === 'twoRows') {
@@ -13096,6 +13171,7 @@
                                         <div style="font-weight: 600; margin-top: 2px;">${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
                                         <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
                                         <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                        ${progressBarHtml}
                                     `;
                                 } else {
                                     // スラッシュ横並び
@@ -13103,6 +13179,7 @@
                                         <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'} / ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
                                         <div style="font-size: 11px; color: #666; margin-top: 4px; ${memberStyle}" ${memberOnclick}>(${memberDisplay})</div>
                                         <div style="font-size: 11px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
+                                        ${progressBarHtml}
                                     `;
                                 }
 
