@@ -2015,13 +2015,37 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">進捗バーのスタイル</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="progressBarStyle" value="inline" onchange="saveProgressBarStyle()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <span style="flex: 1;">
+                                    <strong>セル内に表示</strong><br>
+                                    <small style="color: #666;">進捗バーをセルのコンテンツとして表示（パーセンテージ表示可能）</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="progressBarStyle" value="bottom" onchange="saveProgressBarStyle()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>セル下部に表示</strong><br>
+                                    <small style="color: #666;">進捗バーをセルの下部枠線として表示（パーセンテージは非表示）</small>
+                                </span>
+                            </label>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            進捗バーの表示位置を選択できます
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="showProgressPercentageCheckbox" onchange="toggleProgressPercentageSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
                             <span>進捗バーにパーセンテージを表示する</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             ・オン: 進捗バーの下にパーセンテージ（例: 75%）を表示します<br>
-                            ・オフ: パーセンテージを非表示にします（ツールチップで確認可能）
+                            ・オフ: パーセンテージを非表示にします（ツールチップで確認可能）<br>
+                            ・注意: 「セル下部に表示」スタイルではパーセンテージは表示されません
                         </small>
                     </div>
 
@@ -3750,6 +3774,7 @@
                     showDeviationColors: showDeviationColorsSetting,
                     showProgressBars: showProgressBarsSetting,
                     showProgressPercentage: showProgressPercentageSetting,
+                    progressBarStyle: progressBarStyle,
                     matrixEstActFormat: matrixEstActFormat,
                     matrixDayMonthFormat: matrixDayMonthFormat,
                     defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
@@ -4324,6 +4349,12 @@
                     showProgressPercentageSetting = settings.showProgressPercentage;
                     const checkbox = document.getElementById('showProgressPercentageCheckbox');
                     if (checkbox) checkbox.checked = showProgressPercentageSetting;
+                }
+                // 進捗バーのスタイル設定を読み込み
+                if (settings.progressBarStyle) {
+                    progressBarStyle = settings.progressBarStyle;
+                    const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${settings.progressBarStyle}"]`);
+                    if (radioButton) radioButton.checked = true;
                 }
                 // 見積と実績の表示形式の設定を読み込み
                 if (settings.matrixEstActFormat) {
@@ -5380,6 +5411,7 @@
         let showDeviationColorsSetting = true; // 乖離率背景色の表示設定
         let showProgressBarsSetting = true; // 進捗バー表示設定
         let showProgressPercentageSetting = true; // 進捗バーのパーセンテージ表示設定
+        let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, bottom
         let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
         let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
 
@@ -5410,6 +5442,16 @@
             showProgressPercentageSetting = document.getElementById('showProgressPercentageCheckbox').checked;
             saveData(true);
             updateReportMatrix();
+        }
+
+        // 進捗バーのスタイル保存
+        function saveProgressBarStyle() {
+            const selectedStyle = document.querySelector('input[name="progressBarStyle"]:checked');
+            if (selectedStyle) {
+                progressBarStyle = selectedStyle.value;
+                saveData(true);
+                updateReportMatrix();
+            }
         }
 
         // 見積と実績の表示形式の保存
@@ -9215,19 +9257,30 @@
             const displayRate = progressRate.toFixed(0);
             const remainingDisplay = remainingHours.toFixed(1);
 
-            // パーセンテージ表示の制御
-            const percentageHtml = showProgressPercentageSetting
-                ? `<div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
-                : '';
+            let progressBarHtml = '';
 
-            const progressBarHtml = `
-                <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
-                    <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+            if (progressBarStyle === 'bottom') {
+                // セル下部に表示するスタイル
+                progressBarHtml = `
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
                         <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                     </div>
-                    ${percentageHtml}
-                </div>
-            `;
+                `;
+            } else {
+                // セル内に表示するスタイル（デフォルト）
+                const percentageHtml = showProgressPercentageSetting
+                    ? `<div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+                    : '';
+
+                progressBarHtml = `
+                    <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                        <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                            <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
+                        </div>
+                        ${percentageHtml}
+                    </div>
+                `;
+            }
 
             return progressBarHtml;
         }
@@ -12932,7 +12985,11 @@
                         tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
-                        tableBody += `<td style="min-width: 100px; padding: 8px;">${progressBarHtml || '<span style="color: #ccc; font-size: 11px;">-</span>'}</td>`;
+                        // 進捗バースタイルに応じてセルスタイルを調整
+                        const progressCellStyle = progressBarHtml && progressBarStyle === 'bottom'
+                            ? 'min-width: 100px; padding: 8px 8px 12px 8px; position: relative;'
+                            : 'min-width: 100px; padding: 8px;';
+                        tableBody += `<td style="${progressCellStyle}">${progressBarHtml || '<span style="color: #ccc; font-size: 11px;">-</span>'}</td>`;
                         if (index === 0) {
                             tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
@@ -13245,7 +13302,11 @@
                                     `;
                                 }
 
-                                tableBody += `<td style="text-align: center; background: ${bgColor}; padding: 8px;" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
+                                // 進捗バースタイルに応じてセルスタイルを調整
+                                const matrixCellStyle = progressBarHtml && progressBarStyle === 'bottom'
+                                    ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative;`
+                                    : `text-align: center; background: ${bgColor}; padding: 8px;`;
+                                tableBody += `<td style="${matrixCellStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                             } else {
                                 tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
                             }
@@ -13971,6 +14032,13 @@
                                     showProgressPercentageSetting = data.settings.showProgressPercentage;
                                     const checkbox = document.getElementById('showProgressPercentageCheckbox');
                                     if (checkbox) checkbox.checked = data.settings.showProgressPercentage;
+                                }
+
+                                // 進捗バーのスタイル設定を復元
+                                if (data.settings.progressBarStyle) {
+                                    progressBarStyle = data.settings.progressBarStyle;
+                                    const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${data.settings.progressBarStyle}"]`);
+                                    if (radioButton) radioButton.checked = true;
                                 }
 
                                 // デフォルト表示形式を復元
