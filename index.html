@@ -10521,10 +10521,17 @@
                 const startMonthSelect = document.getElementById('editStartMonth');
                 const endMonthSelect = document.getElementById('editEndMonth');
                 if (!startMonthSelect.value) {
-                    const now = new Date();
-                    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                    generateMonthOptions('editStartMonth', currentMonth);
-                    generateMonthOptions('editEndMonth', currentMonth);
+                    // 単一月で登録されていた月を取得（なければ現在月）
+                    const singleMonthValue = document.getElementById('editEstimateWorkMonth').value;
+                    let defaultMonth;
+                    if (singleMonthValue) {
+                        defaultMonth = singleMonthValue;
+                    } else {
+                        const now = new Date();
+                        defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    }
+                    generateMonthOptions('editStartMonth', defaultMonth);
+                    generateMonthOptions('editEndMonth', defaultMonth);
                 }
 
                 updateEditMonthPreview();
@@ -10619,9 +10626,17 @@
 
             const totalDiv = document.getElementById('editManualTotal');
             if (totalDiv) {
-                const isMatch = Math.abs(total - totalHours) < 0.01;
-                const color = isMatch ? '#27ae60' : '#e74c3c';
+                const diff = total - totalHours;
+                const color = Math.abs(diff) < 0.01 ? '#27ae60' : (diff > 0 ? '#e74c3c' : '#f39c12');
                 totalDiv.innerHTML = `合計: <span style="color: ${color};">${total.toFixed(1)}h</span> / 目標: ${totalHours}h`;
+
+                if (Math.abs(diff) < 0.01) {
+                    totalDiv.innerHTML += ' <span style="color: #27ae60;">✓</span>';
+                } else if (diff > 0) {
+                    totalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
+                } else {
+                    totalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
+                }
             }
         }
 
