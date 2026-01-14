@@ -1351,14 +1351,13 @@
             background: #f8f9ff;
         }
 
-        /* セグメントボタン用コンテナ */
+        /* 動的ボタン用コンテナ */
         .floating-segment-buttons {
             display: flex;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
+            gap: 6px;
             overflow-x: auto;
-            background: white;
-            white-space: nowrap;
+            padding: 2px 0;
+            flex-wrap: wrap;
         }
 
         .floating-segment-buttons::-webkit-scrollbar {
@@ -1379,24 +1378,22 @@
             flex-shrink: 0;
             padding: 6px 12px;
             font-size: 11px;
-            border: none;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             background: white;
             color: #333;
             cursor: pointer;
             transition: all 0.2s;
-            border-right: 1px solid #dee2e6;
-        }
-
-        .floating-segment-buttons button:last-child {
-            border-right: none;
         }
 
         .floating-segment-buttons button.active {
             background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
+            border-color: transparent;
         }
 
         .floating-segment-buttons button:hover:not(.active) {
+            border-color: var(--theme-color, #667eea);
             background: #f8f9ff;
         }
 
@@ -3277,10 +3274,10 @@
 
     <!-- フローティングフィルタパネル -->
     <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel(event)">
-        ⚙
+        🔍
     </button>
 
-    <div class="floating-filter-panel" id="floatingFilterPanel" onclick="event.stopPropagation()">
+    <div class="floating-filter-panel" id="floatingFilterPanel">
         <div class="floating-filter-panel-header">
             <span>フィルタ設定</span>
             <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
@@ -15579,7 +15576,19 @@
                     return;
                 }
                 // それ以外の場合はパネルを閉じる
+                event.stopPropagation();
+                event.preventDefault();
                 panel.classList.remove('show');
+            }
+        }, true); // キャプチャフェーズで実行
+
+        // パネル内のクリックでイベント伝播を止める（見込残存時間モーダルが開くのを防ぐ）
+        document.addEventListener('DOMContentLoaded', function() {
+            const panel = document.getElementById('floatingFilterPanel');
+            if (panel) {
+                panel.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
             }
         });
     </script>
