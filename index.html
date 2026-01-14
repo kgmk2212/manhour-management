@@ -1189,6 +1189,176 @@
         .sticky-placeholder.active {
             display: block;
         }
+
+        /* フローティングフィルタパネル */
+        .floating-filter-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: none; /* レポートタブでのみ表示 */
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 1100;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .floating-filter-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .floating-filter-toggle:active {
+            transform: translateY(0);
+        }
+
+        .floating-filter-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1099;
+            display: none;
+            overflow: hidden;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .floating-filter-panel.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .floating-filter-panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .floating-filter-panel-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .floating-filter-panel-close:hover {
+            opacity: 1;
+        }
+
+        .floating-filter-panel-body {
+            padding: 16px;
+            overflow-y: auto;
+            max-height: calc(70vh - 48px);
+        }
+
+        .floating-filter-group {
+            margin-bottom: 16px;
+        }
+
+        .floating-filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .floating-filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .floating-filter-select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .floating-filter-select:hover {
+            border-color: #667eea;
+        }
+
+        .floating-filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .floating-filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .floating-filter-buttons button {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .floating-filter-buttons button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .floating-filter-buttons button:hover:not(.active) {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .floating-filter-panel {
+                width: calc(100vw - 40px);
+                right: 20px;
+                left: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -3041,6 +3211,54 @@
                         <input type="number" id="otherWorkHours" step="0.5" min="0" placeholder="例: 4">
                     </div>
                     <button class="btn btn-success" onclick="addOtherWork()">追加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フローティングフィルタパネル -->
+    <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel()">
+        🔍
+    </button>
+
+    <div class="floating-filter-panel" id="floatingFilterPanel">
+        <div class="floating-filter-panel-header">
+            <span>フィルタ設定</span>
+            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel()">×</button>
+        </div>
+        <div class="floating-filter-panel-body">
+            <!-- フィルタタイプ選択 -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">フィルタタイプ</label>
+                <div class="floating-filter-buttons">
+                    <button id="floatingFilterMonth" onclick="setFloatingFilterType('month')">月別</button>
+                    <button id="floatingFilterVersion" onclick="setFloatingFilterType('version')">版数別</button>
+                </div>
+            </div>
+
+            <!-- 月別フィルタ -->
+            <div class="floating-filter-group" id="floatingMonthGroup">
+                <label class="floating-filter-label">表示月</label>
+                <select class="floating-filter-select" id="floatingReportMonth" onchange="syncFloatingMonthFilter()">
+                    <option value="all">全期間</option>
+                </select>
+            </div>
+
+            <!-- 版数別フィルタ -->
+            <div class="floating-filter-group" id="floatingVersionGroup" style="display: none;">
+                <label class="floating-filter-label">版数</label>
+                <select class="floating-filter-select" id="floatingReportVersion" onchange="syncFloatingVersionFilter()">
+                    <option value="all">全版数</option>
+                </select>
+            </div>
+
+            <!-- 表示形式 -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">表示形式</label>
+                <div class="floating-filter-buttons">
+                    <button id="floatingViewSummary" onclick="setFloatingViewType('summary')">サマリー</button>
+                    <button id="floatingViewGrouped" onclick="setFloatingViewType('grouped')">グループ</button>
+                    <button id="floatingViewMatrix" onclick="setFloatingViewType('matrix')">マトリクス</button>
                 </div>
             </div>
         </div>
@@ -4914,6 +5132,13 @@
                 applyDefaultReportViewType();
                 // レポートタブを開いた時は常にupdateReport()を呼び出してグラフを更新
                 updateReport();
+                // フローティングフィルタボタンを表示
+                showFloatingFilterButton();
+                // フローティングパネルの状態を同期
+                syncFloatingFilters();
+            } else {
+                // レポートタブ以外ではフローティングフィルタボタンを非表示
+                hideFloatingFilterButton();
             }
         }
 
@@ -14859,11 +15084,22 @@
         }
 
         // フィルタ固定表示設定の保存
+        // Stickyフィルタのイベントハンドラー保持用
+        let stickyScrollHandler = null;
+        let stickyResizeHandler = null;
+
         function saveStickyFilterSetting() {
             const checkbox = document.getElementById('stickyFilterEnabled');
             if (!checkbox) return;
             const enabled = checkbox.checked;
             localStorage.setItem('stickyFilterEnabled', enabled);
+
+            // 設定変更時に機能を有効/無効化
+            if (enabled) {
+                enableStickyFilters();
+            } else {
+                disableStickyFilters();
+            }
         }
 
         // フィルタ固定表示設定の読み込み
@@ -14877,13 +15113,11 @@
             return enabled;
         }
 
-        // フィルタ部分のSticky表示制御
-        function initStickyFilters() {
-            // 設定を確認
-            const enabled = loadStickyFilterSetting();
-            if (!enabled) {
-                return; // 無効の場合は何もしない
-            }
+        // Stickyフィルタを有効化
+        function enableStickyFilters() {
+            // 既に有効な場合は何もしない
+            if (stickyScrollHandler) return;
+
             const container = document.querySelector('.container');
             if (!container) return;
 
@@ -14902,12 +15136,14 @@
             });
 
             // スクロールイベント監視（windowスクロール）
-            function handleScroll() {
+            stickyScrollHandler = function() {
                 stickyFilters.forEach(filter => {
                     // 表示されているフィルタのみ処理
                     if (filter.offsetParent === null) return;
 
                     const placeholder = filter.previousElementSibling;
+                    if (!placeholder) return;
+
                     const containerRect = container.getBoundingClientRect();
 
                     // プレースホルダーの現在位置を取得（元々あった位置）
@@ -14935,12 +15171,12 @@
                         filter.style.left = '';
                     }
                 });
-            }
+            };
 
-            window.addEventListener('scroll', handleScroll);
+            window.addEventListener('scroll', stickyScrollHandler);
 
             // ウィンドウリサイズ時の対応
-            window.addEventListener('resize', () => {
+            stickyResizeHandler = function() {
                 const containerRect = container.getBoundingClientRect();
                 stickyFilters.forEach(filter => {
                     if (filter.classList.contains('is-sticky')) {
@@ -14948,11 +15184,220 @@
                         filter.style.left = containerRect.left + 'px';
                     }
                 });
+            };
+
+            window.addEventListener('resize', stickyResizeHandler);
+        }
+
+        // Stickyフィルタを無効化
+        function disableStickyFilters() {
+            // イベントリスナーを削除
+            if (stickyScrollHandler) {
+                window.removeEventListener('scroll', stickyScrollHandler);
+                stickyScrollHandler = null;
+            }
+            if (stickyResizeHandler) {
+                window.removeEventListener('resize', stickyResizeHandler);
+                stickyResizeHandler = null;
+            }
+
+            // 全てのsticky状態をリセット
+            const stickyFilters = document.querySelectorAll('.sticky-filter-container');
+            stickyFilters.forEach(filter => {
+                filter.classList.remove('is-sticky');
+                filter.style.width = '';
+                filter.style.left = '';
+
+                // プレースホルダーもリセット
+                const placeholder = filter.previousElementSibling;
+                if (placeholder && placeholder.classList.contains('sticky-placeholder')) {
+                    placeholder.classList.remove('active');
+                    placeholder.style.height = '';
+                }
             });
+        }
+
+        // フィルタ部分のSticky表示制御（初期化）
+        function initStickyFilters() {
+            // 設定を確認
+            const enabled = loadStickyFilterSetting();
+            if (enabled) {
+                enableStickyFilters();
+            }
         }
 
         // ページ読み込み時に初期化
         document.addEventListener('DOMContentLoaded', initStickyFilters);
+
+        // ========================================
+        // フローティングフィルタパネル
+        // ========================================
+
+        // フローティングフィルタボタンを表示
+        function showFloatingFilterButton() {
+            const toggle = document.getElementById('floatingFilterToggle');
+            if (toggle) {
+                toggle.style.display = 'flex';
+            }
+        }
+
+        // フローティングフィルタボタンを非表示
+        function hideFloatingFilterButton() {
+            const toggle = document.getElementById('floatingFilterToggle');
+            const panel = document.getElementById('floatingFilterPanel');
+            if (toggle) {
+                toggle.style.display = 'none';
+            }
+            if (panel) {
+                panel.classList.remove('show');
+            }
+        }
+
+        // フローティングパネルの開閉トグル
+        function toggleFloatingFilterPanel() {
+            const panel = document.getElementById('floatingFilterPanel');
+            if (panel) {
+                if (panel.classList.contains('show')) {
+                    panel.classList.remove('show');
+                } else {
+                    panel.classList.add('show');
+                    // パネルを開く時に状態を同期
+                    syncFloatingFilters();
+                }
+            }
+        }
+
+        // メインフィルタの状態をフローティングパネルに同期
+        function syncFloatingFilters() {
+            // フィルタタイプの同期
+            const mainFilterType = document.getElementById('reportFilterType');
+            if (mainFilterType) {
+                const filterType = mainFilterType.value;
+                setFloatingFilterType(filterType, false);
+            }
+
+            // 月フィルタの同期
+            const mainReportMonth = document.getElementById('reportMonth');
+            const floatingReportMonth = document.getElementById('floatingReportMonth');
+            if (mainReportMonth && floatingReportMonth) {
+                // オプションを同期
+                floatingReportMonth.innerHTML = mainReportMonth.innerHTML;
+                floatingReportMonth.value = mainReportMonth.value;
+            }
+
+            // 版数フィルタの同期
+            const mainReportVersion = document.getElementById('reportVersion');
+            const floatingReportVersion = document.getElementById('floatingReportVersion');
+            if (mainReportVersion && floatingReportVersion) {
+                // オプションを同期
+                floatingReportVersion.innerHTML = mainReportVersion.innerHTML;
+                floatingReportVersion.value = mainReportVersion.value;
+            }
+
+            // 表示形式の同期
+            const mainViewType = document.getElementById('reportViewType');
+            if (mainViewType) {
+                const viewType = mainViewType.value;
+                setFloatingViewType(viewType, false);
+            }
+        }
+
+        // フィルタタイプの設定（月別/版数別）
+        function setFloatingFilterType(type, applyToMain = true) {
+            const monthBtn = document.getElementById('floatingFilterMonth');
+            const versionBtn = document.getElementById('floatingFilterVersion');
+            const monthGroup = document.getElementById('floatingMonthGroup');
+            const versionGroup = document.getElementById('floatingVersionGroup');
+
+            if (type === 'month') {
+                monthBtn.classList.add('active');
+                versionBtn.classList.remove('active');
+                monthGroup.style.display = 'block';
+                versionGroup.style.display = 'none';
+            } else {
+                monthBtn.classList.remove('active');
+                versionBtn.classList.add('active');
+                monthGroup.style.display = 'none';
+                versionGroup.style.display = 'block';
+            }
+
+            // メインフィルタに反映
+            if (applyToMain) {
+                const mainFilterType = document.getElementById('reportFilterType');
+                if (mainFilterType) {
+                    mainFilterType.value = type;
+                    handleReportFilterTypeChange();
+                }
+            }
+        }
+
+        // 表示形式の設定
+        function setFloatingViewType(type, applyToMain = true) {
+            const summaryBtn = document.getElementById('floatingViewSummary');
+            const groupedBtn = document.getElementById('floatingViewGrouped');
+            const matrixBtn = document.getElementById('floatingViewMatrix');
+
+            // 全てのボタンからactiveを削除
+            summaryBtn.classList.remove('active');
+            groupedBtn.classList.remove('active');
+            matrixBtn.classList.remove('active');
+
+            // 対応するボタンにactiveを追加
+            if (type === 'summary') {
+                summaryBtn.classList.add('active');
+            } else if (type === 'grouped') {
+                groupedBtn.classList.add('active');
+            } else if (type === 'matrix') {
+                matrixBtn.classList.add('active');
+            }
+
+            // メインフィルタに反映
+            if (applyToMain) {
+                const mainViewType = document.getElementById('reportViewType');
+                if (mainViewType) {
+                    mainViewType.value = type;
+                    updateReport();
+                }
+            }
+        }
+
+        // 月フィルタの同期
+        function syncFloatingMonthFilter() {
+            const floatingMonth = document.getElementById('floatingReportMonth');
+            const mainMonth = document.getElementById('reportMonth');
+            if (floatingMonth && mainMonth) {
+                mainMonth.value = floatingMonth.value;
+                handleReportMonthFilterChange();
+            }
+        }
+
+        // 版数フィルタの同期
+        function syncFloatingVersionFilter() {
+            const floatingVersion = document.getElementById('floatingReportVersion');
+            const mainVersion = document.getElementById('reportVersion');
+            if (floatingVersion && mainVersion) {
+                mainVersion.value = floatingVersion.value;
+                handleReportVersionFilterChange();
+            }
+        }
+
+        // パネル外クリックで閉じる
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('floatingFilterPanel');
+            const toggle = document.getElementById('floatingFilterToggle');
+
+            if (!panel || !toggle) return;
+
+            // パネルが開いている場合のみ処理
+            if (panel.classList.contains('show')) {
+                // クリックがパネル内、またはトグルボタンの場合は何もしない
+                if (panel.contains(event.target) || toggle.contains(event.target)) {
+                    return;
+                }
+                // それ以外の場合はパネルを閉じる
+                panel.classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>
