@@ -10764,10 +10764,11 @@
                 <div><strong>工程:</strong> ${process}</div>
             `;
 
-            // 担当者が複数いる場合は選択できるようにする
+            // 担当者設定
+            const select = document.getElementById('remainingHoursMember');
             if (allMembers.length > 1) {
+                // 担当者が複数いる場合は選択できるようにする
                 document.getElementById('remainingHoursMemberSelect').style.display = 'block';
-                const select = document.getElementById('remainingHoursMember');
                 select.innerHTML = allMembers.map(m => `<option value="${m}">${m}</option>`).join('');
 
                 // 最初の担当者の見込残存時間を表示
@@ -10778,12 +10779,15 @@
                     updateRemainingHoursInput(version, task, process, this.value);
                 };
             } else if (allMembers.length === 1) {
+                // 担当者が1人の場合は非表示だが、selectには値を設定
                 document.getElementById('remainingHoursMemberSelect').style.display = 'none';
-                document.getElementById('remainingHoursMember').value = allMembers[0];
+                select.innerHTML = `<option value="${allMembers[0]}">${allMembers[0]}</option>`;
+                select.value = allMembers[0];
                 updateRemainingHoursInput(version, task, process, allMembers[0]);
             } else {
                 // 担当者がいない場合
                 document.getElementById('remainingHoursMemberSelect').style.display = 'none';
+                select.innerHTML = '';
                 document.getElementById('remainingHoursInput').value = '';
             }
 
