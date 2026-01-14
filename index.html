@@ -2004,6 +2004,17 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="showProgressBarsCheckbox" onchange="toggleProgressBarsSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
+                            <span>レポートで進捗バーを表示する</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ・オン: レポートのマトリクス表示で見込残存時間ベースの進捗バーを表示します<br>
+                            ・オフ: 進捗バーを非表示にします
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">見積と実績の表示形式（レポートのマトリクス）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
@@ -3726,6 +3737,7 @@
                     reportLayout: reportLayout,
                     showMonthColors: showMonthColorsSetting,
                     showDeviationColors: showDeviationColorsSetting,
+                    showProgressBars: showProgressBarsSetting,
                     matrixEstActFormat: matrixEstActFormat,
                     matrixDayMonthFormat: matrixDayMonthFormat,
                     defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
@@ -4288,6 +4300,12 @@
                     showDeviationColorsSetting = settings.showDeviationColors;
                     const checkbox = document.getElementById('showDeviationColorsCheckbox');
                     if (checkbox) checkbox.checked = showDeviationColorsSetting;
+                }
+                // 進捗バー表示の設定を読み込み
+                if (settings.showProgressBars !== undefined) {
+                    showProgressBarsSetting = settings.showProgressBars;
+                    const checkbox = document.getElementById('showProgressBarsCheckbox');
+                    if (checkbox) checkbox.checked = showProgressBarsSetting;
                 }
                 // 見積と実績の表示形式の設定を読み込み
                 if (settings.matrixEstActFormat) {
@@ -5342,6 +5360,7 @@
         // 月別色付け設定
         let showMonthColorsSetting = true;
         let showDeviationColorsSetting = true; // 乖離率背景色の表示設定
+        let showProgressBarsSetting = true; // 進捗バー表示設定
         let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
         let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
 
@@ -5356,6 +5375,13 @@
         // 乖離率背景色設定のトグル
         function toggleDeviationColorsSetting() {
             showDeviationColorsSetting = document.getElementById('showDeviationColorsCheckbox').checked;
+            saveData(true);
+            updateReportMatrix();
+        }
+
+        // 進捗バー表示設定のトグル
+        function toggleProgressBarsSetting() {
+            showProgressBarsSetting = document.getElementById('showProgressBarsCheckbox').checked;
             saveData(true);
             updateReportMatrix();
         }
@@ -9122,6 +9148,11 @@
 
         // 進捗率とバーHTMLを生成（マトリクス表示用）
         function generateProgressBar(version, task, process) {
+            // 設定でオフになっている場合は何も表示しない
+            if (!showProgressBarsSetting) {
+                return '';
+            }
+
             // 実績を集計
             let actualHours = actuals
                 .filter(a => a.version === version && a.task === task && a.process === process)
@@ -13888,6 +13919,20 @@
                                     showMonthColorsSetting = data.settings.showMonthColors;
                                     const checkbox = document.getElementById('showMonthColorsCheckbox');
                                     if (checkbox) checkbox.checked = data.settings.showMonthColors;
+                                }
+
+                                // 乖離率背景色設定を復元
+                                if (data.settings.showDeviationColors !== undefined) {
+                                    showDeviationColorsSetting = data.settings.showDeviationColors;
+                                    const checkbox = document.getElementById('showDeviationColorsCheckbox');
+                                    if (checkbox) checkbox.checked = data.settings.showDeviationColors;
+                                }
+
+                                // 進捗バー表示設定を復元
+                                if (data.settings.showProgressBars !== undefined) {
+                                    showProgressBarsSetting = data.settings.showProgressBars;
+                                    const checkbox = document.getElementById('showProgressBarsCheckbox');
+                                    if (checkbox) checkbox.checked = data.settings.showProgressBars;
                                 }
 
                                 // デフォルト表示形式を復元
