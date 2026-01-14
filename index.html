@@ -9226,30 +9226,30 @@
                 .filter(a => a.version === version && a.task === task && a.process === process)
                 .reduce((sum, a) => sum + a.hours, 0);
 
+            // 見込残存時間のデータが存在するかチェック
+            const remainingData = remainingEstimates
+                .filter(r => r.version === version && r.task === task && r.process === process);
+
             // 見込残存時間を集計
-            let remainingHours = remainingEstimates
-                .filter(r => r.version === version && r.task === task && r.process === process)
-                .reduce((sum, r) => sum + r.remainingHours, 0);
+            let remainingHours = remainingData.reduce((sum, r) => sum + r.remainingHours, 0);
+
+            // 見込残存時間のデータが存在しない場合はバーを表示しない
+            if (remainingData.length === 0) {
+                return '';
+            }
 
             // 進捗率を計算
             let progressRate = 0;
-            let hasRemainingData = false;
 
             if (remainingHours === 0 && actualHours > 0) {
-                // 見込残存が0で実績があれば100%
+                // 見込残存が0hで実績があれば100%（完了）
                 progressRate = 100;
-                hasRemainingData = true;
+            } else if (remainingHours === 0 && actualHours === 0) {
+                // 見込残存が0hで実績もなし → 完了または作業不要（100%）
+                progressRate = 100;
             } else if (actualHours + remainingHours > 0) {
                 // 見込残存データがあれば計算
                 progressRate = (actualHours / (actualHours + remainingHours)) * 100;
-                hasRemainingData = true;
-            }
-            // remainingHoursが未入力（データなし）かつactualHoursも0なら0%のまま
-
-            // プログレスバーのHTMLを生成
-            if (!hasRemainingData) {
-                // 見込残存データがない場合はバーを表示しない
-                return '';
             }
 
             const barColor = getProgressColor(progressRate);
