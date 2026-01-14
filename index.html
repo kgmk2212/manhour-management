@@ -9190,11 +9190,8 @@
             const remainingDisplay = remainingHours.toFixed(1);
 
             const progressBarHtml = `
-                <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
-                    <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
-                        <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
-                    </div>
-                    <div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                    <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                 </div>
             `;
 
@@ -12901,7 +12898,12 @@
                         tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                         tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
-                        tableBody += `<td style="min-width: 100px; padding: 8px;">${progressBarHtml || '<span style="color: #ccc; font-size: 11px;">-</span>'}</td>`;
+                        // 進捗バーがある場合はセルにposition: relativeとpadding-bottomを追加
+                        const progressCellStyle = progressBarHtml
+                            ? 'min-width: 100px; padding: 8px 8px 12px 8px; position: relative;'
+                            : 'min-width: 100px; padding: 8px;';
+                        const progressCellContent = progressBarHtml || '<span style="color: #ccc; font-size: 11px;">-</span>';
+                        tableBody += `<td style="${progressCellStyle}">${progressCellContent}</td>`;
                         if (index === 0) {
                             tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                                 <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
@@ -13214,7 +13216,11 @@
                                     `;
                                 }
 
-                                tableBody += `<td style="text-align: center; background: ${bgColor}; padding: 8px;" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
+                                // 進捗バーがある場合はセルにposition: relativeとpadding-bottomを追加
+                                const cellStyle = progressBarHtml
+                                    ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative;`
+                                    : `text-align: center; background: ${bgColor}; padding: 8px;`;
+                                tableBody += `<td style="${cellStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                             } else {
                                 tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
                             }
