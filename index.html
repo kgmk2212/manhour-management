@@ -10847,10 +10847,12 @@
             saveRemainingEstimate(version, task, process, member, hours);
             saveData(true);
 
-            // レポートを更新
-            updateReportMatrix();
-
+            // モーダルを閉じてから画面を更新
             closeRemainingHoursModal();
+
+            // レポートを更新
+            updateReport();
+
             alert('見込残存時間を保存しました');
         }
 
