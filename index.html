@@ -2368,10 +2368,20 @@
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="stickyFilterEnabled" onchange="saveStickyFilterSetting()" style="width: auto; margin-right: 10px;" checked>
-                            <span>フィルタ固定表示を有効にする</span>
+                            <span>フィルタ固定表示（Sticky）を有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
                             見積一覧・レポートのフィルタ設定部分をスクロール時に画面上部に固定表示します。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="floatingFilterEnabled" onchange="saveFloatingFilterSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <span>フローティングフィルタパネルを有効にする</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            レポートタブで画面右下にフィルタ設定ボタンを表示します。スクロール位置に関係なくフィルタを変更できます。
                         </small>
                     </div>
                 </div>
@@ -15227,14 +15237,50 @@
         }
 
         // ページ読み込み時に初期化
-        document.addEventListener('DOMContentLoaded', initStickyFilters);
+        document.addEventListener('DOMContentLoaded', function() {
+            initStickyFilters();
+            loadFloatingFilterSetting(); // フローティングフィルタ設定を読み込み
+        });
 
         // ========================================
         // フローティングフィルタパネル
         // ========================================
 
+        // フローティングフィルタ設定の保存
+        function saveFloatingFilterSetting() {
+            const checkbox = document.getElementById('floatingFilterEnabled');
+            if (!checkbox) return;
+            const enabled = checkbox.checked;
+            localStorage.setItem('floatingFilterEnabled', enabled);
+
+            // 設定変更時にボタンの表示/非表示を切り替え
+            // レポートタブにいる場合のみ反映
+            const reportTab = document.getElementById('report');
+            if (reportTab && reportTab.classList.contains('active')) {
+                if (enabled) {
+                    showFloatingFilterButton();
+                } else {
+                    hideFloatingFilterButton();
+                }
+            }
+        }
+
+        // フローティングフィルタ設定の読み込み
+        function loadFloatingFilterSetting() {
+            const saved = localStorage.getItem('floatingFilterEnabled');
+            const enabled = saved === null || saved === 'true';
+            const checkbox = document.getElementById('floatingFilterEnabled');
+            if (checkbox) {
+                checkbox.checked = enabled;
+            }
+            return enabled;
+        }
+
         // フローティングフィルタボタンを表示
         function showFloatingFilterButton() {
+            const enabled = loadFloatingFilterSetting();
+            if (!enabled) return;
+
             const toggle = document.getElementById('floatingFilterToggle');
             if (toggle) {
                 toggle.style.display = 'flex';
