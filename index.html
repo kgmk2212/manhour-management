@@ -1198,7 +1198,7 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
             border: none;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -1224,7 +1224,7 @@
             position: fixed;
             bottom: 90px;
             right: 20px;
-            width: 320px;
+            width: 340px;
             max-height: 70vh;
             background: white;
             border-radius: 12px;
@@ -1251,7 +1251,7 @@
         }
 
         .floating-filter-panel-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
             padding: 12px 16px;
             font-weight: 600;
@@ -1341,13 +1341,62 @@
         }
 
         .floating-filter-buttons button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
             border-color: transparent;
         }
 
         .floating-filter-buttons button:hover:not(.active) {
-            border-color: #667eea;
+            border-color: var(--theme-color, #667eea);
+            background: #f8f9ff;
+        }
+
+        /* セグメントボタン用コンテナ */
+        .floating-segment-buttons {
+            display: flex;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow-x: auto;
+            background: white;
+            white-space: nowrap;
+        }
+
+        .floating-segment-buttons::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .floating-segment-buttons::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .floating-segment-buttons::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .floating-segment-buttons button {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            font-size: 11px;
+            border: none;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .floating-segment-buttons button:last-child {
+            border-right: none;
+        }
+
+        .floating-segment-buttons button.active {
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            color: white;
+        }
+
+        .floating-segment-buttons button:hover:not(.active) {
             background: #f8f9ff;
         }
 
@@ -3227,14 +3276,14 @@
     </div>
 
     <!-- フローティングフィルタパネル -->
-    <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel()">
-        🔍
+    <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel(event)">
+        ⚙
     </button>
 
-    <div class="floating-filter-panel" id="floatingFilterPanel">
+    <div class="floating-filter-panel" id="floatingFilterPanel" onclick="event.stopPropagation()">
         <div class="floating-filter-panel-header">
             <span>フィルタ設定</span>
-            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel()">×</button>
+            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
         </div>
         <div class="floating-filter-panel-body">
             <!-- フィルタタイプ選択 -->
@@ -3249,17 +3298,13 @@
             <!-- 月別フィルタ -->
             <div class="floating-filter-group" id="floatingMonthGroup">
                 <label class="floating-filter-label">表示月</label>
-                <select class="floating-filter-select" id="floatingReportMonth" onchange="syncFloatingMonthFilter()">
-                    <option value="all">全期間</option>
-                </select>
+                <div class="floating-segment-buttons" id="floatingMonthButtons"></div>
             </div>
 
             <!-- 版数別フィルタ -->
             <div class="floating-filter-group" id="floatingVersionGroup" style="display: none;">
                 <label class="floating-filter-label">版数</label>
-                <select class="floating-filter-select" id="floatingReportVersion" onchange="syncFloatingVersionFilter()">
-                    <option value="all">全版数</option>
-                </select>
+                <div class="floating-segment-buttons" id="floatingVersionButtons"></div>
             </div>
 
             <!-- 表示形式 -->
@@ -11258,6 +11303,44 @@
             if (estimateTab && estimateTab.classList.contains('active')) {
                 renderEstimateList();
             }
+
+            // フローティングフィルタのテーマを更新
+            updateFloatingFilterTheme();
+        }
+
+        function updateFloatingFilterTheme() {
+            const gradients = {
+                'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
+                'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+                'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+                'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+            };
+
+            const gradient = gradients[currentThemeColor] || gradients['purple'];
+
+            // トグルボタンの背景を更新
+            const toggle = document.getElementById('floatingFilterToggle');
+            if (toggle) {
+                toggle.style.background = gradient;
+            }
+
+            // パネルヘッダーの背景を更新
+            const header = document.querySelector('.floating-filter-panel-header');
+            if (header) {
+                header.style.background = gradient;
+            }
+
+            // アクティブボタンの背景を更新
+            document.querySelectorAll('.floating-filter-buttons button.active, .floating-segment-buttons button.active').forEach(btn => {
+                btn.style.background = gradient;
+            });
         }
         
         function updateBodyBackground() {
@@ -15321,7 +15404,10 @@
         }
 
         // フローティングパネルの開閉トグル
-        function toggleFloatingFilterPanel() {
+        function toggleFloatingFilterPanel(event) {
+            if (event) {
+                event.stopPropagation(); // イベント伝播を防ぐ
+            }
             const panel = document.getElementById('floatingFilterPanel');
             if (panel) {
                 if (panel.classList.contains('show')) {
@@ -15343,22 +15429,48 @@
                 setFloatingFilterType(filterType, false);
             }
 
-            // 月フィルタの同期
+            // 月フィルタの同期（セグメントボタンを生成）
             const mainReportMonth = document.getElementById('reportMonth');
-            const floatingReportMonth = document.getElementById('floatingReportMonth');
-            if (mainReportMonth && floatingReportMonth) {
-                // オプションを同期
-                floatingReportMonth.innerHTML = mainReportMonth.innerHTML;
-                floatingReportMonth.value = mainReportMonth.value;
+            const floatingMonthButtons = document.getElementById('floatingMonthButtons');
+            if (mainReportMonth && floatingMonthButtons) {
+                const currentValue = mainReportMonth.value;
+                floatingMonthButtons.innerHTML = '';
+
+                // オプションからボタンを生成
+                Array.from(mainReportMonth.options).forEach(option => {
+                    const btn = document.createElement('button');
+                    btn.textContent = option.text;
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        syncFloatingMonthFilter(option.value);
+                    };
+                    if (option.value === currentValue) {
+                        btn.classList.add('active');
+                    }
+                    floatingMonthButtons.appendChild(btn);
+                });
             }
 
-            // 版数フィルタの同期
+            // 版数フィルタの同期（セグメントボタンを生成）
             const mainReportVersion = document.getElementById('reportVersion');
-            const floatingReportVersion = document.getElementById('floatingReportVersion');
-            if (mainReportVersion && floatingReportVersion) {
-                // オプションを同期
-                floatingReportVersion.innerHTML = mainReportVersion.innerHTML;
-                floatingReportVersion.value = mainReportVersion.value;
+            const floatingVersionButtons = document.getElementById('floatingVersionButtons');
+            if (mainReportVersion && floatingVersionButtons) {
+                const currentValue = mainReportVersion.value;
+                floatingVersionButtons.innerHTML = '';
+
+                // オプションからボタンを生成
+                Array.from(mainReportVersion.options).forEach(option => {
+                    const btn = document.createElement('button');
+                    btn.textContent = option.text;
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        syncFloatingVersionFilter(option.value);
+                    };
+                    if (option.value === currentValue) {
+                        btn.classList.add('active');
+                    }
+                    floatingVersionButtons.appendChild(btn);
+                });
             }
 
             // 表示形式の同期
@@ -15367,6 +15479,9 @@
                 const viewType = mainViewType.value;
                 setFloatingViewType(viewType, false);
             }
+
+            // テーマを適用
+            updateFloatingFilterTheme();
         }
 
         // フィルタタイプの設定（月別/版数別）
@@ -15429,22 +15544,24 @@
         }
 
         // 月フィルタの同期
-        function syncFloatingMonthFilter() {
-            const floatingMonth = document.getElementById('floatingReportMonth');
+        function syncFloatingMonthFilter(value) {
             const mainMonth = document.getElementById('reportMonth');
-            if (floatingMonth && mainMonth) {
-                mainMonth.value = floatingMonth.value;
+            if (mainMonth) {
+                mainMonth.value = value;
                 handleReportMonthFilterChange();
+                // ボタンの状態を更新
+                syncFloatingFilters();
             }
         }
 
         // 版数フィルタの同期
-        function syncFloatingVersionFilter() {
-            const floatingVersion = document.getElementById('floatingReportVersion');
+        function syncFloatingVersionFilter(value) {
             const mainVersion = document.getElementById('reportVersion');
-            if (floatingVersion && mainVersion) {
-                mainVersion.value = floatingVersion.value;
+            if (mainVersion) {
+                mainVersion.value = value;
                 handleReportVersionFilterChange();
+                // ボタンの状態を更新
+                syncFloatingFilters();
             }
         }
 
