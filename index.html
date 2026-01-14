@@ -12881,7 +12881,7 @@
                         html += '</div>';
                         html += '</div>';
 
-                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">';
 
                         members.forEach(member => {
                             const data = memberSummary[member];
@@ -12894,13 +12894,55 @@
                             const actManMonths = (data.actual / 8 / workingDaysPerMonth).toFixed(2);
                             const taskCount = memberTasks[member] ? memberTasks[member].size : 0;
 
-                            html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
-                            html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${member}</div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">見積: ${data.estimate.toFixed(1)}h <span style="font-size: 11px; color: #6c757d;">(${estManDays}人日 / ${estManMonths}人月)</span></div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">実績: ${data.actual.toFixed(1)}h <span style="font-size: 11px; color: #6c757d;">(${actManDays}人日 / ${actManMonths}人月)</span></div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
-                            html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
-                            html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
+                            // 精度による色分け
+                            let accuracyColor = '#28a745'; // 緑
+                            if (accuracy > 110) accuracyColor = '#dc3545'; // 赤
+                            else if (accuracy > 100 || accuracy < 90) accuracyColor = '#ffc107'; // 黄
+
+                            html += '<div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+
+                            // ヘッダー（担当者名とタスク数）
+                            html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">';
+                            html += `<div style="font-weight: 600; font-size: 15px; color: #212529;">${member}</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d; background: #f8f9fa; padding: 4px 8px; border-radius: 4px;">${taskCount}件</div>`;
+                            html += '</div>';
+
+                            // 見積 vs 実績（2カラム）
+                            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">';
+
+                            // 見積カラム
+                            html += '<div>';
+                            html += '<div style="font-size: 11px; color: #6c757d; font-weight: 600; margin-bottom: 4px;">見積</div>';
+                            html += `<div style="font-size: 18px; font-weight: 700; color: #495057; margin-bottom: 2px;">${data.estimate.toFixed(1)}h</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d;">${estManDays}人日</div>`;
+                            html += `<div style="font-size: 11px; color: #adb5bd;">${estManMonths}人月</div>`;
+                            html += '</div>';
+
+                            // 実績カラム
+                            html += '<div>';
+                            html += '<div style="font-size: 11px; color: #6c757d; font-weight: 600; margin-bottom: 4px;">実績</div>';
+                            html += `<div style="font-size: 18px; font-weight: 700; color: #495057; margin-bottom: 2px;">${data.actual.toFixed(1)}h</div>`;
+                            html += `<div style="font-size: 12px; color: #6c757d;">${actManDays}人日</div>`;
+                            html += `<div style="font-size: 11px; color: #adb5bd;">${actManMonths}人月</div>`;
+                            html += '</div>';
+
+                            html += '</div>';
+
+                            // 精度と差分（強調表示）
+                            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 12px; border-top: 1px solid #e9ecef;">';
+
+                            html += '<div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">';
+                            html += '<div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">達成率</div>';
+                            html += `<div style="font-size: 20px; font-weight: 700; color: ${accuracyColor};">${accuracy}%</div>`;
+                            html += '</div>';
+
+                            html += '<div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">';
+                            html += '<div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">差分</div>';
+                            html += `<div style="font-size: 20px; font-weight: 700; color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+                            html += '</div>';
+
+                            html += '</div>';
+
                             html += '</div>';
                         });
 
