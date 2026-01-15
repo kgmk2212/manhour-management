@@ -6323,15 +6323,24 @@
 
             saveData();
 
-            // 入力欄をクリア
-            document.getElementById('quickTaskSearch').value = '';
+            // 次の入力のために、今追加した実績をデフォルト選択
+            // selectedQuickTaskはそのまま保持（version|task|process|member）
+            selectedQuickTask = `${version}|${task}|${process}|${finalMember}`;
+
+            // 検索ボックスに表示
+            const searchInput = document.getElementById('quickTaskSearch');
+            searchInput.value = `${version} - ${task} [${process}]`;
+
+            // 工数は8にリセット
             document.getElementById('quickHours').value = '8';
-            document.getElementById('quickTaskClearBtn').style.display = 'none';
+
+            // クリアボタンを表示
+            document.getElementById('quickTaskClearBtn').style.display = 'inline-block';
+
             // 担当者選択はリセット（次の入力に備える）
             document.getElementById('quickMemberSelect').value = '';
-            selectedQuickTask = null;
             selectedMemberFilter = null;
-            
+
             updateMonthOptions();
             updateActualMonthOptions();
             updateMemberOptions();
@@ -6415,6 +6424,9 @@
                 document.getElementById('todayActuals').style.display = 'block';
                 actualBtn.style.background = 'rgba(255,255,255,0.9)';
                 actualBtn.style.color = 'rgba(0,0,0,0.85)';
+
+                // 前回の実績を自動選択
+                setQuickInputPreviousActual();
             } else if (mode === 'estimate') {
                 estimateForm.style.display = 'block';
                 modeTitle.textContent = '新規見積登録';
@@ -9141,14 +9153,22 @@
             document.getElementById('editActualId').value = '';
             document.getElementById('editActualDate').value = date;
 
-            // 版数を最新のものにデフォルト設定
+            // 前回の実績を取得
+            const previousActual = getPreviousActual(member, date);
+
+            // 版数のデフォルト設定
             const versionSelect = document.getElementById('editActualVersion');
-            // 最後のオプション（最新の版数）を選択
-            // options[0]="-- 版数を選択 --", options[1]="+ 新しい版数を追加...", 以降が実際の版数
-            if (versionSelect.options.length > 2) {
-                versionSelect.value = versionSelect.options[versionSelect.options.length - 1].value;
+            if (previousActual) {
+                // 前回の実績の版数を選択
+                versionSelect.value = previousActual.version;
             } else {
-                versionSelect.value = '';
+                // 前回の実績がない場合は最新のものにデフォルト設定
+                // options[0]="-- 版数を選択 --", options[1]="+ 新しい版数を追加...", 以降が実際の版数
+                if (versionSelect.options.length > 2) {
+                    versionSelect.value = versionSelect.options[versionSelect.options.length - 1].value;
+                } else {
+                    versionSelect.value = '';
+                }
             }
 
             // 対応名のselect/inputを初期化
@@ -9156,7 +9176,13 @@
             document.getElementById('editActualTaskSelect').value = '';
             document.getElementById('editActualTaskSearch').style.display = 'none';
             document.getElementById('editActualTaskSearch').value = '';
-            document.getElementById('editActualProcess').value = 'UI';
+
+            if (previousActual) {
+                // 前回の実績の工程を選択
+                document.getElementById('editActualProcess').value = previousActual.process;
+            } else {
+                document.getElementById('editActualProcess').value = 'UI';
+            }
             
             // 担当者を設定（カレンダーからの場合は表示のみ）
             const memberSelect = document.getElementById('editActualMember');
@@ -9185,6 +9211,12 @@
             // この担当者の未完了対応を取得してdatalistに設定
             // 新規登録時なのでisEditMode=false、選択した版数を渡す
             updateEditActualTaskList(member, false, versionSelect.value);
+
+            // 前回の実績がある場合は対応名を選択
+            if (previousActual) {
+                const taskSelect = document.getElementById('editActualTaskSelect');
+                taskSelect.value = previousActual.task;
+            }
 
             // 「その他作業」「休暇登録」ボタンを表示し、データを保持
             document.getElementById('editActualOtherBtn').style.display = 'block';
@@ -9263,7 +9295,60 @@
 
             document.getElementById('otherWorkModal').style.display = 'flex';
         }
-        
+
+        // 指定した担当者・日付より前の最新実績を取得
+        function getPreviousActual(member, beforeDate) {
+            // その担当者の、指定日付より前の実績を取得
+            const previousActuals = actuals.filter(a =>
+                a.member === member &&
+                a.date < beforeDate &&
+                a.version && a.task && a.process // 有効なデータのみ
+            );
+
+            // 日付順にソートして最新のものを返す
+            if (previousActuals.length > 0) {
+                previousActuals.sort((a, b) => b.date.localeCompare(a.date));
+                return previousActuals[0];
+            }
+
+            return null;
+        }
+
+        // 全担当者の中から指定日付より前の最新実績を取得（クイック入力用）
+        function getLatestActualBeforeDate(beforeDate) {
+            // 指定日付より前の実績を取得
+            const previousActuals = actuals.filter(a =>
+                a.date < beforeDate &&
+                a.version && a.task && a.process // 有効なデータのみ
+            );
+
+            // 日付順にソートして最新のものを返す
+            if (previousActuals.length > 0) {
+                previousActuals.sort((a, b) => b.date.localeCompare(a.date));
+                return previousActuals[0];
+            }
+
+            return null;
+        }
+
+        // クイック入力で前回の実績を自動選択
+        function setQuickInputPreviousActual() {
+            const today = new Date().toISOString().split('T')[0];
+            const previousActual = getLatestActualBeforeDate(today);
+
+            if (previousActual) {
+                // selectedQuickTaskを設定（形式：version|task|process|member）
+                selectedQuickTask = `${previousActual.version}|${previousActual.task}|${previousActual.process}|${previousActual.member}`;
+
+                // 検索ボックスに表示
+                const searchInput = document.getElementById('quickTaskSearch');
+                searchInput.value = `${previousActual.version} - ${previousActual.task} [${previousActual.process}]`;
+
+                // クリアボタンを表示
+                document.getElementById('quickTaskClearBtn').style.display = 'inline-block';
+            }
+        }
+
         // 実績編集モーダルの対応名リストを更新（担当者と版数に応じた対応）
         function updateEditActualTaskList(member, isEditMode = false, selectedVersion = null) {
             const select = document.getElementById('editActualTaskSelect');
