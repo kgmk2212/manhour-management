@@ -467,6 +467,34 @@
             animation: slideIn 0.3s;
         }
 
+        /* カスタムアラート */
+        .custom-alert-content {
+            background-color: white;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .custom-alert-body {
+            padding: 30px;
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .custom-alert-footer {
+            padding: 15px 30px 30px;
+            text-align: center;
+        }
+
+        .custom-alert-footer .btn {
+            min-width: 100px;
+        }
+
         .modal-header {
             color: white;
             padding: 12px 20px;
@@ -3274,6 +3302,17 @@
         </div>
     </div>
 
+    <!-- カスタムアラート -->
+    <div id="customAlert" class="modal">
+        <div class="custom-alert-content">
+            <div class="custom-alert-body" id="customAlertMessage">
+            </div>
+            <div class="custom-alert-footer">
+                <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- フローティングフィルタパネル -->
     <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel(event)">
         🔍
@@ -3521,6 +3560,30 @@
         // 選択されているグラフカラースキーム（'auto'の場合はテーマカラーに追従）
         let selectedChartColorScheme = 'auto';
 
+        // カスタムアラート表示
+        function showAlert(message, dismissible = false) {
+            const modal = document.getElementById('customAlert');
+            const messageEl = document.getElementById('customAlertMessage');
+            messageEl.textContent = message;
+            modal.style.display = 'flex';
+
+            // dismissibleがtrueの場合、外クリックで閉じる
+            if (dismissible) {
+                modal.onclick = function(event) {
+                    if (event.target === modal) {
+                        closeCustomAlert();
+                    }
+                };
+            } else {
+                modal.onclick = null;
+            }
+        }
+
+        // カスタムアラートを閉じる
+        function closeCustomAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+        }
+
         // グラフカラースキームを取得する関数（'auto'の場合はテーマカラーに対応）
         function getActiveChartColorScheme() {
             if (selectedChartColorScheme === 'auto') {
@@ -3673,7 +3736,7 @@
             vacations.push(vacation);
             saveData();
             renderActualList();
-            alert('休暇を登録しました');
+            showAlert('休暇を登録しました', true);
 
             // フォームをリセット
             document.getElementById('quickVacationHours').value = 8;
@@ -3755,7 +3818,7 @@
             saveData();
             closeVacationModal();
             renderActualList();
-            alert('休暇を登録しました');
+            showAlert('休暇を登録しました', true);
         }
 
         // 指定日が会社休日かどうかをチェック
@@ -5278,7 +5341,7 @@
             renderEstimateList();
             updateQuickTaskList();
             updateReport();
-            alert('見積を登録しました');
+            showAlert('見積を登録しました', true);
         }
 
         function addEstimateWithMonthSplit(version, task, processes, splitProcesses) {
@@ -5690,9 +5753,9 @@
                 renderEstimateList();
                 updateReport();
                 
-                alert('見積を月別に分割しました');
+                showAlert('見積を月別に分割しました', true);
             } else {
-                alert('データの更新に失敗しました');
+                showAlert('データの更新に失敗しました', false);
             }
         }
 
@@ -6275,7 +6338,7 @@
             renderTodayActuals();
             renderActualList();
             updateReport();
-            alert('実績を追加しました');
+            showAlert('実績を追加しました', true);
         }
 
         function renderTodayActuals() {
@@ -6651,7 +6714,7 @@
             updateMemberOptions();
             renderEstimateList();
             updateReport();
-            alert('見積を登録しました');
+            showAlert('見積を登録しました', true);
         }
 
         // 月分割モードで見積登録
@@ -7357,7 +7420,7 @@
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
-            alert('見積登録しました');
+            showAlert('見積を登録しました', true);
         }
 
         function addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses) {
@@ -7444,7 +7507,7 @@
             renderEstimateList();
             updateReport();
             closeAddEstimateModal();
-            alert('見積登録しました');
+            showAlert('見積を登録しました', true);
         }
 
         // ========== ここまで見積もり新規登録モーダル関連関数 ==========
@@ -9470,9 +9533,9 @@
                     renderActualList();
                     updateReport();
 
-                    alert('実績データを更新しました');
+                    showAlert('実績データを更新しました', true);
                 } else {
-                    alert('データの更新に失敗しました');
+                    showAlert('データの更新に失敗しました', false);
                 }
             } else {
                 // 新規登録
@@ -9504,7 +9567,7 @@
                 renderActualList();
                 updateReport();
 
-                alert('実績を登録しました');
+                showAlert('実績を登録しました', true);
             }
         }
 
@@ -10406,7 +10469,7 @@
             // データを更新
             const estimateIndex = estimates.findIndex(e => e.id === id);
             if (estimateIndex === -1) {
-                alert('データの更新に失敗しました');
+                showAlert('データの更新に失敗しました', false);
                 return;
             }
 
@@ -10503,7 +10566,7 @@
             renderEstimateList();
             updateReport();
 
-            alert('見積データを更新しました');
+            showAlert('見積データを更新しました', true);
         }
 
         // 作業月モードの切り替え
@@ -11149,7 +11212,7 @@
             // レポートを更新
             updateReport();
 
-            alert('見込残存時間を保存しました');
+            showAlert('見込残存時間を保存しました', true);
         }
 
         function showMemberOrderHelp() {
@@ -11161,7 +11224,7 @@
             updateMemberOptions();
             renderActualList();
             updateReport();
-            alert('設定を適用しました');
+            showAlert('設定を適用しました', true);
         }
         
         // テーマ関連の関数
@@ -14153,7 +14216,7 @@
             renderEstimateList();
             updateQuickTaskList();
             updateReport();
-            alert('見積を削除しました');
+            showAlert('見積を削除しました', true);
         }
 
         function deleteTask(version, task) {
@@ -14179,7 +14242,7 @@
             renderEstimateList();
             updateQuickTaskList();
             updateReport();
-            alert('対応を削除しました');
+            showAlert('対応を削除しました', true);
         }
 
         // 作業月関連の関数
@@ -14481,12 +14544,12 @@
             renderActualList();
             renderTodayActuals();
             updateReport();
-            alert('実績を削除しました');
+            showAlert('実績を削除しました', true);
         }
 
         function exportBackup() {
             autoBackup();
-            alert('バックアップを作成しました');
+            showAlert('バックアップを作成しました', true);
         }
 
         function importBackup() {
@@ -14637,10 +14700,10 @@
                             updateReport();
                             renderCompanyHolidayList();
 
-                            alert('データを復元しました');
+                            showAlert('データを復元しました', true);
                         }
                     } catch (error) {
-                        alert('ファイルの読み込みに失敗しました');
+                        showAlert('ファイルの読み込みに失敗しました', false);
                     }
                 };
                 reader.readAsText(file);
@@ -15004,7 +15067,7 @@
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                alert('Excelファイルをダウンロードしました');
+                showAlert('Excelファイルをダウンロードしました', true);
                 
             } catch (error) {
                 console.error('Excel出力エラー:', error);
