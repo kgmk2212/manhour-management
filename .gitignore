@@ -51,7 +51,6 @@ logs/
 # Claude Code local settings
 .claude/
 CLAUDE.md
-CLAUDE.local.md
 
 # Personal notes and task lists
 修正案リスト.md
