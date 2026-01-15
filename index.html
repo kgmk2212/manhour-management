@@ -8577,15 +8577,15 @@
                     const currentIndex = monthSelect.selectedIndex;
 
                     if (diffX > 0) {
-                        // 右スワイプ → 前の月へ
-                        if (currentIndex > 0) {
-                            monthSelect.selectedIndex = currentIndex - 1;
+                        // 右スワイプ → 過去の月へ
+                        if (currentIndex < monthSelect.options.length - 1) {
+                            monthSelect.selectedIndex = currentIndex + 1;
                             monthSelect.dispatchEvent(new Event('change'));
                         }
                     } else {
-                        // 左スワイプ → 次の月へ
-                        if (currentIndex < monthSelect.options.length - 1) {
-                            monthSelect.selectedIndex = currentIndex + 1;
+                        // 左スワイプ → 未来の月へ
+                        if (currentIndex > 0) {
+                            monthSelect.selectedIndex = currentIndex - 1;
                             monthSelect.dispatchEvent(new Event('change'));
                         }
                     }
@@ -8695,7 +8695,7 @@
                 </div>`;
                 
                 // 同じtable-wrapper内に合計表を配置
-                html += '<div class="table-wrapper"><table class="actual-matrix">';
+                html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
 
                 // 合計行（濃い青色）
                 html += '<tr style="background: #1565c0; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
@@ -8720,7 +8720,7 @@
                 html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
             } else {
                 // 全期間表示の場合は通常通りヘッダーのみ
-                html += '<div class="table-wrapper"><table class="actual-matrix">';
+                html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
                 html += '<tr><th style="min-width: 100px;">日付</th>';
                 
                 // 担当者ヘッダー
@@ -8879,6 +8879,9 @@
             html += '</table></div>';
 
             container.innerHTML = html;
+
+            // スワイプで月切り替え機能を設定
+            setupCalendarSwipe();
         }
 
 
