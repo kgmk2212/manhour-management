@@ -8584,7 +8584,8 @@
                         }
                     } else {
                         // 左スワイプ → 未来の月へ
-                        if (currentIndex > 0) {
+                        // インデックス1が最新月なので、それより小さくならないようにする
+                        if (currentIndex > 1) {
                             monthSelect.selectedIndex = currentIndex - 1;
                             monthSelect.dispatchEvent(new Event('change'));
                         }
