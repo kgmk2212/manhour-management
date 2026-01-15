@@ -1208,12 +1208,14 @@
             justify-content: center;
             font-size: 24px;
             z-index: 1100;
-            transition: transform 0.2s, box-shadow 0.2s;
+            opacity: 0;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
         }
 
         .floating-filter-toggle:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            opacity: 1;
         }
 
         .floating-filter-toggle:active {
@@ -1472,7 +1474,7 @@
                             </div>
                             <div class="form-group">
                                 <label>実績工数 (h)</label>
-                                <input type="number" id="quickHours" step="0.5" min="0">
+                                <input type="number" id="quickHours" step="0.5" min="0" value="8">
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
@@ -6257,10 +6259,10 @@
             });
 
             saveData();
-            
+
             // 入力欄をクリア
             document.getElementById('quickTaskSearch').value = '';
-            document.getElementById('quickHours').value = '';
+            document.getElementById('quickHours').value = '8';
             document.getElementById('quickTaskClearBtn').style.display = 'none';
             // 担当者選択はリセット（次の入力に備える）
             document.getElementById('quickMemberSelect').value = '';
