@@ -8574,12 +8574,16 @@
                 // 横スワイプが縦スワイプより大きく、かつ50px以上の場合のみ反応
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
                     const monthSelect = document.getElementById('actualMonthFilter');
+                    const monthSelect2 = document.getElementById('actualMonthFilter2');
                     const currentIndex = monthSelect.selectedIndex;
 
                     if (diffX > 0) {
                         // 右スワイプ → 過去の月へ
                         if (currentIndex < monthSelect.options.length - 1) {
                             monthSelect.selectedIndex = currentIndex + 1;
+                            const newValue = monthSelect.value;
+                            if (monthSelect2) monthSelect2.value = newValue;
+                            updateSegmentButtonSelection('actualMonthButtons2', newValue);
                             monthSelect.dispatchEvent(new Event('change'));
                         }
                     } else {
@@ -8587,6 +8591,9 @@
                         // インデックス1が最新月なので、それより小さくならないようにする
                         if (currentIndex > 1) {
                             monthSelect.selectedIndex = currentIndex - 1;
+                            const newValue = monthSelect.value;
+                            if (monthSelect2) monthSelect2.value = newValue;
+                            updateSegmentButtonSelection('actualMonthButtons2', newValue);
                             monthSelect.dispatchEvent(new Event('change'));
                         }
                     }
