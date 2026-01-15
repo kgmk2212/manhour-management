@@ -2998,7 +2998,7 @@
     <div id="remainingHoursModal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
-                <h3>⏱️ 見込残存時間の入力</h3>
+                <h3>工程の詳細</h3>
                 <button class="modal-close" onclick="closeRemainingHoursModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -3013,7 +3013,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">見込残存時間 (h)</label>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">⏱️ 見込残存時間 (h)</label>
                     <input type="number" id="remainingHoursInput" step="0.1" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     <small style="color: #666; display: block; margin-top: 5px;">
                         0を入力すると完了（100%）として扱われます
@@ -3022,7 +3022,7 @@
 
                 <!-- 登録実績リスト -->
                 <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📊 登録実績（現在の表示条件）</label>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📄 実績一覧（表示期間内）</label>
                     <div id="remainingHoursActualsContent" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
                         <!-- 実績リストをここに表示 -->
                     </div>
