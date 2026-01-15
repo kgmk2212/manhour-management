@@ -14650,6 +14650,10 @@
             if (fileName.endsWith('.json')) {
                 // JSONファイルの処理
                 const reader = new FileReader();
+                reader.onerror = function(e) {
+                    console.error('ファイル読み込みエラー:', reader.error);
+                    showAlert('ファイルの読み込みに失敗しました: ' + reader.error.message, false);
+                };
                 reader.onload = function(e) {
                     try {
                         const data = JSON.parse(e.target.result);
@@ -14788,7 +14792,8 @@
                             showAlert('データを復元しました', true);
                         }
                     } catch (error) {
-                        showAlert('ファイルの読み込みに失敗しました', false);
+                        console.error('ファイル読み込みエラー:', error);
+                        showAlert('ファイルの読み込みに失敗しました: ' + error.message, false);
                     }
                 };
                 reader.readAsText(file);
