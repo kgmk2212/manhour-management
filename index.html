@@ -11346,10 +11346,6 @@
                 // 実績リストのHTML生成
                 let html = '<div style="font-size: 13px;">';
 
-                // 合計時間を計算
-                const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
-                html += `<div style="margin-bottom: 10px; padding: 8px; background: white; border-radius: 4px; font-weight: 600; color: #333;">合計: ${totalHours.toFixed(1)}h</div>`;
-
                 // 各実績を表示
                 filteredActuals.forEach((actual, index) => {
                     const dateStr = actual.date ? actual.date : '日付なし';
@@ -11365,6 +11361,10 @@
                         </div>
                     `;
                 });
+
+                // 合計時間を計算して最後に表示
+                const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+                html += `<div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; font-weight: 600; color: #333;">合計: ${totalHours.toFixed(1)}h</div>`;
 
                 html += '</div>';
                 actualsContentDiv.innerHTML = html;
