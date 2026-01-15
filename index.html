@@ -2996,7 +2996,7 @@
 
     <!-- 見込残存時間入力モーダル -->
     <div id="remainingHoursModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
                 <h3>⏱️ 見込残存時間の入力</h3>
                 <button class="modal-close" onclick="closeRemainingHoursModal()">&times;</button>
@@ -3018,6 +3018,14 @@
                     <small style="color: #666; display: block; margin-top: 5px;">
                         0を入力すると完了（100%）として扱われます
                     </small>
+                </div>
+
+                <!-- 登録実績リスト -->
+                <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📊 登録実績（現在の表示条件）</label>
+                    <div id="remainingHoursActualsContent" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
+                        <!-- 実績リストをここに表示 -->
+                    </div>
                 </div>
 
                 <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
@@ -11253,12 +11261,14 @@
                 document.getElementById('remainingHoursMemberSelect').style.display = 'block';
                 select.innerHTML = allMembers.map(m => `<option value="${m}">${m}</option>`).join('');
 
-                // 最初の担当者の見込残存時間を表示
+                // 最初の担当者の見込残存時間と実績リストを表示
                 updateRemainingHoursInput(version, task, process, allMembers[0]);
+                updateRemainingHoursActualsList(version, task, process, allMembers[0]);
 
-                // 担当者変更時に見込残存時間を更新
+                // 担当者変更時に見込残存時間と実績リストを更新
                 select.onchange = function() {
                     updateRemainingHoursInput(version, task, process, this.value);
+                    updateRemainingHoursActualsList(version, task, process, this.value);
                 };
             } else if (allMembers.length === 1) {
                 // 担当者が1人の場合は非表示だが、selectには値を設定
@@ -11266,11 +11276,13 @@
                 select.innerHTML = `<option value="${allMembers[0]}">${allMembers[0]}</option>`;
                 select.value = allMembers[0];
                 updateRemainingHoursInput(version, task, process, allMembers[0]);
+                updateRemainingHoursActualsList(version, task, process, allMembers[0]);
             } else {
                 // 担当者がいない場合
                 document.getElementById('remainingHoursMemberSelect').style.display = 'none';
                 select.innerHTML = '';
                 document.getElementById('remainingHoursInput').value = '';
+                document.getElementById('remainingHoursActualsList').style.display = 'none';
             }
 
             // モーダルにデータを保存
@@ -11292,6 +11304,71 @@
             );
 
             document.getElementById('remainingHoursInput').value = existing ? existing.remainingHours : '';
+        }
+
+        // 実績リストを更新（現在の表示条件でフィルタ）
+        function updateRemainingHoursActualsList(version, task, process, member) {
+            // 現在のレポートのフィルタ条件を取得
+            const filterType = document.getElementById('reportFilterType').value;
+            const filterMonth = document.getElementById('reportMonth').value;
+            const filterVersion = document.getElementById('reportVersion').value;
+
+            // 該当する実績を取得
+            let filteredActuals = actuals.filter(a =>
+                a.version === version &&
+                a.task === task &&
+                a.process === process &&
+                a.member === member
+            );
+
+            // フィルタ条件に基づいてさらに絞り込み
+            if (filterType === 'month' && filterMonth !== 'all') {
+                filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(filterMonth));
+            } else if (filterType === 'version' && filterVersion !== 'all') {
+                filteredActuals = filteredActuals.filter(a => a.version === filterVersion);
+            }
+
+            // 日付でソート（新しい順）
+            filteredActuals.sort((a, b) => {
+                const dateA = a.date || '';
+                const dateB = b.date || '';
+                return dateB.localeCompare(dateA);
+            });
+
+            const actualsListDiv = document.getElementById('remainingHoursActualsList');
+            const actualsContentDiv = document.getElementById('remainingHoursActualsContent');
+
+            if (filteredActuals.length === 0) {
+                actualsListDiv.style.display = 'none';
+            } else {
+                actualsListDiv.style.display = 'block';
+
+                // 実績リストのHTML生成
+                let html = '<div style="font-size: 13px;">';
+
+                // 合計時間を計算
+                const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+                html += `<div style="margin-bottom: 10px; padding: 8px; background: white; border-radius: 4px; font-weight: 600; color: #333;">合計: ${totalHours.toFixed(1)}h</div>`;
+
+                // 各実績を表示
+                filteredActuals.forEach((actual, index) => {
+                    const dateStr = actual.date ? actual.date : '日付なし';
+                    const bgColor = index % 2 === 0 ? 'white' : '#f1f3f5';
+
+                    html += `
+                        <div style="padding: 8px; background: ${bgColor}; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 500; color: #333;">${dateStr}</div>
+                                ${actual.memo ? `<div style="color: #666; font-size: 12px; margin-top: 2px;">${actual.memo}</div>` : ''}
+                            </div>
+                            <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${actual.hours.toFixed(1)}h</div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                actualsContentDiv.innerHTML = html;
+            }
         }
 
         // 見込残存時間モーダルを閉じる
