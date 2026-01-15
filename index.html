@@ -2460,6 +2460,16 @@
                             レポートタブで画面右下にフィルタ設定ボタンを表示します。スクロール位置に関係なくフィルタを変更できます。
                         </small>
                     </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="debugModeEnabled" onchange="saveDebugModeSetting()" style="width: auto; margin-right: 10px;">
+                            <span>デバッグモードを有効にする</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            エラー発生時に詳細なエラーメッセージを表示します。通常はオフで問題ありません。
+                        </small>
+                    </div>
                 </div>
 
                 <!-- グラフカラーパターン設定 -->
@@ -3843,6 +3853,7 @@
             loadThemeSettings(); // テーマ設定を読み込み
             loadReportSettings(); // レポート分析設定を読み込み
             loadChartColorScheme(); // グラフカラースキームを読み込み
+            loadDebugModeSetting(); // デバッグモード設定を読み込み
             updateMonthOptions();
             updateEstimateMonthOptions(); // 見積一覧の月選択肢を更新
             updateEstimateVersionOptions(); // 見積一覧の版数選択肢を更新
@@ -5177,7 +5188,8 @@
                 chartColorScheme: selectedChartColorScheme,
                 memberOrder: document.getElementById('memberOrder').value.trim(),
                 stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
-                floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false'
+                floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
+                debugModeEnabled: debugModeEnabled
             };
 
             const data = {
@@ -5818,34 +5830,35 @@
         let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, bottom
         let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
         let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
+        let debugModeEnabled = false; // デバッグモード設定
 
         // 月別色付け設定のトグル
         function toggleMonthColorsSetting() {
             showMonthColorsSetting = document.getElementById('showMonthColorsCheckbox').checked;
             saveData(true);
             renderEstimates();
-            updateReportMatrix();
+            updateReport();
         }
 
         // 乖離率背景色設定のトグル
         function toggleDeviationColorsSetting() {
             showDeviationColorsSetting = document.getElementById('showDeviationColorsCheckbox').checked;
             saveData(true);
-            updateReportMatrix();
+            updateReport();
         }
 
         // 進捗バー表示設定のトグル
         function toggleProgressBarsSetting() {
             showProgressBarsSetting = document.getElementById('showProgressBarsCheckbox').checked;
             saveData(true);
-            updateReportMatrix();
+            updateReport();
         }
 
         // 進捗バーのパーセンテージ表示設定のトグル
         function toggleProgressPercentageSetting() {
             showProgressPercentageSetting = document.getElementById('showProgressPercentageCheckbox').checked;
             saveData(true);
-            updateReportMatrix();
+            updateReport();
         }
 
         // 進捗バーのスタイル保存
@@ -5854,7 +5867,7 @@
             if (selectedStyle) {
                 progressBarStyle = selectedStyle.value;
                 saveData(true);
-                updateReportMatrix();
+                updateReport();
             }
         }
 
@@ -5864,7 +5877,7 @@
             if (selectedFormat) {
                 matrixEstActFormat = selectedFormat.value;
                 saveData(true);
-                updateReportMatrix();
+                updateReport();
             }
         }
 
@@ -5879,7 +5892,7 @@
             if (selectedFormat) {
                 matrixDayMonthFormat = selectedFormat.value;
                 saveData(true);
-                updateReportMatrix();
+                updateReport();
             }
         }
 
@@ -5892,7 +5905,7 @@
                 updateChartColorPreview();
                 // レポートが表示されている場合、グラフを再描画
                 if (document.getElementById('report').style.display !== 'none') {
-                    updateReportMatrix();
+                    updateReport();
                 }
             }
         }
@@ -11382,7 +11395,7 @@
                 // レポートタブがアクティブな場合、グラフを再描画
                 const reportTab = document.getElementById('report');
                 if (reportTab && reportTab.classList.contains('active')) {
-                    updateReportMatrix();
+                    updateReport();
                 }
             }
 
@@ -14652,7 +14665,10 @@
                 const reader = new FileReader();
                 reader.onerror = function(e) {
                     console.error('ファイル読み込みエラー:', reader.error);
-                    showAlert('ファイルの読み込みに失敗しました: ' + reader.error.message, false);
+                    const message = debugModeEnabled
+                        ? 'ファイルの読み込みに失敗しました: ' + reader.error.message
+                        : 'ファイルの読み込みに失敗しました';
+                    showAlert(message, false);
                 };
                 reader.onload = function(e) {
                     try {
@@ -14766,6 +14782,14 @@
                                     const checkbox = document.getElementById('floatingFilterEnabled');
                                     if (checkbox) checkbox.checked = data.settings.floatingFilterEnabled;
                                 }
+
+                                // デバッグモード設定を復元
+                                if (data.settings.debugModeEnabled !== undefined) {
+                                    debugModeEnabled = data.settings.debugModeEnabled;
+                                    localStorage.setItem('debugModeEnabled', debugModeEnabled);
+                                    const checkbox = document.getElementById('debugModeEnabled');
+                                    if (checkbox) checkbox.checked = debugModeEnabled;
+                                }
                             } else if (data.memberOrder) {
                                 // 旧形式（settingsがない場合）の後方互換性
                                 document.getElementById('memberOrder').value = data.memberOrder;
@@ -14793,7 +14817,10 @@
                         }
                     } catch (error) {
                         console.error('ファイル読み込みエラー:', error);
-                        showAlert('ファイルの読み込みに失敗しました: ' + error.message, false);
+                        const message = debugModeEnabled
+                            ? 'ファイルの読み込みに失敗しました: ' + error.message
+                            : 'ファイルの読み込みに失敗しました';
+                        showAlert(message, false);
                     }
                 };
                 reader.readAsText(file);
@@ -14907,7 +14934,10 @@
                 
             } catch (error) {
                 console.error('Excel読み込みエラー:', error);
-                alert('Excelファイルの読み込みに失敗しました: ' + error.message);
+                const message = debugModeEnabled
+                    ? 'Excelファイルの読み込みに失敗しました: ' + error.message
+                    : 'Excelファイルの読み込みに失敗しました';
+                alert(message);
             }
         }
         
@@ -15551,6 +15581,24 @@
                 checkbox.checked = enabled;
             }
             return enabled;
+        }
+
+        // デバッグモード設定の保存
+        function saveDebugModeSetting() {
+            const checkbox = document.getElementById('debugModeEnabled');
+            if (!checkbox) return;
+            debugModeEnabled = checkbox.checked;
+            localStorage.setItem('debugModeEnabled', debugModeEnabled);
+        }
+
+        // デバッグモード設定の読み込み
+        function loadDebugModeSetting() {
+            const saved = localStorage.getItem('debugModeEnabled');
+            debugModeEnabled = saved === 'true';
+            const checkbox = document.getElementById('debugModeEnabled');
+            if (checkbox) {
+                checkbox.checked = debugModeEnabled;
+            }
         }
 
         // フローティングフィルタボタンを表示
