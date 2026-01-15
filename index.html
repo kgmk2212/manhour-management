@@ -9174,7 +9174,7 @@
             memberDisplay.style.display = 'block';
             memberDisplay.textContent = member;
 
-            document.getElementById('editActualHours').value = '';
+            document.getElementById('editActualHours').value = '8';
             document.getElementById('editActualRemainingHours').value = '';
 
             // モーダルのタイトルを変更
@@ -9297,8 +9297,8 @@
                 const remaining = est.hours - actualHours;
 
                 // 編集モードの場合はすべての対応を含める
-                // 新規入力モードの場合は未完了のみ
-                if (isEditMode || actualHours < est.hours) {
+                // 新規入力モードでも全ての対応を表示（超過した作業も選択可能にする）
+                if (true) {
                     let displayText;
                     if (remaining > 0) {
                         displayText = `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`;
