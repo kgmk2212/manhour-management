@@ -1147,6 +1147,7 @@
         #reportMonthButtons2 {
             scrollbar-width: thin;
             scrollbar-color: #cbd5e0 #f1f5f9;
+            -webkit-overflow-scrolling: touch;
         }
 
         #estimateMonthButtons2::-webkit-scrollbar,
@@ -1811,7 +1812,7 @@
                         <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; handleEstimateMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1822,7 +1823,7 @@
                         <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; handleEstimateVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1931,7 +1932,7 @@
                         <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMemberButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 600px;">
+                            <div id="actualMemberButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(600px, calc(100vw - 120px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="actualMemberSelect2" onchange="document.getElementById('actualMemberSelect').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1949,7 +1950,7 @@
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            <div id="actualMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 140px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="actualMonthFilter2" onchange="document.getElementById('actualMonthFilter').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2009,7 +2010,7 @@
                         <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            <div id="reportMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; handleReportMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2019,7 +2020,7 @@
                         <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: 800px;">
+                            <div id="reportVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; handleReportVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
