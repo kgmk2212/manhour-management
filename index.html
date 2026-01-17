@@ -1430,6 +1430,52 @@
             background: #f8f9ff;
         }
 
+        /* 各タブのセグメントボタン共通スタイル */
+        .segment-buttons {
+            display: inline-flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 0;
+            flex-wrap: nowrap;
+        }
+
+        .segment-buttons::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .segment-buttons::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .segment-buttons::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .segment-buttons button {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            font-size: 11px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .segment-buttons button.active {
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            color: white;
+            border-color: transparent;
+        }
+
+        .segment-buttons button:hover:not(.active) {
+            border-color: var(--theme-color, #667eea);
+            background: #f8f9ff;
+        }
+
         /* モバイル対応 */
         @media (max-width: 768px) {
             .floating-filter-panel {
@@ -1465,10 +1511,10 @@
 
                     <!-- セグメントボタンを右側に配置 -->
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                        <div style="display: inline-flex; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
-                            <button id="quickActualModeBtn" onclick="switchQuickInputMode('actual')" style="padding: 6px 16px; border: none; background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">実績入力</button>
-                            <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">見積登録</button>
-                            <button id="quickVacationModeBtn" onclick="switchQuickInputMode('vacation')" style="padding: 6px 16px; border: none; background: transparent; color: rgba(255,255,255,0.85); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">休暇登録</button>
+                        <div class="segment-buttons">
+                            <button id="quickActualModeBtn" class="active" onclick="switchQuickInputMode('actual')">実績入力</button>
+                            <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')">見積登録</button>
+                            <button id="quickVacationModeBtn" onclick="switchQuickInputMode('vacation')">休暇登録</button>
                         </div>
                     </div>
 
@@ -1803,9 +1849,9 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">月別</button>
-                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">版数別</button>
+                            <div class="segment-buttons">
+                                <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" class="active">月別</button>
+                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion">版数別</button>
                             </div>
                         </div>
 
@@ -1833,10 +1879,10 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" style="padding: 4px 10px; font-size: 12px; border: none; background: white; cursor: pointer; transition: all 0.2s;">グループ</button>
-                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="padding: 4px 10px; font-size: 12px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; transition: all 0.2s;">マトリクス</button>
-                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="padding: 4px 10px; font-size: 12px; border: none; border-left: 1px solid #dee2e6; background: white; cursor: pointer; transition: all 0.2s;">リスト</button>
+                            <div class="segment-buttons">
+                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" class="active">グループ</button>
+                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')">マトリクス</button>
+                                <button id="btnEstimateList" onclick="setEstimateViewType('list')">リスト</button>
                             </div>
                         </div>
                     </div>
@@ -1941,9 +1987,9 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">カレンダー</button>
-                                <button onclick="setActualViewType('list')" id="btnActualList" style="padding: 4px 12px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">リスト</button>
+                            <div class="segment-buttons">
+                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" class="active">カレンダー</button>
+                                <button onclick="setActualViewType('list')" id="btnActualList">リスト</button>
                             </div>
                         </div>
 
@@ -5039,21 +5085,16 @@
         function setEstimateFilterType(type) {
             document.getElementById('estimateFilterType').value = type;
 
-            // セグメントボタンのスタイル更新（テーマカラー適用）
-            const themeColor = getThemeColor();
+            // セグメントボタンのスタイル更新（activeクラス使用）
             const btnMonth = document.getElementById('btnEstimateFilterMonth');
             const btnVersion = document.getElementById('btnEstimateFilterVersion');
 
             if (type === 'month') {
-                btnMonth.style.background = themeColor;
-                btnMonth.style.color = 'white';
-                btnVersion.style.background = 'white';
-                btnVersion.style.color = '#333';
+                btnMonth.classList.add('active');
+                btnVersion.classList.remove('active');
             } else {
-                btnMonth.style.background = 'white';
-                btnMonth.style.color = '#333';
-                btnVersion.style.background = themeColor;
-                btnVersion.style.color = 'white';
+                btnMonth.classList.remove('active');
+                btnVersion.classList.add('active');
             }
 
             handleEstimateFilterTypeChange();
@@ -6437,12 +6478,9 @@
             actualForm.style.display = 'none';
             estimateForm.style.display = 'none';
             vacationForm.style.display = 'none';
-            actualBtn.style.background = 'transparent';
-            actualBtn.style.color = 'rgba(255,255,255,0.85)';
-            estimateBtn.style.background = 'transparent';
-            estimateBtn.style.color = 'rgba(255,255,255,0.85)';
-            vacationBtn.style.background = 'transparent';
-            vacationBtn.style.color = 'rgba(255,255,255,0.85)';
+            actualBtn.classList.remove('active');
+            estimateBtn.classList.remove('active');
+            vacationBtn.classList.remove('active');
 
             if (mode === 'actual') {
                 actualForm.style.display = 'block';
@@ -6450,8 +6488,7 @@
                 bottomTitle.textContent = '今日の入力済み実績';
                 bottomTitle.style.display = 'block';
                 document.getElementById('todayActuals').style.display = 'block';
-                actualBtn.style.background = 'rgba(255,255,255,0.9)';
-                actualBtn.style.color = 'rgba(0,0,0,0.85)';
+                actualBtn.classList.add('active');
 
                 // 前回の実績を自動選択
                 setQuickInputPreviousActual();
@@ -6460,15 +6497,13 @@
                 modeTitle.textContent = '新規見積登録';
                 bottomTitle.style.display = 'none';
                 document.getElementById('todayActuals').style.display = 'none';
-                estimateBtn.style.background = 'rgba(255,255,255,0.9)';
-                estimateBtn.style.color = 'rgba(0,0,0,0.85)';
+                estimateBtn.classList.add('active');
             } else if (mode === 'vacation') {
                 vacationForm.style.display = 'block';
                 modeTitle.textContent = '休暇登録';
                 bottomTitle.style.display = 'none';
                 document.getElementById('todayActuals').style.display = 'none';
-                vacationBtn.style.background = 'rgba(255,255,255,0.9)';
-                vacationBtn.style.color = 'rgba(0,0,0,0.85)';
+                vacationBtn.classList.add('active');
 
                 // 休暇登録フォームの日付を今日に設定
                 const today = new Date().toISOString().split('T')[0];
@@ -12313,23 +12348,23 @@
                 viewTypeElement.value = type;
             }
 
-            // ボタンのスタイルを更新
-            const themeColor = getThemeColor();
+            // ボタンのスタイルを更新（activeクラス使用）
             const btnGrouped = document.getElementById('btnEstimateGrouped');
             const btnMatrix = document.getElementById('btnEstimateMatrix');
             const btnList = document.getElementById('btnEstimateList');
 
-            if (btnGrouped) {
-                btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
-                btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-            }
-            if (btnMatrix) {
-                btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-                btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-            }
-            if (btnList) {
-                btnList.style.background = type === 'list' ? themeColor : 'white';
-                btnList.style.color = type === 'list' ? 'white' : '#333';
+            // 全てのactiveクラスを削除
+            if (btnGrouped) btnGrouped.classList.remove('active');
+            if (btnMatrix) btnMatrix.classList.remove('active');
+            if (btnList) btnList.classList.remove('active');
+
+            // 選択されたボタンにactiveクラスを追加
+            if (type === 'grouped' && btnGrouped) {
+                btnGrouped.classList.add('active');
+            } else if (type === 'matrix' && btnMatrix) {
+                btnMatrix.classList.add('active');
+            } else if (type === 'list' && btnList) {
+                btnList.classList.add('active');
             }
 
             renderEstimateList();
@@ -12338,20 +12373,19 @@
         // セグメントボタン用の関数（実績一覧）
         function setActualViewType(type) {
             document.getElementById('actualViewType').value = type;
-            // ボタンのスタイルを更新
-            const themeColor = getThemeColor();
+            // ボタンのスタイルを更新（activeクラス使用）
             const btnMatrix = document.getElementById('btnActualMatrix');
             const btnList = document.getElementById('btnActualList');
-            if (type === 'matrix') {
-                btnMatrix.style.background = themeColor;
-                btnMatrix.style.color = 'white';
-                btnList.style.background = 'white';
-                btnList.style.color = '#333';
-            } else {
-                btnMatrix.style.background = 'white';
-                btnMatrix.style.color = '#333';
-                btnList.style.background = themeColor;
-                btnList.style.color = 'white';
+
+            // 全てのactiveクラスを削除
+            if (btnMatrix) btnMatrix.classList.remove('active');
+            if (btnList) btnList.classList.remove('active');
+
+            // 選択されたボタンにactiveクラスを追加
+            if (type === 'matrix' && btnMatrix) {
+                btnMatrix.classList.add('active');
+            } else if (type === 'list' && btnList) {
+                btnList.classList.add('active');
             }
             renderActualList();
         }
