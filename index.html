@@ -3971,7 +3971,7 @@
             renderCompanyHolidayList();
 
             // セグメントボタンの初期色をテーマカラーに設定
-            initSegmentButtonColors();
+            updateSegmentedButtons();
 
             // モバイルでタブのスワイプ切り替え機能を追加
             initTabSwipe();
@@ -4023,80 +4023,6 @@
             });
         }
 
-        // セグメントボタンの初期色をテーマカラーに設定
-        function initSegmentButtonColors() {
-            try {
-                const themeColor = getThemeColor();
-
-                // レポートフィルタタイプボタン（版数別がデフォルト選択）
-                const reportFilterType = document.getElementById('reportFilterType');
-                const btnFilterMonth = document.getElementById('btnFilterMonth');
-                const btnFilterVersion = document.getElementById('btnFilterVersion');
-                if (reportFilterType && btnFilterMonth && btnFilterVersion) {
-                    const type = reportFilterType.value;
-                    btnFilterMonth.style.background = type === 'month' ? themeColor : 'white';
-                    btnFilterMonth.style.color = type === 'month' ? 'white' : '#333';
-                    btnFilterVersion.style.background = type === 'version' ? themeColor : 'white';
-                    btnFilterVersion.style.color = type === 'version' ? 'white' : '#333';
-                }
-
-                // 見積一覧フィルタタイプボタン（版数別がデフォルト選択）
-                const estimateFilterType = document.getElementById('estimateFilterType');
-                const btnEstimateFilterMonth = document.getElementById('btnEstimateFilterMonth');
-                const btnEstimateFilterVersion = document.getElementById('btnEstimateFilterVersion');
-                if (estimateFilterType && btnEstimateFilterMonth && btnEstimateFilterVersion) {
-                    const type = estimateFilterType.value;
-                    btnEstimateFilterMonth.style.background = type === 'month' ? themeColor : 'white';
-                    btnEstimateFilterMonth.style.color = type === 'month' ? 'white' : '#333';
-                    btnEstimateFilterVersion.style.background = type === 'version' ? themeColor : 'white';
-                    btnEstimateFilterVersion.style.color = type === 'version' ? 'white' : '#333';
-                }
-
-                // レポート表示形式ボタン（現在の選択に応じて）
-                const reportViewType = document.getElementById('reportViewType');
-                const btnReportSummary = document.getElementById('btnReportSummary');
-                const btnReportGrouped = document.getElementById('btnReportGrouped');
-                const btnReportMatrix = document.getElementById('btnReportMatrix');
-                if (reportViewType && btnReportSummary && btnReportGrouped && btnReportMatrix) {
-                    const type = reportViewType.value;
-                    btnReportSummary.style.background = type === 'summary' ? themeColor : 'white';
-                    btnReportSummary.style.color = type === 'summary' ? 'white' : '#333';
-                    btnReportGrouped.style.background = type === 'grouped' ? themeColor : 'white';
-                    btnReportGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-                    btnReportMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-                    btnReportMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-                }
-
-                // 実績一覧表示形式ボタン（現在の選択に応じて）
-                const actualViewType = document.getElementById('actualViewType');
-                const btnActualMatrix = document.getElementById('btnActualMatrix');
-                const btnActualList = document.getElementById('btnActualList');
-                if (actualViewType && btnActualMatrix && btnActualList) {
-                    const type = actualViewType.value;
-                    btnActualMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-                    btnActualMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-                    btnActualList.style.background = type === 'list' ? themeColor : 'white';
-                    btnActualList.style.color = type === 'list' ? 'white' : '#333';
-                }
-
-                // 見積一覧表示形式ボタン（現在の選択に応じて）
-                const estimateViewType = document.getElementById('estimateViewType');
-                const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
-                const btnEstimateMatrix = document.getElementById('btnEstimateMatrix');
-                const btnEstimateList = document.getElementById('btnEstimateList');
-                if (estimateViewType && btnEstimateGrouped && btnEstimateMatrix && btnEstimateList) {
-                    const type = estimateViewType.value;
-                    btnEstimateGrouped.style.background = type === 'grouped' ? themeColor : 'white';
-                    btnEstimateGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-                    btnEstimateMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-                    btnEstimateMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-                    btnEstimateList.style.background = type === 'list' ? themeColor : 'white';
-                    btnEstimateList.style.color = type === 'list' ? 'white' : '#333';
-                }
-            } catch (e) {
-                console.error('initSegmentButtonColors error:', e);
-            }
-        }
 
         // タブのスワイプ切り替え機能を初期化
         function initTabSwipe() {
@@ -11558,6 +11484,38 @@
         }
         
         function updateThemeElements() {
+            // CSS変数を設定（テーマカラーをグローバルに適用）
+            const gradients = {
+                'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
+                'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+                'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+                'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+                'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+                'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+            };
+
+            const solidColors = {
+                'purple': '#667eea',
+                'deep-blue': '#1e3c72',
+                'teal': '#0f766e',
+                'cyan': '#0891b2',
+                'ocean': '#0c4a6e',
+                'sky': '#0369a1',
+                'indigo': '#4338ca',
+                'navy': '#1e40af',
+                'slate': '#334155',
+                'green': '#047857',
+                'emerald': '#059669'
+            };
+
+            document.documentElement.style.setProperty('--theme-gradient', gradients[currentThemeColor] || gradients['purple']);
+            document.documentElement.style.setProperty('--theme-color', solidColors[currentThemeColor] || solidColors['purple']);
+
             // ページ全体の背景
             updateBodyBackground();
 
@@ -11771,7 +11729,7 @@
 
         // セグメントボタンの色を更新
         function updateSegmentedButtons() {
-            const themeColor = getThemeColor();
+            // activeクラスベースでテーマカラーを適用
 
             // 見積一覧のセグメントボタン（表示形式）
             const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
@@ -11779,12 +11737,9 @@
             const btnEstimateList = document.getElementById('btnEstimateList');
             if (btnEstimateGrouped && btnEstimateMatrix && btnEstimateList) {
                 const estimateViewType = document.getElementById('estimateViewType').value;
-                btnEstimateGrouped.style.background = estimateViewType === 'grouped' ? themeColor : 'white';
-                btnEstimateGrouped.style.color = estimateViewType === 'grouped' ? 'white' : '#333';
-                btnEstimateMatrix.style.background = estimateViewType === 'matrix' ? themeColor : 'white';
-                btnEstimateMatrix.style.color = estimateViewType === 'matrix' ? 'white' : '#333';
-                btnEstimateList.style.background = estimateViewType === 'list' ? themeColor : 'white';
-                btnEstimateList.style.color = estimateViewType === 'list' ? 'white' : '#333';
+                btnEstimateGrouped.classList.toggle('active', estimateViewType === 'grouped');
+                btnEstimateMatrix.classList.toggle('active', estimateViewType === 'matrix');
+                btnEstimateList.classList.toggle('active', estimateViewType === 'list');
             }
 
             // 見積一覧のセグメントボタン（フィルタタイプ：月別/版数別）
@@ -11793,10 +11748,8 @@
             const btnEstimateFilterVersion = document.getElementById('btnEstimateFilterVersion');
             if (estimateFilterType && btnEstimateFilterMonth && btnEstimateFilterVersion) {
                 const type = estimateFilterType.value;
-                btnEstimateFilterMonth.style.background = type === 'month' ? themeColor : 'white';
-                btnEstimateFilterMonth.style.color = type === 'month' ? 'white' : '#333';
-                btnEstimateFilterVersion.style.background = type === 'version' ? themeColor : 'white';
-                btnEstimateFilterVersion.style.color = type === 'version' ? 'white' : '#333';
+                btnEstimateFilterMonth.classList.toggle('active', type === 'month');
+                btnEstimateFilterVersion.classList.toggle('active', type === 'version');
             }
 
             // 見積一覧のセグメントボタン（表示月）
@@ -11822,10 +11775,8 @@
             const btnActualList = document.getElementById('btnActualList');
             if (btnActualMatrix && btnActualList) {
                 const actualViewType = document.getElementById('actualViewType').value;
-                btnActualMatrix.style.background = actualViewType === 'matrix' ? themeColor : 'white';
-                btnActualMatrix.style.color = actualViewType === 'matrix' ? 'white' : '#333';
-                btnActualList.style.background = actualViewType === 'list' ? themeColor : 'white';
-                btnActualList.style.color = actualViewType === 'list' ? 'white' : '#333';
+                btnActualMatrix.classList.toggle('active', actualViewType === 'matrix');
+                btnActualList.classList.toggle('active', actualViewType === 'list');
             }
 
             // 実績一覧のセグメントボタン（担当者）
@@ -11852,12 +11803,9 @@
             const btnReportMatrix = document.getElementById('btnReportMatrix');
             if (btnReportSummary && btnReportGrouped && btnReportMatrix) {
                 const reportViewType = document.getElementById('reportViewType').value;
-                btnReportSummary.style.background = reportViewType === 'summary' ? themeColor : 'white';
-                btnReportSummary.style.color = reportViewType === 'summary' ? 'white' : '#333';
-                btnReportGrouped.style.background = reportViewType === 'grouped' ? themeColor : 'white';
-                btnReportGrouped.style.color = reportViewType === 'grouped' ? 'white' : '#333';
-                btnReportMatrix.style.background = reportViewType === 'matrix' ? themeColor : 'white';
-                btnReportMatrix.style.color = reportViewType === 'matrix' ? 'white' : '#333';
+                btnReportSummary.classList.toggle('active', reportViewType === 'summary');
+                btnReportGrouped.classList.toggle('active', reportViewType === 'grouped');
+                btnReportMatrix.classList.toggle('active', reportViewType === 'matrix');
             }
 
             // レポートのセグメントボタン（表示月）
@@ -11876,10 +11824,17 @@
                 const btnFilterVersion = document.getElementById('btnFilterVersion');
                 if (btnFilterMonth && btnFilterVersion) {
                     const type = reportFilterType.value;
-                    btnFilterMonth.style.background = type === 'month' ? themeColor : 'white';
-                    btnFilterMonth.style.color = type === 'month' ? 'white' : '#333';
-                    btnFilterVersion.style.background = type === 'version' ? themeColor : 'white';
-                    btnFilterVersion.style.color = type === 'version' ? 'white' : '#333';
+                    btnFilterMonth.classList.toggle('active', type === 'month');
+                    btnFilterVersion.classList.toggle('active', type === 'version');
+                }
+            }
+
+            // レポートの版数ボタン
+            const reportVersionButtons = document.getElementById('reportVersionButtons2');
+            if (reportVersionButtons) {
+                const reportVersion = document.getElementById('reportVersion');
+                if (reportVersion) {
+                    updateSegmentButtonSelection('reportVersionButtons2', reportVersion.value);
                 }
             }
         }
