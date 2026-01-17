@@ -93,13 +93,47 @@
 - ✅ **基盤モジュール**: state, utils, vacation が完成
 - 🔄 **段階的移行**: 残りの関数は次セッションで順次モジュール化
 
-## 次のステップ
+## 次のステップ（詳細手順）
 
-1. **動作確認** - ブラウザでアプリを開いて、基本機能が動作するか確認
-2. **エラー修正** - もしコンソールエラーがあれば修正
-3. **残りのモジュール作成** - storage.js から順番に作成
-4. **index.html のクリーンアップ** - モジュール化された関数を削除
-5. **ARCHITECTURE.md の更新** - 最新の構成を反映
+### 次回セッション開始時
+1. 「PROGRESS.mdの続きから再開します」と伝える
+2. 以下の順序でモジュールを作成：
+
+#### Phase 1: 重要モジュール（優先度：高）
+**1. js/storage.js** ⭐最優先
+- 必要な関数をindex.htmlから検索：
+  ```bash
+  grep -n "function loadData\|function saveData\|function exportBackup\|function importBackup\|function handleFileImport\|function autoBackup" index.html
+  ```
+- 各関数の内容を Read して抽出
+- モジュール化してエクスポート
+- init.js に追加してwindowに公開
+
+**2. js/ui.js**
+- showTab(), updateMemberOptions(), updateVersionOptions() など
+- UI関連の基本関数
+
+**3. js/theme.js**
+- applyTheme(), updateThemeElements() など
+- テーマ・レイアウト設定
+
+#### Phase 2: 機能モジュール（優先度：中）
+4. js/estimate.js（最大約800行）
+5. js/actual.js
+6. js/quick-input.js
+7. js/report.js
+
+#### Phase 3: 補助モジュール（優先度：低）
+8. js/chart.js
+9. js/modal.js
+10. js/filter.js
+11. js/other-work.js
+
+#### Phase 4: クリーンアップ
+- index.html から移行済み関数を削除
+- 古い `<style>` タグを削除
+- ARCHITECTURE.md を更新
+- 全機能テスト
 
 ## 技術的な注意点
 
@@ -123,3 +157,16 @@ HTML の onclick 属性を維持するため、init.js で関数を window オ�
 3. スタイルが正しく適用されているか
 
 もしエラーがあれば報告してください。修正します。
+
+---
+
+## 🚀 次回セッション開始コマンド
+
+次回セッションでは、以下のように開始してください：
+
+```
+PROGRESS.mdの続きから、残りのモジュール作成を再開します。
+まず js/storage.js から作成してください。
+```
+
+このファイル（PROGRESS.md）に全体計画と進捗が記録されているので、いつでも中断・再開できます。
