@@ -1457,12 +1457,27 @@
             flex-shrink: 0;
             padding: 6px 12px;
             font-size: 11px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
             background: white;
             color: #333;
             cursor: pointer;
             transition: all 0.2s;
+        }
+
+        /* コンテナに枠線がある場合（動的生成ボタン） */
+        .segment-buttons[style*="border: 1px"] button {
+            border: none;
+            border-radius: 0;
+        }
+
+        /* コンテナに枠線がない場合（スタンドアロンボタン） */
+        .segment-buttons:not([style*="border: 1px"]) button {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
+        .segment-buttons:not([style*="border: 1px"]) button:first-child {
+            margin-left: 0;
         }
 
         .segment-buttons button.active {
@@ -1849,9 +1864,9 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div class="segment-buttons">
+                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
                                 <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" class="active">月別</button>
-                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion">版数別</button>
+                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion" style="border-left: 1px solid #dee2e6;">版数別</button>
                             </div>
                         </div>
 
@@ -1879,10 +1894,10 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
+                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
                                 <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" class="active">グループ</button>
-                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')">マトリクス</button>
-                                <button id="btnEstimateList" onclick="setEstimateViewType('list')">リスト</button>
+                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="border-left: 1px solid #dee2e6;">マトリクス</button>
+                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="border-left: 1px solid #dee2e6;">リスト</button>
                             </div>
                         </div>
                     </div>
@@ -1987,9 +2002,9 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
+                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
                                 <button onclick="setActualViewType('matrix')" id="btnActualMatrix" class="active">カレンダー</button>
-                                <button onclick="setActualViewType('list')" id="btnActualList">リスト</button>
+                                <button onclick="setActualViewType('list')" id="btnActualList" style="border-left: 1px solid #dee2e6;">リスト</button>
                             </div>
                         </div>
 
@@ -11926,14 +11941,16 @@
         function createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler) {
             const container = document.getElementById(containerId);
             const select = document.getElementById(selectId);
-            const themeColor = getThemeColor();
 
             if (!container || !select) return;
 
-            // セグメントボタンを表示（横スクロール対応）
-            container.style.display = 'flex';
+            // コンテナにsegment-buttonsクラスを追加（スタイルはCSSで定義）
+            container.className = 'segment-buttons';
+            container.style.display = 'inline-flex';
+            container.style.border = '1px solid #dee2e6';
+            container.style.borderRadius = '4px';
+            container.style.background = 'white';
             container.style.overflowX = 'auto';
-            container.style.gap = '0';
             select.style.display = 'none';
             container.innerHTML = '';
 
@@ -11941,24 +11958,11 @@
                 const button = document.createElement('button');
                 button.textContent = item.label;
                 button.value = item.value;
-                button.style.cssText = `
-                    padding: 4px 12px;
-                    font-size: 12px;
-                    border: none;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    white-space: nowrap;
-                    flex-shrink: 0;
-                    ${index > 0 ? 'border-left: 1px solid #dee2e6;' : ''}
-                `;
+                button.style.borderLeft = index > 0 ? '1px solid #dee2e6' : 'none';
 
-                // 選択状態のスタイル
+                // 選択状態のスタイル（activeクラスで管理）
                 if (item.value === currentValue) {
-                    button.style.background = themeColor;
-                    button.style.color = 'white';
-                } else {
-                    button.style.background = 'white';
-                    button.style.color = '#333';
+                    button.classList.add('active');
                 }
 
                 button.onclick = () => onClickHandler(item.value, containerId);
@@ -11971,15 +11975,12 @@
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            const themeColor = getThemeColor();
             const buttons = container.querySelectorAll('button');
             buttons.forEach(btn => {
                 if (btn.value === value) {
-                    btn.style.background = themeColor;
-                    btn.style.color = 'white';
+                    btn.classList.add('active');
                 } else {
-                    btn.style.background = 'white';
-                    btn.style.color = '#333';
+                    btn.classList.remove('active');
                 }
             });
         }
