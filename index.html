@@ -5051,9 +5051,9 @@
                 if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
                 if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
 
-                // 月別フィルタに切り替えた時、デフォルト月が選択されていない場合は設定
+                // 月別フィルタに切り替えた時、デフォルト月を設定（値がない、またはallの場合）
                 const estimateMonthEl = document.getElementById('estimateMonthFilter');
-                if (estimateMonthEl && !estimateMonthEl.value) {
+                if (estimateMonthEl && (!estimateMonthEl.value || estimateMonthEl.value === 'all')) {
                     setDefaultEstimateMonth();
                 }
             } else {
@@ -11378,11 +11378,11 @@
                 filteredActuals = filteredActuals.filter(a => a.version === filterVersion);
             }
 
-            // 日付でソート（新しい順）
+            // 日付でソート（古い順）
             filteredActuals.sort((a, b) => {
                 const dateA = a.date || '';
                 const dateB = b.date || '';
-                return dateB.localeCompare(dateA);
+                return dateA.localeCompare(dateB);
             });
 
             const actualsListDiv = document.getElementById('remainingHoursActualsList');
@@ -13073,6 +13073,8 @@
                         sortedMonths.slice(-6).forEach(month => {
                             const data = monthlyData[month];
                             const [year, monthNum] = month.split('-');
+                            // 日付フォーマットのバリデーション
+                            if (!year || !monthNum) return;
                             const estWidth = (data.estimate / maxMonthlyHours * 100).toFixed(1);
                             const actWidth = (data.actual / maxMonthlyHours * 100).toFixed(1);
                             const diff = data.actual - data.estimate;
