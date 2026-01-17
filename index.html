@@ -1462,27 +1462,12 @@
             flex-shrink: 0;
             padding: 6px 12px;
             font-size: 11px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             background: white;
             color: #333;
             cursor: pointer;
             transition: all 0.2s;
-        }
-
-        /* コンテナに枠線がある場合（動的生成ボタン） */
-        .segment-buttons[style*="border: 1px"] button {
-            border: none;
-            border-radius: 0;
-        }
-
-        /* コンテナに枠線がない場合（スタンドアロンボタン） */
-        .segment-buttons:not([style*="border: 1px"]) button {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-left: 6px;
-        }
-
-        .segment-buttons:not([style*="border: 1px"]) button:first-child {
-            margin-left: 0;
         }
 
         .segment-buttons button.active {
@@ -1874,16 +1859,16 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
+                            <div class="segment-buttons">
                                 <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" class="active">月別</button>
-                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion" style="border-left: 1px solid #dee2e6;">版数別</button>
+                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion">版数別</button>
                             </div>
                         </div>
 
                         <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 130px));">
+                            <div id="estimateMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; handleEstimateMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1894,7 +1879,7 @@
                         <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 110px));">
+                            <div id="estimateVersionButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; handleEstimateVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -1904,10 +1889,10 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
+                            <div class="segment-buttons">
                                 <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" class="active">グループ</button>
-                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')" style="border-left: 1px solid #dee2e6;">マトリクス</button>
-                                <button id="btnEstimateList" onclick="setEstimateViewType('list')" style="border-left: 1px solid #dee2e6;">リスト</button>
+                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')">マトリクス</button>
+                                <button id="btnEstimateList" onclick="setEstimateViewType('list')">リスト</button>
                             </div>
                         </div>
                     </div>
@@ -2003,7 +1988,7 @@
                         <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMemberButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(600px, calc(100vw - 120px));">
+                            <div id="actualMemberButtons2" class="segment-buttons" style="max-width: min(600px, calc(100vw - 120px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="actualMemberSelect2" onchange="document.getElementById('actualMemberSelect').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2012,16 +1997,16 @@
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; background: white; overflow: hidden;">
+                            <div class="segment-buttons">
                                 <button onclick="setActualViewType('matrix')" id="btnActualMatrix" class="active">カレンダー</button>
-                                <button onclick="setActualViewType('list')" id="btnActualList" style="border-left: 1px solid #dee2e6;">リスト</button>
+                                <button onclick="setActualViewType('list')" id="btnActualList">リスト</button>
                             </div>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 140px));">
+                            <div id="actualMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 140px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="actualMonthFilter2" onchange="document.getElementById('actualMonthFilter').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2073,15 +2058,15 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">月別</button>
-                                <button onclick="setReportFilterType('version')" id="btnFilterVersion" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">版数別</button>
+                            <div class="segment-buttons">
+                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" class="active">月別</button>
+                                <button onclick="setReportFilterType('version')" id="btnFilterVersion">版数別</button>
                             </div>
                         </div>
                         <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportMonthButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 130px));">
+                            <div id="reportMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; handleReportMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2091,7 +2076,7 @@
                         <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportVersionButtons2" style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow-x: auto; background: white; max-width: min(800px, calc(100vw - 110px));">
+                            <div id="reportVersionButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
                             <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; handleReportVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
@@ -2100,10 +2085,10 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div style="display: inline-flex; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; background: white;">
-                                <button onclick="setReportViewType('summary')" id="btnReportSummary" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; transition: all 0.2s;">サマリー</button>
-                                <button onclick="setReportViewType('grouped')" id="btnReportGrouped" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">グループ</button>
-                                <button onclick="setReportViewType('matrix')" id="btnReportMatrix" style="padding: 4px 10px; font-size: 12px; border: none; background: white; color: #333; cursor: pointer; border-left: 1px solid #dee2e6; transition: all 0.2s;">マトリクス</button>
+                            <div class="segment-buttons">
+                                <button onclick="setReportViewType('summary')" id="btnReportSummary">サマリー</button>
+                                <button onclick="setReportViewType('grouped')" id="btnReportGrouped" class="active">グループ</button>
+                                <button onclick="setReportViewType('matrix')" id="btnReportMatrix">マトリクス</button>
                             </div>
                         </div>
                     </div>
@@ -11977,9 +11962,6 @@
             // コンテナにsegment-buttonsクラスを追加（スタイルはCSSで定義）
             container.className = 'segment-buttons';
             container.style.display = 'inline-flex';
-            container.style.border = '1px solid #dee2e6';
-            container.style.borderRadius = '4px';
-            container.style.background = 'white';
             container.style.overflowX = 'auto';
             select.style.display = 'none';
             container.innerHTML = '';
@@ -11988,7 +11970,6 @@
                 const button = document.createElement('button');
                 button.textContent = item.label;
                 button.value = item.value;
-                button.style.borderLeft = index > 0 ? '1px solid #dee2e6' : 'none';
 
                 // 選択状態のスタイル（activeクラスで管理）
                 if (item.value === currentValue) {
