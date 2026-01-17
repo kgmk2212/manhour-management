@@ -718,6 +718,11 @@
                 grid-template-columns: 1fr;
             }
 
+            /* クイック入力の3列グリッドをモバイルでは1列に */
+            .quick-form > div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+
             /* モバイルでのモーダル余白を縮小 */
             .modal-content {
                 margin: 2% auto;
@@ -1556,13 +1561,18 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                             <div class="form-group">
                                 <label>担当</label>
                                 <select id="quickMemberSelect" onchange="handleMemberChange()">
                                     <option value="">（自動）</option>
                                 </select>
-                                <small style="color: #999; font-size: 11px;">通常は自動、必要時のみ変更</small>
+                                <small style="color: #999; font-size: 11px;">通常は自動</small>
+                            </div>
+                            <div class="form-group">
+                                <label>作業日</label>
+                                <input type="date" id="quickWorkDate" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                                <small style="color: #999; font-size: 11px;">未指定=今日</small>
                             </div>
                             <div class="form-group">
                                 <label>実績工数 (h)</label>
@@ -6381,22 +6391,26 @@
         function quickAddActual() {
             const hours = parseFloat(document.getElementById('quickHours').value);
             const memberOverride = document.getElementById('quickMemberSelect').value;
-            
+            const workDate = document.getElementById('quickWorkDate').value;
+
             if (!selectedQuickTask || !hours) {
                 alert('対応と実績工数を入力してください');
                 return;
             }
 
             const [version, task, process, originalMember] = selectedQuickTask.split('|');
-            
+
             // 担当者の決定ロジック:
             // 1. ユーザーが明示的に選択した担当者があればそれを使用
             // 2. なければ見積の担当者を使用
             const finalMember = memberOverride || originalMember;
 
+            // 作業日の決定: 入力があればそれを使用、なければ今日
+            const finalDate = workDate || new Date().toISOString().split('T')[0];
+
             actuals.push({
                 id: Date.now(),
-                date: new Date().toISOString().split('T')[0],
+                date: finalDate,
                 version: version,
                 task: task,
                 process: process,
