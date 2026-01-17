@@ -10770,22 +10770,19 @@
                 singleSection.style.display = 'none';
                 multiSection.style.display = 'block';
 
-                // 月選択肢を初期化
-                const startMonthSelect = document.getElementById('editStartMonth');
-                const endMonthSelect = document.getElementById('editEndMonth');
-                if (!startMonthSelect.value) {
-                    // 単一月で登録されていた月を取得（なければ現在月）
-                    const singleMonthValue = document.getElementById('editEstimateWorkMonth').value;
-                    let defaultMonth;
-                    if (singleMonthValue) {
-                        defaultMonth = singleMonthValue;
-                    } else {
-                        const now = new Date();
-                        defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                    }
-                    generateMonthOptions('editStartMonth', defaultMonth);
-                    generateMonthOptions('editEndMonth', defaultMonth);
+                // 単一月で登録されていた月を取得（なければ現在月）
+                const singleMonthValue = document.getElementById('editEstimateWorkMonth').value;
+                let defaultMonth;
+                if (singleMonthValue) {
+                    defaultMonth = singleMonthValue;
+                } else {
+                    const now = new Date();
+                    defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 }
+
+                // 常に月選択肢を再生成してデフォルト月を設定
+                generateMonthOptions('editStartMonth', defaultMonth);
+                generateMonthOptions('editEndMonth', defaultMonth);
 
                 updateEditMonthPreview();
             }
@@ -11190,7 +11187,7 @@
                 if (totalAct > 0) {
                     drawBreakdownDonutChart('breakdownActualChart', memberData, 'actual', members, totalAct);
                 }
-            }, 0);
+            }, 100);
 
             modal.style.display = 'flex';
         }
@@ -13095,14 +13092,24 @@
 
                             html += '<div style="margin-bottom: 12px;">';
                             html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${year}年${parseInt(monthNum)}月</div>`;
-                            html += '<div style="display: flex; gap: 5px; align-items: center;">';
-                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 24px; position: relative;">`;
+                            html += '<div style="display: flex; gap: 10px;">';
+                            html += '<div style="flex: 1;">';
+                            html += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
+                            html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">見積</span>';
+                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
                             html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
                             html += '</div>';
-                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 24px;">`;
+                            html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
+                            html += '</div>';
+                            html += '<div style="display: flex; align-items: center; gap: 5px;">';
+                            html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">実績</span>';
+                            html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
                             html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
                             html += '</div>';
-                            html += `<div style="min-width: 80px; text-align: right; font-size: 13px; color: #495057;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+                            html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
+                            html += '</div>';
+                            html += '</div>';
+                            html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
                             html += '</div></div>';
                         });
 
@@ -13265,7 +13272,7 @@
                             chartData.members.forEach((member, index) => {
                                 drawMemberDonutChart(member, index, chartData.filteredEstimates, chartData.filteredActuals);
                             });
-                        }, 100);
+                        }, 200);
                     }
                 }
 
