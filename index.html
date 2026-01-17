@@ -11899,7 +11899,13 @@
             }
         }
 
-        // モーダル外をクリック/タップで閉じる
+        // モーダル外をクリック/タップで閉じる（ドラッグ対応）
+        let mouseDownTarget = null;
+
+        function handleMouseDown(event) {
+            mouseDownTarget = event.target;
+        }
+
         function handleModalClose(event) {
             const workModal = document.getElementById('workModal');
             const editActualModal = document.getElementById('editActualModal');
@@ -11907,33 +11913,46 @@
             const splitEstimateModal = document.getElementById('splitEstimateModal');
             const otherWorkModal = document.getElementById('otherWorkModal');
 
-            if (event.target === workModal) {
+            // mousedownとmouseup/touchendの両方がモーダル外の場合のみ閉じる
+            // これにより、入力欄内でドラッグしてもモーダルが閉じなくなる
+            const isMouseDownOnModal = mouseDownTarget === workModal ||
+                                       mouseDownTarget === editActualModal ||
+                                       mouseDownTarget === editEstimateModal ||
+                                       mouseDownTarget === splitEstimateModal ||
+                                       mouseDownTarget === otherWorkModal;
+
+            if (event.target === workModal && isMouseDownOnModal) {
                 event.stopPropagation();
                 event.preventDefault();
                 closeWorkModal();
             }
-            if (event.target === editActualModal) {
+            if (event.target === editActualModal && isMouseDownOnModal) {
                 event.stopPropagation();
                 event.preventDefault();
                 closeEditActualModal();
             }
-            if (event.target === editEstimateModal) {
+            if (event.target === editEstimateModal && isMouseDownOnModal) {
                 event.stopPropagation();
                 event.preventDefault();
                 closeEditEstimateModal();
             }
-            if (event.target === splitEstimateModal) {
+            if (event.target === splitEstimateModal && isMouseDownOnModal) {
                 event.stopPropagation();
                 event.preventDefault();
                 closeSplitEstimateModal();
             }
-            if (event.target === otherWorkModal) {
+            if (event.target === otherWorkModal && isMouseDownOnModal) {
                 event.stopPropagation();
                 event.preventDefault();
                 closeOtherWorkModal();
             }
+
+            // リセット
+            mouseDownTarget = null;
         }
-        
+
+        window.onmousedown = handleMouseDown;
+        window.ontouchstart = handleMouseDown;
         window.onclick = handleModalClose;
         window.ontouchend = handleModalClose;
 
