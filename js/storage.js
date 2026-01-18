@@ -1,0 +1,474 @@
+// ============================================
+// localStorage・バックアップ機能
+// ============================================
+
+import {
+    estimates, setEstimates,
+    actuals, setActuals,
+    companyHolidays, setCompanyHolidays,
+    vacations, setVacations,
+    remainingEstimates, setRemainingEstimates,
+    setNextCompanyHolidayId, setNextVacationId,
+    showMonthColorsSetting, setShowMonthColorsSetting,
+    showDeviationColorsSetting, setShowDeviationColorsSetting,
+    showProgressBarsSetting, setShowProgressBarsSetting,
+    showProgressPercentageSetting, setShowProgressPercentageSetting,
+    progressBarStyle, setProgressBarStyle,
+    matrixEstActFormat, setMatrixEstActFormat,
+    matrixDayMonthFormat, setMatrixDayMonthFormat,
+    debugModeEnabled, setDebugModeEnabled,
+    selectedChartColorScheme
+} from './state.js';
+
+import { showAlert } from './utils.js';
+
+// ============================================
+// 自動バックアップ設定
+// ============================================
+
+export function loadAutoBackupSetting() {
+    const saved = localStorage.getItem('autoBackupEnabled');
+    window.autoBackupEnabled = saved === 'true';
+    const checkbox = document.getElementById('autoBackupEnabled');
+    if (checkbox) checkbox.checked = window.autoBackupEnabled;
+}
+
+export function saveAutoBackupSetting() {
+    const checkbox = document.getElementById('autoBackupEnabled');
+    if (checkbox) {
+        window.autoBackupEnabled = checkbox.checked;
+        localStorage.setItem('autoBackupEnabled', window.autoBackupEnabled);
+    }
+}
+
+// ============================================
+// データ保存・読み込み
+// ============================================
+
+export function saveData(skipAutoBackup = false) {
+    const data = {
+        estimates: estimates,
+        actuals: actuals,
+        companyHolidays: companyHolidays,
+        vacations: vacations,
+        settings: {
+            memberOrder: document.getElementById('memberOrder').value.trim(),
+            themeColor: window.currentThemeColor,
+            themePattern: window.currentThemePattern,
+            themeTabColor: window.currentTabColor,
+            autoBackup: window.autoBackupEnabled,
+            estimateLayout: window.estimateLayout,
+            actualLayout: window.actualLayout,
+            reportLayout: window.reportLayout,
+            showMonthColors: showMonthColorsSetting,
+            showDeviationColors: showDeviationColorsSetting,
+            showProgressBars: showProgressBarsSetting,
+            showProgressPercentage: showProgressPercentageSetting,
+            progressBarStyle: progressBarStyle,
+            matrixEstActFormat: matrixEstActFormat,
+            matrixDayMonthFormat: matrixDayMonthFormat,
+            defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
+            defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+            chartColorScheme: selectedChartColorScheme
+        }
+    };
+
+    localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
+    localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+    localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
+    localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
+    localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
+    localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
+
+    // 作業月選択肢を更新（window経由で呼び出し）
+    if (typeof window.updateWorkMonthOptions === 'function') {
+        window.updateWorkMonthOptions();
+    }
+
+    // 版数選択肢を更新
+    if (typeof window.updateVersionOptions === 'function') {
+        window.updateVersionOptions();
+    }
+
+    // 帳票名リストを更新
+    if (typeof window.updateFormNameOptions === 'function') {
+        window.updateFormNameOptions();
+    }
+
+    // 自動バックアップが有効な場合のみ実行
+    if (!skipAutoBackup && window.autoBackupEnabled) {
+        autoBackup();
+    }
+}
+
+export function loadData() {
+    const savedEstimates = localStorage.getItem('manhour_estimates');
+    const savedActuals = localStorage.getItem('manhour_actuals');
+    const savedCompanyHolidays = localStorage.getItem('manhour_companyHolidays');
+    const savedVacations = localStorage.getItem('manhour_vacations');
+    const savedRemainingEstimates = localStorage.getItem('manhour_remainingEstimates');
+    const savedSettings = localStorage.getItem('manhour_settings');
+
+    if (savedEstimates) setEstimates(JSON.parse(savedEstimates));
+    if (savedActuals) setActuals(JSON.parse(savedActuals));
+    if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
+    if (savedVacations) setVacations(JSON.parse(savedVacations));
+    if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
+
+    // 次のIDを設定
+    if (companyHolidays.length > 0) {
+        setNextCompanyHolidayId(Math.max(...companyHolidays.map(h => h.id)) + 1);
+    }
+    if (vacations.length > 0) {
+        setNextVacationId(Math.max(...vacations.map(v => v.id)) + 1);
+    }
+
+    // 設定を読み込み
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        if (settings.memberOrder) {
+            document.getElementById('memberOrder').value = settings.memberOrder;
+        }
+        if (settings.themeColor) window.currentThemeColor = settings.themeColor;
+        if (settings.themePattern) window.currentThemePattern = settings.themePattern;
+        if (settings.themeTabColor) window.currentTabColor = settings.themeTabColor;
+        if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
+        if (settings.estimateLayout) window.estimateLayout = settings.estimateLayout;
+        if (settings.actualLayout) window.actualLayout = settings.actualLayout;
+        if (settings.reportLayout) window.reportLayout = settings.reportLayout;
+        if (settings.showMonthColors !== undefined) {
+            setShowMonthColorsSetting(settings.showMonthColors);
+            const checkbox = document.getElementById('showMonthColorsCheckbox');
+            if (checkbox) checkbox.checked = showMonthColorsSetting;
+        }
+        // 乖離率背景色の設定を読み込み
+        if (settings.showDeviationColors !== undefined) {
+            setShowDeviationColorsSetting(settings.showDeviationColors);
+            const checkbox = document.getElementById('showDeviationColorsCheckbox');
+            if (checkbox) checkbox.checked = showDeviationColorsSetting;
+        }
+        // 進捗バー表示の設定を読み込み
+        if (settings.showProgressBars !== undefined) {
+            setShowProgressBarsSetting(settings.showProgressBars);
+            const checkbox = document.getElementById('showProgressBarsCheckbox');
+            if (checkbox) checkbox.checked = showProgressBarsSetting;
+        }
+        // 進捗バーのパーセンテージ表示の設定を読み込み
+        if (settings.showProgressPercentage !== undefined) {
+            setShowProgressPercentageSetting(settings.showProgressPercentage);
+            const checkbox = document.getElementById('showProgressPercentageCheckbox');
+            if (checkbox) checkbox.checked = showProgressPercentageSetting;
+        }
+        // 進捗バーのスタイル設定を読み込み
+        if (settings.progressBarStyle) {
+            setProgressBarStyle(settings.progressBarStyle);
+            const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${settings.progressBarStyle}"]`);
+            if (radioButton) radioButton.checked = true;
+        }
+        // 見積と実績の表示形式の設定を読み込み
+        if (settings.matrixEstActFormat) {
+            setMatrixEstActFormat(settings.matrixEstActFormat);
+            const radioButton = document.querySelector(`input[name="matrixEstActFormat"][value="${settings.matrixEstActFormat}"]`);
+            if (radioButton) radioButton.checked = true;
+        }
+        // 人日/人月表示形式の設定を読み込み
+        if (settings.matrixDayMonthFormat) {
+            setMatrixDayMonthFormat(settings.matrixDayMonthFormat);
+            const radioButton = document.querySelector(`input[name="matrixDayMonthFormat"][value="${settings.matrixDayMonthFormat}"]`);
+            if (radioButton) radioButton.checked = true;
+        }
+        // デフォルト表示形式の設定を読み込み
+        if (settings.defaultEstimateViewType) {
+            const estimateViewTypeSelect = document.getElementById('defaultEstimateViewType');
+            if (estimateViewTypeSelect) {
+                estimateViewTypeSelect.value = settings.defaultEstimateViewType;
+            }
+        }
+        if (settings.defaultReportViewType) {
+            const reportViewTypeSelect = document.getElementById('defaultReportViewType');
+            if (reportViewTypeSelect) {
+                reportViewTypeSelect.value = settings.defaultReportViewType;
+            }
+        }
+    } else {
+        // 旧形式の設定を読み込み（後方互換性）
+        const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
+        if (savedMemberOrder) {
+            document.getElementById('memberOrder').value = savedMemberOrder;
+        }
+    }
+
+    // レイアウト設定を適用（window経由で呼び出し）
+    if (typeof window.applyLayoutSettings === 'function') {
+        window.applyLayoutSettings();
+    }
+}
+
+// ============================================
+// バックアップ・復元
+// ============================================
+
+export function autoBackup() {
+    // 現在の設定を取得
+    const settings = {
+        themeColor: window.currentThemeColor,
+        themePattern: window.currentThemePattern,
+        themeTabColor: window.currentTabColor,
+        themeBackgroundColor: window.currentBackgroundColor,
+        estimateLayout: window.estimateLayout,
+        actualLayout: window.actualLayout,
+        reportLayout: window.reportLayout,
+        showMonthColors: showMonthColorsSetting,
+        showDeviationColors: showDeviationColorsSetting,
+        showProgressBars: showProgressBarsSetting,
+        showProgressPercentage: showProgressPercentageSetting,
+        progressBarStyle: progressBarStyle,
+        matrixEstActFormat: matrixEstActFormat,
+        matrixDayMonthFormat: matrixDayMonthFormat,
+        defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
+        defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+        chartColorScheme: selectedChartColorScheme,
+        memberOrder: document.getElementById('memberOrder').value.trim(),
+        stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
+        floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
+        debugModeEnabled: debugModeEnabled
+    };
+
+    const data = {
+        estimates: estimates,
+        actuals: actuals,
+        companyHolidays: companyHolidays,
+        vacations: vacations,
+        remainingEstimates: remainingEstimates,
+        settings: settings,
+        timestamp: new Date().toISOString(),
+        version: '1.0'
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    // ローカルタイムでファイル名を生成
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const second = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `${year}-${month}-${day}_${hour}-${minute}-${second}`;
+
+    a.href = url;
+    a.download = `工数管理_バックアップ_${timestamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+export function exportBackup() {
+    autoBackup();
+    showAlert('バックアップを作成しました', true);
+}
+
+export function importBackup() {
+    document.getElementById('fileInput').click();
+}
+
+export function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.json')) {
+        // JSONファイルの処理
+        const reader = new FileReader();
+        reader.onerror = function(e) {
+            console.error('ファイル読み込みエラー:', reader.error);
+            const message = debugModeEnabled
+                ? 'ファイルの読み込みに失敗しました: ' + reader.error.message
+                : 'ファイルの読み込みに失敗しました';
+            showAlert(message, false);
+        };
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+
+                if (confirm('現在のデータを復元したデータで上書きしますか？')) {
+                    setEstimates(data.estimates || []);
+                    setActuals(data.actuals || []);
+                    setCompanyHolidays(data.companyHolidays || []);
+                    setVacations(data.vacations || []);
+                    setRemainingEstimates(data.remainingEstimates || []);
+
+                    // 次のIDを設定
+                    if (companyHolidays.length > 0) {
+                        setNextCompanyHolidayId(Math.max(...companyHolidays.map(h => h.id)) + 1);
+                    }
+                    if (vacations.length > 0) {
+                        setNextVacationId(Math.max(...vacations.map(v => v.id)) + 1);
+                    }
+
+                    // 設定を復元
+                    if (data.settings) {
+                        // テーマ設定を復元
+                        if (data.settings.themeColor) {
+                            window.currentThemeColor = data.settings.themeColor;
+                            const el = document.getElementById('themeColor');
+                            if (el) el.value = data.settings.themeColor;
+                        }
+                        if (data.settings.themePattern) {
+                            window.currentThemePattern = data.settings.themePattern;
+                            const el = document.getElementById('themePattern');
+                            if (el) el.value = data.settings.themePattern;
+                        }
+                        if (data.settings.themeTabColor) {
+                            window.currentTabColor = data.settings.themeTabColor;
+                            const el = document.getElementById('themeTabColor');
+                            if (el) el.value = data.settings.themeTabColor;
+                        }
+                        if (data.settings.themeBackgroundColor) {
+                            window.currentBackgroundColor = data.settings.themeBackgroundColor;
+                            const el = document.getElementById('themeBackgroundColor');
+                            if (el) el.value = data.settings.themeBackgroundColor;
+                        }
+
+                        // レイアウト設定を復元
+                        if (data.settings.estimateLayout) window.estimateLayout = data.settings.estimateLayout;
+                        if (data.settings.actualLayout) window.actualLayout = data.settings.actualLayout;
+                        if (data.settings.reportLayout) window.reportLayout = data.settings.reportLayout;
+
+                        // 月色分け設定を復元
+                        if (data.settings.showMonthColors !== undefined) {
+                            setShowMonthColorsSetting(data.settings.showMonthColors);
+                            const checkbox = document.getElementById('showMonthColorsCheckbox');
+                            if (checkbox) checkbox.checked = data.settings.showMonthColors;
+                        }
+
+                        // 乖離率背景色設定を復元
+                        if (data.settings.showDeviationColors !== undefined) {
+                            setShowDeviationColorsSetting(data.settings.showDeviationColors);
+                            const checkbox = document.getElementById('showDeviationColorsCheckbox');
+                            if (checkbox) checkbox.checked = data.settings.showDeviationColors;
+                        }
+
+                        // 進捗バー表示設定を復元
+                        if (data.settings.showProgressBars !== undefined) {
+                            setShowProgressBarsSetting(data.settings.showProgressBars);
+                            const checkbox = document.getElementById('showProgressBarsCheckbox');
+                            if (checkbox) checkbox.checked = data.settings.showProgressBars;
+                        }
+
+                        // 進捗バーのパーセンテージ表示設定を復元
+                        if (data.settings.showProgressPercentage !== undefined) {
+                            setShowProgressPercentageSetting(data.settings.showProgressPercentage);
+                            const checkbox = document.getElementById('showProgressPercentageCheckbox');
+                            if (checkbox) checkbox.checked = data.settings.showProgressPercentage;
+                        }
+
+                        // 進捗バーのスタイル設定を復元
+                        if (data.settings.progressBarStyle) {
+                            setProgressBarStyle(data.settings.progressBarStyle);
+                            const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${data.settings.progressBarStyle}"]`);
+                            if (radioButton) radioButton.checked = true;
+                        }
+
+                        // デフォルト表示形式を復元
+                        if (data.settings.defaultEstimateViewType) {
+                            const select = document.getElementById('defaultEstimateViewType');
+                            if (select) select.value = data.settings.defaultEstimateViewType;
+                        }
+                        if (data.settings.defaultReportViewType) {
+                            const select = document.getElementById('defaultReportViewType');
+                            if (select) select.value = data.settings.defaultReportViewType;
+                        }
+
+                        // 担当者表示順を復元
+                        if (data.settings.memberOrder) {
+                            document.getElementById('memberOrder').value = data.settings.memberOrder;
+                        }
+
+                        // Stickyフィルタ設定を復元
+                        if (data.settings.stickyFilterEnabled !== undefined) {
+                            localStorage.setItem('stickyFilterEnabled', data.settings.stickyFilterEnabled);
+                            const checkbox = document.getElementById('stickyFilterEnabled');
+                            if (checkbox) checkbox.checked = data.settings.stickyFilterEnabled;
+                            if (data.settings.stickyFilterEnabled) {
+                                if (typeof window.enableStickyFilters === 'function') {
+                                    window.enableStickyFilters();
+                                }
+                            } else {
+                                if (typeof window.disableStickyFilters === 'function') {
+                                    window.disableStickyFilters();
+                                }
+                            }
+                        }
+
+                        // フローティングフィルタ設定を復元
+                        if (data.settings.floatingFilterEnabled !== undefined) {
+                            localStorage.setItem('floatingFilterEnabled', data.settings.floatingFilterEnabled);
+                            const checkbox = document.getElementById('floatingFilterEnabled');
+                            if (checkbox) checkbox.checked = data.settings.floatingFilterEnabled;
+                        }
+
+                        // デバッグモード設定を復元
+                        if (data.settings.debugModeEnabled !== undefined) {
+                            setDebugModeEnabled(data.settings.debugModeEnabled);
+                            localStorage.setItem('debugModeEnabled', debugModeEnabled);
+                            const checkbox = document.getElementById('debugModeEnabled');
+                            if (checkbox) checkbox.checked = debugModeEnabled;
+                        }
+                    } else if (data.memberOrder) {
+                        // 旧形式（settingsがない場合）の後方互換性
+                        document.getElementById('memberOrder').value = data.memberOrder;
+                    }
+
+                    saveData(true); // 復元時は自動バックアップをスキップ
+
+                    // テーマを適用
+                    if (typeof window.applyTheme === 'function') {
+                        window.applyTheme();
+                    }
+
+                    // レイアウトを適用
+                    if (typeof window.applyLayoutSettings === 'function') {
+                        window.applyLayoutSettings();
+                    }
+
+                    // UI更新
+                    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+                    if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+                    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+                    if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+                    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+                    if (typeof window.renderActualList === 'function') window.renderActualList();
+                    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+                    if (typeof window.updateReport === 'function') window.updateReport();
+                    if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+
+                    showAlert('データを復元しました', true);
+                }
+            } catch (error) {
+                console.error('ファイル読み込みエラー:', error);
+                const message = debugModeEnabled
+                    ? 'ファイルの読み込みに失敗しました: ' + error.message
+                    : 'ファイルの読み込みに失敗しました';
+                showAlert(message, false);
+            }
+        };
+        reader.readAsText(file);
+    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        // Excelファイルの処理（window経由で呼び出し）
+        if (typeof window.handleExcelImport === 'function') {
+            window.handleExcelImport(file);
+        } else {
+            alert('対応していないファイル形式です。JSON ファイルを選択してください。');
+        }
+    } else {
+        alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
+    }
+
+    event.target.value = '';
+}
+
+console.log('✅ モジュール storage.js loaded');

@@ -235,6 +235,26 @@ export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: tw
 export let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
 export let debugModeEnabled = false; // デバッグモード設定
 
+// 見積編集モード関連
+export let estimateEditMode = false; // 見積編集モード
+export let workMonthSelectionMode = false; // 作業月選択モード
+export const selectedEstimateIds = new Set(); // 選択された見積ID
+
+// テーマカラー関連
+export let currentThemeColor = 'purple';
+export let currentThemePattern = 'gradient';
+export let currentTabColor = 'purple';
+export let currentBackgroundColor = 'default';
+
+// レイアウト設定
+export let estimateLayout = 'compact';
+export let actualLayout = 'compact';
+export let reportLayout = 'compact';
+
+// 初回表示フラグ
+export let isEstimateTabFirstView = true;
+export let isReportTabFirstView = true;
+
 // ============================================
 // Setter関数（他のモジュールから変更可能にする）
 // ============================================
@@ -313,4 +333,48 @@ export function setMatrixDayMonthFormat(value) {
 
 export function setDebugModeEnabled(value) {
     debugModeEnabled = value;
+}
+
+export function setEstimateEditMode(value) {
+    estimateEditMode = value;
+}
+
+export function setWorkMonthSelectionMode(value) {
+    workMonthSelectionMode = value;
+}
+
+export function setCurrentThemeColor(value) {
+    currentThemeColor = value;
+}
+
+export function setCurrentThemePattern(value) {
+    currentThemePattern = value;
+}
+
+export function setCurrentTabColor(value) {
+    currentTabColor = value;
+}
+
+export function setCurrentBackgroundColor(value) {
+    currentBackgroundColor = value;
+}
+
+export function setEstimateLayout(value) {
+    estimateLayout = value;
+}
+
+export function setActualLayout(value) {
+    actualLayout = value;
+}
+
+export function setReportLayout(value) {
+    reportLayout = value;
+}
+
+export function setIsEstimateTabFirstView(value) {
+    isEstimateTabFirstView = value;
+}
+
+export function setIsReportTabFirstView(value) {
+    isReportTabFirstView = value;
 }
