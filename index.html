@@ -3928,9 +3928,9 @@
             // モジュール化された関数はwindow経由で呼び出す
             if (typeof window.loadAutoBackupSetting === 'function') window.loadAutoBackupSetting();
             if (typeof window.loadThemeSettings === 'function') window.loadThemeSettings();
-            loadReportSettings(); // まだモジュール化されていない
+            if (typeof window.loadReportSettings === 'function') window.loadReportSettings();
             if (typeof window.loadChartColorScheme === 'function') window.loadChartColorScheme();
-            loadDebugModeSetting(); // まだモジュール化されていない
+            if (typeof window.loadDebugModeSetting === 'function') window.loadDebugModeSetting();
             if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
             if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
             if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
@@ -3938,7 +3938,7 @@
             if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
             if (typeof window.updateVersionOptions === 'function') window.updateVersionOptions();
             if (typeof window.updateFormNameOptions === 'function') window.updateFormNameOptions();
-            updateQuickTaskList(); // まだモジュール化されていない
+            if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
             if (typeof window.updateWorkMonthOptions === 'function') window.updateWorkMonthOptions();
 
             // 見込残存時間入力モーダル: 外クリックで閉じる
@@ -3970,7 +3970,7 @@
             }
 
             // クイック入力の見積登録フォームを初期化
-            initQuickEstimateForm(); // まだモジュール化されていない
+            if (typeof window.initQuickEstimateForm === 'function') window.initQuickEstimateForm();
 
             // 各タブのデフォルト月を設定
             if (typeof window.setDefaultEstimateMonth === 'function') window.setDefaultEstimateMonth();

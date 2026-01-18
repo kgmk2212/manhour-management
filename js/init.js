@@ -11,6 +11,8 @@ import * as UI from './ui.js';
 import * as Theme from './theme.js';
 import * as Estimate from './estimate.js';
 import * as Actual from './actual.js';
+import * as Quick from './quick.js';
+import * as Report from './report.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -230,6 +232,26 @@ window.reportLayout = State.reportLayout;
 window.isEstimateTabFirstView = State.isEstimateTabFirstView;
 window.isReportTabFirstView = State.isReportTabFirstView;
 
+// quick.js の関数
+window.updateQuickTaskList = Quick.updateQuickTaskList;
+window.updateQuickMemberSelect = Quick.updateQuickMemberSelect;
+window.handleMemberChange = Quick.handleMemberChange;
+window.showQuickTaskDropdown = Quick.showQuickTaskDropdown;
+window.hideQuickTaskDropdown = Quick.hideQuickTaskDropdown;
+window.clearQuickTaskSelection = Quick.clearQuickTaskSelection;
+window.filterQuickTaskList = Quick.filterQuickTaskList;
+window.selectQuickTask = Quick.selectQuickTask;
+window.quickAddActual = Quick.quickAddActual;
+window.switchQuickInputMode = Quick.switchQuickInputMode;
+window.initQuickEstimateForm = Quick.initQuickEstimateForm;
+window.initQuickTaskDropdownHandler = Quick.initQuickTaskDropdownHandler;
+
+// report.js の関数
+window.loadReportSettings = Report.loadReportSettings;
+window.saveReportSettings = Report.saveReportSettings;
+window.loadDebugModeSetting = Report.loadDebugModeSetting;
+window.saveDebugModeSetting = Report.saveDebugModeSetting;
+
 // ============================================
 // 初期化処理
 // ============================================
@@ -251,4 +273,4 @@ console.log('✅ init.js: データロード完了', {
     actuals: State.actuals.length
 });
 
-console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual)');
+console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report)');
