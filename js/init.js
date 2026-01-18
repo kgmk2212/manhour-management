@@ -231,7 +231,24 @@ window.isEstimateTabFirstView = State.isEstimateTabFirstView;
 window.isReportTabFirstView = State.isReportTabFirstView;
 
 // ============================================
-// 初期化処理はindex.html内のDOMContentLoadedで実行
+// 初期化処理
 // ============================================
+
+// ESモジュールはHTMLパース完了後に実行されるため、
+// モジュールレベルでloadDataを呼び出してデータをロードする
+// これにより、index.html内のDOMContentLoadedリスナーより先にデータがロードされる
+Storage.loadData();
+
+// loadData後に配列参照が変わるため、window変数を再設定
+window.estimates = State.estimates;
+window.actuals = State.actuals;
+window.companyHolidays = State.companyHolidays;
+window.vacations = State.vacations;
+window.remainingEstimates = State.remainingEstimates;
+
+console.log('✅ init.js: データロード完了', {
+    estimates: State.estimates.length,
+    actuals: State.actuals.length
+});
 
 console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual)');

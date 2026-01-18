@@ -1788,7 +1788,7 @@
                 <h2>見積一覧</h2>
 
                 <!-- 合計工数表示 -->
-                <div id="estimateTotalCard" style="color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div id="estimateTotalCard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <div>
                             <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">合計工数</div>
@@ -3917,21 +3917,29 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            loadAutoBackupSetting(); // 自動バックアップ設定を読み込み
-            loadThemeSettings(); // テーマ設定を読み込み
-            loadReportSettings(); // レポート分析設定を読み込み
-            loadChartColorScheme(); // グラフカラースキームを読み込み
-            loadDebugModeSetting(); // デバッグモード設定を読み込み
-            updateMonthOptions();
-            updateEstimateMonthOptions(); // 見積一覧の月選択肢を更新
-            updateEstimateVersionOptions(); // 見積一覧の版数選択肢を更新
-            updateActualMonthOptions();
-            updateMemberOptions();
-            updateVersionOptions(); // 版数選択肢を更新
-            updateFormNameOptions(); // 帳票名リストを更新
-            updateQuickTaskList();
-            updateWorkMonthOptions(); // 作業月選択肢を更新
+            // init.jsでモジュール版のloadDataが呼ばれ、データがState.jsにロードされている
+            // ローカル変数をwindow変数（モジュール版のデータ）で更新
+            estimates = window.estimates || [];
+            actuals = window.actuals || [];
+            companyHolidays = window.companyHolidays || [];
+            vacations = window.vacations || [];
+            remainingEstimates = window.remainingEstimates || [];
+
+            // モジュール化された関数はwindow経由で呼び出す
+            if (typeof window.loadAutoBackupSetting === 'function') window.loadAutoBackupSetting();
+            if (typeof window.loadThemeSettings === 'function') window.loadThemeSettings();
+            loadReportSettings(); // まだモジュール化されていない
+            if (typeof window.loadChartColorScheme === 'function') window.loadChartColorScheme();
+            loadDebugModeSetting(); // まだモジュール化されていない
+            if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+            if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
+            if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+            if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+            if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+            if (typeof window.updateVersionOptions === 'function') window.updateVersionOptions();
+            if (typeof window.updateFormNameOptions === 'function') window.updateFormNameOptions();
+            updateQuickTaskList(); // まだモジュール化されていない
+            if (typeof window.updateWorkMonthOptions === 'function') window.updateWorkMonthOptions();
 
             // 見込残存時間入力モーダル: 外クリックで閉じる
             const remainingHoursModal = document.getElementById('remainingHoursModal');
@@ -3947,39 +3955,42 @@
             const filterTypeElement = document.getElementById('estimateFilterType');
             if (filterTypeElement) {
                 filterTypeElement.value = 'version';
-                setEstimateFilterType('version');
+                if (typeof window.setEstimateFilterType === 'function') {
+                    window.setEstimateFilterType('version');
+                }
 
                 // レポートのフィルタタイプも同期
                 const reportFilterType = document.getElementById('reportFilterType');
                 if (reportFilterType) {
                     reportFilterType.value = 'version';
-                    // フィルタタイプ変更ハンドラーを呼び出してUIを更新
-                    handleReportFilterTypeChange();
+                    if (typeof window.handleReportFilterTypeChange === 'function') {
+                        window.handleReportFilterTypeChange();
+                    }
                 }
             }
 
             // クイック入力の見積登録フォームを初期化
-            initQuickEstimateForm();
+            initQuickEstimateForm(); // まだモジュール化されていない
 
             // 各タブのデフォルト月を設定
-            setDefaultEstimateMonth(); // 見積タブ
-            setDefaultActualMonth(); // 実績タブ
-            setDefaultReportMonth(); // レポートタブ
+            if (typeof window.setDefaultEstimateMonth === 'function') window.setDefaultEstimateMonth();
+            if (typeof window.setDefaultActualMonth === 'function') window.setDefaultActualMonth();
+            if (typeof window.setDefaultReportMonth === 'function') window.setDefaultReportMonth();
 
-            renderEstimateList();
-            renderActualList();
-            renderTodayActuals();
-            updateReport();
-            renderCompanyHolidayList();
+            if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+            if (typeof window.renderActualList === 'function') window.renderActualList();
+            if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+            updateReport(); // まだモジュール化されていない
+            if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
 
             // セグメントボタンの初期色をテーマカラーに設定
-            updateSegmentedButtons();
+            if (typeof window.updateSegmentedButtons === 'function') window.updateSegmentedButtons();
 
             // モバイルでタブのスワイプ切り替え機能を追加
-            initTabSwipe();
+            if (typeof window.initTabSwipe === 'function') window.initTabSwipe();
 
             // モーダルのクリックハンドラーをセットアップ
-            setupModalHandlers();
+            setupModalHandlers(); // まだモジュール化されていない
         });
 
         // モーダルのクリック・ドラッグハンドラーをセットアップ
