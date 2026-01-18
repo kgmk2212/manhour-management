@@ -251,6 +251,19 @@ window.loadReportSettings = Report.loadReportSettings;
 window.saveReportSettings = Report.saveReportSettings;
 window.loadDebugModeSetting = Report.loadDebugModeSetting;
 window.saveDebugModeSetting = Report.saveDebugModeSetting;
+window.calculateProgress = Report.calculateProgress;
+window.calculateVersionProgress = Report.calculateVersionProgress;
+window.createProgressBar = Report.createProgressBar;
+window.createStatusBadge = Report.createStatusBadge;
+window.updateProgressReport = Report.updateProgressReport;
+window.updateProgressVersionOptions = Report.updateProgressVersionOptions;
+window.renderProgressSummaryCards = Report.renderProgressSummaryCards;
+window.renderProgressDetailTable = Report.renderProgressDetailTable;
+window.openBulkRemainingModal = Report.openBulkRemainingModal;
+window.closeBulkRemainingModal = Report.closeBulkRemainingModal;
+window.renderBulkRemainingTable = Report.renderBulkRemainingTable;
+window.updateBulkRowStatus = Report.updateBulkRowStatus;
+window.saveBulkRemaining = Report.saveBulkRemaining;
 
 // ============================================
 // 初期化処理
