@@ -264,6 +264,16 @@ window.closeBulkRemainingModal = Report.closeBulkRemainingModal;
 window.renderBulkRemainingTable = Report.renderBulkRemainingTable;
 window.updateBulkRowStatus = Report.updateBulkRowStatus;
 window.saveBulkRemaining = Report.saveBulkRemaining;
+window.togglePhaseCollapse = Report.togglePhaseCollapse;
+window.getProgressColor = Report.getProgressColor;
+window.generateProgressBar = Report.generateProgressBar;
+window.getAnalysisGradients = Report.getAnalysisGradients;
+window.updateReport = Report.updateReport;
+window.renderReportAnalytics = Report.renderReportAnalytics;
+window.renderMemberReport = Report.renderMemberReport;
+window.renderVersionReport = Report.renderVersionReport;
+window.renderReportGrouped = Report.renderReportGrouped;
+window.renderReportMatrix = Report.renderReportMatrix;
 
 // ============================================
 // 初期化処理
