@@ -11958,7 +11958,8 @@
                 button.value = item.value;
 
                 // 選択状態のスタイル（activeクラスで管理）
-                if (item.value === currentValue) {
+                // 型を統一して比較（両方とも文字列に変換）
+                if (String(item.value) === String(currentValue)) {
                     button.classList.add('active');
                 }
 
@@ -11974,7 +11975,8 @@
 
             const buttons = container.querySelectorAll('button');
             buttons.forEach(btn => {
-                if (btn.value === value) {
+                // 型を統一して比較（両方とも文字列に変換）
+                if (String(btn.value) === String(value)) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
@@ -15816,7 +15818,8 @@
                         e.stopPropagation();
                         syncFloatingMonthFilter(option.value);
                     };
-                    if (option.value === currentValue) {
+                    // 型を統一して比較（両方とも文字列に変換）
+                    if (String(option.value) === String(currentValue)) {
                         btn.classList.add('active');
                     }
                     floatingMonthButtons.appendChild(btn);
@@ -15838,7 +15841,8 @@
                         e.stopPropagation();
                         syncFloatingVersionFilter(option.value);
                     };
-                    if (option.value === currentValue) {
+                    // 型を統一して比較（両方とも文字列に変換）
+                    if (String(option.value) === String(currentValue)) {
                         btn.classList.add('active');
                     }
                     floatingVersionButtons.appendChild(btn);
