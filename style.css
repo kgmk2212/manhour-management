@@ -15,7 +15,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
         }
 
@@ -115,7 +115,8 @@
             font-size: 13px;
         }
 
-        input:not([type="radio"]):not([type="checkbox"]), select {
+        input:not([type="radio"]):not([type="checkbox"]),
+        select {
             width: 100%;
             padding: 8px 10px;
             border: 2px solid #ddd;
@@ -123,7 +124,8 @@
             font-size: 14px;
         }
 
-        input[type="radio"], input[type="checkbox"] {
+        input[type="radio"],
+        input[type="checkbox"] {
             width: auto;
             padding: 0;
             margin: 0;
@@ -223,7 +225,8 @@
                 white-space: normal;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
-                max-width: 14vw; /* 画面幅の14% (16%→14%) */
+                max-width: 14vw;
+                /* 画面幅の14% (16%→14%) */
             }
 
             table tr td:first-child {
@@ -235,6 +238,7 @@
 
         /* モバイル用の固定列の幅制限 */
         @media (max-width: 768px) {
+
             /* 日別合計列を非表示にしてスペースを節約 */
             .daily-total {
                 display: none !important;
@@ -248,20 +252,23 @@
             }
 
             table td[rowspan] {
-                max-width: 16vw; /* 画面幅の16% (18%→16%) */
+                max-width: 16vw;
+                /* 画面幅の16% (18%→16%) */
                 padding: 6px 4px;
             }
 
             table tr td:first-child,
             table tr th:first-child {
                 max-width: 16vw;
-                min-width: 70px !important; /* 固定列の最小幅を70pxに制限 (80→70) */
+                min-width: 70px !important;
+                /* 固定列の最小幅を70pxに制限 (80→70) */
                 padding: 6px 4px;
             }
         }
 
         /* 小型モバイル */
         @media (max-width: 480px) {
+
             /* パディングをさらに縮小 */
             table th,
             table td {
@@ -269,14 +276,16 @@
             }
 
             table td[rowspan] {
-                max-width: 20vw; /* 画面幅の20% (25%→20%) */
+                max-width: 20vw;
+                /* 画面幅の20% (25%→20%) */
                 padding: 4px 3px;
             }
 
             table tr td:first-child,
             table tr th:first-child {
                 max-width: 20vw;
-                min-width: 60px !important; /* 固定列の最小幅を60pxに制限 (70→60) */
+                min-width: 60px !important;
+                /* 固定列の最小幅を60pxに制限 (70→60) */
                 padding: 4px 3px;
             }
 
@@ -301,7 +310,7 @@
 
             /* フォントサイズを全体的に縮小 */
             h3 {
-                font-size: 14px !important;
+                font-size: 15px !important;
                 margin-bottom: 8px !important;
             }
         }
@@ -343,6 +352,7 @@
         .holiday-inline {
             display: inline;
         }
+
         .holiday-break {
             display: none;
         }
@@ -352,6 +362,7 @@
             .holiday-inline {
                 display: none;
             }
+
             .holiday-break {
                 display: inline;
             }
@@ -362,6 +373,7 @@
         .task-separator-inline {
             display: inline;
         }
+
         .task-separator-break {
             display: none;
         }
@@ -371,6 +383,7 @@
             .task-separator-inline {
                 display: none;
             }
+
             .task-separator-break {
                 display: inline;
             }
@@ -403,7 +416,7 @@
             border-radius: 6px;
             max-height: 300px;
             overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 100;
             margin-top: 4px;
         }
@@ -503,17 +516,49 @@
         }
 
         /* モーダル用テーマ色 */
-        .modal-theme-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .modal-theme-deep-blue { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
-        .modal-theme-teal { background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); }
-        .modal-theme-cyan { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
-        .modal-theme-ocean { background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%); }
-        .modal-theme-sky { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); }
-        .modal-theme-indigo { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
-        .modal-theme-navy { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
-        .modal-theme-slate { background: linear-gradient(135deg, #334155 0%, #475569 100%); }
-        .modal-theme-green { background: linear-gradient(135deg, #047857 0%, #10b981 100%); }
-        .modal-theme-emerald { background: linear-gradient(135deg, #059669 0%, #34d399 100%); }
+        .modal-theme-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .modal-theme-deep-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .modal-theme-teal {
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        }
+
+        .modal-theme-cyan {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        }
+
+        .modal-theme-ocean {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+        }
+
+        .modal-theme-sky {
+            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+        }
+
+        .modal-theme-indigo {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+        }
+
+        .modal-theme-navy {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .modal-theme-slate {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        }
+
+        .modal-theme-green {
+            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+        }
+
+        .modal-theme-emerald {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+        }
 
         .modal-header h3 {
             margin: 0;
@@ -587,8 +632,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideIn {
@@ -596,6 +646,7 @@
                 transform: translateY(-50px);
                 opacity: 0;
             }
+
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -609,11 +660,30 @@
             font-weight: 600;
         }
 
-        .badge-ui { background: #e3f2fd; color: #1976d2; }
-        .badge-pg { background: #f3e5f5; color: #7b1fa2; }
-        .badge-pt { background: #fff3e0; color: #f57c00; }
-        .badge-it { background: #e8f5e9; color: #388e3c; }
-        .badge-st { background: #fce4ec; color: #c2185b; }
+        .badge-ui {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-pg {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-pt {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-it {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .badge-st {
+            background: #fce4ec;
+            color: #c2185b;
+        }
 
         .stats-grid {
             display: grid;
@@ -629,7 +699,7 @@
         }
 
         .stat-card h3 {
-            font-size: 14px;
+            font-size: 15px;
             margin-bottom: 10px;
         }
 
@@ -651,21 +721,18 @@
                 border-radius: 8px;
             }
 
+            .stat-card .value {
+                font-size: 26px;
+                font-weight: 700;
+            }
+
             .stat-card h3 {
-                font-size: 11px;
+                font-size: 14px;
                 margin-bottom: 6px;
             }
 
-            .stat-card .value {
-                font-size: 22px;
-            }
-
-            .stat-card > div:last-child {
-                font-size: 10px !important;
-            }
-
             /* レポート分析パネルのモバイル最適化 */
-            #reportDetailView > div {
+            #reportDetailView>div {
                 margin: 15px 0 !important;
                 padding: 15px !important;
             }
@@ -710,7 +777,7 @@
             }
 
             /* クイック入力の3列グリッドをモバイルでは1列に */
-            .quick-form > div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+            .quick-form>div[style*="grid-template-columns: 1fr 1fr 1fr"] {
                 grid-template-columns: 1fr !important;
             }
 
@@ -862,11 +929,11 @@
             }
 
             /* 対応合計のフォントサイズを縮小 - グループ表示専用 */
-            table.estimate-grouped td[rowspan] > div:first-child {
+            table.estimate-grouped td[rowspan]>div:first-child {
                 font-size: 14px !important;
             }
 
-            table.estimate-grouped td[rowspan] > div:last-child {
+            table.estimate-grouped td[rowspan]>div:last-child {
                 font-size: 10px !important;
             }
 
@@ -908,13 +975,13 @@
             }
 
             /* 作業月割り当てモードのモバイル対応 */
-            #workMonthAssignmentMode > div {
+            #workMonthAssignmentMode>div {
                 flex-direction: column;
                 align-items: stretch !important;
             }
 
-            #workMonthAssignmentMode > div > div,
-            #workMonthAssignmentMode > div > button {
+            #workMonthAssignmentMode>div>div,
+            #workMonthAssignmentMode>div>button {
                 width: 100%;
             }
 
@@ -924,43 +991,109 @@
                 text-align: center;
             }
         }
-        
+
         /* テーマカラー用CSS */
         .theme-bg {
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
-        
+
         /* 色の定義 */
-        .theme-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .theme-deep-blue { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
-        .theme-teal { background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); }
-        .theme-cyan { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
-        .theme-ocean { background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%); }
-        .theme-sky { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); }
-        .theme-indigo { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
-        .theme-navy { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
-        .theme-slate { background: linear-gradient(135deg, #334155 0%, #475569 100%); }
-        .theme-green { background: linear-gradient(135deg, #047857 0%, #10b981 100%); }
-        .theme-emerald { background: linear-gradient(135deg, #059669 0%, #34d399 100%); }
-        
+        .theme-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .theme-deep-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .theme-teal {
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        }
+
+        .theme-cyan {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        }
+
+        .theme-ocean {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+        }
+
+        .theme-sky {
+            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+        }
+
+        .theme-indigo {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+        }
+
+        .theme-navy {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .theme-slate {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        }
+
+        .theme-green {
+            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+        }
+
+        .theme-emerald {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+        }
+
         /* タブ用の色クラス（模様なし、position/overflowなし） */
-        .tab-theme-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .tab-theme-deep-blue { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
-        .tab-theme-teal { background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); }
-        .tab-theme-cyan { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
-        .tab-theme-ocean { background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%); }
-        .tab-theme-sky { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); }
-        .tab-theme-indigo { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
-        .tab-theme-navy { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
-        .tab-theme-slate { background: linear-gradient(135deg, #334155 0%, #475569 100%); }
-        .tab-theme-green { background: linear-gradient(135deg, #047857 0%, #10b981 100%); }
-        .tab-theme-emerald { background: linear-gradient(135deg, #059669 0%, #34d399 100%); }
-        
+        .tab-theme-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-theme-deep-blue {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .tab-theme-teal {
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        }
+
+        .tab-theme-cyan {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        }
+
+        .tab-theme-ocean {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+        }
+
+        .tab-theme-sky {
+            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+        }
+
+        .tab-theme-indigo {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+        }
+
+        .tab-theme-navy {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .tab-theme-slate {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        }
+
+        .tab-theme-green {
+            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+        }
+
+        .tab-theme-emerald {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+        }
+
         /* グロー効果 */
-        .theme-cyan.pattern-glow { box-shadow: 0 4px 20px rgba(8, 145, 178, 0.3); }
-        
+        .theme-cyan.pattern-glow {
+            box-shadow: 0 4px 20px rgba(8, 145, 178, 0.3);
+        }
+
         /* 模様の定義 */
         .theme-bg.pattern-wave::before {
             content: '';
@@ -969,11 +1102,11 @@
             right: -5%;
             width: 150px;
             height: 150px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 50%;
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-wave::after {
             content: '';
             position: absolute;
@@ -981,11 +1114,11 @@
             left: -5%;
             width: 100px;
             height: 100px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 50%;
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-stripe::after {
             content: '';
             position: absolute;
@@ -993,10 +1126,10 @@
             right: 0;
             bottom: 0;
             width: 3px;
-            background: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.25);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-corner::before {
             content: '';
             position: absolute;
@@ -1004,11 +1137,11 @@
             right: 0;
             width: 60px;
             height: 60px;
-            background: rgba(255,255,255,0.12);
+            background: rgba(255, 255, 255, 0.12);
             border-radius: 0 10px 0 100%;
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-dot::before {
             content: '';
             position: absolute;
@@ -1016,11 +1149,11 @@
             right: 20px;
             width: 10px;
             height: 10px;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-dots::before {
             content: '';
             position: absolute;
@@ -1028,12 +1161,12 @@
             right: 20px;
             width: 8px;
             height: 8px;
-            background: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.25);
             border-radius: 50%;
-            box-shadow: 18px 0 0 rgba(255,255,255,0.25), 36px 0 0 rgba(255,255,255,0.25);
+            box-shadow: 18px 0 0 rgba(255, 255, 255, 0.25), 36px 0 0 rgba(255, 255, 255, 0.25);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-diagonal::before {
             content: '';
             position: absolute;
@@ -1041,11 +1174,11 @@
             right: 40px;
             width: 80px;
             height: 150%;
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             transform: skewX(-15deg);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-circle::before {
             content: '';
             position: absolute;
@@ -1053,12 +1186,12 @@
             right: -30px;
             width: 80px;
             height: 80px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 50%;
             transform: translateY(-50%);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-layer::before {
             content: '';
             position: absolute;
@@ -1066,11 +1199,11 @@
             right: -60px;
             width: 180px;
             height: 100%;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 100%);
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 100%);
             transform: skewX(-20deg);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-line::after {
             content: '';
             position: absolute;
@@ -1078,18 +1211,18 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
             pointer-events: none;
         }
-        
+
         .theme-bg.pattern-bar {
-            border-left: 3px solid rgba(255,255,255,0.35);
+            border-left: 3px solid rgba(255, 255, 255, 0.35);
         }
-        
+
         .theme-bg.pattern-border {
-            border-top: 2px solid rgba(255,255,255,0.25);
+            border-top: 2px solid rgba(255, 255, 255, 0.25);
         }
-        
+
         .theme-bg.pattern-glow::after {
             content: '';
             position: absolute;
@@ -1097,19 +1230,20 @@
             right: -10%;
             width: 200px;
             height: 200px;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
             pointer-events: none;
         }
-        
+
         /* 作業月表示 */
         /* PC・モバイル共通: 次の行に表示 */
         .work-month-inline {
             display: none;
         }
+
         .work-month-block {
             display: block;
         }
-        
+
         /* その他作業モーダル用スタイル */
         .other-work-tab {
             padding: 10px 20px;
@@ -1121,17 +1255,17 @@
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
         }
-        
+
         .other-work-tab.active {
             color: #3498db;
             border-bottom-color: #3498db;
             font-weight: 600;
         }
-        
+
         .other-work-tab:hover {
             color: #3498db;
         }
-        
+
         .other-work-form {
             animation: fadeIn 0.3s;
         }
@@ -1203,7 +1337,7 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             padding: 10px 15px;
             margin: 0;
         }
@@ -1228,9 +1362,10 @@
             background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
             border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             cursor: pointer;
-            display: none; /* レポートタブでのみ表示 */
+            display: none;
+            /* レポートタブでのみ表示 */
             align-items: center;
             justify-content: center;
             font-size: 24px;
@@ -1241,7 +1376,7 @@
 
         .floating-filter-toggle:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
             opacity: 1;
         }
 
@@ -1257,7 +1392,7 @@
             max-height: 70vh;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             z-index: 1099;
             display: none;
             overflow: hidden;
@@ -1273,6 +1408,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
