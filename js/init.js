@@ -13,6 +13,10 @@ import * as Estimate from './estimate.js';
 import * as Actual from './actual.js';
 import * as Quick from './quick.js';
 import * as Report from './report.js';
+import * as EstimateAdd from './estimate-add.js';
+import * as OtherWork from './other-work.js';
+import * as FloatingFilter from './floating-filter.js';
+import * as Modal from './modal.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -246,6 +250,59 @@ window.switchQuickInputMode = Quick.switchQuickInputMode;
 window.initQuickEstimateForm = Quick.initQuickEstimateForm;
 window.initQuickTaskDropdownHandler = Quick.initQuickTaskDropdownHandler;
 
+// estimate-add.js の関数
+window.openAddEstimateModal = EstimateAdd.openAddEstimateModal;
+window.closeAddEstimateModal = EstimateAdd.closeAddEstimateModal;
+window.autoFillMember = EstimateAdd.autoFillMember;
+window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
+window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
+window.switchAddEstMonthType = EstimateAdd.switchAddEstMonthType;
+window.updateAddEstimateTableHeader = EstimateAdd.updateAddEstimateTableHeader;
+window.updateDefaultAddProcessMonths = EstimateAdd.updateDefaultAddProcessMonths;
+window.toggleAddMonthSplit = EstimateAdd.toggleAddMonthSplit;
+window.updateAddEstimateTotals = EstimateAdd.updateAddEstimateTotals;
+window.updateAddMonthPreview = EstimateAdd.updateAddMonthPreview;
+window.checkAddMonthTotal = EstimateAdd.checkAddMonthTotal;
+window.addEstimateFromModal = EstimateAdd.addEstimateFromModal;
+window.addEstimateFromModalNormal = EstimateAdd.addEstimateFromModalNormal;
+window.addEstimateFromModalWithMonthSplit = EstimateAdd.addEstimateFromModalWithMonthSplit;
+
+// other-work.js の関数
+window.addMeeting = OtherWork.addMeeting;
+window.addOtherWork = OtherWork.addOtherWork;
+window.openOtherWorkModal = OtherWork.openOtherWorkModal;
+window.closeOtherWorkModal = OtherWork.closeOtherWorkModal;
+window.switchOtherWorkTab = OtherWork.switchOtherWorkTab;
+
+// floating-filter.js の関数
+window.saveStickyFilterSetting = FloatingFilter.saveStickyFilterSetting;
+window.loadStickyFilterSetting = FloatingFilter.loadStickyFilterSetting;
+window.enableStickyFilters = FloatingFilter.enableStickyFilters;
+window.disableStickyFilters = FloatingFilter.disableStickyFilters;
+window.initStickyFilters = FloatingFilter.initStickyFilters;
+window.saveFloatingFilterSetting = FloatingFilter.saveFloatingFilterSetting;
+window.loadFloatingFilterSetting = FloatingFilter.loadFloatingFilterSetting;
+window.showFloatingFilterButton = FloatingFilter.showFloatingFilterButton;
+window.hideFloatingFilterButton = FloatingFilter.hideFloatingFilterButton;
+window.toggleFloatingFilterPanel = FloatingFilter.toggleFloatingFilterPanel;
+window.syncFloatingFilters = FloatingFilter.syncFloatingFilters;
+window.setFloatingFilterType = FloatingFilter.setFloatingFilterType;
+window.setFloatingViewType = FloatingFilter.setFloatingViewType;
+window.syncFloatingMonthFilter = FloatingFilter.syncFloatingMonthFilter;
+window.syncFloatingVersionFilter = FloatingFilter.syncFloatingVersionFilter;
+window.initFloatingFilterEvents = FloatingFilter.initFloatingFilterEvents;
+
+// modal.js の関数
+window.showProcessBreakdown = Modal.showProcessBreakdown;
+window.drawBreakdownDonutChart = Modal.drawBreakdownDonutChart;
+window.closeProcessBreakdownModal = Modal.closeProcessBreakdownModal;
+window.openRemainingHoursModal = Modal.openRemainingHoursModal;
+window.updateRemainingHoursInput = Modal.updateRemainingHoursInput;
+window.updateRemainingHoursActualsList = Modal.updateRemainingHoursActualsList;
+window.closeRemainingHoursModal = Modal.closeRemainingHoursModal;
+window.saveRemainingHoursFromModal = Modal.saveRemainingHoursFromModal;
+window.setupModalHandlers = Modal.setupModalHandlers;
+
 // report.js の関数
 window.loadReportSettings = Report.loadReportSettings;
 window.saveReportSettings = Report.saveReportSettings;
@@ -296,4 +353,89 @@ console.log('✅ init.js: データロード完了', {
     actuals: State.actuals.length
 });
 
-console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report)');
+console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report, estimate-add, other-work, floating-filter, modal)');
+
+// ============================================
+// DOMContentLoaded 初期化処理
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ init.js: DOMContentLoaded イベント発火');
+
+    // 各種設定の読み込み
+    Storage.loadAutoBackupSetting();
+    Theme.loadThemeSettings();
+    Report.loadReportSettings();
+    Theme.loadChartColorScheme();
+    Report.loadDebugModeSetting();
+
+    // オプションの更新
+    UI.updateMonthOptions();
+    UI.updateEstimateMonthOptions();
+    UI.updateEstimateVersionOptions();
+    UI.updateActualMonthOptions();
+    UI.updateMemberOptions();
+    UI.updateVersionOptions();
+    UI.updateFormNameOptions();
+    Quick.updateQuickTaskList();
+    Estimate.updateWorkMonthOptions();
+
+    // 見込残存時間入力モーダル: 外クリックで閉じる
+    const remainingHoursModal = document.getElementById('remainingHoursModal');
+    if (remainingHoursModal) {
+        remainingHoursModal.addEventListener('click', function(event) {
+            if (event.target === remainingHoursModal) {
+                Modal.closeRemainingHoursModal();
+            }
+        });
+    }
+
+    // 見積一覧のデフォルトを版数別の最新版数に設定
+    const filterTypeElement = document.getElementById('estimateFilterType');
+    if (filterTypeElement) {
+        filterTypeElement.value = 'version';
+        UI.setEstimateFilterType('version');
+
+        // レポートのフィルタタイプも同期
+        const reportFilterType = document.getElementById('reportFilterType');
+        if (reportFilterType) {
+            reportFilterType.value = 'version';
+            UI.handleReportFilterTypeChange();
+        }
+    }
+
+    // クイック入力の見積登録フォームを初期化
+    Quick.initQuickEstimateForm();
+
+    // 各タブのデフォルト月を設定
+    UI.setDefaultEstimateMonth();
+    UI.setDefaultActualMonth();
+    UI.setDefaultReportMonth();
+
+    // 表示の更新
+    Estimate.renderEstimateList();
+    Actual.renderActualList();
+    Actual.renderTodayActuals();
+    Report.updateReport();
+    Vacation.renderCompanyHolidayList();
+
+    // セグメントボタンの初期色をテーマカラーに設定
+    UI.updateSegmentedButtons();
+
+    // モバイルでタブのスワイプ切り替え機能を追加
+    UI.initTabSwipe();
+
+    // モーダルのクリックハンドラーをセットアップ
+    Modal.setupModalHandlers();
+
+    // Stickyフィルタの初期化
+    FloatingFilter.initStickyFilters();
+
+    // フローティングフィルタ設定を読み込み
+    FloatingFilter.loadFloatingFilterSetting();
+
+    // フローティングフィルタイベントの初期化
+    FloatingFilter.initFloatingFilterEvents();
+
+    console.log('✅ init.js: 初期化処理完了');
+});
