@@ -17,6 +17,9 @@ import * as EstimateAdd from './estimate-add.js';
 import * as OtherWork from './other-work.js';
 import * as FloatingFilter from './floating-filter.js';
 import * as Modal from './modal.js';
+import * as EstimateEdit from './estimate-edit.js';
+import * as EstimateSelection from './estimate-selection.js';
+import * as EstimateSplit from './estimate-split.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -168,33 +171,39 @@ window.renderEstimateMatrix = Estimate.renderEstimateMatrix;
 window.renderEstimateDetailList = Estimate.renderEstimateDetailList;
 window.deleteEstimate = Estimate.deleteEstimate;
 window.deleteTask = Estimate.deleteTask;
-window.editEstimate = Estimate.editEstimate;
-window.closeEditEstimateModal = Estimate.closeEditEstimateModal;
-window.saveEstimateEdit = Estimate.saveEstimateEdit;
-window.toggleEditWorkMonthMode = Estimate.toggleEditWorkMonthMode;
-window.updateEditMonthPreview = Estimate.updateEditMonthPreview;
-window.updateEditManualTotal = Estimate.updateEditManualTotal;
-window.editTask = Estimate.editTask;
-window.closeEditTaskModal = Estimate.closeEditTaskModal;
-window.saveTaskEdit = Estimate.saveTaskEdit;
-window.toggleEstimateEditMode = Estimate.toggleEstimateEditMode;
-window.toggleWorkMonthSelectionMode = Estimate.toggleWorkMonthSelectionMode;
-window.toggleEstimateSelection = Estimate.toggleEstimateSelection;
-window.selectTaskEstimates = Estimate.selectTaskEstimates;
-window.updateSelectedWorkHours = Estimate.updateSelectedWorkHours;
-window.executeWorkMonthAssignment = Estimate.executeWorkMonthAssignment;
-window.cancelWorkMonthSelection = Estimate.cancelWorkMonthSelection;
-window.initDragHandle = Estimate.initDragHandle;
 window.updateWorkMonthOptions = Estimate.updateWorkMonthOptions;
-window.openSplitEstimateModal = Estimate.openSplitEstimateModal;
-window.closeSplitEstimateModal = Estimate.closeSplitEstimateModal;
-window.updateSplitPreview = Estimate.updateSplitPreview;
-window.updateSplitManualTotal = Estimate.updateSplitManualTotal;
-window.executeSplitEstimate = Estimate.executeSplitEstimate;
-window.clearEstimateForm = Estimate.clearEstimateForm;
-window.toggleMonthSplit = Estimate.toggleMonthSplit;
-window.updateMonthPreview = Estimate.updateMonthPreview;
-window.updateManualTotal = Estimate.updateManualTotal;
+
+// estimate-edit.js の関数
+window.editEstimate = EstimateEdit.editEstimate;
+window.closeEditEstimateModal = EstimateEdit.closeEditEstimateModal;
+window.saveEstimateEdit = EstimateEdit.saveEstimateEdit;
+window.toggleEditWorkMonthMode = EstimateEdit.toggleEditWorkMonthMode;
+window.updateEditMonthPreview = EstimateEdit.updateEditMonthPreview;
+window.updateEditManualTotal = EstimateEdit.updateEditManualTotal;
+window.editTask = EstimateEdit.editTask;
+window.closeEditTaskModal = EstimateEdit.closeEditTaskModal;
+window.saveTaskEdit = EstimateEdit.saveTaskEdit;
+window.toggleEstimateEditMode = EstimateEdit.toggleEstimateEditMode;
+
+// estimate-selection.js の関数
+window.toggleWorkMonthSelectionMode = EstimateSelection.toggleWorkMonthSelectionMode;
+window.toggleEstimateSelection = EstimateSelection.toggleEstimateSelection;
+window.selectTaskEstimates = EstimateSelection.selectTaskEstimates;
+window.updateSelectedWorkHours = EstimateSelection.updateSelectedWorkHours;
+window.executeWorkMonthAssignment = EstimateSelection.executeWorkMonthAssignment;
+window.cancelWorkMonthSelection = EstimateSelection.cancelWorkMonthSelection;
+window.initDragHandle = EstimateSelection.initDragHandle;
+
+// estimate-split.js の関数
+window.openSplitEstimateModal = EstimateSplit.openSplitEstimateModal;
+window.closeSplitEstimateModal = EstimateSplit.closeSplitEstimateModal;
+window.updateSplitPreview = EstimateSplit.updateSplitPreview;
+window.updateSplitManualTotal = EstimateSplit.updateSplitManualTotal;
+window.executeSplitEstimate = EstimateSplit.executeSplitEstimate;
+window.clearEstimateForm = EstimateSplit.clearEstimateForm;
+window.toggleMonthSplit = EstimateSplit.toggleMonthSplit;
+window.updateMonthPreview = EstimateSplit.updateMonthPreview;
+window.updateManualTotal = EstimateSplit.updateManualTotal;
 
 // actual.js の関数
 window.getDayOfWeek = Actual.getDayOfWeek;
@@ -353,7 +362,7 @@ console.log('✅ init.js: データロード完了', {
     actuals: State.actuals.length
 });
 
-console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report, estimate-add, other-work, floating-filter, modal)');
+console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report, estimate-add, other-work, floating-filter, modal, estimate-edit, estimate-selection, estimate-split)');
 
 // ============================================
 // DOMContentLoaded 初期化処理
