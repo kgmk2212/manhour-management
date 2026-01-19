@@ -1106,8 +1106,8 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
 
                 html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #e9ecef;">';
                 html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
-                html += `<div style="font-size: 20px; font-weight: bold; color: ${isOverrun ? '#dc3545' : isGood ? '#28a745' : '#ffc107'};">${accuracy}%</div>`;
-                html += `<div style="font-size: 13px; color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
+                html += `<div style="font-size: 22px; font-weight: bold; color: ${isOverrun ? '#dc3545' : isGood ? '#28a745' : '#ffc107'};">${accuracy}%</div>`;
+                html += `<div style="font-size: 14px; color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
                 html += '</div>';
             });
 
@@ -1466,7 +1466,22 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
                     html += '</div>';
                 });
 
+                html += '</div>';
+
+                // 内訳ドーナツグラフセクション
+                html += '<div style="margin-top: 20px;">';
+                html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: 14px; font-weight: 600;">担当者別 工数内訳</h5>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">';
+
+                members3.forEach((member, index) => {
+                    html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center;">';
+                    html += `<div style="font-weight: 600; margin-bottom: 10px; color: #495057;">${member}</div>`;
+                    html += `<canvas id="memberDonutChart_${index}" class="donut-chart-canvas"></canvas>`;
+                    html += '</div>';
+                });
+
                 html += '</div></div>';
+                html += '</div>';
 
                 // グラフ描画データを保存
                 const chartData = {
