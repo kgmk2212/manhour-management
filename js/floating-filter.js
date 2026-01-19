@@ -352,8 +352,8 @@ export function syncFloatingMonthFilter(value) {
     const mainMonth = document.getElementById('reportMonth');
     if (mainMonth) {
         mainMonth.value = value;
-        if (typeof window.handleReportMonthFilterChange === 'function') {
-            window.handleReportMonthFilterChange();
+        if (typeof window.handleReportMonthChange === 'function') {
+            window.handleReportMonthChange(value);
         }
         // ボタンの状態を更新
         syncFloatingFilters();
@@ -365,8 +365,8 @@ export function syncFloatingVersionFilter(value) {
     const mainVersion = document.getElementById('reportVersion');
     if (mainVersion) {
         mainVersion.value = value;
-        if (typeof window.handleReportVersionFilterChange === 'function') {
-            window.handleReportVersionFilterChange();
+        if (typeof window.handleReportVersionChange === 'function') {
+            window.handleReportVersionChange(value);
         }
         // ボタンの状態を更新
         syncFloatingFilters();
