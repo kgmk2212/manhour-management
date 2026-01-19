@@ -2,15 +2,17 @@
 // クイック入力関連機能
 // ============================================
 
-import { estimates, actuals } from './state.js';
+import {
+    estimates, actuals,
+    quickInputMode, setQuickInputMode,
+    rememberQuickInputMode, setRememberQuickInputMode
+} from './state.js';
 import { generateMonthOptions } from './utils.js';
 
 // クイック入力用の状態変数
 let allQuickTasks = [];
 let selectedQuickTask = null;
 let selectedMemberFilter = null;
-let quickInputMode = 'actual';
-let rememberQuickInputMode = false;
 
 // ============================================
 // タスクリスト管理
@@ -263,7 +265,7 @@ export function quickAddActual() {
 // ============================================
 
 export function switchQuickInputMode(mode) {
-    quickInputMode = mode;
+    setQuickInputMode(mode);
 
     const actualForm = document.getElementById('quickActualForm');
     const estimateForm = document.getElementById('quickEstimateForm');
@@ -316,6 +318,11 @@ export function switchQuickInputMode(mode) {
         if (vacationDate) vacationDate.value = today;
     }
 
+    // 全てのセグメントボタンの色を更新
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
+
     // 設定で記憶が有効な場合、localStorageに保存
     if (rememberQuickInputMode) {
         localStorage.setItem('quickInputMode', mode);
@@ -339,7 +346,7 @@ export function initQuickEstimateForm() {
 
     // 前回モードを記憶する設定の読み込み
     const savedRememberMode = localStorage.getItem('rememberQuickInputMode');
-    rememberQuickInputMode = savedRememberMode === 'true';
+    setRememberQuickInputMode(savedRememberMode === 'true');
 
     // チェックボックスのUIに反映
     const rememberCheckbox = document.getElementById('rememberQuickInputMode');
@@ -362,7 +369,7 @@ export function initQuickEstimateForm() {
 // ============================================
 
 export function initQuickTaskDropdownHandler() {
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         const dropdown = document.getElementById('quickTaskDropdown');
         const searchInput = document.getElementById('quickTaskSearch');
 

@@ -2,7 +2,13 @@
 // UI操作・DOM操作
 // ============================================
 
-import { estimates, actuals } from './state.js';
+import {
+    estimates, actuals,
+    showMonthColorsSetting, showDeviationColorsSetting,
+    showProgressBarsSetting, showProgressPercentageSetting,
+    progressBarStyle, matrixEstActFormat, matrixDayMonthFormat,
+    memberOrder, setMemberOrder
+} from './state.js';
 import { normalizeEstimate } from './utils.js';
 
 // タブの順序を定義
@@ -119,13 +125,13 @@ export function initTabSwipe() {
         return element !== null;
     }
 
-    content.addEventListener('touchstart', function(e) {
+    content.addEventListener('touchstart', function (e) {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
         touchStartTarget = e.target;
     }, { passive: true });
 
-    content.addEventListener('touchend', function(e) {
+    content.addEventListener('touchend', function (e) {
         touchEndX = e.changedTouches[0].screenX;
         touchEndY = e.changedTouches[0].screenY;
         handleSwipe();
@@ -255,24 +261,6 @@ export function setActualViewType(type) {
 export function setReportViewType(type) {
     const viewTypeEl = document.getElementById('reportViewType');
     if (viewTypeEl) viewTypeEl.value = type;
-
-    const themeColor = getThemeColor();
-    const btnSummary = document.getElementById('btnReportSummary');
-    const btnGrouped = document.getElementById('btnReportGrouped');
-    const btnMatrix = document.getElementById('btnReportMatrix');
-
-    if (btnSummary) {
-        btnSummary.style.background = type === 'summary' ? themeColor : 'white';
-        btnSummary.style.color = type === 'summary' ? 'white' : '#333';
-    }
-    if (btnGrouped) {
-        btnGrouped.style.background = type === 'grouped' ? themeColor : 'white';
-        btnGrouped.style.color = type === 'grouped' ? 'white' : '#333';
-    }
-    if (btnMatrix) {
-        btnMatrix.style.background = type === 'matrix' ? themeColor : 'white';
-        btnMatrix.style.color = type === 'matrix' ? 'white' : '#333';
-    }
 
     if (typeof window.updateReport === 'function') {
         window.updateReport();
@@ -529,6 +517,19 @@ export function updateLayoutToggleButtons() {
 }
 
 export function updateSegmentedButtons() {
+    // クイック入力のモードボタン
+    const quickActualModeBtn = document.getElementById('quickActualModeBtn');
+    const quickEstimateModeBtn = document.getElementById('quickEstimateModeBtn');
+    const quickVacationModeBtn = document.getElementById('quickVacationModeBtn');
+    if (quickActualModeBtn && quickEstimateModeBtn && quickVacationModeBtn) {
+        if (typeof window.quickInputMode !== 'undefined') {
+            const mode = window.quickInputMode;
+            quickActualModeBtn.classList.toggle('active', mode === 'actual');
+            quickEstimateModeBtn.classList.toggle('active', mode === 'estimate');
+            quickVacationModeBtn.classList.toggle('active', mode === 'vacation');
+        }
+    }
+
     // 見積一覧のセグメントボタン（表示形式）
     const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
     const btnEstimateMatrix = document.getElementById('btnEstimateMatrix');
@@ -599,11 +600,33 @@ export function updateSegmentedButtons() {
     const btnReportSummary = document.getElementById('btnReportSummary');
     const btnReportGrouped = document.getElementById('btnReportGrouped');
     const btnReportMatrix = document.getElementById('btnReportMatrix');
-    if (btnReportSummary && btnReportGrouped && btnReportMatrix) {
-        const reportViewType = document.getElementById('reportViewType').value;
+    const reportViewTypeEl = document.getElementById('reportViewType');
+    if (btnReportSummary && btnReportGrouped && btnReportMatrix && reportViewTypeEl) {
+        const reportViewType = reportViewTypeEl.value;
         btnReportSummary.classList.toggle('active', reportViewType === 'summary');
         btnReportGrouped.classList.toggle('active', reportViewType === 'grouped');
         btnReportMatrix.classList.toggle('active', reportViewType === 'matrix');
+    }
+
+    const reportFilterType = document.getElementById('reportFilterType');
+
+    // フローティングフィルタパネルのセグメントボタン
+    const floatingViewSummary = document.getElementById('floatingViewSummary');
+    const floatingViewGrouped = document.getElementById('floatingViewGrouped');
+    const floatingViewMatrix = document.getElementById('floatingViewMatrix');
+    if (floatingViewSummary && floatingViewGrouped && floatingViewMatrix && reportViewTypeEl) {
+        const reportViewType = reportViewTypeEl.value;
+        floatingViewSummary.classList.toggle('active', reportViewType === 'summary');
+        floatingViewGrouped.classList.toggle('active', reportViewType === 'grouped');
+        floatingViewMatrix.classList.toggle('active', reportViewType === 'matrix');
+    }
+
+    const floatingFilterMonth = document.getElementById('floatingFilterMonth');
+    const floatingFilterVersion = document.getElementById('floatingFilterVersion');
+    if (floatingFilterMonth && floatingFilterVersion && reportFilterType) {
+        const type = reportFilterType.value;
+        floatingFilterMonth.classList.toggle('active', type === 'month');
+        floatingFilterVersion.classList.toggle('active', type === 'version');
     }
 
     // レポートのセグメントボタン（表示月）
@@ -616,7 +639,6 @@ export function updateSegmentedButtons() {
     }
 
     // レポートのフィルタタイプボタン
-    const reportFilterType = document.getElementById('reportFilterType');
     if (reportFilterType) {
         const btnFilterMonth = document.getElementById('btnFilterMonth');
         const btnFilterVersion = document.getElementById('btnFilterVersion');
@@ -652,15 +674,18 @@ export function updateSegmentedButtons() {
     };
     const gradient = gradients[window.currentThemeColor] || gradients['purple'];
 
-    document.querySelectorAll('.segment-buttons button').forEach(btn => {
+    // 全てのセグメントボタンにテーマカラーを適用
+    // 通常のセグメントボタンと、フローティングフィルタボタンの両方を対象にする
+    const allSegmentButtons = document.querySelectorAll('.segment-buttons button, .floating-filter-buttons button, .floating-segment-buttons button');
+    allSegmentButtons.forEach(btn => {
         if (btn.classList.contains('active')) {
             btn.style.background = gradient;
             btn.style.color = 'white';
             btn.style.borderColor = 'transparent';
         } else {
-            btn.style.background = '';
-            btn.style.color = '';
-            btn.style.borderColor = '';
+            btn.style.background = 'white';
+            btn.style.color = '#333';
+            btn.style.borderColor = '#ddd';
         }
     });
 }
@@ -1339,40 +1364,21 @@ export function syncFilterTypeToEstimate(type) {
         const btnVersion = document.getElementById('btnEstimateFilterVersion');
 
         if (type === 'month') {
-            if (btnMonth) {
-                btnMonth.style.background = themeColor;
-                btnMonth.style.color = 'white';
-            }
-            if (btnVersion) {
-                btnVersion.style.background = 'white';
-                btnVersion.style.color = '#333';
-            }
+            if (btnMonth) btnMonth.classList.add('active');
+            if (btnVersion) btnVersion.classList.remove('active');
         } else {
-            if (btnMonth) {
-                btnMonth.style.background = 'white';
-                btnMonth.style.color = '#333';
-            }
-            if (btnVersion) {
-                btnVersion.style.background = themeColor;
-                btnVersion.style.color = 'white';
-            }
+            if (btnMonth) btnMonth.classList.remove('active');
+            if (btnVersion) btnVersion.classList.add('active');
         }
     }
 }
 
 export function updateFilterTypeButtons(type) {
-    const themeColor = getThemeColor();
     const btnMonth = document.getElementById('btnFilterMonth');
     const btnVersion = document.getElementById('btnFilterVersion');
 
-    if (btnMonth) {
-        btnMonth.style.background = type === 'month' ? themeColor : 'white';
-        btnMonth.style.color = type === 'month' ? 'white' : '#333';
-    }
-    if (btnVersion) {
-        btnVersion.style.background = type === 'version' ? themeColor : 'white';
-        btnVersion.style.color = type === 'version' ? 'white' : '#333';
-    }
+    if (btnMonth) btnMonth.classList.toggle('active', type === 'month');
+    if (btnVersion) btnVersion.classList.toggle('active', type === 'version');
 }
 
 // ============================================
@@ -1684,4 +1690,96 @@ export function handleEditActualMemberChange() {
     }
 }
 
+// ============================================
+// 設定値を読み込んでUIに反映
+// ============================================
+
+export function syncSettingsToUI() {
+    // チェックボックス
+    const checkboxMap = {
+        'showMonthColorsCheckbox': showMonthColorsSetting,
+        'showDeviationColorsCheckbox': showDeviationColorsSetting,
+        'showProgressBarsCheckbox': showProgressBarsSetting,
+        'showProgressPercentageCheckbox': showProgressPercentageSetting,
+        'autoBackupEnabled': window.autoBackupEnabled
+    };
+
+    Object.entries(checkboxMap).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = value;
+    });
+
+    // 進捗バースタイル（ラジオボタン）
+    if (progressBarStyle) {
+        const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${progressBarStyle}"]`);
+        if (radioButton) radioButton.checked = true;
+    }
+
+    // 見積/実績表示形式（ラジオボタン）
+    if (matrixEstActFormat) {
+        const radioButton = document.querySelector(`input[name="matrixEstActFormat"][value="${matrixEstActFormat}"]`);
+        if (radioButton) radioButton.checked = true;
+    }
+
+    // 日付/月表示形式（ラジオボタン）
+    if (matrixDayMonthFormat) {
+        const radioButton = document.querySelector(`input[name="matrixDayMonthFormat"][value="${matrixDayMonthFormat}"]`);
+        if (radioButton) radioButton.checked = true;
+    }
+
+    // 担当者の表示順
+    const memberOrderEl = document.getElementById('memberOrder');
+    if (memberOrderEl && memberOrder) {
+        memberOrderEl.value = memberOrder;
+    }
+
+    // テーマ設定の要素は Theme.loadThemeSettings で別途同期されるが、
+    // ここでも念のため、State と window 変数を最終確認
+}
+
+/**
+ * 全ての画面表示を更新
+ */
+export function updateAllDisplays() {
+    console.log('🔄 全画面更新実行');
+
+    // 担当者表示順をDOMから取得して状態に反映
+    const memberOrderEl = document.getElementById('memberOrder');
+    if (memberOrderEl) {
+        const newValue = memberOrderEl.value.trim();
+        setMemberOrder(newValue);
+    }
+
+    // 各モジュールのレンダリング関数を呼び出し
+    // window を介して呼び出す（循環参照を避けるためと、init.js で確実に公開されているため）
+    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+    if (typeof window.renderActualList === 'function') window.renderActualList();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+    if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+
+    console.log('✅ 全画面更新完了');
+}
+
+/**
+ * 担当者表示順のヘルプを表示
+ */
+export function showMemberOrderHelp() {
+    const helpMsg = `
+        <strong>担当者表示順の設定方法:</strong><br><br>
+        1. 担当者の名前をカンマ(,)区切りで入力します<br>
+        2. ここで指定した順番で、実績一覧やレポートに表示されます<br>
+        3. 指定しなかった担当者は、指定された人の後ろに名前順で表示されます<br><br>
+        例: <code>佐藤,田中,山田</code><br><br>
+        ※入力後は「設定を適用」ボタンを押すか、欄外をクリックすると反映されます。
+    `;
+    if (typeof window.showAlert === 'function') {
+        window.showAlert(helpMsg, true);
+    } else {
+        alert('担当者表示順の設定方法:\n\n1. 担当者の名前をカンマ(,)区切りで入力します\n2. 指定した順番で表示されます\n3. 指定しなかった人は後ろに名前順で表示されます');
+    }
+}
+
 console.log('✅ モジュール ui.js loaded');
+

@@ -353,6 +353,11 @@ export function renderEstimateList() {
     } else {
         renderEstimateDetailList();
     }
+
+    // セグメントボタンのハイライトを更新
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
 }
 
 /**

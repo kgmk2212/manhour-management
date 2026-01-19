@@ -59,7 +59,7 @@ export function enableStickyFilters() {
     });
 
     // スクロールイベント監視（windowスクロール）
-    stickyScrollHandler = function() {
+    stickyScrollHandler = function () {
         stickyFilters.forEach(filter => {
             // 表示されているフィルタのみ処理
             if (filter.offsetParent === null) return;
@@ -99,7 +99,7 @@ export function enableStickyFilters() {
     window.addEventListener('scroll', stickyScrollHandler);
 
     // ウィンドウリサイズ時の対応
-    stickyResizeHandler = function() {
+    stickyResizeHandler = function () {
         const container = document.querySelector('.container');
         if (!container) return;
 
@@ -246,7 +246,7 @@ export function syncFloatingFilters() {
         Array.from(mainReportMonth.options).forEach(option => {
             const btn = document.createElement('button');
             btn.textContent = option.text;
-            btn.onclick = function(e) {
+            btn.onclick = function (e) {
                 e.stopPropagation();
                 syncFloatingMonthFilter(option.value);
             };
@@ -269,7 +269,7 @@ export function syncFloatingFilters() {
         Array.from(mainReportVersion.options).forEach(option => {
             const btn = document.createElement('button');
             btn.textContent = option.text;
-            btn.onclick = function(e) {
+            btn.onclick = function (e) {
                 e.stopPropagation();
                 syncFloatingVersionFilter(option.value);
             };
@@ -302,15 +302,11 @@ export function setFloatingFilterType(type, applyToMain = true) {
     const versionGroup = document.getElementById('floatingVersionGroup');
 
     if (type === 'month') {
-        monthBtn.classList.add('active');
-        versionBtn.classList.remove('active');
-        monthGroup.style.display = 'block';
-        versionGroup.style.display = 'none';
+        if (monthGroup) monthGroup.style.display = 'block';
+        if (versionGroup) versionGroup.style.display = 'none';
     } else {
-        monthBtn.classList.remove('active');
-        versionBtn.classList.add('active');
-        monthGroup.style.display = 'none';
-        versionGroup.style.display = 'block';
+        if (monthGroup) monthGroup.style.display = 'none';
+        if (versionGroup) versionGroup.style.display = 'block';
     }
 
     // メインフィルタに反映
@@ -332,23 +328,7 @@ export function setFloatingFilterType(type, applyToMain = true) {
 
 // 表示形式の設定
 export function setFloatingViewType(type, applyToMain = true) {
-    const summaryBtn = document.getElementById('floatingViewSummary');
-    const groupedBtn = document.getElementById('floatingViewGrouped');
-    const matrixBtn = document.getElementById('floatingViewMatrix');
-
-    // 全てのボタンからactiveを削除
-    summaryBtn.classList.remove('active');
-    groupedBtn.classList.remove('active');
-    matrixBtn.classList.remove('active');
-
-    // 対応するボタンにactiveを追加
-    if (type === 'summary') {
-        summaryBtn.classList.add('active');
-    } else if (type === 'grouped') {
-        groupedBtn.classList.add('active');
-    } else if (type === 'matrix') {
-        matrixBtn.classList.add('active');
-    }
+    // 表示形式の同期は、メインフィルタに反映した後の updateReport 内の updateSegmentedButtons で行われる
 
     // メインフィルタに反映
     if (applyToMain) {
@@ -395,7 +375,7 @@ export function syncFloatingVersionFilter(value) {
 
 // パネル外クリックで閉じるイベントの初期化
 export function initFloatingFilterEvents() {
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         const panel = document.getElementById('floatingFilterPanel');
         const toggle = document.getElementById('floatingFilterToggle');
 
@@ -417,7 +397,7 @@ export function initFloatingFilterEvents() {
     // パネル内のクリックでイベント伝播を止める
     const panel = document.getElementById('floatingFilterPanel');
     if (panel) {
-        panel.addEventListener('click', function(event) {
+        panel.addEventListener('click', function (event) {
             event.stopPropagation();
         });
     }

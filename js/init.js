@@ -47,6 +47,7 @@ window.progressBarStyle = State.progressBarStyle;
 window.matrixEstActFormat = State.matrixEstActFormat;
 window.matrixDayMonthFormat = State.matrixDayMonthFormat;
 window.debugModeEnabled = State.debugModeEnabled;
+window.memberOrder = State.memberOrder;
 
 // utils.js の関数
 window.showAlert = Utils.showAlert;
@@ -133,6 +134,8 @@ window.handleQuickFormNameChange = UI.handleQuickFormNameChange;
 window.handleAddFormNameChange = UI.handleAddFormNameChange;
 window.handleEditFormNameChange = UI.handleEditFormNameChange;
 window.handleEditActualMemberChange = UI.handleEditActualMemberChange;
+window.updateAllDisplays = UI.updateAllDisplays;
+window.showMemberOrderHelp = UI.showMemberOrderHelp;
 
 // theme.js の関数
 window.getActiveChartColorScheme = Theme.getActiveChartColorScheme;
@@ -230,6 +233,7 @@ window.updateEditActualTaskList = Actual.updateEditActualTaskList;
 window.openOtherWorkFromCalendar = Actual.openOtherWorkFromCalendar;
 window.openVacationFromCalendar = Actual.openVacationFromCalendar;
 window.openOtherWorkModalWithContext = Actual.openOtherWorkModalWithContext;
+window.handleActualTaskSelect = Actual.handleActualTaskSelect;
 
 // state.js の追加エクスポート（テーマ・レイアウト関連）
 window.estimateEditMode = State.estimateEditMode;
@@ -356,6 +360,7 @@ window.actuals = State.actuals;
 window.companyHolidays = State.companyHolidays;
 window.vacations = State.vacations;
 window.remainingEstimates = State.remainingEstimates;
+window.memberOrder = State.memberOrder;
 
 console.log('✅ init.js: データロード完了', {
     estimates: State.estimates.length,
@@ -368,7 +373,7 @@ console.log('✅ モジュール init.js loaded (state, utils, vacation, storage
 // DOMContentLoaded 初期化処理
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('✅ init.js: DOMContentLoaded イベント発火');
 
     // 各種設定の読み込み
@@ -392,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 見込残存時間入力モーダル: 外クリックで閉じる
     const remainingHoursModal = document.getElementById('remainingHoursModal');
     if (remainingHoursModal) {
-        remainingHoursModal.addEventListener('click', function(event) {
+        remainingHoursModal.addEventListener('click', function (event) {
             if (event.target === remainingHoursModal) {
                 Modal.closeRemainingHoursModal();
             }
@@ -430,6 +435,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
+
+    // レイアウト設定を適用（loadDataはDOMContentLoaded前に実行されるため、ここで再適用）
+    UI.applyLayoutSettings();
+
+    // 全ての設定をUI要素に同期
+    UI.syncSettingsToUI();
 
     // モバイルでタブのスワイプ切り替え機能を追加
     UI.initTabSwipe();

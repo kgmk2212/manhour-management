@@ -11,12 +11,11 @@ import {
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
-    matrixDayMonthFormat, setMatrixDayMonthFormat
+    matrixDayMonthFormat, setMatrixDayMonthFormat,
+    setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
+    isEstimateTabFirstView, setIsEstimateTabFirstView,
+    isReportTabFirstView, setIsReportTabFirstView
 } from './state.js';
-
-// タブの初回表示フラグ
-let isEstimateTabFirstView = true;
-let isReportTabFirstView = true;
 
 // ============================================
 // グラフカラースキーム
@@ -96,22 +95,22 @@ export function loadThemeSettings() {
     if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         if (settings.themeColor) {
-            window.currentThemeColor = settings.themeColor;
+            setCurrentThemeColor(settings.themeColor);
             const el = document.getElementById('themeColor');
             if (el) el.value = settings.themeColor;
         }
         if (settings.themePattern) {
-            window.currentThemePattern = settings.themePattern;
+            setCurrentThemePattern(settings.themePattern);
             const el = document.getElementById('themePattern');
             if (el) el.value = settings.themePattern;
         }
         if (settings.themeTabColor) {
-            window.currentTabColor = settings.themeTabColor;
+            setCurrentTabColor(settings.themeTabColor);
             const el = document.getElementById('themeTabColor');
             if (el) el.value = settings.themeTabColor;
         }
         if (settings.themeBackgroundColor) {
-            window.currentBackgroundColor = settings.themeBackgroundColor;
+            setCurrentBackgroundColor(settings.themeBackgroundColor);
             const el = document.getElementById('themeBackgroundColor');
             if (el) el.value = settings.themeBackgroundColor;
         }
@@ -122,19 +121,19 @@ export function loadThemeSettings() {
         const savedTabColor = localStorage.getItem('manhour_themeTabColor');
 
         if (savedColor) {
-            window.currentThemeColor = savedColor;
+            setCurrentThemeColor(savedColor);
             const el = document.getElementById('themeColor');
             if (el) el.value = savedColor;
         }
 
         if (savedPattern) {
-            window.currentThemePattern = savedPattern;
+            setCurrentThemePattern(savedPattern);
             const el = document.getElementById('themePattern');
             if (el) el.value = savedPattern;
         }
 
         if (savedTabColor) {
-            window.currentTabColor = savedTabColor;
+            setCurrentTabColor(savedTabColor);
             const el = document.getElementById('themeTabColor');
             if (el) el.value = savedTabColor;
         }
@@ -149,10 +148,11 @@ export function applyTheme() {
     const tabColorEl = document.getElementById('themeTabColor');
     const backgroundColorEl = document.getElementById('themeBackgroundColor');
 
-    if (colorEl) window.currentThemeColor = colorEl.value;
-    if (patternEl) window.currentThemePattern = patternEl.value;
-    if (tabColorEl) window.currentTabColor = tabColorEl.value;
-    if (backgroundColorEl) window.currentBackgroundColor = backgroundColorEl.value;
+    // DOM要素から値を読み取る（存在する場合のみ更新、loadThemeSettingsで設定された値を保持）
+    if (colorEl && colorEl.value) window.currentThemeColor = colorEl.value;
+    if (patternEl && patternEl.value) window.currentThemePattern = patternEl.value;
+    if (tabColorEl && tabColorEl.value) window.currentTabColor = tabColorEl.value;
+    if (backgroundColorEl && backgroundColorEl.value) window.currentBackgroundColor = backgroundColorEl.value;
 
     updateThemePreview();
     updateThemeElements();
@@ -301,14 +301,6 @@ export function updateFloatingFilterTheme() {
     if (header) {
         header.style.background = gradient;
     }
-
-    document.querySelectorAll('.floating-filter-buttons button, .floating-segment-buttons button').forEach(btn => {
-        if (btn.classList.contains('active')) {
-            btn.style.background = gradient;
-        } else {
-            btn.style.background = '';
-        }
-    });
 }
 
 export function updateBodyBackground() {
@@ -482,7 +474,7 @@ export function applyDefaultEstimateViewType() {
     if (!isEstimateTabFirstView) {
         return;
     }
-    isEstimateTabFirstView = false;
+    setIsEstimateTabFirstView(false);
 
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {
@@ -502,7 +494,7 @@ export function applyDefaultReportViewType() {
     if (!isReportTabFirstView) {
         return;
     }
-    isReportTabFirstView = false;
+    setIsReportTabFirstView(false);
 
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {

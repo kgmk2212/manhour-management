@@ -252,6 +252,11 @@ export function renderActualList() {
     } else {
         renderActualListView();
     }
+
+    // セグメントボタンのハイライトを更新
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
 }
 
 /**
@@ -1391,4 +1396,43 @@ export function openOtherWorkModalWithContext(member, date) {
     document.getElementById('otherWorkModal').style.display = 'flex';
 }
 
+/**
+ * 実績編集モーダルの対応選択変更時の処理
+ */
+export function handleActualTaskSelect() {
+    const select = document.getElementById('editActualTaskSelect');
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+
+    if (!select || !searchInput) return;
+
+    if (select.value === '__NEW__') {
+        select.style.display = 'none';
+        searchInput.style.display = 'block';
+        searchInput.value = '';
+        searchInput.focus();
+    } else {
+        // 選択されたオプションから情報を取得
+        const selectedOption = select.options[select.selectedIndex];
+        const version = selectedOption.getAttribute('data-version');
+        const process = selectedOption.getAttribute('data-process');
+
+        if (version && versionSelect) versionSelect.value = version;
+        if (process && processSelect) processSelect.value = process;
+
+        // 残存時間の初期値を表示
+        if (version && select.value && process) {
+            const memberSelect = document.getElementById('editActualMember');
+            const member = memberSelect ? memberSelect.value : '';
+            const existingRemaining = getRemainingEstimate(version, select.value, process, member);
+            const remainingInput = document.getElementById('editActualRemainingHours');
+            if (remainingInput) {
+                remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
+            }
+        }
+    }
+}
+
 console.log('✅ モジュール actual.js loaded');
+

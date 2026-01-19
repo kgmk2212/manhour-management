@@ -234,6 +234,7 @@ export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, 
 export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
 export let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
 export let debugModeEnabled = false; // デバッグモード設定
+export let memberOrder = ''; // 担当者の表示順
 
 // 見積編集モード関連
 export let estimateEditMode = false; // 見積編集モード
@@ -255,126 +256,175 @@ export let reportLayout = 'compact';
 export let isEstimateTabFirstView = true;
 export let isReportTabFirstView = true;
 
+// クイック入力関連
+export let quickInputMode = 'actual'; // クイック入力のモード
+export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
+
 // ============================================
 // Setter関数（他のモジュールから変更可能にする）
 // ============================================
 
 export function setEstimates(value) {
     estimates = value;
+    window.estimates = value;
 }
 
 export function setFilteredEstimates(value) {
     filteredEstimates = value;
+    window.filteredEstimates = value;
 }
 
 export function setActuals(value) {
     actuals = value;
+    window.actuals = value;
 }
 
 export function setCompanyHolidays(value) {
     companyHolidays = value;
+    window.companyHolidays = value;
 }
 
 export function setVacations(value) {
     vacations = value;
+    window.vacations = value;
 }
 
 export function setRemainingEstimates(value) {
     remainingEstimates = value;
+    window.remainingEstimates = value;
 }
 
 export function setNextCompanyHolidayId(value) {
     nextCompanyHolidayId = value;
+    window.nextCompanyHolidayId = value;
 }
 
 export function setNextVacationId(value) {
     nextVacationId = value;
+    window.nextVacationId = value;
 }
 
 export function setReportSettings(value) {
     reportSettings = value;
+    window.reportSettings = value;
 }
 
 export function setPhaseCollapsed(value) {
     phaseCollapsed = value;
+    window.phaseCollapsed = value;
 }
 
 export function setSelectedChartColorScheme(value) {
     selectedChartColorScheme = value;
+    window.selectedChartColorScheme = value;
 }
 
 export function setShowMonthColorsSetting(value) {
     showMonthColorsSetting = value;
+    window.showMonthColorsSetting = value;
 }
 
 export function setShowDeviationColorsSetting(value) {
     showDeviationColorsSetting = value;
+    window.showDeviationColorsSetting = value;
 }
 
 export function setShowProgressBarsSetting(value) {
     showProgressBarsSetting = value;
+    window.showProgressBarsSetting = value;
 }
 
 export function setShowProgressPercentageSetting(value) {
     showProgressPercentageSetting = value;
+    window.showProgressPercentageSetting = value;
 }
 
 export function setProgressBarStyle(value) {
     progressBarStyle = value;
+    window.progressBarStyle = value;
 }
 
 export function setMatrixEstActFormat(value) {
     matrixEstActFormat = value;
+    window.matrixEstActFormat = value;
 }
 
 export function setMatrixDayMonthFormat(value) {
     matrixDayMonthFormat = value;
+    window.matrixDayMonthFormat = value;
 }
 
 export function setDebugModeEnabled(value) {
     debugModeEnabled = value;
+    window.debugModeEnabled = value;
 }
 
 export function setEstimateEditMode(value) {
     estimateEditMode = value;
+    window.estimateEditMode = value;
 }
 
 export function setWorkMonthSelectionMode(value) {
     workMonthSelectionMode = value;
+    window.workMonthSelectionMode = value;
+}
+
+export function setMemberOrder(value) {
+    memberOrder = value;
+    window.memberOrder = value;
 }
 
 export function setCurrentThemeColor(value) {
     currentThemeColor = value;
+    window.currentThemeColor = value;
 }
 
 export function setCurrentThemePattern(value) {
     currentThemePattern = value;
+    window.currentThemePattern = value;
 }
 
 export function setCurrentTabColor(value) {
     currentTabColor = value;
+    window.currentTabColor = value;
 }
 
 export function setCurrentBackgroundColor(value) {
     currentBackgroundColor = value;
+    window.currentBackgroundColor = value;
 }
 
 export function setEstimateLayout(value) {
     estimateLayout = value;
+    window.estimateLayout = value;
 }
 
 export function setActualLayout(value) {
     actualLayout = value;
+    window.actualLayout = value;
 }
 
 export function setReportLayout(value) {
     reportLayout = value;
+    window.reportLayout = value;
 }
 
 export function setIsEstimateTabFirstView(value) {
     isEstimateTabFirstView = value;
+    window.isEstimateTabFirstView = value;
 }
 
 export function setIsReportTabFirstView(value) {
     isReportTabFirstView = value;
+    window.isReportTabFirstView = value;
+}
+
+export function setQuickInputMode(value) {
+    quickInputMode = value;
+    window.quickInputMode = value;
+}
+
+export function setRememberQuickInputMode(value) {
+    rememberQuickInputMode = value;
+    window.rememberQuickInputMode = value;
 }

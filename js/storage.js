@@ -17,7 +17,9 @@ import {
     matrixEstActFormat, setMatrixEstActFormat,
     matrixDayMonthFormat, setMatrixDayMonthFormat,
     debugModeEnabled, setDebugModeEnabled,
-    selectedChartColorScheme
+    selectedChartColorScheme,
+    setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
+    setEstimateLayout, setActualLayout, setReportLayout, setMemberOrder
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -133,77 +135,40 @@ export function loadData() {
     // 設定を読み込み
     if (savedSettings) {
         const settings = JSON.parse(savedSettings);
-        if (settings.memberOrder) {
-            const memberOrderEl = document.getElementById('memberOrder');
-            if (memberOrderEl) memberOrderEl.value = settings.memberOrder;
-        }
-        if (settings.themeColor) window.currentThemeColor = settings.themeColor;
-        if (settings.themePattern) window.currentThemePattern = settings.themePattern;
-        if (settings.themeTabColor) window.currentTabColor = settings.themeTabColor;
+        if (settings.memberOrder) setMemberOrder(settings.memberOrder);
+        if (settings.themeColor) setCurrentThemeColor(settings.themeColor);
+        if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
+        if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
         if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
-        if (settings.estimateLayout) window.estimateLayout = settings.estimateLayout;
-        if (settings.actualLayout) window.actualLayout = settings.actualLayout;
-        if (settings.reportLayout) window.reportLayout = settings.reportLayout;
+        if (settings.estimateLayout) setEstimateLayout(settings.estimateLayout);
+        if (settings.actualLayout) setActualLayout(settings.actualLayout);
+        if (settings.reportLayout) setReportLayout(settings.reportLayout);
         if (settings.showMonthColors !== undefined) {
             setShowMonthColorsSetting(settings.showMonthColors);
-            const checkbox = document.getElementById('showMonthColorsCheckbox');
-            if (checkbox) checkbox.checked = showMonthColorsSetting;
         }
         // 乖離率背景色の設定を読み込み
         if (settings.showDeviationColors !== undefined) {
             setShowDeviationColorsSetting(settings.showDeviationColors);
-            const checkbox = document.getElementById('showDeviationColorsCheckbox');
-            if (checkbox) checkbox.checked = showDeviationColorsSetting;
         }
         // 進捗バー表示の設定を読み込み
         if (settings.showProgressBars !== undefined) {
             setShowProgressBarsSetting(settings.showProgressBars);
-            const checkbox = document.getElementById('showProgressBarsCheckbox');
-            if (checkbox) checkbox.checked = showProgressBarsSetting;
         }
         // 進捗バーのパーセンテージ表示の設定を読み込み
         if (settings.showProgressPercentage !== undefined) {
             setShowProgressPercentageSetting(settings.showProgressPercentage);
-            const checkbox = document.getElementById('showProgressPercentageCheckbox');
-            if (checkbox) checkbox.checked = showProgressPercentageSetting;
         }
         // 進捗バーのスタイル設定を読み込み
         if (settings.progressBarStyle) {
             setProgressBarStyle(settings.progressBarStyle);
-            const radioButton = document.querySelector(`input[name="progressBarStyle"][value="${settings.progressBarStyle}"]`);
-            if (radioButton) radioButton.checked = true;
         }
         // 見積と実績の表示形式の設定を読み込み
         if (settings.matrixEstActFormat) {
             setMatrixEstActFormat(settings.matrixEstActFormat);
-            const radioButton = document.querySelector(`input[name="matrixEstActFormat"][value="${settings.matrixEstActFormat}"]`);
-            if (radioButton) radioButton.checked = true;
         }
         // 人日/人月表示形式の設定を読み込み
         if (settings.matrixDayMonthFormat) {
             setMatrixDayMonthFormat(settings.matrixDayMonthFormat);
-            const radioButton = document.querySelector(`input[name="matrixDayMonthFormat"][value="${settings.matrixDayMonthFormat}"]`);
-            if (radioButton) radioButton.checked = true;
-        }
-        // デフォルト表示形式の設定を読み込み
-        if (settings.defaultEstimateViewType) {
-            const estimateViewTypeSelect = document.getElementById('defaultEstimateViewType');
-            if (estimateViewTypeSelect) {
-                estimateViewTypeSelect.value = settings.defaultEstimateViewType;
-            }
-        }
-        if (settings.defaultReportViewType) {
-            const reportViewTypeSelect = document.getElementById('defaultReportViewType');
-            if (reportViewTypeSelect) {
-                reportViewTypeSelect.value = settings.defaultReportViewType;
-            }
-        }
-    } else {
-        // 旧形式の設定を読み込み（後方互換性）
-        const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
-        if (savedMemberOrder) {
-            const memberOrderEl = document.getElementById('memberOrder');
-            if (memberOrderEl) memberOrderEl.value = savedMemberOrder;
         }
     }
 
@@ -293,14 +258,14 @@ export function handleFileImport(event) {
     if (fileName.endsWith('.json')) {
         // JSONファイルの処理
         const reader = new FileReader();
-        reader.onerror = function(e) {
+        reader.onerror = function (e) {
             console.error('ファイル読み込みエラー:', reader.error);
             const message = debugModeEnabled
                 ? 'ファイルの読み込みに失敗しました: ' + reader.error.message
                 : 'ファイルの読み込みに失敗しました';
             showAlert(message, false);
         };
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             try {
                 const data = JSON.parse(e.target.result);
 
