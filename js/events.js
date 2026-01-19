@@ -48,7 +48,16 @@ import {
     saveVacationFromModal
 } from './vacation.js';
 import { renderEstimateList } from './estimate.js';
-import { toggleEstimateEditMode } from './estimate-edit.js';
+import {
+    toggleEstimateEditMode,
+    closeEditEstimateModal,
+    saveEstimateEdit,
+    updateEditMonthPreview,
+    toggleEditWorkMonthMode,
+    closeEditTaskModal,
+    saveTaskEdit
+} from './estimate-edit.js';
+import { openAddEstimateModal } from './estimate-add.js';
 import { toggleWorkMonthSelectionMode, executeWorkMonthAssignment, cancelWorkMonthSelection } from './estimate-selection.js';
 import {
     renderActualList,
