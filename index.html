@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,22 +9,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>工数管理システム</h1>
             <div class="header-buttons">
-                <button class="btn btn-success" onclick="exportBackup()">バックアップ</button>
-                <button class="btn btn-primary" onclick="importBackup()">復元</button>
+                <button class="btn btn-success" id="btnExportBackup">バックアップ</button>
+                <button class="btn btn-primary" id="btnImportBackup">復元</button>
             </div>
         </header>
 
         <div class="tabs">
-            <button class="tab active tab-theme-purple" onclick="showTab('quick')">クイック入力</button>
-            <button class="tab" onclick="showTab('estimate')">見積一覧</button>
-            <button class="tab" onclick="showTab('actual')">実績一覧</button>
-            <button class="tab" onclick="showTab('report')">レポート</button>
-            <button class="tab" onclick="showTab('settings')">⚙️ 設定</button>
+            <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
+            <button class="tab" data-tab="estimate">見積一覧</button>
+            <button class="tab" data-tab="actual">実績一覧</button>
+            <button class="tab" data-tab="report">レポート</button>
+            <button class="tab" data-tab="settings">⚙️ 設定</button>
         </div>
 
         <div class="content">
@@ -34,9 +36,9 @@
                     <!-- セグメントボタンを右側に配置 -->
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
                         <div class="segment-buttons">
-                            <button id="quickActualModeBtn" class="active" onclick="switchQuickInputMode('actual')">実績入力</button>
-                            <button id="quickEstimateModeBtn" onclick="switchQuickInputMode('estimate')">見積登録</button>
-                            <button id="quickVacationModeBtn" onclick="switchQuickInputMode('vacation')">休暇登録</button>
+                            <button id="quickActualModeBtn" class="active">実績入力</button>
+                            <button id="quickEstimateModeBtn">見積登録</button>
+                            <button id="quickVacationModeBtn">休暇登録</button>
                         </div>
                     </div>
 
@@ -45,17 +47,9 @@
                         <div class="form-group">
                             <label>対応検索・選択</label>
                             <div style="position: relative;">
-                                <input 
-                                    type="text" 
-                                    id="quickTaskSearch" 
-                                    placeholder="クリックして対応を選択..." 
-                                    autocomplete="off"
-                                    oninput="filterQuickTaskList()"
-                                    onclick="showQuickTaskDropdown()"
+                                <input type="text" id="quickTaskSearch" placeholder="クリックして対応を選択..." autocomplete="off"
                                     style="padding-right: 35px;">
-                                <button 
-                                    id="quickTaskClearBtn"
-                                    onclick="clearQuickTaskSelection()"
+                                <button id="quickTaskClearBtn"
                                     style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
                                     title="クリア">×</button>
                                 <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
@@ -66,14 +60,15 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                             <div class="form-group">
                                 <label>担当</label>
-                                <select id="quickMemberSelect" onchange="handleMemberChange()">
+                                <select id="quickMemberSelect">
                                     <option value="">（自動）</option>
                                 </select>
                                 <small style="color: #999; font-size: 11px;">通常は自動</small>
                             </div>
                             <div class="form-group">
                                 <label>作業日</label>
-                                <input type="date" id="quickWorkDate" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                                <input type="date" id="quickWorkDate"
+                                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
                                 <small style="color: #999; font-size: 11px;">未指定=今日</small>
                             </div>
                             <div class="form-group">
@@ -82,8 +77,9 @@
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-success" onclick="quickAddActual()" style="flex: 2;">追加</button>
-                            <button class="btn" onclick="openOtherWorkModal()" style="flex: 1; background: rgba(255,255,255,0.2); color: white;">その他</button>
+                            <button class="btn btn-success" id="btnQuickAddActual" style="flex: 2;">追加</button>
+                            <button class="btn" id="btnOpenOtherWork"
+                                style="flex: 1; background: rgba(255,255,255,0.2); color: white;">その他</button>
                         </div>
                     </div>
 
@@ -91,44 +87,50 @@
                     <div id="quickEstimateForm" class="quick-form" style="display: none;">
                         <div class="form-group">
                             <label>版数</label>
-                            <select id="quickEstVersion" onchange="handleVersionChange('quickEstVersion')">
+                            <select id="quickEstVersion">
                                 <option value="">-- 版数を選択 --</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>帳票名</label>
-                            <select id="quickEstFormNameSelect" onchange="handleQuickFormNameChange()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                            <select id="quickEstFormNameSelect"
+                                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
                                 <option value="">-- 帳票名を選択 --</option>
                                 <option value="__new__">新規入力</option>
                             </select>
-                            <input type="text" id="quickEstFormName" placeholder="帳票A" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; display: none;">
-                            <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
+                            <input type="text" id="quickEstFormName" placeholder="帳票A"
+                                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; display: none;">
+                            <small
+                                style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
                         </div>
                         <div class="form-group">
                             <label>対応名</label>
-                            <input type="text" id="quickEstTask" placeholder="X対応" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                            <input type="text" id="quickEstTask" placeholder="X対応"
+                                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
                         </div>
                         <div class="form-group">
                             <label>作業月</label>
                             <div style="display: flex; gap: 12px; margin-bottom: 8px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="quickEstMonthType" value="single" checked onchange="switchQuickEstMonthType()" style="width: auto; margin-right: 4px;">
+                                    <input type="radio" name="quickEstMonthType" value="single" checked
+                                        style="width: auto; margin-right: 4px;">
                                     <span style="color: rgba(255,255,255,0.75); font-size: 11px;">単一月</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="quickEstMonthType" value="multi" onchange="switchQuickEstMonthType()" style="width: auto; margin-right: 4px;">
+                                    <input type="radio" name="quickEstMonthType" value="multi"
+                                        style="width: auto; margin-right: 4px;">
                                     <span style="color: rgba(255,255,255,0.75); font-size: 11px;">複数月</span>
                                 </label>
                             </div>
                             <div id="quickEstMonthInputs">
                                 <div id="quickEstSingleMonthInput" style="display: block;">
-                                    <select id="quickEstStartMonth" onchange="updateQuickEstWorkMonthUI()"></select>
+                                    <select id="quickEstStartMonth"></select>
                                 </div>
                                 <div id="quickEstMultiMonthInput" style="display: none;">
                                     <div style="display: flex; gap: 10px; align-items: center;">
-                                        <select id="quickEstStartMonthMulti" onchange="updateQuickEstWorkMonthUI()"></select>
+                                        <select id="quickEstStartMonthMulti"></select>
                                         <span>〜</span>
-                                        <select id="quickEstEndMonth" onchange="updateQuickEstWorkMonthUI()"></select>
+                                        <select id="quickEstEndMonth"></select>
                                     </div>
                                 </div>
                             </div>
@@ -145,51 +147,68 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                        <td style="text-align: center; font-weight: 600;"><span
+                                                class="badge badge-ui">UI</span></td>
                                         <td><select id="quickEstUI_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
+                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5"
+                                                style="margin: 0;"></td>
                                     </tr>
                                     <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                        <td><select id="quickEstPG_member" style="margin: 0;" onchange="autoFillMember('quickEstPG_member')"></select></td>
-                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
+                                        <td style="text-align: center; font-weight: 600;"><span
+                                                class="badge badge-pg">PG</span></td>
+                                        <td><select id="quickEstPG_member" style="margin: 0;"></select></td>
+                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5"
+                                                style="margin: 0;"></td>
                                     </tr>
                                     <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                        <td><select id="quickEstPT_member" style="margin: 0;" onchange="autoFillMember('quickEstPT_member')"></select></td>
-                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
+                                        <td style="text-align: center; font-weight: 600;"><span
+                                                class="badge badge-pt">PT</span></td>
+                                        <td><select id="quickEstPT_member" style="margin: 0;"></select></td>
+                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5"
+                                                style="margin: 0;"></td>
                                     </tr>
                                     <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                        <td><select id="quickEstIT_member" style="margin: 0;" onchange="autoFillMember('quickEstIT_member')"></select></td>
-                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
+                                        <td style="text-align: center; font-weight: 600;"><span
+                                                class="badge badge-it">IT</span></td>
+                                        <td><select id="quickEstIT_member" style="margin: 0;"></select></td>
+                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5"
+                                                style="margin: 0;"></td>
                                     </tr>
                                     <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                        <td><select id="quickEstST_member" style="margin: 0;" onchange="autoFillMember('quickEstST_member')"></select></td>
-                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateQuickEstimateTotals()"></td>
+                                        <td style="text-align: center; font-weight: 600;"><span
+                                                class="badge badge-st">ST</span></td>
+                                        <td><select id="quickEstST_member" style="margin: 0;"></select></td>
+                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5"
+                                                style="margin: 0;"></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- 合計表示エリア -->
-                        <div id="quickEstimateTotals" style="background: rgba(25, 118, 210, 0.15); padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div id="quickEstimateTotals"
+                            style="background: rgba(25, 118, 210, 0.15); padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                 <span style="font-weight: 600; color: rgba(255,255,255,0.9);">対応合計:</span>
                                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                                    <span style="color: rgba(255,255,255,0.95);"><strong id="quickEstTotalHours">0.0</strong> h</span>
-                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalDays">0.0</span> 人日)</span>
-                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalMonths">0.00</span> 人月)</span>
+                                    <span style="color: rgba(255,255,255,0.95);"><strong
+                                            id="quickEstTotalHours">0.0</strong> h</span>
+                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalDays">0.0</span>
+                                        人日)</span>
+                                    <span style="color: rgba(255,255,255,0.8);">(<span
+                                            id="quickEstTotalMonths">0.00</span> 人月)</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 月分割アシスタント -->
-                        <div style="background: rgba(251, 146, 60, 0.15); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb923c;">
+                        <div
+                            style="background: rgba(251, 146, 60, 0.15); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb923c;">
                             <div class="form-group" style="margin-bottom: 10px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="quickEnableMonthSplit" onchange="toggleQuickMonthSplit()" style="width: auto; margin-right: 10px;">
+                                    <input type="checkbox" id="quickEnableMonthSplit" onchange="toggleQuickMonthSplit()"
+                                        style="width: auto; margin-right: 10px;">
                                     <span style="font-weight: 600; color: #ea580c;">📅 複数月に分割して登録</span>
                                 </label>
                                 <small style="color: rgba(255,255,255,0.8); display: block; margin-top: 5px;">
@@ -202,23 +221,33 @@
                                     <label>分割する工程を選択</label>
                                     <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" id="quickSplitUI" class="quick-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                            <input type="checkbox" id="quickSplitUI"
+                                                class="quick-split-process-checkbox"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>UI</span>
                                         </label>
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" id="quickSplitPG" class="quick-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                            <input type="checkbox" id="quickSplitPG"
+                                                class="quick-split-process-checkbox"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>PG</span>
                                         </label>
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" id="quickSplitPT" class="quick-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                            <input type="checkbox" id="quickSplitPT"
+                                                class="quick-split-process-checkbox"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>PT</span>
                                         </label>
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" id="quickSplitIT" class="quick-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                            <input type="checkbox" id="quickSplitIT"
+                                                class="quick-split-process-checkbox"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>IT</span>
                                         </label>
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" id="quickSplitST" class="quick-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                            <input type="checkbox" id="quickSplitST"
+                                                class="quick-split-process-checkbox"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>ST</span>
                                         </label>
                                     </div>
@@ -229,16 +258,16 @@
 
                                 <div class="form-group">
                                     <label>総工数</label>
-                                    <input type="number" id="quickTotalHours" step="0.1" min="0" placeholder="例: 80" oninput="updateQuickMonthPreview()">
+                                    <input type="number" id="quickTotalHours" step="0.1" min="0" placeholder="例: 80">
                                     <span style="margin-left: 5px;">時間</span>
                                 </div>
 
                                 <div class="form-group">
                                     <label>作業期間</label>
                                     <div style="display: flex; gap: 10px; align-items: center;">
-                                        <select id="quickStartMonth" onchange="updateQuickMonthPreview()"></select>
+                                        <select id="quickStartMonth"></select>
                                         <span>〜</span>
-                                        <select id="quickEndMonth" onchange="updateQuickMonthPreview()"></select>
+                                        <select id="quickEndMonth"></select>
                                     </div>
                                 </div>
 
@@ -246,11 +275,13 @@
                                     <label>分割方法</label>
                                     <div style="display: flex; gap: 20px;">
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="radio" name="quickSplitMethod" value="equal" checked onchange="updateQuickMonthPreview()" style="width: auto; margin-right: 5px;">
+                                            <input type="radio" name="quickSplitMethod" value="equal" checked
+                                                style="width: auto; margin-right: 5px;">
                                             <span>均等分割</span>
                                         </label>
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="radio" name="quickSplitMethod" value="manual" onchange="updateQuickMonthPreview()" style="width: auto; margin-right: 5px;">
+                                            <input type="radio" name="quickSplitMethod" value="manual"
+                                                style="width: auto; margin-right: 5px;">
                                             <span>手動設定</span>
                                         </label>
                                     </div>
@@ -260,7 +291,8 @@
                             </div>
                         </div>
 
-                        <button class="btn" onclick="addQuickEstimate()" style="margin-top: 15px; background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
+                        <button class="btn" id="btnAddQuickEstimate"
+                            style="margin-top: 15px; background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
                     </div>
 
                     <!-- 休暇登録フォーム -->
@@ -276,7 +308,7 @@
                         </div>
                         <div class="form-group">
                             <label>休暇タイプ</label>
-                            <select id="quickVacationType" onchange="handleVacationTypeChange()">
+                            <select id="quickVacationType">
                                 <option value="有休">有給休暇（有休）</option>
                                 <option value="特休">特別休暇（特休）</option>
                                 <option value="代休">代休（代休）</option>
@@ -291,7 +323,8 @@
                                 時間休は1h単位で入力してください。全日休暇は8hです。
                             </small>
                         </div>
-                        <button class="btn" onclick="addQuickVacation()" style="background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
+                        <button class="btn" id="btnAddQuickVacation"
+                            style="background: rgba(255,255,255,0.9); color: #7b3ff2; font-weight: 600;">登録</button>
                     </div>
                 </div>
 
@@ -303,8 +336,10 @@
                 <h2>見積一覧</h2>
 
                 <!-- 合計工数表示 -->
-                <div id="estimateTotalCard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div id="estimateTotalCard"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <div>
                             <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">合計工数</div>
                             <div style="font-size: 28px; font-weight: bold;" id="estimateTotalHours">0h</div>
@@ -317,42 +352,47 @@
                 </div>
 
                 <!-- 担当者別合計表示 -->
-                <div id="estimateMemberSummary" style="background: #f8f9fa; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
+                <div id="estimateMemberSummary"
+                    style="background: #f8f9fa; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
                     <div style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 10px;">担当者別合計</div>
                     <div id="estimateMemberSummaryContent" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     </div>
                 </div>
 
                 <!-- 新規登録ボタン -->
-                <button class="btn btn-primary" onclick="openAddEstimateModal()" style="margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <button class="btn btn-primary" id="btnOpenAddEstimateModal"
+                    style="margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
                     <span style="font-size: 16px;">+</span> 新規登録
                 </button>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
                 <div id="estimateFiltersCompact" class="sticky-filter-container" style="margin-bottom: 20px;">
-                    <div style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div
+                        style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <select id="estimateFilterType" onchange="handleEstimateFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                            <select id="estimateFilterType" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="month">月別</option>
                                 <option value="version">版数別</option>
                             </select>
                         </div>
-                        <div id="estimateMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <div id="estimateMonthFilterCompact"
+                            style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                            <select id="estimateMonthFilter" onchange="handleEstimateMonthFilterChange()" style="padding: 3px 6px; font-size: 12px;">
+                            <select id="estimateMonthFilter" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
-                        <div id="estimateVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <div id="estimateVersionFilterCompact"
+                            style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <select id="estimateVersionFilter" onchange="handleEstimateVersionFilterChange()" style="padding: 3px 6px; font-size: 12px;">
+                            <select id="estimateVersionFilter" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <select id="estimateViewType" onchange="renderEstimateList()" style="padding: 3px 6px; font-size: 12px;">
+                            <select id="estimateViewType" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="grouped">グループ</option>
                                 <option value="matrix">マトリクス</option>
                                 <option value="list">リスト</option>
@@ -360,35 +400,39 @@
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="workMonthSelectionMode" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                        <label
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="workMonthSelectionMode" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="estimateEditMode" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                        <label
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="estimateEditMode" style="width: auto; margin-right: 5px;">
                             <span>編集モード</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="estimateFiltersSegmented" class="sticky-filter-container" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                <div id="estimateFiltersSegmented" class="sticky-filter-container"
+                    style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
                             <div class="segment-buttons">
-                                <button onclick="setEstimateFilterType('month')" id="btnEstimateFilterMonth" class="active">月別</button>
-                                <button onclick="setEstimateFilterType('version')" id="btnEstimateFilterVersion">版数別</button>
+                                <button id="btnEstimateFilterMonth" class="active">月別</button>
+                                <button id="btnEstimateFilterVersion">版数別</button>
                             </div>
                         </div>
 
                         <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 130px));">
+                            <div id="estimateMonthButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateMonthFilter2" onchange="document.getElementById('estimateMonthFilter').value = this.value; handleEstimateMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="estimateMonthFilter2" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -396,10 +440,12 @@
                         <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="estimateVersionButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 110px));">
+                            <div id="estimateVersionButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateVersionFilter2" onchange="document.getElementById('estimateVersionFilter').value = this.value; handleEstimateVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="estimateVersionFilter2"
+                                style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -407,52 +453,64 @@
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div class="segment-buttons">
-                                <button id="btnEstimateGrouped" onclick="setEstimateViewType('grouped')" class="active">グループ</button>
-                                <button id="btnEstimateMatrix" onclick="setEstimateViewType('matrix')">マトリクス</button>
-                                <button id="btnEstimateList" onclick="setEstimateViewType('list')">リスト</button>
+                                <button id="btnEstimateGrouped" class="active">グループ</button>
+                                <button id="btnEstimateMatrix">マトリクス</button>
+                                <button id="btnEstimateList">リスト</button>
                             </div>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="workMonthSelectionMode2" onchange="toggleWorkMonthSelectionMode()" style="width: auto; margin-right: 5px;">
+                        <label
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="workMonthSelectionMode2" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
-                        <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="estimateEditMode2" onchange="toggleEstimateEditMode()" style="width: auto; margin-right: 5px;">
+                        <label
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
+                            <input type="checkbox" id="estimateEditMode2" style="width: auto; margin-right: 5px;">
                             <span>編集モード</span>
                         </label>
                     </div>
                 </div>
-                
+
                 <!-- 作業月割り当てモード（フロート表示） -->
-                <div id="workMonthAssignmentMode" style="display: none; background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%); padding: 18px; border-radius: 8px; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-left: 4px solid #ffc107; max-width: 90vw;">
+                <div id="workMonthAssignmentMode"
+                    style="display: none; background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%); padding: 18px; border-radius: 8px; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-left: 4px solid #ffc107; max-width: 90vw;">
                     <!-- ドラッグハンドル -->
-                    <div id="dragHandle" style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                    <div id="dragHandle"
+                        style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center; z-index: 1;">
                         <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;"></div>
                     </div>
 
                     <!-- 閉じるボタン -->
-                    <button onclick="closeWorkMonthAssignmentMode()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); border: 2px solid #856404; font-size: 20px; font-weight: bold; color: #856404; cursor: pointer; padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1;" onmouseover="this.style.background='#856404'; this.style.color='white';" onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.color='#856404';">&times;</button>
+                    <!-- 閉じるボタン -->
+                    <button id="btnCloseWorkMonthAssignmentMode"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); border: 2px solid #856404; font-size: 20px; font-weight: bold; color: #856404; cursor: pointer; padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1;"
+                        onmouseover="this.style.background='#856404'; this.style.color='white';"
+                        onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.color='#856404';">&times;</button>
 
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 8px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="font-weight: 600; color: #856404;">割り当て先:</label>
-                            <select id="assignWorkMonth" style="padding: 8px 12px; border: 2px solid #ffc107; border-radius: 6px; font-weight: 500; font-size: 14px; background: white;">
+                            <select id="assignWorkMonth"
+                                style="padding: 8px 12px; border: 2px solid #ffc107; border-radius: 6px; font-weight: 500; font-size: 14px; background: white;">
                             </select>
                         </div>
-                        <button class="btn btn-success" onclick="executeWorkMonthAssignment()" style="margin: 0; font-weight: 600; padding: 8px 20px;">
+                        <button class="btn btn-success" id="btnExecuteWorkMonthAssignment"
+                            style="margin: 0; font-weight: 600; padding: 8px 20px;">
                             ✓ 割り当て実行
                         </button>
-                        <button class="btn" onclick="cancelWorkMonthSelection()" style="margin: 0; background: #6c757d; color: white; padding: 8px 16px;">
+                        <button class="btn" id="btnCancelWorkMonthSelection"
+                            style="margin: 0; background: #6c757d; color: white; padding: 8px 16px;">
                             選択解除
                         </button>
-                        <div id="selectedWorkHours" style="margin-left: auto; font-weight: 700; font-size: 18px; color: #1976d2; white-space: nowrap;">
+                        <div id="selectedWorkHours"
+                            style="margin-left: auto; font-weight: 700; font-size: 18px; color: #1976d2; white-space: nowrap;">
                             選択中: 0h (0人日 / 0人月)
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="estimateList"></div>
             </div>
 
@@ -460,10 +518,11 @@
                 <h2>実績データ一覧</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="actualFiltersCompact" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                <div id="actualFiltersCompact"
+                    style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示モード:</label>
-                        <select id="actualViewMode" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="actualViewMode" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全担当者</option>
                             <option value="member">担当者別</option>
                         </select>
@@ -471,13 +530,13 @@
 
                     <div id="memberSelectGroup" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">担当者:</label>
-                        <select id="actualMemberSelect" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="actualMemberSelect" style="padding: 3px 6px; font-size: 12px;">
                         </select>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="actualViewType" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="actualViewType" style="padding: 3px 6px; font-size: 12px;">
                             <option value="matrix">カレンダー</option>
                             <option value="list">リスト</option>
                         </select>
@@ -485,18 +544,19 @@
 
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示期間:</label>
-                        <select id="actualMonthFilter" onchange="renderActualList()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="actualMonthFilter" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="actualFiltersSegmented" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                <div id="actualFiltersSegmented"
+                    style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示モード:</label>
-                            <select id="actualViewMode2" onchange="document.getElementById('actualViewMode').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px;">
+                            <select id="actualViewMode2" style="padding: 4px 8px; font-size: 13px;">
                                 <option value="all">全担当者</option>
                                 <option value="member">担当者別</option>
                             </select>
@@ -505,28 +565,30 @@
                         <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">担当者:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMemberButtons2" class="segment-buttons" style="max-width: min(600px, calc(100vw - 120px));">
+                            <div id="actualMemberButtons2" class="segment-buttons"
+                                style="max-width: min(600px, calc(100vw - 120px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="actualMemberSelect2" onchange="document.getElementById('actualMemberSelect').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="actualMemberSelect2" style="padding: 4px 8px; font-size: 13px; display: none;">
                             </select>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div class="segment-buttons">
-                                <button onclick="setActualViewType('matrix')" id="btnActualMatrix" class="active">カレンダー</button>
-                                <button onclick="setActualViewType('list')" id="btnActualList">リスト</button>
+                                <button id="btnActualMatrix" class="active">カレンダー</button>
+                                <button id="btnActualList">リスト</button>
                             </div>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示期間:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="actualMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 140px));">
+                            <div id="actualMonthButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 140px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="actualMonthFilter2" onchange="document.getElementById('actualMonthFilter').value = this.value; renderActualList()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="actualMonthFilter2" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -540,29 +602,32 @@
                 <h2>工数レポート</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="reportFiltersCompact" class="sticky-filter-container" style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                <div id="reportFiltersCompact" class="sticky-filter-container"
+                    style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                        <select id="reportFilterType" onchange="handleReportFilterTypeChange()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportFilterType" style="padding: 3px 6px; font-size: 12px;">
                             <option value="month">月別</option>
                             <option value="version">版数別</option>
                         </select>
                     </div>
-                    <div id="reportMonthFilterCompact" style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                    <div id="reportMonthFilterCompact"
+                        style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="reportMonth" onchange="handleReportMonthFilterChange()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportMonth" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
-                    <div id="reportVersionFilterCompact" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                    <div id="reportVersionFilterCompact"
+                        style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                        <select id="reportVersion" onchange="handleReportVersionFilterChange()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportVersion" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全版数</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="reportViewType" onchange="updateReport()" style="padding: 3px 6px; font-size: 12px;">
+                        <select id="reportViewType" style="padding: 3px 6px; font-size: 12px;">
                             <option value="summary">サマリー</option>
                             <option value="grouped" selected>グループ</option>
                             <option value="matrix">マトリクス</option>
@@ -571,41 +636,44 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="reportFiltersSegmented" class="sticky-filter-container" style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                <div id="reportFiltersSegmented" class="sticky-filter-container"
+                    style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
                             <div class="segment-buttons">
-                                <button onclick="setReportFilterType('month')" id="btnFilterMonth" class="active">月別</button>
-                                <button onclick="setReportFilterType('version')" id="btnFilterVersion">版数別</button>
+                                <button id="btnFilterMonth" class="active">月別</button>
+                                <button id="btnFilterVersion">版数別</button>
                             </div>
                         </div>
                         <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportMonthButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 130px));">
+                            <div id="reportMonthButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportMonth2" onchange="document.getElementById('reportMonth').value = this.value; handleReportMonthFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="reportMonth2" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
                         <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
-                            <div id="reportVersionButtons2" class="segment-buttons" style="max-width: min(800px, calc(100vw - 110px));">
+                            <div id="reportVersionButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportVersion2" onchange="document.getElementById('reportVersion').value = this.value; handleReportVersionFilterChange()" style="padding: 4px 8px; font-size: 13px; display: none;">
+                            <select id="reportVersion2" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div class="segment-buttons">
-                                <button onclick="setReportViewType('summary')" id="btnReportSummary">サマリー</button>
-                                <button onclick="setReportViewType('grouped')" id="btnReportGrouped" class="active">グループ</button>
-                                <button onclick="setReportViewType('matrix')" id="btnReportMatrix">マトリクス</button>
+                                <button id="btnReportSummary">サマリー</button>
+                                <button id="btnReportGrouped" class="active">グループ</button>
+                                <button id="btnReportMatrix">マトリクス</button>
                             </div>
                         </div>
                     </div>
@@ -617,12 +685,14 @@
                     <div class="stat-card theme-bg theme-purple">
                         <h3>総見積工数</h3>
                         <div class="value" id="totalEstimate">0h</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;" id="totalEstimateManpower"></div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
+                            id="totalEstimateManpower"></div>
                     </div>
                     <div class="stat-card theme-bg theme-purple">
                         <h3>総実績工数</h3>
                         <div class="value" id="totalActual">0h</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;" id="totalActualManpower"></div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
+                            id="totalActualManpower"></div>
                     </div>
                     <div class="stat-card theme-bg theme-purple">
                         <h3>差異</h3>
@@ -651,17 +721,20 @@
 
                     <!-- フィルタ -->
                     <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-                        <select id="progressVersionFilter" onchange="updateProgressReport()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <select id="progressVersionFilter"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                             <option value="all">全版数</option>
                         </select>
-                        <select id="progressStatusFilter" onchange="updateProgressReport()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <select id="progressStatusFilter"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                             <option value="all">全ステータス</option>
                             <option value="completed">完了</option>
                             <option value="ontrack">順調</option>
                             <option value="warning">注意</option>
                             <option value="exceeded">超過</option>
                         </select>
-                        <button class="btn btn-primary" onclick="openBulkRemainingModal()" style="padding: 8px 16px; font-size: 13px;">
+                        <button class="btn btn-primary" id="btnOpenBulkRemaining"
+                            style="padding: 8px 16px; font-size: 13px;">
                             一括編集
                         </button>
                     </div>
@@ -681,7 +754,7 @@
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
                     <h3>📊 Excel出力</h3>
                     <p style="color: #666; margin-bottom: 15px;">実績データと見積データをExcel形式で出力します。</p>
-                    
+
                     <div style="margin-bottom: 15px;">
                         <h4 style="margin-bottom: 8px; font-size: 14px;">出力内容:</h4>
                         <ul style="color: #666; font-size: 13px; margin-left: 20px;">
@@ -689,8 +762,8 @@
                             <li><strong>見積シート:</strong> 版数、作業月、対応名、工程、担当、見積工数</li>
                         </ul>
                     </div>
-                    
-                    <button class="btn btn-success" onclick="exportToExcel()" style="font-weight: 600;">
+
+                    <button class="btn btn-success" id="btnExportExcel" style="font-weight: 600;">
                         📥 Excelファイルをダウンロード
                     </button>
                 </div>
@@ -698,15 +771,15 @@
 
             <div id="settings" class="tab-content">
                 <h2>⚙️ 設定</h2>
-                
+
                 <!-- テーマカラー設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>🎨 テーマカラー</h3>
                     <p style="color: #666; margin-bottom: 15px;">アプリの配色を変更できます。クイック入力エリア、レポート集計、アクティブタブに適用されます。</p>
-                    
+
                     <div class="form-group">
                         <label>色</label>
-                        <select id="themeColor" onchange="applyTheme()">
+                        <select id="themeColor">
                             <option value="purple">紫（現在）</option>
                             <option value="deep-blue">ディープブルー</option>
                             <option value="teal">ティール</option>
@@ -720,10 +793,10 @@
                             <option value="emerald">エメラルド</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>デザイン</label>
-                        <select id="themePattern" onchange="applyTheme()">
+                        <select id="themePattern">
                             <option value="none">シンプル（模様なし）</option>
                             <option value="wave">波模様</option>
                             <option value="stripe">右ストライプ</option>
@@ -739,10 +812,10 @@
                             <option value="border">上部ボーダー</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>タブの色</label>
-                        <select id="themeTabColor" onchange="applyTheme()">
+                        <select id="themeTabColor">
                             <option value="same">メインカラーと同じ</option>
                             <option value="default">デフォルト（青）</option>
                             <option value="purple">紫</option>
@@ -761,10 +834,10 @@
                             タブの色を個別に設定できます
                         </small>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>背景色</label>
-                        <select id="themeBackgroundColor" onchange="applyTheme()">
+                        <select id="themeBackgroundColor">
                             <option value="same">メインカラーと同じ</option>
                             <option value="purple">紫</option>
                             <option value="deep-blue">ディープブルー</option>
@@ -782,16 +855,17 @@
                             ページ全体の背景色を個別に設定できます
                         </small>
                     </div>
-                    
+
                     <!-- プレビュー -->
                     <div style="margin: 20px 0;">
                         <label style="display: block; margin-bottom: 10px; font-weight: 600;">プレビュー</label>
-                        <div id="themePreview" style="padding: 20px; border-radius: 8px; color: white; position: relative; overflow: hidden;">
+                        <div id="themePreview"
+                            style="padding: 20px; border-radius: 8px; color: white; position: relative; overflow: hidden;">
                             <div style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">クイック実績入力</div>
                             <div style="font-size: 14px;">レポート集計カード・アクティブタブにも適用されます</div>
                         </div>
                     </div>
-                    
+
                     <small style="color: #666; display: block; margin-top: 10px;">
                         ・設定は自動的に保存されます<br>
                         ・ページをリロードしても設定は保持されます
@@ -805,7 +879,8 @@
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showMonthColorsCheckbox" onchange="toggleMonthColorsSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="showMonthColorsCheckbox" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>見積一覧で月ごとに色分けする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -816,7 +891,8 @@
 
                     <div class="form-group" style="margin-top: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showDeviationColorsCheckbox" onchange="toggleDeviationColorsSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
+                            <input type="checkbox" id="showDeviationColorsCheckbox"
+                                style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
                             <span>レポートで乖離率に応じた背景色を表示する</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -827,7 +903,8 @@
 
                     <div class="form-group" style="margin-top: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showProgressBarsCheckbox" onchange="toggleProgressBarsSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
+                            <input type="checkbox" id="showProgressBarsCheckbox"
+                                style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
                             <span>レポートで進捗バーを表示する</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -840,14 +917,16 @@
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">進捗バーのスタイル</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="progressBarStyle" value="inline" onchange="saveProgressBarStyle()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <input type="radio" name="progressBarStyle" value="inline"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
                                 <span style="flex: 1;">
                                     <strong>セル内に表示</strong><br>
                                     <small style="color: #666;">進捗バーをセルのコンテンツとして表示（パーセンテージ表示可能）</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="progressBarStyle" value="bottom" onchange="saveProgressBarStyle()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <input type="radio" name="progressBarStyle" value="bottom"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
                                 <span style="flex: 1;">
                                     <strong>セル下部に表示</strong><br>
                                     <small style="color: #666;">進捗バーをセルの下部枠線として表示（パーセンテージは非表示）</small>
@@ -861,7 +940,8 @@
 
                     <div class="form-group" style="margin-top: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showProgressPercentageCheckbox" onchange="toggleProgressPercentageSetting()" style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
+                            <input type="checkbox" id="showProgressPercentageCheckbox"
+                                style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
                             <span>進捗バーにパーセンテージを表示する</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -872,17 +952,20 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">見積と実績の表示形式（レポートのマトリクス）</label>
+                        <label
+                            style="font-weight: 600; margin-bottom: 10px; display: block;">見積と実績の表示形式（レポートのマトリクス）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixEstActFormat" value="twoRows" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <input type="radio" name="matrixEstActFormat" value="twoRows"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
                                 <span style="flex: 1;">
                                     <strong>2行表示</strong><br>
                                     <small style="color: #666;">見積と実績を2行で表示（見積は細字、実績は太字）</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixEstActFormat" value="slash" onchange="saveMatrixEstActFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <input type="radio" name="matrixEstActFormat" value="slash"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
                                 <span style="flex: 1;">
                                     <strong>スラッシュ横並び</strong><br>
                                     <small style="color: #666;">例: 10.0 / 15.5</small>
@@ -895,31 +978,37 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">人日/人月の表示形式（レポートの合計列）</label>
+                        <label
+                            style="font-weight: 600; margin-bottom: 10px; display: block;">人日/人月の表示形式（レポートの合計列）</label>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="inline" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <input type="radio" name="matrixDayMonthFormat" value="inline"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
                                 <span style="flex: 1;">
                                     <strong>横に括弧で表示</strong><br>
                                     <small style="color: #666;">例: 10.0 (2.0人日/0.10人月)</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="separate" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <input type="radio" name="matrixDayMonthFormat" value="separate"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
                                 <span style="flex: 1;">
                                     <strong>別行で表示</strong><br>
-                                    <small style="color: #666;">見積: 10.0 / 実績: 15.5<br>見積: 2.0人日/0.10人月 / 実績: 3.1人日/0.16人月</small>
+                                    <small style="color: #666;">見積: 10.0 / 実績: 15.5<br>見積: 2.0人日/0.10人月 / 実績:
+                                        3.1人日/0.16人月</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="side" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <input type="radio" name="matrixDayMonthFormat" value="side"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
                                 <span style="flex: 1;">
                                     <strong>右側に表示</strong><br>
                                     <small style="color: #666;">見積 10.0　　　　2.0人日/0.10人月</small>
                                 </span>
                             </label>
                             <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="arrow" onchange="saveMatrixDayMonthFormat()" style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <input type="radio" name="matrixDayMonthFormat" value="arrow"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
                                 <span style="flex: 1;">
                                     <strong>矢印で表示</strong><br>
                                     <small style="color: #666;">見積 10.0 → 2.0人日/0.10人月</small>
@@ -939,7 +1028,7 @@
 
                     <div class="form-group">
                         <label>見積一覧のデフォルト表示</label>
-                        <select id="defaultEstimateViewType" onchange="saveDefaultViewTypeSetting()">
+                        <select id="defaultEstimateViewType">
                             <option value="grouped">グループ</option>
                             <option value="matrix">マトリクス</option>
                             <option value="list">リスト</option>
@@ -951,7 +1040,7 @@
 
                     <div class="form-group">
                         <label>レポートのデフォルト表示</label>
-                        <select id="defaultReportViewType" onchange="saveDefaultViewTypeSetting()">
+                        <select id="defaultReportViewType">
                             <option value="summary">サマリー</option>
                             <option value="grouped">グループ</option>
                             <option value="matrix">マトリクス</option>
@@ -965,10 +1054,10 @@
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>自動バックアップ</h3>
                     <p style="color: #666; margin-bottom: 15px;">データ保存時に自動的にJSONファイルをダウンロードします。</p>
-                    
+
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="autoBackupEnabled" onchange="saveAutoBackupSetting()" style="width: auto; margin-right: 10px;">
+                            <input type="checkbox" id="autoBackupEnabled" style="width: auto; margin-right: 10px;">
                             <span>自動バックアップを有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -984,7 +1073,7 @@
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="rememberQuickInputMode" onchange="saveQuickInputModeSetting()" style="width: auto; margin-right: 10px;">
+                            <input type="checkbox" id="rememberQuickInputMode" style="width: auto; margin-right: 10px;">
                             <span>前回のモード（実績/見積）を記憶する</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -996,11 +1085,13 @@
 
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>担当者表示順</h3>
-                    <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。</p>
+                    <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。
+                    </p>
 
                     <div class="form-group">
-                        <label>表示順序 <button onclick="showMemberOrderHelp()" style="border: none; background: none; cursor: pointer; color: #3498db; font-size: 18px;">ℹ️</button></label>
-                        <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中" onchange="updateAllDisplays()">
+                        <label>表示順序 <button id="btnShowMemberOrderHelp"
+                                style="border: none; background: none; cursor: pointer; color: #3498db; font-size: 18px;">ℹ️</button></label>
+                        <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中">
                         <small style="color: #666; display: block; margin-top: 5px;">
                             ・カンマ区切りで入力してください<br>
                             ・指定した順番で表示されます<br>
@@ -1009,7 +1100,7 @@
                         </small>
                     </div>
 
-                    <button class="btn btn-primary" onclick="updateAllDisplays()" style="margin-top: 10px;">設定を適用</button>
+                    <button class="btn btn-primary" id="btnUpdateAllDisplays" style="margin-top: 10px;">設定を適用</button>
                 </div>
 
                 <!-- UI/UX設定 -->
@@ -1019,7 +1110,8 @@
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="stickyFilterEnabled" onchange="saveStickyFilterSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="stickyFilterEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>フィルタ固定表示（Sticky）を有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
@@ -1029,7 +1121,8 @@
 
                     <div class="form-group" style="margin-top: 15px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="floatingFilterEnabled" onchange="saveFloatingFilterSetting()" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="floatingFilterEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>フローティングフィルタパネルを有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
@@ -1039,7 +1132,7 @@
 
                     <div class="form-group" style="margin-top: 15px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="debugModeEnabled" onchange="saveDebugModeSetting()" style="width: auto; margin-right: 10px;">
+                            <input type="checkbox" id="debugModeEnabled" style="width: auto; margin-right: 10px;">
                             <span>デバッグモードを有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
@@ -1055,7 +1148,7 @@
 
                     <div class="form-group">
                         <label>カラーパターン</label>
-                        <select id="chartColorScheme" onchange="saveChartColorScheme()">
+                        <select id="chartColorScheme">
                             <option value="auto">テーマカラーに合わせる（自動）</option>
                             <option value="classic">クラシック</option>
                             <option value="purple">紫</option>
@@ -1083,14 +1176,17 @@
 
                         <!-- 棒グラフプレビュー -->
                         <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">見積 vs 実績の棒グラフ</div>
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">見積 vs
+                                実績の棒グラフ</div>
                             <div style="display: flex; gap: 15px; align-items: center;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div id="chartPreviewEstimateBar" style="width: 40px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewEstimateBar"
+                                        style="width: 40px; height: 20px; border-radius: 3px;"></div>
                                     <span style="font-size: 12px; color: #495057;">見積</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div id="chartPreviewActualBar" style="width: 40px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewActualBar"
+                                        style="width: 40px; height: 20px; border-radius: 3px;"></div>
                                     <span style="font-size: 12px; color: #495057;">実績</span>
                                 </div>
                             </div>
@@ -1098,26 +1194,32 @@
 
                         <!-- ドーナツグラフプレビュー -->
                         <div style="background: white; padding: 15px; border-radius: 8px;">
-                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">工数内訳ドーナツグラフ</div>
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">
+                                工数内訳ドーナツグラフ</div>
                             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div id="chartPreviewUI" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewUI" style="width: 20px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">UI</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div id="chartPreviewPG" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewPG" style="width: 20px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">PG</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div id="chartPreviewPT" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewPT" style="width: 20px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">PT</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div id="chartPreviewIT" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewIT" style="width: 20px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">IT</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div id="chartPreviewST" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                                    <div id="chartPreviewST" style="width: 20px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">ST</span>
                                 </div>
                             </div>
@@ -1132,8 +1234,10 @@
                     <div class="form-group">
                         <label>見積一覧のレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('estimate', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('estimate', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                            <button onclick="toggleFilterLayout('estimate', 'compact')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('estimate', 'segmented')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             横並び: コンパクトな横並びレイアウト<br>
@@ -1144,8 +1248,10 @@
                     <div class="form-group">
                         <label>実績一覧のレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('actual', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('actual', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                            <button onclick="toggleFilterLayout('actual', 'compact')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('actual', 'segmented')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             横並び: コンパクトな横並びレイアウト<br>
@@ -1156,8 +1262,10 @@
                     <div class="form-group">
                         <label>レポートのレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('report', 'compact')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('report', 'segmented')" class="layout-toggle-btn" style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
+                            <button onclick="toggleFilterLayout('report', 'compact')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
+                            <button onclick="toggleFilterLayout('report', 'segmented')" class="layout-toggle-btn"
+                                style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             横並び: コンパクトな横並びレイアウト<br>
@@ -1174,17 +1282,20 @@
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1: 即効性の高い改善</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportAccuracyEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportAccuracyEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>見積精度の%表示（工程別、版数別）</span>
                         </label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportAnomalyEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportAnomalyEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>異常値のハイライト表示（50%超過を強調）</span>
                         </label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportWarningTasksEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportWarningTasksEnabled"
+                                style="width: auto; margin-right: 10px;" checked>
                             <span>要注意タスクのリスト表示</span>
                         </label>
                     </div>
@@ -1193,12 +1304,14 @@
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2: 視覚化の強化</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportChartEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportChartEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>棒グラフ表示（版数別、工程別）</span>
                         </label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportTrendEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportTrendEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>月別推移の表示</span>
                         </label>
                     </div>
@@ -1207,12 +1320,14 @@
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 3: 高度な分析</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportMemberAnalysisEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportMemberAnalysisEnabled"
+                                style="width: auto; margin-right: 10px;" checked>
                             <span>担当者別の詳細分析</span>
                         </label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportInsightsEnabled" onchange="saveReportSettings(); updateReport();" style="width: auto; margin-right: 10px;" checked>
+                            <input type="checkbox" id="reportInsightsEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
                             <span>インサイト・推奨アクションの表示</span>
                         </label>
                     </div>
@@ -1243,7 +1358,8 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary" onclick="addCompanyHoliday()" style="margin-bottom: 20px;">休日を追加</button>
+                    <button class="btn btn-primary" id="btnAddCompanyHoliday"
+                        style="margin-bottom: 20px;">休日を追加</button>
 
                     <div id="companyHolidayList"></div>
                 </div>
@@ -1251,14 +1367,14 @@
         </div>
     </div>
 
-    <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;" onchange="handleFileImport(event)">
+    <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;">
 
     <!-- 作業詳細モーダル -->
     <div id="workModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">作業詳細</h3>
-                <button class="modal-close" onclick="closeWorkModal()">&times;</button>
+                <button class="modal-close" id="btnCloseWorkModal">&times;</button>
             </div>
             <div class="modal-body" id="modalBody">
             </div>
@@ -1270,7 +1386,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>実績データを編集</h3>
-                <button class="modal-close" onclick="closeEditActualModal()">&times;</button>
+                <button class="modal-close" id="btnCloseEditActualModal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editActualId">
@@ -1280,13 +1396,13 @@
                 </div>
                 <div class="form-group">
                     <label>版数</label>
-                    <select id="editActualVersion" onchange="handleVersionChange('editActualVersion')">
+                    <select id="editActualVersion">
                         <option value="">-- 版数を選択 --</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
-                    <select id="editActualTaskSelect" onchange="handleActualTaskSelect()" style="margin-bottom: 10px;">
+                    <select id="editActualTaskSelect" style="margin-bottom: 10px;">
                         <option value="">-- 対応を選択 --</option>
                     </select>
                     <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
@@ -1306,9 +1422,10 @@
                 </div>
                 <div class="form-group">
                     <label>担当</label>
-                    <select id="editActualMember" onchange="handleEditActualMemberChange()">
+                    <select id="editActualMember">
                     </select>
-                    <span id="editActualMemberDisplay" style="display: none; padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></span>
+                    <span id="editActualMemberDisplay"
+                        style="display: none; padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></span>
                 </div>
                 <div class="form-group">
                     <label>実績工数</label>
@@ -1317,16 +1434,20 @@
                 <div class="form-group" id="remainingHoursGroup">
                     <label>見込残存時間</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" id="editActualRemainingHours" step="0.5" min="0" placeholder="0" style="flex: 1; max-width: 120px;">
+                        <input type="number" id="editActualRemainingHours" step="0.5" min="0" placeholder="0"
+                            style="flex: 1; max-width: 120px;">
                         <span style="color: #666; font-size: 13px;">時間</span>
                     </div>
                     <small style="color: #666; display: block; margin-top: 5px;">この対応にあと何時間で完了予定か入力（0=完了）</small>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="saveActualEdit()">保存</button>
-                    <button class="btn" id="editActualOtherBtn" onclick="openOtherWorkFromCalendar()" style="background: #9b59b6; color: white; display: none;">その他作業</button>
-                    <button class="btn" id="editActualVacationBtn" onclick="openVacationFromCalendar()" style="background: #27ae60; color: white; display: none;">休暇登録</button>
-                    <button class="btn" onclick="closeEditActualModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn btn-primary" id="btnSaveActualEdit">保存</button>
+                    <button class="btn" id="editActualOtherBtn"
+                        style="background: #9b59b6; color: white; display: none;">その他作業</button>
+                    <button class="btn" id="editActualVacationBtn"
+                        style="background: #27ae60; color: white; display: none;">休暇登録</button>
+                    <button class="btn" id="btnCloseEditActualModalCancel"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1342,7 +1463,8 @@
             <div class="modal-body" style="overflow-y: auto; max-height: calc(85vh - 120px);">
                 <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
                     <label>版数フィルタ:</label>
-                    <select id="bulkRemainingVersionFilter" onchange="renderBulkRemainingTable()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                    <select id="bulkRemainingVersionFilter" onchange="renderBulkRemainingTable()"
+                        style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                         <option value="all">全版数</option>
                     </select>
                 </div>
@@ -1367,8 +1489,9 @@
                     </table>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
-                    <button class="btn btn-primary" onclick="saveBulkRemaining()">保存</button>
-                    <button class="btn" onclick="closeBulkRemainingModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn btn-primary" id="btnSaveBulkRemaining">保存</button>
+                    <button class="btn" id="btnCloseBulkRemaining"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1379,22 +1502,24 @@
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">
                 <h3 style="color: white;">休暇を登録</h3>
-                <button class="modal-close" onclick="closeVacationModal()" style="color: white;">&times;</button>
+                <button class="modal-close" id="btnCloseVacationModal" style="color: white;">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="vacationModalMember">
                 <input type="hidden" id="vacationModalDate">
                 <div class="form-group">
                     <label>担当者</label>
-                    <div id="vacationModalMemberDisplay" style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
+                    <div id="vacationModalMemberDisplay"
+                        style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
                 </div>
                 <div class="form-group">
                     <label>日付</label>
-                    <div id="vacationModalDateDisplay" style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
+                    <div id="vacationModalDateDisplay"
+                        style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
                 </div>
                 <div class="form-group">
                     <label>休暇タイプ</label>
-                    <select id="vacationModalType" onchange="handleVacationModalTypeChange()">
+                    <select id="vacationModalType">
                         <option value="有休">有給休暇（有休）</option>
                         <option value="特休">特別休暇（特休）</option>
                         <option value="代休">代休（代休）</option>
@@ -1408,8 +1533,10 @@
                     <small style="color: #666; display: block; margin-top: 5px;">時間休は1h単位で入力。全日休暇は8h。</small>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="saveVacationFromModal()" style="background: #f57c00;">登録</button>
-                    <button class="btn" onclick="closeVacationModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn btn-primary" id="btnSaveVacationFromModal"
+                        style="background: #f57c00;">登録</button>
+                    <button class="btn" id="btnCloseVacationModalCancel"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1420,19 +1547,19 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>見積データを編集</h3>
-                <button class="modal-close" onclick="closeEditEstimateModal()">&times;</button>
+                <button class="modal-close" id="btnCloseEditEstimateModal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editEstimateId">
                 <div class="form-group">
                     <label>版数</label>
-                    <select id="editEstimateVersion" onchange="handleVersionChange('editEstimateVersion')">
+                    <select id="editEstimateVersion">
                         <option value="">-- 版数を選択 --</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
-                    <input type="text" id="editEstimateTaskSearch" placeholder="検索または新規入力" list="editEstimateTaskList" oninput="handleEstimateTaskInput()">
+                    <input type="text" id="editEstimateTaskSearch" placeholder="検索または新規入力" list="editEstimateTaskList">
                     <datalist id="editEstimateTaskList">
                     </datalist>
                 </div>
@@ -1453,7 +1580,7 @@
                 </div>
                 <div class="form-group">
                     <label>見積工数</label>
-                    <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8" oninput="syncEditTotalHours()">
+                    <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
                     <small style="color: #666; display: block; margin-top: 5px;">
                         複数月に分割している場合、総工数が表示されます
                     </small>
@@ -1462,11 +1589,13 @@
                     <label>作業月設定</label>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="editWorkMonthMode" value="single" checked onchange="toggleEditWorkMonthMode()" style="width: auto; margin-right: 5px;">
+                            <input type="radio" name="editWorkMonthMode" value="single" checked
+                                style="width: auto; margin-right: 5px;">
                             <span>単一月</span>
                         </label>
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="editWorkMonthMode" value="multi" onchange="toggleEditWorkMonthMode()" style="width: auto; margin-right: 5px;">
+                            <input type="radio" name="editWorkMonthMode" value="multi"
+                                style="width: auto; margin-right: 5px;">
                             <span>複数月分割</span>
                         </label>
                     </div>
@@ -1486,18 +1615,20 @@
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
                             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                                 <label style="flex: 1;">作業期間:</label>
-                                <select id="editStartMonth" onchange="updateEditMonthPreview()"></select>
+                                <select id="editStartMonth"></select>
                                 <span>〜</span>
-                                <select id="editEndMonth" onchange="updateEditMonthPreview()"></select>
+                                <select id="editEndMonth"></select>
                             </div>
 
                             <div style="display: flex; gap: 20px; margin-bottom: 10px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="editSplitMethod" value="equal" checked onchange="updateEditMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <input type="radio" name="editSplitMethod" value="equal" checked
+                                        style="width: auto; margin-right: 5px;">
                                     <span>均等分割</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="editSplitMethod" value="manual" onchange="updateEditMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <input type="radio" name="editSplitMethod" value="manual"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>手動設定</span>
                                 </label>
                             </div>
@@ -1507,8 +1638,9 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="saveEstimateEdit()">保存</button>
-                    <button class="btn" onclick="closeEditEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn btn-primary" id="btnSaveEstimateEdit">保存</button>
+                    <button class="btn" id="btnCloseEditEstimateModalCancel"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1519,20 +1651,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>対応名を編集</h3>
-                <button class="modal-close" onclick="closeEditTaskModal()">&times;</button>
+                <button class="modal-close" id="btnCloseEditTaskModal">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editTaskOldVersion">
                 <input type="hidden" id="editTaskOldName">
                 <div class="form-group">
                     <label>版数</label>
-                    <select id="editTaskVersion" onchange="handleVersionChange('editTaskVersion')">
+                    <select id="editTaskVersion">
                         <option value="">-- 版数を選択 --</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>帳票名</label>
-                    <select id="editTaskFormNameSelect" onchange="handleEditFormNameChange()">
+                    <select id="editTaskFormNameSelect">
                         <option value="">-- 帳票名を選択 --</option>
                         <option value="__new__">新規入力</option>
                     </select>
@@ -1544,11 +1676,13 @@
                 </div>
                 <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 6px;">
                     <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
-                    <div style="font-size: 13px; color: #856404;">この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
+                    <div style="font-size: 13px; color: #856404;">
+                        この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="saveTaskEdit()">保存</button>
-                    <button class="btn" onclick="closeEditTaskModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn btn-primary" id="btnSaveTaskEdit">保存</button>
+                    <button class="btn" id="btnCloseEditTaskModalCancel"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1559,7 +1693,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="breakdownModalTitle">工程内訳</h3>
-                <button class="modal-close" onclick="closeProcessBreakdownModal()">&times;</button>
+                <button class="modal-close" id="btnCloseProcessBreakdownModal">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="breakdownModalContent"></div>
@@ -1575,19 +1709,22 @@
                 <button class="modal-close" onclick="closeRemainingHoursModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="remainingHoursInfo" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
+                <div id="remainingHoursInfo"
+                    style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
                     <!-- 版数、対応名、工程情報を表示 -->
                 </div>
 
                 <div id="remainingHoursMemberSelect" style="display: none; margin-bottom: 20px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">担当者</label>
-                    <select id="remainingHoursMember" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <select id="remainingHoursMember"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">⏱️ 見込残存時間 (h)</label>
-                    <input type="number" id="remainingHoursInput" step="0.1" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="number" id="remainingHoursInput" step="0.1" min="0"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     <small style="color: #666; display: block; margin-top: 5px;">
                         0を入力すると完了（100%）として扱われます
                     </small>
@@ -1595,15 +1732,20 @@
 
                 <!-- 登録実績リスト -->
                 <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📄 実績一覧（表示期間内）</label>
-                    <div id="remainingHoursActualsContent" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📄
+                        実績一覧（表示期間内）</label>
+                    <div id="remainingHoursActualsContent"
+                        style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
                         <!-- 実績リストをここに表示 -->
                     </div>
                 </div>
 
                 <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                    <button onclick="closeRemainingHoursModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
-                    <button onclick="saveRemainingHoursFromModal()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">保存</button>
+                    <button onclick="closeRemainingHoursModal()"
+                        style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
+                    <button onclick="saveRemainingHoursFromModal()"
+                        style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">保存</button>
                 </div>
             </div>
         </div>
@@ -1640,11 +1782,13 @@
                     <label>作業月</label>
                     <div style="display: flex; gap: 12px; margin-bottom: 8px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="addEstMonthType" value="single" checked onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
+                            <input type="radio" name="addEstMonthType" value="single" checked
+                                onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
                             <span style="font-size: 14px;">単一月</span>
                         </label>
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
+                            <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()"
+                                style="width: auto; margin-right: 4px;">
                             <span style="font-size: 14px;">複数月</span>
                         </label>
                     </div>
@@ -1673,37 +1817,53 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span>
+                                </td>
                                 <td><select id="addEstUI_member" style="margin: 0;"></select></td>
-                                <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;"
+                                        oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span>
+                                </td>
+                                <td><select id="addEstPG_member" style="margin: 0;"
+                                        onchange="autoFillMember('addEstPG_member')"></select></td>
+                                <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;"
+                                        oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span>
+                                </td>
+                                <td><select id="addEstPT_member" style="margin: 0;"
+                                        onchange="autoFillMember('addEstPT_member')"></select></td>
+                                <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;"
+                                        oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span>
+                                </td>
+                                <td><select id="addEstIT_member" style="margin: 0;"
+                                        onchange="autoFillMember('addEstIT_member')"></select></td>
+                                <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;"
+                                        oninput="updateAddEstimateTotals()"></td>
                             </tr>
                             <tr>
-                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
-                                <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span>
+                                </td>
+                                <td><select id="addEstST_member" style="margin: 0;"
+                                        onchange="autoFillMember('addEstST_member')"></select></td>
+                                <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;"
+                                        oninput="updateAddEstimateTotals()"></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- 合計表示エリア -->
-                <div id="addEstimateTotals" style="background: #e3f2fd; padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div id="addEstimateTotals"
+                    style="background: #e3f2fd; padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <span style="font-weight: 600; color: #1565c0;">対応合計:</span>
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
@@ -1714,10 +1874,12 @@
                 </div>
 
                 <!-- 月分割アシスタント -->
-                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb8c00;">
+                <div
+                    style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fb8c00;">
                     <div class="form-group" style="margin-bottom: 10px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="addEnableMonthSplit" onchange="toggleAddMonthSplit()" style="width: auto; margin-right: 10px;">
+                            <input type="checkbox" id="addEnableMonthSplit" onchange="toggleAddMonthSplit()"
+                                style="width: auto; margin-right: 10px;">
                             <span style="font-weight: 600; color: #e65100;">📅 複数月に分割して登録</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -1730,23 +1892,28 @@
                             <label>分割する工程を選択</label>
                             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="addSplitUI" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <input type="checkbox" id="addSplitUI" class="add-split-process-checkbox"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>UI</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="addSplitPG" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <input type="checkbox" id="addSplitPG" class="add-split-process-checkbox"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>PG</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="addSplitPT" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <input type="checkbox" id="addSplitPT" class="add-split-process-checkbox"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>PT</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="addSplitIT" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <input type="checkbox" id="addSplitIT" class="add-split-process-checkbox"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>IT</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="addSplitST" class="add-split-process-checkbox" style="width: auto; margin-right: 5px;">
+                                    <input type="checkbox" id="addSplitST" class="add-split-process-checkbox"
+                                        style="width: auto; margin-right: 5px;">
                                     <span>ST</span>
                                 </label>
                             </div>
@@ -1757,7 +1924,8 @@
 
                         <div class="form-group">
                             <label>総工数</label>
-                            <input type="number" id="addTotalHours" step="0.1" min="0" placeholder="例: 80" oninput="updateAddMonthPreview()">
+                            <input type="number" id="addTotalHours" step="0.1" min="0" placeholder="例: 80"
+                                oninput="updateAddMonthPreview()">
                             <span style="margin-left: 5px;">時間</span>
                         </div>
 
@@ -1774,11 +1942,13 @@
                             <label>分割方法</label>
                             <div style="display: flex; gap: 20px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="addSplitMethod" value="equal" checked onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <input type="radio" name="addSplitMethod" value="equal" checked
+                                        onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
                                     <span>均等分割</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="radio" name="addSplitMethod" value="manual" onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
+                                    <input type="radio" name="addSplitMethod" value="manual"
+                                        onchange="updateAddMonthPreview()" style="width: auto; margin-right: 5px;">
                                     <span>手動設定</span>
                                 </label>
                             </div>
@@ -1790,7 +1960,8 @@
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="addEstimateFromModal()">登録</button>
-                    <button class="btn" onclick="closeAddEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn" onclick="closeAddEstimateModal()"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1805,18 +1976,18 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="splitEstimateId">
-                
+
                 <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                     <strong>対象見積:</strong><br>
                     <div id="splitEstimateInfo" style="margin-top: 5px; color: #666;"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>総工数</label>
                     <input type="number" id="splitTotalHours" step="0.1" min="0" readonly style="background: #f0f0f0;">
                     <span style="margin-left: 5px;">時間</span>
                 </div>
-                
+
                 <div class="form-group">
                     <label>作業期間</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -1825,26 +1996,29 @@
                         <select id="splitEndMonth" onchange="updateSplitPreview()"></select>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>分割方法</label>
                     <div style="display: flex; gap: 20px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="splitMethodModal" value="equal" checked onchange="updateSplitPreview()" style="width: auto; margin-right: 5px;">
+                            <input type="radio" name="splitMethodModal" value="equal" checked
+                                onchange="updateSplitPreview()" style="width: auto; margin-right: 5px;">
                             <span>均等分割</span>
                         </label>
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="splitMethodModal" value="manual" onchange="updateSplitPreview()" style="width: auto; margin-right: 5px;">
+                            <input type="radio" name="splitMethodModal" value="manual" onchange="updateSplitPreview()"
+                                style="width: auto; margin-right: 5px;">
                             <span>手動設定</span>
                         </label>
                     </div>
                 </div>
-                
+
                 <div id="splitPreview" style="margin-top: 15px;"></div>
-                
+
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="executeSplitEstimate()">分割を適用</button>
-                    <button class="btn" onclick="closeSplitEstimateModal()" style="background: #95a5a6; color: white;">キャンセル</button>
+                    <button class="btn" onclick="closeSplitEstimateModal()"
+                        style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
         </div>
@@ -1860,10 +2034,11 @@
             <div class="modal-body">
                 <!-- タブ切り替え -->
                 <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
-                    <button id="meetingTab" class="other-work-tab active" onclick="switchOtherWorkTab('meeting')">打ち合わせ</button>
+                    <button id="meetingTab" class="other-work-tab active"
+                        onclick="switchOtherWorkTab('meeting')">打ち合わせ</button>
                     <button id="customTab" class="other-work-tab" onclick="switchOtherWorkTab('custom')">任意作業</button>
                 </div>
-                
+
                 <!-- 打ち合わせタブ -->
                 <div id="meetingForm" class="other-work-form">
                     <p style="color: #666; margin-bottom: 15px;">全担当者に同じ工数で登録されます。</p>
@@ -1873,7 +2048,7 @@
                     </div>
                     <button class="btn btn-success" onclick="addMeeting()">全員分追加</button>
                 </div>
-                
+
                 <!-- 任意作業タブ -->
                 <div id="customForm" class="other-work-form" style="display: none;">
                     <div class="form-group">
@@ -1954,4 +2129,5 @@
     <!-- モジュールスクリプト -->
     <script type="module" src="js/init.js"></script>
 </body>
+
 </html>

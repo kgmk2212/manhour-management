@@ -7,7 +7,8 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode
 } from './state.js';
-import { generateMonthOptions } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert } from './utils.js';
+import * as Estimate from './estimate.js';
 
 // クイック入力用の状態変数
 let allQuickTasks = [];
@@ -364,6 +365,19 @@ export function initQuickEstimateForm() {
     }
 }
 
+export function saveQuickInputModeSetting() {
+    const checkbox = document.getElementById('rememberQuickInputMode');
+    if (checkbox) {
+        setRememberQuickInputMode(checkbox.checked);
+        localStorage.setItem('rememberQuickInputMode', checkbox.checked);
+
+        // オフにした場合は保存されたモードを削除
+        if (!checkbox.checked) {
+            localStorage.removeItem('quickInputMode');
+        }
+    }
+}
+
 // ============================================
 // 外部クリックハンドラー
 // ============================================
@@ -396,6 +410,199 @@ export function setSelectedQuickTask(value) {
 
 export function getQuickInputMode() {
     return quickInputMode;
+}
+
+export function getQuickInputMode() {
+    return quickInputMode;
+}
+
+// ============================================
+// 見積簡易登録 (復活)
+// ============================================
+
+export function updateQuickEstWorkMonthUI() {
+    const monthType = document.querySelector('input[name="quickEstMonthType"]:checked')?.value || 'single';
+    if (monthType === 'single') return;
+
+    const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
+    const endMonth = document.getElementById('quickEstEndMonth');
+
+    if (!startMonthMulti || !endMonth) return;
+    if (!startMonthMulti.value) return;
+
+    if (endMonth.value && startMonthMulti.value !== endMonth.value) {
+        // updateDefaultQuickProcessMonths(startMonthMulti.value, endMonth.value); // Helper logic needed? Use simplified logic for quick input
+    }
+}
+
+export function switchQuickEstMonthType() {
+    const monthType = document.querySelector('input[name="quickEstMonthType"]:checked').value;
+    const singleMonthInput = document.getElementById('quickEstSingleMonthInput');
+    const multiMonthInput = document.getElementById('quickEstMultiMonthInput');
+
+    if (monthType === 'single') {
+        singleMonthInput.style.display = 'block';
+        multiMonthInput.style.display = 'none';
+    } else {
+        singleMonthInput.style.display = 'none';
+        multiMonthInput.style.display = 'block';
+
+        const startMonth = document.getElementById('quickEstStartMonth').value;
+        const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
+        const endMonth = document.getElementById('quickEstEndMonth');
+
+        if (startMonth && startMonthMulti) {
+            startMonthMulti.value = startMonth;
+            if (endMonth && !endMonth.value) {
+                endMonth.value = startMonth;
+            }
+        }
+    }
+}
+
+export function updateQuickEstimateTotals() {
+    const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    let totalHours = 0;
+
+    processes.forEach(proc => {
+        const hours = parseFloat(document.getElementById(`quickEst${proc}`).value) || 0;
+        totalHours += hours;
+    });
+
+    const totalDays = (totalHours / 8).toFixed(1);
+    const totalMonths = (totalHours / 160).toFixed(2);
+
+    document.getElementById('quickEstTotalHours').textContent = totalHours.toFixed(1);
+    document.getElementById('quickEstTotalDays').textContent = totalDays;
+    document.getElementById('quickEstTotalMonths').textContent = totalMonths;
+
+    // updateQuickMonthPreview(); // Split logic update
+}
+
+export function toggleQuickMonthSplit() {
+    const enabled = document.getElementById('quickEnableMonthSplit').checked;
+    const panel = document.getElementById('quickMonthSplitPanel');
+    if (enabled) {
+        panel.style.display = 'block';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+export function updateQuickMonthPreview() {
+    // Simplified preview logic
+    const startMonth = document.getElementById('quickStartMonth').value;
+    const endMonth = document.getElementById('quickEndMonth').value;
+    const totalHours = parseFloat(document.getElementById('quickTotalHours').value) || 0;
+    const preview = document.getElementById('quickMonthPreview');
+
+    if (!startMonth || !endMonth || totalHours <= 0) {
+        preview.innerHTML = '';
+        return;
+    }
+
+    // Basic implementation
+    preview.innerHTML = `<div style="padding:10px; background:#f0f0f0;">${startMonth}〜${endMonth}: Total ${totalHours}h</div>`;
+}
+
+export function addQuickEstimate() {
+    const version = document.getElementById('quickEstVersion').value;
+    const formNameSelect = document.getElementById('quickEstFormNameSelect');
+    const formNameInput = document.getElementById('quickEstFormName');
+    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const taskName = document.getElementById('quickEstTask').value.trim();
+
+    if (!version || !formName || !taskName) {
+        alert('必須項目を入力してください');
+        return;
+    }
+
+    const task = `${formName}：${taskName}`;
+    const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+
+    // 作業月の決定
+    const monthType = document.querySelector('input[name="quickEstMonthType"]:checked').value;
+    let startMonth, endMonth;
+    if (monthType === 'single') {
+        startMonth = document.getElementById('quickEstStartMonth').value;
+        endMonth = null;
+    } else {
+        startMonth = document.getElementById('quickEstStartMonthMulti').value;
+        endMonth = document.getElementById('quickEstEndMonth').value;
+    }
+
+    if (!startMonth) {
+        alert('作業月を選択してください');
+        return;
+    }
+
+    processes.forEach(proc => {
+        const member = document.getElementById(`quickEst${proc}_member`).value;
+        const hours = parseFloat(document.getElementById(`quickEst${proc}`).value) || 0;
+
+        if (hours > 0) {
+            const est = {
+                id: Date.now() + Math.random(),
+                version: version,
+                task: task,
+                process: proc,
+                member: member,
+                hours: hours,
+                workMonth: startMonth,
+                workMonths: [startMonth],
+                monthlyHours: { [startMonth]: hours },
+                createdAt: new Date().toISOString()
+            };
+
+            // 複数月の場合の簡易対応 (均等割り)
+            if (endMonth && startMonth !== endMonth) {
+                const months = generateMonthRange(startMonth, endMonth);
+                est.workMonths = months;
+                est.monthlyHours = {};
+                months.forEach(m => est.monthlyHours[m] = hours / months.length);
+            }
+
+            estimates.push(est);
+            Estimate.saveRemainingEstimate(version, task, proc, member, hours);
+        }
+    });
+
+    if (typeof window.saveData === 'function') window.saveData();
+    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+
+    // Reset form simplified
+    document.getElementById('quickEstTask').value = '';
+    processes.forEach(proc => {
+        document.getElementById(`quickEst${proc}`).value = '';
+    });
+    updateQuickEstimateTotals();
+
+    showAlert('見積を簡易登録しました', true);
+}
+
+export function handleQuickFormNameChange() {
+    const startMonth = document.getElementById('quickEstStartMonth');
+    // logic placeholder
+}
+
+export function autoFillMember(changedFieldId) {
+    // Reuse logic from estimate-add? Or copy it?
+    // Copy simplified version
+    const match = changedFieldId.match(/^quickEst(\w+)_member$/);
+    if (!match) return;
+    const process = match[1];
+    const val = document.getElementById(changedFieldId).value;
+
+    let target = null;
+    if (process === 'PG') target = 'PT';
+    else if (process === 'PT') target = 'PG';
+    else if (process === 'IT') target = 'ST';
+    else if (process === 'ST') target = 'IT';
+
+    if (target) {
+        const targetEl = document.getElementById(`quickEst${target}_member`);
+        if (targetEl && !targetEl.value) targetEl.value = val;
+    }
 }
 
 console.log('✅ モジュール quick.js loaded');

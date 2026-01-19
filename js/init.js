@@ -20,6 +20,7 @@ import * as Modal from './modal.js';
 import * as EstimateEdit from './estimate-edit.js';
 import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
+import { initEventHandlers } from './events.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -456,6 +457,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // フローティングフィルタイベントの初期化
     FloatingFilter.initFloatingFilterEvents();
+
+    // グローバルイベントハンドラの初期化（index.htmlから移行）
+    initEventHandlers();
 
     console.log('✅ init.js: 初期化処理完了');
 });
