@@ -30,13 +30,13 @@ export function closeCustomAlert() {
 
 // 見積データを正規化（旧形式から新形式への変換）
 export function normalizeEstimate(e) {
-    // 新形式がすでにある場合
-    if (e.workMonths && e.monthlyHours) {
+    // 新形式がすでにある場合（workMonthsが空でない場合のみ）
+    if (e.workMonths && e.workMonths.length > 0 && e.monthlyHours && Object.keys(e.monthlyHours).length > 0) {
         return e;
     }
 
     // 旧形式（workMonthのみ）を新形式に変換
-    if (e.workMonth && !e.workMonths) {
+    if (e.workMonth && (!e.workMonths || e.workMonths.length === 0)) {
         return {
             ...e,
             workMonths: [e.workMonth],
@@ -44,8 +44,8 @@ export function normalizeEstimate(e) {
         };
     }
 
-    // workMonthもworkMonthsもない場合（未設定）
-    if (!e.workMonth && !e.workMonths) {
+    // workMonthもworkMonthsも空の場合（未設定）
+    if (!e.workMonth && (!e.workMonths || e.workMonths.length === 0)) {
         return {
             ...e,
             workMonths: [],

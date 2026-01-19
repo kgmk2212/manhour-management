@@ -19,6 +19,8 @@ import {
     matrixDayMonthFormat
 } from './state.js';
 
+import { normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegend } from './utils.js';
+
 // ============================================
 // レポート設定
 // ============================================
@@ -27,7 +29,18 @@ export function loadReportSettings() {
     const saved = localStorage.getItem('reportSettings');
     if (saved) {
         const loadedSettings = JSON.parse(saved);
-        setReportSettings(loadedSettings);
+        // デフォルト値とマージして、古いデータに存在しないプロパティを補完
+        const defaultSettings = {
+            accuracyEnabled: true,
+            anomalyEnabled: true,
+            warningTasksEnabled: true,
+            chartEnabled: true,
+            trendEnabled: true,
+            memberAnalysisEnabled: true,
+            insightsEnabled: true
+        };
+        const mergedSettings = { ...defaultSettings, ...loadedSettings };
+        setReportSettings(mergedSettings);
     }
 
     // UIに反映
@@ -916,8 +929,7 @@ export function updateReport() {
     let filteredActuals = actuals;
     let filteredEstimates = estimates;
 
-    // window経由で関数を呼び出し
-    const normalizeEstimate = typeof window.normalizeEstimate === 'function' ? window.normalizeEstimate : (e => e);
+    // window経由で関数を呼び出し（normalizeEstimateはutils.jsからインポート済み）
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
 
@@ -934,15 +946,25 @@ export function updateReport() {
             // 複数月対応: workMonthsに含まれる見積をフィルタ
             filteredEstimates = estimates.filter(e => {
                 const est = normalizeEstimate(e);
+                // workMonthsが未設定の見積は含める（未設定データ）
                 if (!est.workMonths || est.workMonths.length === 0) {
                     return true;
                 }
                 return est.workMonths.includes(selectedMonth);
             }).map(e => {
                 const est = normalizeEstimate(e);
+                // monthlyHoursにその月のデータがある場合はそれを使用
+                // workMonthsが未設定の場合は元のhoursを使用
+                // それ以外（workMonthsはあるがmonthlyHoursにデータがない）は0
+                let hoursForMonth = 0;
+                if (est.monthlyHours && est.monthlyHours[selectedMonth] !== undefined) {
+                    hoursForMonth = est.monthlyHours[selectedMonth];
+                } else if (!est.workMonths || est.workMonths.length === 0) {
+                    hoursForMonth = est.hours;
+                }
                 return {
                     ...est,
-                    hours: est.monthlyHours[selectedMonth] || est.hours
+                    hours: hoursForMonth
                 };
             });
         } else {
@@ -1184,7 +1206,367 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
         html += '</div>';
     }
 
-    // Phase 2とPhase 3は長いため省略（必要に応じて追加）
+    // Phase 2: グラフと月別推移
+    if (reportSettings.chartEnabled || reportSettings.trendEnabled) {
+        html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
+        html += `<h3 onclick="togglePhaseCollapse('phase2')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+        html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
+        html += 'Phase 2: ビジュアル分析</h3>';
+        html += `<div id="phase2-content" style="display: ${phaseCollapsed.phase2 ? 'none' : 'block'}; margin-top: 15px;">`;
+
+        // 工程別バーチャート
+        if (reportSettings.chartEnabled) {
+            const processSummary2 = {};
+            const processOrder2 = ['UI', 'PG', 'PT', 'IT', 'ST'];
+
+            filteredEstimates.forEach(e => {
+                const processKey = processOrder2.includes(e.process) ? e.process : 'その他';
+                if (!processSummary2[processKey]) {
+                    processSummary2[processKey] = { estimate: 0, actual: 0 };
+                }
+                processSummary2[processKey].estimate += e.hours;
+            });
+
+            filteredActuals.forEach(a => {
+                const processKey = processOrder2.includes(a.process) ? a.process : 'その他';
+                if (!processSummary2[processKey]) {
+                    processSummary2[processKey] = { estimate: 0, actual: 0 };
+                }
+                processSummary2[processKey].actual += a.hours;
+            });
+
+            const maxHours = Math.max(...Object.values(processSummary2).map(p => Math.max(p.estimate, p.actual)));
+
+            html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
+            html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">工程別見積vs実績</h4>';
+
+            const sortedProcesses2 = [
+                ...processOrder2.filter(p => processSummary2[p]),
+                ...(processSummary2['その他'] ? ['その他'] : [])
+            ];
+
+            sortedProcesses2.forEach(proc => {
+                const data = processSummary2[proc];
+                const estWidth = (data.estimate / maxHours * 100).toFixed(1);
+                const actWidth = (data.actual / maxHours * 100).toFixed(1);
+
+                html += '<div style="margin-bottom: 15px;">';
+                html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
+                html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
+                html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
+                html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
+                html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
+                html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
+                html += '</div></div>';
+                html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
+                html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
+                html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
+                html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
+                html += '</div></div>';
+                html += '</div></div>';
+            });
+
+            html += '</div>';
+        }
+
+        // 月別推移分析
+        if (reportSettings.trendEnabled && selectedMonth === 'all') {
+            const monthlyData = {};
+
+            filteredEstimates.forEach(e => {
+                const est = normalizeEstimate(e);
+                if (est.workMonths) {
+                    est.workMonths.forEach(month => {
+                        if (!monthlyData[month]) {
+                            monthlyData[month] = { estimate: 0, actual: 0 };
+                        }
+                        const monthlyHoursVal = est.monthlyHours ? est.monthlyHours[month] : 0;
+                        monthlyData[month].estimate += monthlyHoursVal || 0;
+                    });
+                }
+            });
+
+            filteredActuals.forEach(a => {
+                const month = a.date ? a.date.substring(0, 7) : a.workMonth;
+                if (month) {
+                    if (!monthlyData[month]) {
+                        monthlyData[month] = { estimate: 0, actual: 0 };
+                    }
+                    monthlyData[month].actual += a.hours;
+                }
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+
+            if (sortedMonths.length > 1) {
+                html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">';
+                html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">月別推移</h4>';
+
+                const maxMonthlyHours = Math.max(...Object.values(monthlyData).map(m => Math.max(m.estimate, m.actual)));
+
+                sortedMonths.slice(-6).forEach(month => {
+                    const data = monthlyData[month];
+                    const [year, monthNum] = month.split('-');
+                    if (!year || !monthNum) return;
+                    const estWidth = maxMonthlyHours > 0 ? (data.estimate / maxMonthlyHours * 100).toFixed(1) : 0;
+                    const actWidth = maxMonthlyHours > 0 ? (data.actual / maxMonthlyHours * 100).toFixed(1) : 0;
+                    const diff = data.actual - data.estimate;
+
+                    html += '<div style="margin-bottom: 12px;">';
+                    html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${year}年${parseInt(monthNum)}月</div>`;
+                    html += '<div style="display: flex; gap: 10px;">';
+                    html += '<div style="flex: 1;">';
+                    html += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
+                    html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">見積</span>';
+                    html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
+                    html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
+                    html += '</div>';
+                    html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
+                    html += '</div>';
+                    html += '<div style="display: flex; align-items: center; gap: 5px;">';
+                    html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">実績</span>';
+                    html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
+                    html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
+                    html += '</div>';
+                    html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
+                    html += '</div>';
+                    html += '</div>';
+                    html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+                    html += '</div></div>';
+                });
+
+                html += '</div>';
+            }
+        }
+
+        html += '</div>'; // close phase2-content
+        html += '</div>';
+    }
+
+    // Phase 3: 担当者別分析とインサイト
+    if (reportSettings.memberAnalysisEnabled || reportSettings.insightsEnabled) {
+        html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
+        html += `<h3 onclick="togglePhaseCollapse('phase3')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+        html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
+        html += 'Phase 3: 担当者分析とインサイト</h3>';
+        html += `<div id="phase3-content" style="display: ${phaseCollapsed.phase3 ? 'none' : 'block'}; margin-top: 15px;">`;
+
+        // 担当者別パフォーマンス
+        if (reportSettings.memberAnalysisEnabled) {
+            const memberSummary3 = {};
+            const memberTasks = {};
+
+            const allMembers = new Set();
+            filteredEstimates.forEach(e => allMembers.add(e.member));
+            filteredActuals.forEach(a => allMembers.add(a.member));
+
+            allMembers.forEach(member => {
+                memberSummary3[member] = { estimate: 0, actual: 0 };
+                memberTasks[member] = new Set();
+            });
+
+            filteredEstimates.forEach(estimate => {
+                const relatedActuals = filteredActuals.filter(a =>
+                    a.version === estimate.version &&
+                    a.task === estimate.task &&
+                    a.process === estimate.process
+                );
+
+                let otherMembersActualHours = 0;
+                const otherMembersHours = {};
+
+                relatedActuals.forEach(actual => {
+                    if (actual.member !== estimate.member) {
+                        otherMembersActualHours += actual.hours;
+                        otherMembersHours[actual.member] = (otherMembersHours[actual.member] || 0) + actual.hours;
+                    }
+                });
+
+                const originalMemberEstimate = Math.max(0, estimate.hours - otherMembersActualHours);
+                memberSummary3[estimate.member].estimate += originalMemberEstimate;
+                memberTasks[estimate.member].add(`${estimate.version}-${estimate.task}`);
+
+                Object.keys(otherMembersHours).forEach(otherMember => {
+                    if (!memberSummary3[otherMember]) {
+                        memberSummary3[otherMember] = { estimate: 0, actual: 0 };
+                        memberTasks[otherMember] = new Set();
+                    }
+                    memberSummary3[otherMember].estimate += otherMembersHours[otherMember];
+                    memberTasks[otherMember].add(`${estimate.version}-${estimate.task}`);
+                });
+            });
+
+            filteredActuals.forEach(a => {
+                if (!memberSummary3[a.member]) {
+                    memberSummary3[a.member] = { estimate: 0, actual: 0 };
+                    memberTasks[a.member] = new Set();
+                }
+                memberSummary3[a.member].actual += a.hours;
+                memberTasks[a.member].add(`${a.version}-${a.task}`);
+            });
+
+            let members3;
+            const memberOrderElement = document.getElementById('memberOrder');
+            const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
+            if (memberOrderInput) {
+                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
+                const memberSet = new Set(Object.keys(memberSummary3));
+                const orderedMembers = orderList.filter(m => memberSet.has(m));
+                const unorderedMembers = Object.keys(memberSummary3).filter(m => !orderedMembers.includes(m)).sort();
+                members3 = [...orderedMembers, ...unorderedMembers];
+            } else {
+                members3 = Object.keys(memberSummary3).sort();
+            }
+
+            if (members3.length > 0) {
+                html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
+                html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">担当者別パフォーマンス</h4>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
+
+                members3.forEach(member => {
+                    const data = memberSummary3[member];
+                    const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(1) : 0;
+                    const diff = data.actual - data.estimate;
+                    const estManDays = (data.estimate / 8).toFixed(1);
+                    const actManDays = (data.actual / 8).toFixed(1);
+                    const estManMonths = (data.estimate / 8 / workingDaysPerMonth).toFixed(2);
+                    const actManMonths = (data.actual / 8 / workingDaysPerMonth).toFixed(2);
+                    const taskCount = memberTasks[member] ? memberTasks[member].size : 0;
+
+                    html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
+                    html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${member}</div>`;
+                    html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
+                    html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
+                    html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
+                    html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
+                    html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
+                    html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
+                    html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
+                    html += '</div>';
+                });
+
+                html += '</div></div>';
+            }
+        }
+
+        // AIライクなインサイト
+        if (reportSettings.insightsEnabled) {
+            const insights = [];
+
+            const totalEst3 = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
+            const totalAct3 = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+            const overallAccuracy = totalEst3 > 0 ? (totalAct3 / totalEst3 * 100) : 0;
+
+            if (overallAccuracy > 120) {
+                insights.push({
+                    type: 'warning',
+                    title: '見積精度に課題',
+                    message: `全体で見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
+                });
+            } else if (overallAccuracy >= 90 && overallAccuracy <= 110) {
+                insights.push({
+                    type: 'success',
+                    title: '優れた見積精度',
+                    message: `見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
+                });
+            }
+
+            const processSummary3 = {};
+            filteredEstimates.forEach(e => {
+                if (!processSummary3[e.process]) processSummary3[e.process] = { estimate: 0, actual: 0 };
+                processSummary3[e.process].estimate += e.hours;
+            });
+            filteredActuals.forEach(a => {
+                if (!processSummary3[a.process]) processSummary3[a.process] = { estimate: 0, actual: 0 };
+                processSummary3[a.process].actual += a.hours;
+            });
+
+            let bestProcess = null;
+            let bestAccuracy = 1000;
+            Object.entries(processSummary3).forEach(([proc, data]) => {
+                if (data.estimate > 0) {
+                    const accuracy = Math.abs(100 - (data.actual / data.estimate * 100));
+                    if (accuracy < bestAccuracy) {
+                        bestAccuracy = accuracy;
+                        bestProcess = proc;
+                    }
+                }
+            });
+
+            if (bestProcess) {
+                insights.push({
+                    type: 'info',
+                    title: '最適な工程',
+                    message: `${bestProcess}工程の見積精度が最も高く、計画通りに進行しています。`
+                });
+            }
+
+            const memberData3 = {};
+            filteredEstimates.forEach(e => {
+                if (!memberData3[e.member]) memberData3[e.member] = { estimate: 0, actual: 0 };
+                memberData3[e.member].estimate += e.hours;
+            });
+            filteredActuals.forEach(a => {
+                if (!memberData3[a.member]) memberData3[a.member] = { estimate: 0, actual: 0 };
+                memberData3[a.member].actual += a.hours;
+            });
+
+            const memberDataSorted = Object.entries(memberData3).sort((a, b) => b[1].estimate - a[1].estimate);
+            const maxEstMember = memberDataSorted[0];
+            if (maxEstMember && selectedMonth !== 'all') {
+                const manMonths = (maxEstMember[1].estimate / 8 / workingDaysPerMonth).toFixed(2);
+                if (parseFloat(manMonths) > 1.2) {
+                    const manDays = (maxEstMember[1].estimate / 8).toFixed(1);
+                    insights.push({
+                        type: 'warning',
+                        title: '高負荷担当者あり',
+                        message: `${maxEstMember[0]}さんの見積工数が${manMonths}人月（${manDays}人日）で、リソース配分の見直しを検討してください。`
+                    });
+                }
+            }
+
+            const estimatedTasks = new Set(filteredEstimates.map(e => `${e.version}-${e.task}`));
+            const actualTasks = new Set(filteredActuals.map(a => `${a.version}-${a.task}`));
+            const completedTasks = [...estimatedTasks].filter(t => actualTasks.has(t));
+            const completionRate = estimatedTasks.size > 0 ? (completedTasks.length / estimatedTasks.size * 100).toFixed(0) : 0;
+
+            if (parseInt(completionRate) < 100 && selectedMonth !== 'all') {
+                const pendingCount = estimatedTasks.size - completedTasks.length;
+                insights.push({
+                    type: 'info',
+                    title: '未完了タスクあり',
+                    message: `見積済みタスクのうち${pendingCount}件が未完了です。進捗を確認してください。`
+                });
+            }
+
+            if (insights.length > 0) {
+                html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">';
+                html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">インサイト</h4>';
+
+                insights.forEach(insight => {
+                    const bgColor = insight.type === 'warning' ? '#fff5f5' :
+                                  insight.type === 'success' ? '#d4edda' :
+                                  '#cce5ff';
+                    const borderColor = insight.type === 'warning' ? '#f5c6cb' :
+                                  insight.type === 'success' ? '#c3e6cb' :
+                                  '#b8daff';
+                    const textColor = insight.type === 'warning' ? '#721c24' :
+                                  insight.type === 'success' ? '#155724' :
+                                  '#004085';
+
+                    html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid ${borderColor};">`;
+                    html += `<div style="font-weight: 600; margin-bottom: 3px; color: ${textColor};">${insight.title}</div>`;
+                    html += `<div style="font-size: 13px; color: ${textColor};">${insight.message}</div>`;
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+        }
+
+        html += '</div>'; // close phase3-content
+        html += '</div>';
+    }
 
     container.innerHTML += html;
 }
@@ -1518,12 +1900,8 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 export function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
     const container = document.getElementById('reportDetailView');
 
-    // window経由で関数を呼び出し
+    // window経由で関数を呼び出し（normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegendはutils.jsからインポート済み）
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-    const normalizeEstimate = typeof window.normalizeEstimate === 'function' ? window.normalizeEstimate : (e => e);
-    const getMonthColor = typeof window.getMonthColor === 'function' ? window.getMonthColor : (() => ({ bg: '', tooltip: '' }));
-    const getDeviationColor = typeof window.getDeviationColor === 'function' ? window.getDeviationColor : (() => '#ffffff');
-    const generateMonthColorLegend = typeof window.generateMonthColorLegend === 'function' ? window.generateMonthColorLegend : (() => '');
 
     // 全期間かつ設定がオンの時のみ色付けする
     const showMonthColors = selectedMonth === 'all' && showMonthColorsSetting;

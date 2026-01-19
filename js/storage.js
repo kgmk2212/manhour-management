@@ -46,13 +46,14 @@ export function saveAutoBackupSetting() {
 // ============================================
 
 export function saveData(skipAutoBackup = false) {
+    const memberOrderEl = document.getElementById('memberOrder');
     const data = {
         estimates: estimates,
         actuals: actuals,
         companyHolidays: companyHolidays,
         vacations: vacations,
         settings: {
-            memberOrder: document.getElementById('memberOrder').value.trim(),
+            memberOrder: memberOrderEl ? memberOrderEl.value.trim() : '',
             themeColor: window.currentThemeColor,
             themePattern: window.currentThemePattern,
             themeTabColor: window.currentTabColor,
@@ -117,17 +118,24 @@ export function loadData() {
 
     // 次のIDを設定
     if (companyHolidays.length > 0) {
-        setNextCompanyHolidayId(Math.max(...companyHolidays.map(h => h.id)) + 1);
+        const ids = companyHolidays.map(h => h.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) {
+            setNextCompanyHolidayId(Math.max(...ids) + 1);
+        }
     }
     if (vacations.length > 0) {
-        setNextVacationId(Math.max(...vacations.map(v => v.id)) + 1);
+        const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) {
+            setNextVacationId(Math.max(...ids) + 1);
+        }
     }
 
     // 設定を読み込み
     if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         if (settings.memberOrder) {
-            document.getElementById('memberOrder').value = settings.memberOrder;
+            const memberOrderEl = document.getElementById('memberOrder');
+            if (memberOrderEl) memberOrderEl.value = settings.memberOrder;
         }
         if (settings.themeColor) window.currentThemeColor = settings.themeColor;
         if (settings.themePattern) window.currentThemePattern = settings.themePattern;
@@ -194,7 +202,8 @@ export function loadData() {
         // 旧形式の設定を読み込み（後方互換性）
         const savedMemberOrder = localStorage.getItem('manhour_memberOrder');
         if (savedMemberOrder) {
-            document.getElementById('memberOrder').value = savedMemberOrder;
+            const memberOrderEl = document.getElementById('memberOrder');
+            if (memberOrderEl) memberOrderEl.value = savedMemberOrder;
         }
     }
 
@@ -210,6 +219,7 @@ export function loadData() {
 
 export function autoBackup() {
     // 現在の設定を取得
+    const memberOrderEl = document.getElementById('memberOrder');
     const settings = {
         themeColor: window.currentThemeColor,
         themePattern: window.currentThemePattern,
@@ -228,7 +238,7 @@ export function autoBackup() {
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
         chartColorScheme: selectedChartColorScheme,
-        memberOrder: document.getElementById('memberOrder').value.trim(),
+        memberOrder: memberOrderEl ? memberOrderEl.value.trim() : '',
         stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
         floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
         debugModeEnabled: debugModeEnabled
@@ -303,10 +313,16 @@ export function handleFileImport(event) {
 
                     // 次のIDを設定
                     if (companyHolidays.length > 0) {
-                        setNextCompanyHolidayId(Math.max(...companyHolidays.map(h => h.id)) + 1);
+                        const ids = companyHolidays.map(h => h.id).filter(id => typeof id === 'number' && !isNaN(id));
+                        if (ids.length > 0) {
+                            setNextCompanyHolidayId(Math.max(...ids) + 1);
+                        }
                     }
                     if (vacations.length > 0) {
-                        setNextVacationId(Math.max(...vacations.map(v => v.id)) + 1);
+                        const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
+                        if (ids.length > 0) {
+                            setNextVacationId(Math.max(...ids) + 1);
+                        }
                     }
 
                     // 設定を復元
@@ -385,7 +401,8 @@ export function handleFileImport(event) {
 
                         // 担当者表示順を復元
                         if (data.settings.memberOrder) {
-                            document.getElementById('memberOrder').value = data.settings.memberOrder;
+                            const memberOrderEl = document.getElementById('memberOrder');
+                            if (memberOrderEl) memberOrderEl.value = data.settings.memberOrder;
                         }
 
                         // Stickyフィルタ設定を復元
@@ -420,7 +437,8 @@ export function handleFileImport(event) {
                         }
                     } else if (data.memberOrder) {
                         // 旧形式（settingsがない場合）の後方互換性
-                        document.getElementById('memberOrder').value = data.memberOrder;
+                        const memberOrderEl = document.getElementById('memberOrder');
+                        if (memberOrderEl) memberOrderEl.value = data.memberOrder;
                     }
 
                     saveData(true); // 復元時は自動バックアップをスキップ
