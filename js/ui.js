@@ -1469,8 +1469,17 @@ export function handleEstimateFilterTypeChange() {
         if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
 
         const estimateMonthEl = document.getElementById('estimateMonthFilter');
-        if (estimateMonthEl && (!estimateMonthEl.value || estimateMonthEl.value === 'all')) {
-            setDefaultEstimateMonth();
+        if (estimateMonthEl) {
+            // 月オプションが「全期間」のみの場合、確実に 'all' を設定
+            const hasMonthOptions = estimateMonthEl.options.length > 1;
+            if (!hasMonthOptions || !estimateMonthEl.value) {
+                estimateMonthEl.value = 'all';
+                const estimateMonthEl2 = document.getElementById('estimateMonthFilter2');
+                if (estimateMonthEl2) estimateMonthEl2.value = 'all';
+                updateSegmentButtonSelection('estimateMonthButtons2', 'all');
+            } else if (estimateMonthEl.value === 'all') {
+                setDefaultEstimateMonth();
+            }
         }
     } else {
         if (monthFilterCompact) monthFilterCompact.style.display = 'none';
@@ -1545,8 +1554,17 @@ export function handleReportFilterTypeChange() {
             if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
 
             const reportMonthEl = document.getElementById('reportMonth');
-            if (reportMonthEl && !reportMonthEl.value) {
-                setDefaultReportMonth();
+            if (reportMonthEl) {
+                // 月オプションが「全期間」のみの場合、確実に 'all' を設定
+                const hasMonthOptions = reportMonthEl.options.length > 1;
+                if (!hasMonthOptions || !reportMonthEl.value) {
+                    reportMonthEl.value = 'all';
+                    const reportMonth2El = document.getElementById('reportMonth2');
+                    if (reportMonth2El) reportMonth2El.value = 'all';
+                    updateSegmentButtonSelection('reportMonthButtons2', 'all');
+                } else if (reportMonthEl.value === 'all') {
+                    setDefaultReportMonth();
+                }
             }
         } else {
             if (monthFilterCompact) monthFilterCompact.style.display = 'none';
