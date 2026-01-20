@@ -1253,10 +1253,17 @@ export function setDefaultReportMonth() {
 
 export function setDefaultEstimateMonth() {
     const select = document.getElementById('estimateMonthFilter');
-    if (!select) return;
+    if (!select) return 'all';
 
     const defaultMonth = getDefaultMonth(select);
     select.value = defaultMonth;
+
+    // セグメントボタンと2番目のselectも更新
+    const select2 = document.getElementById('estimateMonthFilter2');
+    if (select2) select2.value = defaultMonth;
+    updateSegmentButtonSelection('estimateMonthButtons2', defaultMonth);
+
+    return defaultMonth;
 }
 
 // ============================================
@@ -1478,11 +1485,8 @@ export function handleEstimateFilterTypeChange() {
                 if (estimateMonthEl2) estimateMonthEl2.value = 'all';
                 updateSegmentButtonSelection('estimateMonthButtons2', 'all');
             } else {
-                // 月オプションがある場合は最新の月を選択
+                // 月オプションがある場合は最新の月を選択（セグメントボタンも更新される）
                 setDefaultEstimateMonth();
-                const estimateMonthEl2 = document.getElementById('estimateMonthFilter2');
-                if (estimateMonthEl2) estimateMonthEl2.value = estimateMonthEl.value;
-                updateSegmentButtonSelection('estimateMonthButtons2', estimateMonthEl.value);
             }
         }
     } else {
@@ -1567,11 +1571,8 @@ export function handleReportFilterTypeChange() {
                     if (reportMonth2El) reportMonth2El.value = 'all';
                     updateSegmentButtonSelection('reportMonthButtons2', 'all');
                 } else {
-                    // 月オプションがある場合は最新の月を選択
+                    // 月オプションがある場合は最新の月を選択（セグメントボタンも更新される）
                     setDefaultReportMonth();
-                    const reportMonth2El = document.getElementById('reportMonth2');
-                    if (reportMonth2El) reportMonth2El.value = reportMonthEl.value;
-                    updateSegmentButtonSelection('reportMonthButtons2', reportMonthEl.value);
                 }
             }
         } else {
