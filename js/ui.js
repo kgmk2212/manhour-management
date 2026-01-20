@@ -1213,7 +1213,8 @@ export function updateActualMonthOptions() {
 
 export function getDefaultMonth(selectElement) {
     const options = Array.from(selectElement.options);
-    const monthOptions = options.filter(opt => opt.value !== 'all');
+    // 'all' と 'unassigned' を除外（'unassigned' は文字列比較で日付より大きくなるため）
+    const monthOptions = options.filter(opt => opt.value !== 'all' && opt.value !== 'unassigned');
 
     if (monthOptions.length > 0) {
         const latestMonth = monthOptions.reduce((latest, opt) => {
