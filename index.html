@@ -109,21 +109,20 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                            <div class="form-group">
+                        <div class="quick-form-grid">
+                            <div class="form-group quick-form-date">
+                                <label>作業日</label>
+                                <input type="date" id="quickWorkDate"
+                                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                            </div>
+                            <div class="form-group quick-form-member">
                                 <label>担当</label>
                                 <select id="quickMemberSelect">
                                     <option value="">（自動）</option>
                                 </select>
                                 <small style="color: #999; font-size: 11px;">通常は自動</small>
                             </div>
-                            <div class="form-group">
-                                <label>作業日</label>
-                                <input type="date" id="quickWorkDate"
-                                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
-                                <small style="color: #999; font-size: 11px;">未指定=今日</small>
-                            </div>
-                            <div class="form-group">
+                            <div class="form-group quick-form-hours">
                                 <label>実績工数 (h)</label>
                                 <input type="number" id="quickHours" step="0.5" min="0" value="8">
                             </div>

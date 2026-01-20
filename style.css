@@ -145,6 +145,25 @@
             margin-top: 10px;
         }
 
+        /* クイック入力フォームのグリッドレイアウト */
+        .quick-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* モバイル対応: 作業日を上部に1列、担当と実績工数を2列に */
+        @media (max-width: 768px) {
+            .quick-form-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .quick-form-date {
+                grid-column: 1 / -1;
+            }
+        }
+
         /* 見積テーブル用スタイル */
         .estimate-table {
             border-collapse: collapse;

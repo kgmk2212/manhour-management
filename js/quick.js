@@ -338,6 +338,13 @@ export function initQuickEstimateForm() {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+    // クイック入力の作業日に今日の日付を設定
+    const today = now.toISOString().split('T')[0];
+    const workDateInput = document.getElementById('quickWorkDate');
+    if (workDateInput) {
+        workDateInput.value = today;
+    }
+
     // 作業月セレクトボックスの初期化
     generateMonthOptions('quickEstStartMonth', currentMonth);
     generateMonthOptions('quickEstStartMonthMulti', currentMonth);
