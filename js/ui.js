@@ -1472,13 +1472,17 @@ export function handleEstimateFilterTypeChange() {
         if (estimateMonthEl) {
             // 月オプションが「全期間」のみの場合、確実に 'all' を設定
             const hasMonthOptions = estimateMonthEl.options.length > 1;
-            if (!hasMonthOptions || !estimateMonthEl.value) {
+            if (!hasMonthOptions) {
                 estimateMonthEl.value = 'all';
                 const estimateMonthEl2 = document.getElementById('estimateMonthFilter2');
                 if (estimateMonthEl2) estimateMonthEl2.value = 'all';
                 updateSegmentButtonSelection('estimateMonthButtons2', 'all');
-            } else if (estimateMonthEl.value === 'all') {
+            } else {
+                // 月オプションがある場合は最新の月を選択
                 setDefaultEstimateMonth();
+                const estimateMonthEl2 = document.getElementById('estimateMonthFilter2');
+                if (estimateMonthEl2) estimateMonthEl2.value = estimateMonthEl.value;
+                updateSegmentButtonSelection('estimateMonthButtons2', estimateMonthEl.value);
             }
         }
     } else {
@@ -1557,13 +1561,17 @@ export function handleReportFilterTypeChange() {
             if (reportMonthEl) {
                 // 月オプションが「全期間」のみの場合、確実に 'all' を設定
                 const hasMonthOptions = reportMonthEl.options.length > 1;
-                if (!hasMonthOptions || !reportMonthEl.value) {
+                if (!hasMonthOptions) {
                     reportMonthEl.value = 'all';
                     const reportMonth2El = document.getElementById('reportMonth2');
                     if (reportMonth2El) reportMonth2El.value = 'all';
                     updateSegmentButtonSelection('reportMonthButtons2', 'all');
-                } else if (reportMonthEl.value === 'all') {
+                } else {
+                    // 月オプションがある場合は最新の月を選択
                     setDefaultReportMonth();
+                    const reportMonth2El = document.getElementById('reportMonth2');
+                    if (reportMonth2El) reportMonth2El.value = reportMonthEl.value;
+                    updateSegmentButtonSelection('reportMonthButtons2', reportMonthEl.value);
                 }
             }
         } else {
