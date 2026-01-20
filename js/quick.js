@@ -412,10 +412,6 @@ export function getQuickInputMode() {
     return quickInputMode;
 }
 
-export function getQuickInputMode() {
-    return quickInputMode;
-}
-
 // ============================================
 // 見積簡易登録 (復活)
 // ============================================

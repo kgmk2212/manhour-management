@@ -353,7 +353,7 @@ export function syncFloatingMonthFilter(value) {
     if (mainMonth) {
         mainMonth.value = value;
         if (typeof window.handleReportMonthChange === 'function') {
-            window.handleReportMonthChange(value);
+            window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
         // ボタンの状態を更新
         syncFloatingFilters();
@@ -366,7 +366,7 @@ export function syncFloatingVersionFilter(value) {
     if (mainVersion) {
         mainVersion.value = value;
         if (typeof window.handleReportVersionChange === 'function') {
-            window.handleReportVersionChange(value);
+            window.handleReportVersionChange(value, 'reportVersionButtons2');
         }
         // ボタンの状態を更新
         syncFloatingFilters();
