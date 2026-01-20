@@ -1470,6 +1470,17 @@ export function handleEstimateFilterTypeChange() {
     const monthFilterSegmented = document.getElementById('estimateMonthFilterSegmented');
     const versionFilterSegmented = document.getElementById('estimateVersionFilterSegmented');
 
+    // フィルタタイプボタンの選択状態を更新
+    const btnMonth = document.getElementById('btnEstimateFilterMonth');
+    const btnVersion = document.getElementById('btnEstimateFilterVersion');
+    if (filterType === 'month') {
+        if (btnMonth) btnMonth.classList.add('active');
+        if (btnVersion) btnVersion.classList.remove('active');
+    } else {
+        if (btnMonth) btnMonth.classList.remove('active');
+        if (btnVersion) btnVersion.classList.add('active');
+    }
+
     if (filterType === 'month') {
         if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
         if (versionFilterCompact) versionFilterCompact.style.display = 'none';
@@ -1521,6 +1532,9 @@ export function handleEstimateFilterTypeChange() {
             syncVersionToReport(estimateVersionEl.value);
         }
     }
+
+    // セグメントボタンのスタイルを更新（テーマカラー適用）
+    updateSegmentedButtons();
 
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
@@ -1755,10 +1769,10 @@ export function syncSettingsToUI() {
         if (radioButton) radioButton.checked = true;
     }
 
-    // 担当者の表示順
+    // 担当者の表示順（window.memberOrderを使用して確実に最新値を取得）
     const memberOrderEl = document.getElementById('memberOrder');
-    if (memberOrderEl && memberOrder) {
-        memberOrderEl.value = memberOrder;
+    if (memberOrderEl && window.memberOrder) {
+        memberOrderEl.value = window.memberOrder;
     }
 
     // テーマ設定の要素は Theme.loadThemeSettings で別途同期されるが、
