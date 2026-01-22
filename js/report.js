@@ -2310,9 +2310,23 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     const legendHeight = isMobile ? 60 : 0;
     const centerX = width / 2;
     const centerY = isMobile ? (height - legendHeight) / 2 : height / 2 - 10;
-    const radius = isMobile
+
+    // キャンバスサイズが小さすぎる場合は描画をスキップ
+    const calculatedRadius = isMobile
         ? Math.min(width, height - legendHeight - 40) / 2.5
         : Math.min(width, height - 40) / 2.2;
+    const radius = Math.max(calculatedRadius, 10); // 最小半径を10pxに設定
+
+    // 半径計算が負または非常に小さい場合は早期リターン
+    if (calculatedRadius <= 0 || width <= 0 || height <= 0) {
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('表示領域不足', Math.max(centerX, 50), Math.max(centerY, 50));
+        return;
+    }
+
     const innerRadius = radius * 0.5;
 
     const processHours = {};
