@@ -124,6 +124,16 @@
             font-size: 14px;
         }
 
+        /* モバイルでのズーム防止 (フォントサイズ16px以上にする) */
+        @media (max-width: 768px) {
+
+            input:not([type="radio"]):not([type="checkbox"]),
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+
         input[type="radio"],
         input[type="checkbox"] {
             width: auto;
@@ -152,17 +162,7 @@
             gap: 10px;
         }
 
-        /* モバイル対応: 作業日を上部に1列、担当と実績工数を2列に */
-        @media (max-width: 768px) {
-            .quick-form-grid {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
-            }
 
-            .quick-form-date {
-                grid-column: 1 / -1;
-            }
-        }
 
         /* 見積テーブル用スタイル */
         .estimate-table {

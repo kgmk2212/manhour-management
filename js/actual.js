@@ -537,27 +537,10 @@ export function renderActualMatrix() {
 
     let members = [...new Set(filteredActuals.map(a => a.member))];
 
-    if (memberOrderInput) {
-        const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
+    // memberOrderInput is already defined above
+    // members is already defined above
 
-        orderList.forEach(name => {
-            if (members.includes(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        members.forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        members = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        members.sort();
-    }
+    members = sortMembers(members, memberOrderInput);
 
     const dates = filteredActuals.map(a => a.date).sort();
 

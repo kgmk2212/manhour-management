@@ -491,10 +491,8 @@ export function saveDefaultViewTypeSetting() {
 // ============================================
 
 export function applyDefaultEstimateViewType() {
-    if (!isEstimateTabFirstView) {
-        return;
-    }
-    setIsEstimateTabFirstView(false);
+    // isEstimateTabFirstView check removed to ensure execution
+    // setIsEstimateTabFirstView(false);
 
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {
@@ -511,10 +509,7 @@ export function applyDefaultEstimateViewType() {
 }
 
 export function applyDefaultReportViewType() {
-    if (!isReportTabFirstView) {
-        return;
-    }
-    setIsReportTabFirstView(false);
+    // isReportTabFirstView check removed
 
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {

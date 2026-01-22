@@ -19,7 +19,8 @@ import {
     generateMonthOptions,
     getMonthColor,
     generateMonthColorLegend,
-    showAlert
+    showAlert,
+    sortMembers
 } from './utils.js';
 
 // ============================================
@@ -301,14 +302,7 @@ export function renderEstimateList() {
         const memberOrderElement = document.getElementById('memberOrder');
         const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
 
-        if (memberOrderInput) {
-            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-            const orderedMembers = orderList.filter(m => memberSet.has(m));
-            const unorderedMembers = Array.from(memberSet).filter(m => !orderedMembers.includes(m)).sort();
-            sortedMembers = [...orderedMembers, ...unorderedMembers];
-        } else {
-            sortedMembers = Array.from(memberSet).sort();
-        }
+        sortedMembers = sortMembers(Array.from(memberSet), memberOrderInput);
 
         if (sortedMembers.length > 0) {
             memberSummaryContainer.style.display = 'block';

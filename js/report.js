@@ -29,7 +29,7 @@ import {
     currentThemeColor
 } from './state.js';
 
-import { normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegend } from './utils.js';
+import { normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegend, sortMembers } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 
 // ============================================
@@ -1420,15 +1420,8 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
             let members3;
             const memberOrderElement = document.getElementById('memberOrder');
             const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
-            if (memberOrderInput) {
-                const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-                const memberSet = new Set(Object.keys(memberSummary3));
-                const orderedMembers = orderList.filter(m => memberSet.has(m));
-                const unorderedMembers = Object.keys(memberSummary3).filter(m => !orderedMembers.includes(m)).sort();
-                members3 = [...orderedMembers, ...unorderedMembers];
-            } else {
-                members3 = Object.keys(memberSummary3).sort();
-            }
+
+            members3 = sortMembers(Object.keys(memberSummary3), memberOrderInput);
 
             if (members3.length > 0) {
                 html += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
@@ -1598,30 +1591,9 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
     filteredActuals.forEach(a => allMembers.add(a.member));
 
     // 表示順が設定されている場合はそれを使用
-    let members;
     const memberOrderInput = document.getElementById('memberOrder');
     const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
-    if (memberOrderValue) {
-        const orderList = memberOrderValue.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
-
-        orderList.forEach(name => {
-            if (allMembers.has(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        Array.from(allMembers).forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        members = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        members = Array.from(allMembers).sort();
-    }
+    const members = sortMembers(allMembers, memberOrderValue);
 
     if (members.length === 0) {
         document.getElementById('memberReport').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">データがありません</p>';

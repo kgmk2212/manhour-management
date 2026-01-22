@@ -70,8 +70,8 @@ export function saveData(skipAutoBackup = false) {
             progressBarStyle: progressBarStyle,
             matrixEstActFormat: matrixEstActFormat,
             matrixDayMonthFormat: matrixDayMonthFormat,
-            defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
-            defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+            defaultEstimateViewType: document.getElementById('estimateViewType') ? document.getElementById('estimateViewType').value : 'grouped',
+            defaultReportViewType: document.getElementById('reportViewType') ? document.getElementById('reportViewType').value : 'grouped',
             chartColorScheme: selectedChartColorScheme
         }
     };

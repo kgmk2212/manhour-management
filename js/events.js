@@ -2,7 +2,7 @@
 // イベントハンドラ一括登録
 // ============================================
 
-import { exportBackup, importBackup, saveAutoBackupSetting, exportToExcel, handleFileImport } from './storage.js';
+import { exportBackup, importBackup, saveAutoBackupSetting, exportToExcel, handleFileImport, saveData } from './storage.js';
 import {
     showTab,
     handleVersionChange,
@@ -141,6 +141,16 @@ export function initEventHandlers() {
     if (quickTaskSearch) {
         quickTaskSearch.addEventListener('input', filterQuickTaskList);
         quickTaskSearch.addEventListener('click', showQuickTaskDropdown);
+
+        // 外クリックで閉じる
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('quickTaskDropdown');
+            if (dropdown && dropdown.style.display !== 'none') {
+                if (!quickTaskSearch.contains(e.target) && !dropdown.contains(e.target)) {
+                    hideQuickTaskDropdown();
+                }
+            }
+        });
     }
 
     const quickTaskClearBtn = document.getElementById('quickTaskClearBtn');
@@ -151,6 +161,19 @@ export function initEventHandlers() {
     const quickMemberSelect = document.getElementById('quickMemberSelect');
     if (quickMemberSelect) {
         quickMemberSelect.addEventListener('change', handleMemberChange);
+    }
+
+    // 担当者表示順 (自動保存 & 即時反映)
+    const memberOrderEl = document.getElementById('memberOrder');
+    if (memberOrderEl) {
+        memberOrderEl.addEventListener('change', () => {
+            // UI.updateAllDisplays() saves via saveData() internally or we call it explicitly?
+            // updateAllDisplays calls setMemberOrder then render...
+            // Let's call updateAllDisplays directly if possible, or saveData.
+            // Save data first to persist
+            import('./storage.js').then(m => m.saveData(true));
+            import('./ui.js').then(m => m.updateAllDisplays());
+        });
     }
 
     // アクションボタン
@@ -271,7 +294,12 @@ export function initEventHandlers() {
     if (estimateVersionFilter) estimateVersionFilter.addEventListener('change', (e) => handleEstimateVersionChange(e.target.value, 'estimateVersionButtons2'));
 
     const estimateViewType = document.getElementById('estimateViewType');
-    if (estimateViewType) estimateViewType.addEventListener('change', renderEstimateList);
+    if (estimateViewType) {
+        estimateViewType.addEventListener('change', () => {
+            saveDefaultViewTypeSetting();
+            renderEstimateList();
+        });
+    }
 
     // モードトグル
     const workMonthSelectionMode = document.getElementById('workMonthSelectionMode');
@@ -307,7 +335,10 @@ export function initEventHandlers() {
 
     ['grouped', 'matrix', 'list'].forEach(type => {
         const btn = document.getElementById(`btnEstimate${type.charAt(0).toUpperCase() + type.slice(1)}`);
-        if (btn) btn.addEventListener('click', () => setEstimateViewType(type));
+        if (btn) btn.addEventListener('click', () => {
+            setEstimateViewType(type);
+            saveData(true);
+        });
     });
 
     const workMonthSelectionMode2 = document.getElementById('workMonthSelectionMode2');
@@ -447,7 +478,7 @@ export function initEventHandlers() {
     const reportViewType = document.getElementById('reportViewType');
     if (reportViewType) {
         reportViewType.addEventListener('change', () => {
-            // UI sync + logic
+            saveDefaultViewTypeSetting();
             setReportViewType(reportViewType.value);
         });
     }

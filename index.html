@@ -143,35 +143,44 @@
 
                     <!-- 実績入力フォーム -->
                     <div id="quickActualForm" class="quick-form">
+
+
+                        <!-- 1. 作業日 (一番上) -->
+                        <div class="form-group quick-form-date">
+                            <label>作業日</label>
+                            <input type="date" id="quickWorkDate"
+                                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; width: 100%;">
+                        </div>
+
+                        <!-- 2. 対応検索 -->
                         <div class="form-group">
                             <label>対応検索・選択</label>
                             <div style="position: relative;">
                                 <input type="text" id="quickTaskSearch" placeholder="クリックして対応を選択..." autocomplete="off"
-                                    style="padding-right: 35px;">
+                                    style="padding-right: 35px; background: rgba(255,255,255,0.95); color: #333; border: none;">
                                 <button id="quickTaskClearBtn"
-                                    style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
+                                    style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #666; cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
                                     title="クリア">×</button>
                                 <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;">
                                     <!-- JavaScriptで動的に生成 -->
                                 </div>
                             </div>
                         </div>
-                        <div class="quick-form-grid">
-                            <div class="form-group quick-form-date">
-                                <label>作業日</label>
-                                <input type="date" id="quickWorkDate"
-                                    style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;">
-                            </div>
+
+                        <!-- 3. 担当・時間 (2列グリッド) -->
+                        <div class="quick-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="form-group quick-form-member">
                                 <label>担当</label>
-                                <select id="quickMemberSelect">
+                                <select id="quickMemberSelect"
+                                    style="background: rgba(255,255,255,0.95); color: #333; border: none;">
                                     <option value="">（自動）</option>
                                 </select>
-                                <small style="color: #999; font-size: 11px;">通常は自動</small>
+                                <small style="color: rgba(255,255,255,0.7); font-size: 11px;">通常は自動</small>
                             </div>
                             <div class="form-group quick-form-hours">
                                 <label>実績工数 (h)</label>
-                                <input type="number" id="quickHours" step="0.5" min="0" value="8">
+                                <input type="number" id="quickHours" step="0.5" min="0" value="8"
+                                    style="background: rgba(255,255,255,0.95); color: #333; border: none;">
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
@@ -179,6 +188,7 @@
                             <button class="btn" id="btnOpenOtherWork"
                                 style="flex: 1; background: rgba(255,255,255,0.2); color: white;">その他</button>
                         </div>
+
                     </div>
 
                     <!-- 見積登録フォーム -->
@@ -295,7 +305,8 @@
                                     <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalDays">0.0</span>
                                         人日)</span>
                                     <span style="color: rgba(255,255,255,0.8);">(<span
-                                            id="quickEstTotalMonths">0.00</span> 人月)</span>
+                                            id="quickEstTotalMonths">0.00</span>
+                                        人月)</span>
                                 </div>
                             </div>
                         </div>
@@ -444,7 +455,8 @@
                         </div>
                         <div>
                             <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">人日 / 人月</div>
-                            <div style="font-size: 18px; font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月</div>
+                            <div style="font-size: 18px; font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -452,7 +464,8 @@
                 <!-- 担当者別合計表示 -->
                 <div id="estimateMemberSummary"
                     style="background: #f8f9fa; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
-                    <div style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 10px;">担当者別合計</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 10px;">担当者別合計
+                    </div>
                     <div id="estimateMemberSummaryContent" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     </div>
                 </div>
@@ -577,7 +590,8 @@
                     <!-- ドラッグハンドル -->
                     <div id="dragHandle"
                         style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; cursor: ns-resize; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                        <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;"></div>
+                        <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;">
+                        </div>
                     </div>
 
                     <!-- 閉じるボタン -->
@@ -1184,7 +1198,8 @@
 
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>担当者表示順</h3>
-                    <p style="color: #666; margin-bottom: 15px;">担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。
+                    <p style="color: #666; margin-bottom: 15px;">
+                        担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。
                     </p>
 
                     <div class="form-group">
@@ -1243,7 +1258,8 @@
                 <!-- グラフカラーパターン設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3>🎨 グラフカラーパターン</h3>
-                    <p style="color: #666; margin-bottom: 15px;">レポートの担当者分析グラフ（見積・実績の棒グラフと工数内訳ドーナツグラフ）の配色を変更できます。</p>
+                    <p style="color: #666; margin-bottom: 15px;">レポートの担当者分析グラフ（見積・実績の棒グラフと工数内訳ドーナツグラフ）の配色を変更できます。
+                    </p>
 
                     <div class="form-group">
                         <label>カラーパターン</label>
@@ -1275,7 +1291,8 @@
 
                         <!-- 棒グラフプレビュー -->
                         <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">見積 vs
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #495057;">見積
+                                vs
                                 実績の棒グラフ</div>
                             <div style="display: flex; gap: 15px; align-items: center;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -1285,7 +1302,8 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div id="chartPreviewActualBar"
-                                        style="width: 40px; height: 20px; border-radius: 3px;"></div>
+                                        style="width: 40px; height: 20px; border-radius: 3px;">
+                                    </div>
                                     <span style="font-size: 12px; color: #495057;">実績</span>
                                 </div>
                             </div>
@@ -1384,7 +1402,8 @@
                     <p style="color: #666; margin-bottom: 15px;">レポートに表示する分析機能を選択できます。</p>
 
                     <div class="form-group">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1: 即効性の高い改善</label>
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1:
+                            即効性の高い改善</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
                             <input type="checkbox" id="reportAccuracyEnabled" style="width: auto; margin-right: 10px;"
@@ -1406,7 +1425,8 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2: 視覚化の強化</label>
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2:
+                            視覚化の強化</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
                             <input type="checkbox" id="reportChartEnabled" style="width: auto; margin-right: 10px;"
@@ -1586,8 +1606,10 @@
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">見積</th>
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">実績</th>
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">残存</th>
-                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">予測総工数</th>
-                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">状態</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">予測総工数
+                                </th>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">状態
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="bulkRemainingTableBody">
