@@ -471,5 +471,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // localStorageエラーは無視
     }
 
+    // 初期化完了：ローディング状態を解除してコンテンツを表示
+    const container = document.querySelector('.container.is-loading');
+    if (container) {
+        container.classList.remove('is-loading');
+    }
+
     console.log('✅ init.js: 初期化処理完了');
 });
