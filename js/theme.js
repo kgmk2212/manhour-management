@@ -148,11 +148,27 @@ export function applyTheme() {
     const tabColorEl = document.getElementById('themeTabColor');
     const backgroundColorEl = document.getElementById('themeBackgroundColor');
 
-    // DOM要素から値を読み取る（存在する場合のみ更新、loadThemeSettingsで設定された値を保持）
-    if (colorEl && colorEl.value) window.currentThemeColor = colorEl.value;
-    if (patternEl && patternEl.value) window.currentThemePattern = patternEl.value;
-    if (tabColorEl && tabColorEl.value) window.currentTabColor = tabColorEl.value;
-    if (backgroundColorEl && backgroundColorEl.value) window.currentBackgroundColor = backgroundColorEl.value;
+    // DOM要素が存在する場合はその値を使用、なければstate変数（window経由）を使用
+    // DOM要素の値を更新しつつ、state変数も同期
+    if (colorEl && colorEl.value) {
+        setCurrentThemeColor(colorEl.value);
+    } else if (!window.currentThemeColor) {
+        setCurrentThemeColor('purple');
+    }
+
+    if (patternEl && patternEl.value) {
+        setCurrentThemePattern(patternEl.value);
+    } else if (!window.currentThemePattern) {
+        setCurrentThemePattern('gradient');
+    }
+
+    if (tabColorEl && tabColorEl.value) {
+        setCurrentTabColor(tabColorEl.value);
+    }
+
+    if (backgroundColorEl && backgroundColorEl.value) {
+        setCurrentBackgroundColor(backgroundColorEl.value);
+    }
 
     updateThemePreview();
     updateThemeElements();

@@ -294,22 +294,22 @@ export function handleFileImport(event) {
                     if (data.settings) {
                         // テーマ設定を復元
                         if (data.settings.themeColor) {
-                            window.currentThemeColor = data.settings.themeColor;
+                            setCurrentThemeColor(data.settings.themeColor);
                             const el = document.getElementById('themeColor');
                             if (el) el.value = data.settings.themeColor;
                         }
                         if (data.settings.themePattern) {
-                            window.currentThemePattern = data.settings.themePattern;
+                            setCurrentThemePattern(data.settings.themePattern);
                             const el = document.getElementById('themePattern');
                             if (el) el.value = data.settings.themePattern;
                         }
                         if (data.settings.themeTabColor) {
-                            window.currentTabColor = data.settings.themeTabColor;
+                            setCurrentTabColor(data.settings.themeTabColor);
                             const el = document.getElementById('themeTabColor');
                             if (el) el.value = data.settings.themeTabColor;
                         }
                         if (data.settings.themeBackgroundColor) {
-                            window.currentBackgroundColor = data.settings.themeBackgroundColor;
+                            setCurrentBackgroundColor(data.settings.themeBackgroundColor);
                             const el = document.getElementById('themeBackgroundColor');
                             if (el) el.value = data.settings.themeBackgroundColor;
                         }
