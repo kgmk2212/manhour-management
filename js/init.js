@@ -461,5 +461,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // グローバルイベントハンドラの初期化（index.htmlから移行）
     initEventHandlers();
 
+    // 保存されたタブを復元（リロード時に前回のタブに戻る）
+    try {
+        const savedTab = localStorage.getItem('manhour_currentTab');
+        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(savedTab)) {
+            UI.showTab(savedTab);
+        }
+    } catch (e) {
+        // localStorageエラーは無視
+    }
+
     console.log('✅ init.js: 初期化処理完了');
 });

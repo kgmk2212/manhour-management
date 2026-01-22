@@ -77,6 +77,13 @@ export function showTab(tabName) {
             window.hideFloatingFilterButton();
         }
     }
+
+    // 現在のタブをlocalStorageに保存（リロード時に復元用）
+    try {
+        localStorage.setItem('manhour_currentTab', tabName);
+    } catch (e) {
+        // localStorageエラーは無視
+    }
 }
 
 export function nextTab() {
