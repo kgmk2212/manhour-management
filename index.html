@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- 早期テーマ読み込み：ちらつき防止 -->
+    <!-- 早期テーマ・タブ読み込み：ちらつき防止 -->
     <script>
         (function () {
             try {
@@ -18,6 +18,11 @@
                     if (parsed.themeColor) {
                         window.__earlyThemeColor = parsed.themeColor;
                     }
+                }
+                // 保存されたタブを読み込み
+                var savedTab = localStorage.getItem('manhour_currentTab');
+                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
+                    window.__earlySavedTab = savedTab;
                 }
             } catch (e) { }
         })();
@@ -53,6 +58,11 @@
             // CSS変数を設定
             document.documentElement.style.setProperty('--early-theme-gradient', gradient);
             document.documentElement.dataset.earlyTheme = themeColor;
+
+            // 保存されたタブを早期適用
+            if (window.__earlySavedTab && window.__earlySavedTab !== 'quick') {
+                document.documentElement.dataset.earlyTab = window.__earlySavedTab;
+            }
         })();
     </script>
     <style>
@@ -77,6 +87,27 @@
         /* ページ読込中の背景安定化 */
         body {
             background: var(--early-theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+        }
+
+        /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
+        [data-early-tab] #quick.tab-content.active {
+            display: none !important;
+        }
+
+        [data-early-tab="estimate"] #estimate.tab-content {
+            display: block !important;
+        }
+
+        [data-early-tab="actual"] #actual.tab-content {
+            display: block !important;
+        }
+
+        [data-early-tab="report"] #report.tab-content {
+            display: block !important;
+        }
+
+        [data-early-tab="settings"] #settings.tab-content {
+            display: block !important;
         }
     </style>
     <div class="container">
