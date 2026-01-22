@@ -110,12 +110,12 @@
             display: block !important;
         }
 
-        /* 初期化中はコンテンツエリアを非表示（ちらつき防止） */
-        .container.is-loading .content {
+        /* 初期化中はコンテナを非表示（ちらつき防止） */
+        .container.is-loading {
             visibility: hidden;
         }
 
-        .container:not(.is-loading) .content {
+        .container:not(.is-loading) {
             visibility: visible;
         }
     </style>
