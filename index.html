@@ -109,17 +109,8 @@
         [data-early-tab="settings"] #settings.tab-content {
             display: block !important;
         }
-
-        /* 初期化中はコンテナを非表示（ちらつき防止） */
-        .container.is-loading {
-            visibility: hidden;
-        }
-
-        .container:not(.is-loading) {
-            visibility: visible;
-        }
     </style>
-    <div class="container is-loading">
+    <div class="container">
         <header>
             <h1>工数管理システム</h1>
             <div class="header-buttons">
