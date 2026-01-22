@@ -7,7 +7,7 @@ import {
     setActuals
 } from './state.js';
 
-import { showAlert } from './utils.js';
+import { showAlert, sortMembers } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate } from './estimate.js';
 
 // ============================================
@@ -1026,7 +1026,7 @@ export function addActualFromCalendar(member, date) {
     const [year, month, day] = date.split('-');
     modalTitle.textContent = `実績を新規登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
 
-    updateEditActualTaskList(member, false, versionSelect.value);
+    updateEditActualTaskList(member, false, versionSelect.value, document.getElementById('editActualProcess').value);
 
     if (previousActual) {
         const taskSelect = document.getElementById('editActualTaskSelect');
@@ -1055,7 +1055,7 @@ export function editActual(id) {
     document.getElementById('editActualDate').value = actual.date;
     document.getElementById('editActualVersion').value = actual.version;
 
-    updateEditActualTaskList(actual.member, true, actual.version);
+    updateEditActualTaskList(actual.member, true, actual.version, actual.process);
 
     const taskSelect = document.getElementById('editActualTaskSelect');
     taskSelect.style.display = 'block';
@@ -1258,7 +1258,7 @@ export function getLatestActualBeforeDate(beforeDate) {
 /**
  * 実績編集モーダルの対応名リストを更新
  */
-export function updateEditActualTaskList(member, isEditMode = false, selectedVersion = null) {
+export function updateEditActualTaskList(member, isEditMode = false, selectedVersion = null, selectedProcess = null) {
     const select = document.getElementById('editActualTaskSelect');
 
     if (!selectedVersion) {
@@ -1270,6 +1270,10 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
 
     if (selectedVersion && selectedVersion !== '') {
         allEstimates = allEstimates.filter(e => e.version === selectedVersion);
+    }
+
+    if (selectedProcess && selectedProcess !== '') {
+        allEstimates = allEstimates.filter(e => e.process === selectedProcess);
     }
 
     const actualTotals = {};
@@ -1322,8 +1326,14 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
         select.appendChild(optgroup);
     }
 
-    Object.keys(tasksByMember).sort().forEach(otherMember => {
-        if (otherMember !== member && tasksByMember[otherMember].length > 0) {
+    const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
+
+    const otherMembers = Object.keys(tasksByMember).filter(m => m !== member);
+    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
+
+    sortedOtherMembers.forEach(otherMember => {
+        if (tasksByMember[otherMember].length > 0) {
             const optgroup = document.createElement('optgroup');
             optgroup.label = `担当：${otherMember}`;
             tasksByMember[otherMember].forEach(task => {
@@ -1433,8 +1443,21 @@ export function handleActualTaskSelect() {
         const version = selectedOption.getAttribute('data-version');
         const process = selectedOption.getAttribute('data-process');
 
-        if (version && versionSelect) versionSelect.value = version;
-        if (process && processSelect) processSelect.value = process;
+        // イベントループを防ぐため、一時的にイベントリスナーを無効化するか、
+        // 値変更時の処理を調整する必要がありますが、ここでは単純に値をセットします。
+        // ただし、プロセス変更イベントが発火して再描画されると無限ループになる可能性があるため注意。
+        // 今回の要件では「対応名選択 -> 工程追従」なので、ここで工程を変えます。
+
+        if (version && versionSelect && versionSelect.value !== version) {
+            versionSelect.value = version;
+        }
+
+        if (process && processSelect && processSelect.value !== process) {
+            processSelect.value = process;
+            // プロセスが変わったのでリストを再生成したいところですが、
+            // 既に選択済みのタスクが消えてしまうと困るので、
+            // ここではリスト再生成はせず、値の追従のみ行います。
+        }
 
         // 残存時間の初期値を表示
         if (version && select.value && process) {
@@ -1447,6 +1470,25 @@ export function handleActualTaskSelect() {
             }
         }
     }
+}
+
+/**
+ * 実績編集モーダルの工程変更時の処理
+ */
+export function handleActualProcessChange() {
+    const memberSelect = document.getElementById('editActualMember');
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+
+    if (!memberSelect || !processSelect) return;
+
+    const member = memberSelect.value;
+    const version = versionSelect ? versionSelect.value : null;
+    const process = processSelect.value;
+
+    // 現在選択されている対応名を保持したいが、プロセスが変わるとリスト内容が変わるため、
+    // 基本的にはリセットされるか、同じ名前があればそれが選ばれる挙動になる。
+    updateEditActualTaskList(member, true, version, process);
 }
 
 console.log('✅ モジュール actual.js loaded');

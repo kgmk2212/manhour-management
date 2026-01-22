@@ -866,6 +866,7 @@
                     </button>
                 </div>
             </div>
+            <!-- /report -->
 
             <div id="settings" class="tab-content">
                 <h2>⚙️ 設定</h2>
@@ -1332,9 +1333,11 @@
                     <div class="form-group">
                         <label>見積一覧のレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('estimate', 'compact')" class="layout-toggle-btn"
+                            <button id="btnSettingsEstimateCompact" onclick="toggleFilterLayout('estimate', 'compact')"
+                                class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('estimate', 'segmented')" class="layout-toggle-btn"
+                            <button id="btnSettingsEstimateSegmented"
+                                onclick="toggleFilterLayout('estimate', 'segmented')" class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -1346,9 +1349,11 @@
                     <div class="form-group">
                         <label>実績一覧のレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('actual', 'compact')" class="layout-toggle-btn"
+                            <button id="btnSettingsActualCompact" onclick="toggleFilterLayout('actual', 'compact')"
+                                class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('actual', 'segmented')" class="layout-toggle-btn"
+                            <button id="btnSettingsActualSegmented" onclick="toggleFilterLayout('actual', 'segmented')"
+                                class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -1360,9 +1365,11 @@
                     <div class="form-group">
                         <label>レポートのレイアウト</label>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <button onclick="toggleFilterLayout('report', 'compact')" class="layout-toggle-btn"
+                            <button id="btnSettingsReportCompact" onclick="toggleFilterLayout('report', 'compact')"
+                                class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">横並び</button>
-                            <button onclick="toggleFilterLayout('report', 'segmented')" class="layout-toggle-btn"
+                            <button id="btnSettingsReportSegmented" onclick="toggleFilterLayout('report', 'segmented')"
+                                class="layout-toggle-btn"
                                 style="padding: 6px 14px; font-size: 13px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">セグメント</button>
                         </div>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -1504,19 +1511,21 @@
                         <option value="">-- 対応を選択 --</option>
                     </select>
                     <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        ↑ 未完了の対応を選択、または「新規入力」で新しい対応を追加
-                    </small>
+
                 </div>
                 <div class="form-group">
                     <label>工程</label>
                     <select id="editActualProcess">
+                        <option value="">全工程</option>
                         <option value="UI">UI</option>
                         <option value="PG">PG</option>
                         <option value="PT">PT</option>
                         <option value="IT">IT</option>
                         <option value="ST">ST</option>
                     </select>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        工程を選択して候補を絞り込むことができます。
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>担当</label>
@@ -1541,9 +1550,9 @@
                 <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <button class="btn btn-primary" id="btnSaveActualEdit">保存</button>
                     <button class="btn" id="editActualOtherBtn"
-                        style="background: #9b59b6; color: white; display: none;">その他作業</button>
+                        style="background: #27ae60; color: white; display: none;">その他作業</button>
                     <button class="btn" id="editActualVacationBtn"
-                        style="background: #27ae60; color: white; display: none;">休暇登録</button>
+                        style="background: #f57c00; color: white; display: none;">休暇登録</button>
                     <button class="btn" id="btnCloseEditActualModalCancel"
                         style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>

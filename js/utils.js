@@ -13,7 +13,7 @@ export function showAlert(message, dismissible = false) {
 
     // dismissibleがtrueの場合、外クリックで閉じる
     if (dismissible) {
-        modal.onclick = function(event) {
+        modal.onclick = function (event) {
             if (event.target === modal) {
                 closeCustomAlert();
             }
@@ -232,4 +232,36 @@ export function getDeviationColor(estimate, actual) {
         if (absDeviation < 100) return '#90ff90';
         return '#80ff80';
     }
+}
+
+// メンバーリストを指定された順序でソートする
+export function sortMembers(members, orderString) {
+    // SetやMapの場合は配列に変換
+    const memberArray = Array.isArray(members) ? members : Array.from(members);
+
+    // 順序指定がない場合は単純ソート
+    if (!orderString || !orderString.trim()) {
+        return memberArray.sort();
+    }
+
+    const orderList = orderString.split(',').map(m => m.trim()).filter(m => m);
+    const orderedMembers = [];
+    const unorderedMembers = [];
+
+    // 指定順のメンバーを抽出
+    orderList.forEach(name => {
+        if (memberArray.includes(name)) {
+            orderedMembers.push(name);
+        }
+    });
+
+    // 指定外のメンバーを抽出
+    memberArray.forEach(m => {
+        if (!orderedMembers.includes(m)) {
+            unorderedMembers.push(m);
+        }
+    });
+
+    // 指定順のメンバー + 指定外のメンバー（アルファベット順）
+    return [...orderedMembers, ...unorderedMembers.sort()];
 }

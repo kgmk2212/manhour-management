@@ -7,9 +7,9 @@ import {
     showMonthColorsSetting, showDeviationColorsSetting,
     showProgressBarsSetting, showProgressPercentageSetting,
     progressBarStyle, matrixEstActFormat, matrixDayMonthFormat,
-    memberOrder, setMemberOrder
+    memberOrder, setMemberOrder, debugModeEnabled
 } from './state.js';
-import { normalizeEstimate } from './utils.js';
+import { normalizeEstimate, sortMembers } from './utils.js';
 
 // タブの順序を定義
 const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
@@ -19,6 +19,10 @@ const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
 // ============================================
 
 export function showTab(tabName) {
+    // 早期適用の属性を削除（一度動作したら不要）
+    document.documentElement.removeAttribute('data-early-tab');
+    document.documentElement.removeAttribute('data-early-theme');
+
     // 全タブからactiveクラスとテーマクラスを削除
     document.querySelectorAll('.tab').forEach(t => {
         t.classList.remove('active');
@@ -33,10 +37,10 @@ export function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
     // 対象のタブボタンを見つけてactiveクラスを追加
-    const tabButtons = document.querySelectorAll('.tab');
-    const tabIndex = TAB_ORDER.indexOf(tabName);
-    if (tabIndex !== -1 && tabButtons[tabIndex]) {
-        tabButtons[tabIndex].classList.add('active');
+    // 対象のタブボタンを見つけてactiveクラスを追加
+    const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    if (targetTabBtn) {
+        targetTabBtn.classList.add('active');
     }
 
     // タブコンテンツを表示
@@ -344,9 +348,8 @@ export function toggleFilterLayout(page, version) {
         const compact = document.getElementById('estimateFiltersCompact');
         const segmented = document.getElementById('estimateFiltersSegmented');
 
-        const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'estimate\'"]');
-        const btnCompact = settingsButtons[0];
-        const btnSegmented = settingsButtons[1];
+        const btnCompact = document.getElementById('btnSettingsEstimateCompact');
+        const btnSegmented = document.getElementById('btnSettingsEstimateSegmented');
 
         if (version === 'compact') {
             if (compact) compact.style.display = 'flex';
@@ -385,9 +388,8 @@ export function toggleFilterLayout(page, version) {
         const compact = document.getElementById('actualFiltersCompact');
         const segmented = document.getElementById('actualFiltersSegmented');
 
-        const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'actual\'"]');
-        const btnCompact = settingsButtons[0];
-        const btnSegmented = settingsButtons[1];
+        const btnCompact = document.getElementById('btnSettingsActualCompact');
+        const btnSegmented = document.getElementById('btnSettingsActualSegmented');
 
         if (version === 'compact') {
             const viewMode = document.getElementById('actualViewMode2');
@@ -440,9 +442,8 @@ export function toggleFilterLayout(page, version) {
         const compact = document.getElementById('reportFiltersCompact');
         const segmented = document.getElementById('reportFiltersSegmented');
 
-        const settingsButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'report\'"]');
-        const btnCompact = settingsButtons[0];
-        const btnSegmented = settingsButtons[1];
+        const btnCompact = document.getElementById('btnSettingsReportCompact');
+        const btnSegmented = document.getElementById('btnSettingsReportSegmented');
 
         if (version === 'compact') {
             const reportMonth2 = document.getElementById('reportMonth2');
@@ -490,36 +491,42 @@ export function updateLayoutToggleButtons() {
     const themeColor = getThemeColor();
 
     // 見積一覧のボタン
-    const estimateButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'estimate\'"]');
-    if (estimateButtons.length >= 2) {
+    const btnEstimateCompact = document.getElementById('btnSettingsEstimateCompact');
+    const btnEstimateSegmented = document.getElementById('btnSettingsEstimateSegmented');
+
+    if (btnEstimateCompact && btnEstimateSegmented) {
         const estimateCompact = document.getElementById('estimateFiltersCompact');
         const isCompactActive = estimateCompact && estimateCompact.style.display !== 'none';
-        estimateButtons[0].style.background = isCompactActive ? themeColor : 'white';
-        estimateButtons[0].style.color = isCompactActive ? 'white' : '#333';
-        estimateButtons[1].style.background = !isCompactActive ? themeColor : 'white';
-        estimateButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+        btnEstimateCompact.style.background = isCompactActive ? themeColor : 'white';
+        btnEstimateCompact.style.color = isCompactActive ? 'white' : '#333';
+        btnEstimateSegmented.style.background = !isCompactActive ? themeColor : 'white';
+        btnEstimateSegmented.style.color = !isCompactActive ? 'white' : '#333';
     }
 
     // 実績一覧のボタン
-    const actualButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'actual\'"]');
-    if (actualButtons.length >= 2) {
+    const btnActualCompact = document.getElementById('btnSettingsActualCompact');
+    const btnActualSegmented = document.getElementById('btnSettingsActualSegmented');
+
+    if (btnActualCompact && btnActualSegmented) {
         const actualCompact = document.getElementById('actualFiltersCompact');
         const isCompactActive = actualCompact && actualCompact.style.display !== 'none';
-        actualButtons[0].style.background = isCompactActive ? themeColor : 'white';
-        actualButtons[0].style.color = isCompactActive ? 'white' : '#333';
-        actualButtons[1].style.background = !isCompactActive ? themeColor : 'white';
-        actualButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+        btnActualCompact.style.background = isCompactActive ? themeColor : 'white';
+        btnActualCompact.style.color = isCompactActive ? 'white' : '#333';
+        btnActualSegmented.style.background = !isCompactActive ? themeColor : 'white';
+        btnActualSegmented.style.color = !isCompactActive ? 'white' : '#333';
     }
 
     // レポートのボタン
-    const reportButtons = document.querySelectorAll('#settings button[onclick*="toggleFilterLayout(\'report\'"]');
-    if (reportButtons.length >= 2) {
+    const btnReportCompact = document.getElementById('btnSettingsReportCompact');
+    const btnReportSegmented = document.getElementById('btnSettingsReportSegmented');
+
+    if (btnReportCompact && btnReportSegmented) {
         const reportCompact = document.getElementById('reportFiltersCompact');
         const isCompactActive = reportCompact && reportCompact.style.display !== 'none';
-        reportButtons[0].style.background = isCompactActive ? themeColor : 'white';
-        reportButtons[0].style.color = isCompactActive ? 'white' : '#333';
-        reportButtons[1].style.background = !isCompactActive ? themeColor : 'white';
-        reportButtons[1].style.color = !isCompactActive ? 'white' : '#333';
+        btnReportCompact.style.background = isCompactActive ? themeColor : 'white';
+        btnReportCompact.style.color = isCompactActive ? 'white' : '#333';
+        btnReportSegmented.style.background = !isCompactActive ? themeColor : 'white';
+        btnReportSegmented.style.color = !isCompactActive ? 'white' : '#333';
     }
 }
 
@@ -706,31 +713,10 @@ export function updateMemberOptions() {
     estimates.forEach(e => members.add(e.member));
     actuals.forEach(a => members.add(a.member));
 
-    let sortedMembers;
     const memberOrderInput = document.getElementById('memberOrder');
     const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
 
-    if (memberOrderValue) {
-        const orderList = memberOrderValue.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
-
-        orderList.forEach(name => {
-            if (members.has(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        Array.from(members).forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        sortedMembers = Array.from(members).sort();
-    }
+    const sortedMembers = sortMembers(members, memberOrderValue);
 
     // 各工程の担当者選択肢を更新
     const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -1790,7 +1776,7 @@ export function syncSettingsToUI() {
  * 全ての画面表示を更新
  */
 export function updateAllDisplays() {
-    console.log('🔄 全画面更新実行');
+    if (debugModeEnabled) console.log('🔄 全画面更新実行');
 
     // 担当者表示順をDOMから取得して状態に反映
     const memberOrderEl = document.getElementById('memberOrder');
@@ -1808,7 +1794,7 @@ export function updateAllDisplays() {
     if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
 
-    console.log('✅ 全画面更新完了');
+    if (debugModeEnabled) console.log('✅ 全画面更新完了');
 }
 
 /**

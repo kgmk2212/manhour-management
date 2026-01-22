@@ -7,7 +7,7 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode
 } from './state.js';
-import { generateMonthOptions, generateMonthRange, showAlert } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert, sortMembers } from './utils.js';
 import * as Estimate from './estimate.js';
 
 // クイック入力用の状態変数
@@ -51,17 +51,9 @@ export function updateQuickMemberSelect() {
     estimates.forEach(e => members.add(e.member));
 
     // 表示順が設定されている場合はそれを使用
-    let sortedMembers;
     const memberOrderInput = document.getElementById('memberOrder');
     const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
-    if (memberOrderValue) {
-        const orderList = memberOrderValue.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = orderList.filter(m => members.has(m));
-        const unorderedMembers = Array.from(members).filter(m => !orderedMembers.includes(m)).sort();
-        sortedMembers = [...orderedMembers, ...unorderedMembers];
-    } else {
-        sortedMembers = Array.from(members).sort();
-    }
+    const sortedMembers = sortMembers(members, memberOrderValue);
 
     // オプションを生成
     const currentValue = select.value;

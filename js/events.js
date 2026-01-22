@@ -66,7 +66,8 @@ import {
     saveActualEdit,
     openOtherWorkFromCalendar,
     openVacationFromCalendar,
-    handleActualTaskSelect
+    handleActualTaskSelect,
+    handleActualProcessChange
 } from './actual.js';
 import {
     saveStickyFilterSetting,
@@ -101,11 +102,10 @@ import {
     closeProcessBreakdownModal,
     closeRemainingHoursModal
 } from './modal.js';
+import { debugModeEnabled } from './state.js';
 
 export function initEventHandlers() {
-    console.log('✅ events.js: イベントハンドラ初期化開始');
-
-    // ヘッダーボタン
+    if (debugModeEnabled) console.log('✅ events.js: イベントハンドラ初期化開始');
     const exportBtn = document.getElementById('btnExportBackup');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBackup);
@@ -673,6 +673,12 @@ export function initEventHandlers() {
     const editActualMember = document.getElementById('editActualMember');
     if (editActualMember) editActualMember.addEventListener('change', handleEditActualMemberChange);
 
+    const editActualTaskSelect = document.getElementById('editActualTaskSelect');
+    if (editActualTaskSelect) editActualTaskSelect.addEventListener('change', handleActualTaskSelect);
+
+    const editActualProcess = document.getElementById('editActualProcess');
+    if (editActualProcess) editActualProcess.addEventListener('change', handleActualProcessChange);
+
     // その他作業・休暇登録ボタン (カレンダーからの新規登録時に表示)
     // イベント委譲を使用して確実にイベントをキャッチする
     const editActualModal = document.getElementById('editActualModal');
@@ -721,8 +727,7 @@ export function initEventHandlers() {
     const btnCloseProcessBreakdownModal = document.getElementById('btnCloseProcessBreakdownModal');
     if (btnCloseProcessBreakdownModal) btnCloseProcessBreakdownModal.addEventListener('click', closeProcessBreakdownModal);
 
-
-    console.log('✅ events.js: イベントハンドラ初期化完了');
+    if (debugModeEnabled) console.log('✅ events.js: イベントハンドラ初期化完了');
 
     // Expose for generated HTML
     window.togglePhaseCollapse = togglePhaseCollapse;
