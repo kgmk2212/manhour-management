@@ -673,6 +673,26 @@ export function initEventHandlers() {
     const editActualMember = document.getElementById('editActualMember');
     if (editActualMember) editActualMember.addEventListener('change', handleEditActualMemberChange);
 
+    // その他作業・休暇登録ボタン (カレンダーからの新規登録時に表示)
+    // イベント委譲を使用して確実にイベントをキャッチする
+    const editActualModal = document.getElementById('editActualModal');
+    if (editActualModal) {
+        editActualModal.addEventListener('click', (e) => {
+            const otherBtn = e.target.closest('#editActualOtherBtn');
+            if (otherBtn) {
+                openOtherWorkFromCalendar();
+                return;
+            }
+
+            const vacationBtn = e.target.closest('#editActualVacationBtn');
+            if (vacationBtn) {
+                openVacationFromCalendar();
+                return;
+            }
+        });
+    }
+
+
     // Vacation Modal
     const btnCloseVacationModal = document.getElementById('btnCloseVacationModal');
     if (btnCloseVacationModal) btnCloseVacationModal.addEventListener('click', closeVacationModal);

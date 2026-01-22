@@ -795,7 +795,22 @@ export function renderActualListView() {
 
     let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
 
-    const sortedActuals = [...filteredActuals].sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 担当者順を取得
+    const memberOrderInput = document.getElementById('memberOrder').value.trim();
+    const orderList = memberOrderInput ? memberOrderInput.split(',').map(m => m.trim()).filter(m => m) : [];
+
+    const getMemberIndex = (member) => {
+        const idx = orderList.indexOf(member);
+        return idx >= 0 ? idx : orderList.length + member.charCodeAt(0);
+    };
+
+    const sortedActuals = [...filteredActuals].sort((a, b) => {
+        // まず日付で降順ソート
+        const dateDiff = new Date(b.date) - new Date(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        // 同日付なら担当者順でソート
+        return getMemberIndex(a.member) - getMemberIndex(b.member);
+    });
 
     if (sortedActuals.length === 0) {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した条件に該当する実績データがありません</p>';
