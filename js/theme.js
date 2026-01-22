@@ -234,6 +234,10 @@ export function updateThemeElements() {
     document.documentElement.style.setProperty('--theme-gradient', gradients[window.currentThemeColor] || gradients['purple']);
     document.documentElement.style.setProperty('--theme-color', solidColors[window.currentThemeColor] || solidColors['purple']);
 
+    // 早期テーマ適用用のCSS変数とdata属性も更新（ちらつき防止スクリプトとの同期）
+    document.documentElement.style.setProperty('--early-theme-gradient', gradients[window.currentThemeColor] || gradients['purple']);
+    document.documentElement.dataset.earlyTheme = window.currentThemeColor || 'purple';
+
     updateBodyBackground();
 
     // クイック入力エリア
