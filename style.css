@@ -75,6 +75,9 @@
 
         .content {
             padding: 15px;
+            position: relative;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         .tab-content {
@@ -1677,4 +1680,104 @@
             .floating-filter-toggle {
                 bottom: 80px !important;
             }
+        }
+
+        /* ============================================ */
+        /* スワイプ・遷移アニメーション定義 */
+        /* ============================================ */
+
+        /* 右から入ってくる（次へ） */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 左へ出ていく（次へ） */
+        @keyframes slideOutLeft {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(-20%);
+                opacity: 0;
+            }
+        }
+
+        /* 左から入ってくる（前へ） */
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 右へ出ていく（前へ） */
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(20%);
+                opacity: 0;
+            }
+        }
+
+        .anim-slide-in-right {
+            animation: slideInRight 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+
+        .anim-slide-out-left {
+            animation: slideOutLeft 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .anim-slide-in-left {
+            animation: slideInLeft 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+
+        .anim-slide-out-right {
+            animation: slideOutRight 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        /* アニメーション中のコンテナ制御 */
+        .tab-content-container {
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* アニメーション中の離脱タブを表示維持 */
+        .tab-content.anim-leaving {
+            display: block !important;
+            pointer-events: none;
+            /* タッチ無効化 */
+            z-index: 1;
+        }
+
+        /* 進入タブは上 */
+        .tab-content.anim-entering {
+            z-index: 2;
         }

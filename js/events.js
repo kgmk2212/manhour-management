@@ -24,7 +24,8 @@ import {
     toggleFilterLayout,
     handleEditActualMemberChange,
     handleEditFormNameChange,
-    handleAddFormNameChange
+    handleAddFormNameChange,
+    initAnimationState
 } from './ui.js';
 import {
     switchQuickInputMode,
@@ -763,4 +764,7 @@ export function initEventHandlers() {
     // Expose for generated HTML
     window.togglePhaseCollapse = togglePhaseCollapse;
     window.handleActualTaskSelect = handleActualTaskSelect;
+
+    // アニメーション状態の初期化
+    initAnimationState();
 }

@@ -265,3 +265,75 @@ export function sortMembers(members, orderString) {
     // 指定順のメンバー + 指定外のメンバー（アルファベット順）
     return [...orderedMembers, ...unorderedMembers.sort()];
 }
+
+// ============================================
+// UIユーティリティ
+// ============================================
+
+/**
+ * コンテナにドラッグスクロール機能を追加
+ * @param {HTMLElement} container 
+ */
+export function enableDragScroll(container) {
+    if (!container || container.dataset.dragScrollEnabled) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    const onMouseDown = (e) => {
+        isDown = true;
+        container.dataset.isDragging = 'false';
+        container.style.cursor = 'grabbing';
+        startX = e.pageX;
+        scrollLeft = container.scrollLeft;
+
+        // ドラッグ中はdocument全体でイベントを監視（コンテナ外に出てもドラッグ継続）
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        // テキスト選択などを防止
+        e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX;
+        const walk = (x - startX) * 2; // スクロール速度
+        container.scrollLeft = scrollLeft - walk;
+
+        // わずかな動きはクリックとみなす
+        if (Math.abs(x - startX) > 5) {
+            container.dataset.isDragging = 'true';
+        }
+    };
+
+    const onMouseUp = () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+
+        // イベントリスナー解除
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // クリックイベントハンドラが動作する時間を確保してからフラグをリセット
+        setTimeout(() => {
+            container.dataset.isDragging = 'false';
+        }, 10);
+    };
+
+    container.addEventListener('mousedown', onMouseDown);
+
+    // キャプチャフェーズでクリックイベントを捕捉し、ドラッグ中なら停止
+    container.addEventListener('click', (e) => {
+        if (container.dataset.isDragging === 'true') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+
+    // 初期スタイル
+    container.style.cursor = 'grab';
+    container.style.userSelect = 'none';
+    container.dataset.dragScrollEnabled = 'true';
+}

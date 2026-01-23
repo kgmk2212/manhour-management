@@ -2,6 +2,8 @@
 // フローティングフィルタ・スティッキーフィルタ関連機能
 // ============================================
 
+import { enableDragScroll } from './utils.js';
+
 // ============================================
 // スティッキーフィルタ
 // ============================================
@@ -340,6 +342,10 @@ export function syncFloatingEstimateFilters() {
     if (typeof window.updateSegmentedButtons === 'function') {
         window.updateSegmentedButtons();
     }
+
+    // ドラッグスクロールを有効化
+    if (floatingMonthButtons) enableDragScroll(floatingMonthButtons);
+    if (floatingVersionButtons) enableDragScroll(floatingVersionButtons);
 }
 
 // 見積: フィルタタイプ設定
@@ -530,6 +536,10 @@ export function syncFloatingFilters() {
     if (typeof window.updateFloatingFilterTheme === 'function') {
         window.updateFloatingFilterTheme();
     }
+
+    // ドラッグスクロールを有効化
+    if (floatingMonthButtons) enableDragScroll(floatingMonthButtons);
+    if (floatingVersionButtons) enableDragScroll(floatingVersionButtons);
 }
 
 // フィルタタイプの設定（月別/版数別）

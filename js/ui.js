@@ -9,7 +9,7 @@ import {
     progressBarStyle, matrixEstActFormat, matrixDayMonthFormat,
     memberOrder, setMemberOrder, debugModeEnabled
 } from './state.js';
-import { normalizeEstimate, sortMembers } from './utils.js';
+import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
 const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
@@ -29,8 +29,38 @@ export function showTab(tabName) {
         window.tabScrollPositions = {};
     }
     const currentActiveTab = document.querySelector('.tab-content.active');
+    let currentTabId = null;
     if (currentActiveTab && currentActiveTab.id) {
+        currentTabId = currentActiveTab.id;
         window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
+    }
+
+    // アニメーション方向の決定
+    let animationClassOut = '';
+    let animationClassIn = '';
+
+    if (currentTabId && currentTabId !== tabName) {
+        const currentIndex = TAB_ORDER.indexOf(currentTabId);
+        const nextIndex = TAB_ORDER.indexOf(tabName);
+
+        if (currentIndex !== -1 && nextIndex !== -1 && window.innerWidth <= 768) {
+            if (nextIndex > currentIndex) {
+                // 次へ（右へ進む）：現在は左へ消え、次は右から来る
+                animationClassOut = 'anim-slide-out-left';
+                animationClassIn = 'anim-slide-in-right';
+            } else {
+                // 前へ（左へ戻る）：現在は右へ消え、次は左から来る
+                animationClassOut = 'anim-slide-out-right';
+                animationClassIn = 'anim-slide-in-left';
+            }
+        }
+    }
+
+
+
+    // アニメーションクラスの適用（退出側）
+    if (animationClassOut && currentActiveTab) {
+        currentActiveTab.classList.add('anim-leaving', animationClassOut);
     }
 
     // 早期適用の属性を削除（一度動作したら不要）
@@ -61,6 +91,21 @@ export function showTab(tabName) {
     const tabContent = document.getElementById(tabName);
     if (tabContent) {
         tabContent.classList.add('active');
+
+        // アニメーションクラスの適用（進入側）
+        if (animationClassIn) {
+            tabContent.classList.add('anim-entering', animationClassIn);
+
+            // アニメーション終了後のクリーンアップ
+            setTimeout(() => {
+                // 退出側のクラス削除
+                if (currentActiveTab) {
+                    currentActiveTab.classList.remove('anim-leaving', animationClassOut);
+                }
+                // 進入側のクラス削除
+                tabContent.classList.remove('anim-entering', animationClassIn);
+            }, 300); // CSSのアニメーション時間(0.3s)に合わせる
+        }
     }
 
     // アクティブタブにテーマを適用（window経由）
@@ -187,6 +232,35 @@ export function initSmartSticky() {
             ticking = true;
         }
     }, { passive: true });
+
+    // タブエリアクリックでの表示復帰（PC:上部、Mobile:下部）
+    // キャプチャフェーズ(true)でイベントを捕捉し、条件に合致すれば伝播を止める
+    window.addEventListener('click', (e) => {
+        if (!tabs.classList.contains('is-hidden')) return;
+
+        const isMobile = window.innerWidth <= 768;
+        const triggerZone = 60; // タブバーのおおよその高さ
+        let hit = false;
+
+        if (isMobile) {
+            // モバイル：画面下部
+            if (e.clientY > window.innerHeight - triggerZone) {
+                hit = true;
+            }
+        } else {
+            // PC：画面上部
+            if (e.clientY < triggerZone) {
+                hit = true;
+            }
+        }
+
+        if (hit) {
+            tabs.classList.remove('is-hidden');
+            // 他の要素（モーダル表示ボタンなど）へのクリック反応を防ぐ
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
 }
 
 export function initTabSwipe() {
@@ -270,6 +344,45 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
     select.style.display = 'none';
     container.innerHTML = '';
 
+    // ドラッグスクロールの実装
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let isDragging = false;
+
+    container.addEventListener('mousedown', (e) => {
+        isDown = true;
+        isDragging = false;
+        container.style.cursor = 'grabbing';
+        startX = e.pageX - container.offsetLeft;
+        scrollLeft = container.scrollLeft;
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+        // クリックイベントの後にisDraggingをリセットするため、少し遅延させる
+        setTimeout(() => { isDragging = false; }, 0);
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const walk = (x - startX) * 2; // スクロール速度
+        container.scrollLeft = scrollLeft - walk;
+
+        // わずかな動きは除外（クリック誤爆防止）
+        if (Math.abs(x - startX) > 5) {
+            isDragging = true;
+        }
+    });
+
     items.forEach((item, index) => {
         const button = document.createElement('button');
         button.textContent = item.label;
@@ -279,7 +392,16 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
             button.classList.add('active');
         }
 
-        button.onclick = () => onClickHandler(item.value, containerId);
+        // クリックイベント：ドラッグ中は実行しない
+        button.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            onClickHandler(item.value, containerId);
+        });
+
         container.appendChild(button);
     });
 }
@@ -292,6 +414,14 @@ export function updateSegmentButtonSelection(containerId, value) {
     buttons.forEach(btn => {
         if (btn.value === value) {
             btn.classList.add('active');
+            // 選択されたボタンが画面外にある場合、中央にスクロール
+            // setTimeoutでレンダリング待ちを入れるとより確実
+            setTimeout(() => {
+                const containerRect = container.getBoundingClientRect();
+                const btnRect = btn.getBoundingClientRect();
+                const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+                container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+            }, 10);
         } else {
             btn.classList.remove('active');
         }
@@ -1481,8 +1611,95 @@ export function handleActualMemberChange(value, containerId) {
     }
 }
 
+// 実績月の追跡用
+let lastActualMonth = null;
+
+export function initAnimationState() {
+    const select = document.getElementById('actualMonthFilter');
+    if (select) {
+        lastActualMonth = select.value;
+    }
+}
+
 export function handleActualMonthChange(value, containerId) {
     const select = document.getElementById('actualMonthFilter');
+
+    // 初回呼び出し時や変数が未設定の場合は現在の値（またはデフォルト）を設定
+    if (lastActualMonth === null && select) {
+        // 初期値として現在のDOMの値を設定して終わる（次回から比較可能にする）
+        // ただし、この関数が呼ばれた時点で「変更後」なので、比較対象がない。
+        // UI操作で変更された場合、前の値を知るすべがないため、初回はアニメーションなし。
+        // しかし、画面ロード時に初期値が入っているはず。
+        // ここに来るのは「変更時」。
+        // 仕方ないので、初期化ロジックは別途必要か、あるいは「今回はアニメーションせず、値を保存」する。
+        // でもそうすると最初の切り替えでアニメーションしない。
+        // 対策: selectにフォーカスした時点の値を取得？ いや、難しい。
+        // 妥協: 初回はアニメーションなし。次回からあり。
+        // いや、ページ読み込み時に値は決まっている。
+        // どこかで初期化したいが... 
+        // 暫定対応: lastActualMonthがnullなら、valueと異なると仮定して...いや、方向がわからない。
+        // 一旦値を保存してリターン。
+        lastActualMonth = value;
+    }
+
+    const currentMonth = lastActualMonth;
+
+    // アニメーション方向決定 (スマホのみ)
+    let direction = 'none';
+    if (window.innerWidth <= 768 && currentMonth && value && currentMonth !== 'all' && value !== 'all' && currentMonth !== value) {
+        if (value > currentMonth) direction = 'next';
+        else direction = 'prev';
+    }
+
+    // 次回のために現在の値を保存
+    lastActualMonth = value;
+
+    if (direction !== 'none') {
+        const container = document.getElementById('actualList');
+        if (container && container.parentNode) {
+            // 親要素（タブコンテンツ）のスタイル調整
+            container.parentNode.style.position = 'relative';
+            container.parentNode.style.overflowX = 'hidden';
+
+            // 現在のコンテンツを複製
+            const clone = container.cloneNode(true);
+            clone.id = 'actualList-clone';
+            clone.style.position = 'absolute';
+            clone.style.top = container.offsetTop + 'px'; // 元の位置に合わせる
+            clone.style.left = container.offsetLeft + 'px';
+            clone.style.width = container.offsetWidth + 'px'; // 幅を固定
+            clone.style.zIndex = '10';
+
+            const outClass = direction === 'next' ? 'anim-slide-out-left' : 'anim-slide-out-right';
+            clone.classList.add('anim-leaving', outClass);
+
+            container.parentNode.appendChild(clone);
+
+            // 実際の更新処理
+            const select2 = document.getElementById('actualMonthFilter2');
+            if (select) select.value = value;
+            if (select2) select2.value = value;
+            updateSegmentButtonSelection(containerId, value);
+            if (typeof window.renderActualList === 'function') {
+                window.renderActualList();
+            }
+
+            // 新しいコンテンツのアニメーション
+            const inClass = direction === 'next' ? 'anim-slide-in-right' : 'anim-slide-in-left';
+            container.classList.add('anim-entering', inClass);
+
+            // クリーンアップ
+            setTimeout(() => {
+                if (clone.parentNode) clone.parentNode.removeChild(clone);
+                container.classList.remove('anim-entering', inClass);
+                container.parentNode.style.overflowX = ''; // 戻す
+                container.parentNode.style.position = '';
+            }, 300);
+            return;
+        }
+    }
+
+    // 通常更新
     const select2 = document.getElementById('actualMonthFilter2');
     if (select) select.value = value;
     if (select2) select2.value = value;
@@ -1494,6 +1711,61 @@ export function handleActualMonthChange(value, containerId) {
 
 export function handleEstimateMonthChange(value, containerId) {
     const filterElement = document.getElementById('estimateMonthFilter');
+    const currentMonth = filterElement ? filterElement.value : null;
+
+    // アニメーション方向決定 (スマホのみ)
+    let direction = 'none';
+    if (window.innerWidth <= 768 && currentMonth && value && currentMonth !== 'all' && value !== 'all' && currentMonth !== value) {
+        if (value > currentMonth) direction = 'next';
+        else direction = 'prev';
+    }
+
+    if (direction !== 'none') {
+        const container = document.getElementById('estimateList');
+        // 親要素が相対配置であることを前提とする (.estimate-table-wrapper)
+        if (container && container.parentNode) {
+            // アニメーション中はスクロールを抑制
+            container.parentNode.style.overflowX = 'hidden';
+
+            // 現在のコンテンツを複製してアニメーションさせる（退出）
+            const clone = container.cloneNode(true);
+            clone.id = 'estimateList-clone';
+            // クローンは絶対配置で上に重ねる
+            clone.style.position = 'absolute';
+            clone.style.top = '0';
+            clone.style.left = '0';
+            clone.style.width = '100%';
+            clone.style.zIndex = '10';
+
+            const outClass = direction === 'next' ? 'anim-slide-out-left' : 'anim-slide-out-right';
+            clone.classList.add('anim-leaving', outClass);
+
+            container.parentNode.appendChild(clone);
+
+            // 実際の更新処理
+            if (filterElement) filterElement.value = value;
+            updateSegmentButtonSelection(containerId, value);
+            syncMonthToReport(value);
+            if (typeof window.renderEstimateList === 'function') {
+                window.renderEstimateList();
+            }
+
+            // 新しいコンテンツのアニメーション（進入）
+            const inClass = direction === 'next' ? 'anim-slide-in-right' : 'anim-slide-in-left';
+            container.classList.add('anim-entering', inClass);
+
+            // クリーンアップ
+            setTimeout(() => {
+                if (clone.parentNode) clone.parentNode.removeChild(clone);
+                container.classList.remove('anim-entering', inClass);
+                // スクロール設定を戻す
+                container.parentNode.style.overflowX = 'auto';
+            }, 300);
+            return;
+        }
+    }
+
+    // 通常更新 (アニメーションなし)
     if (filterElement) {
         filterElement.value = value;
     }
