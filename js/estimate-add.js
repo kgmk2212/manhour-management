@@ -96,15 +96,30 @@ export function initAddEstimateForm() {
     const startMonthMulti = document.getElementById('addEstStartMonthMulti');
     const endMonth = document.getElementById('addEstEndMonth');
     if (startMonthMulti) {
-        startMonthMulti.addEventListener('change', function() {
+        startMonthMulti.addEventListener('change', function () {
             // 開始月が変更されたら、終了月の選択肢を更新（開始月より後の月のみ）
             const currentEndValue = endMonth.value;
             Utils.generateMonthOptions('addEstEndMonth', currentEndValue, startMonthMulti.value);
+
+            // 開始月が終了月より後の場合、終了月を開始月に合わせる
+            if (endMonth.value < startMonthMulti.value) {
+                endMonth.value = startMonthMulti.value;
+            }
+
             updateAddEstWorkMonthUI();
         });
     }
     if (endMonth) {
-        endMonth.addEventListener('change', updateAddEstWorkMonthUI);
+        endMonth.addEventListener('change', function () {
+            // 終了月が変更されたら、終了月が開始月より前の場合、開始月を終了月に合わせる
+            if (endMonth.value < startMonthMulti.value) {
+                startMonthMulti.value = endMonth.value;
+                // 開始月変更に伴い終了月の選択肢も再生成が必要だが、
+                // startMonthMultiのchangeイベントは発火しないのでここで処理
+                Utils.generateMonthOptions('addEstEndMonth', endMonth.value, startMonthMulti.value);
+            }
+            updateAddEstWorkMonthUI();
+        });
     }
 }
 
@@ -478,6 +493,7 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
     closeAddEstimateModal();
@@ -565,6 +581,7 @@ export function addEstimateFromModalWithMonthSplit(version, task, processes, spl
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
     closeAddEstimateModal();

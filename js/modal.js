@@ -223,6 +223,22 @@ export function drawBreakdownDonutChart(canvasId, memberData, dataType, members,
     });
 }
 
+// 工程内訳モーダルを開く（IDベースのラッパー）
+export function openProcessBreakdown(version, task, process) {
+    // データをフィルタリング
+    const filteredEstimates = State.estimates.filter(e =>
+        e.version === version && e.task === task && e.process === process
+    );
+    const filteredActuals = State.actuals.filter(a =>
+        a.version === version && a.task === task && a.process === process
+    );
+
+    showProcessBreakdown(version, task, process, filteredActuals, filteredEstimates);
+}
+
+// Windowオブジェクトに公開
+window.openProcessBreakdown = openProcessBreakdown;
+
 export function closeProcessBreakdownModal() {
     document.getElementById('processBreakdownModal').style.display = 'none';
 }
@@ -270,7 +286,7 @@ export function openRemainingHoursModal(version, task, process) {
         updateRemainingHoursActualsList(version, task, process, allMembers[0]);
 
         // 担当者変更時に見込残存時間と実績リストを更新
-        select.onchange = function() {
+        select.onchange = function () {
             updateRemainingHoursInput(version, task, process, this.value);
             updateRemainingHoursActualsList(version, task, process, this.value);
         };
@@ -425,7 +441,7 @@ export function setupModalHandlers() {
         { id: 'editEstimateModal', closeFunc: () => { if (typeof window.closeEditEstimateModal === 'function') window.closeEditEstimateModal(); } },
         { id: 'editTaskModal', closeFunc: () => { if (typeof window.closeEditTaskModal === 'function') window.closeEditTaskModal(); } },
         { id: 'processBreakdownModal', closeFunc: closeProcessBreakdownModal },
-        { id: 'addEstimateModal', closeFunc: () => { if (typeof window.closeAddEstimateModal === 'function') window.closeAddEstimateModal(); } },
+        { id: 'addEstimateModal', closeFunc: () => { if (typeof window.closeAddEstimateModal === 'function') window.closeAddEstimateModal(); }, preventOutsideClick: true },
         { id: 'splitEstimateModal', closeFunc: () => { if (typeof window.closeSplitEstimateModal === 'function') window.closeSplitEstimateModal(); } },
         { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } }
     ];
@@ -443,6 +459,11 @@ export function setupModalHandlers() {
 
         // mouseupイベントで終了位置を確認
         modalElement.addEventListener('mouseup', (e) => {
+            // preventOutsideClickがtrueの場合は、外側クリックで閉じない
+            if (modal.preventOutsideClick) {
+                return;
+            }
+
             // mousedownとmouseupの両方がモーダル背景（.modal）だった場合のみ閉じる
             if (mouseDownTarget === modalElement && e.target === modalElement) {
                 modal.closeFunc();

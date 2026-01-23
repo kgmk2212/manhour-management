@@ -18,7 +18,21 @@ const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
 // タブ操作
 // ============================================
 
+// タブ切り替え中かどうかのフラグ
+let isTabSwitching = false;
+
 export function showTab(tabName) {
+    isTabSwitching = true;
+
+    // 現在アクティブなタブのスクロール位置を保存
+    if (typeof window.tabScrollPositions === 'undefined') {
+        window.tabScrollPositions = {};
+    }
+    const currentActiveTab = document.querySelector('.tab-content.active');
+    if (currentActiveTab && currentActiveTab.id) {
+        window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
+    }
+
     // 早期適用の属性を削除（一度動作したら不要）
     document.documentElement.removeAttribute('data-early-tab');
     document.documentElement.removeAttribute('data-early-theme');
@@ -59,6 +73,14 @@ export function showTab(tabName) {
         if (typeof window.applyDefaultEstimateViewType === 'function') {
             window.applyDefaultEstimateViewType();
         }
+        // フローティングフィルタボタンを表示
+        if (typeof window.showFloatingFilterButton === 'function') {
+            window.showFloatingFilterButton();
+        }
+        // フローティングパネルの状態を同期
+        if (typeof window.syncFloatingEstimateFilters === 'function') {
+            window.syncFloatingEstimateFilters();
+        }
     } else if (tabName === 'report') {
         if (typeof window.applyDefaultReportViewType === 'function') {
             window.applyDefaultReportViewType();
@@ -76,7 +98,7 @@ export function showTab(tabName) {
             window.syncFloatingFilters();
         }
     } else {
-        // レポートタブ以外ではフローティングフィルタボタンを非表示
+        // 見積・レポートタブ以外ではフローティングフィルタボタンを非表示
         if (typeof window.hideFloatingFilterButton === 'function') {
             window.hideFloatingFilterButton();
         }
@@ -88,6 +110,28 @@ export function showTab(tabName) {
     } catch (e) {
         // localStorageエラーは無視
     }
+
+    // スクロール位置の復元（保存されていれば）
+    if (typeof window.tabScrollPositions === 'undefined') {
+        window.tabScrollPositions = {};
+    }
+
+    // スクロール位置を復元
+    const savedScrollY = window.tabScrollPositions[tabName] || 0;
+    window.scrollTo(0, savedScrollY);
+
+    // タブバーを表示状態に戻す（隠れていたら）
+    const tabs = document.querySelector('.tabs');
+    if (tabs) tabs.classList.remove('is-hidden');
+
+    // 少し待ってからフラグを解除（スクロールイベントの発生を待つ）
+    setTimeout(() => {
+        isTabSwitching = false;
+        // スクロール追跡用の変数もリセット（SmartSticky側で参照できないため、ここで何かする必要があるか？
+        // initSmartSticky内のlastScrollYはずれている可能性がある。
+        // しかし、initSmartStickyはクロージャなので外からアクセスできない。
+        // なので、initSmartSticky内で isTabSwitching を監視させる。
+    }, 300);
 }
 
 export function nextTab() {
@@ -106,6 +150,43 @@ export function prevTab() {
     if (currentIndex > 0) {
         showTab(TAB_ORDER[currentIndex - 1]);
     }
+}
+
+// スマートStickyタブの初期化
+export function initSmartSticky() {
+    const tabs = document.querySelector('.tabs');
+    if (!tabs) return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const currentScrollY = window.scrollY;
+
+                // バウンススクロール対策
+                if (currentScrollY < 0) {
+                    ticking = false;
+                    return;
+                }
+
+                // 下スクロール (ヘッダーの高さ以上スクロールしてから判定)
+                if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                    tabs.classList.add('is-hidden');
+                }
+                // 上スクロール
+                else if (currentScrollY < lastScrollY) {
+                    tabs.classList.remove('is-hidden');
+                }
+
+                lastScrollY = currentScrollY;
+                ticking = false;
+            });
+
+            ticking = true;
+        }
+    }, { passive: true });
 }
 
 export function initTabSwipe() {
@@ -1036,12 +1117,15 @@ export function updateEstimateMonthOptions() {
         const est = normalizeEstimate(e);
         est.workMonths.forEach(month => {
             if (month && month !== 'unassigned') {
-                months.add(month);
+                // 時間が0より大きい月のみを追加
+                if (est.monthlyHours && est.monthlyHours[month] > 0) {
+                    months.add(month);
+                }
             }
         });
     });
 
-    const sortedMonths = Array.from(months).sort().reverse();
+    const sortedMonths = Array.from(months).sort();
 
     select.innerHTML = '<option value="all">全期間</option>';
     if (select2) select2.innerHTML = '<option value="all">全期間</option>';
@@ -1063,7 +1147,7 @@ export function updateEstimateMonthOptions() {
 
     const items = [
         { value: 'all', label: '全期間' },
-        ...sortedMonths.slice().reverse().map(month => {
+        ...sortedMonths.map(month => {
             const [year, monthNum] = month.split('-');
             return {
                 value: month,

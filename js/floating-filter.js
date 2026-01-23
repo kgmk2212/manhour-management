@@ -214,14 +214,252 @@ export function toggleFloatingFilterPanel(event) {
     if (event) {
         event.stopPropagation(); // イベント伝播を防ぐ
     }
-    const panel = document.getElementById('floatingFilterPanel');
-    if (panel) {
-        if (panel.classList.contains('show')) {
-            panel.classList.remove('show');
+
+    // 現在のアクティブなタブを確認
+    // tab-content.active を探す
+    let activeTabId = 'report'; // デフォルト
+    const activeContent = document.querySelector('.tab-content.active');
+    if (activeContent) {
+        activeTabId = activeContent.id;
+    }
+
+    let targetPanelId = 'floatingFilterPanel'; // デフォルト（レポート用）
+    if (activeTabId === 'estimate') {
+        targetPanelId = 'floatingFilterPanelEstimate';
+    }
+
+    const targetPanel = document.getElementById(targetPanelId);
+
+    // 他のすべてのパネルを閉じる
+    const allPanels = document.querySelectorAll('.floating-filter-panel');
+    allPanels.forEach(p => {
+        if (p.id !== targetPanelId) {
+            p.classList.remove('show');
+        }
+    });
+
+    if (targetPanel) {
+        if (targetPanel.classList.contains('show')) {
+            targetPanel.classList.remove('show');
         } else {
-            panel.classList.add('show');
+            targetPanel.classList.add('show');
             // パネルを開く時に状態を同期
-            syncFloatingFilters();
+            if (activeTabId === 'estimate') {
+                syncFloatingEstimateFilters();
+            } else {
+                syncFloatingFilters();
+            }
+        }
+    }
+}
+
+// 見積フィルタの状態をフローティングパネルに同期
+export function syncFloatingEstimateFilters() {
+    // フィルタタイプの同期
+    const mainFilterType = document.getElementById('estimateFilterType');
+    if (mainFilterType) {
+        const filterType = mainFilterType.value;
+        setFloatingEstFilterType(filterType, false);
+    }
+
+    // 月フィルタの同期
+    const mainMonth = document.getElementById('estimateMonthFilter');
+    const floatingMonthButtons = document.getElementById('floatingEstMonthButtons');
+    if (mainMonth && floatingMonthButtons) {
+        const currentValue = mainMonth.value;
+        floatingMonthButtons.innerHTML = '';
+        Array.from(mainMonth.options).forEach(option => {
+            const btn = document.createElement('button');
+            btn.textContent = option.text;
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                syncFloatingEstMonthFilter(option.value);
+            };
+            if (String(option.value) === String(currentValue)) btn.classList.add('active');
+            floatingMonthButtons.appendChild(btn);
+        });
+    }
+
+    // 版数フィルタの同期
+    const mainVersion = document.getElementById('estimateVersionFilter');
+    const floatingVersionButtons = document.getElementById('floatingEstVersionButtons');
+    if (mainVersion && floatingVersionButtons) {
+        const currentValue = mainVersion.value;
+        floatingVersionButtons.innerHTML = '';
+
+        // オプションを取得して並び替え（全版数を先頭に、残りを昇順に）
+        const options = Array.from(mainVersion.options);
+        const allOption = options.find(o => o.value === 'all');
+        const otherOptions = options.filter(o => o.value !== 'all');
+
+        // 昇順にソート
+        otherOptions.sort((a, b) => a.text.localeCompare(b.text));
+
+        const sortedOptions = [];
+        if (allOption) sortedOptions.push(allOption);
+        sortedOptions.push(...otherOptions);
+
+        sortedOptions.forEach(option => {
+            const btn = document.createElement('button');
+            btn.textContent = option.text;
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                syncFloatingEstVersionFilter(option.value);
+            };
+            if (String(option.value) === String(currentValue)) btn.classList.add('active');
+            floatingVersionButtons.appendChild(btn);
+        });
+    }
+
+    // 表示形式の同期
+    const mainViewType = document.getElementById('estimateViewType');
+    if (mainViewType) {
+        const viewType = mainViewType.value;
+        setFloatingEstViewType(viewType, false);
+    }
+
+    // 編集モードの同期
+    const mainEditMode = document.getElementById('estimateEditMode2');
+    const floatingEditMode = document.getElementById('floatingEstimateEditMode');
+    if (mainEditMode && floatingEditMode) {
+        // mainEditMode自体がinput要素（またはinputを含むlabelかもしれないがIDはinputについている）
+        // IDがinput要素についている場合はそのままcheckedを参照
+        if (mainEditMode.tagName === 'INPUT') {
+            floatingEditMode.checked = mainEditMode.checked;
+        } else {
+            // 万が一コンテナだった場合のフォールバック
+            const input = mainEditMode.querySelector('input');
+            if (input) floatingEditMode.checked = input.checked;
+        }
+    }
+
+    // テーマとボタンのスタイルを更新
+    if (typeof window.updateFloatingFilterTheme === 'function') {
+        window.updateFloatingFilterTheme();
+    }
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
+}
+
+// 見積: フィルタタイプ設定
+export function setFloatingEstFilterType(type, applyToMain = true) {
+    const monthGroup = document.getElementById('floatingEstMonthGroup');
+    const versionGroup = document.getElementById('floatingEstVersionGroup');
+
+    // ボタンのスタイル更新のためにクラスを切り替え
+    const btnMonth = document.getElementById('floatingEstFilterMonth');
+    const btnVersion = document.getElementById('floatingEstFilterVersion');
+
+    if (type === 'month') {
+        if (monthGroup) monthGroup.style.display = 'block';
+        if (versionGroup) versionGroup.style.display = 'none';
+        if (btnMonth) btnMonth.classList.add('active');
+        if (btnVersion) btnVersion.classList.remove('active');
+    } else {
+        if (monthGroup) monthGroup.style.display = 'none';
+        if (versionGroup) versionGroup.style.display = 'block';
+        if (btnMonth) btnMonth.classList.remove('active');
+        if (btnVersion) btnVersion.classList.add('active');
+    }
+
+    if (applyToMain) {
+        const mainFilterType = document.getElementById('estimateFilterType');
+        if (mainFilterType) {
+            mainFilterType.value = type;
+            // Use handler if available to avoid crash on null .onchange
+            if (typeof window.handleEstimateFilterTypeChange === 'function') {
+                window.handleEstimateFilterTypeChange();
+            } else {
+                mainFilterType.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+
+    // テーマ更新
+    if (typeof window.updateFloatingFilterTheme === 'function') {
+        window.updateFloatingFilterTheme();
+    }
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
+}
+
+// 見積: 表示形式設定
+export function setFloatingEstViewType(type, applyToMain = true) {
+    // ボタンのactiveクラス制御
+    const btnGrouped = document.getElementById('floatingEstViewGrouped');
+    const btnMatrix = document.getElementById('floatingEstViewMatrix');
+    const btnList = document.getElementById('floatingEstViewList');
+
+    if (btnGrouped) btnGrouped.classList.remove('active');
+    if (btnMatrix) btnMatrix.classList.remove('active');
+    if (btnList) btnList.classList.remove('active');
+
+    if (type === 'grouped' && btnGrouped) btnGrouped.classList.add('active');
+    if (type === 'matrix' && btnMatrix) btnMatrix.classList.add('active');
+    if (type === 'list' && btnList) btnList.classList.add('active');
+
+    if (applyToMain) {
+        // Update UI logic directly
+        if (typeof window.setEstimateViewType === 'function') {
+            window.setEstimateViewType(type);
+        } else {
+            // Fallback
+            const mainViewType = document.getElementById('estimateViewType');
+            if (mainViewType) {
+                mainViewType.value = type;
+                mainViewType.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+
+    // テーマ更新
+    if (typeof window.updateFloatingFilterTheme === 'function') {
+        window.updateFloatingFilterTheme();
+    }
+    if (typeof window.updateSegmentedButtons === 'function') {
+        window.updateSegmentedButtons();
+    }
+}
+
+// 見積: 月変更
+export function syncFloatingEstMonthFilter(value) {
+    const mainMonth = document.getElementById('estimateMonthFilter');
+    if (mainMonth) {
+        mainMonth.value = value;
+        // Use handler if available
+        if (typeof window.handleEstimateMonthChange === 'function') {
+            window.handleEstimateMonthChange(value);
+        } else {
+            mainMonth.dispatchEvent(new Event('change'));
+        }
+        syncFloatingEstimateFilters();
+    }
+}
+
+// 見積: 版数変更
+export function syncFloatingEstVersionFilter(value) {
+    const mainVersion = document.getElementById('estimateVersionFilter');
+    if (mainVersion) {
+        mainVersion.value = value;
+        // Use handler if available
+        if (typeof window.handleEstimateVersionChange === 'function') {
+            window.handleEstimateVersionChange(value);
+        } else {
+            mainVersion.dispatchEvent(new Event('change'));
+        }
+        syncFloatingEstimateFilters();
+    }
+}
+
+// 編集モード切り替え
+window.toggleEstimateEditMode = function (checked) {
+    const mainEditMode = document.getElementById('estimateEditMode2');
+    if (mainEditMode) {
+        const checkbox = mainEditMode.querySelector('input');
+        if (checkbox && checkbox.checked !== checked) {
+            checkbox.click(); // クリックイベントを発火させて既存のロジックを実行
         }
     }
 }
@@ -304,9 +542,13 @@ export function setFloatingFilterType(type, applyToMain = true) {
     if (type === 'month') {
         if (monthGroup) monthGroup.style.display = 'block';
         if (versionGroup) versionGroup.style.display = 'none';
+        if (monthBtn) monthBtn.classList.add('active');
+        if (versionBtn) versionBtn.classList.remove('active');
     } else {
         if (monthGroup) monthGroup.style.display = 'none';
         if (versionGroup) versionGroup.style.display = 'block';
+        if (monthBtn) monthBtn.classList.remove('active');
+        if (versionBtn) versionBtn.classList.add('active');
     }
 
     // メインフィルタに反映
@@ -376,31 +618,31 @@ export function syncFloatingVersionFilter(value) {
 // パネル外クリックで閉じるイベントの初期化
 export function initFloatingFilterEvents() {
     document.addEventListener('click', function (event) {
-        const panel = document.getElementById('floatingFilterPanel');
         const toggle = document.getElementById('floatingFilterToggle');
 
-        if (!panel || !toggle) return;
-
-        // パネルが開いている場合のみ処理
-        if (panel.classList.contains('show')) {
-            // クリックがパネル内、またはトグルボタンの場合は何もしない
-            if (panel.contains(event.target) || toggle.contains(event.target)) {
-                return;
-            }
-            // それ以外の場合はパネルを閉じる
-            event.stopPropagation();
-            event.preventDefault();
-            panel.classList.remove('show');
+        // トグルボタンのクリックは toggleFloatingFilterPanel で処理されるため無視
+        if (toggle && toggle.contains(event.target)) {
+            return;
         }
-    }, true); // キャプチャフェーズで実行
 
-    // パネル内のクリックでイベント伝播を止める
-    const panel = document.getElementById('floatingFilterPanel');
-    if (panel) {
+        // 開いている全てのパネルを確認
+        const openPanels = document.querySelectorAll('.floating-filter-panel.show');
+        openPanels.forEach(panel => {
+            // クリックがパネル内部でなければ閉じる
+            if (!panel.contains(event.target)) {
+                panel.classList.remove('show');
+            }
+        });
+    });
+
+    // パネル内のクリックイベント伝播を止める（念のため詳細設定）
+    // （document click リスナーでの contains チェックで十分だが、安全策）
+    const panels = document.querySelectorAll('.floating-filter-panel');
+    panels.forEach(panel => {
         panel.addEventListener('click', function (event) {
             event.stopPropagation();
         });
-    }
+    });
 }
 
 console.log('✅ モジュール floating-filter.js loaded');

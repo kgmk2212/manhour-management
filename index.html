@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>工数管理システム</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -623,7 +625,18 @@
                     </div>
                 </div>
 
+
+
+                <!-- 換算基準表示エリア -->
+                <div id="estimateConversionParams"
+                    style="margin-bottom: 15px; margin-top: 0px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
+                </div>
+
                 <div id="estimateList"></div>
+
+                <div id="estimateMemberSummary" style="margin-top: 30px; display: none;"></div>
+
+
             </div>
 
             <div id="actual" class="tab-content">
@@ -793,6 +806,13 @@
 
                 <h3 id="reportPeriodTitle">全期間の集計</h3>
 
+                <!-- 換算基準表示エリア -->
+                <div id="reportConversionParams"
+                    style="margin-bottom: 15px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
+                </div>
+
+
+
                 <div class="stats-grid">
                     <div class="stat-card theme-bg theme-purple">
                         <h3>総見積工数</h3>
@@ -815,6 +835,8 @@
                         <div class="value" id="actualRate">0%</div>
                     </div>
                 </div>
+
+
 
                 <div id="reportDetailView"></div>
 
@@ -1143,7 +1165,7 @@
                         <label>見積一覧のデフォルト表示</label>
                         <select id="defaultEstimateViewType">
                             <option value="grouped">グループ</option>
-                            <option value="matrix">マトリクス</option>
+                            <option value="matrix" selected>マトリクス</option>
                             <option value="list">リスト</option>
                         </select>
                         <small style="color: #666; display: block; margin-top: 5px;">
@@ -1156,7 +1178,7 @@
                         <select id="defaultReportViewType">
                             <option value="summary">サマリー</option>
                             <option value="grouped">グループ</option>
-                            <option value="matrix">マトリクス</option>
+                            <option value="matrix" selected>マトリクス</option>
                         </select>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             レポートタブを開いたとき、または画面を読み込んだときの初期表示形式です。
@@ -2207,6 +2229,58 @@
             </div>
             <div class="custom-alert-footer">
                 <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="floatingFilterPanelEstimate" class="floating-filter-panel">
+        <div class="floating-filter-panel-header">
+            <span>見積フィルタ設定</span>
+            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
+        </div>
+        <div class="floating-filter-panel-body">
+            <!-- 編集モード -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label"
+                    style="display: flex; justify-content: space-between; align-items: center;">
+                    編集モード
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="floatingEstimateEditMode"
+                            onchange="toggleEstimateEditMode(this.checked)">
+                        <label for="floatingEstimateEditMode" class="toggle-label"></label>
+                    </div>
+                </label>
+            </div>
+
+            <!-- フィルタタイプ選択 -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">フィルタタイプ</label>
+                <div class="floating-filter-buttons">
+                    <button id="floatingEstFilterMonth" onclick="setFloatingEstFilterType('month')">月別</button>
+                    <button id="floatingEstFilterVersion" onclick="setFloatingEstFilterType('version')">版数別</button>
+                </div>
+            </div>
+
+            <!-- 月別フィルタ -->
+            <div class="floating-filter-group" id="floatingEstMonthGroup">
+                <label class="floating-filter-label">表示月</label>
+                <div class="floating-segment-buttons" id="floatingEstMonthButtons"></div>
+            </div>
+
+            <!-- 版数別フィルタ -->
+            <div class="floating-filter-group" id="floatingEstVersionGroup" style="display: none;">
+                <label class="floating-filter-label">版数</label>
+                <div class="floating-segment-buttons" id="floatingEstVersionButtons"></div>
+            </div>
+
+            <!-- 表示形式 -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">表示形式</label>
+                <div class="floating-filter-buttons">
+                    <button id="floatingEstViewGrouped" onclick="setFloatingEstViewType('grouped')">グループ</button>
+                    <button id="floatingEstViewMatrix" onclick="setFloatingEstViewType('matrix')">マトリクス</button>
+                    <button id="floatingEstViewList" onclick="setFloatingEstViewType('list')">リスト</button>
+                </div>
             </div>
         </div>
     </div>

@@ -2075,7 +2075,48 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                             ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative; cursor: pointer;`
                             : `text-align: center; background: ${bgColor}; padding: 8px; cursor: pointer;`;
 
-                        const cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
+                        let cellOnclick;
+                        const totalMembers = new Set([...est.members, ...act.members]);
+                        if (totalMembers.size > 1) {
+                            // 複数人の場合は内訳モーダルを表示 (filteredActuals, filteredEstimatesは親スコープから利用可能だが、ここでは文字列として渡せないので、必要なIDだけ渡すか、グローバル関数に依存する)
+                            // ここでは showProcessBreakdown を呼ぶようにする。引数に必要なデータを渡す必要があるが、
+                            // showProcessBreakdownの実装を見ると、Globalなestimates/actualsを使うのではなく引数でフィルタ済みデータを受け取っている。
+                            // しかしonclickで複雑なオブジェクトを渡すのは難しい。
+                            // 既存の showProcessBreakdown は `filteredActuals` 等を受け取るようになっている。
+                            // 簡略化のため、グローバルな State.actuals / State.estimates を使う新しいラッパー関数を用意するか、
+                            // もしくは既存の `openRemainingHoursModal` のように、必要なIDだけ渡して内部でフィルタするように変更するほうが安全だが、
+                            // ここでは一旦 `showProcessBreakdown` を windowメソッドとして公開されている前提で、
+                            // 引数に `State.actuals` 等を渡すわけにはいかないので、
+                            // 暫定的に `openRemainingHoursModal` と同様にIDを渡し、受け側で処理するか、
+                            // `showProcessBreakdown` は `modal.js` で export されているが window に付与されているか不明。
+                            // 確認: modal.jsを見ると `export function showProcessBreakdown` だが、windowには代入されていないように見える。
+                            // しかし `import * as Modal from './modal.js'` して `window.showProcessBreakdown = Modal.showProcessBreakdown` している箇所があるはず (main.js等)。
+                            // ここでは `openProcessBreakdownModal` のようなラッパーを想定して記述するが、
+                            // user requirement is "click a cell with multiple members". 
+                            // Let's assume there is a wrapper or we make `showProcessBreakdown` available globally.
+                            // Actually, let's look at how `openRemainingHoursModal` is called. It uses string arguments.
+                            // I will assume `showProcessBreakdown` is available or I can use it.
+                            // Wait, `showProcessBreakdown` takes objects. I can't pass objects in HTML attribute onclick.
+                            // I should change logic to call `openRemainingHoursModal` (which handles >1 members by showing a select box currently),
+                            // BUT the user wants "Process Breakdown" (the graph view).
+                            // I need a way to open the breakdown modal from a string-based onclick.
+                            // I will create a bridge function in `index.html` or `main.js` later if needed, but for now I will generate code that assumes a global function exists, 
+                            // OR better, I'll assume `window.showProcessBreakdownWrapper` exists which takes string IDs.
+                            // Actually, looking at `js/modal.js`, `showProcessBreakdown` takes `(version, task, process, filteredActuals, filteredEstimates)`.
+                            // This is hard to call from onclick.
+                            // However, `openRemainingHoursModal` fetches data from State.
+                            // I should probably add a new wrapper in `modal.js` or `main.js` that takes (version, task, process) and gets attributes from State, 
+                            // THEN calls `showProcessBreakdown`. 
+                            // Since I cannot easily modify `main.js` (didn't read it), I will assume I can modify `modal.js` to add `openProcessBreakdownWrapper`.
+                            // But I am editing `report.js` right now.
+                            // Let's change the onclick to call `openProcessBreakdown(version, task, process)`.
+                            // valid wrapper name: `openProcessBreakdown`
+                            cellOnclick = `onclick="openProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
+                        } else {
+                            cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
+                        }
+
+                        // Note: I will need to implement `openProcessBreakdown` in `js/modal.js` and expose it to window.
 
                         tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
                     } else {

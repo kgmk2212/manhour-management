@@ -317,10 +317,10 @@ export function updateFloatingFilterTheme() {
         toggle.style.background = gradient;
     }
 
-    const header = document.querySelector('.floating-filter-panel-header');
-    if (header) {
+    const headers = document.querySelectorAll('.floating-filter-panel-header');
+    headers.forEach(header => {
         header.style.background = gradient;
-    }
+    });
 }
 
 export function updateBodyBackground() {
@@ -492,18 +492,19 @@ export function saveDefaultViewTypeSetting() {
 
 export function applyDefaultEstimateViewType() {
     // isEstimateTabFirstView check removed to ensure execution
-    // setIsEstimateTabFirstView(false);
-
     const savedSettings = localStorage.getItem('manhour_settings');
+    let defaultViewType = 'matrix';
+
     if (savedSettings) {
         const settings = JSON.parse(savedSettings);
-        const defaultViewType = settings.defaultEstimateViewType || 'grouped';
-        const estimateViewTypeElement = document.getElementById('estimateViewType');
-        if (estimateViewTypeElement && estimateViewTypeElement.value !== defaultViewType) {
-            estimateViewTypeElement.value = defaultViewType;
-            if (typeof window.setEstimateViewType === 'function') {
-                window.setEstimateViewType(defaultViewType);
-            }
+        defaultViewType = settings.defaultEstimateViewType || 'matrix';
+    }
+
+    const estimateViewTypeElement = document.getElementById('estimateViewType');
+    if (estimateViewTypeElement) {
+        estimateViewTypeElement.value = defaultViewType;
+        if (typeof window.setEstimateViewType === 'function') {
+            window.setEstimateViewType(defaultViewType);
         }
     }
 }
@@ -512,15 +513,18 @@ export function applyDefaultReportViewType() {
     // isReportTabFirstView check removed
 
     const savedSettings = localStorage.getItem('manhour_settings');
+    let defaultViewType = 'matrix';
+
     if (savedSettings) {
         const settings = JSON.parse(savedSettings);
-        const defaultViewType = settings.defaultReportViewType || 'grouped';
-        const reportViewTypeElement = document.getElementById('reportViewType');
-        if (reportViewTypeElement && reportViewTypeElement.value !== defaultViewType) {
-            reportViewTypeElement.value = defaultViewType;
-            if (typeof window.setReportViewType === 'function') {
-                window.setReportViewType(defaultViewType);
-            }
+        defaultViewType = settings.defaultReportViewType || 'matrix';
+    }
+
+    const reportViewTypeElement = document.getElementById('reportViewType');
+    if (reportViewTypeElement) {
+        reportViewTypeElement.value = defaultViewType;
+        if (typeof window.setReportViewType === 'function') {
+            window.setReportViewType(defaultViewType);
         }
     }
 }

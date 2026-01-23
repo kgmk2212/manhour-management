@@ -91,6 +91,7 @@ window.showTab = UI.showTab;
 window.nextTab = UI.nextTab;
 window.prevTab = UI.prevTab;
 window.initTabSwipe = UI.initTabSwipe;
+window.initSmartSticky = UI.initSmartSticky;
 window.createSegmentButtons = UI.createSegmentButtons;
 window.updateSegmentButtonSelection = UI.updateSegmentButtonSelection;
 window.setEstimateViewType = UI.setEstimateViewType;
@@ -305,6 +306,10 @@ window.setFloatingViewType = FloatingFilter.setFloatingViewType;
 window.syncFloatingMonthFilter = FloatingFilter.syncFloatingMonthFilter;
 window.syncFloatingVersionFilter = FloatingFilter.syncFloatingVersionFilter;
 window.initFloatingFilterEvents = FloatingFilter.initFloatingFilterEvents;
+window.setFloatingEstFilterType = FloatingFilter.setFloatingEstFilterType;
+window.setFloatingEstViewType = FloatingFilter.setFloatingEstViewType;
+window.syncFloatingEstimateFilters = FloatingFilter.syncFloatingEstimateFilters;
+window.syncFloatingEstMonthFilter = FloatingFilter.syncFloatingEstMonthFilter;
 
 // modal.js の関数
 window.showProcessBreakdown = Modal.showProcessBreakdown;
@@ -454,6 +459,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // モバイルでタブのスワイプ切り替え機能を追加
     UI.initTabSwipe();
+
+    // スマートStickyタブ（スクロール連動表示）を初期化
+    if (typeof UI.initSmartSticky === 'function') {
+        UI.initSmartSticky();
+    }
 
     // モーダルのクリックハンドラーをセットアップ
     Modal.setupModalHandlers();

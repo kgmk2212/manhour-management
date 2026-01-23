@@ -251,6 +251,23 @@ export function renderEstimateList() {
     if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
     if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
+    // 換算基準を表示
+    const conversionParams = document.getElementById('estimateConversionParams');
+    if (conversionParams) {
+        let workDaysLabel = 'デフォルト20日';
+        if (filterType === 'month' && monthFilter !== 'all') {
+            const [year, month] = monthFilter.split('-');
+            const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+            const days = calculatedDays > 0 ? calculatedDays : 20; // Use calculatedDays if valid, else 20. But logic above used calculatedDays or 20. 
+            // Reuse logic:
+            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        }
+        conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）`;
+        conversionParams.style.display = 'block';
+    }
+
+
+
     // 合計カードにテーマカラーのグラデーションを適用
     const totalCard = document.getElementById('estimateTotalCard');
     if (totalCard) {
@@ -421,15 +438,10 @@ export function renderEstimateGrouped() {
 
     let html = '<div style="margin-bottom: 30px;">';
 
-    let workDaysLabel = 'デフォルト20日';
-    if (filterType === 'month' && workMonthFilter !== 'all' && workMonthFilter !== 'unassigned') {
-        const [year, month] = workMonthFilter.split('-');
-        workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-    }
-
-    html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-        <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）
-    </div>`;
+    // 換算基準は共通エリアに表示するため、ここでは表示しない
+    // html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
+    //    <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）
+    // </div>`;
 
     Object.keys(versionGroups).sort().forEach(version => {
         html += `<div style="margin-bottom: 30px;">`;
@@ -906,15 +918,8 @@ export function updateWorkMonthOptions() {
         return `<option value="${m}">${year}年${parseInt(month)}月</option>`;
     }).join('');
 
-    if (filter) {
-        const currentFilterValue = filter.value;
-        filter.innerHTML = '<option value="all">全て</option><option value="unassigned">未設定のみ</option>';
-        sortedMonths.forEach(m => {
-            const [year, month] = m.split('-');
-            filter.innerHTML += `<option value="${m}">${year}年${parseInt(month)}月</option>`;
-        });
-        filter.value = currentFilterValue;
-    }
+    // filterの更新はui.jsのupdateEstimateMonthOptionsで行うため削除
+    // if (filter) { ... }
 }
 
 console.log('✅ モジュール estimate.js loaded');
