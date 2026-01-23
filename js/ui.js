@@ -15,6 +15,76 @@ import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 const TAB_ORDER = ['quick', 'estimate', 'actual', 'report', 'settings'];
 
 // ============================================
+// スクロール比率ユーティリティ（表内相対位置）
+// ============================================
+
+/**
+ * 表の中での現在のスクロール位置の比率を計算
+ * 表の先頭が画面上部にある時を0%、表の末尾が画面下部にある時を100%とする
+ * @param {HTMLElement} tableElement - 対象の表要素（estimateList, reportDetailViewなど）
+ * @returns {number|null} - スクロール比率（0〜1）、または null
+ */
+function getTableScrollRatio(tableElement) {
+    if (!tableElement) return null;
+
+    // ドキュメント座標系で表の絶対位置を取得（offsetTopはoffsetParent相対なので不適切）
+    const tableRect = tableElement.getBoundingClientRect();
+    const tableTop = tableRect.top + window.scrollY;
+    const tableHeight = tableElement.offsetHeight;
+    const viewportHeight = window.innerHeight;
+
+    // 表が画面より小さい場合は比率計算不要
+    if (tableHeight <= viewportHeight) return 0;
+
+    // 表の先頭から現在のビューポート位置までの距離
+    const scrolledIntoTable = window.scrollY - tableTop;
+
+    // 表内でスクロール可能な最大距離（表の高さ - ビューポートの高さ）
+    const maxScrollInTable = tableHeight - viewportHeight;
+
+    // 比率を計算（0〜1の範囲にクランプ）
+    const ratio = Math.max(0, Math.min(1, scrolledIntoTable / maxScrollInTable));
+
+    return ratio;
+}
+
+/**
+ * 表の中での相対位置を復元
+ * フィルタ変更などで表のサイズが変わっても、相対的な位置を維持する
+ * @param {HTMLElement} tableElement - 対象の表要素
+ * @param {number|null} ratio - 復元する比率（0〜1）
+ */
+function restoreTableScrollRatio(tableElement, ratio) {
+    if (!tableElement || ratio === null || ratio === undefined) return;
+
+    // レンダリング完了を待ってから復元
+    requestAnimationFrame(() => {
+        // ドキュメント座標系で表の絶対位置を取得
+        const tableRect = tableElement.getBoundingClientRect();
+        const tableTop = tableRect.top + window.scrollY;
+        const tableHeight = tableElement.offsetHeight;
+        const viewportHeight = window.innerHeight;
+
+        // 表が画面より小さい場合は表の先頭に移動
+        if (tableHeight <= viewportHeight) {
+            window.scrollTo(0, tableTop);
+            return;
+        }
+
+        // 新しい表のサイズでスクロール可能な最大距離
+        const maxScrollInTable = tableHeight - viewportHeight;
+
+        // 比率を適用して新しいスクロール位置を計算
+        const newScrollY = tableTop + (ratio * maxScrollInTable);
+
+        // 表の範囲内に収まるようにクランプ
+        const clampedScrollY = Math.max(tableTop, Math.min(newScrollY, tableTop + maxScrollInTable));
+
+        window.scrollTo(0, clampedScrollY);
+    });
+}
+
+// ============================================
 // タブ操作
 // ============================================
 
@@ -1713,6 +1783,10 @@ export function handleEstimateMonthChange(value, containerId) {
     const filterElement = document.getElementById('estimateMonthFilter');
     const currentMonth = filterElement ? filterElement.value : null;
 
+    // 表のスクロール比率を保存（estimateListを使用）
+    const tableElement = document.getElementById('estimateList');
+    const scrollRatio = getTableScrollRatio(tableElement);
+
     // アニメーション方向決定 (スマホのみ)
     let direction = 'none';
     if (window.innerWidth <= 768 && currentMonth && value && currentMonth !== 'all' && value !== 'all' && currentMonth !== value) {
@@ -1750,6 +1824,9 @@ export function handleEstimateMonthChange(value, containerId) {
                 window.renderEstimateList();
             }
 
+            // スクロール比率を復元
+            restoreTableScrollRatio(tableElement, scrollRatio);
+
             // 新しいコンテンツのアニメーション（進入）
             const inClass = direction === 'next' ? 'anim-slide-in-right' : 'anim-slide-in-left';
             container.classList.add('anim-entering', inClass);
@@ -1774,6 +1851,8 @@ export function handleEstimateMonthChange(value, containerId) {
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
+    // スクロール比率を復元
+    restoreTableScrollRatio(tableElement, scrollRatio);
 }
 
 export function handleEstimateVersionChange(value, containerId) {
@@ -1781,11 +1860,19 @@ export function handleEstimateVersionChange(value, containerId) {
     if (filterElement) {
         filterElement.value = value;
     }
+
+    // 表のスクロール比率を保存（estimateListを使用）
+    const tableElement = document.getElementById('estimateList');
+    const scrollRatio = getTableScrollRatio(tableElement);
+
     updateSegmentButtonSelection(containerId, value);
     syncVersionToReport(value);
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
+
+    // スクロール比率を復元
+    restoreTableScrollRatio(tableElement, scrollRatio);
 }
 
 export function handleReportMonthChange(value, containerId) {
@@ -1793,11 +1880,19 @@ export function handleReportMonthChange(value, containerId) {
     const select2 = document.getElementById('reportMonth2');
     if (select) select.value = value;
     if (select2) select2.value = value;
+
+    // 表のスクロール比率を保存（reportDetailViewを使用）
+    const tableElement = document.getElementById('reportDetailView');
+    const scrollRatio = getTableScrollRatio(tableElement);
+
     updateSegmentButtonSelection(containerId, value);
     syncMonthToEstimate(value);
     if (typeof window.updateReport === 'function') {
         window.updateReport();
     }
+
+    // スクロール比率を復元
+    restoreTableScrollRatio(tableElement, scrollRatio);
 }
 
 export function handleReportVersionChange(value, containerId) {
@@ -1805,11 +1900,19 @@ export function handleReportVersionChange(value, containerId) {
     const select2 = document.getElementById('reportVersion2');
     if (select) select.value = value;
     if (select2) select2.value = value;
+
+    // 表のスクロール比率を保存（reportDetailViewを使用）
+    const tableElement = document.getElementById('reportDetailView');
+    const scrollRatio = getTableScrollRatio(tableElement);
+
     updateSegmentButtonSelection(containerId, value);
     syncVersionToEstimate(value);
     if (typeof window.updateReport === 'function') {
         window.updateReport();
     }
+
+    // スクロール比率を復元
+    restoreTableScrollRatio(tableElement, scrollRatio);
 }
 
 export function handleEstimateFilterTypeChange() {
