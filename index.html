@@ -123,9 +123,9 @@
 
         <div class="tabs">
             <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
+            <button class="tab" data-tab="report">レポート</button>
             <button class="tab" data-tab="estimate">見積一覧</button>
             <button class="tab" data-tab="actual">実績一覧</button>
-            <button class="tab" data-tab="report">レポート</button>
             <button class="tab" data-tab="settings">⚙️ 設定</button>
         </div>
 
@@ -443,6 +443,186 @@
                 <div id="todayActuals"></div>
             </div>
 
+            <div id="report" class="tab-content">
+                <h2>工数レポート</h2>
+
+                <!-- バージョン1: 横並びコンパクトレイアウト -->
+                <div id="reportFiltersCompact" class="sticky-filter-container"
+                    style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                        <select id="reportFilterType" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="month">月別</option>
+                            <option value="version">版数別</option>
+                        </select>
+                    </div>
+                    <div id="reportMonthFilterCompact"
+                        style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="reportMonth" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全期間</option>
+                        </select>
+                    </div>
+                    <div id="reportVersionFilterCompact"
+                        style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
+                        <select id="reportVersion" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="all">全版数</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="reportViewType" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="summary">サマリー</option>
+                            <option value="grouped" selected>グループ</option>
+                            <option value="matrix">マトリクス</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
+                <div id="reportFiltersSegmented" class="sticky-filter-container"
+                    style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <div class="segment-buttons">
+                                <button id="btnFilterMonth" class="active">月別</button>
+                                <button id="btnFilterVersion">版数別</button>
+                            </div>
+                        </div>
+                        <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <!-- セグメントボタン版 -->
+                            <div id="reportMonthButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 130px));">
+                            </div>
+                            <!-- Select版（要素数が多い場合） -->
+                            <select id="reportMonth2" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全期間</option>
+                            </select>
+                        </div>
+                        <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <!-- セグメントボタン版 -->
+                            <div id="reportVersionButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 110px));">
+                            </div>
+                            <!-- Select版（要素数が多い場合） -->
+                            <select id="reportVersion2" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全版数</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <div class="segment-buttons">
+                                <button id="btnReportSummary">サマリー</button>
+                                <button id="btnReportGrouped" class="active">グループ</button>
+                                <button id="btnReportMatrix">マトリクス</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 id="reportPeriodTitle">全期間の集計</h3>
+
+                <!-- 換算基準表示エリア -->
+                <div id="reportConversionParams"
+                    style="margin-bottom: 15px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
+                </div>
+
+
+
+                <div class="stats-grid">
+                    <div class="stat-card theme-bg theme-purple">
+                        <h3>総見積工数</h3>
+                        <div class="value" id="totalEstimate">0h</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
+                            id="totalEstimateManpower"></div>
+                    </div>
+                    <div class="stat-card theme-bg theme-purple">
+                        <h3>総実績工数</h3>
+                        <div class="value" id="totalActual">0h</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
+                            id="totalActualManpower"></div>
+                    </div>
+                    <div class="stat-card theme-bg theme-purple">
+                        <h3>差異</h3>
+                        <div class="value" id="totalDiff">0h</div>
+                    </div>
+                    <div class="stat-card theme-bg theme-purple">
+                        <h3>実績率</h3>
+                        <div class="value" id="actualRate">0%</div>
+                    </div>
+                </div>
+
+
+
+                <div id="reportDetailView"></div>
+
+                <h3>担当者別工数</h3>
+                <div id="memberReport"></div>
+
+                <h3 style="margin-top: 20px;">版数別進捗</h3>
+                <div id="versionReport"></div>
+
+                <!-- 進捗管理セクション -->
+                <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3>進捗管理（見込残存時間ベース）</h3>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 13px;">
+                        見込残存時間を入力すると、より正確な進捗率と予測総工数が表示されます。
+                    </p>
+
+                    <!-- フィルタ -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                        <select id="progressVersionFilter"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="all">全版数</option>
+                        </select>
+                        <select id="progressStatusFilter"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="all">全ステータス</option>
+                            <option value="completed">完了</option>
+                            <option value="ontrack">順調</option>
+                            <option value="warning">注意</option>
+                            <option value="exceeded">超過</option>
+                        </select>
+                        <button class="btn btn-primary" id="btnOpenBulkRemaining"
+                            style="padding: 8px 16px; font-size: 13px;">
+                            一括編集
+                        </button>
+                    </div>
+
+                    <!-- 進捗サマリーカード -->
+                    <div class="stats-grid" id="progressSummaryCards">
+                        <!-- 動的に生成 -->
+                    </div>
+
+                    <!-- 詳細テーブル -->
+                    <div id="progressDetailTable" style="margin-top: 20px;">
+                        <!-- 動的に生成 -->
+                    </div>
+                </div>
+
+                <!-- Excel出力セクション -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                    <h3>📊 Excel出力</h3>
+                    <p style="color: #666; margin-bottom: 15px;">実績データと見積データをExcel形式で出力します。</p>
+
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="margin-bottom: 8px; font-size: 14px;">出力内容:</h4>
+                        <ul style="color: #666; font-size: 13px; margin-left: 20px;">
+                            <li><strong>実績シート（担当者別）:</strong> 日付、曜日、備考、作業、時間</li>
+                            <li><strong>見積シート:</strong> 版数、作業月、対応名、工程、担当、見積工数</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn btn-success" id="btnExportExcel" style="font-weight: 600;">
+                        📥 Excelファイルをダウンロード
+                    </button>
+                </div>
+            </div>
+
             <div id="estimate" class="tab-content">
                 <h2>見積一覧</h2>
 
@@ -721,186 +901,6 @@
                 </div>
 
                 <div id="actualList"></div>
-            </div>
-
-            <div id="report" class="tab-content">
-                <h2>工数レポート</h2>
-
-                <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="reportFiltersCompact" class="sticky-filter-container"
-                    style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                        <select id="reportFilterType" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="month">月別</option>
-                            <option value="version">版数別</option>
-                        </select>
-                    </div>
-                    <div id="reportMonthFilterCompact"
-                        style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="reportMonth" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全期間</option>
-                        </select>
-                    </div>
-                    <div id="reportVersionFilterCompact"
-                        style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
-                        <select id="reportVersion" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全版数</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="reportViewType" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="summary">サマリー</option>
-                            <option value="grouped" selected>グループ</option>
-                            <option value="matrix">マトリクス</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="reportFiltersSegmented" class="sticky-filter-container"
-                    style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div class="segment-buttons">
-                                <button id="btnFilterMonth" class="active">月別</button>
-                                <button id="btnFilterVersion">版数別</button>
-                            </div>
-                        </div>
-                        <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                            <!-- セグメントボタン版 -->
-                            <div id="reportMonthButtons2" class="segment-buttons"
-                                style="max-width: min(800px, calc(100vw - 130px));">
-                            </div>
-                            <!-- Select版（要素数が多い場合） -->
-                            <select id="reportMonth2" style="padding: 4px 8px; font-size: 13px; display: none;">
-                                <option value="all">全期間</option>
-                            </select>
-                        </div>
-                        <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <!-- セグメントボタン版 -->
-                            <div id="reportVersionButtons2" class="segment-buttons"
-                                style="max-width: min(800px, calc(100vw - 110px));">
-                            </div>
-                            <!-- Select版（要素数が多い場合） -->
-                            <select id="reportVersion2" style="padding: 4px 8px; font-size: 13px; display: none;">
-                                <option value="all">全版数</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
-                                <button id="btnReportSummary">サマリー</button>
-                                <button id="btnReportGrouped" class="active">グループ</button>
-                                <button id="btnReportMatrix">マトリクス</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <h3 id="reportPeriodTitle">全期間の集計</h3>
-
-                <!-- 換算基準表示エリア -->
-                <div id="reportConversionParams"
-                    style="margin-bottom: 15px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
-                </div>
-
-
-
-                <div class="stats-grid">
-                    <div class="stat-card theme-bg theme-purple">
-                        <h3>総見積工数</h3>
-                        <div class="value" id="totalEstimate">0h</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
-                            id="totalEstimateManpower"></div>
-                    </div>
-                    <div class="stat-card theme-bg theme-purple">
-                        <h3>総実績工数</h3>
-                        <div class="value" id="totalActual">0h</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
-                            id="totalActualManpower"></div>
-                    </div>
-                    <div class="stat-card theme-bg theme-purple">
-                        <h3>差異</h3>
-                        <div class="value" id="totalDiff">0h</div>
-                    </div>
-                    <div class="stat-card theme-bg theme-purple">
-                        <h3>実績率</h3>
-                        <div class="value" id="actualRate">0%</div>
-                    </div>
-                </div>
-
-
-
-                <div id="reportDetailView"></div>
-
-                <h3>担当者別工数</h3>
-                <div id="memberReport"></div>
-
-                <h3 style="margin-top: 20px;">版数別進捗</h3>
-                <div id="versionReport"></div>
-
-                <!-- 進捗管理セクション -->
-                <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                    <h3>進捗管理（見込残存時間ベース）</h3>
-                    <p style="color: #666; margin-bottom: 15px; font-size: 13px;">
-                        見込残存時間を入力すると、より正確な進捗率と予測総工数が表示されます。
-                    </p>
-
-                    <!-- フィルタ -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-                        <select id="progressVersionFilter"
-                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="all">全版数</option>
-                        </select>
-                        <select id="progressStatusFilter"
-                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="all">全ステータス</option>
-                            <option value="completed">完了</option>
-                            <option value="ontrack">順調</option>
-                            <option value="warning">注意</option>
-                            <option value="exceeded">超過</option>
-                        </select>
-                        <button class="btn btn-primary" id="btnOpenBulkRemaining"
-                            style="padding: 8px 16px; font-size: 13px;">
-                            一括編集
-                        </button>
-                    </div>
-
-                    <!-- 進捗サマリーカード -->
-                    <div class="stats-grid" id="progressSummaryCards">
-                        <!-- 動的に生成 -->
-                    </div>
-
-                    <!-- 詳細テーブル -->
-                    <div id="progressDetailTable" style="margin-top: 20px;">
-                        <!-- 動的に生成 -->
-                    </div>
-                </div>
-
-                <!-- Excel出力セクション -->
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
-                    <h3>📊 Excel出力</h3>
-                    <p style="color: #666; margin-bottom: 15px;">実績データと見積データをExcel形式で出力します。</p>
-
-                    <div style="margin-bottom: 15px;">
-                        <h4 style="margin-bottom: 8px; font-size: 14px;">出力内容:</h4>
-                        <ul style="color: #666; font-size: 13px; margin-left: 20px;">
-                            <li><strong>実績シート（担当者別）:</strong> 日付、曜日、備考、作業、時間</li>
-                            <li><strong>見積シート:</strong> 版数、作業月、対応名、工程、担当、見積工数</li>
-                        </ul>
-                    </div>
-
-                    <button class="btn btn-success" id="btnExportExcel" style="font-weight: 600;">
-                        📥 Excelファイルをダウンロード
-                    </button>
-                </div>
             </div>
             <!-- /report -->
 
