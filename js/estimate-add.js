@@ -5,6 +5,7 @@
 import * as State from './state.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
+import { PROCESS } from './constants.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -35,8 +36,7 @@ export function closeAddEstimateModal() {
     if (singleRadio) singleRadio.checked = true;
     switchAddEstMonthType();
 
-    const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
-    processes.forEach(proc => {
+    PROCESS.TYPES.forEach(proc => {
         const memberEl = document.getElementById(`addEst${proc}_member`);
         const hoursEl = document.getElementById(`addEst${proc}`);
         if (memberEl) memberEl.value = '';
@@ -212,7 +212,7 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
         bodyRows.forEach((row, index) => {
             if (row.children.length === 3) {
                 const td = document.createElement('td');
-                const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+                const processes = PROCESS.TYPES;
                 const processName = processes[index];
                 td.innerHTML = `
                     <div style="display: flex; gap: 5px; align-items: center;">
@@ -284,7 +284,7 @@ export function toggleAddMonthSplit() {
 }
 
 export function updateAddEstimateTotals() {
-    const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    const processes = PROCESS.TYPES;
     let totalHours = 0;
 
     processes.forEach(proc => {
@@ -416,7 +416,7 @@ export function addEstimateFromModal() {
         return;
     }
 
-    const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    const processes = PROCESS.TYPES;
     const monthSplitEnabled = document.getElementById('addEnableMonthSplit').checked;
 
     if (monthSplitEnabled) {

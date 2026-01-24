@@ -15,7 +15,19 @@ export const LAYOUT = {
 
     // アニメーション
     ANIMATION_DURATION_MS: 300,
-    FADE_DURATION_MS: 200
+    FADE_DURATION_MS: 200,
+
+    // スペーシング（パディング・マージン）
+    SPACING: {
+        XS: 2,
+        SM: 4,
+        BASE: 6,
+        MD: 8,
+        LG: 10,
+        XL: 12,
+        XXL: 15,
+        XXXL: 20
+    }
 };
 
 /**
@@ -98,7 +110,48 @@ export const UI = {
 
     // モーダル
     MODAL_Z_INDEX: 1000,
-    OVERLAY_Z_INDEX: 999
+    OVERLAY_Z_INDEX: 999,
+
+    // デフォルト値
+    DEFAULT_MEMBER_LABEL: '未設定',
+
+    // テーブル背景色
+    TABLE_COLORS: {
+        HEADER_BG: '#1565c0',
+        ROW_BG: '#f5f5f5',
+        SUBTOTAL_BG: '#fff3cd',
+        DAILY_TOTAL_BG: '#ffc107',
+        EMPTY_CELL_BG: '#fafafa',
+        VACATION_BG: '#fff3e0',
+        HOLIDAY_BG: '#ffebee'
+    },
+
+    // バッジ色
+    BADGE_COLORS: {
+        UNSET: '#dc3545',
+        SET: '#28a745'
+    },
+
+    // フォントサイズ
+    FONT_SIZES: {
+        XS: 10,
+        SM: 11,
+        BASE: 12,
+        MD: 13,
+        LG: 14,
+        XL: 15,
+        XXL: 16,
+        XXXL: 18
+    },
+
+    // 透明度
+    OPACITY: {
+        LIGHT: 0.15,
+        MEDIUM: 0.2,
+        STRONG: 0.3,
+        HEAVY: 0.35,
+        OPAQUE: 0.4
+    }
 };
 
 /**
@@ -181,4 +234,28 @@ export const SUCCESS_MESSAGES = {
     UPDATED: '更新しました',
     IMPORTED: 'インポートしました',
     EXPORTED: 'エクスポートしました'
+};
+
+/**
+ * 工程（プロセス）関連の定数
+ */
+export const PROCESS = {
+    // 工程タイプ（ウォーターフォール順序）
+    TYPES: ['UI', 'PG', 'PT', 'IT', 'ST'],
+
+    // 工程名
+    UI: 'UI',
+    PG: 'PG',
+    PT: 'PT',
+    IT: 'IT',
+    ST: 'ST',
+
+    // 工程別色（チャート・グラフ用）
+    COLORS: {
+        UI: '#4dabf7',
+        PG: '#20c997',
+        PT: '#ff922b',
+        IT: '#51cf66',
+        ST: '#f06595'
+    }
 };
