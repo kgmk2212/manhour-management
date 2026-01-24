@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Dependency Test</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        #status {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        #results {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .module {
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 3px;
+        }
+        .module.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .module.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <h1>Module Dependency Test</h1>
+    <div class="info">
+        <strong>用途:</strong> リファクタリング時にモジュールの依存関係と循環参照をチェック<br>
+        <strong>使用方法:</strong> ローカルサーバーで開く（例: <code>python -m http.server 8000</code>）<br>
+        <strong>確認事項:</strong> 全モジュールが正常にロードされるか、エラーがないか
+    </div>
+    <div id="status">Loading modules...</div>
+    <div id="results"></div>
+    <script type="module">
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        let successCount = 0;
+        let errorCount = 0;
+
+        const modules = [
+            'state.js',
+            'utils.js',
+            'constants.js',
+            'storage.js',
+            'modal.js',
+            'theme.js',
+            'ui.js',
+            'estimate.js',
+            'estimate-add.js',
+            'estimate-edit.js',
+            'estimate-split.js',
+            'estimate-selection.js',
+            'actual.js',
+            'quick.js',
+            'vacation.js',
+            'other-work.js',
+            'floating-filter.js',
+            'report.js',
+            'events.js',
+            'init.js'
+        ];
+
+        console.log('=== Module Dependency Test Started ===');
+        console.log(`Total modules to test: ${modules.length}`);
+
+        for (const moduleName of modules) {
+            const moduleDiv = document.createElement('div');
+            moduleDiv.className = 'module';
+
+            try {
+                const startTime = performance.now();
+                await import(`./js/${moduleName}`);
+                const loadTime = (performance.now() - startTime).toFixed(2);
+
+                moduleDiv.classList.add('success');
+                moduleDiv.textContent = `✓ ${moduleName} (${loadTime}ms)`;
+                console.log(`✓ ${moduleName} loaded in ${loadTime}ms`);
+                successCount++;
+            } catch (error) {
+                moduleDiv.classList.add('error');
+                moduleDiv.textContent = `✗ ${moduleName} - ${error.message}`;
+                console.error(`✗ ${moduleName} failed:`, error);
+                errorCount++;
+            }
+
+            resultsDiv.appendChild(moduleDiv);
+        }
+
+        if (errorCount === 0) {
+            statusDiv.textContent = `✓ All ${successCount} modules loaded successfully!`;
+            statusDiv.style.color = '#2e7d32';
+        } else {
+            statusDiv.textContent = `⚠ ${successCount} succeeded, ${errorCount} failed`;
+            statusDiv.style.color = '#c62828';
+        }
+
+        console.log('=== Module Dependency Test Completed ===');
+        console.log(`Success: ${successCount}, Failed: ${errorCount}`);
+    </script>
+</body>
+</html>
