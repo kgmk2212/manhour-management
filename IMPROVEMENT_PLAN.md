@@ -24,7 +24,7 @@
 - **Phase3-3: constants.jsの適用拡大** - 定数の実際の使用
 - **Phase3-4: ユーティリティ関数の活用拡大** - 重複コードの統合
 
-#### Phase 4: 長大関数の分割（進行中）
+#### Phase 4: 長大関数の分割 ✅ 完了
 - **renderReportAnalytics() の分割** ✅
   - 520行の巨大関数を10個のサブ関数に分割
   - メイン関数: 520行 → 25行
@@ -94,11 +94,11 @@
 
 ### 優先度A: 低リスク・高効果（推奨）
 
-#### 1. 長大関数の段階的分割（継続）
+#### 1. 長大関数の段階的分割 ✅ 完了
 **対象:**
 - ~~`renderReportAnalytics()` - 1,100行（report.js）~~ ✅ 完了
-- `renderEstimateList()` - 700行（estimate.js）
-- `updateReport()` - 124行（report.js）
+- ~~`renderEstimateList()` - 700行（estimate.js）~~ ✅ 完了
+- ~~`updateReport()` - 124行（report.js）~~ ✅ 完了
 
 **アプローチ:**
 ```javascript
