@@ -28,9 +28,33 @@
 - **renderReportAnalytics() の分割** ✅
   - 520行の巨大関数を10個のサブ関数に分割
   - メイン関数: 520行 → 25行
-  - サブ関数: renderPhase1AccuracyAnalysis, renderProcessAccuracy, renderAnomalyDetection,
-    renderWarningTasks, renderPhase2VisualAnalysis, renderProcessBarChart, renderMonthlyTrend,
-    renderPhase3MemberAnalysis, renderMemberPerformance, renderInsights
+
+  | サブ関数名 | 責務 | 場所 |
+  |-----------|------|------|
+  | `renderPhase1AccuracyAnalysis` | Phase 1コンテナ（見積精度分析） | report.js:1125 |
+  | `renderProcessAccuracy` | 工程別見積精度 | report.js:1161 |
+  | `renderAnomalyDetection` | 異常値検出（50%超過） | report.js:1210 |
+  | `renderWarningTasks` | 要注意タスク一覧 | report.js:1266 |
+  | `renderPhase2VisualAnalysis` | Phase 2コンテナ（ビジュアル分析） | report.js:1325 |
+  | `renderProcessBarChart` | 工程別見積vs実績バーチャート | report.js:1356 |
+  | `renderMonthlyTrend` | 月別推移 | report.js:1414 |
+  | `renderPhase3MemberAnalysis` | Phase 3コンテナ（担当者分析） | report.js:1494 |
+  | `renderMemberPerformance` | 担当者別パフォーマンス | report.js:1529 |
+  | `renderInsights` | AIライクなインサイト | report.js:1655 |
+
+- **renderEstimateList() の分割** ✅
+  - 213行の関数を7個のサブ関数に分割
+  - メイン関数: 213行 → 60行
+
+  | サブ関数名 | 責務 | 場所 |
+  |-----------|------|------|
+  | `applyEstimateFilters` | フィルタ適用 | estimate.js:173 |
+  | `calculateEstimateTotalHours` | 合計工数計算 | estimate.js:202 |
+  | `displayEstimateTotals` | 合計表示 | estimate.js:232 |
+  | `applyTotalCardTheme` | テーマカラー適用 | estimate.js:260 |
+  | `calculateMemberSummary` | 担当者別集計 | estimate.js:287 |
+  | `renderEstimateMemberSummary` | 担当者別表示 | estimate.js:319 |
+  | `showEstimateEmptyState` | 空状態表示 | estimate.js:371 |
 
 #### 改善効果
 - ページ読み込み時間: **30-40%削減**

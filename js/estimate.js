@@ -164,42 +164,13 @@ export function getRemainingEstimate(version, task, process, member) {
 // ============================================
 
 /**
- * 見積一覧のメイン描画関数
+ * 見積データにフィルタを適用
+ * @param {string} filterType - フィルタタイプ（'month' | 'version'）
+ * @param {string} monthFilter - 月フィルタ値
+ * @param {string} versionFilter - 版数フィルタ値
+ * @returns {Array} フィルタ済み見積配列
  */
-/**
- * 見積一覧をレンダリング（メイン関数）
- * フィルタ・表示形式に応じて、グループ形式/マトリクス形式/詳細リストを描画
- * 合計工数・人日・人月を計算し、担当者別サマリーを表示
- * @returns {void}
- */
-export function renderEstimateList() {
-    const container = document.getElementById('estimateList');
-    if (!container) return;
-
-    const viewTypeElement = document.getElementById('estimateViewType');
-    const monthFilterElement = document.getElementById('estimateMonthFilter');
-    const filterTypeElement = document.getElementById('estimateFilterType');
-    const versionFilterElement = document.getElementById('estimateVersionFilter');
-
-    if (!viewTypeElement || !monthFilterElement) return;
-
-    const viewType = viewTypeElement.value;
-    const filterType = filterTypeElement ? filterTypeElement.value : 'month';
-    const monthFilter = monthFilterElement.value;
-    const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';
-
-    if (estimates.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">見積データがありません</p>';
-        const totalHoursElement = document.getElementById('estimateTotalHours');
-        const totalManpowerElement = document.getElementById('estimateTotalManpower');
-        if (totalHoursElement) totalHoursElement.textContent = '0h';
-        if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
-        const memberSummaryContainer = document.getElementById('estimateMemberSummary');
-        if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
-        return;
-    }
-
-    // フィルタを適用
+function applyEstimateFilters(filterType, monthFilter, versionFilter) {
     let filtered = estimates;
 
     if (filterType === 'version') {
@@ -218,22 +189,19 @@ export function renderEstimateList() {
         }
     }
 
-    // グローバル変数を更新
-    setFilteredEstimates(filtered);
+    return filtered;
+}
 
-    if (filtered.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に見積データがありません</p>';
-        const totalHoursElement = document.getElementById('estimateTotalHours');
-        const totalManpowerElement = document.getElementById('estimateTotalManpower');
-        if (totalHoursElement) totalHoursElement.textContent = '0h';
-        if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
-        const memberSummaryContainer = document.getElementById('estimateMemberSummary');
-        if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
-        return;
-    }
-
-    // 合計工数を計算
+/**
+ * 見積の合計工数を計算
+ * @param {Array} filtered - フィルタ済み見積配列
+ * @param {string} filterType - フィルタタイプ
+ * @param {string} monthFilter - 月フィルタ値
+ * @returns {number} 合計工数（時間）
+ */
+function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
     let totalHours = 0;
+
     if (filterType === 'version') {
         totalHours = filtered.reduce((sum, e) => sum + e.hours, 0);
     } else {
@@ -251,17 +219,20 @@ export function renderEstimateList() {
         }
     }
 
-    // 人日・人月を計算
-    let workingDaysPerMonth = 20;
-    if (monthFilter !== 'all') {
-        const [year, month] = monthFilter.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
-    }
+    return totalHours;
+}
+
+/**
+ * 合計工数・人日・人月をDOM要素に表示
+ * @param {number} totalHours - 合計工数
+ * @param {number} workingDaysPerMonth - 月間稼働日数
+ * @param {string} filterType - フィルタタイプ
+ * @param {string} monthFilter - 月フィルタ値
+ */
+function displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, monthFilter) {
     const totalManDays = (totalHours / 8).toFixed(1);
     const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
 
-    // 合計を表示
     const totalHoursElement = document.getElementById('estimateTotalHours');
     const totalManpowerElement = document.getElementById('estimateTotalManpower');
     if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
@@ -273,38 +244,49 @@ export function renderEstimateList() {
         let workDaysLabel = 'デフォルト20日';
         if (filterType === 'month' && monthFilter !== 'all') {
             const [year, month] = monthFilter.split('-');
-            const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-            const days = calculatedDays > 0 ? calculatedDays : 20; // Use calculatedDays if valid, else 20. But logic above used calculatedDays or 20. 
-            // Reuse logic:
             workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
         }
         conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）`;
         conversionParams.style.display = 'block';
     }
 
-
-
     // 合計カードにテーマカラーのグラデーションを適用
-    const totalCard = document.getElementById('estimateTotalCard');
-    if (totalCard) {
-        const gradients = {
-            'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-            'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-            'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-            'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-            'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-            'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-            'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-            'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-            'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-            'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-        };
-        totalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
-    }
+    applyTotalCardTheme();
+}
 
-    // 担当者別の合計を集計
+/**
+ * 合計カードにテーマカラーを適用
+ */
+function applyTotalCardTheme() {
+    const totalCard = document.getElementById('estimateTotalCard');
+    if (!totalCard) return;
+
+    const gradients = {
+        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
+        'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+        'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+        'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+    };
+    totalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
+}
+
+/**
+ * 担当者別の合計を集計
+ * @param {Array} filtered - フィルタ済み見積配列
+ * @param {string} filterType - フィルタタイプ
+ * @param {string} monthFilter - 月フィルタ値
+ * @returns {Object} 担当者名をキー、工数を値とするオブジェクト
+ */
+function calculateMemberSummary(filtered, filterType, monthFilter) {
     const memberSummary = {};
+
     filtered.forEach(e => {
         const est = normalizeEstimate(e);
         const member = est.member || '未設定';
@@ -326,53 +308,130 @@ export function renderEstimateList() {
         }
     });
 
-    // 担当者別合計を表示
+    return memberSummary;
+}
+
+/**
+ * 担当者別合計をDOM要素に表示
+ * @param {Object} memberSummary - 担当者別工数オブジェクト
+ * @param {number} workingDaysPerMonth - 月間稼働日数
+ */
+function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
     const memberSummaryContainer = document.getElementById('estimateMemberSummary');
     const memberSummaryContent = document.getElementById('estimateMemberSummaryContent');
-    if (memberSummaryContainer && memberSummaryContent) {
-        const memberSet = new Set(Object.keys(memberSummary));
-        let sortedMembers = [];
-        const memberOrderElement = document.getElementById('memberOrder');
-        const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
+    if (!memberSummaryContainer || !memberSummaryContent) return;
 
-        sortedMembers = sortMembers(Array.from(memberSet), memberOrderInput);
+    const memberOrderElement = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
+    const sortedMembers = sortMembers(Object.keys(memberSummary), memberOrderInput);
 
-        if (sortedMembers.length > 0) {
-            memberSummaryContainer.style.display = 'block';
-            const themeColors = {
-                'purple': '#667eea',
-                'deep-blue': '#1e3c72',
-                'teal': '#0f766e',
-                'cyan': '#0891b2',
-                'ocean': '#0c4a6e',
-                'sky': '#0369a1',
-                'indigo': '#4338ca',
-                'navy': '#1e40af',
-                'slate': '#334155',
-                'green': '#047857',
-                'emerald': '#059669'
-            };
-            const borderColor = themeColors[currentThemeColor] || '#667eea';
-
-            let memberHtml = '';
-            sortedMembers.forEach(member => {
-                const hours = memberSummary[member];
-                const days = (hours / 8).toFixed(1);
-                const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
-                memberHtml += `
-                    <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
-                        <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
-                        <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
-                        <div style="font-size: 12px; color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
-                    </div>
-                `;
-            });
-            memberSummaryContent.innerHTML = memberHtml;
-        } else {
-            memberSummaryContainer.style.display = 'none';
-        }
+    if (sortedMembers.length === 0) {
+        memberSummaryContainer.style.display = 'none';
+        return;
     }
 
+    memberSummaryContainer.style.display = 'block';
+
+    const themeColors = {
+        'purple': '#667eea',
+        'deep-blue': '#1e3c72',
+        'teal': '#0f766e',
+        'cyan': '#0891b2',
+        'ocean': '#0c4a6e',
+        'sky': '#0369a1',
+        'indigo': '#4338ca',
+        'navy': '#1e40af',
+        'slate': '#334155',
+        'green': '#047857',
+        'emerald': '#059669'
+    };
+    const borderColor = themeColors[currentThemeColor] || '#667eea';
+
+    let memberHtml = '';
+    sortedMembers.forEach(member => {
+        const hours = memberSummary[member];
+        const days = (hours / 8).toFixed(1);
+        const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
+        memberHtml += `
+            <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
+                <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
+                <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
+                <div style="font-size: 12px; color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
+            </div>
+        `;
+    });
+    memberSummaryContent.innerHTML = memberHtml;
+}
+
+/**
+ * 空状態を表示（データなし/フィルタ結果なし）
+ * @param {HTMLElement} container - コンテナ要素
+ * @param {string} message - 表示メッセージ
+ */
+function showEstimateEmptyState(container, message) {
+    container.innerHTML = `<p style="color: #999; text-align: center; padding: 40px;">${message}</p>`;
+    const totalHoursElement = document.getElementById('estimateTotalHours');
+    const totalManpowerElement = document.getElementById('estimateTotalManpower');
+    if (totalHoursElement) totalHoursElement.textContent = '0h';
+    if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
+    const memberSummaryContainer = document.getElementById('estimateMemberSummary');
+    if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
+}
+
+/**
+ * 見積一覧をレンダリング（メイン関数）
+ * フィルタ・表示形式に応じて、グループ形式/マトリクス形式/詳細リストを描画
+ * 合計工数・人日・人月を計算し、担当者別サマリーを表示
+ */
+export function renderEstimateList() {
+    const container = document.getElementById('estimateList');
+    if (!container) return;
+
+    const viewTypeElement = document.getElementById('estimateViewType');
+    const monthFilterElement = document.getElementById('estimateMonthFilter');
+    const filterTypeElement = document.getElementById('estimateFilterType');
+    const versionFilterElement = document.getElementById('estimateVersionFilter');
+
+    if (!viewTypeElement || !monthFilterElement) return;
+
+    const viewType = viewTypeElement.value;
+    const filterType = filterTypeElement ? filterTypeElement.value : 'month';
+    const monthFilter = monthFilterElement.value;
+    const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';
+
+    // データがない場合
+    if (estimates.length === 0) {
+        showEstimateEmptyState(container, '見積データがありません');
+        return;
+    }
+
+    // フィルタを適用
+    const filtered = applyEstimateFilters(filterType, monthFilter, versionFilter);
+    setFilteredEstimates(filtered);
+
+    // フィルタ結果が空の場合
+    if (filtered.length === 0) {
+        showEstimateEmptyState(container, '選択した期間に見積データがありません');
+        return;
+    }
+
+    // 月間稼働日数を取得
+    let workingDaysPerMonth = 20;
+    if (monthFilter !== 'all') {
+        const [year, month] = monthFilter.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
+    }
+
+    // 合計工数を計算・表示
+    const totalHours = calculateEstimateTotalHours(filtered, filterType, monthFilter);
+    displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, monthFilter);
+
+    // 担当者別集計・表示
+    const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
+    renderEstimateMemberSummary(memberSummary, workingDaysPerMonth);
+
+    // ビュータイプに応じて描画
     if (viewType === 'grouped') {
         renderEstimateGrouped();
     } else if (viewType === 'matrix') {
