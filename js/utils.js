@@ -117,6 +117,9 @@ export function getMonthColor(workMonths) {
     }
 
     if (workMonths.length === 1) {
+        if (!workMonths[0]) {
+            return { bg: 'rgba(150, 150, 150, 0.15)', tooltip: '未設定', isMultiple: false };
+        }
         const month = workMonths[0].split('-')[1];
         const [year, m] = workMonths[0].split('-');
         const color = monthColors[month] || { bg: 'rgba(200, 200, 200, 0.3)', name: month + '月' };
@@ -128,6 +131,9 @@ export function getMonthColor(workMonths) {
     }
 
     // 複数月の場合 - 逆斜線ストライプで開始月と終了月の色を使用
+    if (!workMonths[0] || !workMonths[workMonths.length - 1]) {
+        return { bg: 'rgba(150, 150, 150, 0.15)', tooltip: '未設定', isMultiple: false };
+    }
     const firstMonth = workMonths[0].split('-')[1];
     const lastMonth = workMonths[workMonths.length - 1].split('-')[1];
     const [y1, m1] = workMonths[0].split('-');

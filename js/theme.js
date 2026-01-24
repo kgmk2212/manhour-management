@@ -52,13 +52,18 @@ export function saveChartColorScheme() {
 export function loadChartColorScheme() {
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        if (settings.chartColorScheme) {
-            setSelectedChartColorScheme(settings.chartColorScheme);
-            const selector = document.getElementById('chartColorScheme');
-            if (selector) {
-                selector.value = selectedChartColorScheme;
+        try {
+            const settings = JSON.parse(savedSettings);
+            if (settings.chartColorScheme) {
+                setSelectedChartColorScheme(settings.chartColorScheme);
+                const selector = document.getElementById('chartColorScheme');
+                if (selector) {
+                    selector.value = selectedChartColorScheme;
+                }
             }
+        } catch (error) {
+            console.error('チャート配色設定の読み込みに失敗しました:', error);
+            // デフォルト設定を使用
         }
     }
     updateChartColorPreview();
@@ -93,26 +98,31 @@ export function updateChartColorPreview() {
 export function loadThemeSettings() {
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        if (settings.themeColor) {
-            setCurrentThemeColor(settings.themeColor);
-            const el = document.getElementById('themeColor');
-            if (el) el.value = settings.themeColor;
-        }
-        if (settings.themePattern) {
-            setCurrentThemePattern(settings.themePattern);
-            const el = document.getElementById('themePattern');
-            if (el) el.value = settings.themePattern;
-        }
-        if (settings.themeTabColor) {
-            setCurrentTabColor(settings.themeTabColor);
-            const el = document.getElementById('themeTabColor');
-            if (el) el.value = settings.themeTabColor;
-        }
-        if (settings.themeBackgroundColor) {
-            setCurrentBackgroundColor(settings.themeBackgroundColor);
-            const el = document.getElementById('themeBackgroundColor');
-            if (el) el.value = settings.themeBackgroundColor;
+        try {
+            const settings = JSON.parse(savedSettings);
+            if (settings.themeColor) {
+                setCurrentThemeColor(settings.themeColor);
+                const el = document.getElementById('themeColor');
+                if (el) el.value = settings.themeColor;
+            }
+            if (settings.themePattern) {
+                setCurrentThemePattern(settings.themePattern);
+                const el = document.getElementById('themePattern');
+                if (el) el.value = settings.themePattern;
+            }
+            if (settings.themeTabColor) {
+                setCurrentTabColor(settings.themeTabColor);
+                const el = document.getElementById('themeTabColor');
+                if (el) el.value = settings.themeTabColor;
+            }
+            if (settings.themeBackgroundColor) {
+                setCurrentBackgroundColor(settings.themeBackgroundColor);
+                const el = document.getElementById('themeBackgroundColor');
+                if (el) el.value = settings.themeBackgroundColor;
+            }
+        } catch (error) {
+            console.error('テーマ設定の読み込みに失敗しました:', error);
+            // デフォルトテーマを使用
         }
     } else {
         // 旧形式から読み込み（後方互換性）
@@ -496,8 +506,13 @@ export function applyDefaultEstimateViewType() {
     let defaultViewType = 'matrix';
 
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        defaultViewType = settings.defaultEstimateViewType || 'matrix';
+        try {
+            const settings = JSON.parse(savedSettings);
+            defaultViewType = settings.defaultEstimateViewType || 'matrix';
+        } catch (error) {
+            console.error('見積ビュー設定の読み込みに失敗しました:', error);
+            // デフォルト値を使用
+        }
     }
 
     const estimateViewTypeElement = document.getElementById('estimateViewType');
@@ -516,8 +531,13 @@ export function applyDefaultReportViewType() {
     let defaultViewType = 'matrix';
 
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        defaultViewType = settings.defaultReportViewType || 'matrix';
+        try {
+            const settings = JSON.parse(savedSettings);
+            defaultViewType = settings.defaultReportViewType || 'matrix';
+        } catch (error) {
+            console.error('レポートビュー設定の読み込みに失敗しました:', error);
+            // デフォルト値を使用
+        }
     }
 
     const reportViewTypeElement = document.getElementById('reportViewType');

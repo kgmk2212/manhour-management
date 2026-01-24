@@ -28,14 +28,19 @@ export function closeAddEstimateModal() {
     formNameInput.value = '';
     formNameInput.style.display = 'none';
 
-    document.getElementById('addEstTask').value = '';
-    document.querySelector('input[name="addEstMonthType"][value="single"]').checked = true;
+    const addEstTask = document.getElementById('addEstTask');
+    if (addEstTask) addEstTask.value = '';
+
+    const singleRadio = document.querySelector('input[name="addEstMonthType"][value="single"]');
+    if (singleRadio) singleRadio.checked = true;
     switchAddEstMonthType();
 
     const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
     processes.forEach(proc => {
-        document.getElementById(`addEst${proc}_member`).value = '';
-        document.getElementById(`addEst${proc}`).value = '';
+        const memberEl = document.getElementById(`addEst${proc}_member`);
+        const hoursEl = document.getElementById(`addEst${proc}`);
+        if (memberEl) memberEl.value = '';
+        if (hoursEl) hoursEl.value = '';
     });
 
     document.getElementById('addEnableMonthSplit').checked = false;
@@ -149,7 +154,10 @@ export function updateAddEstWorkMonthUI() {
 }
 
 export function switchAddEstMonthType() {
-    const monthType = document.querySelector('input[name="addEstMonthType"]:checked').value;
+    const monthTypeRadio = document.querySelector('input[name="addEstMonthType"]:checked');
+    if (!monthTypeRadio) return;
+
+    const monthType = monthTypeRadio.value;
     const singleMonthInput = document.getElementById('addEstSingleMonthInput');
     const multiMonthInput = document.getElementById('addEstMultiMonthInput');
 
@@ -188,6 +196,8 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
 
     const headerRow = table.querySelector('thead tr');
     const bodyRows = table.querySelectorAll('tbody tr');
+
+    if (!headerRow) return;
 
     if (showWorkMonthColumn) {
         // 作業月列を追加
@@ -303,6 +313,11 @@ export function updateAddMonthPreview() {
     }
 
     const months = Utils.generateMonthRange(startMonth, endMonth);
+    if (months.length === 0) {
+        preview.innerHTML = '';
+        return;
+    }
+
     let html = '<div style="background: #f0f0f0; padding: 10px; border-radius: 5px;">';
     html += '<strong>分割プレビュー:</strong><br>';
 

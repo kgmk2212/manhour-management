@@ -116,11 +116,18 @@ export function loadData() {
     const savedRemainingEstimates = localStorage.getItem('manhour_remainingEstimates');
     const savedSettings = localStorage.getItem('manhour_settings');
 
-    if (savedEstimates) setEstimates(JSON.parse(savedEstimates));
-    if (savedActuals) setActuals(JSON.parse(savedActuals));
-    if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
-    if (savedVacations) setVacations(JSON.parse(savedVacations));
-    if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
+    try {
+        if (savedEstimates) setEstimates(JSON.parse(savedEstimates));
+        if (savedActuals) setActuals(JSON.parse(savedActuals));
+        if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
+        if (savedVacations) setVacations(JSON.parse(savedVacations));
+        if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
+    } catch (error) {
+        console.error('データの読み込みに失敗しました:', error);
+        alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
+        // データをリセット（オプション）
+        // localStorage.clear();
+    }
 
     // 次のIDを設定
     if (companyHolidays.length > 0) {
@@ -138,41 +145,46 @@ export function loadData() {
 
     // 設定を読み込み
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        if (settings.memberOrder) setMemberOrder(settings.memberOrder);
-        if (settings.themeColor) setCurrentThemeColor(settings.themeColor);
-        if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
-        if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
-        if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
-        if (settings.estimateLayout) setEstimateLayout(settings.estimateLayout);
-        if (settings.actualLayout) setActualLayout(settings.actualLayout);
-        if (settings.reportLayout) setReportLayout(settings.reportLayout);
-        if (settings.showMonthColors !== undefined) {
-            setShowMonthColorsSetting(settings.showMonthColors);
-        }
-        // 乖離率背景色の設定を読み込み
-        if (settings.showDeviationColors !== undefined) {
-            setShowDeviationColorsSetting(settings.showDeviationColors);
-        }
-        // 進捗バー表示の設定を読み込み
-        if (settings.showProgressBars !== undefined) {
-            setShowProgressBarsSetting(settings.showProgressBars);
-        }
-        // 進捗バーのパーセンテージ表示の設定を読み込み
-        if (settings.showProgressPercentage !== undefined) {
-            setShowProgressPercentageSetting(settings.showProgressPercentage);
-        }
-        // 進捗バーのスタイル設定を読み込み
-        if (settings.progressBarStyle) {
-            setProgressBarStyle(settings.progressBarStyle);
-        }
-        // 見積と実績の表示形式の設定を読み込み
-        if (settings.matrixEstActFormat) {
-            setMatrixEstActFormat(settings.matrixEstActFormat);
-        }
-        // 人日/人月表示形式の設定を読み込み
-        if (settings.matrixDayMonthFormat) {
-            setMatrixDayMonthFormat(settings.matrixDayMonthFormat);
+        try {
+            const settings = JSON.parse(savedSettings);
+            if (settings.memberOrder) setMemberOrder(settings.memberOrder);
+            if (settings.themeColor) setCurrentThemeColor(settings.themeColor);
+            if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
+            if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
+            if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
+            if (settings.estimateLayout) setEstimateLayout(settings.estimateLayout);
+            if (settings.actualLayout) setActualLayout(settings.actualLayout);
+            if (settings.reportLayout) setReportLayout(settings.reportLayout);
+            if (settings.showMonthColors !== undefined) {
+                setShowMonthColorsSetting(settings.showMonthColors);
+            }
+            // 乖離率背景色の設定を読み込み
+            if (settings.showDeviationColors !== undefined) {
+                setShowDeviationColorsSetting(settings.showDeviationColors);
+            }
+            // 進捗バー表示の設定を読み込み
+            if (settings.showProgressBars !== undefined) {
+                setShowProgressBarsSetting(settings.showProgressBars);
+            }
+            // 進捗バーのパーセンテージ表示の設定を読み込み
+            if (settings.showProgressPercentage !== undefined) {
+                setShowProgressPercentageSetting(settings.showProgressPercentage);
+            }
+            // 進捗バーのスタイル設定を読み込み
+            if (settings.progressBarStyle) {
+                setProgressBarStyle(settings.progressBarStyle);
+            }
+            // 見積と実績の表示形式の設定を読み込み
+            if (settings.matrixEstActFormat) {
+                setMatrixEstActFormat(settings.matrixEstActFormat);
+            }
+            // 人日/人月表示形式の設定を読み込み
+            if (settings.matrixDayMonthFormat) {
+                setMatrixDayMonthFormat(settings.matrixDayMonthFormat);
+            }
+        } catch (error) {
+            console.error('設定の読み込みに失敗しました:', error);
+            // デフォルト設定を使用（エラーは表示しない）
         }
     }
 

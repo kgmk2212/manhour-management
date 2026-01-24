@@ -15,6 +15,11 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
     const title = document.getElementById('breakdownModalTitle');
     const content = document.getElementById('breakdownModalContent');
 
+    if (!modal || !title || !content) {
+        console.error('工程内訳モーダルの要素が見つかりません');
+        return;
+    }
+
     // タイトルを設定
     title.textContent = `${version} - ${task} [${process}] の内訳`;
 

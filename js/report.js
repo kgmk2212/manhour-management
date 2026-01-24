@@ -46,19 +46,24 @@ import { getActiveChartColorScheme } from './theme.js';
 export function loadReportSettings() {
     const saved = localStorage.getItem('reportSettings');
     if (saved) {
-        const loadedSettings = JSON.parse(saved);
-        // デフォルト値とマージして、古いデータに存在しないプロパティを補完
-        const defaultSettings = {
-            accuracyEnabled: true,
-            anomalyEnabled: true,
-            warningTasksEnabled: true,
-            chartEnabled: true,
-            trendEnabled: true,
-            memberAnalysisEnabled: true,
-            insightsEnabled: true
-        };
-        const mergedSettings = { ...defaultSettings, ...loadedSettings };
-        setReportSettings(mergedSettings);
+        try {
+            const loadedSettings = JSON.parse(saved);
+            // デフォルト値とマージして、古いデータに存在しないプロパティを補完
+            const defaultSettings = {
+                accuracyEnabled: true,
+                anomalyEnabled: true,
+                warningTasksEnabled: true,
+                chartEnabled: true,
+                trendEnabled: true,
+                memberAnalysisEnabled: true,
+                insightsEnabled: true
+            };
+            const mergedSettings = { ...defaultSettings, ...loadedSettings };
+            setReportSettings(mergedSettings);
+        } catch (error) {
+            console.error('レポート設定の読み込みに失敗しました:', error);
+            // デフォルト設定を使用
+        }
     }
 
     // UIに反映
