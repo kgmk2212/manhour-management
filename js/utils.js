@@ -29,6 +29,12 @@ export function closeCustomAlert() {
 }
 
 // 見積データを正規化（旧形式から新形式への変換）
+/**
+ * 見積オブジェクトを正規化（旧形式→新形式変換）
+ * 分割前の月が設定されている場合、作業月に変換
+ * @param {Object} e - 見積オブジェクト
+ * @returns {Object} 正規化された見積オブジェクト
+ */
 export function normalizeEstimate(e) {
     // 新形式がすでにある場合（workMonthsが空でない場合のみ）
     if (e.workMonths && e.workMonths.length > 0 && e.monthlyHours && Object.keys(e.monthlyHours).length > 0) {
@@ -111,6 +117,12 @@ export function generateMonthOptions(selectId, selectedValue = '', minValue = nu
 }
 
 // 月から背景色を取得
+/**
+ * 作業月に対応する背景色とツールチップを取得
+ * 単月の場合は月カラー、複数月の場合は逆斜線ストライプで開始月と終了月の色を使用
+ * @param {string[]} workMonths - 作業月の配列（YYYY-MM形式）
+ * @returns {{bg: string, tooltip: string, isMultiple: boolean}} 背景色情報オブジェクト
+ */
 export function getMonthColor(workMonths) {
     if (!workMonths || workMonths.length === 0) {
         return { bg: 'rgba(150, 150, 150, 0.15)', tooltip: '未設定', isMultiple: false };
@@ -381,6 +393,15 @@ export function getTargetVersions(estimates, actuals, versionFilter) {
  * @param {number} warningThreshold - 警告閾値（デフォルト1.2）
  * @returns {Object} - { status, statusLabel, statusColor, eac }
  */
+/**
+ * 進捗ステータスを判定
+ * EAC（見積完成時総工数）と見積工数を比較してステータス・色・ラベルを決定
+ * @param {number} estimatedHours - 見積工数
+ * @param {number} actualHours - 実績工数
+ * @param {number} remainingHours - 見込残存工数
+ * @param {number} [warningThreshold=1.2] - 警告閾値（見積の120%など）
+ * @returns {{status: string, statusLabel: string, statusColor: string, eac: number}} ステータス情報オブジェクト
+ */
 export function determineProgressStatus(estimatedHours, actualHours, remainingHours, warningThreshold = 1.2) {
     const eac = actualHours + remainingHours; // 予測総工数
 
@@ -456,6 +477,16 @@ export function hoursToManMonths(hours, hoursPerMonth = 160) {
  * @param {string|null} process - 工程（オプション）
  * @param {string|null} member - 担当者（オプション）
  * @returns {Array} - フィルタされた配列
+ */
+/**
+ * 配列を版数・対応・工程・担当者でフィルタリング
+ * nullが指定された引数はフィルタ条件から除外
+ * @param {Array} array - フィルタ対象の配列（見積または実績）
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ * @param {string|null} [process=null] - 工程（null時は全工程）
+ * @param {string|null} [member=null] - 担当者（null時は全担当者）
+ * @returns {Array} フィルタリングされた配列
  */
 export function filterByVersionAndTask(array, version, task, process = null, member = null) {
     return array.filter(item =>

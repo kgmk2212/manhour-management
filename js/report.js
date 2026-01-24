@@ -128,12 +128,24 @@ export function saveDebugModeSetting() {
 // 進捗計算のキャッシュ
 const progressCache = new Map();
 
-// キャッシュをクリア（データ更新時に呼び出す）
+/**
+ * 進捗計算キャッシュをクリア
+ * データ更新時に呼び出してキャッシュを無効化
+ * @returns {void}
+ */
 export function clearProgressCache() {
     progressCache.clear();
 }
 
-// 対応単位での進捗情報を計算
+/**
+ * 対応単位での進捗情報を計算（キャッシング機構付き）
+ * 見積・実績・見込残存工数から進捗率・EAC・ステータス・乖離を算出
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ * @param {string|null} [process=null] - 工程（未指定時は全工程集計）
+ * @param {string|null} [member=null] - 担当者（未指定時は全担当者集計）
+ * @returns {{estimatedHours: number, actualHours: number, remainingHours: number, eac: number, progressRate: number, status: string, statusLabel: string, statusColor: string, variance: number, variancePercent: number, hasRemainingData: boolean}} 進捗情報オブジェクト
+ */
 export function calculateProgress(version, task, process = null, member = null) {
     // キャッシュキーの生成
     const cacheKey = `${version}|${task}|${process}|${member}`;
@@ -271,6 +283,16 @@ export function calculateVersionProgress(version) {
 }
 
 // プログレスバーHTMLを生成
+/**
+ * 進捗バーのHTMLを生成
+ * ステータスに応じた色・スタイルで進捗バーを描画（パーセンテージ表示オプション付き）
+ * @param {number} progressRate - 進捗率（0-100以上の数値）
+ * @param {string} status - ステータス（'completed'|'ontrack'|'warning'|'exceeded'|'unknown'）
+ * @param {Object} [options={}] - オプション設定
+ * @param {boolean} [options.showPercentage=true] - パーセンテージを表示するか
+ * @param {string} [options.style='default'] - バースタイル（'default'|'modern'|'minimal'）
+ * @returns {string} 進捗バーのHTML文字列
+ */
 export function createProgressBar(progressRate, status, options = {}) {
     const {
         showLabel = true,

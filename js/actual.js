@@ -221,6 +221,11 @@ export function renderTodayActuals() {
 /**
  * 実績一覧のメイン描画関数
  */
+/**
+ * 実績一覧をレンダリング（メイン関数）
+ * フィルタ・表示形式に応じて、カレンダー形式/マトリクス形式/リスト形式を描画
+ * @returns {void}
+ */
 export function renderActualList() {
     const container = document.getElementById('actualList');
     const viewType = document.getElementById('actualViewType').value;
@@ -340,6 +345,11 @@ export function updateMemberSelectOptions() {
 
 /**
  * 担当者別カレンダー表示
+ */
+/**
+ * 担当者別カレンダー形式で実績を表示
+ * 月別の日付×担当者マトリクスを生成し、祝日・休暇・その他作業を表示
+ * @returns {void}
  */
 export function renderMemberCalendar() {
     const container = document.getElementById('actualList');
@@ -1112,6 +1122,11 @@ export function closeEditActualModal() {
 
 /**
  * 実績編集を保存
+ */
+/**
+ * 実績の新規作成または更新を保存
+ * 新規/更新を判定し、見込残存時間も同時に保存
+ * @returns {void}
  */
 export function saveActualEdit() {
     const id = parseFloat(document.getElementById('editActualId').value);

@@ -48,6 +48,12 @@ export function saveAutoBackupSetting() {
 // データ保存・読み込み
 // ============================================
 
+/**
+ * すべてのデータをlocalStorageに保存
+ * 見積・実績・休日・休暇・設定・キャッシュを同期保存し、必要に応じて自動バックアップを実行
+ * @param {boolean} [skipAutoBackup=false] - 自動バックアップをスキップするか
+ * @returns {void}
+ */
 export function saveData(skipAutoBackup = false) {
     const memberOrderEl = document.getElementById('memberOrder');
     const data = {
@@ -108,6 +114,12 @@ export function saveData(skipAutoBackup = false) {
     }
 }
 
+/**
+ * すべてのデータをlocalStorageから読み込み
+ * 見積・実績・休日・休暇・設定を復元し、ID最大値を再計算してセット
+ * データ破損時はエラーハンドリングを実行してデフォルト値を使用
+ * @returns {void}
+ */
 export function loadData() {
     const savedEstimates = localStorage.getItem('manhour_estimates');
     const savedActuals = localStorage.getItem('manhour_actuals');
@@ -198,6 +210,11 @@ export function loadData() {
 // バックアップ・復元
 // ============================================
 
+/**
+ * 自動バックアップを実行
+ * 全データをJSON形式でファイルとしてダウンロード（タイムスタンプ付きファイル名）
+ * @returns {void}
+ */
 export function autoBackup() {
     // 現在の設定を取得
     const memberOrderEl = document.getElementById('memberOrder');
@@ -265,6 +282,13 @@ export function importBackup() {
     document.getElementById('fileInput').click();
 }
 
+/**
+ * ファイルをインポート（JSON/Excel形式に対応）
+ * JSONファイルの場合: 全データ（見積・実績・休日・休暇・設定）を復元
+ * Excelファイルの場合: 実績データのみをインポート
+ * @param {Event} event - ファイル選択イベント
+ * @returns {void}
+ */
 export function handleFileImport(event) {
     const file = event.target.files[0];
     if (!file) return;

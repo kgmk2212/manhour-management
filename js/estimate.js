@@ -111,6 +111,16 @@ export function calculateDefaultWorkMonths(startMonth, endMonth) {
 /**
  * 見込残存時間を保存/更新する関数
  */
+/**
+ * 見込残存時間を保存/更新
+ * 同一バージョン・対応・工程・担当者のレコードがあれば更新、なければ新規作成
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ * @param {string} process - 工程（UI/PG/PT/IT/ST）
+ * @param {string} member - 担当者名
+ * @param {number} remainingHours - 見込残存時間（h）
+ * @returns {void}
+ */
 export function saveRemainingEstimate(version, task, process, member, remainingHours) {
     const existingIndex = remainingEstimates.findIndex(r =>
         r.version === version &&
@@ -155,6 +165,12 @@ export function getRemainingEstimate(version, task, process, member) {
 
 /**
  * 見積一覧のメイン描画関数
+ */
+/**
+ * 見積一覧をレンダリング（メイン関数）
+ * フィルタ・表示形式に応じて、グループ形式/マトリクス形式/詳細リストを描画
+ * 合計工数・人日・人月を計算し、担当者別サマリーを表示
+ * @returns {void}
  */
 export function renderEstimateList() {
     const container = document.getElementById('estimateList');
