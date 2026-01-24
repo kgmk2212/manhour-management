@@ -544,3 +544,72 @@ export function safeQuerySelector(selector, parent = document) {
         return null;
     }
 }
+
+/**
+ * YYYY-MM形式の文字列を年と月に分解
+ * @param {string} monthStr - YYYY-MM形式の月文字列
+ * @returns {{year: number, month: number}} 年と月のオブジェクト
+ */
+export function parseMonthString(monthStr) {
+    const [year, month] = monthStr.split('-');
+    return {
+        year: parseInt(year),
+        month: parseInt(month)
+    };
+}
+
+/**
+ * 年と月を日本語フォーマットで表示
+ * @param {number} year - 年
+ * @param {number} month - 月
+ * @returns {string} 「YYYY年M月」形式の文字列
+ */
+export function formatMonthJapanese(year, month) {
+    return `${year}年${parseInt(month)}月`;
+}
+
+/**
+ * 月の範囲を日本語フォーマットで表示
+ * @param {string} startMonth - 開始月（YYYY-MM形式）
+ * @param {string} endMonth - 終了月（YYYY-MM形式）
+ * @returns {string} 「YYYY年M月〜YYYY年M月」形式の文字列
+ */
+export function formatMonthRangeJapanese(startMonth, endMonth) {
+    const {year: y1, month: m1} = parseMonthString(startMonth);
+    const {year: y2, month: m2} = parseMonthString(endMonth);
+
+    if (y1 === y2) {
+        // 同じ年の場合
+        if (m1 === m2) {
+            return formatMonthJapanese(y1, m1);
+        }
+        return `${y1}年${m1}月〜${m2}月`;
+    }
+    // 異なる年の場合
+    return `${formatMonthJapanese(y1, m1)}〜${formatMonthJapanese(y2, m2)}`;
+}
+
+/**
+ * 現在の月をYYYY-MM形式で取得
+ * @returns {string} YYYY-MM形式の現在の月
+ */
+export function getCurrentMonthString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
+
+/**
+ * YYYY-MM-DD形式の日付の次の日を計算
+ * @param {string} dateStr - YYYY-MM-DD形式の日付文字列
+ * @returns {string} YYYY-MM-DD形式の次の日の日付
+ */
+export function getNextDateString(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const nextDate = new Date(y, m - 1, d + 1);
+    const year = nextDate.getFullYear();
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
