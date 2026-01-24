@@ -29,6 +29,13 @@ import {
     currentThemeColor
 } from './state.js';
 
+import {
+    getTargetVersions,
+    determineProgressStatus,
+    formatHours,
+    filterByVersionAndTask
+} from './utils.js';
+
 import { normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegend, sortMembers } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 
@@ -113,8 +120,25 @@ export function saveDebugModeSetting() {
 // 進捗管理関連機能
 // ============================================
 
+// 進捗計算のキャッシュ
+const progressCache = new Map();
+
+// キャッシュをクリア（データ更新時に呼び出す）
+export function clearProgressCache() {
+    progressCache.clear();
+}
+
 // 対応単位での進捗情報を計算
 export function calculateProgress(version, task, process = null, member = null) {
+    // キャッシュキーの生成
+    const cacheKey = `${version}|${task}|${process}|${member}`;
+
+    // キャッシュにあれば返す
+    if (progressCache.has(cacheKey)) {
+        return progressCache.get(cacheKey);
+    }
+
+    // 計算を実行
     // 見積工数を集計
     let estimatedHours = estimates
         .filter(e =>
@@ -184,7 +208,8 @@ export function calculateProgress(version, task, process = null, member = null) 
         ? ((eac - estimatedHours) / estimatedHours) * 100
         : 0;
 
-    return {
+    // 計算結果をキャッシュに保存
+    const result = {
         estimatedHours,
         actualHours,
         remainingHours,
@@ -198,6 +223,9 @@ export function calculateProgress(version, task, process = null, member = null) 
         hasRemainingData: remainingHours > 0 ||
             remainingEstimates.some(r => r.version === version && r.task === task)
     };
+
+    progressCache.set(cacheKey, result);
+    return result;
 }
 
 // 版数全体の進捗情報を計算
@@ -376,20 +404,33 @@ export function updateProgressVersionOptions() {
         ...actuals.map(a => a.version)
     ])].filter(v => v && v.trim() !== '').sort();
 
-    const currentValue = select.value;
-    select.innerHTML = '<option value="all">全版数</option>';
-    versions.forEach(v => {
-        select.innerHTML += `<option value="${v}">${v}</option>`;
-    });
-    select.value = currentValue || 'all';
+    // DOM最適化: DocumentFragmentを使用してセレクトボックスを更新
+    const updateSelectOptions = (selectElement, options, allLabel = '全版数') => {
+        const currentValue = selectElement.value;
+        const fragment = document.createDocumentFragment();
 
-    if (bulkSelect) {
-        const bulkCurrentValue = bulkSelect.value;
-        bulkSelect.innerHTML = '<option value="all">全版数</option>';
-        versions.forEach(v => {
-            bulkSelect.innerHTML += `<option value="${v}">${v}</option>`;
+        // 「全版数」オプション
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = allLabel;
+        fragment.appendChild(allOption);
+
+        // 各版数のオプション
+        options.forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            fragment.appendChild(option);
         });
-        bulkSelect.value = bulkCurrentValue || 'all';
+
+        selectElement.innerHTML = '';
+        selectElement.appendChild(fragment);
+        selectElement.value = currentValue || 'all';
+    };
+
+    updateSelectOptions(select, versions);
+    if (bulkSelect) {
+        updateSelectOptions(bulkSelect, versions);
     }
 }
 
@@ -399,10 +440,7 @@ export function renderProgressSummaryCards(versionFilter) {
     if (!container) return;
 
     // フィルタリング
-    let targetVersions = versionFilter === 'all'
-        ? [...new Set([...estimates.map(e => e.version), ...actuals.map(a => a.version)])]
-            .filter(v => v && v.trim() !== '')
-        : [versionFilter];
+    const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
 
     // 全体統計
     let totalEstimated = 0, totalActual = 0, totalRemaining = 0;
@@ -479,10 +517,7 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
     if (!container) return;
 
     // フィルタリング
-    let targetVersions = versionFilter === 'all'
-        ? [...new Set([...estimates.map(e => e.version), ...actuals.map(a => a.version)])]
-            .filter(v => v && v.trim() !== '').sort()
-        : [versionFilter];
+    const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
 
     let html = '<div class="table-wrapper"><table style="width: 100%; border-collapse: collapse;">';
     html += `
@@ -582,10 +617,7 @@ export function renderBulkRemainingTable() {
     if (!tbody) return;
 
     // 版数でフィルタリング
-    let targetVersions = versionFilter === 'all'
-        ? [...new Set([...estimates.map(e => e.version), ...actuals.map(a => a.version)])]
-            .filter(v => v && v.trim() !== '').sort()
-        : [versionFilter];
+    const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
 
     let html = '';
     let rowIndex = 0;

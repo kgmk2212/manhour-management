@@ -3,7 +3,7 @@
 > **このファイルについて**
 > - プロジェクトのファイル構成と各ファイルの役割を記載
 > - ファイル追加・削除・変更時は必ずこのドキュメントも更新する
-> - 最終更新: 2026-01-17
+> - 最終更新: 2026-01-24
 
 ## 📁 ファイル構成
 
@@ -14,20 +14,25 @@
 ├── js/
 │   ├── state.js           (グローバル変数・状態管理)
 │   ├── storage.js         (localStorage操作・バックアップ)
-│   ├── estimate.js        (見積管理機能)
+│   ├── estimate.js        (見積管理機能 - メイン)
+│   ├── estimate-add.js    (見積追加機能)
+│   ├── estimate-edit.js   (見積編集機能)
+│   ├── estimate-split.js  (見積分割機能)
+│   ├── estimate-selection.js (見積選択機能)
 │   ├── actual.js          (実績管理機能)
-│   ├── quick-input.js     (クイック入力機能)
+│   ├── quick.js           (クイック入力機能)
 │   ├── report.js          (レポート・分析機能)
-│   ├── chart.js           (グラフ描画機能)
 │   ├── vacation.js        (休暇・休日管理)
 │   ├── other-work.js      (その他作業・会議)
 │   ├── theme.js           (テーマ・UI設定)
-│   ├── filter.js          (フィルタ管理)
+│   ├── floating-filter.js (フローティングフィルタ)
 │   ├── modal.js           (モーダル操作)
 │   ├── ui.js              (UI操作・DOM操作)
+│   ├── events.js          (イベントハンドラ統合)
 │   ├── utils.js           (ユーティリティ関数)
 │   └── init.js            (初期化処理)
 ├── CLAUDE.md              (開発ガイド・Claude Code指示)
+├── 修正案リスト.md         (機能改善・修正案リスト)
 └── ARCHITECTURE.md        (このファイル)
 ```
 
@@ -110,44 +115,92 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/estimate.js** (~800行)
-**役割**: 見積管理機能
+### **js/estimate.js** (42KB)
+**役割**: 見積管理機能 - メイン表示・フィルタリング
 
 **主要関数**:
-- `addEstimate()` - 見積追加（通常）
-- `addEstimateWithMonthSplit()` - 見積追加（月分割）
-- `editTask(version, taskName)` - タスク編集
-- `closeEditTaskModal()` - タスク編集モーダルを閉じる
-- `saveTaskEdit()` - タスク編集を保存
+- `renderEstimateList()` - 見積一覧表示
+- `renderEstimateGrouped()` - グループ化表示
+- `renderEstimateMatrix()` - マトリクス表示
+- `renderEstimateListView()` - リスト表示
 - `deleteEstimate(id)` - 見積削除
 - `deleteTask(version, task)` - タスク削除
-- `clearEstimateForm()` - 見積フォームクリア
-- `toggleEstimateEditMode()` - 見積編集モード切替
-- `toggleWorkMonthSelectionMode()` - 作業月選択モード切替
-- `toggleEstimateSelection(id, event)` - 見積選択/解除
-- `selectTaskEstimates(version, task, event)` - タスク単位で選択
-- `updateSelectedWorkHours()` - 選択された見積の合計工数更新
-- `executeWorkMonthAssignment()` - 作業月一括割り当て実行
-- `cancelWorkMonthSelection()` - 作業月選択キャンセル
-- `updateWorkMonthOptions()` - 作業月オプション更新
-- `openSplitEstimateModal(id)` - 見積分割モーダル表示
-- `closeSplitEstimateModal()` - 見積分割モーダル閉じる
-- `updateSplitPreview()` - 分割プレビュー更新
-- `executeSplitEstimate()` - 見積分割実行
-- `toggleMonthSplit()` - 月分割入力モード切替
-- `updateMonthPreview()` - 月プレビュー更新
-- `updateManualTotal()` - 手動入力合計更新
-- `updateSplitManualTotal()` - 分割手動入力合計更新
+- フィルタリング・集計関連関数
 
 **依存関係**:
-- `state.js` - estimates, actuals
+- `state.js` - estimates
 - `storage.js` - saveData
 - `ui.js` - UI更新
 - `utils.js` - ユーティリティ関数
 
 ---
 
-### **js/actual.js** (~300行)
+### **js/estimate-add.js** (23KB)
+**役割**: 見積追加機能
+
+**主要関数**:
+- `addEstimate()` - 見積追加（通常）
+- `addEstimateWithMonthSplit()` - 見積追加（月分割）
+- `clearEstimateForm()` - 見積フォームクリア
+- `toggleMonthSplit()` - 月分割入力モード切替
+- `updateMonthPreview()` - 月プレビュー更新
+- 月分割関連の計算・UI更新関数
+
+**依存関係**:
+- `state.js` - estimates
+- `storage.js` - saveData
+- `ui.js` - UI更新
+
+---
+
+### **js/estimate-edit.js** (20KB)
+**役割**: 見積編集機能
+
+**主要関数**:
+- `editTask(version, taskName)` - タスク編集
+- `closeEditTaskModal()` - タスク編集モーダルを閉じる
+- `saveTaskEdit()` - タスク編集を保存
+- `toggleEstimateEditMode()` - 見積編集モード切替
+
+**依存関係**:
+- `state.js` - estimates
+- `storage.js` - saveData
+- `ui.js` - UI更新
+
+---
+
+### **js/estimate-split.js** (15KB)
+**役割**: 見積分割機能
+
+**主要関数**:
+- `openSplitEstimateModal(id)` - 見積分割モーダル表示
+- `closeSplitEstimateModal()` - 見積分割モーダル閉じる
+- `updateSplitPreview()` - 分割プレビュー更新
+- `executeSplitEstimate()` - 見積分割実行
+
+**依存関係**:
+- `state.js` - estimates
+- `storage.js` - saveData
+
+---
+
+### **js/estimate-selection.js** (7KB)
+**役割**: 見積選択・作業月一括割り当て
+
+**主要関数**:
+- `toggleWorkMonthSelectionMode()` - 作業月選択モード切替
+- `toggleEstimateSelection(id, event)` - 見積選択/解除
+- `selectTaskEstimates(version, task, event)` - タスク単位で選択
+- `executeWorkMonthAssignment()` - 作業月一括割り当て実行
+- `cancelWorkMonthSelection()` - 作業月選択キャンセル
+
+**依存関係**:
+- `state.js` - estimates
+- `storage.js` - saveData
+
+---
+
+### **js/actual.js** (57KB)
 **役割**: 実績管理機能
 
 **主要関数**:
@@ -162,7 +215,7 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/quick-input.js** (~600行)
+### **js/quick.js** (22KB)
 **役割**: クイック入力タブの機能
 
 **主要関数**:
@@ -199,8 +252,8 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/report.js** (~1,200行)
-**役割**: レポート・分析機能
+### **js/report.js** (110KB)
+**役割**: レポート・分析機能（グラフ描画を含む）
 
 **主要関数**:
 - `updateReport()` - レポート更新（メイン処理）
@@ -223,21 +276,6 @@ export function setActuals(value) { actuals = value; }
 - `chart.js` - グラフ描画
 - `utils.js` - getDeviationColor, normalizeEstimate
 - `ui.js` - UI更新
-
----
-
-### **js/chart.js** (~600行)
-**役割**: グラフ描画機能（Canvas使用）
-
-**主要関数**:
-- `drawMemberComparisonChart(members, memberSummary)` - 担当者比較棒グラフ
-- `drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)` - 担当者別ドーナツグラフ
-- `drawBreakdownDonutChart(canvasId, memberData, dataType, members, total)` - 工程内訳ドーナツグラフ
-- グラフ描画ユーティリティ関数
-
-**依存関係**:
-- `state.js` - chartColorSchemes
-- `theme.js` - getActiveChartColorScheme
 
 ---
 
@@ -313,15 +351,10 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/filter.js** (~600行)
-**役割**: フィルタ管理（Sticky Filter / Floating Filter）
+### **js/floating-filter.js** (24KB)
+**役割**: フローティングフィルタ管理（スマホ対応）
 
 **主要関数**:
-- `saveStickyFilterSetting()` - Sticky Filter設定保存
-- `loadStickyFilterSetting()` - Sticky Filter設定読み込み
-- `enableStickyFilters()` - Sticky Filter有効化
-- `disableStickyFilters()` - Sticky Filter無効化
-- `initStickyFilters()` - Sticky Filter初期化
 - `saveFloatingFilterSetting()` - Floating Filter設定保存
 - `loadFloatingFilterSetting()` - Floating Filter設定読み込み
 - `showFloatingFilterButton()` - Floating Filterボタン表示
@@ -330,17 +363,9 @@ export function setActuals(value) { actuals = value; }
 - `syncFloatingFilters()` - Floating Filter同期
 - `setFloatingFilterType(type, applyToMain)` - Floating Filterタイプ設定
 - `setFloatingViewType(type, applyToMain)` - Floating Filter表示タイプ設定
-- `syncFloatingMonthFilter(value)` - Floating Filter月同期
-- `syncFloatingVersionFilter(value)` - Floating Filter版数同期
-- `handleActualMonthChange(value, containerId)` - 実績月変更ハンドラ
-- `handleEstimateMonthChange(value, containerId)` - 見積月変更ハンドラ
-- `handleEstimateVersionChange(value, containerId)` - 見積版数変更ハンドラ
 - `handleReportMonthChange(value, containerId)` - レポート月変更ハンドラ
 - `handleReportVersionChange(value, containerId)` - レポート版数変更ハンドラ
-- `handleReportFilterTypeChange()` - レポートフィルタタイプ変更
-- `setReportFilterType(type)` - レポートフィルタタイプ設定
-- `syncMonthToReport(value)` - 月をレポートに同期
-- `syncVersionToReport(value)` - 版数をレポートに同期
+- フィルタ同期・変更ハンドラ関数
 
 **依存関係**:
 - `state.js` - estimates, actuals
@@ -375,7 +400,20 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/ui.js** (~1,000行)
+### **js/events.js** (32KB)
+**役割**: イベントハンドラ統合（HTML onclick属性の代替）
+
+**主要関数**:
+- HTML要素のイベントリスナー登録
+- クリック・変更イベントハンドラ
+- 各モジュールの関数を呼び出す橋渡し役
+
+**依存関係**:
+- 全モジュール - イベント発生時に各モジュールの関数を呼び出し
+
+---
+
+### **js/ui.js** (89KB)
 **役割**: UI操作・DOM操作
 
 **主要関数**:
@@ -490,18 +528,23 @@ document.addEventListener('DOMContentLoaded', function() {
 ```
 state.js (基盤)
     ↓
-storage.js → ui.js → report.js
+storage.js → ui.js → report.js (グラフ描画含む)
     ↓         ↓         ↓
-estimate.js   ↓     chart.js
-actual.js     ↓         ↓
-vacation.js   ↓     theme.js
+estimate.js   ↓     theme.js
+  ├─ estimate-add.js
+  ├─ estimate-edit.js
+  ├─ estimate-split.js
+  └─ estimate-selection.js
+    ↓         ↓         ↓
+actual.js     ↓     floating-filter.js
+vacation.js   ↓         ↓
 other-work.js ↓         ↓
     ↓         ↓         ↓
-quick-input.js → filter.js
-    ↓         ↓
-  modal.js    ↓
+  quick.js → modal.js
     ↓         ↓
   utils.js (ユーティリティ)
+    ↓
+  events.js (イベントハンドラ統合)
     ↓
   init.js (統合・初期化)
 ```
@@ -532,6 +575,15 @@ quick-input.js → filter.js
 ---
 
 ## 📝 変更履歴
+
+### 2026-01-24
+- アーキテクチャドキュメントを最新の構成に更新
+- 19個のJavaScriptモジュール構成に更新
+- estimate関連を5ファイルに分割（estimate.js, estimate-add.js, estimate-edit.js, estimate-split.js, estimate-selection.js）
+- filter.js → floating-filter.js に名称変更
+- events.js を追加（イベントハンドラ統合）
+- chart.js を削除（report.js に統合）
+- quick-input.js → quick.js に名称変更
 
 ### 2026-01-17
 - 初版作成

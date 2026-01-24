@@ -337,3 +337,173 @@ export function enableDragScroll(container) {
     container.style.userSelect = 'none';
     container.dataset.dragScrollEnabled = 'true';
 }
+
+// ============================================
+// 重複コード統合ユーティリティ
+// ============================================
+
+/**
+ * 対象版数のリストを取得
+ * report.jsの3箇所で重複していたロジックを統合
+ * @param {Array} estimates - 見積配列
+ * @param {Array} actuals - 実績配列
+ * @param {string} versionFilter - フィルタ値（'all'または特定版数）
+ * @returns {Array} - 対象版数の配列
+ */
+export function getTargetVersions(estimates, actuals, versionFilter) {
+    if (versionFilter !== 'all') {
+        return [versionFilter];
+    }
+
+    // 全版数を取得
+    const versions = [...new Set([
+        ...estimates.map(e => e.version),
+        ...actuals.map(a => a.version)
+    ])]
+        .filter(v => v && v.trim() !== '')
+        .sort();
+
+    return versions;
+}
+
+/**
+ * 進捗ステータスを判定
+ * calculateProgress、updateBulkRowStatus、renderBulkRemainingTableで重複していたロジックを統合
+ * @param {number} estimatedHours - 見積工数
+ * @param {number} actualHours - 実績工数
+ * @param {number} remainingHours - 見込残存時間
+ * @param {number} warningThreshold - 警告閾値（デフォルト1.2）
+ * @returns {Object} - { status, statusLabel, statusColor, eac }
+ */
+export function determineProgressStatus(estimatedHours, actualHours, remainingHours, warningThreshold = 1.2) {
+    const eac = actualHours + remainingHours; // 予測総工数
+
+    let status = 'unknown';
+    let statusLabel = '未設定';
+    let statusColor = '#999';
+
+    if (remainingHours === 0 && actualHours > 0) {
+        status = 'completed';
+        statusLabel = '完了';
+        statusColor = '#27ae60';
+    } else if (estimatedHours > 0) {
+        if (eac <= estimatedHours) {
+            status = 'ontrack';
+            statusLabel = '順調';
+            statusColor = '#3498db';
+        } else if (eac <= estimatedHours * warningThreshold) {
+            status = 'warning';
+            statusLabel = '注意';
+            statusColor = '#f39c12';
+        } else {
+            status = 'exceeded';
+            statusLabel = '超過';
+            statusColor = '#e74c3c';
+        }
+    }
+
+    return {
+        status,
+        statusLabel,
+        statusColor,
+        eac
+    };
+}
+
+/**
+ * 工数を見やすくフォーマット
+ * @param {number} hours - 工数
+ * @param {number} decimalPlaces - 小数点以下の桁数（デフォルト1）
+ * @returns {string} - フォーマットされた工数
+ */
+export function formatHours(hours, decimalPlaces = 1) {
+    if (hours === 0) return '0';
+    if (!hours || isNaN(hours)) return '-';
+    return hours.toFixed(decimalPlaces);
+}
+
+/**
+ * 人日に変換
+ * @param {number} hours - 工数
+ * @param {number} hoursPerDay - 1日の稼働時間（デフォルト8）
+ * @returns {number} - 人日
+ */
+export function hoursToManDays(hours, hoursPerDay = 8) {
+    return hours / hoursPerDay;
+}
+
+/**
+ * 人月に変換
+ * @param {number} hours - 工数
+ * @param {number} hoursPerMonth - 1ヶ月の稼働時間（デフォルト160）
+ * @returns {number} - 人月
+ */
+export function hoursToManMonths(hours, hoursPerMonth = 160) {
+    return hours / hoursPerMonth;
+}
+
+/**
+ * 配列を版数とタスクでフィルタリング
+ * @param {Array} array - フィルタ対象の配列
+ * @param {string} version - 版数
+ * @param {string} task - タスク名
+ * @param {string|null} process - 工程（オプション）
+ * @param {string|null} member - 担当者（オプション）
+ * @returns {Array} - フィルタされた配列
+ */
+export function filterByVersionAndTask(array, version, task, process = null, member = null) {
+    return array.filter(item =>
+        item.version === version &&
+        item.task === task &&
+        (process === null || item.process === process) &&
+        (member === null || item.member === member)
+    );
+}
+
+/**
+ * 安全にlocalStorageから読み込む
+ * @param {string} key - ストレージキー
+ * @param {*} defaultValue - デフォルト値
+ * @returns {*} - 読み込んだ値またはデフォルト値
+ */
+export function safeGetLocalStorage(key, defaultValue = null) {
+    try {
+        const value = localStorage.getItem(key);
+        if (value === null) return defaultValue;
+        return JSON.parse(value);
+    } catch (error) {
+        console.error(`Error reading from localStorage (key: ${key}):`, error);
+        return defaultValue;
+    }
+}
+
+/**
+ * 安全にlocalStorageに保存
+ * @param {string} key - ストレージキー
+ * @param {*} value - 保存する値
+ * @returns {boolean} - 成功したかどうか
+ */
+export function safeSetLocalStorage(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    } catch (error) {
+        console.error(`Error writing to localStorage (key: ${key}):`, error);
+        return false;
+    }
+}
+
+/**
+ * DOM要素を安全に取得
+ * @param {string} selector - セレクタ
+ * @param {HTMLElement} parent - 親要素（デフォルトはdocument）
+ * @returns {HTMLElement|null} - 要素またはnull
+ */
+export function safeQuerySelector(selector, parent = document) {
+    try {
+        return parent.querySelector(selector);
+    } catch (error) {
+        console.error(`Error in querySelector (selector: ${selector}):`, error);
+        return null;
+    }
+}

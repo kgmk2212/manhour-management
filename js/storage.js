@@ -23,6 +23,7 @@ import {
 } from './state.js';
 
 import { showAlert } from './utils.js';
+import { clearProgressCache } from './report.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -82,6 +83,9 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
     localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
+
+    // 進捗計算キャッシュをクリア
+    clearProgressCache();
 
     // 作業月選択肢を更新（window経由で呼び出し）
     if (typeof window.updateWorkMonthOptions === 'function') {
