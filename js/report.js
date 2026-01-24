@@ -986,21 +986,19 @@ export function getAnalysisGradients() {
     return gradients[currentThemeColor] || gradients['purple'];
 }
 
-export function updateReport() {
-    const filterType = document.getElementById('reportFilterType').value;
-    const selectedMonth = document.getElementById('reportMonth').value;
-    const selectedVersion = document.getElementById('reportVersion').value;
-    const viewType = document.getElementById('reportViewType').value;
-
+/**
+ * レポート用のフィルタリング済みデータを取得
+ * @param {string} filterType - フィルタタイプ（'month' | 'version'）
+ * @param {string} selectedMonth - 選択された月
+ * @param {string} selectedVersion - 選択された版数
+ * @returns {Object} { filteredActuals, filteredEstimates }
+ */
+function filterReportData(filterType, selectedMonth, selectedVersion) {
+    const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     let filteredActuals = actuals;
     let filteredEstimates = estimates;
 
-    // window経由で関数を呼び出し（normalizeEstimateはutils.jsからインポート済み）
-    const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
-
     if (filterType === 'month') {
-        // 月別フィルタリング
         if (selectedMonth !== 'all') {
             filteredActuals = actuals.filter(a => {
                 if (isOtherWork(a)) {
@@ -1009,35 +1007,26 @@ export function updateReport() {
                 return a.date && a.date.startsWith(selectedMonth);
             });
 
-            // 複数月対応: workMonthsに含まれる見積をフィルタ
             filteredEstimates = estimates.filter(e => {
                 const est = normalizeEstimate(e);
-                // workMonthsが未設定の見積は含める（未設定データ）
                 if (!est.workMonths || est.workMonths.length === 0) {
                     return true;
                 }
                 return est.workMonths.includes(selectedMonth);
             }).map(e => {
                 const est = normalizeEstimate(e);
-                // monthlyHoursにその月のデータがある場合はそれを使用
-                // workMonthsが未設定の場合は元のhoursを使用
-                // それ以外（workMonthsはあるがmonthlyHoursにデータがない）は0
                 let hoursForMonth = 0;
                 if (est.monthlyHours && est.monthlyHours[selectedMonth] !== undefined) {
                     hoursForMonth = est.monthlyHours[selectedMonth];
                 } else if (!est.workMonths || est.workMonths.length === 0) {
                     hoursForMonth = est.hours;
                 }
-                return {
-                    ...est,
-                    hours: hoursForMonth
-                };
+                return { ...est, hours: hoursForMonth };
             });
         } else {
             filteredEstimates = estimates.map(e => normalizeEstimate(e));
         }
     } else {
-        // 版数別フィルタリング
         if (selectedVersion !== 'all') {
             filteredActuals = actuals.filter(a => a.version === selectedVersion);
             filteredEstimates = estimates.filter(e => e.version === selectedVersion).map(e => normalizeEstimate(e));
@@ -1046,8 +1035,19 @@ export function updateReport() {
         }
     }
 
-    // タイトル更新
+    return { filteredActuals, filteredEstimates };
+}
+
+/**
+ * レポートタイトルを更新
+ * @param {string} filterType - フィルタタイプ
+ * @param {string} selectedMonth - 選択された月
+ * @param {string} selectedVersion - 選択された版数
+ */
+function updateReportTitle(filterType, selectedMonth, selectedVersion) {
     const titleElement = document.getElementById('reportPeriodTitle');
+    if (!titleElement) return;
+
     if (filterType === 'month') {
         if (selectedMonth === 'all') {
             titleElement.textContent = '全期間の集計';
@@ -1062,18 +1062,20 @@ export function updateReport() {
             titleElement.textContent = `${selectedVersion} の集計`;
         }
     }
+}
 
+/**
+ * レポートサマリーを計算・表示
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {number} workingDaysPerMonth - 月間稼働日数
+ */
+function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth) {
     const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
     const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
     const diff = totalAct - totalEst;
     const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
 
-    // 人日と人月の計算（実働日数ベース）
-    let workingDaysPerMonth = 20; // デフォルト
-    if (filterType === 'month' && selectedMonth !== 'all') {
-        const [year, month] = selectedMonth.split('-');
-        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
-    }
     const estManDays = (totalEst / 8).toFixed(1);
     const estManMonths = (totalEst / 8 / workingDaysPerMonth).toFixed(2);
     const actManDays = (totalAct / 8).toFixed(1);
@@ -1084,9 +1086,36 @@ export function updateReport() {
     document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'h';
     document.getElementById('actualRate').textContent = rate + '%';
 
-    // 補足情報として人日・人月を表示
     document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
     document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
+}
+
+/**
+ * レポートを更新（メイン関数）
+ * フィルタ条件に基づいてデータを抽出し、各種レポートビューを描画
+ */
+export function updateReport() {
+    const filterType = document.getElementById('reportFilterType').value;
+    const selectedMonth = document.getElementById('reportMonth').value;
+    const selectedVersion = document.getElementById('reportVersion').value;
+    const viewType = document.getElementById('reportViewType').value;
+
+    // フィルタリング
+    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
+
+    // タイトル更新
+    updateReportTitle(filterType, selectedMonth, selectedVersion);
+
+    // 月間稼働日数を取得
+    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
+    let workingDaysPerMonth = 20;
+    if (filterType === 'month' && selectedMonth !== 'all') {
+        const [year, month] = selectedMonth.split('-');
+        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
+    }
+
+    // サマリー表示
+    displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
 
     // レポート詳細ビューをクリア
     document.getElementById('reportDetailView').innerHTML = '';

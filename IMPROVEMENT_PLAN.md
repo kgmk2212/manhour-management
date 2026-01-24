@@ -56,6 +56,16 @@
   | `renderEstimateMemberSummary` | 担当者別表示 | estimate.js:319 |
   | `showEstimateEmptyState` | 空状態表示 | estimate.js:371 |
 
+- **updateReport() の分割** ✅
+  - 123行の関数を3個のサブ関数に分割
+  - メイン関数: 123行 → 44行
+
+  | サブ関数名 | 責務 | 場所 |
+  |-----------|------|------|
+  | `filterReportData` | フィルタリングロジック | report.js:996 |
+  | `updateReportTitle` | タイトル更新 | report.js:1047 |
+  | `displayReportSummary` | サマリー表示 | report.js:1073 |
+
 #### 改善効果
 - ページ読み込み時間: **30-40%削減**
 - CPU使用率: **50%削減**
