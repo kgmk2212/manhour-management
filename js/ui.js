@@ -585,230 +585,23 @@ export function getThemeColor() {
 // ============================================
 
 export function applyLayoutSettings() {
-    // 見積一覧のレイアウトを適用
-    const estimateCompact = document.getElementById('estimateFiltersCompact');
+    // セグメントレイアウトを表示（固定）
     const estimateSegmented = document.getElementById('estimateFiltersSegmented');
-    if (window.estimateLayout === 'compact') {
-        if (estimateCompact) estimateCompact.style.display = 'flex';
-        if (estimateSegmented) estimateSegmented.style.display = 'none';
-    } else {
-        if (estimateCompact) estimateCompact.style.display = 'none';
-        if (estimateSegmented) estimateSegmented.style.display = 'block';
-    }
-
-    // 実績一覧のレイアウトを適用
-    const actualCompact = document.getElementById('actualFiltersCompact');
     const actualSegmented = document.getElementById('actualFiltersSegmented');
-    if (window.actualLayout === 'compact') {
-        if (actualCompact) actualCompact.style.display = 'flex';
-        if (actualSegmented) actualSegmented.style.display = 'none';
-    } else {
-        if (actualCompact) actualCompact.style.display = 'none';
-        if (actualSegmented) actualSegmented.style.display = 'block';
-    }
-
-    // レポートのレイアウトを適用
-    const reportCompact = document.getElementById('reportFiltersCompact');
     const reportSegmented = document.getElementById('reportFiltersSegmented');
-    if (window.reportLayout === 'compact') {
-        if (reportCompact) reportCompact.style.display = 'flex';
-        if (reportSegmented) reportSegmented.style.display = 'none';
-    } else {
-        if (reportCompact) reportCompact.style.display = 'none';
-        if (reportSegmented) reportSegmented.style.display = 'block';
-    }
 
-    // 設定タブのボタンの状態を更新
-    updateLayoutToggleButtons();
+    if (estimateSegmented) estimateSegmented.style.display = 'block';
+    if (actualSegmented) actualSegmented.style.display = 'block';
+    if (reportSegmented) reportSegmented.style.display = 'block';
 }
 
-export function toggleFilterLayout(page, version) {
-    const themeColor = getThemeColor();
-
-    if (page === 'estimate') {
-        const compact = document.getElementById('estimateFiltersCompact');
-        const segmented = document.getElementById('estimateFiltersSegmented');
-
-        const btnCompact = document.getElementById('btnSettingsEstimateCompact');
-        const btnSegmented = document.getElementById('btnSettingsEstimateSegmented');
-
-        if (version === 'compact') {
-            if (compact) compact.style.display = 'flex';
-            if (segmented) segmented.style.display = 'none';
-            if (btnCompact) {
-                btnCompact.style.background = themeColor;
-                btnCompact.style.color = 'white';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = 'white';
-                btnSegmented.style.color = '#333';
-            }
-            window.estimateLayout = 'compact';
-            if (typeof window.renderEstimateList === 'function') {
-                window.renderEstimateList();
-            }
-        } else {
-            const viewType = document.getElementById('estimateViewType').value;
-            setEstimateViewType(viewType);
-            if (compact) compact.style.display = 'none';
-            if (segmented) segmented.style.display = 'block';
-            if (btnCompact) {
-                btnCompact.style.background = 'white';
-                btnCompact.style.color = '#333';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = themeColor;
-                btnSegmented.style.color = 'white';
-            }
-            window.estimateLayout = 'segmented';
-        }
-        if (typeof window.saveData === 'function') {
-            window.saveData(true);
-        }
-    } else if (page === 'actual') {
-        const compact = document.getElementById('actualFiltersCompact');
-        const segmented = document.getElementById('actualFiltersSegmented');
-
-        const btnCompact = document.getElementById('btnSettingsActualCompact');
-        const btnSegmented = document.getElementById('btnSettingsActualSegmented');
-
-        if (version === 'compact') {
-            const viewMode = document.getElementById('actualViewMode2');
-            const memberSelect = document.getElementById('actualMemberSelect2');
-            const monthFilter = document.getElementById('actualMonthFilter2');
-            if (viewMode) document.getElementById('actualViewMode').value = viewMode.value;
-            if (memberSelect) document.getElementById('actualMemberSelect').value = memberSelect.value;
-            if (monthFilter) document.getElementById('actualMonthFilter').value = monthFilter.value;
-
-            if (compact) compact.style.display = 'flex';
-            if (segmented) segmented.style.display = 'none';
-            if (btnCompact) {
-                btnCompact.style.background = themeColor;
-                btnCompact.style.color = 'white';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = 'white';
-                btnSegmented.style.color = '#333';
-            }
-            window.actualLayout = 'compact';
-            if (typeof window.renderActualList === 'function') {
-                window.renderActualList();
-            }
-        } else {
-            const viewMode = document.getElementById('actualViewMode');
-            const memberSelect = document.getElementById('actualMemberSelect');
-            const monthFilter = document.getElementById('actualMonthFilter');
-            if (viewMode) document.getElementById('actualViewMode2').value = viewMode.value;
-            if (memberSelect) document.getElementById('actualMemberSelect2').value = memberSelect.value;
-            if (monthFilter) document.getElementById('actualMonthFilter2').value = monthFilter.value;
-
-            const viewType = document.getElementById('actualViewType').value;
-            setActualViewType(viewType);
-            if (compact) compact.style.display = 'none';
-            if (segmented) segmented.style.display = 'block';
-            if (btnCompact) {
-                btnCompact.style.background = 'white';
-                btnCompact.style.color = '#333';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = themeColor;
-                btnSegmented.style.color = 'white';
-            }
-            window.actualLayout = 'segmented';
-        }
-        if (typeof window.saveData === 'function') {
-            window.saveData(true);
-        }
-    } else if (page === 'report') {
-        const compact = document.getElementById('reportFiltersCompact');
-        const segmented = document.getElementById('reportFiltersSegmented');
-
-        const btnCompact = document.getElementById('btnSettingsReportCompact');
-        const btnSegmented = document.getElementById('btnSettingsReportSegmented');
-
-        if (version === 'compact') {
-            const reportMonth2 = document.getElementById('reportMonth2');
-            if (reportMonth2) document.getElementById('reportMonth').value = reportMonth2.value;
-
-            if (compact) compact.style.display = 'flex';
-            if (segmented) segmented.style.display = 'none';
-            if (btnCompact) {
-                btnCompact.style.background = themeColor;
-                btnCompact.style.color = 'white';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = 'white';
-                btnSegmented.style.color = '#333';
-            }
-            window.reportLayout = 'compact';
-            if (typeof window.updateReport === 'function') {
-                window.updateReport();
-            }
-        } else {
-            const reportMonth = document.getElementById('reportMonth');
-            if (reportMonth) document.getElementById('reportMonth2').value = reportMonth.value;
-
-            const viewType = document.getElementById('reportViewType').value;
-            setReportViewType(viewType);
-            if (compact) compact.style.display = 'none';
-            if (segmented) segmented.style.display = 'block';
-            if (btnCompact) {
-                btnCompact.style.background = 'white';
-                btnCompact.style.color = '#333';
-            }
-            if (btnSegmented) {
-                btnSegmented.style.background = themeColor;
-                btnSegmented.style.color = 'white';
-            }
-            window.reportLayout = 'segmented';
-        }
-        if (typeof window.saveData === 'function') {
-            window.saveData(true);
-        }
-    }
+// レイアウト切り替え機能は削除済み（セグメント表示に固定）
+export function toggleFilterLayout() {
+    // 互換性のため空関数として残す
 }
 
 export function updateLayoutToggleButtons() {
-    const themeColor = getThemeColor();
-
-    // 見積一覧のボタン
-    const btnEstimateCompact = document.getElementById('btnSettingsEstimateCompact');
-    const btnEstimateSegmented = document.getElementById('btnSettingsEstimateSegmented');
-
-    if (btnEstimateCompact && btnEstimateSegmented) {
-        const estimateCompact = document.getElementById('estimateFiltersCompact');
-        const isCompactActive = estimateCompact && estimateCompact.style.display !== 'none';
-        btnEstimateCompact.style.background = isCompactActive ? themeColor : 'white';
-        btnEstimateCompact.style.color = isCompactActive ? 'white' : '#333';
-        btnEstimateSegmented.style.background = !isCompactActive ? themeColor : 'white';
-        btnEstimateSegmented.style.color = !isCompactActive ? 'white' : '#333';
-    }
-
-    // 実績一覧のボタン
-    const btnActualCompact = document.getElementById('btnSettingsActualCompact');
-    const btnActualSegmented = document.getElementById('btnSettingsActualSegmented');
-
-    if (btnActualCompact && btnActualSegmented) {
-        const actualCompact = document.getElementById('actualFiltersCompact');
-        const isCompactActive = actualCompact && actualCompact.style.display !== 'none';
-        btnActualCompact.style.background = isCompactActive ? themeColor : 'white';
-        btnActualCompact.style.color = isCompactActive ? 'white' : '#333';
-        btnActualSegmented.style.background = !isCompactActive ? themeColor : 'white';
-        btnActualSegmented.style.color = !isCompactActive ? 'white' : '#333';
-    }
-
-    // レポートのボタン
-    const btnReportCompact = document.getElementById('btnSettingsReportCompact');
-    const btnReportSegmented = document.getElementById('btnSettingsReportSegmented');
-
-    if (btnReportCompact && btnReportSegmented) {
-        const reportCompact = document.getElementById('reportFiltersCompact');
-        const isCompactActive = reportCompact && reportCompact.style.display !== 'none';
-        btnReportCompact.style.background = isCompactActive ? themeColor : 'white';
-        btnReportCompact.style.color = isCompactActive ? 'white' : '#333';
-        btnReportSegmented.style.background = !isCompactActive ? themeColor : 'white';
-        btnReportSegmented.style.color = !isCompactActive ? 'white' : '#333';
-    }
+    // 互換性のため空関数として残す
 }
 
 export function updateSegmentedButtons() {

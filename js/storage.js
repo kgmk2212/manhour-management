@@ -67,9 +67,6 @@ export function saveData(skipAutoBackup = false) {
             themePattern: window.currentThemePattern,
             themeTabColor: window.currentTabColor,
             autoBackup: window.autoBackupEnabled,
-            estimateLayout: window.estimateLayout,
-            actualLayout: window.actualLayout,
-            reportLayout: window.reportLayout,
             showMonthColors: showMonthColorsSetting,
             showDeviationColors: showDeviationColorsSetting,
             showProgressBars: showProgressBarsSetting,
@@ -164,9 +161,6 @@ export function loadData() {
             if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
             if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
             if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
-            if (settings.estimateLayout) setEstimateLayout(settings.estimateLayout);
-            if (settings.actualLayout) setActualLayout(settings.actualLayout);
-            if (settings.reportLayout) setReportLayout(settings.reportLayout);
             if (settings.showMonthColors !== undefined) {
                 setShowMonthColorsSetting(settings.showMonthColors);
             }
@@ -223,9 +217,6 @@ export function autoBackup() {
         themePattern: window.currentThemePattern,
         themeTabColor: window.currentTabColor,
         themeBackgroundColor: window.currentBackgroundColor,
-        estimateLayout: window.estimateLayout,
-        actualLayout: window.actualLayout,
-        reportLayout: window.reportLayout,
         showMonthColors: showMonthColorsSetting,
         showDeviationColors: showDeviationColorsSetting,
         showProgressBars: showProgressBarsSetting,
@@ -233,8 +224,8 @@ export function autoBackup() {
         progressBarStyle: progressBarStyle,
         matrixEstActFormat: matrixEstActFormat,
         matrixDayMonthFormat: matrixDayMonthFormat,
-        defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
-        defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
+        defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
+        defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
         chartColorScheme: selectedChartColorScheme,
         memberOrder: memberOrderEl ? memberOrderEl.value.trim() : '',
         stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
@@ -353,11 +344,6 @@ export function handleFileImport(event) {
                             const el = document.getElementById('themeBackgroundColor');
                             if (el) el.value = data.settings.themeBackgroundColor;
                         }
-
-                        // レイアウト設定を復元
-                        if (data.settings.estimateLayout) window.estimateLayout = data.settings.estimateLayout;
-                        if (data.settings.actualLayout) window.actualLayout = data.settings.actualLayout;
-                        if (data.settings.reportLayout) window.reportLayout = data.settings.reportLayout;
 
                         // 月色分け設定を復元
                         if (data.settings.showMonthColors !== undefined) {
