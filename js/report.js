@@ -2336,12 +2336,12 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
 
-            html += '<div class="matrix-table-wrapper"><table class="matrix-table">';
-            html += '<tr><th class="matrix-header-task">対応名</th>';
+            html += '<div class="table-wrapper"><table class="estimate-matrix matrix-table">';
+            html += '<tr><th style="min-width: 200px;">対応名</th>';
             displayProcesses.forEach(proc => {
-                html += `<th class="matrix-proc-header">${proc}</th>`;
+                html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
             });
-            html += '<th class="matrix-total-header">合計</th></tr>';
+            html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
             html += contentHtml;
             html += '<tr style="background: #f8fafc; font-weight: bold; border-top: 2px solid #ddd;">';
             html += `<td class="matrix-header-task">合計</td>`;
@@ -2453,8 +2453,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div class="opt-a-row a-act ${actColorClass}">
                 ${actText}
             </div>
+            ${memberText ? `<div style="font-size: 12px; color: #666;">${memberText}</div>` : ''}
             <div class="matrix-diff ${diff > 0 ? 'diff-negative' : (diff < 0 ? 'diff-positive' : '')}">${diffText}</div>
-            ${memberText ? `<div class="m-member">${memberText}</div>` : ''}
         </div>
     `;
 }

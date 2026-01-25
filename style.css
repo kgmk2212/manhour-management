@@ -1801,41 +1801,19 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
+        /* estimate-matrixと併用するmatrix-table固有のスタイル */
         .matrix-table {
-            width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
-            table-layout: auto;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            border: 1px solid #eee;
+            text-align: center;
+            overflow: hidden;
         }
 
         @media (max-width: 767px) {
-            .matrix-table {
-                font-size: 0.75rem;
-            }
-
-            .matrix-container {
-                padding: 5px;
-                margin: 0 -10px;
-                border-radius: 0;
-            }
-
-            .matrix-table th,
-            .matrix-table td {
-                padding: 3px 2px;
-            }
-
-            .matrix-header-task {
-                width: 80px !important;
-                min-width: 80px !important;
-                max-width: 100px !important;
-                font-size: 0.7rem;
-            }
-
-            .matrix-table th:not(.matrix-header-task) {
-                min-width: 50px;
-                padding: 3px 1px;
-            }
-
             /* モバイルでは人日表示を非表示 */
             .unit-info {
                 display: none;
@@ -1846,11 +1824,7 @@
             }
 
             .matrix-diff {
-                font-size: 0.65rem;
-            }
-
-            .m-member {
-                font-size: 8px;
+                font-size: 10px;
             }
 
             .opt-a-row {
@@ -1862,48 +1836,12 @@
             }
         }
 
-        .matrix-table th,
-        .matrix-table td {
-            border: 1px solid #eee;
-            padding: 6px 8px;
-            text-align: center;
-            overflow: hidden;
-        }
-
-        .matrix-table th {
-            background: #34495e;
-            color: white;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
         .matrix-header-task {
             text-align: left !important;
             position: sticky;
             left: 0;
             background: #f8fafc;
             z-index: 10;
-            width: 150px;
-        }
-
-        .matrix-proc-header {
-            text-align: center;
-            min-width: 70px;
-        }
-
-        .matrix-total-header {
-            text-align: center;
-            min-width: 80px;
-        }
-
-        @media (max-width: 767px) {
-            .matrix-proc-header {
-                min-width: 45px;
-            }
-
-            .matrix-total-header {
-                min-width: 50px;
-            }
         }
 
         .matrix-task-row td:first-child {
