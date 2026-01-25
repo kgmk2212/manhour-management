@@ -18,7 +18,6 @@ import {
     setNextCompanyHolidayId,
     setNextVacationId,
     showMonthColorsSetting,
-    showDeviationColorsSetting,
     showProgressBarsSetting,
     showProgressPercentageSetting,
     selectedChartColorScheme,
@@ -2078,7 +2077,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-            html += '<div class="table-wrapper"><table>';
+            html += '<div class="table-wrapper"><table class="estimate-grouped">';
             html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">進捗</th><th style="min-width: 100px;">対応合計</th></tr>';
             html += tableBody;
 
@@ -2108,8 +2107,9 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     // window経由で関数を呼び出し（normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegendはutils.jsからインポート済み）
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
 
-    // 全期間かつ設定がオンの時のみ色付けする
-    const showMonthColors = selectedMonth === 'all' && showMonthColorsSetting;
+    // 背景色モードに応じて表示を制御
+    const bgColorMode = window.reportMatrixBgColorMode || 'deviation';
+    const showMonthColors = bgColorMode === 'month';
 
     // 使用されている月を収集（凡例用）
     const usedMonths = new Set();
@@ -2264,9 +2264,13 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                             memberDisplay = Array.from(est.members).join(',');
                         }
 
-                        const deviationBgColor = getDeviationColor(est.hours, act.hours);
-                        const monthColor = showMonthColors ? getMonthColor(est.workMonths || []) : { bg: '', tooltip: '' };
-                        const bgColor = showMonthColors ? monthColor.bg : deviationBgColor;
+                        const monthColor = getMonthColor(est.workMonths || []);
+                        let bgColor = '#ffffff';
+                        if (bgColorMode === 'month') {
+                            bgColor = monthColor.bg;
+                        } else if (bgColorMode === 'deviation') {
+                            bgColor = getDeviationColor(est.hours, act.hours);
+                        }
 
                         const progressBarHtml = generateProgressBar(version, taskGroup.task, proc);
 
@@ -2335,14 +2339,18 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
                         // Note: I will need to implement `openProcessBreakdown` in `js/modal.js` and expose it to window.
 
-                        tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>${cellHtml}</td>`;
+                        const titleAttr = bgColorMode === 'month' ? `title="${monthColor.tooltip}"` : '';
+                        tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${titleAttr}>${cellHtml}</td>`;
                     } else {
                         tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
                     }
                 });
 
                 const totalDiff = totalAct - totalEst;
-                const totalBgColor = getDeviationColor(totalEst, totalAct);
+                let totalBgColor = '#ffffff';
+                if (bgColorMode === 'deviation') {
+                    totalBgColor = getDeviationColor(totalEst, totalAct);
+                }
 
                 let totalCellHtml = `
                     <div style="font-weight: 600;"><span style="font-size: 13px; color: #666; margin-right: 2px;">見</span>${totalEst.toFixed(1)}<span style="margin: 0 4px; color: #999;">/</span><span style="font-size: 13px; color: #666; margin-right: 2px;">実</span>${totalAct.toFixed(1)}</div>
@@ -2359,7 +2367,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-            html += '<div class="table-wrapper"><table>';
+            html += '<div class="table-wrapper"><table class="estimate-matrix">';
             html += '<tr><th style="min-width: 200px;">対応名</th>';
             displayProcesses.forEach(proc => {
                 html += `<th style="min-width: 120px; text-align: center;">${proc}<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th>`;
@@ -2372,7 +2380,10 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             displayProcesses.forEach(() => {
                 html += '<td></td>';
             });
-            const versionTotalBgColor = getDeviationColor(versionTotalEst, versionTotalAct);
+            let versionTotalBgColor = '#ffffff';
+            if (bgColorMode === 'deviation') {
+                versionTotalBgColor = getDeviationColor(versionTotalEst, versionTotalAct);
+            }
             let versionTotalCellHtml = `
                 <div style="font-weight: 600;"><span style="font-size: 13px; color: #666; margin-right: 2px;">見</span>${versionTotalEst.toFixed(1)}<span style="margin: 0 4px; color: #999;">/</span><span style="font-size: 13px; color: #666; margin-right: 2px;">実</span>${versionTotalAct.toFixed(1)}</div>
                 <div style="font-size: 13px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>

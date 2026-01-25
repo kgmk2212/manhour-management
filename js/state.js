@@ -201,9 +201,9 @@ export const chartColorSchemes = {
 
 // Phaseセクションの折り畳み状態
 export let phaseCollapsed = {
-    phase1: false,
-    phase2: false,
-    phase3: false
+    phase1: true,
+    phase2: true,
+    phase3: true
 };
 
 // 選択されているグラフカラースキーム（'auto'の場合はテーマカラーに追従）
@@ -227,7 +227,7 @@ export const monthColors = {
 
 // 月別色付け設定
 export let showMonthColorsSetting = true;
-export let showDeviationColorsSetting = true; // 乖離率背景色の表示設定
+export let reportMatrixBgColorMode = 'month'; // レポートマトリクスの背景色モード: 'none', 'month', 'deviation'
 export let showProgressBarsSetting = true; // 進捗バー表示設定
 export let showProgressPercentageSetting = true; // 進捗バーのパーセンテージ表示設定
 export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, bottom
@@ -324,9 +324,9 @@ export function setShowMonthColorsSetting(value) {
     window.showMonthColorsSetting = value;
 }
 
-export function setShowDeviationColorsSetting(value) {
-    showDeviationColorsSetting = value;
-    window.showDeviationColorsSetting = value;
+export function setReportMatrixBgColorMode(value) {
+    reportMatrixBgColorMode = value;
+    window.reportMatrixBgColorMode = value;
 }
 
 export function setShowProgressBarsSetting(value) {

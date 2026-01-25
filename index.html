@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>工数管理システム</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
@@ -1025,14 +1025,35 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showDeviationColorsCheckbox"
-                                style="width: auto; margin-right: 10px; flex-shrink: 0;" checked>
-                            <span>レポートで乖離率に応じた背景色を表示する</span>
-                        </label>
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            ・オン: レポートのマトリクス表示で見積と実績の乖離率に応じて背景色をグラデーション表示します<br>
-                            ・オフ: 背景色を無効にします（白背景）
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">レポートマトリクスの背景色</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="reportMatrixBgColorMode" value="none"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>なし（白背景）</strong><br>
+                                    <small style="color: #666;">背景色を表示しません</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="reportMatrixBgColorMode" value="month"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <span style="flex: 1;">
+                                    <strong>月ごとの色</strong><br>
+                                    <small style="color: #666;">作業月に応じて背景色を表示します（見積一覧と同様）</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="reportMatrixBgColorMode" value="deviation"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>乖離率の色</strong><br>
+                                    <small style="color: #666;">見積と実績の乖離率に応じて背景色をグラデーション表示します</small>
+                                </span>
+                            </label>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            月別表示・版数別表示・全期間表示すべてに適用されます
                         </small>
                     </div>
 

@@ -4,7 +4,7 @@
 
 import {
     estimates, actuals,
-    showMonthColorsSetting, showDeviationColorsSetting,
+    showMonthColorsSetting, reportMatrixBgColorMode,
     showProgressBarsSetting, showProgressPercentageSetting,
     progressBarStyle, matrixEstActFormat, matrixDayMonthFormat,
     memberOrder, setMemberOrder, debugModeEnabled
@@ -2192,7 +2192,6 @@ export function syncSettingsToUI() {
     // チェックボックス
     const checkboxMap = {
         'showMonthColorsCheckbox': showMonthColorsSetting,
-        'showDeviationColorsCheckbox': showDeviationColorsSetting,
         'showProgressBarsCheckbox': showProgressBarsSetting,
         'showProgressPercentageCheckbox': showProgressPercentageSetting,
         'autoBackupEnabled': window.autoBackupEnabled
@@ -2202,6 +2201,12 @@ export function syncSettingsToUI() {
         const el = document.getElementById(id);
         if (el) el.checked = value;
     });
+
+    // レポートマトリクスの背景色モード（ラジオボタン）
+    if (reportMatrixBgColorMode) {
+        const radioButton = document.querySelector(`input[name="reportMatrixBgColorMode"][value="${reportMatrixBgColorMode}"]`);
+        if (radioButton) radioButton.checked = true;
+    }
 
     // 進捗バースタイル（ラジオボタン）
     if (progressBarStyle) {

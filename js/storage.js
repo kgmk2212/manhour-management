@@ -10,7 +10,7 @@ import {
     remainingEstimates, setRemainingEstimates,
     setNextCompanyHolidayId, setNextVacationId,
     showMonthColorsSetting, setShowMonthColorsSetting,
-    showDeviationColorsSetting, setShowDeviationColorsSetting,
+    reportMatrixBgColorMode, setReportMatrixBgColorMode,
     showProgressBarsSetting, setShowProgressBarsSetting,
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
@@ -71,7 +71,7 @@ export function saveData(skipAutoBackup = false) {
             actualLayout: window.actualLayout,
             reportLayout: window.reportLayout,
             showMonthColors: showMonthColorsSetting,
-            showDeviationColors: showDeviationColorsSetting,
+            reportMatrixBgColorMode: reportMatrixBgColorMode,
             showProgressBars: showProgressBarsSetting,
             showProgressPercentage: showProgressPercentageSetting,
             progressBarStyle: progressBarStyle,
@@ -168,9 +168,12 @@ export function loadData() {
             if (settings.showMonthColors !== undefined) {
                 setShowMonthColorsSetting(settings.showMonthColors);
             }
-            // 乖離率背景色の設定を読み込み
-            if (settings.showDeviationColors !== undefined) {
-                setShowDeviationColorsSetting(settings.showDeviationColors);
+            // レポートマトリクスの背景色モード設定を読み込み（新形式）
+            if (settings.reportMatrixBgColorMode) {
+                setReportMatrixBgColorMode(settings.reportMatrixBgColorMode);
+            } else if (settings.showDeviationColors !== undefined) {
+                // 旧形式からの移行処理
+                setReportMatrixBgColorMode(settings.showDeviationColors ? 'deviation' : 'none');
             }
             // 進捗バー表示の設定を読み込み
             if (settings.showProgressBars !== undefined) {
@@ -225,7 +228,7 @@ export function autoBackup() {
         actualLayout: window.actualLayout,
         reportLayout: window.reportLayout,
         showMonthColors: showMonthColorsSetting,
-        showDeviationColors: showDeviationColorsSetting,
+        reportMatrixBgColorMode: reportMatrixBgColorMode,
         showProgressBars: showProgressBarsSetting,
         showProgressPercentage: showProgressPercentageSetting,
         progressBarStyle: progressBarStyle,
@@ -364,11 +367,17 @@ export function handleFileImport(event) {
                             if (checkbox) checkbox.checked = data.settings.showMonthColors;
                         }
 
-                        // 乖離率背景色設定を復元
-                        if (data.settings.showDeviationColors !== undefined) {
-                            setShowDeviationColorsSetting(data.settings.showDeviationColors);
-                            const checkbox = document.getElementById('showDeviationColorsCheckbox');
-                            if (checkbox) checkbox.checked = data.settings.showDeviationColors;
+                        // レポートマトリクスの背景色モード設定を復元
+                        if (data.settings.reportMatrixBgColorMode) {
+                            setReportMatrixBgColorMode(data.settings.reportMatrixBgColorMode);
+                            const radioButton = document.querySelector(`input[name="reportMatrixBgColorMode"][value="${data.settings.reportMatrixBgColorMode}"]`);
+                            if (radioButton) radioButton.checked = true;
+                        } else if (data.settings.showDeviationColors !== undefined) {
+                            // 旧形式からの移行処理
+                            const mode = data.settings.showDeviationColors ? 'deviation' : 'none';
+                            setReportMatrixBgColorMode(mode);
+                            const radioButton = document.querySelector(`input[name="reportMatrixBgColorMode"][value="${mode}"]`);
+                            if (radioButton) radioButton.checked = true;
                         }
 
                         // 進捗バー表示設定を復元

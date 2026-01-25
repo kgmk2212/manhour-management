@@ -2,7 +2,7 @@
 // ユーティリティ関数
 // ============================================
 
-import { monthColors, showDeviationColorsSetting } from './state.js';
+import { monthColors } from './state.js';
 
 // カスタムアラート表示
 export function showAlert(message, dismissible = false) {
@@ -203,11 +203,6 @@ export function generateMonthColorLegend(usedMonths, hasMultipleMonths = false, 
 
 // 乖離率から背景色を取得
 export function getDeviationColor(estimate, actual) {
-    // 設定がオフの場合は白を返す
-    if (!showDeviationColorsSetting) {
-        return '#ffffff';
-    }
-
     if (estimate === 0 && actual === 0) {
         return '#ffffff'; // 両方0は白
     }

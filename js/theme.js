@@ -6,7 +6,7 @@ import {
     chartColorSchemes,
     selectedChartColorScheme, setSelectedChartColorScheme,
     showMonthColorsSetting, setShowMonthColorsSetting,
-    showDeviationColorsSetting, setShowDeviationColorsSetting,
+    reportMatrixBgColorMode, setReportMatrixBgColorMode,
     showProgressBarsSetting, setShowProgressBarsSetting,
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
@@ -412,10 +412,10 @@ export function toggleMonthColorsSetting() {
     }
 }
 
-export function toggleDeviationColorsSetting() {
-    const checkbox = document.getElementById('showDeviationColorsCheckbox');
-    if (checkbox) {
-        setShowDeviationColorsSetting(checkbox.checked);
+export function changeReportMatrixBgColorMode() {
+    const selectedRadio = document.querySelector('input[name="reportMatrixBgColorMode"]:checked');
+    if (selectedRadio) {
+        setReportMatrixBgColorMode(selectedRadio.value);
         if (typeof window.saveData === 'function') {
             window.saveData(true);
         }

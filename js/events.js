@@ -90,7 +90,7 @@ import {
     applyTheme,
     saveChartColorScheme,
     toggleMonthColorsSetting,
-    toggleDeviationColorsSetting,
+    changeReportMatrixBgColorMode,
     toggleProgressBarsSetting,
     toggleProgressPercentageSetting,
     saveProgressBarStyle,
@@ -551,8 +551,9 @@ export function initEventHandlers() {
         });
     }
 
-    const showDeviationColorsCheckbox = document.getElementById('showDeviationColorsCheckbox');
-    if (showDeviationColorsCheckbox) showDeviationColorsCheckbox.addEventListener('change', toggleDeviationColorsSetting);
+    document.querySelectorAll('input[name="reportMatrixBgColorMode"]').forEach(radio => {
+        radio.addEventListener('change', changeReportMatrixBgColorMode);
+    });
 
     const showProgressBarsCheckbox = document.getElementById('showProgressBarsCheckbox');
     if (showProgressBarsCheckbox) showProgressBarsCheckbox.addEventListener('change', toggleProgressBarsSetting);
