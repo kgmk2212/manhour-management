@@ -887,6 +887,49 @@
                 padding: 4px 3px !important;
             }
 
+            /* レポートタブのマトリクス表専用（estimate-matrixとmatrix-tableを併用） */
+            table.estimate-matrix.matrix-table th,
+            table.estimate-matrix.matrix-table td {
+                padding: 2px 1px !important;
+                font-size: 10px !important;
+            }
+
+            /* 対応名列 */
+            table.estimate-matrix.matrix-table th:first-child,
+            table.estimate-matrix.matrix-table td:first-child {
+                width: 70px !important;
+                min-width: 70px !important;
+                max-width: 80px !important;
+                font-size: 9px !important;
+                word-break: break-all;
+            }
+
+            /* 工程列・合計列 */
+            table.estimate-matrix.matrix-table th:not(:first-child),
+            table.estimate-matrix.matrix-table td:not(:first-child) {
+                width: 42px !important;
+                min-width: 42px !important;
+                max-width: 50px !important;
+            }
+
+            /* セル内のコンテンツをコンパクトに */
+            table.estimate-matrix.matrix-table .matrix-cell-content {
+                gap: 1px !important;
+            }
+
+            table.estimate-matrix.matrix-table .a-val {
+                font-size: 10px !important;
+            }
+
+            table.estimate-matrix.matrix-table .matrix-diff {
+                font-size: 9px !important;
+            }
+
+            /* 担当者名をモバイルで非表示 */
+            table.estimate-matrix.matrix-table .matrix-member {
+                display: none !important;
+            }
+
             /* 実績一覧カレンダー表示専用のモバイル最適化 */
             table.actual-matrix {
                 min-width: 100% !important;

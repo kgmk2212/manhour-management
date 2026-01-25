@@ -2453,7 +2453,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div class="opt-a-row a-act ${actColorClass}">
                 ${actText}
             </div>
-            ${memberText ? `<div style="font-size: 12px; color: #666;">${memberText}</div>` : ''}
+            ${memberText ? `<div class="matrix-member" style="font-size: 12px; color: #666;">${memberText}</div>` : ''}
             <div class="matrix-diff ${diff > 0 ? 'diff-negative' : (diff < 0 ? 'diff-positive' : '')}">${diffText}</div>
         </div>
     `;
