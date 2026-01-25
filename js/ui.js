@@ -278,6 +278,13 @@ export function initSmartSticky() {
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
+                // タブ切り替え中はスクロール判定をスキップ
+                if (isTabSwitching) {
+                    lastScrollY = window.scrollY;
+                    ticking = false;
+                    return;
+                }
+
                 const currentScrollY = window.scrollY;
 
                 // バウンススクロール対策
@@ -303,30 +310,28 @@ export function initSmartSticky() {
         }
     }, { passive: true });
 
-    // タブエリアクリックでの表示復帰（PC:上部、Mobile:下部）
-    // キャプチャフェーズ(true)でイベントを捕捉し、条件に合致すれば伝播を止める
-    window.addEventListener('click', (e) => {
+    // PC: マウスオーバーでの表示（画面上部）
+    const isMobile = () => window.innerWidth <= 768;
+    const triggerZone = 60;
+
+    document.addEventListener('mousemove', (e) => {
+        if (isMobile()) return;
         if (!tabs.classList.contains('is-hidden')) return;
 
-        const isMobile = window.innerWidth <= 768;
-        const triggerZone = 60; // タブバーのおおよその高さ
-        let hit = false;
-
-        if (isMobile) {
-            // モバイル：画面下部
-            if (e.clientY > window.innerHeight - triggerZone) {
-                hit = true;
-            }
-        } else {
-            // PC：画面上部
-            if (e.clientY < triggerZone) {
-                hit = true;
-            }
-        }
-
-        if (hit) {
+        // 画面上部にマウスが入ったら表示
+        if (e.clientY < triggerZone) {
             tabs.classList.remove('is-hidden');
-            // 他の要素（モーダル表示ボタンなど）へのクリック反応を防ぐ
+        }
+    }, { passive: true });
+
+    // タブエリアクリックでの表示復帰（Mobile:下部クリック）
+    window.addEventListener('click', (e) => {
+        if (!tabs.classList.contains('is-hidden')) return;
+        if (!isMobile()) return; // PCはマウスオーバーで対応
+
+        // モバイル：画面下部クリック
+        if (e.clientY > window.innerHeight - triggerZone) {
+            tabs.classList.remove('is-hidden');
             e.preventDefault();
             e.stopPropagation();
         }
