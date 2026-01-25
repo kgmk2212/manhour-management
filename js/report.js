@@ -2369,92 +2369,68 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     let isSafeNormal = false;
 
     // 4-Stage Color Logic
-    // 未完了（残存時間 > 0）の場合は予測工数（EAC = 実績 + 残存）で判定
-    // 完了（残存時間 = 0 または null）の場合は実績で判定
     if (est.hours > 0) {
         let comparisonValue;
         if (remainingHours !== null && remainingHours > 0) {
-            // 未完了: 予測工数（EAC）で判定
             comparisonValue = act.hours + remainingHours;
         } else {
-            // 完了または残存データなし: 実績で判定
             comparisonValue = act.hours;
         }
 
         if (comparisonValue > 0) {
             const ratio = comparisonValue / est.hours;
             if (ratio > 1.1) {
-                isOver = true;      // Red (> 110%)
+                isOver = true;
             } else if (ratio > 1.0) {
-                isWarning = true;   // Orange (100% - 110%)
+                isWarning = true;
             } else if (ratio < 0.9) {
-                isSafeBright = true; // Bright Green (< 90%)
+                isSafeBright = true;
             } else {
-                isSafeNormal = true; // Green (90% - 100%)
+                isSafeNormal = true;
             }
         }
     } else if (est.hours === 0 && act.hours > 0) {
-        isOver = true; // No estimate -> Red
+        isOver = true;
     }
 
     const actColorClass = isOver ? 'over' : (isWarning ? 'warning' : (isSafeBright ? 'safe-bright' : (isSafeNormal ? 'safe-normal' : '')));
 
-    // Unit Calculations
-    const estDays = est.hours / 8;
-    const actDays = act.hours / 8;
-
-    // Estimate Text Generation
-    let estText = '-';
-    if (est.hours > 0) {
-        if (process === 'total') {
-            const estMonths = est.hours / 8 / workingDaysPerMonth;
-            estText = `<div style="line-height: 1.4;">
-                <span class="a-val">${est.hours.toFixed(1)}h</span><br>
-                <span style="font-size: 10px; font-weight: 400; color: #666;">
-                    (${estDays.toFixed(1)}人日 / ${estMonths.toFixed(2)}人月)
-                </span>
-            </div>`;
-        } else {
-            estText = `<span class="a-val">${est.hours.toFixed(1)}h</span><span class="unit-info">(${estDays.toFixed(1)}人日)</span>`;
-        }
-    }
-
-    // For Actual, handle Total column specific Person-Months
-    let actText = '-';
-    if (act.hours > 0) {
-        if (process === 'total') {
-            const actMonths = act.hours / 8 / workingDaysPerMonth;
-            actText = `<div style="line-height: 1.4;">
-                <span class="a-val">${act.hours.toFixed(1)}h</span><br>
-                <span style="font-size: 10px; font-weight: 400; color: #666;">
-                    (${actDays.toFixed(1)}人日 / ${actMonths.toFixed(2)}人月)
-                </span>
-            </div>`;
-        } else {
-            actText = `<span class="a-val">${act.hours.toFixed(1)}h</span><span class="unit-info">(${actDays.toFixed(1)}人日)</span>`;
-        }
-    }
-
+    // 担当者表示
     let memberDisplay = '-';
     if (act.members.size > 0) memberDisplay = Array.from(act.members).join(',');
     else if (est.members.size > 0) memberDisplay = Array.from(est.members).join(',');
-
     const memberText = memberDisplay !== '-' ? `(${memberDisplay})` : '';
 
-    const diffText = diff !== 0
-        ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h'
-        : '±0h';
+    // 合計列の場合
+    if (process === 'total') {
+        const estDays = est.hours / 8;
+        const actDays = act.hours / 8;
+        const estMonths = estDays / workingDaysPerMonth;
+        const actMonths = actDays / workingDaysPerMonth;
+
+        return `
+            <div style="text-align: center;">
+                <div style="font-weight: 600; color: #546e7a;">見 ${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
+                <div style="font-weight: 600;" class="act-color ${actColorClass}">実 ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                <div class="total-manpower">
+                    <div style="font-size: 10px; color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
+                    <div style="font-size: 10px; color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 工程セル（見積一覧タブに近いスタイル）
+    const estText = est.hours > 0 ? est.hours.toFixed(1) : '-';
+    const actText = act.hours > 0 ? act.hours.toFixed(1) : '-';
+    const diffText = diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '±0';
 
     return `
-        <div class="matrix-cell-content">
-            <div class="opt-a-row a-est">
-                ${estText}
-            </div>
-            <div class="opt-a-row a-act ${actColorClass}">
-                ${actText}
-            </div>
-            ${memberText ? `<div class="matrix-member" style="font-size: 12px; color: #666;">${memberText}</div>` : ''}
-            <div class="matrix-diff ${diff > 0 ? 'diff-negative' : (diff < 0 ? 'diff-positive' : '')}">${diffText}</div>
+        <div style="text-align: center;">
+            <div style="font-weight: 600; color: #546e7a;">${estText}</div>
+            <div style="font-weight: 600;" class="act-color ${actColorClass}">${actText}</div>
+            ${memberText ? `<div class="matrix-member" style="font-size: 11px; color: #666;">${memberText}</div>` : ''}
+            <div style="font-size: 10px; color: ${diff > 0 ? '#e74c3c' : (diff < 0 ? '#27ae60' : '#666')};">${diffText}</div>
         </div>
     `;
 }

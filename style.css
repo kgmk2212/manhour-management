@@ -1834,7 +1834,7 @@
         }
 
         /* ============================================ */
-        /* レポートマトリクス改善用スタイル (Phase 9: Final 2-Row Layout) */
+        /* レポートマトリクス改善用スタイル */
         /* ============================================ */
         .matrix-container {
             overflow-x: auto;
@@ -1856,29 +1856,6 @@
             overflow: hidden;
         }
 
-        @media (max-width: 767px) {
-            /* モバイルでは人日表示を非表示 */
-            .unit-info {
-                display: none;
-            }
-
-            .a-val {
-                font-size: 11px;
-            }
-
-            .matrix-diff {
-                font-size: 10px;
-            }
-
-            .opt-a-row {
-                min-height: 16px;
-            }
-
-            .matrix-cell-content {
-                gap: 2px;
-            }
-        }
-
         .matrix-header-task {
             text-align: left !important;
             position: sticky;
@@ -1887,102 +1864,32 @@
             z-index: 10;
         }
 
-        .matrix-task-row td:first-child {
-            text-align: left;
-            position: sticky;
-            left: 0;
-            background: #fff;
-            z-index: 9;
-        }
-
-        .matrix-cell-content {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            /* Increased gap between rows */
-            width: 100%;
-        }
-
-        .opt-a-row {
-            position: relative;
-            padding: 1px 0;
-            display: flex;
-            justify-content: center;
-            /* Centered */
-            align-items: center;
-            min-height: 20px;
-            white-space: nowrap;
-            /* Prevent wrapping of unit */
-        }
-
-        .a-est {
-            color: #546e7a !important;
-            /* Slate Gray */
-        }
-
-        .a-act {
-            color: #1b5e20 !important;
-            /* Dark Green (Safe - Default) */
-            font-weight: 700;
-        }
-
-        /* 4-Stage Colors for Actual */
-        /* < 90% */
-        .a-act.safe-bright {
+        /* 実績の色分け */
+        .act-color.safe-bright {
             color: #00897b !important;
-            /* Teal 600 - High Safety */
         }
 
-        /* 90-100% */
-        .a-act.safe-normal {
+        .act-color.safe-normal {
             color: #43a047 !important;
-            /* Green 600 - Normal Safety */
         }
 
-        /* 100-110% */
-        .a-act.warning {
+        .act-color.warning {
             color: #ef6c00 !important;
         }
 
-        /* > 110% */
-        .a-act.over {
+        .act-color.over {
             color: #d32f2f !important;
         }
 
+        @media (max-width: 767px) {
+            /* モバイルでは合計列の人日/人月を非表示 */
+            .total-manpower {
+                display: none;
+            }
 
-
-        .a-val {
-            font-weight: 700;
-            font-size: 13px;
+            /* 担当者名を非表示 */
+            .matrix-member {
+                display: none !important;
+            }
         }
 
-        /* Inline Unit Styles */
-        .unit-info {
-            font-size: 10px;
-            font-weight: 400;
-            margin-left: 4px;
-            opacity: 0.8;
-        }
-
-        .m-member {
-            font-size: 9px;
-            color: #888;
-            margin-top: 2px;
-            text-align: center;
-        }
-
-        .matrix-diff {
-            font-weight: 700;
-            font-size: 0.75rem;
-            margin-top: 2px;
-            text-align: center;
-            color: #64748b;
-        }
-
-        .diff-positive {
-            color: #27ae60;
-        }
-
-        .diff-negative {
-            color: #e74c3c;
-        }
