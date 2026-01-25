@@ -232,7 +232,7 @@ export let showProgressBarsSetting = true; // 進捗バー表示設定
 export let showProgressPercentageSetting = true; // 進捗バーのパーセンテージ表示設定
 export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, bottom
 export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
-export let matrixDayMonthFormat = 'inline'; // 人日/人月の表示形式: inline, separate, side, arrow
+
 export let debugModeEnabled = false; // デバッグモード設定
 export let memberOrder = ''; // 担当者の表示順
 
@@ -349,10 +349,7 @@ export function setMatrixEstActFormat(value) {
     window.matrixEstActFormat = value;
 }
 
-export function setMatrixDayMonthFormat(value) {
-    matrixDayMonthFormat = value;
-    window.matrixDayMonthFormat = value;
-}
+
 
 export function setDebugModeEnabled(value) {
     debugModeEnabled = value;

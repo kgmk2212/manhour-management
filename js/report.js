@@ -24,7 +24,7 @@ import {
     debugModeEnabled,
     setDebugModeEnabled,
     matrixEstActFormat,
-    matrixDayMonthFormat,
+
     currentThemeColor
 } from './state.js';
 
@@ -32,10 +32,14 @@ import {
     getTargetVersions,
     determineProgressStatus,
     formatHours,
-    filterByVersionAndTask
+    filterByVersionAndTask,
+    getWorkingDays,
+    normalizeEstimate,
+    getMonthColor,
+    getDeviationColor,
+    generateMonthColorLegend,
+    sortMembers
 } from './utils.js';
-
-import { normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegend, sortMembers } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 
 // ============================================
@@ -868,9 +872,17 @@ export function generateProgressBar(version, task, process) {
     // 見込残存時間を集計
     let remainingHours = remainingData.reduce((sum, r) => sum + r.remainingHours, 0);
 
-    // 見込残存時間のデータが存在しない場合はバーを表示しない
+    // 見込残存時間のデータが存在しない場合は、見積時間から算出（フォールバック）
     if (remainingData.length === 0) {
-        return '';
+        // 見積データを検索
+        const estData = estimates.find(e => e.version === version && e.task === task && e.process === process);
+        if (estData && estData.hours > 0) {
+            // 見積 - 実績 = 残（マイナスは0）
+            remainingHours = Math.max(0, estData.hours - actualHours);
+        } else {
+            // 見積もなし → バーを表示しない
+            return '';
+        }
     }
 
     // 進捗率を計算
@@ -2103,20 +2115,34 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
 export function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
     const container = document.getElementById('reportDetailView');
-
-    // window経由で関数を呼び出し（normalizeEstimate, getMonthColor, getDeviationColor, generateMonthColorLegendはutils.jsからインポート済み）
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-
-    // 背景色モードに応じて表示を制御
     const bgColorMode = window.reportMatrixBgColorMode || 'deviation';
     const showMonthColors = bgColorMode === 'month';
+    const isMobile = window.innerWidth <= 768;
 
-    // 使用されている月を収集（凡例用）
     const usedMonths = new Set();
     let hasMultipleMonths = false;
     let hasUnassigned = false;
 
-    // 版数ごとにグループ化
+    // Calculate Working Days for Conversion Basis
+    let workingDaysPerMonth = 20;
+    let workDaysLabel = 'デフォルト20日';
+    if (selectedMonth && selectedMonth !== 'all') {
+        const [year, month] = selectedMonth.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        if (calculatedDays > 0) {
+            workingDaysPerMonth = calculatedDays;
+            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        }
+    }
+
+    // Update Conversion Params Header
+    const conversionParams = document.getElementById('reportConversionParams');
+    if (conversionParams) {
+        conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）`;
+        conversionParams.style.display = 'block';
+    }
+
     const versionGroups = {};
 
     filteredEstimates.forEach(e => {
@@ -2129,23 +2155,15 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             taskKey = e.task;
         }
 
-        if (!versionGroups[version]) {
-            versionGroups[version] = {};
-        }
+        if (!versionGroups[version]) versionGroups[version] = {};
         if (!versionGroups[version][taskKey]) {
-            versionGroups[version][taskKey] = {
-                task: taskKey,
-                estimates: {},
-                actuals: {}
-            };
+            versionGroups[version][taskKey] = { task: taskKey, estimates: {}, actuals: {} };
         }
 
         const est = normalizeEstimate(e);
         if (est.workMonths && est.workMonths.length > 0) {
             est.workMonths.forEach(m => usedMonths.add(m));
-            if (est.workMonths.length > 1) {
-                hasMultipleMonths = true;
-            }
+            if (est.workMonths.length > 1) hasMultipleMonths = true;
         } else {
             hasUnassigned = true;
         }
@@ -2171,15 +2189,9 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             taskKey = a.task;
         }
 
-        if (!versionGroups[version]) {
-            versionGroups[version] = {};
-        }
+        if (!versionGroups[version]) versionGroups[version] = {};
         if (!versionGroups[version][taskKey]) {
-            versionGroups[version][taskKey] = {
-                task: taskKey,
-                estimates: {},
-                actuals: {}
-            };
+            versionGroups[version][taskKey] = { task: taskKey, estimates: {}, actuals: {} };
         }
         if (!versionGroups[version][taskKey].actuals[a.process]) {
             versionGroups[version][taskKey].actuals[a.process] = { members: new Set(), hours: 0 };
@@ -2194,14 +2206,10 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     }
 
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
-
     let html = '<h3 style="margin-top: 30px;">対応別マトリクス（見積 vs 実績）</h3>';
+    if (showMonthColors) html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
 
-    if (showMonthColors) {
-        html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
-    }
-
-    html += '<div style="margin-bottom: 30px;">';
+    html += '<div class="matrix-container">';
 
     const versions = Object.keys(versionGroups).sort((a, b) => {
         if (a === 'その他付随作業') return 1;
@@ -2210,30 +2218,29 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     });
 
     versions.forEach(version => {
-        const versionProcesses = new Set();
-        Object.values(versionGroups[version]).forEach(taskGroup => {
-            Object.keys(taskGroup.estimates).forEach(p => versionProcesses.add(p));
-            Object.keys(taskGroup.actuals).forEach(p => versionProcesses.add(p));
-        });
+        // const versionProcesses = new Set();
+        // Object.values(versionGroups[version]).forEach(taskGroup => {
+        //     Object.keys(taskGroup.estimates).forEach(p => versionProcesses.add(p));
+        //     Object.keys(taskGroup.actuals).forEach(p => versionProcesses.add(p));
+        // });
 
-        const displayProcesses = [
-            ...processOrder.filter(p => versionProcesses.has(p)),
-            ...[...versionProcesses].filter(p => !processOrder.includes(p))
-        ];
+        const displayProcesses = processOrder;
 
-        let tableBody = '';
+        let contentHtml = '';
         let versionTotalEst = 0;
         let versionTotalAct = 0;
 
         Object.values(versionGroups[version]).forEach(taskGroup => {
             let totalEst = 0;
             let totalAct = 0;
+            const taskCells = [];
 
             displayProcesses.forEach(proc => {
-                const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0 };
+                const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0, workMonths: [] };
                 const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                 totalEst += est.hours;
                 totalAct += act.hours;
+                taskCells.push({ proc, est, act });
             });
 
             if (totalEst > 0 || totalAct > 0) {
@@ -2247,158 +2254,170 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
                 }
 
-                tableBody += '<tr>';
-                tableBody += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
-
-                displayProcesses.forEach(proc => {
-                    const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0, workMonths: [] };
-                    const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
-
+                contentHtml += '<tr>';
+                contentHtml += `<td class="matrix-header-task">${taskDisplayHtml}</td>`;
+                taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
-                        const diff = act.hours - est.hours;
+                        const bgColor = bgColorMode === 'month' ? getMonthColor(est.workMonths || []).bg : '';
+                        const cellInner = renderCellOptionA(version, taskGroup.task, proc, est, act, bgColorMode, workingDaysPerMonth);
+                        const onclick = getCellOnclick(version, taskGroup.task, proc, est, act);
+                        const title = bgColorMode === 'month' ? `title="${getMonthColor(est.workMonths || []).tooltip}"` : '';
 
-                        let memberDisplay = '-';
-                        if (act.members.size > 0) {
-                            memberDisplay = Array.from(act.members).join(',');
-                        } else if (est.members.size > 0) {
-                            memberDisplay = Array.from(est.members).join(',');
+                        // deviation mode default style
+                        let devStyle = '';
+                        if (bgColorMode === 'deviation') {
+                            devStyle = `background: ${getDeviationColor(est.hours, act.hours)};`;
                         }
 
-                        const monthColor = getMonthColor(est.workMonths || []);
-                        let bgColor = '#ffffff';
-                        if (bgColorMode === 'month') {
-                            bgColor = monthColor.bg;
-                        } else if (bgColorMode === 'deviation') {
-                            bgColor = getDeviationColor(est.hours, act.hours);
-                        }
-
-                        const progressBarHtml = generateProgressBar(version, taskGroup.task, proc);
-
-                        let cellHtml = '';
-                        if (matrixEstActFormat === 'twoRows') {
-                            cellHtml = `
-                                <div style="font-size: 0.85em; font-weight: 300; color: #666;"><span style="font-size: 13px; background: #e8f4f8; padding: 1px 3px; border-radius: 2px; margin-right: 3px;">見</span>${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
-                                <div style="font-weight: 600; margin-top: 2px;"><span style="font-size: 13px; background: #fff3e0; padding: 1px 3px; border-radius: 2px; margin-right: 3px;">実</span>${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                <div style="font-size: 13px; color: #666; margin-top: 4px;">(${memberDisplay})</div>
-                                <div style="font-size: 13px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
-                                ${progressBarHtml}
-                            `;
-                        } else {
-                            cellHtml = `
-                                <div style="font-weight: 600;"><span style="font-size: 13px; color: #666; margin-right: 2px;">見</span>${est.hours > 0 ? est.hours.toFixed(1) : '-'}<span style="margin: 0 4px; color: #999;">/</span><span style="font-size: 13px; color: #666; margin-right: 2px;">実</span>${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
-                                <div style="font-size: 13px; color: #666; margin-top: 4px;">(${memberDisplay})</div>
-                                <div style="font-size: 13px; margin-top: 2px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '-'}</div>
-                                ${progressBarHtml}
-                            `;
-                        }
-
-                        const matrixCellStyle = progressBarHtml && progressBarStyle === 'bottom'
-                            ? `text-align: center; background: ${bgColor}; padding: 8px 8px 12px 8px; position: relative; cursor: pointer;`
-                            : `text-align: center; background: ${bgColor}; padding: 8px; cursor: pointer;`;
-
-                        let cellOnclick;
-                        const totalMembers = new Set([...est.members, ...act.members]);
-                        if (totalMembers.size > 1) {
-                            // 複数人の場合は内訳モーダルを表示 (filteredActuals, filteredEstimatesは親スコープから利用可能だが、ここでは文字列として渡せないので、必要なIDだけ渡すか、グローバル関数に依存する)
-                            // ここでは showProcessBreakdown を呼ぶようにする。引数に必要なデータを渡す必要があるが、
-                            // showProcessBreakdownの実装を見ると、Globalなestimates/actualsを使うのではなく引数でフィルタ済みデータを受け取っている。
-                            // しかしonclickで複雑なオブジェクトを渡すのは難しい。
-                            // 既存の showProcessBreakdown は `filteredActuals` 等を受け取るようになっている。
-                            // 簡略化のため、グローバルな State.actuals / State.estimates を使う新しいラッパー関数を用意するか、
-                            // もしくは既存の `openRemainingHoursModal` のように、必要なIDだけ渡して内部でフィルタするように変更するほうが安全だが、
-                            // ここでは一旦 `showProcessBreakdown` を windowメソッドとして公開されている前提で、
-                            // 引数に `State.actuals` 等を渡すわけにはいかないので、
-                            // 暫定的に `openRemainingHoursModal` と同様にIDを渡し、受け側で処理するか、
-                            // `showProcessBreakdown` は `modal.js` で export されているが window に付与されているか不明。
-                            // 確認: modal.jsを見ると `export function showProcessBreakdown` だが、windowには代入されていないように見える。
-                            // しかし `import * as Modal from './modal.js'` して `window.showProcessBreakdown = Modal.showProcessBreakdown` している箇所があるはず (main.js等)。
-                            // ここでは `openProcessBreakdownModal` のようなラッパーを想定して記述するが、
-                            // user requirement is "click a cell with multiple members". 
-                            // Let's assume there is a wrapper or we make `showProcessBreakdown` available globally.
-                            // Actually, let's look at how `openRemainingHoursModal` is called. It uses string arguments.
-                            // I will assume `showProcessBreakdown` is available or I can use it.
-                            // Wait, `showProcessBreakdown` takes objects. I can't pass objects in HTML attribute onclick.
-                            // I should change logic to call `openRemainingHoursModal` (which handles >1 members by showing a select box currently),
-                            // BUT the user wants "Process Breakdown" (the graph view).
-                            // I need a way to open the breakdown modal from a string-based onclick.
-                            // I will create a bridge function in `index.html` or `main.js` later if needed, but for now I will generate code that assumes a global function exists, 
-                            // OR better, I'll assume `window.showProcessBreakdownWrapper` exists which takes string IDs.
-                            // Actually, looking at `js/modal.js`, `showProcessBreakdown` takes `(version, task, process, filteredActuals, filteredEstimates)`.
-                            // This is hard to call from onclick.
-                            // However, `openRemainingHoursModal` fetches data from State.
-                            // I should probably add a new wrapper in `modal.js` or `main.js` that takes (version, task, process) and gets attributes from State, 
-                            // THEN calls `showProcessBreakdown`. 
-                            // Since I cannot easily modify `main.js` (didn't read it), I will assume I can modify `modal.js` to add `openProcessBreakdownWrapper`.
-                            // But I am editing `report.js` right now.
-                            // Let's change the onclick to call `openProcessBreakdown(version, task, process)`.
-                            // valid wrapper name: `openProcessBreakdown`
-                            cellOnclick = `onclick="openProcessBreakdown('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
-                        } else {
-                            cellOnclick = `onclick="openRemainingHoursModal('${version.replace(/'/g, "\\'")}', '${taskGroup.task.replace(/'/g, "\\'")}', '${proc}')"`;
-                        }
-
-                        // Note: I will need to implement `openProcessBreakdown` in `js/modal.js` and expose it to window.
-
-                        const titleAttr = bgColorMode === 'month' ? `title="${monthColor.tooltip}"` : '';
-                        tableBody += `<td style="${matrixCellStyle}" ${cellOnclick} ${titleAttr}>${cellHtml}</td>`;
+                        contentHtml += `<td style="${bgColor ? 'background:' + bgColor + ';' : devStyle} padding: 4px; cursor: pointer;" ${onclick} ${title}>${cellInner}</td>`;
                     } else {
-                        tableBody += `<td style="text-align: center; color: #ccc;">-</td>`;
+                        contentHtml += `<td style="text-align: center; color: #ccc;">-</td>`;
                     }
                 });
 
+                // Total Column using renderCellOptionA
                 const totalDiff = totalAct - totalEst;
-                let totalBgColor = '#ffffff';
-                if (bgColorMode === 'deviation') {
-                    totalBgColor = getDeviationColor(totalEst, totalAct);
-                }
+                const totalBgColor = bgColorMode === 'deviation' ? getDeviationColor(totalEst, totalAct) : '#ffffff';
+                const totalCellInner = renderCellOptionA(
+                    version,
+                    taskGroup.task,
+                    'total',
+                    { hours: totalEst, members: new Set() },
+                    { hours: totalAct, members: new Set() },
+                    bgColorMode,
+                    workingDaysPerMonth
+                );
 
-                let totalCellHtml = `
-                    <div style="font-weight: 600;"><span style="font-size: 13px; color: #666; margin-right: 2px;">見</span>${totalEst.toFixed(1)}<span style="margin: 0 4px; color: #999;">/</span><span style="font-size: 13px; color: #666; margin-right: 2px;">実</span>${totalAct.toFixed(1)}</div>
-                    <div style="font-size: 13px; margin-top: 2px; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}</div>
-                `;
-
-                tableBody += `<td style="text-align: center; background: ${totalBgColor}; padding: 8px;">${totalCellHtml}</td>`;
-                tableBody += '</tr>';
+                contentHtml += `<td style="text-align: center; background: ${totalBgColor}; padding: 4px;">${totalCellInner}</td></tr>`;
             }
         });
 
-        if (tableBody) {
+        if (contentHtml) {
             const versionTotalDiff = versionTotalAct - versionTotalEst;
-
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
-            html += '<div class="table-wrapper"><table class="estimate-matrix">';
-            html += '<tr><th style="min-width: 200px;">対応名</th>';
+
+            html += '<div class="matrix-table-wrapper"><table class="matrix-table">';
+            html += '<tr><th class="matrix-header-task">対応名</th>';
             displayProcesses.forEach(proc => {
-                html += `<th style="min-width: 120px; text-align: center;">${proc}<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th>`;
+                html += `<th style="min-width: 80px; text-align: center;">${proc}</th>`;
             });
-            html += '<th style="min-width: 100px; text-align: center;">合計<br><small style="font-weight: normal; opacity: 0.8;">見積/実績</small></th></tr>';
-            html += tableBody;
+            html += '<th style="min-width: 90px; text-align: center;">合計</th></tr>';
+            html += contentHtml;
+            html += '<tr style="background: #f8fafc; font-weight: bold; border-top: 2px solid #ddd;">';
+            html += `<td class="matrix-header-task">合計</td>`;
+            displayProcesses.forEach(() => html += '<td></td>');
+            const vBg = bgColorMode === 'deviation' ? getDeviationColor(versionTotalEst, versionTotalAct) : '#f8fafc';
+            html += `<td style="text-align: center; background: ${vBg}; padding: 4px;">
+                <div style="font-weight: 600;">${versionTotalEst.toFixed(1)}<span style="margin: 0 2px; color: #ccc;">/</span>${versionTotalAct.toFixed(1)}</div>
+                <div class="matrix-diff ${versionTotalDiff > 0 ? 'diff-negative' : 'diff-positive'}" style="margin-top: 2px;">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+            </td></tr></table></div>`;
 
-            html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
-            html += `<td style="padding: 12px; position: sticky; left: 0; background: #f5f5f5; z-index: 1;">合計</td>`;
-            displayProcesses.forEach(() => {
-                html += '<td></td>';
-            });
-            let versionTotalBgColor = '#ffffff';
-            if (bgColorMode === 'deviation') {
-                versionTotalBgColor = getDeviationColor(versionTotalEst, versionTotalAct);
-            }
-            let versionTotalCellHtml = `
-                <div style="font-weight: 600;"><span style="font-size: 13px; color: #666; margin-right: 2px;">見</span>${versionTotalEst.toFixed(1)}<span style="margin: 0 4px; color: #999;">/</span><span style="font-size: 13px; color: #666; margin-right: 2px;">実</span>${versionTotalAct.toFixed(1)}</div>
-                <div style="font-size: 13px; margin-top: 2px; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
-            `;
-
-            html += `<td style="text-align: center; background: ${versionTotalBgColor}; padding: 8px;">${versionTotalCellHtml}</td>`;
-            html += '</tr>';
-
-            html += '</table></div>';
             html += '</div>';
         }
     });
 
     html += '</div>';
     container.innerHTML += html;
+}
+
+// 案A（改：Formatted 2-Row Layout）のセルレンダリング
+function renderCellOptionA(version, task, process, est, act, bgColorMode, workingDaysPerMonth = 20) {
+    const diff = act.hours - est.hours;
+    let isOver = false;
+    let isWarning = false;
+    let isSafeBright = false;
+    let isSafeNormal = false;
+
+    // 4-Stage Color Logic (Applied to Actual value)
+    if (est.hours > 0 && act.hours > 0) {
+        const ratio = act.hours / est.hours;
+        if (ratio > 1.1) {
+            isOver = true;      // Red (> 110%)
+        } else if (ratio > 1.0) {
+            isWarning = true;   // Orange (100% - 110%)
+        } else if (ratio < 0.9) {
+            isSafeBright = true; // Bright Green (< 90%)
+        } else {
+            isSafeNormal = true; // Green (90% - 100%)
+        }
+    } else if (est.hours === 0 && act.hours > 0) {
+        isOver = true; // No estimate -> Red
+    }
+
+    const actColorClass = isOver ? 'over' : (isWarning ? 'warning' : (isSafeBright ? 'safe-bright' : (isSafeNormal ? 'safe-normal' : '')));
+
+    // Unit Calculations
+    const estDays = est.hours / 8;
+    const actDays = act.hours / 8;
+
+    // Estimate Text Generation
+    let estText = '-';
+    if (est.hours > 0) {
+        if (process === 'total') {
+            const estMonths = est.hours / 8 / workingDaysPerMonth;
+            estText = `<div style="line-height: 1.4;">
+                <span class="a-val">${est.hours.toFixed(1)}h</span><br>
+                <span style="font-size: 10px; font-weight: 400; color: #666;">
+                    (${estDays.toFixed(1)}人日 / ${estMonths.toFixed(2)}人月)
+                </span>
+            </div>`;
+        } else {
+            estText = `<span class="a-val">${est.hours.toFixed(1)}h</span><span class="unit-info">(${estDays.toFixed(1)}人日)</span>`;
+        }
+    }
+
+    // For Actual, handle Total column specific Person-Months
+    let actText = '-';
+    if (act.hours > 0) {
+        if (process === 'total') {
+            const actMonths = act.hours / 8 / workingDaysPerMonth;
+            actText = `<div style="line-height: 1.4;">
+                <span class="a-val">${act.hours.toFixed(1)}h</span><br>
+                <span style="font-size: 10px; font-weight: 400; color: #666;">
+                    (${actDays.toFixed(1)}人日 / ${actMonths.toFixed(2)}人月)
+                </span>
+            </div>`;
+        } else {
+            actText = `<span class="a-val">${act.hours.toFixed(1)}h</span><span class="unit-info">(${actDays.toFixed(1)}人日)</span>`;
+        }
+    }
+
+    let memberDisplay = '-';
+    if (act.members.size > 0) memberDisplay = Array.from(act.members).join(',');
+    else if (est.members.size > 0) memberDisplay = Array.from(est.members).join(',');
+
+    const memberText = memberDisplay !== '-' ? `(${memberDisplay})` : '';
+
+    const diffText = diff !== 0
+        ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h'
+        : '±0h';
+
+    return `
+        <div class="matrix-cell-content">
+            <div class="opt-a-row a-est">
+                ${estText}
+            </div>
+            <div class="opt-a-row a-act ${actColorClass}">
+                ${actText}
+            </div>
+            <div class="matrix-diff ${diff > 0 ? 'diff-negative' : (diff < 0 ? 'diff-positive' : '')}">${diffText}</div>
+            ${memberText ? `<div class="m-member">${memberText}</div>` : ''}
+        </div>
+    `;
+}
+
+// セルクリック時のイベント取得
+function getCellOnclick(version, task, process, est, act) {
+    const totalMembers = new Set([...est.members, ...act.members]);
+    const v = version.replace(/'/g, "\\'");
+    const t = task.replace(/'/g, "\\'");
+    const p = process.replace(/'/g, "\\'");
+    if (totalMembers.size > 1) {
+        return `onclick="openProcessBreakdown('${v}', '${t}', '${p}')"`;
+    } else {
+        return `onclick="openRemainingHoursModal('${v}', '${t}', '${p}')"`;
+    }
 }
 
 // 担当者別見積vs実績比較グラフを描画

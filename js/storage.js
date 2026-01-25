@@ -15,7 +15,7 @@ import {
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
-    matrixDayMonthFormat, setMatrixDayMonthFormat,
+
     debugModeEnabled, setDebugModeEnabled,
     selectedChartColorScheme,
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
@@ -76,7 +76,7 @@ export function saveData(skipAutoBackup = false) {
             showProgressPercentage: showProgressPercentageSetting,
             progressBarStyle: progressBarStyle,
             matrixEstActFormat: matrixEstActFormat,
-            matrixDayMonthFormat: matrixDayMonthFormat,
+
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
             chartColorScheme: selectedChartColorScheme
@@ -191,10 +191,7 @@ export function loadData() {
             if (settings.matrixEstActFormat) {
                 setMatrixEstActFormat(settings.matrixEstActFormat);
             }
-            // 人日/人月表示形式の設定を読み込み
-            if (settings.matrixDayMonthFormat) {
-                setMatrixDayMonthFormat(settings.matrixDayMonthFormat);
-            }
+
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
             // デフォルト設定を使用（エラーは表示しない）
@@ -233,7 +230,7 @@ export function autoBackup() {
         showProgressPercentage: showProgressPercentageSetting,
         progressBarStyle: progressBarStyle,
         matrixEstActFormat: matrixEstActFormat,
-        matrixDayMonthFormat: matrixDayMonthFormat,
+
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
         chartColorScheme: selectedChartColorScheme,

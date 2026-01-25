@@ -1789,3 +1789,159 @@
         .tab-content.anim-entering {
             z-index: 2;
         }
+
+        /* ============================================ */
+        /* レポートマトリクス改善用スタイル (Phase 9: Final 2-Row Layout) */
+        /* ============================================ */
+        .matrix-container {
+            overflow-x: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 800px;
+            table-layout: fixed;
+        }
+
+        @media (max-width: 767px) {
+            .matrix-table {
+                font-size: 0.8rem;
+                min-width: 700px;
+            }
+
+            .matrix-container {
+                padding: 5px;
+                margin: 0 -10px;
+                border-radius: 0;
+            }
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            border: 1px solid #eee;
+            padding: 6px 8px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .matrix-table th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .matrix-header-task {
+            text-align: left !important;
+            position: sticky;
+            left: 0;
+            background: #f8fafc;
+            z-index: 10;
+            width: 180px;
+        }
+
+        .matrix-task-row td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 9;
+        }
+
+        .matrix-cell-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            /* Increased gap between rows */
+            width: 100%;
+        }
+
+        .opt-a-row {
+            position: relative;
+            padding: 1px 0;
+            display: flex;
+            justify-content: center;
+            /* Centered */
+            align-items: center;
+            min-height: 20px;
+            white-space: nowrap;
+            /* Prevent wrapping of unit */
+        }
+
+        .a-est {
+            color: #546e7a !important;
+            /* Slate Gray */
+        }
+
+        .a-act {
+            color: #1b5e20 !important;
+            /* Dark Green (Safe - Default) */
+            font-weight: 700;
+        }
+
+        /* 4-Stage Colors for Actual */
+        /* < 90% */
+        .a-act.safe-bright {
+            color: #00897b !important;
+            /* Teal 600 - High Safety */
+        }
+
+        /* 90-100% */
+        .a-act.safe-normal {
+            color: #43a047 !important;
+            /* Green 600 - Normal Safety */
+        }
+
+        /* 100-110% */
+        .a-act.warning {
+            color: #ef6c00 !important;
+        }
+
+        /* > 110% */
+        .a-act.over {
+            color: #d32f2f !important;
+        }
+
+
+
+        .a-val {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        /* Inline Unit Styles */
+        .unit-info {
+            font-size: 10px;
+            font-weight: 400;
+            margin-left: 4px;
+            opacity: 0.8;
+        }
+
+        .m-member {
+            font-size: 9px;
+            color: #888;
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        .matrix-diff {
+            font-weight: 700;
+            font-size: 0.75rem;
+            margin-top: 2px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .diff-positive {
+            color: #27ae60;
+        }
+
+        .diff-negative {
+            color: #e74c3c;
+        }

@@ -608,3 +608,8 @@ export function getNextDateString(dateStr) {
     const day = String(nextDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+// 月の稼働日数を取得（デフォルト20日）
+export function getWorkingDays(year, month) {
+    return 20;
+}

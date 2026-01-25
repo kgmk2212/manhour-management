@@ -526,10 +526,7 @@
 
                 <h3 id="reportPeriodTitle">全期間の集計</h3>
 
-                <!-- 換算基準表示エリア -->
-                <div id="reportConversionParams"
-                    style="margin-bottom: 15px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
-                </div>
+
 
 
 
@@ -554,6 +551,11 @@
                         <h3>実績率</h3>
                         <div class="value" id="actualRate">0%</div>
                     </div>
+                </div>
+
+                <!-- 換算基準表示エリア -->
+                <div id="reportConversionParams"
+                    style="margin-bottom: 25px; background: #e3f2fd; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #1565c0; display: none;">
                 </div>
 
 
@@ -1133,48 +1135,7 @@
                         </small>
                     </div>
 
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label
-                            style="font-weight: 600; margin-bottom: 10px; display: block;">人日/人月の表示形式（レポートの合計列）</label>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="inline"
-                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
-                                <span style="flex: 1;">
-                                    <strong>横に括弧で表示</strong><br>
-                                    <small style="color: #666;">例: 10.0 (2.0人日/0.10人月)</small>
-                                </span>
-                            </label>
-                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="separate"
-                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="flex: 1;">
-                                    <strong>別行で表示</strong><br>
-                                    <small style="color: #666;">見積: 10.0 / 実績: 15.5<br>見積: 2.0人日/0.10人月 / 実績:
-                                        3.1人日/0.16人月</small>
-                                </span>
-                            </label>
-                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="side"
-                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="flex: 1;">
-                                    <strong>右側に表示</strong><br>
-                                    <small style="color: #666;">見積 10.0　　　　2.0人日/0.10人月</small>
-                                </span>
-                            </label>
-                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
-                                <input type="radio" name="matrixDayMonthFormat" value="arrow"
-                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
-                                <span style="flex: 1;">
-                                    <strong>矢印で表示</strong><br>
-                                    <small style="color: #666;">見積 10.0 → 2.0人日/0.10人月</small>
-                                </span>
-                            </label>
-                        </div>
-                        <small style="color: #666; display: block; margin-top: 10px;">
-                            レポートタブのマトリクス表示で、合計列に表示される人日/人月の表示形式を選択できます
-                        </small>
-                    </div>
+
                 </div>
 
                 <!-- デフォルト表示形式設定 -->

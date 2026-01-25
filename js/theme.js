@@ -11,7 +11,7 @@ import {
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
-    matrixDayMonthFormat, setMatrixDayMonthFormat,
+
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
     isReportTabFirstView, setIsReportTabFirstView
@@ -477,18 +477,7 @@ export function saveMatrixEstActFormat() {
     }
 }
 
-export function saveMatrixDayMonthFormat() {
-    const selectedFormat = document.querySelector('input[name="matrixDayMonthFormat"]:checked');
-    if (selectedFormat) {
-        setMatrixDayMonthFormat(selectedFormat.value);
-        if (typeof window.saveData === 'function') {
-            window.saveData(true);
-        }
-        if (typeof window.updateReport === 'function') {
-            window.updateReport();
-        }
-    }
-}
+
 
 export function saveDefaultViewTypeSetting() {
     if (typeof window.saveData === 'function') {

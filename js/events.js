@@ -95,7 +95,7 @@ import {
     toggleProgressPercentageSetting,
     saveProgressBarStyle,
     saveMatrixEstActFormat,
-    saveMatrixDayMonthFormat,
+
     saveDefaultViewTypeSetting,
     updateThemeElements
 } from './theme.js';
@@ -569,9 +569,7 @@ export function initEventHandlers() {
         radio.addEventListener('change', saveMatrixEstActFormat);
     });
 
-    document.querySelectorAll('input[name="matrixDayMonthFormat"]').forEach(radio => {
-        radio.addEventListener('change', saveMatrixDayMonthFormat);
-    });
+
 
     ['defaultEstimateViewType', 'defaultReportViewType'].forEach(id => {
         const el = document.getElementById(id);

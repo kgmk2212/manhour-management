@@ -6,7 +6,7 @@ import {
     estimates, actuals,
     showMonthColorsSetting, reportMatrixBgColorMode,
     showProgressBarsSetting, showProgressPercentageSetting,
-    progressBarStyle, matrixEstActFormat, matrixDayMonthFormat,
+    progressBarStyle, matrixEstActFormat,
     memberOrder, setMemberOrder, debugModeEnabled
 } from './state.js';
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
@@ -1883,7 +1883,21 @@ export function handleReportMonthChange(value, containerId) {
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
-    const scrollRatio = getTableScrollRatio(tableElement);
+    let scrollRatio = null;
+    let shouldUseTableRatio = false;
+
+    if (tableElement) {
+        const tableRect = tableElement.getBoundingClientRect();
+        // テーブルの上端が画面上部より上（または少し下）にある場合のみ比率計算を使用
+        // つまり、マトリクス表を現在見ている（またはスクロールして通り過ぎた）場合
+        // 100pxはヘッダーやマージン分のバッファ
+        if (tableRect.top <= 100) {
+            shouldUseTableRatio = true;
+            scrollRatio = getTableScrollRatio(tableElement);
+        }
+    }
+
+    const savedScrollY = window.scrollY;
 
     updateSegmentButtonSelection(containerId, value);
     syncMonthToEstimate(value);
@@ -1891,8 +1905,15 @@ export function handleReportMonthChange(value, containerId) {
         window.updateReport();
     }
 
-    // スクロール比率を復元
-    restoreTableScrollRatio(tableElement, scrollRatio);
+    // スクロール位置を復元
+    if (shouldUseTableRatio) {
+        restoreTableScrollRatio(tableElement, scrollRatio);
+    } else {
+        // マトリクス表以外を見ている場合は、単純にページスクロール位置を維持
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollY);
+        });
+    }
 }
 
 export function handleReportVersionChange(value, containerId) {
@@ -1903,7 +1924,18 @@ export function handleReportVersionChange(value, containerId) {
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
-    const scrollRatio = getTableScrollRatio(tableElement);
+    let scrollRatio = null;
+    let shouldUseTableRatio = false;
+
+    if (tableElement) {
+        const tableRect = tableElement.getBoundingClientRect();
+        if (tableRect.top <= 100) {
+            shouldUseTableRatio = true;
+            scrollRatio = getTableScrollRatio(tableElement);
+        }
+    }
+
+    const savedScrollY = window.scrollY;
 
     updateSegmentButtonSelection(containerId, value);
     syncVersionToEstimate(value);
@@ -1911,8 +1943,14 @@ export function handleReportVersionChange(value, containerId) {
         window.updateReport();
     }
 
-    // スクロール比率を復元
-    restoreTableScrollRatio(tableElement, scrollRatio);
+    // スクロール位置を復元
+    if (shouldUseTableRatio) {
+        restoreTableScrollRatio(tableElement, scrollRatio);
+    } else {
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollY);
+        });
+    }
 }
 
 export function handleEstimateFilterTypeChange() {
@@ -2221,10 +2259,7 @@ export function syncSettingsToUI() {
     }
 
     // 日付/月表示形式（ラジオボタン）
-    if (matrixDayMonthFormat) {
-        const radioButton = document.querySelector(`input[name="matrixDayMonthFormat"][value="${matrixDayMonthFormat}"]`);
-        if (radioButton) radioButton.checked = true;
-    }
+
 
     // 担当者の表示順（window.memberOrderを使用して確実に最新値を取得）
     const memberOrderEl = document.getElementById('memberOrder');

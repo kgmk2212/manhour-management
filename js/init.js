@@ -46,7 +46,7 @@ window.showProgressBarsSetting = State.showProgressBarsSetting;
 window.showProgressPercentageSetting = State.showProgressPercentageSetting;
 window.progressBarStyle = State.progressBarStyle;
 window.matrixEstActFormat = State.matrixEstActFormat;
-window.matrixDayMonthFormat = State.matrixDayMonthFormat;
+
 window.debugModeEnabled = State.debugModeEnabled;
 window.memberOrder = State.memberOrder;
 
@@ -157,7 +157,7 @@ window.toggleProgressBarsSetting = Theme.toggleProgressBarsSetting;
 window.toggleProgressPercentageSetting = Theme.toggleProgressPercentageSetting;
 window.saveProgressBarStyle = Theme.saveProgressBarStyle;
 window.saveMatrixEstActFormat = Theme.saveMatrixEstActFormat;
-window.saveMatrixDayMonthFormat = Theme.saveMatrixDayMonthFormat;
+
 window.saveDefaultViewTypeSetting = Theme.saveDefaultViewTypeSetting;
 window.applyDefaultEstimateViewType = Theme.applyDefaultEstimateViewType;
 window.applyDefaultReportViewType = Theme.applyDefaultReportViewType;
