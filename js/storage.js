@@ -164,9 +164,7 @@ export function loadData() {
             if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
             if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
             if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
-            if (settings.estimateLayout) setEstimateLayout(settings.estimateLayout);
-            if (settings.actualLayout) setActualLayout(settings.actualLayout);
-            if (settings.reportLayout) setReportLayout(settings.reportLayout);
+            // レイアウト設定は読み込まない（セグメント表示に固定）
             if (settings.showMonthColors !== undefined) {
                 setShowMonthColorsSetting(settings.showMonthColors);
             }

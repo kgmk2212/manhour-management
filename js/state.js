@@ -247,10 +247,10 @@ export let currentThemePattern = 'gradient';
 export let currentTabColor = 'purple';
 export let currentBackgroundColor = 'default';
 
-// レイアウト設定
-export let estimateLayout = 'compact';
-export let actualLayout = 'compact';
-export let reportLayout = 'compact';
+// レイアウト設定（セグメント表示に固定）
+export let estimateLayout = 'segmented';
+export let actualLayout = 'segmented';
+export let reportLayout = 'segmented';
 
 // 初回表示フラグ
 export let isEstimateTabFirstView = true;
