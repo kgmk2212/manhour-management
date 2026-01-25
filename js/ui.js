@@ -1785,7 +1785,19 @@ export function handleEstimateMonthChange(value, containerId) {
 
     // 表のスクロール比率を保存（estimateListを使用）
     const tableElement = document.getElementById('estimateList');
-    const scrollRatio = getTableScrollRatio(tableElement);
+    let scrollRatio = null;
+    let shouldUseTableRatio = false;
+
+    if (tableElement) {
+        const tableRect = tableElement.getBoundingClientRect();
+        // テーブルの上端が画面上部より上（または少し下）にある場合のみ比率計算を使用
+        if (tableRect.top <= 100) {
+            shouldUseTableRatio = true;
+            scrollRatio = getTableScrollRatio(tableElement);
+        }
+    }
+
+    const savedScrollY = window.scrollY;
 
     // アニメーション方向決定 (スマホのみ)
     let direction = 'none';
@@ -1824,8 +1836,14 @@ export function handleEstimateMonthChange(value, containerId) {
                 window.renderEstimateList();
             }
 
-            // スクロール比率を復元
-            restoreTableScrollRatio(tableElement, scrollRatio);
+            // スクロール位置を復元
+            if (shouldUseTableRatio) {
+                restoreTableScrollRatio(tableElement, scrollRatio);
+            } else {
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, savedScrollY);
+                });
+            }
 
             // 新しいコンテンツのアニメーション（進入）
             const inClass = direction === 'next' ? 'anim-slide-in-right' : 'anim-slide-in-left';
@@ -1851,8 +1869,15 @@ export function handleEstimateMonthChange(value, containerId) {
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
-    // スクロール比率を復元
-    restoreTableScrollRatio(tableElement, scrollRatio);
+    
+    // スクロール位置を復元
+    if (shouldUseTableRatio) {
+        restoreTableScrollRatio(tableElement, scrollRatio);
+    } else {
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollY);
+        });
+    }
 }
 
 export function handleEstimateVersionChange(value, containerId) {

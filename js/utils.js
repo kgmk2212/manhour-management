@@ -611,5 +611,23 @@ export function getNextDateString(dateStr) {
 
 // 月の稼働日数を取得（デフォルト20日）
 export function getWorkingDays(year, month) {
-    return 20;
+    const lastDay = new Date(year, month, 0).getDate();
+    let workingDays = 0;
+
+    for (let day = 1; day <= lastDay; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+        // window経由で祝日・会社休日判定関数を呼び出し
+        const holiday = typeof window.getHoliday === 'function' ? window.getHoliday(dateStr) : null;
+        const companyHol = typeof window.isCompanyHoliday === 'function' ? window.isCompanyHoliday(dateStr) : false;
+
+        if (!isWeekend && !holiday && !companyHol) {
+            workingDays++;
+        }
+    }
+
+    return workingDays;
 }
