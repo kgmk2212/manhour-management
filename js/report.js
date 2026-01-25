@@ -2282,10 +2282,22 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
                 contentHtml += '<tr>';
                 contentHtml += `<td class="matrix-header-task">${taskDisplayHtml}</td>`;
+                let totalRemainingHours = 0;
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
+                        // 残存時間を計算（remainingEstimatesから取得、なければ見積-実績でフォールバック）
+                        const remainingData = remainingEstimates.filter(
+                            r => r.version === version && r.task === taskGroup.task && r.process === proc
+                        );
+                        let cellRemainingHours = remainingData.reduce((sum, r) => sum + r.remainingHours, 0);
+                        if (remainingData.length === 0 && est.hours > 0) {
+                            // フォールバック: 見積 - 実績（マイナスは0）
+                            cellRemainingHours = Math.max(0, est.hours - act.hours);
+                        }
+                        totalRemainingHours += cellRemainingHours;
+
                         const bgColor = bgColorMode === 'month' ? getMonthColor(est.workMonths || []).bg : '';
-                        const cellInner = renderCellOptionA(version, taskGroup.task, proc, est, act, bgColorMode, workingDaysPerMonth);
+                        const cellInner = renderCellOptionA(version, taskGroup.task, proc, est, act, bgColorMode, workingDaysPerMonth, cellRemainingHours);
                         const onclick = getCellOnclick(version, taskGroup.task, proc, est, act);
                         const title = bgColorMode === 'month' ? `title="${getMonthColor(est.workMonths || []).tooltip}"` : '';
 
@@ -2311,7 +2323,8 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     { hours: totalEst, members: new Set() },
                     { hours: totalAct, members: new Set() },
                     bgColorMode,
-                    workingDaysPerMonth
+                    workingDaysPerMonth,
+                    totalRemainingHours
                 );
 
                 contentHtml += `<td style="text-align: center; background: ${totalBgColor}; padding: 4px;">${totalCellInner}</td></tr>`;
@@ -2348,24 +2361,37 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 }
 
 // 案A（改：Formatted 2-Row Layout）のセルレンダリング
-function renderCellOptionA(version, task, process, est, act, bgColorMode, workingDaysPerMonth = 20) {
+function renderCellOptionA(version, task, process, est, act, bgColorMode, workingDaysPerMonth = 20, remainingHours = null) {
     const diff = act.hours - est.hours;
     let isOver = false;
     let isWarning = false;
     let isSafeBright = false;
     let isSafeNormal = false;
 
-    // 4-Stage Color Logic (Applied to Actual value)
-    if (est.hours > 0 && act.hours > 0) {
-        const ratio = act.hours / est.hours;
-        if (ratio > 1.1) {
-            isOver = true;      // Red (> 110%)
-        } else if (ratio > 1.0) {
-            isWarning = true;   // Orange (100% - 110%)
-        } else if (ratio < 0.9) {
-            isSafeBright = true; // Bright Green (< 90%)
+    // 4-Stage Color Logic
+    // 未完了（残存時間 > 0）の場合は予測工数（EAC = 実績 + 残存）で判定
+    // 完了（残存時間 = 0 または null）の場合は実績で判定
+    if (est.hours > 0) {
+        let comparisonValue;
+        if (remainingHours !== null && remainingHours > 0) {
+            // 未完了: 予測工数（EAC）で判定
+            comparisonValue = act.hours + remainingHours;
         } else {
-            isSafeNormal = true; // Green (90% - 100%)
+            // 完了または残存データなし: 実績で判定
+            comparisonValue = act.hours;
+        }
+
+        if (comparisonValue > 0) {
+            const ratio = comparisonValue / est.hours;
+            if (ratio > 1.1) {
+                isOver = true;      // Red (> 110%)
+            } else if (ratio > 1.0) {
+                isWarning = true;   // Orange (100% - 110%)
+            } else if (ratio < 0.9) {
+                isSafeBright = true; // Bright Green (< 90%)
+            } else {
+                isSafeNormal = true; // Green (90% - 100%)
+            }
         }
     } else if (est.hours === 0 && act.hours > 0) {
         isOver = true; // No estimate -> Red
