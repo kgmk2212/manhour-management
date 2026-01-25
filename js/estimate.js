@@ -173,20 +173,20 @@ export function getRemainingEstimate(version, task, process, member) {
 function applyEstimateFilters(filterType, monthFilter, versionFilter) {
     let filtered = estimates;
 
-    if (filterType === 'version') {
-        if (versionFilter !== 'all') {
-            filtered = estimates.filter(e => e.version === versionFilter);
-        }
-    } else {
-        if (monthFilter !== 'all') {
-            filtered = estimates.filter(e => {
-                const est = normalizeEstimate(e);
-                if (!est.workMonths || est.workMonths.length === 0) {
-                    return true;
-                }
-                return est.workMonths.includes(monthFilter);
-            });
-        }
+    // 版数フィルタを適用
+    if (versionFilter !== 'all') {
+        filtered = filtered.filter(e => e.version === versionFilter);
+    }
+
+    // 月フィルタを適用
+    if (monthFilter !== 'all') {
+        filtered = filtered.filter(e => {
+            const est = normalizeEstimate(e);
+            if (!est.workMonths || est.workMonths.length === 0) {
+                return true;
+            }
+            return est.workMonths.includes(monthFilter);
+        });
     }
 
     return filtered;
@@ -387,14 +387,14 @@ export function renderEstimateList() {
     const container = document.getElementById('estimateList');
     if (!container) return;
 
-    const viewTypeElement = document.getElementById('estimateViewType');
     const monthFilterElement = document.getElementById('estimateMonthFilter');
     const filterTypeElement = document.getElementById('estimateFilterType');
     const versionFilterElement = document.getElementById('estimateVersionFilter');
+    const defaultViewTypeElement = document.getElementById('defaultEstimateViewType');
 
-    if (!viewTypeElement || !monthFilterElement) return;
+    if (!monthFilterElement) return;
 
-    const viewType = viewTypeElement.value;
+    const viewType = defaultViewTypeElement ? defaultViewTypeElement.value : 'matrix';
     const filterType = filterTypeElement ? filterTypeElement.value : 'month';
     const monthFilter = monthFilterElement.value;
     const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';

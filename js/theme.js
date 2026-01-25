@@ -504,12 +504,9 @@ export function applyDefaultEstimateViewType() {
         }
     }
 
-    const estimateViewTypeElement = document.getElementById('estimateViewType');
-    if (estimateViewTypeElement) {
-        estimateViewTypeElement.value = defaultViewType;
-        if (typeof window.setEstimateViewType === 'function') {
-            window.setEstimateViewType(defaultViewType);
-        }
+    // 設定の表示形式を直接使用するため、setEstimateViewTypeを呼び出し
+    if (typeof window.setEstimateViewType === 'function') {
+        window.setEstimateViewType(defaultViewType);
     }
 }
 
@@ -529,12 +526,9 @@ export function applyDefaultReportViewType() {
         }
     }
 
-    const reportViewTypeElement = document.getElementById('reportViewType');
-    if (reportViewTypeElement) {
-        reportViewTypeElement.value = defaultViewType;
-        if (typeof window.setReportViewType === 'function') {
-            window.setReportViewType(defaultViewType);
-        }
+    // 設定の表示形式を直接使用するため、setReportViewTypeを呼び出し
+    if (typeof window.setReportViewType === 'function') {
+        window.setReportViewType(defaultViewType);
     }
 }
 

@@ -48,14 +48,24 @@
             overflow-x: auto;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
+            /* ヘッダーや他要素より上に表示 */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform: translateY(-100%);
+            /* デフォルトで隠す */
+            opacity: 0;
         }
 
-        /* PC等でのデフォルト：上にスライドして隠れる */
+        /* 表示状態 */
+        .tabs:not(.is-hidden) {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         .tabs.is-hidden {
             transform: translateY(-100%);
+            opacity: 0;
         }
 
         .tab {
@@ -1882,6 +1892,7 @@
         }
 
         @media (max-width: 767px) {
+
             /* モバイルでは合計列の人日/人月を非表示 */
             .total-manpower {
                 display: none;
@@ -1892,4 +1903,3 @@
                 display: none !important;
             }
         }
-

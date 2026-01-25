@@ -272,13 +272,15 @@ export function initSmartSticky() {
     const tabs = document.querySelector('.tabs');
     if (!tabs) return;
 
+    // デフォルトで隠す状態にする
+    tabs.classList.add('is-hidden');
+
     let lastScrollY = window.scrollY;
     let ticking = false;
 
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
-                // タブ切り替え中はスクロール判定をスキップ
                 if (isTabSwitching) {
                     lastScrollY = window.scrollY;
                     ticking = false;
@@ -286,18 +288,16 @@ export function initSmartSticky() {
                 }
 
                 const currentScrollY = window.scrollY;
-
-                // バウンススクロール対策
                 if (currentScrollY < 0) {
                     ticking = false;
                     return;
                 }
 
-                // 下スクロール (ヘッダーの高さ以上スクロールしてから判定)
-                if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                // 一定以上スクロールしたら強制的に隠す
+                if (currentScrollY > lastScrollY && currentScrollY > 100) {
                     tabs.classList.add('is-hidden');
                 }
-                // 上スクロール
+                // 上にスクロールした時は表示
                 else if (currentScrollY < lastScrollY) {
                     tabs.classList.remove('is-hidden');
                 }
@@ -305,31 +305,39 @@ export function initSmartSticky() {
                 lastScrollY = currentScrollY;
                 ticking = false;
             });
-
             ticking = true;
         }
     }, { passive: true });
 
-    // PC: マウスオーバーでの表示（画面上部）
-    const isMobile = () => window.innerWidth <= 768;
-    const triggerZone = 60;
+    // マウスオーバーでの表示
+    const isMobileLayout = () => window.innerWidth <= 768;
+    const triggerZone = 80;
 
     document.addEventListener('mousemove', (e) => {
-        if (isMobile()) return;
-        if (!tabs.classList.contains('is-hidden')) return;
-
-        // 画面上部にマウスが入ったら表示
-        if (e.clientY < triggerZone) {
-            tabs.classList.remove('is-hidden');
+        // 通常レイアウト（上部タブ）: 上端マウスオーバーで表示
+        if (!isMobileLayout()) {
+            if (e.clientY < triggerZone) {
+                tabs.classList.remove('is-hidden');
+            }
+        }
+        // モバイルレイアウト（下部タブ）: 下端マウスオーバーで表示
+        else {
+            if (e.clientY > window.innerHeight - triggerZone) {
+                tabs.classList.remove('is-hidden');
+            }
         }
     }, { passive: true });
+
+    // タブエリアにマウスが乗っている間は隠さない
+    tabs.addEventListener('mouseenter', () => {
+        tabs.classList.remove('is-hidden');
+    });
 
     // タブエリアクリックでの表示復帰（Mobile:下部クリック）
     window.addEventListener('click', (e) => {
         if (!tabs.classList.contains('is-hidden')) return;
-        if (!isMobile()) return; // PCはマウスオーバーで対応
+        if (!isMobile()) return;
 
-        // モバイル：画面下部クリック
         if (e.clientY > window.innerHeight - triggerZone) {
             tabs.classList.remove('is-hidden');
             e.preventDefault();
@@ -508,7 +516,7 @@ export function updateSegmentButtonSelection(containerId, value) {
 // ============================================
 
 export function setEstimateViewType(type) {
-    const viewTypeElement = document.getElementById('estimateViewType');
+    const viewTypeElement = document.getElementById('defaultEstimateViewType');
     if (viewTypeElement) {
         viewTypeElement.value = type;
     }
@@ -556,7 +564,7 @@ export function setActualViewType(type) {
 }
 
 export function setReportViewType(type) {
-    const viewTypeEl = document.getElementById('reportViewType');
+    const viewTypeEl = document.getElementById('defaultReportViewType');
     if (viewTypeEl) viewTypeEl.value = type;
 
     if (typeof window.updateReport === 'function') {
@@ -653,7 +661,7 @@ export function toggleFilterLayout(page, version) {
                 window.renderEstimateList();
             }
         } else {
-            const viewType = document.getElementById('estimateViewType').value;
+            const viewType = document.getElementById('defaultEstimateViewType').value;
             setEstimateViewType(viewType);
             if (compact) compact.style.display = 'none';
             if (segmented) segmented.style.display = 'block';
@@ -753,7 +761,7 @@ export function toggleFilterLayout(page, version) {
             const reportMonth = document.getElementById('reportMonth');
             if (reportMonth) document.getElementById('reportMonth2').value = reportMonth.value;
 
-            const viewType = document.getElementById('reportViewType').value;
+            const viewType = document.getElementById('defaultReportViewType').value;
             setReportViewType(viewType);
             if (compact) compact.style.display = 'none';
             if (segmented) segmented.style.display = 'block';
@@ -830,26 +838,19 @@ export function updateSegmentedButtons() {
         }
     }
 
-    // 見積一覧のセグメントボタン（表示形式）
+    // 見積一覧のセグメントボタン（表示形式）- 設定で管理するため不要
     const btnEstimateGrouped = document.getElementById('btnEstimateGrouped');
     const btnEstimateMatrix = document.getElementById('btnEstimateMatrix');
     const btnEstimateList = document.getElementById('btnEstimateList');
     if (btnEstimateGrouped && btnEstimateMatrix && btnEstimateList) {
-        const estimateViewType = document.getElementById('estimateViewType').value;
+        const estimateViewTypeEl = document.getElementById('defaultEstimateViewType');
+        const estimateViewType = estimateViewTypeEl ? estimateViewTypeEl.value : 'matrix';
         btnEstimateGrouped.classList.toggle('active', estimateViewType === 'grouped');
         btnEstimateMatrix.classList.toggle('active', estimateViewType === 'matrix');
         btnEstimateList.classList.toggle('active', estimateViewType === 'list');
     }
 
-    // 見積一覧のセグメントボタン（フィルタタイプ）
-    const estimateFilterType = document.getElementById('estimateFilterType');
-    const btnEstimateFilterMonth = document.getElementById('btnEstimateFilterMonth');
-    const btnEstimateFilterVersion = document.getElementById('btnEstimateFilterVersion');
-    if (estimateFilterType && btnEstimateFilterMonth && btnEstimateFilterVersion) {
-        const type = estimateFilterType.value;
-        btnEstimateFilterMonth.classList.toggle('active', type === 'month');
-        btnEstimateFilterVersion.classList.toggle('active', type === 'version');
-    }
+    // 見積一覧のセグメントボタン（フィルタタイプ）- 月別/版数別トグル削除のため不要
 
     // 見積一覧のセグメントボタン（表示月）
     const estimateMonthButtons = document.getElementById('estimateMonthButtons2');
@@ -896,11 +897,11 @@ export function updateSegmentedButtons() {
         }
     }
 
-    // レポートのセグメントボタン（表示形式）
+    // レポートのセグメントボタン（表示形式）- 設定で管理するため不要
     const btnReportSummary = document.getElementById('btnReportSummary');
     const btnReportGrouped = document.getElementById('btnReportGrouped');
     const btnReportMatrix = document.getElementById('btnReportMatrix');
-    const reportViewTypeEl = document.getElementById('reportViewType');
+    const reportViewTypeEl = document.getElementById('defaultReportViewType');
     if (btnReportSummary && btnReportGrouped && btnReportMatrix && reportViewTypeEl) {
         const reportViewType = reportViewTypeEl.value;
         btnReportSummary.classList.toggle('active', reportViewType === 'summary');
@@ -910,24 +911,7 @@ export function updateSegmentedButtons() {
 
     const reportFilterType = document.getElementById('reportFilterType');
 
-    // フローティングフィルタパネルのセグメントボタン
-    const floatingViewSummary = document.getElementById('floatingViewSummary');
-    const floatingViewGrouped = document.getElementById('floatingViewGrouped');
-    const floatingViewMatrix = document.getElementById('floatingViewMatrix');
-    if (floatingViewSummary && floatingViewGrouped && floatingViewMatrix && reportViewTypeEl) {
-        const reportViewType = reportViewTypeEl.value;
-        floatingViewSummary.classList.toggle('active', reportViewType === 'summary');
-        floatingViewGrouped.classList.toggle('active', reportViewType === 'grouped');
-        floatingViewMatrix.classList.toggle('active', reportViewType === 'matrix');
-    }
-
-    const floatingFilterMonth = document.getElementById('floatingFilterMonth');
-    const floatingFilterVersion = document.getElementById('floatingFilterVersion');
-    if (floatingFilterMonth && floatingFilterVersion && reportFilterType) {
-        const type = reportFilterType.value;
-        floatingFilterMonth.classList.toggle('active', type === 'month');
-        floatingFilterVersion.classList.toggle('active', type === 'version');
-    }
+    // フローティングフィルタパネルのセグメントボタン - 月別/版数別トグル削除のため不要
 
     // レポートのセグメントボタン（表示月）
     const reportMonthButtons = document.getElementById('reportMonthButtons2');
@@ -938,16 +922,7 @@ export function updateSegmentedButtons() {
         }
     }
 
-    // レポートのフィルタタイプボタン
-    if (reportFilterType) {
-        const btnFilterMonth = document.getElementById('btnFilterMonth');
-        const btnFilterVersion = document.getElementById('btnFilterVersion');
-        if (btnFilterMonth && btnFilterVersion) {
-            const type = reportFilterType.value;
-            btnFilterMonth.classList.toggle('active', type === 'month');
-            btnFilterVersion.classList.toggle('active', type === 'version');
-        }
-    }
+    // レポートのフィルタタイプボタン - 月別/版数別トグル削除のため不要
 
     // レポートの版数ボタン
     const reportVersionButtons = document.getElementById('reportVersionButtons2');
@@ -1188,17 +1163,26 @@ export function updateFormNameOptions() {
     }
 }
 
-export function updateReportVersionOptions(sortedVersions) {
+export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all') {
     try {
         if (!sortedVersions) {
             const versions = new Set();
             estimates.forEach(e => {
                 if (e.version && e.version.trim() !== '') {
+                    // 月フィルタが適用されている場合、該当する見積のみを確認
+                    if (selectedMonth !== 'all') {
+                        const est = normalizeEstimate(e);
+                        if (!est.workMonths || !est.workMonths.includes(selectedMonth)) return;
+                    }
                     versions.add(e.version);
                 }
             });
             actuals.forEach(a => {
                 if (a.version && a.version.trim() !== '') {
+                    // 月フィルタが適用されている場合、該当する実績のみを確認
+                    if (selectedMonth !== 'all') {
+                        if (!a.date || !a.date.startsWith(selectedMonth)) return;
+                    }
                     versions.add(a.version);
                 }
             });
@@ -1214,7 +1198,12 @@ export function updateReportVersionOptions(sortedVersions) {
 
         const isFirstLoad = !select.dataset.initialized;
         const lastVersion = sortedVersions.length > 0 ? sortedVersions[sortedVersions.length - 1] : 'all';
-        const currentValue = isFirstLoad ? lastVersion : (select.value || 'all');
+        let currentValue = isFirstLoad ? lastVersion : (select.value || 'all');
+
+        // 現在の値が新しいリストに含まれているかチェック
+        if (currentValue !== 'all' && !sortedVersions.includes(currentValue)) {
+            currentValue = 'all';
+        }
 
         select.innerHTML = '<option value="all">全版数</option>';
         if (select2) select2.innerHTML = '<option value="all">全版数</option>';
@@ -1258,15 +1247,38 @@ export function updateReportVersionOptions(sortedVersions) {
     }
 }
 
-export function updateMonthOptions() {
+export function updateMonthOptions(selectedVersion = 'all') {
     const select = document.getElementById('reportMonth');
     const select2 = document.getElementById('reportMonth2');
     const months = new Set();
 
+    // 実績から月を収集
     actuals.forEach(a => {
         if (a.date) {
+            // 版数フィルタが適用されている場合、該当する実績のみを確認
+            if (selectedVersion !== 'all' && a.version !== selectedVersion) return;
+
             const month = a.date.substring(0, 7);
             months.add(month);
+        }
+    });
+
+    // 見積から月を収集
+    estimates.forEach(e => {
+        const est = normalizeEstimate(e);
+
+        // 版数フィルタが適用されている場合、該当する見積のみを確認
+        if (selectedVersion !== 'all' && est.version !== selectedVersion) return;
+
+        if (est.workMonths) {
+            est.workMonths.forEach(m => {
+                if (m && m !== 'unassigned') {
+                    // 時間が0より大きい月のみを追加
+                    if (est.monthlyHours && est.monthlyHours[m] > 0) {
+                        months.add(m);
+                    }
+                }
+            });
         }
     });
 
@@ -1300,7 +1312,13 @@ export function updateMonthOptions() {
             };
         })
     ];
-    const currentValue = select.value || 'all';
+    let currentValue = select.value || 'all';
+
+    // 現在の値が新しいリストに含まれているかチェック
+    if (currentValue !== 'all' && !sortedMonths.includes(currentValue)) {
+        currentValue = 'all';
+    }
+
     createSegmentButtons(
         'reportMonthButtons2',
         'reportMonth2',
@@ -1495,17 +1513,25 @@ export function updateActualMonthOptions() {
 
 export function getDefaultMonth(selectElement) {
     const options = Array.from(selectElement.options);
-    // 'all' と 'unassigned' を除外（'unassigned' は文字列比較で日付より大きくなるため）
+    // 'all' と 'unassigned' を除外
     const monthOptions = options.filter(opt => opt.value !== 'all' && opt.value !== 'unassigned');
 
-    if (monthOptions.length > 0) {
-        const latestMonth = monthOptions.reduce((latest, opt) => {
-            return opt.value > latest ? opt.value : latest;
-        }, monthOptions[0].value);
-        return latestMonth;
+    if (monthOptions.length === 0) return 'all';
+
+    // 現在の年月 (YYYY-MM)
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 現在の年月が選択肢にあればそれを優先
+    if (monthOptions.some(opt => opt.value === currentMonth)) {
+        return currentMonth;
     }
 
-    return 'all';
+    // なければ最新（最大値）の月を返す fallback
+    const latestMonth = monthOptions.reduce((latest, opt) => {
+        return opt.value > latest ? opt.value : latest;
+    }, monthOptions[0].value);
+    return latestMonth;
 }
 
 export function setDefaultActualMonth() {
@@ -1532,6 +1558,14 @@ export function setDefaultReportMonth() {
     if (select2) select2.value = defaultMonth;
 
     updateSegmentButtonSelection('reportMonthButtons2', defaultMonth);
+
+    // 版数フィルタの選択肢を連動して更新（初期ロード時用）
+    updateReportVersionOptions(null, defaultMonth);
+
+    // デフォルト選択後にレポートを更新
+    if (typeof window.updateReport === 'function') {
+        window.updateReport();
+    }
 }
 
 export function setDefaultEstimateMonth() {
@@ -1575,6 +1609,9 @@ export function syncMonthToEstimate(value) {
     if (estimateMonthButtons2) {
         updateSegmentButtonSelection('estimateMonthButtons2', value);
     }
+
+    // 版数フィルタの選択肢を連動して更新（レポート用）
+    updateReportVersionOptions(null, value);
 }
 
 export function syncVersionToReport(value) {
@@ -1599,6 +1636,9 @@ export function syncVersionToEstimate(value) {
     if (estimateVersionButtons2) {
         updateSegmentButtonSelection('estimateVersionButtons2', value);
     }
+
+    // 月フィルタの選択肢を連動して更新
+    updateMonthOptions(value);
 }
 
 export function syncFilterTypeToReport(type) {
@@ -1808,12 +1848,16 @@ export function handleEstimateMonthChange(value, containerId) {
     if (filterElement) {
         filterElement.value = value;
     }
+
+    const filterTypeEl = document.getElementById('estimateFilterType');
+    if (filterTypeEl) filterTypeEl.value = 'month';
+
     updateSegmentButtonSelection(containerId, value);
     syncMonthToReport(value);
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
-    
+
     // スクロール位置を復元
     if (shouldUseTableRatio) {
         restoreTableScrollRatio(tableElement, scrollRatio);
@@ -1830,18 +1874,39 @@ export function handleEstimateVersionChange(value, containerId) {
         filterElement.value = value;
     }
 
+    const filterTypeEl = document.getElementById('estimateFilterType');
+    if (filterTypeEl) filterTypeEl.value = 'version';
+
     // 表のスクロール比率を保存（estimateListを使用）
     const tableElement = document.getElementById('estimateList');
-    const scrollRatio = getTableScrollRatio(tableElement);
+    let scrollRatio = null;
+    let shouldUseTableRatio = false;
 
+    if (tableElement) {
+        const tableRect = tableElement.getBoundingClientRect();
+        if (tableRect.top <= 100) {
+            shouldUseTableRatio = true;
+            scrollRatio = getTableScrollRatio(tableElement);
+        }
+    }
+
+    const savedScrollY = window.scrollY;
+
+    // UI toggling logic removed as per instruction.
     updateSegmentButtonSelection(containerId, value);
     syncVersionToReport(value);
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
 
-    // スクロール比率を復元
-    restoreTableScrollRatio(tableElement, scrollRatio);
+    // スクロール位置を復元
+    if (shouldUseTableRatio) {
+        restoreTableScrollRatio(tableElement, scrollRatio);
+    } else {
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollY);
+        });
+    }
 }
 
 export function handleReportMonthChange(value, containerId) {
@@ -1849,6 +1914,9 @@ export function handleReportMonthChange(value, containerId) {
     const select2 = document.getElementById('reportMonth2');
     if (select) select.value = value;
     if (select2) select2.value = value;
+
+    const filterTypeEl = document.getElementById('reportFilterType');
+    if (filterTypeEl) filterTypeEl.value = 'month';
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -1870,6 +1938,10 @@ export function handleReportMonthChange(value, containerId) {
 
     updateSegmentButtonSelection(containerId, value);
     syncMonthToEstimate(value);
+
+    // 版数フィルタの選択肢を連動して更新
+    updateReportVersionOptions(null, value);
+
     if (typeof window.updateReport === 'function') {
         window.updateReport();
     }
@@ -1891,6 +1963,9 @@ export function handleReportVersionChange(value, containerId) {
     if (select) select.value = value;
     if (select2) select2.value = value;
 
+    const filterTypeEl = document.getElementById('reportFilterType');
+    if (filterTypeEl) filterTypeEl.value = 'version';
+
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
     let scrollRatio = null;
@@ -1908,6 +1983,10 @@ export function handleReportVersionChange(value, containerId) {
 
     updateSegmentButtonSelection(containerId, value);
     syncVersionToEstimate(value);
+
+    // 月フィルタの選択肢を連動して更新
+    updateMonthOptions(value);
+
     if (typeof window.updateReport === 'function') {
         window.updateReport();
     }
@@ -1924,28 +2003,14 @@ export function handleReportVersionChange(value, containerId) {
 
 export function handleEstimateFilterTypeChange() {
     const filterType = document.getElementById('estimateFilterType').value;
-    const monthFilterCompact = document.getElementById('estimateMonthFilterCompact');
-    const versionFilterCompact = document.getElementById('estimateVersionFilterCompact');
     const monthFilterSegmented = document.getElementById('estimateMonthFilterSegmented');
     const versionFilterSegmented = document.getElementById('estimateVersionFilterSegmented');
 
-    // フィルタタイプボタンの選択状態を更新
-    const btnMonth = document.getElementById('btnEstimateFilterMonth');
-    const btnVersion = document.getElementById('btnEstimateFilterVersion');
-    if (filterType === 'month') {
-        if (btnMonth) btnMonth.classList.add('active');
-        if (btnVersion) btnVersion.classList.remove('active');
-    } else {
-        if (btnMonth) btnMonth.classList.remove('active');
-        if (btnVersion) btnVersion.classList.add('active');
-    }
+    // 全てのフィルタ要素を表示状態に保つ（フィルタタイプによる非表示を廃止）
+    if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+    if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
 
     if (filterType === 'month') {
-        if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
-        if (versionFilterCompact) versionFilterCompact.style.display = 'none';
-        if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
-        if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
-
         const estimateMonthEl = document.getElementById('estimateMonthFilter');
         if (estimateMonthEl) {
             // 月オプションが「全期間」のみの場合、確実に 'all' を設定
@@ -1961,11 +2026,6 @@ export function handleEstimateFilterTypeChange() {
             }
         }
     } else {
-        if (monthFilterCompact) monthFilterCompact.style.display = 'none';
-        if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
-        if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
-        if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
-
         const estimateVersionEl = document.getElementById('estimateVersionFilter');
         if (estimateVersionEl && (!estimateVersionEl.value || estimateVersionEl.value === 'all')) {
             const options = estimateVersionEl.options;
@@ -2024,17 +2084,14 @@ export function handleReportFilterTypeChange() {
         if (!filterTypeEl) return;
 
         const filterType = filterTypeEl.value;
-        const monthFilterCompact = document.getElementById('reportMonthFilterCompact');
-        const versionFilterCompact = document.getElementById('reportVersionFilterCompact');
         const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
         const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
 
-        if (filterType === 'month') {
-            if (monthFilterCompact) monthFilterCompact.style.display = 'flex';
-            if (versionFilterCompact) versionFilterCompact.style.display = 'none';
-            if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
-            if (versionFilterSegmented) versionFilterSegmented.style.display = 'none';
+        // 全てのフィルタ要素を表示状態に保つ
+        if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+        if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
 
+        if (filterType === 'month') {
             const reportMonthEl = document.getElementById('reportMonth');
             if (reportMonthEl) {
                 // 月オプションが「全期間」のみの場合、確実に 'all' を設定
@@ -2050,11 +2107,6 @@ export function handleReportFilterTypeChange() {
                 }
             }
         } else {
-            if (monthFilterCompact) monthFilterCompact.style.display = 'none';
-            if (versionFilterCompact) versionFilterCompact.style.display = 'flex';
-            if (monthFilterSegmented) monthFilterSegmented.style.display = 'none';
-            if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
-
             const reportVersionEl = document.getElementById('reportVersion');
             if (reportVersionEl && (!reportVersionEl.value || reportVersionEl.value === 'all')) {
                 const options = reportVersionEl.options;
@@ -2067,7 +2119,6 @@ export function handleReportFilterTypeChange() {
             }
         }
 
-        updateFilterTypeButtons(filterType);
         syncFilterTypeToEstimate(filterType);
 
         if (filterType === 'month') {

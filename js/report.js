@@ -832,6 +832,13 @@ export function togglePhaseCollapse(phaseId) {
     if (arrow) {
         arrow.textContent = phaseCollapsed[phaseId] ? '▶' : '▼';
     }
+
+    // Phase 3 が展開された場合、グラフを再描画（サイズ0で描画された可能性があるため）
+    if (phaseId === 'phase3' && !phaseCollapsed.phase3) {
+        if (typeof updateReport === 'function') {
+            updateReport();
+        }
+    }
 }
 
 // ============================================
@@ -1007,43 +1014,35 @@ export function getAnalysisGradients() {
 function filterReportData(filterType, selectedMonth, selectedVersion) {
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     let filteredActuals = actuals;
-    let filteredEstimates = estimates;
+    // 最初に見積データを正規化
+    let filteredEstimates = estimates.map(e => normalizeEstimate(e));
 
-    if (filterType === 'month') {
-        if (selectedMonth !== 'all') {
-            filteredActuals = actuals.filter(a => {
-                if (isOtherWork(a)) {
-                    return a.date && a.date.startsWith(selectedMonth);
-                }
-                return a.date && a.date.startsWith(selectedMonth);
-            });
+    // 版数フィルタを適用
+    if (selectedVersion !== 'all') {
+        filteredActuals = filteredActuals.filter(a => a.version === selectedVersion);
+        filteredEstimates = filteredEstimates.filter(e => e.version === selectedVersion);
+    }
 
-            filteredEstimates = estimates.filter(e => {
-                const est = normalizeEstimate(e);
-                if (!est.workMonths || est.workMonths.length === 0) {
-                    return true;
-                }
-                return est.workMonths.includes(selectedMonth);
-            }).map(e => {
-                const est = normalizeEstimate(e);
-                let hoursForMonth = 0;
-                if (est.monthlyHours && est.monthlyHours[selectedMonth] !== undefined) {
-                    hoursForMonth = est.monthlyHours[selectedMonth];
-                } else if (!est.workMonths || est.workMonths.length === 0) {
-                    hoursForMonth = est.hours;
-                }
-                return { ...est, hours: hoursForMonth };
-            });
-        } else {
-            filteredEstimates = estimates.map(e => normalizeEstimate(e));
-        }
-    } else {
-        if (selectedVersion !== 'all') {
-            filteredActuals = actuals.filter(a => a.version === selectedVersion);
-            filteredEstimates = estimates.filter(e => e.version === selectedVersion).map(e => normalizeEstimate(e));
-        } else {
-            filteredEstimates = estimates.map(e => normalizeEstimate(e));
-        }
+    // 月フィルタを適用
+    if (selectedMonth !== 'all') {
+        filteredActuals = filteredActuals.filter(a => {
+            return a.date && a.date.startsWith(selectedMonth);
+        });
+
+        filteredEstimates = filteredEstimates.filter(e => {
+            if (!e.workMonths || e.workMonths.length === 0) {
+                return true;
+            }
+            return e.workMonths.includes(selectedMonth);
+        }).map(e => {
+            let hoursForMonth = 0;
+            if (e.monthlyHours && e.monthlyHours[selectedMonth] !== undefined) {
+                hoursForMonth = e.monthlyHours[selectedMonth];
+            } else if (!e.workMonths || e.workMonths.length === 0) {
+                hoursForMonth = e.hours;
+            }
+            return { ...e, hours: hoursForMonth };
+        });
     }
 
     return { filteredActuals, filteredEstimates };
@@ -1059,19 +1058,29 @@ function updateReportTitle(filterType, selectedMonth, selectedVersion) {
     const titleElement = document.getElementById('reportPeriodTitle');
     if (!titleElement) return;
 
-    if (filterType === 'month') {
-        if (selectedMonth === 'all') {
-            titleElement.textContent = '全期間の集計';
-        } else {
-            const [year, month] = selectedMonth.split('-');
-            titleElement.textContent = `${year}年${parseInt(month)}月の集計`;
-        }
+    let periodText = '';
+    if (selectedMonth === 'all') {
+        periodText = '全期間';
     } else {
-        if (selectedVersion === 'all') {
-            titleElement.textContent = '全版数の集計';
-        } else {
-            titleElement.textContent = `${selectedVersion} の集計`;
-        }
+        const [year, month] = selectedMonth.split('-');
+        periodText = `${year}年${parseInt(month)}月`;
+    }
+
+    let versionText = '';
+    if (selectedVersion === 'all') {
+        versionText = '全版数';
+    } else {
+        versionText = selectedVersion;
+    }
+
+    if (selectedMonth === 'all' && selectedVersion === 'all') {
+        titleElement.textContent = '全データの集計';
+    } else if (selectedMonth === 'all') {
+        titleElement.textContent = `${versionText} の集計`;
+    } else if (selectedVersion === 'all') {
+        titleElement.textContent = `${periodText} の集計`;
+    } else {
+        titleElement.textContent = `${versionText} (${periodText}) の集計`;
     }
 }
 
@@ -1109,7 +1118,8 @@ export function updateReport() {
     const filterType = document.getElementById('reportFilterType').value;
     const selectedMonth = document.getElementById('reportMonth').value;
     const selectedVersion = document.getElementById('reportVersion').value;
-    const viewType = document.getElementById('reportViewType').value;
+    const defaultViewTypeElement = document.getElementById('defaultReportViewType');
+    const viewType = defaultViewTypeElement ? defaultViewTypeElement.value : 'matrix';
 
     // フィルタリング
     const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
@@ -1129,16 +1139,38 @@ export function updateReport() {
     displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
 
     // レポート詳細ビューをクリア
-    document.getElementById('reportDetailView').innerHTML = '';
+    const container = document.getElementById('reportDetailView');
+    let reportHtml = '';
 
     // 分析機能の表示
-    renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth);
+    const analyticsResult = renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth);
+    reportHtml += analyticsResult.html;
 
     // 詳細ビュー表示
     if (viewType === 'grouped') {
-        renderReportGrouped(filteredActuals, filteredEstimates);
+        reportHtml += renderReportGrouped(filteredActuals, filteredEstimates);
     } else if (viewType === 'matrix') {
-        renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth);
+        reportHtml += renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth);
+    }
+
+    // まとめてDOMに反映
+    container.innerHTML = reportHtml;
+
+    // グラフを描画（DOM更新後に実行）
+    if (analyticsResult.chartData) {
+        // requestAnimationFrameを使用してDOMの反映を待つ
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (typeof drawMemberComparisonChart === 'function') {
+                    drawMemberComparisonChart(analyticsResult.chartData.members, analyticsResult.chartData.memberSummary);
+                }
+                if (typeof drawMemberDonutChart === 'function') {
+                    analyticsResult.chartData.members.forEach((member, index) => {
+                        drawMemberDonutChart(member, index, analyticsResult.chartData.filteredEstimates, analyticsResult.chartData.filteredActuals);
+                    });
+                }
+            });
+        });
     }
 
     renderMemberReport(filteredActuals, filteredEstimates);
@@ -1782,7 +1814,6 @@ function renderInsights(filteredEstimates, filteredActuals) {
  * @param {number} workingDaysPerMonth - 月あたり稼働日数
  */
 export function renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth) {
-    const container = document.getElementById('reportDetailView');
     let html = '';
 
     // Phase 1: 見積精度分析
@@ -1795,17 +1826,7 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
     const phase3Result = renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth);
     html += phase3Result.html;
 
-    container.innerHTML += html;
-
-    // Phase 3のグラフを描画（DOMが更新された後に実行）
-    if (phase3Result.chartData) {
-        setTimeout(() => {
-            drawMemberComparisonChart(phase3Result.chartData.members, phase3Result.chartData.memberSummary);
-            phase3Result.chartData.members.forEach((member, index) => {
-                drawMemberDonutChart(member, index, phase3Result.chartData.filteredEstimates, phase3Result.chartData.filteredActuals);
-            });
-        }, 200);
-    }
+    return { html, chartData: phase3Result.chartData };
 }
 
 // ============================================
@@ -1926,7 +1947,6 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
 // ============================================
 
 export function renderReportGrouped(filteredActuals, filteredEstimates) {
-    const container = document.getElementById('reportDetailView');
 
     // window経由で関数を呼び出し
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
@@ -1998,8 +2018,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
     });
 
     if (Object.keys(versionGroups).length === 0) {
-        container.innerHTML += '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
-        return;
+        return '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
     }
 
     let html = '<h3 style="margin-top: 30px;">対応別詳細（見積 vs 実績）</h3>';
@@ -2110,11 +2129,10 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
     });
 
     html += '</div>';
-    container.innerHTML += html;
+    return html;
 }
 
 export function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
-    const container = document.getElementById('reportDetailView');
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     const bgColorMode = window.reportMatrixBgColorMode || 'deviation';
     const showMonthColors = bgColorMode === 'month';
@@ -2144,7 +2162,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 est.workMonths.forEach(m => workMonthsSet.add(m));
             }
         });
-        
+
         if (workMonthsSet.size > 0) {
             let totalDays = 0;
             workMonthsSet.forEach(m => {
@@ -2227,8 +2245,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     });
 
     if (Object.keys(versionGroups).length === 0) {
-        container.innerHTML += '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
-        return;
+        return '<p style="color: #999; text-align: center; padding: 40px;">該当するデータがありません</p>';
     }
 
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -2357,7 +2374,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     });
 
     html += '</div>';
-    container.innerHTML += html;
+    return html;
 }
 
 // 案A（改：Formatted 2-Row Layout）のセルレンダリング
@@ -2451,13 +2468,20 @@ function getCellOnclick(version, task, process, est, act) {
 // 担当者別見積vs実績比較グラフを描画
 function drawMemberComparisonChart(members, memberSummary) {
     const canvas = document.getElementById('memberComparisonChart');
-    if (!canvas) return;
+    if (!canvas) {
+        if (debugModeEnabled) console.warn('drawMemberComparisonChart: canvas not found');
+        return;
+    }
 
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
 
     // キャンバスのサイズを設定
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+        if (debugModeEnabled) console.warn('drawMemberComparisonChart: canvas size is 0', rect);
+        return;
+    }
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
@@ -2587,6 +2611,10 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
 
     // キャンバスのサイズを設定
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+        if (debugModeEnabled) console.warn(`drawMemberDonutChart: canvas ${canvasId} size is 0`, rect);
+        return;
+    }
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);

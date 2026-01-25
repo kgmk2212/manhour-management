@@ -313,8 +313,8 @@ export function syncFloatingEstimateFilters() {
         });
     }
 
-    // 表示形式の同期
-    const mainViewType = document.getElementById('estimateViewType');
+    // 表示形式の同期（設定から取得）
+    const mainViewType = document.getElementById('defaultEstimateViewType');
     if (mainViewType) {
         const viewType = mainViewType.value;
         setFloatingEstViewType(viewType, false);
@@ -348,26 +348,13 @@ export function syncFloatingEstimateFilters() {
     if (floatingVersionButtons) enableDragScroll(floatingVersionButtons);
 }
 
-// 見積: フィルタタイプ設定
+// 見揮: フィルタタイプ設定
 export function setFloatingEstFilterType(type, applyToMain = true) {
+    // 全てのフィルタ要素を表示状態に保つ（フィルタタイプによる非表示を廃止）
     const monthGroup = document.getElementById('floatingEstMonthGroup');
     const versionGroup = document.getElementById('floatingEstVersionGroup');
-
-    // ボタンのスタイル更新のためにクラスを切り替え
-    const btnMonth = document.getElementById('floatingEstFilterMonth');
-    const btnVersion = document.getElementById('floatingEstFilterVersion');
-
-    if (type === 'month') {
-        if (monthGroup) monthGroup.style.display = 'block';
-        if (versionGroup) versionGroup.style.display = 'none';
-        if (btnMonth) btnMonth.classList.add('active');
-        if (btnVersion) btnVersion.classList.remove('active');
-    } else {
-        if (monthGroup) monthGroup.style.display = 'none';
-        if (versionGroup) versionGroup.style.display = 'block';
-        if (btnMonth) btnMonth.classList.remove('active');
-        if (btnVersion) btnVersion.classList.add('active');
-    }
+    if (monthGroup) monthGroup.style.display = 'block';
+    if (versionGroup) versionGroup.style.display = 'block';
 
     if (applyToMain) {
         const mainFilterType = document.getElementById('estimateFilterType');
@@ -411,11 +398,13 @@ export function setFloatingEstViewType(type, applyToMain = true) {
         if (typeof window.setEstimateViewType === 'function') {
             window.setEstimateViewType(type);
         } else {
-            // Fallback
-            const mainViewType = document.getElementById('estimateViewType');
+            // Fallback - 設定から取得
+            const mainViewType = document.getElementById('defaultEstimateViewType');
             if (mainViewType) {
                 mainViewType.value = type;
-                mainViewType.dispatchEvent(new Event('change'));
+                if (typeof window.renderEstimateList === 'function') {
+                    window.renderEstimateList();
+                }
             }
         }
     }
@@ -525,8 +514,8 @@ export function syncFloatingFilters() {
         });
     }
 
-    // 表示形式の同期
-    const mainViewType = document.getElementById('reportViewType');
+    // 表示形式の同期（設定から取得）
+    const mainViewType = document.getElementById('defaultReportViewType');
     if (mainViewType) {
         const viewType = mainViewType.value;
         setFloatingViewType(viewType, false);
@@ -544,22 +533,11 @@ export function syncFloatingFilters() {
 
 // フィルタタイプの設定（月別/版数別）
 export function setFloatingFilterType(type, applyToMain = true) {
-    const monthBtn = document.getElementById('floatingFilterMonth');
-    const versionBtn = document.getElementById('floatingFilterVersion');
+    // 全てのフィルタ要素を表示状態に保つ
     const monthGroup = document.getElementById('floatingMonthGroup');
     const versionGroup = document.getElementById('floatingVersionGroup');
-
-    if (type === 'month') {
-        if (monthGroup) monthGroup.style.display = 'block';
-        if (versionGroup) versionGroup.style.display = 'none';
-        if (monthBtn) monthBtn.classList.add('active');
-        if (versionBtn) versionBtn.classList.remove('active');
-    } else {
-        if (monthGroup) monthGroup.style.display = 'none';
-        if (versionGroup) versionGroup.style.display = 'block';
-        if (monthBtn) monthBtn.classList.remove('active');
-        if (versionBtn) versionBtn.classList.add('active');
-    }
+    if (monthGroup) monthGroup.style.display = 'block';
+    if (versionGroup) versionGroup.style.display = 'block';
 
     // メインフィルタに反映
     if (applyToMain) {
@@ -582,9 +560,9 @@ export function setFloatingFilterType(type, applyToMain = true) {
 export function setFloatingViewType(type, applyToMain = true) {
     // 表示形式の同期は、メインフィルタに反映した後の updateReport 内の updateSegmentedButtons で行われる
 
-    // メインフィルタに反映
+    // メインフィルタに反映（設定から取得）
     if (applyToMain) {
-        const mainViewType = document.getElementById('reportViewType');
+        const mainViewType = document.getElementById('defaultReportViewType');
         if (mainViewType) {
             mainViewType.value = type;
             if (typeof window.updateReport === 'function') {

@@ -294,13 +294,7 @@ export function initEventHandlers() {
     const estimateVersionFilter = document.getElementById('estimateVersionFilter');
     if (estimateVersionFilter) estimateVersionFilter.addEventListener('change', (e) => handleEstimateVersionChange(e.target.value, 'estimateVersionButtons2'));
 
-    const estimateViewType = document.getElementById('estimateViewType');
-    if (estimateViewType) {
-        estimateViewType.addEventListener('change', () => {
-            saveDefaultViewTypeSetting();
-            renderEstimateList();
-        });
-    }
+
 
     // モードトグル
     const workMonthSelectionMode = document.getElementById('workMonthSelectionMode');
@@ -475,14 +469,7 @@ export function initEventHandlers() {
         });
     }
 
-    // 表示タイプ
-    const reportViewType = document.getElementById('reportViewType');
-    if (reportViewType) {
-        reportViewType.addEventListener('change', () => {
-            saveDefaultViewTypeSetting();
-            setReportViewType(reportViewType.value);
-        });
-    }
+
 
     ['Summary', 'Grouped', 'Matrix'].forEach(type => {
         const btn = document.getElementById(`btnReport${type}`);

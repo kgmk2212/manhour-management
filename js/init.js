@@ -432,11 +432,6 @@ document.addEventListener('DOMContentLoaded', function () {
     UI.setDefaultActualMonth();
     UI.setDefaultReportMonth();
 
-    // 各タブのデフォルト月を設定
-    UI.setDefaultEstimateMonth();
-    UI.setDefaultActualMonth();
-    UI.setDefaultReportMonth();
-
     // デフォルトの表示形式を適用（View Type）
     Theme.applyDefaultEstimateViewType();
     Theme.applyDefaultReportViewType();

@@ -470,26 +470,22 @@
                             <option value="all">全版数</option>
                         </select>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="reportViewType" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="summary">サマリー</option>
-                            <option value="grouped" selected>グループ</option>
-                            <option value="matrix">マトリクス</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
                 <div id="reportFiltersSegmented" class="sticky-filter-container"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div class="segment-buttons">
-                                <button id="btnFilterMonth" class="active">月別</button>
-                                <button id="btnFilterVersion">版数別</button>
+                        <div id="reportVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
+                            <!-- セグメントボタン版 -->
+                            <div id="reportVersionButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
+                            <!-- Select版（要素数が多い場合） -->
+                            <select id="reportVersion2" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全版数</option>
+                            </select>
                         </div>
                         <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
@@ -501,25 +497,6 @@
                             <select id="reportMonth2" style="padding: 4px 8px; font-size: 13px; display: none;">
                                 <option value="all">全期間</option>
                             </select>
-                        </div>
-                        <div id="reportVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
-                            <!-- セグメントボタン版 -->
-                            <div id="reportVersionButtons2" class="segment-buttons"
-                                style="max-width: min(800px, calc(100vw - 110px));">
-                            </div>
-                            <!-- Select版（要素数が多い場合） -->
-                            <select id="reportVersion2" style="padding: 4px 8px; font-size: 13px; display: none;">
-                                <option value="all">全版数</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
-                                <button id="btnReportSummary">サマリー</button>
-                                <button id="btnReportGrouped" class="active">グループ</button>
-                                <button id="btnReportMatrix">マトリクス</button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -685,14 +662,7 @@
                                 <option value="all">全版数</option>
                             </select>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <select id="estimateViewType" style="padding: 3px 6px; font-size: 12px;">
-                                <option value="grouped">グループ</option>
-                                <option value="matrix">マトリクス</option>
-                                <option value="list">リスト</option>
-                            </select>
-                        </div>
+
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
                         <label
@@ -712,27 +682,7 @@
                 <div id="estimateFiltersSegmented" class="sticky-filter-container"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <div class="segment-buttons">
-                                <button id="btnEstimateFilterMonth" class="active">月別</button>
-                                <button id="btnEstimateFilterVersion">版数別</button>
-                            </div>
-                        </div>
-
-                        <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
-                            <!-- セグメントボタン版 -->
-                            <div id="estimateMonthButtons2" class="segment-buttons"
-                                style="max-width: min(800px, calc(100vw - 130px));">
-                            </div>
-                            <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateMonthFilter2" style="padding: 4px 8px; font-size: 13px; display: none;">
-                                <option value="all">全期間</option>
-                            </select>
-                        </div>
-
-                        <div id="estimateVersionFilterSegmented" style="display: none; align-items: center; gap: 6px;">
+                        <div id="estimateVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
                             <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
                             <div id="estimateVersionButtons2" class="segment-buttons"
@@ -745,13 +695,16 @@
                             </select>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
-                                <button id="btnEstimateGrouped" class="active">グループ</button>
-                                <button id="btnEstimateMatrix">マトリクス</button>
-                                <button id="btnEstimateList">リスト</button>
+                        <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <!-- セグメントボタン版 -->
+                            <div id="estimateMonthButtons2" class="segment-buttons"
+                                style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
+                            <!-- Select版（セグメントボタン生成用に必要） -->
+                            <select id="estimateMonthFilter2" style="padding: 4px 8px; font-size: 13px; display: none;">
+                                <option value="all">全期間</option>
+                            </select>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
@@ -1138,33 +1091,25 @@
 
                 </div>
 
-                <!-- デフォルト表示形式設定 -->
+                <!-- 表示形式設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3>📋 デフォルト表示形式</h3>
-                    <p style="color: #666; margin-bottom: 15px;">見積一覧とレポートを開いたときに表示される初期表示形式を設定できます。</p>
+                    <h3>📋 表示形式</h3>
+                    <p style="color: #666; margin-bottom: 15px;">見積一覧とレポートの表示形式を設定できます。</p>
 
                     <div class="form-group">
-                        <label>見積一覧のデフォルト表示</label>
+                        <label>見積一覧の表示形式</label>
                         <select id="defaultEstimateViewType">
                             <option value="grouped">グループ</option>
                             <option value="matrix" selected>マトリクス</option>
-                            <option value="list">リスト</option>
                         </select>
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            見積一覧タブを開いたとき、または画面を読み込んだときの初期表示形式です。
-                        </small>
                     </div>
 
                     <div class="form-group">
-                        <label>レポートのデフォルト表示</label>
+                        <label>レポートの表示形式</label>
                         <select id="defaultReportViewType">
-                            <option value="summary">サマリー</option>
                             <option value="grouped">グループ</option>
                             <option value="matrix" selected>マトリクス</option>
                         </select>
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            レポートタブを開いたとき、または画面を読み込んだときの初期表示形式です。
-                        </small>
                     </div>
                 </div>
 
@@ -2181,13 +2126,10 @@
                 </label>
             </div>
 
-            <!-- フィルタタイプ選択 -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">フィルタタイプ</label>
-                <div class="floating-filter-buttons">
-                    <button id="floatingEstFilterMonth" onclick="setFloatingEstFilterType('month')">月別</button>
-                    <button id="floatingEstFilterVersion" onclick="setFloatingEstFilterType('version')">版数別</button>
-                </div>
+            <!-- 版数別フィルタ -->
+            <div class="floating-filter-group" id="floatingEstVersionGroup">
+                <label class="floating-filter-label">版数</label>
+                <div class="floating-segment-buttons" id="floatingEstVersionButtons"></div>
             </div>
 
             <!-- 月別フィルタ -->
@@ -2196,21 +2138,6 @@
                 <div class="floating-segment-buttons" id="floatingEstMonthButtons"></div>
             </div>
 
-            <!-- 版数別フィルタ -->
-            <div class="floating-filter-group" id="floatingEstVersionGroup" style="display: none;">
-                <label class="floating-filter-label">版数</label>
-                <div class="floating-segment-buttons" id="floatingEstVersionButtons"></div>
-            </div>
-
-            <!-- 表示形式 -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">表示形式</label>
-                <div class="floating-filter-buttons">
-                    <button id="floatingEstViewGrouped" onclick="setFloatingEstViewType('grouped')">グループ</button>
-                    <button id="floatingEstViewMatrix" onclick="setFloatingEstViewType('matrix')">マトリクス</button>
-                    <button id="floatingEstViewList" onclick="setFloatingEstViewType('list')">リスト</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -2225,13 +2152,10 @@
             <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
         </div>
         <div class="floating-filter-panel-body">
-            <!-- フィルタタイプ選択 -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">フィルタタイプ</label>
-                <div class="floating-filter-buttons">
-                    <button id="floatingFilterMonth" onclick="setFloatingFilterType('month')">月別</button>
-                    <button id="floatingFilterVersion" onclick="setFloatingFilterType('version')">版数別</button>
-                </div>
+            <!-- 版数別フィルタ -->
+            <div class="floating-filter-group" id="floatingVersionGroup">
+                <label class="floating-filter-label">版数</label>
+                <div class="floating-segment-buttons" id="floatingVersionButtons"></div>
             </div>
 
             <!-- 月別フィルタ -->
@@ -2240,21 +2164,6 @@
                 <div class="floating-segment-buttons" id="floatingMonthButtons"></div>
             </div>
 
-            <!-- 版数別フィルタ -->
-            <div class="floating-filter-group" id="floatingVersionGroup" style="display: none;">
-                <label class="floating-filter-label">版数</label>
-                <div class="floating-segment-buttons" id="floatingVersionButtons"></div>
-            </div>
-
-            <!-- 表示形式 -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">表示形式</label>
-                <div class="floating-filter-buttons">
-                    <button id="floatingViewSummary" onclick="setFloatingViewType('summary')">サマリー</button>
-                    <button id="floatingViewGrouped" onclick="setFloatingViewType('grouped')">グループ</button>
-                    <button id="floatingViewMatrix" onclick="setFloatingViewType('matrix')">マトリクス</button>
-                </div>
-            </div>
         </div>
     </div>
 
