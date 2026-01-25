@@ -357,7 +357,7 @@ export function initTabSwipe() {
         const segmentButton = target.closest('[id$="Buttons2"]');
         if (segmentButton) return true;
 
-        const element = target.closest('.table-wrapper, .estimate-table-wrapper, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
+        const element = target.closest('.table-wrapper, .estimate-table-wrapper, .matrix-container, .matrix-table, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
         return element !== null;
     }
 
@@ -1799,68 +1799,7 @@ export function handleEstimateMonthChange(value, containerId) {
 
     const savedScrollY = window.scrollY;
 
-    // アニメーション方向決定 (スマホのみ)
-    let direction = 'none';
-    if (window.innerWidth <= 768 && currentMonth && value && currentMonth !== 'all' && value !== 'all' && currentMonth !== value) {
-        if (value > currentMonth) direction = 'next';
-        else direction = 'prev';
-    }
-
-    if (direction !== 'none') {
-        const container = document.getElementById('estimateList');
-        // 親要素が相対配置であることを前提とする (.estimate-table-wrapper)
-        if (container && container.parentNode) {
-            // アニメーション中はスクロールを抑制
-            container.parentNode.style.overflowX = 'hidden';
-
-            // 現在のコンテンツを複製してアニメーションさせる（退出）
-            const clone = container.cloneNode(true);
-            clone.id = 'estimateList-clone';
-            // クローンは絶対配置で上に重ねる
-            clone.style.position = 'absolute';
-            clone.style.top = '0';
-            clone.style.left = '0';
-            clone.style.width = '100%';
-            clone.style.zIndex = '10';
-
-            const outClass = direction === 'next' ? 'anim-slide-out-left' : 'anim-slide-out-right';
-            clone.classList.add('anim-leaving', outClass);
-
-            container.parentNode.appendChild(clone);
-
-            // 実際の更新処理
-            if (filterElement) filterElement.value = value;
-            updateSegmentButtonSelection(containerId, value);
-            syncMonthToReport(value);
-            if (typeof window.renderEstimateList === 'function') {
-                window.renderEstimateList();
-            }
-
-            // スクロール位置を復元
-            if (shouldUseTableRatio) {
-                restoreTableScrollRatio(tableElement, scrollRatio);
-            } else {
-                requestAnimationFrame(() => {
-                    window.scrollTo(0, savedScrollY);
-                });
-            }
-
-            // 新しいコンテンツのアニメーション（進入）
-            const inClass = direction === 'next' ? 'anim-slide-in-right' : 'anim-slide-in-left';
-            container.classList.add('anim-entering', inClass);
-
-            // クリーンアップ
-            setTimeout(() => {
-                if (clone.parentNode) clone.parentNode.removeChild(clone);
-                container.classList.remove('anim-entering', inClass);
-                // スクロール設定を戻す
-                container.parentNode.style.overflowX = 'auto';
-            }, 300);
-            return;
-        }
-    }
-
-    // 通常更新 (アニメーションなし)
+    // 通常更新 (アニメーションなし - 実績一覧タブのみアニメーション有効)
     if (filterElement) {
         filterElement.value = value;
     }
