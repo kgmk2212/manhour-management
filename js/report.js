@@ -2339,9 +2339,9 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += '<div class="matrix-table-wrapper"><table class="matrix-table">';
             html += '<tr><th class="matrix-header-task">対応名</th>';
             displayProcesses.forEach(proc => {
-                html += `<th style="min-width: 80px; text-align: center;">${proc}</th>`;
+                html += `<th class="matrix-proc-header">${proc}</th>`;
             });
-            html += '<th style="min-width: 90px; text-align: center;">合計</th></tr>';
+            html += '<th class="matrix-total-header">合計</th></tr>';
             html += contentHtml;
             html += '<tr style="background: #f8fafc; font-weight: bold; border-top: 2px solid #ddd;">';
             html += `<td class="matrix-header-task">合計</td>`;

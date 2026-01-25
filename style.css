@@ -1805,20 +1805,60 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
-            min-width: 800px;
-            table-layout: fixed;
+            table-layout: auto;
         }
 
         @media (max-width: 767px) {
             .matrix-table {
-                font-size: 0.8rem;
-                min-width: 700px;
+                font-size: 0.75rem;
             }
 
             .matrix-container {
                 padding: 5px;
                 margin: 0 -10px;
                 border-radius: 0;
+            }
+
+            .matrix-table th,
+            .matrix-table td {
+                padding: 3px 2px;
+            }
+
+            .matrix-header-task {
+                width: 80px !important;
+                min-width: 80px !important;
+                max-width: 100px !important;
+                font-size: 0.7rem;
+            }
+
+            .matrix-table th:not(.matrix-header-task) {
+                min-width: 50px;
+                padding: 3px 1px;
+            }
+
+            /* モバイルでは人日表示を非表示 */
+            .unit-info {
+                display: none;
+            }
+
+            .a-val {
+                font-size: 11px;
+            }
+
+            .matrix-diff {
+                font-size: 0.65rem;
+            }
+
+            .m-member {
+                font-size: 8px;
+            }
+
+            .opt-a-row {
+                min-height: 16px;
+            }
+
+            .matrix-cell-content {
+                gap: 2px;
             }
         }
 
@@ -1843,7 +1883,27 @@
             left: 0;
             background: #f8fafc;
             z-index: 10;
-            width: 180px;
+            width: 150px;
+        }
+
+        .matrix-proc-header {
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .matrix-total-header {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        @media (max-width: 767px) {
+            .matrix-proc-header {
+                min-width: 45px;
+            }
+
+            .matrix-total-header {
+                min-width: 50px;
+            }
         }
 
         .matrix-task-row td:first-child {
