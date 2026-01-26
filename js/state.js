@@ -259,6 +259,7 @@ export let isReportTabFirstView = true;
 // クイック入力関連
 export let quickInputMode = 'actual'; // クイック入力のモード
 export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
+export let mobileTabDesign = 'classic'; // モバイルタブのデザイン: 'classic', 'dock', 'capsule'
 
 // ============================================
 // Setter関数（他のモジュールから変更可能にする）
@@ -424,4 +425,9 @@ export function setQuickInputMode(value) {
 export function setRememberQuickInputMode(value) {
     rememberQuickInputMode = value;
     window.rememberQuickInputMode = value;
+}
+
+export function setMobileTabDesign(value) {
+    mobileTabDesign = value;
+    window.mobileTabDesign = value;
 }

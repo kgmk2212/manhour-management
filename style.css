@@ -873,10 +873,6 @@
                 width: 95%;
             }
 
-            /* 見積テーブルのモバイル対応 */
-            .estimate-table-wrapper {
-                /* overflow-x削除で全列表示 */
-            }
 
             .estimate-table {
                 display: table;
@@ -1712,23 +1708,117 @@
                 bottom: env(safe-area-inset-bottom, 0);
                 top: auto !important;
                 /* PC用のtop:0を打ち消し */
-                left: env(safe-area-inset-left, 0);
-                right: env(safe-area-inset-right, 0);
+                left: 0;
+                right: 0;
                 width: auto;
                 z-index: 1000;
                 border-radius: 0;
                 box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
                 padding: 10px 5px;
-                padding-left: max(5px, env(safe-area-inset-left, 5px));
-                padding-right: max(5px, env(safe-area-inset-right, 5px));
-                padding-bottom: 10px;
                 background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(5px);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex;
             }
 
-            /* モバイルでは下に沈めて隠す（セーフエリアを含めた高さ分） */
+            .tabs .tab {
+                flex: none;
+                /* 自然な幅に戻す */
+                margin: 0 2px;
+                text-align: center;
+                padding: 10px 16px;
+                font-size: 13px;
+                transition: all 0.3s ease;
+                display: block;
+                white-space: nowrap;
+            }
+
+            /* 0. Classic (修正前の標準) */
+            .tabs.is-classic {
+                background: rgba(255, 255, 255, 0.95);
+                border-top: 1px solid #ddd;
+                padding: 10px 5px calc(env(safe-area-inset-bottom, 0px) + 10px);
+                border-radius: 0;
+                bottom: 0 !important;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tabs.is-classic .tab {
+                background: white;
+                color: #333;
+                border: none;
+                border-radius: 6px;
+            }
+
+            .tabs.is-classic .tab.active {
+                background: var(--early-theme-gradient);
+                color: white;
+            }
+
+            /* 1. Solid Dock (ネイティブ風) */
+            .tabs.is-dock {
+                bottom: 0 !important;
+                padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+                border-radius: 24px 24px 0 0;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(25px);
+                box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.12);
+                border: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 8px;
+            }
+
+            .tabs.is-dock .tab {
+                border-radius: 16px;
+                background: rgba(0, 0, 0, 0.05);
+                padding: 12px 20px;
+                flex: none;
+            }
+
+            .tabs.is-dock .tab.active {
+                background: var(--early-theme-gradient);
+                color: white;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                transform: translateY(-2px);
+            }
+
+            /* 2. Floating Capsule (モダン) */
+            .tabs.is-capsule {
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
+                left: 12px;
+                right: 12px;
+                margin: 0;
+                padding: 8px;
+                border-radius: 40px;
+                background: rgba(255, 255, 255, 0.88);
+                backdrop-filter: blur(30px) saturate(180%);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 5px;
+            }
+
+            .tabs.is-capsule .tab {
+                border-radius: 35px;
+                background: transparent;
+                padding: 12px 18px;
+                flex: none;
+            }
+
+            .tabs.is-capsule .tab.active {
+                background: var(--early-theme-gradient);
+                color: white;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+                transform: scale(1.05);
+            }
+
+            /* モバイルでは下に沈めて隠す */
             .tabs.is-hidden {
-                transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px)));
+                transform: translateY(calc(120% + env(safe-area-inset-bottom, 0px)));
             }
 
             /* 下部タブの分だけコンテンツに余白を設ける */

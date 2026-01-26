@@ -14,8 +14,10 @@ import {
 
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
-    isReportTabFirstView, setIsReportTabFirstView
+    isReportTabFirstView, setIsReportTabFirstView,
+    mobileTabDesign, setMobileTabDesign
 } from './state.js';
+
 
 // ============================================
 // グラフカラースキーム
@@ -149,6 +151,7 @@ export function loadThemeSettings() {
         }
     }
 
+    loadMobileTabDesign();
     applyTheme();
 }
 
@@ -157,6 +160,7 @@ export function applyTheme() {
     const patternEl = document.getElementById('themePattern');
     const tabColorEl = document.getElementById('themeTabColor');
     const backgroundColorEl = document.getElementById('themeBackgroundColor');
+    const tabs = document.querySelector('.tabs');
 
     // DOM要素が存在する場合はその値を使用、なければstate変数（window経由）を使用
     // DOM要素の値を更新しつつ、state変数も同期
@@ -191,6 +195,11 @@ export function applyTheme() {
                 window.updateReport();
             }
         }
+    }
+
+    if (tabs) {
+        tabs.classList.remove('is-classic', 'is-dock', 'is-capsule');
+        tabs.classList.add(`is-${window.mobileTabDesign || 'classic'}`);
     }
 
     if (typeof window.saveData === 'function') {
@@ -483,6 +492,31 @@ export function saveDefaultViewTypeSetting() {
     if (typeof window.saveData === 'function') {
         window.saveData(true);
     }
+}
+
+// ============================================
+// モバイルタブデザイン設定
+// ============================================
+
+export function loadMobileTabDesign() {
+    try {
+        const saved = localStorage.getItem('mobileTabDesign');
+        if (saved) {
+            setMobileTabDesign(saved);
+            const el = document.getElementById('mobileTabDesign');
+            if (el) el.value = saved;
+        }
+    } catch (e) { }
+}
+
+export function changeMobileTabDesign() {
+    const el = document.getElementById('mobileTabDesign');
+    if (!el) return;
+
+    const value = el.value;
+    setMobileTabDesign(value);
+    localStorage.setItem('mobileTabDesign', value);
+    applyTheme();
 }
 
 // ============================================
