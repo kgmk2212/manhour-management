@@ -46,6 +46,7 @@ window.showProgressBarsSetting = State.showProgressBarsSetting;
 window.showProgressPercentageSetting = State.showProgressPercentageSetting;
 window.progressBarStyle = State.progressBarStyle;
 window.matrixEstActFormat = State.matrixEstActFormat;
+window.mobileTabDesign = State.mobileTabDesign;
 
 window.debugModeEnabled = State.debugModeEnabled;
 window.memberOrder = State.memberOrder;
