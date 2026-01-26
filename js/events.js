@@ -120,19 +120,26 @@ export function initEventHandlers() {
 
     // タブ切り替え
     // タブ切り替え（イベント委譲）
-    document.addEventListener('click', (e) => {
-        if (debugModeEnabled) console.log('🖱️ Document Clicked:', e.target);
+    const handleTabClick = (e) => {
         const tab = e.target.closest('.tab[data-tab]');
         if (tab) {
-            e.preventDefault();
-            console.log('✅ Tab Click Detected:', tab.dataset.tab);
+            // ダブルタップやタッチ+クリックでの重複実行防止
+            if (e.type === 'touchstart') {
+                e.preventDefault(); // クリックイベントの発生を防ぐ
+            }
+
+            if (debugModeEnabled) console.log(`✅ Tab ${e.type} Detected:`, tab.dataset.tab);
+
             if (typeof showTab === 'function') {
                 showTab(tab.dataset.tab);
             } else {
                 console.error('❌ showTab is not a function!');
             }
         }
-    });
+    };
+
+    document.addEventListener('click', handleTabClick);
+    document.addEventListener('touchstart', handleTabClick, { passive: false });
 
     // ============================================
     // クイック入力: 共通 & 実績
