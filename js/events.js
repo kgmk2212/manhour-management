@@ -123,11 +123,6 @@ export function initEventHandlers() {
     function handleTabClick(e) {
         const tab = e.target.closest('.tab[data-tab]');
         if (tab) {
-            // ダブルタップやタッチ+クリックでの重複実行防止
-            if (e.type === 'touchstart') {
-                e.preventDefault(); // クリックイベントの発生を防ぐ
-            }
-
             if (debugModeEnabled) console.log('✅ Tab ' + e.type + ' Detected:', tab.dataset.tab);
 
             if (typeof showTab === 'function') {
@@ -139,7 +134,6 @@ export function initEventHandlers() {
     }
 
     document.addEventListener('click', handleTabClick);
-    document.addEventListener('touchstart', handleTabClick, { passive: false });
 
     // ============================================
     // クイック入力: 共通 & 実績
