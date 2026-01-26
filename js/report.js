@@ -2354,7 +2354,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
 
-            html += '<div class="table-wrapper"><table class="estimate-matrix">';
+            html += '<div class="table-wrapper"><table class="estimate-matrix report-matrix">';
             html += '<tr><th style="min-width: 200px;">対応名</th>';
             displayProcesses.forEach(proc => {
                 html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
@@ -2439,7 +2439,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
         if (remaining === null && est.hours > 0) {
             remaining = Math.max(0, est.hours - actualHours);
         }
-        
+
         // 進捗率を計算
         let progressRate = 0;
         if (remaining === 0 && actualHours > 0) {

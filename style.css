@@ -257,15 +257,15 @@
             z-index: 2;
         }
 
-        /* 見積/レポートマトリクス表 - 常に画面内に収める＆列幅固定 */
-        table.estimate-matrix {
+        /* レポートタブ専用のマトリクスレイアウト（最新版：常に画面内に収める＆列幅固定） */
+        table.estimate-matrix.report-matrix {
             min-width: 0;
             width: 100%;
             table-layout: fixed;
         }
 
-        table.estimate-matrix th,
-        table.estimate-matrix td {
+        table.estimate-matrix.report-matrix th,
+        table.estimate-matrix.report-matrix td {
             white-space: normal;
             word-break: break-word;
             padding: 6px 4px;
@@ -273,20 +273,20 @@
         }
 
         /* 対応名列: 広め */
-        table.estimate-matrix th:first-child,
-        table.estimate-matrix td:first-child {
+        table.estimate-matrix.report-matrix th:first-child,
+        table.estimate-matrix.report-matrix td:first-child {
             width: 25%;
         }
 
         /* 工程列(UI,PG,PT,IT,ST): 均等 */
-        table.estimate-matrix th:not(:first-child):not(:last-child),
-        table.estimate-matrix td:not(:first-child):not(:last-child) {
+        table.estimate-matrix.report-matrix th:not(:first-child):not(:last-child),
+        table.estimate-matrix.report-matrix td:not(:first-child):not(:last-child) {
             width: 12%;
         }
 
         /* 合計列 */
-        table.estimate-matrix th:last-child,
-        table.estimate-matrix td:last-child {
+        table.estimate-matrix.report-matrix th:last-child,
+        table.estimate-matrix.report-matrix td:last-child {
             width: 15%;
         }
 
