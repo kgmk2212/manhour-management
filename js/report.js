@@ -20,6 +20,7 @@ import {
     showMonthColorsSetting,
     showProgressBarsSetting,
     showProgressPercentageSetting,
+    progressBarStyle,
     selectedChartColorScheme,
     debugModeEnabled,
     setDebugModeEnabled,
@@ -2298,7 +2299,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 }
 
                 contentHtml += '<tr>';
-                contentHtml += `<td class="matrix-header-task">${taskDisplayHtml}</td>`;
+                contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
                 let totalRemainingHours = 0;
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
@@ -2324,7 +2325,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                             devStyle = `background: ${getDeviationColor(est.hours, act.hours)};`;
                         }
 
-                        contentHtml += `<td style="${bgColor ? 'background:' + bgColor + ';' : devStyle} padding: 4px; cursor: pointer;" ${onclick} ${title}>${cellInner}</td>`;
+                        contentHtml += `<td style="text-align: center; ${bgColor ? 'background:' + bgColor + ';' : devStyle} cursor: pointer;" ${onclick} ${title}>${cellInner}</td>`;
                     } else {
                         contentHtml += `<td style="text-align: center; color: #ccc;">-</td>`;
                     }
@@ -2344,7 +2345,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     totalRemainingHours
                 );
 
-                contentHtml += `<td style="text-align: center; background: ${totalBgColor}; padding: 4px;">${totalCellInner}</td></tr>`;
+                contentHtml += `<td style="text-align: center; background: ${totalBgColor};">${totalCellInner}</td></tr>`;
             }
         });
 
@@ -2353,7 +2354,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
 
-            html += '<div class="table-wrapper"><table class="estimate-matrix matrix-table">';
+            html += '<div class="table-wrapper"><table class="estimate-matrix">';
             html += '<tr><th style="min-width: 200px;">対応名</th>';
             displayProcesses.forEach(proc => {
                 html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
@@ -2364,9 +2365,17 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += `<td class="matrix-header-task">合計</td>`;
             displayProcesses.forEach(() => html += '<td></td>');
             const vBg = bgColorMode === 'deviation' ? getDeviationColor(versionTotalEst, versionTotalAct) : '#f8fafc';
-            html += `<td style="text-align: center; background: ${vBg}; padding: 4px;">
-                <div style="font-weight: 600;">${versionTotalEst.toFixed(1)}<span style="margin: 0 2px; color: #ccc;">/</span>${versionTotalAct.toFixed(1)}</div>
-                <div class="matrix-diff ${versionTotalDiff > 0 ? 'diff-negative' : 'diff-positive'}" style="margin-top: 2px;">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}</div>
+            const versionTotalEstDays = versionTotalEst / 8;
+            const versionTotalActDays = versionTotalAct / 8;
+            const versionTotalEstMonths = versionTotalEstDays / workingDaysPerMonth;
+            const versionTotalActMonths = versionTotalActDays / workingDaysPerMonth;
+            html += `<td style="text-align: center; background: ${vBg};">
+                <div style="font-weight: 600;">${versionTotalEst.toFixed(1)}h</div>
+                <div style="font-weight: 700; color: #1976d2;">${versionTotalAct.toFixed(1)}h</div>
+                <div class="total-manpower">
+                    <div style="font-size: 11px; color: #666;">${versionTotalEstDays.toFixed(1)}/${versionTotalActDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${versionTotalEstMonths.toFixed(2)}/${versionTotalActMonths.toFixed(2)}人月</div>
+                </div>
             </td></tr></table></div>`;
 
             html += '</div>';
@@ -2412,13 +2421,67 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
     const actColorClass = isOver ? 'over' : (isWarning ? 'warning' : (isSafeBright ? 'safe-bright' : (isSafeNormal ? 'safe-normal' : '')));
 
-    // 担当者表示
-    let memberDisplay = '-';
-    if (act.members.size > 0) memberDisplay = Array.from(act.members).join(',');
-    else if (est.members.size > 0) memberDisplay = Array.from(est.members).join(',');
-    const memberText = memberDisplay !== '-' ? `(${memberDisplay})` : '';
+    // 担当者表示（見積一覧タブと同じ形式）
+    let memberDisplay = '';
+    if (act.members && act.members.size > 0) {
+        memberDisplay = Array.from(act.members).join(',');
+    } else if (est.members && est.members.size > 0) {
+        memberDisplay = Array.from(est.members).join(',');
+    }
 
-    // 合計列の場合
+    // 進捗バーの生成
+    let progressBarHtml = '';
+    if (showProgressBarsSetting && process !== 'total') {
+        // 実績時間
+        const actualHours = act.hours || 0;
+        // 残時間（渡されたremainingHoursを使用、なければest-actでフォールバック）
+        let remaining = remainingHours;
+        if (remaining === null && est.hours > 0) {
+            remaining = Math.max(0, est.hours - actualHours);
+        }
+        
+        // 進捗率を計算
+        let progressRate = 0;
+        if (remaining === 0 && actualHours > 0) {
+            progressRate = 100;
+        } else if (remaining === 0 && actualHours === 0) {
+            progressRate = 100;
+        } else if (actualHours + remaining > 0) {
+            progressRate = (actualHours / (actualHours + remaining)) * 100;
+        }
+
+        if (est.hours > 0 || actualHours > 0) {
+            const barColor = getProgressColor(progressRate);
+            const barWidth = Math.min(progressRate, 100);
+            const displayRate = progressRate.toFixed(0);
+            const remainingDisplay = (remaining || 0).toFixed(1);
+
+            if (progressBarStyle === 'bottom') {
+                // セル下部に表示するスタイル
+                progressBarHtml = `
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                        <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
+                    </div>
+                `;
+            } else {
+                // セル内に表示するスタイル（デフォルト）
+                const percentageHtml = showProgressPercentageSetting
+                    ? `<div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+                    : '';
+
+                progressBarHtml = `
+                    <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                        <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                            <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
+                        </div>
+                        ${percentageHtml}
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // 合計列の場合（見積一覧タブのスタイルに合わせる）
     if (process === 'total') {
         const estDays = est.hours / 8;
         const actDays = act.hours / 8;
@@ -2427,27 +2490,29 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
         return `
             <div style="text-align: center;">
-                <div style="font-weight: 600; color: #546e7a;">見 ${est.hours > 0 ? est.hours.toFixed(1) : '-'}</div>
-                <div style="font-weight: 600;" class="act-color ${actColorClass}">実 ${act.hours > 0 ? act.hours.toFixed(1) : '-'}</div>
+                <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}h</div>
+                <div style="font-weight: 700; color: #1976d2;" class="act-color ${actColorClass}">${act.hours > 0 ? act.hours.toFixed(1) : '-'}h</div>
                 <div class="total-manpower">
-                    <div style="font-size: 10px; color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
-                    <div style="font-size: 10px; color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
+                    <div style="font-size: 11px; color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
                 </div>
             </div>
         `;
     }
 
-    // 工程セル（見積一覧タブに近いスタイル）
-    const estText = est.hours > 0 ? est.hours.toFixed(1) : '-';
-    const actText = act.hours > 0 ? act.hours.toFixed(1) : '-';
-    const diffText = diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) : '±0';
+    // 工程セル（見積一覧タブのスタイルに合わせる）
+    const estText = est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-';
+    const actText = act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-';
+
+    // bottomスタイルの場合、セルにposition: relativeが必要
+    const wrapperStyle = progressBarStyle === 'bottom' && progressBarHtml ? 'text-align: center; position: relative; padding-bottom: 6px;' : 'text-align: center;';
 
     return `
-        <div style="text-align: center;">
-            <div style="font-weight: 600; color: #546e7a;">${estText}</div>
+        <div style="${wrapperStyle}">
+            <div style="font-weight: 600;">${estText}</div>
             <div style="font-weight: 600;" class="act-color ${actColorClass}">${actText}</div>
-            ${memberText ? `<div class="matrix-member" style="font-size: 11px; color: #666;">${memberText}</div>` : ''}
-            <div style="font-size: 10px; color: ${diff > 0 ? '#e74c3c' : (diff < 0 ? '#27ae60' : '#666')};">${diffText}</div>
+            ${memberDisplay ? `<div style="font-size: 12px; color: #666;">(${memberDisplay})</div>` : ''}
+            ${progressBarHtml}
         </div>
     `;
 }

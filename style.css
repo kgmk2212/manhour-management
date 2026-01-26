@@ -257,6 +257,39 @@
             z-index: 2;
         }
 
+        /* 見積/レポートマトリクス表 - 常に画面内に収める＆列幅固定 */
+        table.estimate-matrix {
+            min-width: 0;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        table.estimate-matrix th,
+        table.estimate-matrix td {
+            white-space: normal;
+            word-break: break-word;
+            padding: 6px 4px;
+            overflow: hidden;
+        }
+
+        /* 対応名列: 広め */
+        table.estimate-matrix th:first-child,
+        table.estimate-matrix td:first-child {
+            width: 25%;
+        }
+
+        /* 工程列(UI,PG,PT,IT,ST): 均等 */
+        table.estimate-matrix th:not(:first-child):not(:last-child),
+        table.estimate-matrix td:not(:first-child):not(:last-child) {
+            width: 12%;
+        }
+
+        /* 合計列 */
+        table.estimate-matrix th:last-child,
+        table.estimate-matrix td:last-child {
+            width: 15%;
+        }
+
         /* rowspan固定列の改善 - デスクトップでは改行しない */
         table td[rowspan] {
             white-space: nowrap;
@@ -897,48 +930,7 @@
                 padding: 4px 3px !important;
             }
 
-            /* レポートタブのマトリクス表専用（estimate-matrixとmatrix-tableを併用） */
-            table.estimate-matrix.matrix-table th,
-            table.estimate-matrix.matrix-table td {
-                padding: 2px 1px !important;
-                font-size: 10px !important;
-            }
 
-            /* 対応名列 */
-            table.estimate-matrix.matrix-table th:first-child,
-            table.estimate-matrix.matrix-table td:first-child {
-                width: 70px !important;
-                min-width: 70px !important;
-                max-width: 80px !important;
-                font-size: 9px !important;
-                word-break: break-all;
-            }
-
-            /* 工程列・合計列 */
-            table.estimate-matrix.matrix-table th:not(:first-child),
-            table.estimate-matrix.matrix-table td:not(:first-child) {
-                width: 42px !important;
-                min-width: 42px !important;
-                max-width: 50px !important;
-            }
-
-            /* セル内のコンテンツをコンパクトに */
-            table.estimate-matrix.matrix-table .matrix-cell-content {
-                gap: 1px !important;
-            }
-
-            table.estimate-matrix.matrix-table .a-val {
-                font-size: 10px !important;
-            }
-
-            table.estimate-matrix.matrix-table .matrix-diff {
-                font-size: 9px !important;
-            }
-
-            /* 担当者名をモバイルで非表示 */
-            table.estimate-matrix.matrix-table .matrix-member {
-                display: none !important;
-            }
 
             /* 実績一覧カレンダー表示専用のモバイル最適化 */
             table.actual-matrix {
@@ -1854,18 +1846,6 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
-        /* estimate-matrixと併用するmatrix-table固有のスタイル */
-        .matrix-table {
-            border-collapse: collapse;
-        }
-
-        .matrix-table th,
-        .matrix-table td {
-            border: 1px solid #eee;
-            text-align: center;
-            overflow: hidden;
-        }
-
         .matrix-header-task {
             text-align: left !important;
             position: sticky;
@@ -1896,10 +1876,5 @@
             /* モバイルでは合計列の人日/人月を非表示 */
             .total-manpower {
                 display: none;
-            }
-
-            /* 担当者名を非表示 */
-            .matrix-member {
-                display: none !important;
             }
         }
