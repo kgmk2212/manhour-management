@@ -272,22 +272,22 @@
             overflow: hidden;
         }
 
-        /* 対応名列 */
+        /* 対応名列: 広め */
         table.estimate-matrix th:first-child,
         table.estimate-matrix td:first-child {
-            width: 18%;
+            width: 25%;
         }
 
         /* 工程列(UI,PG,PT,IT,ST): 均等 */
         table.estimate-matrix th:not(:first-child):not(:last-child),
         table.estimate-matrix td:not(:first-child):not(:last-child) {
-            width: 13%;
+            width: 12%;
         }
 
         /* 合計列 */
         table.estimate-matrix th:last-child,
         table.estimate-matrix td:last-child {
-            width: 17%;
+            width: 15%;
         }
 
         /* 人日表示 - 狭い画面では非表示 */
