@@ -120,7 +120,7 @@ export function initEventHandlers() {
 
     // タブ切り替え
     // タブ切り替え（イベント委譲）
-    const handleTabClick = (e) => {
+    function handleTabClick(e) {
         const tab = e.target.closest('.tab[data-tab]');
         if (tab) {
             // ダブルタップやタッチ+クリックでの重複実行防止
@@ -128,7 +128,7 @@ export function initEventHandlers() {
                 e.preventDefault(); // クリックイベントの発生を防ぐ
             }
 
-            if (debugModeEnabled) console.log(`✅ Tab ${e.type} Detected:`, tab.dataset.tab);
+            if (debugModeEnabled) console.log('✅ Tab ' + e.type + ' Detected:', tab.dataset.tab);
 
             if (typeof showTab === 'function') {
                 showTab(tab.dataset.tab);
@@ -136,7 +136,7 @@ export function initEventHandlers() {
                 console.error('❌ showTab is not a function!');
             }
         }
-    };
+    }
 
     document.addEventListener('click', handleTabClick);
     document.addEventListener('touchstart', handleTabClick, { passive: false });
