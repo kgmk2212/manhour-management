@@ -95,7 +95,8 @@ import {
     toggleProgressPercentageSetting,
     saveProgressBarStyle,
     saveMatrixEstActFormat,
-
+    loadMobileTabDesign,
+    changeMobileTabDesign,
     saveDefaultViewTypeSetting,
     updateThemeElements
 } from './theme.js';
@@ -118,11 +119,14 @@ export function initEventHandlers() {
     }
 
     // タブ切り替え
-    const tabs = document.querySelectorAll('.tab[data-tab]');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+    // タブ切り替え（イベント委譲）
+    document.addEventListener('click', (e) => {
+        const tab = e.target.closest('.tab[data-tab]');
+        if (tab) {
+            e.preventDefault();
+            console.log('Tab clicked:', tab.dataset.tab);
             showTab(tab.dataset.tab);
-        });
+        }
     });
 
     // ============================================
@@ -590,6 +594,11 @@ export function initEventHandlers() {
     // 会社休日
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');
     if (btnAddCompanyHoliday) btnAddCompanyHoliday.addEventListener('click', addCompanyHoliday);
+
+    const mobileTabDesignDropdown = document.getElementById('mobileTabDesign');
+    if (mobileTabDesignDropdown) {
+        mobileTabDesignDropdown.addEventListener('change', changeMobileTabDesign);
+    }
 
     // Excel・ファイル
     const btnExportExcel = document.getElementById('btnExportExcel');
