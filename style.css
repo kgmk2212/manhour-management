@@ -76,6 +76,7 @@
             cursor: pointer;
             font-size: 13px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .tab.active {
