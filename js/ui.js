@@ -336,12 +336,14 @@ export function initSmartSticky() {
     // タブエリアクリックでの表示復帰（Mobile:下部クリック）
     window.addEventListener('click', (e) => {
         if (!tabs.classList.contains('is-hidden')) return;
-        if (!isMobile()) return;
+        if (!isMobileLayout()) return;
 
-        if (e.clientY > window.innerHeight - triggerZone) {
+        if (e.clientY > window.innerHeight - triggerZone || window.scrollY < 20) {
             tabs.classList.remove('is-hidden');
-            e.preventDefault();
-            e.stopPropagation();
+            if (e.clientY > window.innerHeight - triggerZone) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
         }
     }, true);
 }
