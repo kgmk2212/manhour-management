@@ -2504,13 +2504,21 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     const estText = est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-';
     const actText = act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-';
 
+    // 人日表示（広い画面のみ）
+    const estDays = est.hours / 8;
+    const actDays = act.hours / 8;
+    const manDaysHtml = (est.hours > 0 || act.hours > 0)
+        ? `<div class="cell-mandays" style="font-size: 10px; color: #888; white-space: nowrap;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
+        : '';
+
     // bottomスタイルの場合、セルにposition: relativeが必要
     const wrapperStyle = progressBarStyle === 'bottom' && progressBarHtml ? 'text-align: center; position: relative; padding-bottom: 6px;' : 'text-align: center;';
 
     return `
         <div style="${wrapperStyle}">
-            <div style="font-weight: 600;">${estText}</div>
-            <div style="font-weight: 600;" class="act-color ${actColorClass}">${actText}</div>
+            <div style="font-weight: 600; white-space: nowrap;">${estText}</div>
+            <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
+            ${manDaysHtml}
             ${memberDisplay ? `<div style="font-size: 12px; color: #666;">(${memberDisplay})</div>` : ''}
             ${progressBarHtml}
         </div>

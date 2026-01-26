@@ -272,22 +272,29 @@
             overflow: hidden;
         }
 
-        /* 対応名列: 広め */
+        /* 対応名列 */
         table.estimate-matrix th:first-child,
         table.estimate-matrix td:first-child {
-            width: 25%;
+            width: 18%;
         }
 
         /* 工程列(UI,PG,PT,IT,ST): 均等 */
         table.estimate-matrix th:not(:first-child):not(:last-child),
         table.estimate-matrix td:not(:first-child):not(:last-child) {
-            width: 12%;
+            width: 13%;
         }
 
         /* 合計列 */
         table.estimate-matrix th:last-child,
         table.estimate-matrix td:last-child {
-            width: 15%;
+            width: 17%;
+        }
+
+        /* 人日表示 - 狭い画面では非表示 */
+        @media (max-width: 900px) {
+            .cell-mandays {
+                display: none;
+            }
         }
 
         /* rowspan固定列の改善 - デスクトップでは改行しない */
