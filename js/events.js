@@ -121,11 +121,16 @@ export function initEventHandlers() {
     // タブ切り替え
     // タブ切り替え（イベント委譲）
     document.addEventListener('click', (e) => {
+        if (debugModeEnabled) console.log('🖱️ Document Clicked:', e.target);
         const tab = e.target.closest('.tab[data-tab]');
         if (tab) {
             e.preventDefault();
-            console.log('Tab clicked:', tab.dataset.tab);
-            showTab(tab.dataset.tab);
+            console.log('✅ Tab Click Detected:', tab.dataset.tab);
+            if (typeof showTab === 'function') {
+                showTab(tab.dataset.tab);
+            } else {
+                console.error('❌ showTab is not a function!');
+            }
         }
     });
 
