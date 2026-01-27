@@ -515,6 +515,9 @@
             .custom-dropdown {
                 max-height: 250px;
                 /* キーボード表示時などに見えなくならないよう制限 */
+                /* モバイルで下部が隠れないようパディングを大幅に増やす */
+                padding-bottom: 80px;
+                z-index: 2000;
             }
         }
 
@@ -1798,7 +1801,7 @@
 
             /* 2. Floating Capsule (モダン) */
             .tabs.is-capsule {
-                bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
                 left: 12px;
                 right: 12px;
                 margin: 0;

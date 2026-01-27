@@ -2299,7 +2299,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 }
 
                 contentHtml += '<tr>';
-                contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                contentHtml += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
                 let totalRemainingHours = 0;
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
@@ -2508,7 +2508,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     const estDays = est.hours / 8;
     const actDays = act.hours / 8;
     const manDaysHtml = (est.hours > 0 || act.hours > 0)
-        ? `<div class="cell-mandays" style="font-size: 10px; color: #888; white-space: nowrap;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
+        ? `<div class="cell-mandays" style="font-size: 10px; color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
         : '';
 
     // bottomスタイルの場合、セルにposition: relativeが必要
@@ -2516,8 +2516,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
     return `
         <div style="${wrapperStyle}">
-            <div style="font-weight: 600; white-space: nowrap;">${estText}</div>
-            <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
+            <div style="font-weight: 600;">${estText}</div>
+            <div style="font-weight: 600;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
             ${memberDisplay ? `<div style="font-size: 12px; color: #666;">(${memberDisplay})</div>` : ''}
             ${progressBarHtml}

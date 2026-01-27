@@ -1229,7 +1229,14 @@ export function getPreviousActual(member, beforeDate) {
     );
 
     if (previousActuals.length > 0) {
-        previousActuals.sort((a, b) => b.date.localeCompare(a.date));
+        previousActuals.sort((a, b) => {
+            const dateDiff = b.date.localeCompare(a.date);
+            if (dateDiff !== 0) return dateDiff;
+            // 日付が同じ場合は作成日時で降順ソート
+            const createdA = a.createdAt || '';
+            const createdB = b.createdAt || '';
+            return createdB.localeCompare(createdA);
+        });
         return previousActuals[0];
     }
 
