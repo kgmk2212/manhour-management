@@ -1484,9 +1484,41 @@ export function handleActualProcessChange() {
     const version = versionSelect ? versionSelect.value : null;
     const process = processSelect.value;
 
+    // プロセス変更時に現在の選択済みタスクを保持する試み
+    let currentTask = null;
+    const taskSelect = document.getElementById('editActualTaskSelect');
+    const taskInput = document.getElementById('editActualTaskSearch');
+
+    if (taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__') {
+        currentTask = taskSelect.value;
+    } else if (taskInput.style.display !== 'none' && taskInput.value) {
+        // テキスト入力モードの場合は名前だけで保持（完全一致するかは不明だが試行）
+        // ただし updateEditActualTaskList は select を再構築するので、
+        // テキスト入力モードから戻ることは想定しにくいが、念のため。
+    }
+
     // 現在選択されている対応名を保持したいが、プロセスが変わるとリスト内容が変わるため、
     // 基本的にはリセットされるか、同じ名前があればそれが選ばれる挙動になる。
     updateEditActualTaskList(member, true, version, process);
+
+    // 同じタスク名が新しいプロセスのリストにも存在すれば、それを選択し直す
+    if (currentTask) {
+        // オプションが存在するか確認
+        const options = Array.from(taskSelect.options);
+        const exists = options.some(opt => opt.value === currentTask);
+        if (exists) {
+            taskSelect.value = currentTask;
+            // 再選択したことによる残存時間の更新などは handleActualTaskSelect で行われるため、
+            // 必要に応じて呼び出すか、ここでも更新する。
+            // ループしないように注意。ここでは値セットだけにして、残時間は再度計算。
+
+            const existingRemaining = getRemainingEstimate(version, currentTask, process, member);
+            const remainingInput = document.getElementById('editActualRemainingHours');
+            if (remainingInput) {
+                remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
+            }
+        }
+    }
 }
 
 console.log('✅ モジュール actual.js loaded');
