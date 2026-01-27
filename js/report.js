@@ -2299,7 +2299,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 }
 
                 contentHtml += '<tr>';
-                contentHtml += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
                 let totalRemainingHours = 0;
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
@@ -2516,10 +2516,10 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
     return `
         <div style="${wrapperStyle}">
-            <div style="font-weight: 600;">${estText}</div>
-            <div style="font-weight: 600;" class="act-color ${actColorClass}">${actText}</div>
+            <div style="font-weight: 600; white-space: nowrap;">${estText}</div>
+            <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
-            ${memberDisplay ? `<div style="font-size: 12px; color: #666;">(${memberDisplay})</div>` : ''}
+            ${memberDisplay ? `<div style="font-size: 12px; color: #666; white-space: nowrap;">(${memberDisplay})</div>` : ''}
             ${progressBarHtml}
         </div>
     `;
