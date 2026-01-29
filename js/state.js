@@ -431,3 +431,40 @@ export function setMobileTabDesign(value) {
     mobileTabDesign = value;
     window.mobileTabDesign = value;
 }
+
+
+// ============================================
+// [GANTT-CHART] スケジュール関連変数
+// ============================================
+
+// スケジュールデータ
+export let schedules = [];
+export let nextScheduleId = 1;
+
+// スケジュール設定
+export let scheduleSettings = {
+    viewMode: 'member',      // 'member' | 'task'
+    displayRange: 'month',   // 'month' | 'week'
+    hoursPerDay: 8,          // 1日の作業時間
+    currentMonth: null       // 表示中の月（YYYY-MM）
+};
+
+// タスク色マッピング（タスク名 → 色）
+export let taskColorMap = {};
+
+// スケジュール関連Setter
+export function setSchedules(value) {
+    schedules = value;
+}
+
+export function setNextScheduleId(value) {
+    nextScheduleId = value;
+}
+
+export function setScheduleSettings(value) {
+    scheduleSettings = { ...scheduleSettings, ...value };
+}
+
+export function setTaskColorMap(value) {
+    taskColorMap = value;
+}

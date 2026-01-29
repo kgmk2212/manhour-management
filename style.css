@@ -1989,3 +1989,227 @@
                 display: none;
             }
         }
+/* ============================================
+   [GANTT-CHART] スケジュール関連スタイル
+   ============================================ */
+
+/* ツールバー */
+.schedule-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.schedule-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.schedule-nav-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.schedule-nav-btn:hover {
+    background: #e9ecef;
+}
+
+.schedule-today-btn {
+    background: #4A90D9;
+    color: white;
+    border-color: #4A90D9;
+}
+
+.schedule-today-btn:hover {
+    background: #3A80C9;
+}
+
+.schedule-current-month {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    min-width: 120px;
+    text-align: center;
+}
+
+.schedule-view-toggle {
+    display: flex;
+    gap: 5px;
+}
+
+.schedule-view-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.schedule-view-btn.active {
+    background: #4A90D9;
+    color: white;
+    border-color: #4A90D9;
+}
+
+.schedule-view-btn:hover:not(.active) {
+    background: #e9ecef;
+}
+
+/* サマリーパネル */
+.schedule-summary {
+    display: flex;
+    gap: 20px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 15px;
+}
+
+.schedule-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.schedule-summary-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.schedule-summary-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.schedule-summary-value.schedule-warning {
+    color: #FF6B6B;
+}
+
+/* ガントチャートコンテナ */
+.gantt-container {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    overflow: auto;
+    min-height: 400px;
+}
+
+#ganttCanvas {
+    display: block;
+}
+
+/* 空メッセージ */
+.schedule-empty-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.schedule-empty-message p:first-child {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+/* 詳細モーダル */
+.schedule-detail-progress {
+    margin-bottom: 20px;
+}
+
+.schedule-progress-bar-container {
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.schedule-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4A90D9, #50C878);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.schedule-progress-stats {
+    text-align: right;
+    font-size: 14px;
+    color: #666;
+}
+
+.schedule-detail-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.schedule-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.schedule-info-row:last-child {
+    border-bottom: none;
+}
+
+.schedule-info-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.schedule-info-value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.schedule-actual-list {
+    margin-bottom: 20px;
+}
+
+.schedule-edit-section {
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+    .schedule-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .schedule-nav {
+        justify-content: center;
+    }
+
+    .schedule-view-toggle {
+        justify-content: center;
+    }
+
+    .schedule-actions {
+        text-align: center;
+    }
+
+    .schedule-summary {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}

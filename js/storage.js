@@ -19,7 +19,11 @@ import {
     debugModeEnabled, setDebugModeEnabled,
     selectedChartColorScheme,
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
-    setEstimateLayout, setActualLayout, setReportLayout, setMemberOrder
+    setEstimateLayout, setActualLayout, setReportLayout, setMemberOrder,
+    // [GANTT-CHART] スケジュール関連
+    schedules, setSchedules, setNextScheduleId,
+    scheduleSettings, setScheduleSettings,
+    taskColorMap, setTaskColorMap
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -88,6 +92,10 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
     localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
     localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
+    // [GANTT-CHART] スケジュールデータ保存
+    localStorage.setItem('manhour_schedules', JSON.stringify(schedules));
+    localStorage.setItem('manhour_scheduleSettings', JSON.stringify(scheduleSettings));
+    localStorage.setItem('manhour_taskColorMap', JSON.stringify(taskColorMap));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
 
     // 進捗計算キャッシュをクリア
@@ -134,6 +142,13 @@ export function loadData() {
         if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
         if (savedVacations) setVacations(JSON.parse(savedVacations));
         if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
+        // [GANTT-CHART] スケジュールデータ読み込み
+        const savedSchedules = localStorage.getItem('manhour_schedules');
+        const savedScheduleSettings = localStorage.getItem('manhour_scheduleSettings');
+        const savedTaskColorMap = localStorage.getItem('manhour_taskColorMap');
+        if (savedSchedules) setSchedules(JSON.parse(savedSchedules));
+        if (savedScheduleSettings) setScheduleSettings(JSON.parse(savedScheduleSettings));
+        if (savedTaskColorMap) setTaskColorMap(JSON.parse(savedTaskColorMap));
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
         alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
@@ -153,6 +168,15 @@ export function loadData() {
         if (ids.length > 0) {
             setNextVacationId(Math.max(...ids) + 1);
         }
+    }
+
+    // [GANTT-CHART] スケジュールIDの最大値を設定
+    if (schedules.length > 0) {
+        const maxId = Math.max(...schedules.map(s => {
+            const match = s.id.match(/sch_(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+        }));
+        setNextScheduleId(maxId + 1);
     }
 
     // 設定を読み込み

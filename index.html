@@ -126,6 +126,7 @@
             <button class="tab" data-tab="report">レポート</button>
             <button class="tab" data-tab="estimate">見積一覧</button>
             <button class="tab" data-tab="actual">実績一覧</button>
+            <button class="tab" data-tab="schedule">📅 スケジュール</button>
             <button class="tab" data-tab="settings">⚙️ 設定</button>
         </div>
 
@@ -858,6 +859,54 @@
                 <div id="actualList"></div>
             </div>
             <!-- /report -->
+
+            <!-- [GANTT-CHART] スケジュールタブ -->
+            <div id="schedule" class="tab-content">
+                <!-- ツールバー -->
+                <div class="schedule-toolbar">
+                    <div class="schedule-nav">
+                        <button onclick="navigateScheduleMonth(-1)" class="schedule-nav-btn">◀ 前月</button>
+                        <span id="scheduleCurrentMonth" class="schedule-current-month">2026年1月</span>
+                        <button onclick="navigateScheduleMonth(1)" class="schedule-nav-btn">次月 ▶</button>
+                        <button onclick="goToScheduleToday()" class="schedule-nav-btn schedule-today-btn">今日</button>
+                    </div>
+                    <div class="schedule-view-toggle">
+                        <button onclick="setScheduleViewMode('member')" class="schedule-view-btn active" id="viewMemberBtn">担当者別</button>
+                        <button onclick="setScheduleViewMode('task')" class="schedule-view-btn" id="viewTaskBtn">タスク別</button>
+                    </div>
+                    <div class="schedule-actions">
+                        <button onclick="openCreateScheduleModal()" class="btn btn-primary">+ 予定作成</button>
+                    </div>
+                </div>
+
+                <!-- サマリーパネル -->
+                <div class="schedule-summary" id="scheduleSummary">
+                    <div class="schedule-summary-item">
+                        <span class="schedule-summary-label">完了</span>
+                        <span class="schedule-summary-value" id="summaryCompleted">0/0</span>
+                    </div>
+                    <div class="schedule-summary-item">
+                        <span class="schedule-summary-label">遅延</span>
+                        <span class="schedule-summary-value schedule-warning" id="summaryDelayed">0件</span>
+                    </div>
+                    <div class="schedule-summary-item">
+                        <span class="schedule-summary-label">残作業</span>
+                        <span class="schedule-summary-value" id="summaryRemaining">0h</span>
+                    </div>
+                </div>
+
+                <!-- ガントチャート -->
+                <div class="gantt-container" id="ganttContainer">
+                    <canvas id="ganttCanvas"></canvas>
+                </div>
+
+                <!-- 空の状態メッセージ -->
+                <div id="scheduleEmptyMessage" class="schedule-empty-message" style="display: none;">
+                    <p>スケジュールがありません</p>
+                    <p style="font-size: 14px; color: #888;">「+ 予定作成」ボタンから予定を追加してください</p>
+                </div>
+            </div>
+            <!-- /schedule -->
 
             <div id="settings" class="tab-content">
                 <h2>⚙️ 設定</h2>
@@ -2179,8 +2228,129 @@
         </div>
     </div>
 
+    <!-- [GANTT-CHART] 予定作成モーダル -->
+    <div id="createScheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>予定の作成</h3>
+                <span class="close" onclick="closeCreateScheduleModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="scheduleVersion" onchange="updateScheduleTaskOptions()">
+                        <option value="">選択してください</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>タスク</label>
+                    <select id="scheduleTask" onchange="updateScheduleProcessOptions()">
+                        <option value="">選択してください</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>工程</label>
+                    <select id="scheduleProcess" onchange="updateScheduleMemberOptions()">
+                        <option value="">選択してください</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>担当者</label>
+                    <select id="scheduleMember" onchange="populateScheduleEstimateHours()">
+                        <option value="">選択してください</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>見積工数</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" id="scheduleEstimatedHours" readonly style="flex: 1;">
+                        <span>時間</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>着手日</label>
+                    <input type="date" id="scheduleStartDate" onchange="recalculateScheduleEndDate()">
+                </div>
+                <div class="form-group">
+                    <label>終了予定日</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="text" id="scheduleEndDate" readonly style="flex: 1; background: #f0f0f0;">
+                        <span id="scheduleWorkingDays" style="color: #666; font-size: 13px;"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>メモ</label>
+                    <textarea id="scheduleNote" rows="2" placeholder="メモ（任意）"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeCreateScheduleModal()" class="btn btn-secondary">キャンセル</button>
+                <button onclick="saveScheduleFromModal()" class="btn btn-primary">作成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [GANTT-CHART] 予定詳細モーダル -->
+    <div id="scheduleDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="scheduleDetailTitle">予定詳細</h3>
+                <span class="close" onclick="closeScheduleDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- 進捗状況 -->
+                <div class="schedule-detail-progress">
+                    <div class="schedule-progress-bar-container">
+                        <div class="schedule-progress-bar" id="detailProgressBar"></div>
+                    </div>
+                    <div class="schedule-progress-stats">
+                        <span id="detailProgressRate">0%</span>
+                    </div>
+                </div>
+
+                <!-- 計画情報 -->
+                <div class="schedule-detail-info">
+                    <div class="schedule-info-row">
+                        <span class="schedule-info-label">計画期間</span>
+                        <span class="schedule-info-value" id="detailPlanPeriod"></span>
+                    </div>
+                    <div class="schedule-info-row">
+                        <span class="schedule-info-label">見積工数</span>
+                        <span class="schedule-info-value" id="detailEstimatedHours"></span>
+                    </div>
+                    <div class="schedule-info-row">
+                        <span class="schedule-info-label">実績工数</span>
+                        <span class="schedule-info-value" id="detailActualHours"></span>
+                    </div>
+                    <div class="schedule-info-row">
+                        <span class="schedule-info-label">残作業</span>
+                        <span class="schedule-info-value" id="detailRemainingHours"></span>
+                    </div>
+                </div>
+
+                <!-- 実績一覧 -->
+                <div class="schedule-actual-list" id="detailActualList">
+                    <!-- 動的に生成 -->
+                </div>
+
+                <!-- 編集フォーム -->
+                <div class="schedule-edit-section">
+                    <div class="form-group">
+                        <label>着手日を変更</label>
+                        <input type="date" id="detailStartDate" onchange="recalculateScheduleEndDateDetail()">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="deleteScheduleFromModal()" class="btn btn-danger">削除</button>
+                <button onclick="closeScheduleDetailModal()" class="btn btn-secondary">閉じる</button>
+                <button onclick="saveScheduleDetailChanges()" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260127-2"></script>
+    <script type="module" src="js/init.js?v=20260127-3"></script>
 </body>
 
 </html>

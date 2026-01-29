@@ -259,3 +259,68 @@ export const PROCESS = {
         ST: '#f06595'
     }
 };
+
+
+// ============================================
+// [GANTT-CHART] スケジュール関連定数
+// ============================================
+
+export const SCHEDULE = {
+    // ステータス
+    STATUS: {
+        PENDING: 'pending',
+        IN_PROGRESS: 'in_progress',
+        COMPLETED: 'completed'
+    },
+
+    // 表示モード
+    VIEW_MODE: {
+        MEMBER: 'member',
+        TASK: 'task'
+    },
+
+    // 表示範囲
+    DISPLAY_RANGE: {
+        MONTH: 'month',
+        WEEK: 'week'
+    },
+
+    // デフォルト値
+    DEFAULT_HOURS_PER_DAY: 8,
+
+    // Canvas描画設定
+    CANVAS: {
+        BAR_HEIGHT: 20,
+        ROW_HEIGHT: 32,
+        HEADER_HEIGHT: 50,
+        DAY_WIDTH: 28,
+        LABEL_WIDTH: 150,
+        ROW_PADDING: 6
+    },
+
+    // 色設定
+    COLORS: {
+        PLAN_BAR: '#B3D4FC',      // 計画バー（薄い青）
+        ACTUAL_BAR: '#4A90D9',    // 実績バー（濃い青）
+        DELAYED: '#FF6B6B',       // 遅延（赤）
+        COMPLETED: '#50C878',     // 完了（緑）
+        TODAY_LINE: '#FF5722',    // 今日ライン（オレンジ）
+        WEEKEND: '#F5F5F5',       // 週末背景
+        HOLIDAY: '#FFF3E0',       // 祝日背景
+        GRID: '#E0E0E0'           // グリッド線
+    }
+};
+
+// タスク用カラーパレット（自動割当用）
+export const TASK_COLORS = [
+    '#4A90D9', // 青
+    '#50C878', // 緑
+    '#FFB347', // オレンジ
+    '#FF6B6B', // 赤
+    '#9B59B6', // 紫
+    '#1ABC9C', // ティール
+    '#F39C12', // 黄
+    '#E74C3C', // 深赤
+    '#3498DB', // 明るい青
+    '#2ECC71'  // 明るい緑
+];
