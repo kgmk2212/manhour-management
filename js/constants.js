@@ -294,7 +294,7 @@ export const SCHEDULE = {
         ROW_HEIGHT: 32,
         HEADER_HEIGHT: 50,
         DAY_WIDTH: 28,
-        LABEL_WIDTH: 150,
+        LABEL_WIDTH: 200,  // 長い名前に対応するため拡大
         ROW_PADDING: 6
     },
 

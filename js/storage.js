@@ -59,14 +59,16 @@ export function saveAutoBackupSetting() {
  * @returns {void}
  */
 export function saveData(skipAutoBackup = false) {
+    // 担当者順はステート変数を優先（DOM要素が非表示の場合があるため）
     const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderValue = window.memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
     const data = {
         estimates: estimates,
         actuals: actuals,
         companyHolidays: companyHolidays,
         vacations: vacations,
         settings: {
-            memberOrder: memberOrderEl ? memberOrderEl.value.trim() : '',
+            memberOrder: memberOrderValue,
             themeColor: window.currentThemeColor,
             themePattern: window.currentThemePattern,
             themeTabColor: window.currentTabColor,
@@ -238,8 +240,9 @@ export function loadData() {
  * @returns {void}
  */
 export function autoBackup() {
-    // 現在の設定を取得
+    // 現在の設定を取得（担当者順はステート変数を優先）
     const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderValue = window.memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
     const settings = {
         themeColor: window.currentThemeColor,
         themePattern: window.currentThemePattern,
@@ -258,7 +261,7 @@ export function autoBackup() {
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
         chartColorScheme: selectedChartColorScheme,
-        memberOrder: memberOrderEl ? memberOrderEl.value.trim() : '',
+        memberOrder: memberOrderValue,
         stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
         floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
         debugModeEnabled: debugModeEnabled

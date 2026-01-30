@@ -1957,6 +1957,15 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
+        /* モバイル時のレポートマトリクス余白を見積一覧と揃える */
+        @media (max-width: 768px) {
+            .matrix-container {
+                padding: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
         .matrix-header-task {
             text-align: left !important;
             position: sticky;
@@ -1989,227 +1998,714 @@
                 display: none;
             }
         }
-/* ============================================
+
+        /* ============================================
    [GANTT-CHART] スケジュール関連スタイル
    ============================================ */
 
-/* ツールバー */
-.schedule-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    padding: 15px 20px;
-    background: #f8f9fa;
+        /* ツールバー */
+        .schedule-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .schedule-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .schedule-nav-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .schedule-nav-btn:hover {
+            background: #e9ecef;
+        }
+
+        .schedule-today-btn {
+            background: #4A90D9;
+            color: white;
+            border-color: #4A90D9;
+        }
+
+        .schedule-today-btn:hover {
+            background: #3A80C9;
+        }
+
+        .schedule-current-month {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .schedule-view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+
+        .schedule-view-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .schedule-view-btn.active {
+            background: #4A90D9;
+            color: white;
+            border-color: #4A90D9;
+        }
+
+        .schedule-view-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        /* サマリーパネル */
+        .schedule-summary {
+            display: flex;
+            gap: 20px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .schedule-summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .schedule-summary-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .schedule-summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .schedule-summary-value.schedule-warning {
+            color: #FF6B6B;
+        }
+
+        .schedule-summary-value.schedule-active {
+            color: #0d6efd;
+        }
+
+        .schedule-summary-value.schedule-today {
+            color: #198754;
+        }
+
+        /* ガントチャートコンテナ */
+        .gantt-container {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            overflow: auto;
+            min-height: 400px;
+        }
+
+        #ganttCanvas {
+            display: block;
+        }
+
+        /* 空メッセージ */
+        .schedule-empty-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .schedule-empty-message p:first-child {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        /* 詳細モーダル */
+        .schedule-detail-progress {
+            margin-bottom: 20px;
+        }
+
+        .schedule-progress-bar-container {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .schedule-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4A90D9, #50C878);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .schedule-progress-stats {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .schedule-detail-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .schedule-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .schedule-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .schedule-info-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .schedule-info-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .schedule-actual-list {
+            margin-bottom: 20px;
+        }
+
+        .schedule-edit-section {
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .schedule-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .schedule-nav {
+                justify-content: center;
+            }
+
+            .schedule-view-toggle {
+                justify-content: center;
+            }
+
+            .schedule-actions {
+                text-align: center;
+            }
+
+            .schedule-summary {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        /* 自動生成モーダル */
+        .auto-gen-preview {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .auto-gen-preview .preview-stats {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .auto-gen-preview .preview-stats p {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+
+        .auto-gen-preview .preview-list {
+            font-size: 13px;
+        }
+
+        .auto-gen-preview .preview-item {
+            display: flex;
+            gap: 8px;
+            padding: 4px 0;
+            border-bottom: 1px dotted #dee2e6;
+        }
+
+        .auto-gen-preview .preview-item:last-child {
+            border-bottom: none;
+        }
+
+        .auto-gen-preview .preview-task {
+            flex: 2;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .auto-gen-preview .preview-process {
+            flex: 0 0 40px;
+            color: #6c757d;
+        }
+
+        .auto-gen-preview .preview-member {
+            flex: 1;
+            color: #495057;
+        }
+
+        .auto-gen-preview .preview-hours {
+            flex: 0 0 50px;
+            text-align: right;
+            color: #007bff;
+        }
+
+        .modal-description {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .text-warning {
+            color: #856404;
+        }
+
+        .text-muted {
+            color: #6c757d;
+        }
+
+        /* ステータスボタン */
+        .schedule-status-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .status-btn:hover {
+            border-color: #adb5bd;
+        }
+
+        .status-btn.active {
+            border-width: 2px;
+        }
+
+        .status-btn.status-pending {
+            color: #6c757d;
+        }
+
+        .status-btn.status-pending.active {
+            background: #f8f9fa;
+            border-color: #6c757d;
+        }
+
+        .status-btn.status-in-progress {
+            color: #0d6efd;
+        }
+
+        .status-btn.status-in-progress.active {
+            background: #e7f1ff;
+            border-color: #0d6efd;
+        }
+
+        .status-btn.status-completed {
+            color: #198754;
+        }
+
+        .status-btn.status-completed.active {
+            background: #d1e7dd;
+            border-color: #198754;
+        }
+
+        /* 実績一覧テーブル */
+        .actual-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .actual-list-table th,
+        .actual-list-table td {
+            padding: 6px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .actual-list-table th {
+            background: #f8f9fa;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .schedule-actual-list h4 {
+            font-size: 14px;
+            margin: 0 0 8px 0;
+            color: #495057;
+        }
+
+        /* フィルタバー */
+        .schedule-filter-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .schedule-filter-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .schedule-filter-item label {
+            font-size: 13px;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+
+        .schedule-filter-item select {
+            padding: 5px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            background: #fff;
+            min-width: 100px;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #6c757d;
+            color: #6c757d;
+        }
+
+        .btn-outline:hover {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .btn-danger-outline {
+            background: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .btn-danger-outline:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .schedule-filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .schedule-filter-item {
+                width: 100%;
+            }
+
+            .schedule-filter-item select {
+                flex: 1;
+            }
+        }
+
+/* ガントチャート ツールチップ */
+.gantt-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    border: 1px solid #dee2e6;
     border-radius: 8px;
-    margin-bottom: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    min-width: 220px;
+    max-width: 300px;
+    font-size: 13px;
+    pointer-events: none;
 }
 
-.schedule-nav {
+.gantt-tooltip .tooltip-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 8px 8px 0 0;
+}
+
+.gantt-tooltip .tooltip-header strong {
+    color: #333;
+    font-size: 14px;
+}
+
+.gantt-tooltip .tooltip-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.gantt-tooltip .tooltip-status.pending {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.gantt-tooltip .tooltip-status.in_progress {
+    background: #e7f1ff;
+    color: #0d6efd;
+}
+
+.gantt-tooltip .tooltip-status.completed {
+    background: #d1e7dd;
+    color: #198754;
+}
+
+.gantt-tooltip .tooltip-body {
+    padding: 10px 12px;
+}
+
+.gantt-tooltip .tooltip-row {
+    display: flex;
+    margin-bottom: 6px;
+}
+
+.gantt-tooltip .tooltip-row:last-child {
+    margin-bottom: 0;
+}
+
+.gantt-tooltip .tooltip-label {
+    color: #6c757d;
+    min-width: 50px;
+}
+
+.gantt-tooltip .tooltip-row span:last-child {
+    color: #333;
+}
+
+.gantt-tooltip .tooltip-row .delayed {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.gantt-tooltip .tooltip-warning {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* トースト通知 */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
-.schedule-nav-btn {
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.schedule-nav-btn:hover {
-    background: #e9ecef;
-}
-
-.schedule-today-btn {
-    background: #4A90D9;
-    color: white;
-    border-color: #4A90D9;
-}
-
-.schedule-today-btn:hover {
-    background: #3A80C9;
-}
-
-.schedule-current-month {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    min-width: 120px;
-    text-align: center;
-}
-
-.schedule-view-toggle {
+.toast {
     display: flex;
-    gap: 5px;
-}
-
-.schedule-view-btn {
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.schedule-view-btn.active {
-    background: #4A90D9;
-    color: white;
-    border-color: #4A90D9;
-}
-
-.schedule-view-btn:hover:not(.active) {
-    background: #e9ecef;
-}
-
-/* サマリーパネル */
-.schedule-summary {
-    display: flex;
-    gap: 20px;
-    padding: 15px 20px;
-    background: white;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #fff;
     border-radius: 8px;
-    border: 1px solid #e9ecef;
-    margin-bottom: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 250px;
+    max-width: 400px;
+    animation: toast-slide-in 0.3s ease;
 }
 
-.schedule-summary-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.toast.toast-success {
+    border-left: 4px solid #198754;
 }
 
-.schedule-summary-label {
-    font-size: 12px;
-    color: #666;
+.toast.toast-error {
+    border-left: 4px solid #dc3545;
 }
 
-.schedule-summary-value {
+.toast.toast-info {
+    border-left: 4px solid #0d6efd;
+}
+
+.toast.toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast-icon {
     font-size: 18px;
-    font-weight: 600;
+}
+
+.toast-success .toast-icon { color: #198754; }
+.toast-error .toast-icon { color: #dc3545; }
+.toast-info .toast-icon { color: #0d6efd; }
+.toast-warning .toast-icon { color: #ffc107; }
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
     color: #333;
 }
 
-.schedule-summary-value.schedule-warning {
-    color: #FF6B6B;
-}
-
-/* ガントチャートコンテナ */
-.gantt-container {
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-    overflow: auto;
-    min-height: 400px;
-}
-
-#ganttCanvas {
-    display: block;
-}
-
-/* 空メッセージ */
-.schedule-empty-message {
-    text-align: center;
-    padding: 60px 20px;
-    color: #666;
-}
-
-.schedule-empty-message p:first-child {
+.toast-close {
+    background: none;
+    border: none;
     font-size: 18px;
-    margin-bottom: 10px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
 }
 
-/* 詳細モーダル */
-.schedule-detail-progress {
-    margin-bottom: 20px;
+.toast-close:hover {
+    color: #333;
 }
 
-.schedule-progress-bar-container {
-    height: 20px;
-    background: #e9ecef;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 8px;
+.toast.toast-hide {
+    animation: toast-slide-out 0.3s ease forwards;
 }
 
-.schedule-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #4A90D9, #50C878);
-    border-radius: 10px;
-    transition: width 0.3s ease;
+@keyframes toast-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
-.schedule-progress-stats {
+@keyframes toast-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* フィルタ結果件数 */
+.filter-result-count {
+    font-size: 13px;
+    color: #6c757d;
+    margin-left: auto;
+}
+
+.filter-result-count strong {
+    color: #333;
+}
+
+/* 見込み残存時間入力 */
+.schedule-remaining-edit {
+    background: #fff8e7 !important;
+    border-radius: 6px;
+    margin-top: 8px !important;
+    padding: 10px !important;
+}
+
+.schedule-remaining-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.schedule-remaining-input-group input {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    font-size: 14px;
     text-align: right;
-    font-size: 14px;
+}
+
+.schedule-remaining-input-group input:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+}
+
+.schedule-remaining-input-group .input-suffix {
     color: #666;
+    font-size: 13px;
 }
 
-.schedule-detail-info {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
+.schedule-remaining-input-group .btn {
+    padding: 6px 12px;
 }
 
-.schedule-info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #e9ecef;
+/* キーボードショートカットヒント */
+.keyboard-hint {
+    cursor: help;
+    font-size: 16px;
+    color: #6c757d;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
 }
 
-.schedule-info-row:last-child {
-    border-bottom: none;
-}
-
-.schedule-info-label {
-    color: #666;
-    font-size: 14px;
-}
-
-.schedule-info-value {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.schedule-actual-list {
-    margin-bottom: 20px;
-}
-
-.schedule-edit-section {
-    padding-top: 15px;
-    border-top: 1px solid #e9ecef;
-}
-
-/* レスポンシブ */
-@media (max-width: 768px) {
-    .schedule-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .schedule-nav {
-        justify-content: center;
-    }
-
-    .schedule-view-toggle {
-        justify-content: center;
-    }
-
-    .schedule-actions {
-        text-align: center;
-    }
-
-    .schedule-summary {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+.keyboard-hint:hover {
+    background: #e9ecef;
+    color: #333;
 }

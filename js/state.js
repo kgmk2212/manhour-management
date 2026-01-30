@@ -261,6 +261,16 @@ export let quickInputMode = 'actual'; // クイック入力のモード
 export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
 export let mobileTabDesign = 'capsule'; // モバイルタブのデザイン: 'classic', 'dock', 'capsule'
 
+// フィルタ状態の保持（画面遷移・データ更新時に維持するため）
+export let estimateFilterState = {
+    month: null,       // null = 未設定（デフォルト適用）
+    version: null
+};
+export let reportFilterState = {
+    month: null,
+    version: null
+};
+
 // ============================================
 // Setter関数（他のモジュールから変更可能にする）
 // ============================================
@@ -446,7 +456,10 @@ export let scheduleSettings = {
     viewMode: 'member',      // 'member' | 'task'
     displayRange: 'month',   // 'month' | 'week'
     hoursPerDay: 8,          // 1日の作業時間
-    currentMonth: null       // 表示中の月（YYYY-MM）
+    currentMonth: null,      // 表示中の月（YYYY-MM）
+    filterVersion: '',       // フィルタ: 版数
+    filterMember: '',        // フィルタ: 担当者
+    filterStatus: ''         // フィルタ: ステータス
 };
 
 // タスク色マッピング（タスク名 → 色）
@@ -467,4 +480,13 @@ export function setScheduleSettings(value) {
 
 export function setTaskColorMap(value) {
     taskColorMap = value;
+}
+
+// フィルタ状態Setter
+export function setEstimateFilterState(state) {
+    estimateFilterState = { ...estimateFilterState, ...state };
+}
+
+export function setReportFilterState(state) {
+    reportFilterState = { ...reportFilterState, ...state };
 }
