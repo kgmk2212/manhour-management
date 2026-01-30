@@ -1960,7 +1960,7 @@
         /* モバイル時のレポートマトリクス余白を見積一覧と揃える */
         @media (max-width: 768px) {
             .matrix-container {
-                padding: 0;
+                padding: 0 !important;
                 border-radius: 0;
                 box-shadow: none;
             }
@@ -2461,251 +2461,264 @@
             }
         }
 
-/* ガントチャート ツールチップ */
-.gantt-tooltip {
-    position: fixed;
-    z-index: 10000;
-    background: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    padding: 0;
-    min-width: 220px;
-    max-width: 300px;
-    font-size: 13px;
-    pointer-events: none;
-}
+        /* ガントチャート ツールチップ */
+        .gantt-tooltip {
+            position: fixed;
+            z-index: 10000;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 0;
+            min-width: 220px;
+            max-width: 300px;
+            font-size: 13px;
+            pointer-events: none;
+        }
 
-.gantt-tooltip .tooltip-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
-    border-radius: 8px 8px 0 0;
-}
+        .gantt-tooltip .tooltip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 8px 8px 0 0;
+        }
 
-.gantt-tooltip .tooltip-header strong {
-    color: #333;
-    font-size: 14px;
-}
+        .gantt-tooltip .tooltip-header strong {
+            color: #333;
+            font-size: 14px;
+        }
 
-.gantt-tooltip .tooltip-status {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 500;
-}
+        .gantt-tooltip .tooltip-status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
 
-.gantt-tooltip .tooltip-status.pending {
-    background: #f8f9fa;
-    color: #6c757d;
-    border: 1px solid #dee2e6;
-}
+        .gantt-tooltip .tooltip-status.pending {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
 
-.gantt-tooltip .tooltip-status.in_progress {
-    background: #e7f1ff;
-    color: #0d6efd;
-}
+        .gantt-tooltip .tooltip-status.in_progress {
+            background: #e7f1ff;
+            color: #0d6efd;
+        }
 
-.gantt-tooltip .tooltip-status.completed {
-    background: #d1e7dd;
-    color: #198754;
-}
+        .gantt-tooltip .tooltip-status.completed {
+            background: #d1e7dd;
+            color: #198754;
+        }
 
-.gantt-tooltip .tooltip-body {
-    padding: 10px 12px;
-}
+        .gantt-tooltip .tooltip-body {
+            padding: 10px 12px;
+        }
 
-.gantt-tooltip .tooltip-row {
-    display: flex;
-    margin-bottom: 6px;
-}
+        .gantt-tooltip .tooltip-row {
+            display: flex;
+            margin-bottom: 6px;
+        }
 
-.gantt-tooltip .tooltip-row:last-child {
-    margin-bottom: 0;
-}
+        .gantt-tooltip .tooltip-row:last-child {
+            margin-bottom: 0;
+        }
 
-.gantt-tooltip .tooltip-label {
-    color: #6c757d;
-    min-width: 50px;
-}
+        .gantt-tooltip .tooltip-label {
+            color: #6c757d;
+            min-width: 50px;
+        }
 
-.gantt-tooltip .tooltip-row span:last-child {
-    color: #333;
-}
+        .gantt-tooltip .tooltip-row span:last-child {
+            color: #333;
+        }
 
-.gantt-tooltip .tooltip-row .delayed {
-    color: #dc3545;
-    font-weight: 500;
-}
+        .gantt-tooltip .tooltip-row .delayed {
+            color: #dc3545;
+            font-weight: 500;
+        }
 
-.gantt-tooltip .tooltip-warning {
-    margin-top: 8px;
-    padding: 6px 10px;
-    background: #fff3cd;
-    color: #856404;
-    border-radius: 4px;
-    font-size: 12px;
-    text-align: center;
-}
+        .gantt-tooltip .tooltip-warning {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
 
-/* トースト通知 */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10001;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+        /* トースト通知 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-.toast {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    min-width: 250px;
-    max-width: 400px;
-    animation: toast-slide-in 0.3s ease;
-}
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            min-width: 250px;
+            max-width: 400px;
+            animation: toast-slide-in 0.3s ease;
+        }
 
-.toast.toast-success {
-    border-left: 4px solid #198754;
-}
+        .toast.toast-success {
+            border-left: 4px solid #198754;
+        }
 
-.toast.toast-error {
-    border-left: 4px solid #dc3545;
-}
+        .toast.toast-error {
+            border-left: 4px solid #dc3545;
+        }
 
-.toast.toast-info {
-    border-left: 4px solid #0d6efd;
-}
+        .toast.toast-info {
+            border-left: 4px solid #0d6efd;
+        }
 
-.toast.toast-warning {
-    border-left: 4px solid #ffc107;
-}
+        .toast.toast-warning {
+            border-left: 4px solid #ffc107;
+        }
 
-.toast-icon {
-    font-size: 18px;
-}
+        .toast-icon {
+            font-size: 18px;
+        }
 
-.toast-success .toast-icon { color: #198754; }
-.toast-error .toast-icon { color: #dc3545; }
-.toast-info .toast-icon { color: #0d6efd; }
-.toast-warning .toast-icon { color: #ffc107; }
+        .toast-success .toast-icon {
+            color: #198754;
+        }
 
-.toast-message {
-    flex: 1;
-    font-size: 14px;
-    color: #333;
-}
+        .toast-error .toast-icon {
+            color: #dc3545;
+        }
 
-.toast-close {
-    background: none;
-    border: none;
-    font-size: 18px;
-    color: #6c757d;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-}
+        .toast-info .toast-icon {
+            color: #0d6efd;
+        }
 
-.toast-close:hover {
-    color: #333;
-}
+        .toast-warning .toast-icon {
+            color: #ffc107;
+        }
 
-.toast.toast-hide {
-    animation: toast-slide-out 0.3s ease forwards;
-}
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
 
-@keyframes toast-slide-in {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
 
-@keyframes toast-slide-out {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
+        .toast-close:hover {
+            color: #333;
+        }
 
-/* フィルタ結果件数 */
-.filter-result-count {
-    font-size: 13px;
-    color: #6c757d;
-    margin-left: auto;
-}
+        .toast.toast-hide {
+            animation: toast-slide-out 0.3s ease forwards;
+        }
 
-.filter-result-count strong {
-    color: #333;
-}
+        @keyframes toast-slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
 
-/* 見込み残存時間入力 */
-.schedule-remaining-edit {
-    background: #fff8e7 !important;
-    border-radius: 6px;
-    margin-top: 8px !important;
-    padding: 10px !important;
-}
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-.schedule-remaining-input-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+        @keyframes toast-slide-out {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
 
-.schedule-remaining-input-group input {
-    width: 80px;
-    padding: 6px 8px;
-    border: 1px solid #ffc107;
-    border-radius: 4px;
-    font-size: 14px;
-    text-align: right;
-}
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
 
-.schedule-remaining-input-group input:focus {
-    outline: none;
-    border-color: #ff9800;
-    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
-}
+        /* フィルタ結果件数 */
+        .filter-result-count {
+            font-size: 13px;
+            color: #6c757d;
+            margin-left: auto;
+        }
 
-.schedule-remaining-input-group .input-suffix {
-    color: #666;
-    font-size: 13px;
-}
+        .filter-result-count strong {
+            color: #333;
+        }
 
-.schedule-remaining-input-group .btn {
-    padding: 6px 12px;
-}
+        /* 見込み残存時間入力 */
+        .schedule-remaining-edit {
+            background: #fff8e7 !important;
+            border-radius: 6px;
+            margin-top: 8px !important;
+            padding: 10px !important;
+        }
 
-/* キーボードショートカットヒント */
-.keyboard-hint {
-    cursor: help;
-    font-size: 16px;
-    color: #6c757d;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
+        .schedule-remaining-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-.keyboard-hint:hover {
-    background: #e9ecef;
-    color: #333;
-}
+        .schedule-remaining-input-group input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .schedule-remaining-input-group input:focus {
+            outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+        }
+
+        .schedule-remaining-input-group .input-suffix {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .schedule-remaining-input-group .btn {
+            padding: 6px 12px;
+        }
+
+        /* キーボードショートカットヒント */
+        .keyboard-hint {
+            cursor: help;
+            font-size: 16px;
+            color: #6c757d;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .keyboard-hint:hover {
+            background: #e9ecef;
+            color: #333;
+        }
