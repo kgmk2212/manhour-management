@@ -14,6 +14,18 @@
 | `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
 | `feature/gantt-chart` | 新機能開発 | ガントチャート（スケジュール管理）機能 |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
+| `experiment/design-rebuild` | 実験用 | デザインシステムの全面再構築 |
+
+### Worktree構成
+
+各ブランチは専用のディレクトリで作業します。
+
+| ディレクトリ | ブランチ | 用途 |
+|-------------|---------|------|
+| `manhour-management` | `main` | 安定版（メイン） |
+| `manhour-gantt` | `feature/gantt-chart` | ガントチャート開発 |
+| `manhour-experiment` | `experiment/sandbox` | 実験用 |
+| `manhour-design-rebuild` | `experiment/design-rebuild` | デザイン再構築 |
 
 ### 作業前の確認事項
 
@@ -31,6 +43,7 @@ git branch
 | ガントチャート機能の実装 | `feature/gantt-chart` |
 | スケジュール関連の作業 | `feature/gantt-chart` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
+| デザイン・UIの全面リニューアル | `experiment/design-rebuild` |
 
 **判断に迷う場合**: ユーザーに確認してください。
 
