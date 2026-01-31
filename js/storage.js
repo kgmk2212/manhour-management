@@ -17,6 +17,7 @@ import {
     matrixEstActFormat, setMatrixEstActFormat,
 
     debugModeEnabled, setDebugModeEnabled,
+    devFeaturesEnabled, setDevFeaturesEnabled,
     selectedChartColorScheme,
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
     setEstimateLayout, setActualLayout, setReportLayout, setMemberOrder,
@@ -217,6 +218,10 @@ export function loadData() {
             if (settings.matrixEstActFormat) {
                 setMatrixEstActFormat(settings.matrixEstActFormat);
             }
+            // 開発中の機能表示設定を読み込み
+            if (settings.devFeaturesEnabled !== undefined) {
+                setDevFeaturesEnabled(settings.devFeaturesEnabled);
+            }
 
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
@@ -264,7 +269,8 @@ export function autoBackup() {
         memberOrder: memberOrderValue,
         stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
         floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
-        debugModeEnabled: debugModeEnabled
+        debugModeEnabled: debugModeEnabled,
+        devFeaturesEnabled: devFeaturesEnabled
     };
 
     const data = {
@@ -470,6 +476,17 @@ export function handleFileImport(event) {
                             localStorage.setItem('debugModeEnabled', debugModeEnabled);
                             const checkbox = document.getElementById('debugModeEnabled');
                             if (checkbox) checkbox.checked = debugModeEnabled;
+                        }
+                        // 開発中機能表示設定を復元
+                        if (data.settings.devFeaturesEnabled !== undefined) {
+                            setDevFeaturesEnabled(data.settings.devFeaturesEnabled);
+                            localStorage.setItem('devFeaturesEnabled', devFeaturesEnabled);
+                            const checkbox = document.getElementById('devFeaturesEnabled');
+                            if (checkbox) checkbox.checked = devFeaturesEnabled;
+                            // タブの表示/非表示を更新
+                            if (typeof window.loadDevFeaturesSetting === 'function') {
+                                window.loadDevFeaturesSetting();
+                            }
                         }
                     } else if (data.memberOrder) {
                         // 旧形式（settingsがない場合）の後方互換性

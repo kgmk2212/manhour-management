@@ -333,6 +333,8 @@ window.loadReportSettings = Report.loadReportSettings;
 window.saveReportSettings = Report.saveReportSettings;
 window.loadDebugModeSetting = Report.loadDebugModeSetting;
 window.saveDebugModeSetting = Report.saveDebugModeSetting;
+window.loadDevFeaturesSetting = Report.loadDevFeaturesSetting;
+window.saveDevFeaturesSetting = Report.saveDevFeaturesSetting;
 window.calculateProgress = Report.calculateProgress;
 window.calculateVersionProgress = Report.calculateVersionProgress;
 window.createProgressBar = Report.createProgressBar;
@@ -448,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
     Report.loadReportSettings();
     Theme.loadChartColorScheme();
     Report.loadDebugModeSetting();
+    Report.loadDevFeaturesSetting();
 
     // オプションの更新
     UI.updateMonthOptions();

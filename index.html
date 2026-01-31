@@ -126,7 +126,7 @@
             <button class="tab" data-tab="report">レポート</button>
             <button class="tab" data-tab="estimate">見積一覧</button>
             <button class="tab" data-tab="actual">実績一覧</button>
-            <button class="tab" data-tab="schedule">📅 スケジュール</button>
+            <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
             <button class="tab" data-tab="settings">⚙️ 設定</button>
         </div>
 
@@ -861,7 +861,7 @@
             <!-- /report -->
 
             <!-- [GANTT-CHART] スケジュールタブ -->
-            <div id="schedule" class="tab-content">
+            <div id="schedule" class="tab-content dev-feature" style="display: none;">
                 <!-- ツールバー -->
                 <div class="schedule-toolbar">
                     <div class="schedule-nav">
@@ -1306,6 +1306,16 @@
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
                             エラー発生時に詳細なエラーメッセージを表示します。通常はオフで問題ありません。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="devFeaturesEnabled" style="width: auto; margin-right: 10px;">
+                            <span>開発中の機能を表示する</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            開発中の機能（スケジュール/ガントチャートなど）を表示します。機能が不完全な場合があります。
                         </small>
                     </div>
                 </div>

@@ -81,6 +81,8 @@ import {
     saveReportSettings,
     loadDebugModeSetting,
     saveDebugModeSetting,
+    loadDevFeaturesSetting,
+    saveDevFeaturesSetting,
     updateProgressReport,
     openBulkRemainingModal,
     closeBulkRemainingModal,
@@ -619,9 +621,14 @@ export function initEventHandlers() {
         btn.addEventListener('click', () => toggleFilterLayout(btn.dataset.target));
     });
 
-    const debugModeCheckbox = document.getElementById('debugModeCheckbox');
+    const debugModeCheckbox = document.getElementById('debugModeEnabled');
     if (debugModeCheckbox) {
         debugModeCheckbox.addEventListener('change', saveDebugModeSetting);
+    }
+
+    const devFeaturesCheckbox = document.getElementById('devFeaturesEnabled');
+    if (devFeaturesCheckbox) {
+        devFeaturesCheckbox.addEventListener('change', saveDevFeaturesSetting);
     }
 
     // Report Analysis Settings

@@ -234,6 +234,7 @@ export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, 
 export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
 
 export let debugModeEnabled = false; // デバッグモード設定
+export let devFeaturesEnabled = false; // 開発中の機能を表示するか
 export let memberOrder = ''; // 担当者の表示順
 
 // 見積編集モード関連
@@ -365,6 +366,11 @@ export function setMatrixEstActFormat(value) {
 export function setDebugModeEnabled(value) {
     debugModeEnabled = value;
     window.debugModeEnabled = value;
+}
+
+export function setDevFeaturesEnabled(value) {
+    devFeaturesEnabled = value;
+    window.devFeaturesEnabled = value;
 }
 
 export function setEstimateEditMode(value) {

@@ -24,6 +24,8 @@ import {
     selectedChartColorScheme,
     debugModeEnabled,
     setDebugModeEnabled,
+    devFeaturesEnabled,
+    setDevFeaturesEnabled,
     matrixEstActFormat,
 
     currentThemeColor
@@ -123,6 +125,54 @@ export function saveDebugModeSetting() {
 
     setDebugModeEnabled(isEnabled);
     localStorage.setItem('debugModeEnabled', isEnabled);
+}
+
+// ============================================
+// 開発中機能の表示設定
+// ============================================
+
+export function loadDevFeaturesSetting() {
+    const saved = localStorage.getItem('devFeaturesEnabled');
+    const isEnabled = saved === 'true';
+
+    setDevFeaturesEnabled(isEnabled);
+
+    const checkbox = document.getElementById('devFeaturesEnabled');
+    if (checkbox) checkbox.checked = isEnabled;
+
+    // タブの表示/非表示を更新
+    updateDevFeaturesVisibility(isEnabled);
+}
+
+export function saveDevFeaturesSetting() {
+    const checkbox = document.getElementById('devFeaturesEnabled');
+    const isEnabled = checkbox ? checkbox.checked : false;
+
+    setDevFeaturesEnabled(isEnabled);
+    localStorage.setItem('devFeaturesEnabled', isEnabled);
+
+    // タブの表示/非表示を更新
+    updateDevFeaturesVisibility(isEnabled);
+}
+
+function updateDevFeaturesVisibility(isEnabled) {
+    const devFeatures = document.querySelectorAll('.dev-feature');
+    devFeatures.forEach(el => {
+        if (el.classList.contains('tab-content')) {
+            // タブコンテンツはactiveクラスで制御されるため、displayは直接設定しない
+            // ただし非表示の場合はdisplay:noneを維持
+            if (!isEnabled) {
+                el.style.display = 'none';
+            } else {
+                // タブコンテンツの表示はtab切り替えロジックに任せる
+                // ここではstyleを削除してCSSに任せる
+                el.style.removeProperty('display');
+            }
+        } else {
+            // タブボタンなど
+            el.style.display = isEnabled ? '' : 'none';
+        }
+    });
 }
 
 // ============================================
