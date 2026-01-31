@@ -2904,6 +2904,63 @@ function calculateWorkingDaysForCapacity(filterType, selectedMonth, filteredEsti
 }
 
 /**
+ * キャパシティ表示モードを取得
+ * @returns {string} 表示モード
+ */
+function getCapacityDisplayMode() {
+    return localStorage.getItem('manhour_capacityDisplayMode') || 'stripe_bg';
+}
+
+/**
+ * キャパシティ表示モードを設定
+ * @param {string} mode - 表示モード
+ */
+export function setCapacityDisplayMode(mode) {
+    localStorage.setItem('manhour_capacityDisplayMode', mode);
+    // ラジオボタンを更新
+    const radio = document.querySelector(`input[name="capacityDisplayMode"][value="${mode}"]`);
+    if (radio) radio.checked = true;
+}
+
+/**
+ * キャパシティ設定UIを初期化
+ */
+export function initCapacitySettings() {
+    const settingsBtn = document.getElementById('capacitySettingsBtn');
+    const dropdown = document.getElementById('capacitySettingsDropdown');
+
+    if (!settingsBtn || !dropdown) return;
+
+    // 現在のモードを反映
+    const currentMode = getCapacityDisplayMode();
+    const radio = document.querySelector(`input[name="capacityDisplayMode"][value="${currentMode}"]`);
+    if (radio) radio.checked = true;
+
+    // 設定ボタンのクリック
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+
+    // 外部クリックで閉じる
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target) && e.target !== settingsBtn) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    // モード変更
+    dropdown.querySelectorAll('input[name="capacityDisplayMode"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            setCapacityDisplayMode(e.target.value);
+            // 再描画をトリガー
+            const event = new CustomEvent('capacityDisplayModeChanged');
+            document.dispatchEvent(event);
+        });
+    });
+}
+
+/**
  * キャパシティ分析を更新
  * @param {number} totalEstimate - 総見積工数（時間）
  * @param {number} totalActual - 総実績工数（時間）
@@ -2918,6 +2975,7 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
     const estimatePercent = standardHours > 0 ? (totalEstimate / standardHours) * 100 : 0;
     const actualPercent = standardHours > 0 ? (totalActual / standardHours) * 100 : 0;
     const isOverCapacity = totalEstimate > standardHours;
+    const displayMode = getCapacityDisplayMode();
 
     const el = (id) => document.getElementById(id);
 
@@ -2932,44 +2990,42 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         detailEl.textContent = `(${displayLabel}×${hoursPerDay}h×${headcount}人)`;
     }
 
-    // 色の濃さを割合に応じて計算（0-100%の範囲で濃さを調整）
-    const getBarOpacity = (percent) => {
-        const minOpacity = 0.4;
-        const maxOpacity = 1.0;
-        const clampedPercent = Math.min(Math.max(percent, 0), 100);
-        return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
-    };
+    // 表示モードの切り替え
+    const barView = el('capacityBarView');
+    const gaugeView = el('capacityGaugeView');
+    const analysisSection = el('capacityAnalysis');
+    const warningBadge = el('capacityWarningBadge');
 
-    // 見積バー（コンテナは130%まで表示可能、100%ラインは76.9%の位置）
-    // スケール: 実際のパーセント * (100/130) = コンテナ内の幅
-    const SCALE_FACTOR = 100 / 130; // ≈ 0.769
-    const estimateBarEl = el('capacityEstimateBar');
-    const estimateTextEl = el('capacityEstimateText');
-    if (estimateBarEl && estimateTextEl) {
-        const clampedPercent = Math.min(estimatePercent, 130);
-        const displayWidth = clampedPercent * SCALE_FACTOR;
-        estimateBarEl.style.width = displayWidth + '%';
-        estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
+    if (displayMode === 'gauge') {
+        // ゲージ表示
+        if (barView) barView.style.display = 'none';
+        if (gaugeView) gaugeView.style.display = 'flex';
+        updateGaugeDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity);
+    } else {
+        // バー表示
+        if (barView) barView.style.display = 'block';
+        if (gaugeView) gaugeView.style.display = 'none';
+        updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode);
+    }
 
-        const opacity = getBarOpacity(estimatePercent);
-        if (isOverCapacity) {
-            estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
+    // 背景色変化（stripe_bgモード）
+    if (analysisSection) {
+        if (displayMode === 'stripe_bg' && isOverCapacity) {
+            analysisSection.classList.add('capacity-over-bg');
         } else {
-            estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
+            analysisSection.classList.remove('capacity-over-bg');
         }
     }
 
-    // 実績バー（同じスケール）
-    const actualBarEl = el('capacityActualBar');
-    const actualTextEl = el('capacityActualText');
-    if (actualBarEl && actualTextEl) {
-        const clampedPercent = Math.min(actualPercent, 130);
-        const displayWidth = clampedPercent * SCALE_FACTOR;
-        actualBarEl.style.width = displayWidth + '%';
-        actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
-
-        const opacity = getBarOpacity(actualPercent);
-        actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+    // 警告バッジ（stripe_warningモード）
+    if (warningBadge) {
+        if (displayMode === 'stripe_warning' && isOverCapacity) {
+            warningBadge.style.display = 'inline-flex';
+            warningBadge.classList.add('capacity-pulse-animate');
+        } else {
+            warningBadge.style.display = 'none';
+            warningBadge.classList.remove('capacity-pulse-animate');
+        }
     }
 
     // 差異（見積と標準の差）
@@ -2979,12 +3035,10 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         const absDiff = Math.abs(diffHours);
         const labelSpan = diffContainerEl.querySelector('span');
         if (isOverCapacity) {
-            // 超過: 見積が標準を上回っている
             if (labelSpan) labelSpan.textContent = '超過:';
             diffEl.textContent = `${absDiff.toFixed(1)}h`;
             diffEl.style.color = '#dc2626';
         } else {
-            // 余裕: 見積が標準を下回っている
             if (labelSpan) labelSpan.textContent = '余裕:';
             diffEl.textContent = `${absDiff.toFixed(1)}h`;
             diffEl.style.color = '#16a34a';
@@ -2996,6 +3050,146 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
     if (remainingEl) {
         const remaining = standardHours - totalActual;
         remainingEl.textContent = `${Math.abs(remaining).toFixed(1)}h`;
+    }
+}
+
+/**
+ * バー表示を更新
+ */
+function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode) {
+    const el = (id) => document.getElementById(id);
+    const SCALE_FACTOR = 100 / 130;
+
+    const getBarOpacity = (percent) => {
+        const minOpacity = 0.4;
+        const maxOpacity = 1.0;
+        const clampedPercent = Math.min(Math.max(percent, 0), 100);
+        return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
+    };
+
+    const estimateBarEl = el('capacityEstimateBar');
+    const estimateTextEl = el('capacityEstimateText');
+    const estimateStripeEl = el('capacityEstimateStripe');
+    const estimateBarRowEl = el('capacityEstimateBarRow');
+
+    if (estimateBarEl && estimateTextEl) {
+        estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
+        const opacity = getBarOpacity(Math.min(estimatePercent, 100));
+
+        if (isOverCapacity && ['stripe', 'stripe_warning', 'stripe_bg'].includes(displayMode)) {
+            // ストライプ表示: 100%まで赤バー、超過分はストライプ
+            const baseWidth = 76.9; // 100%の位置
+            estimateBarEl.style.width = baseWidth + '%';
+            estimateBarEl.style.borderRadius = '12px 0 0 12px';
+            estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
+
+            // ストライプ部分
+            if (estimateStripeEl) {
+                const overPercent = Math.min(estimatePercent - 100, 30); // 最大30%超過まで表示
+                const stripeWidth = overPercent * SCALE_FACTOR;
+                estimateStripeEl.style.display = 'block';
+                estimateStripeEl.style.left = baseWidth + '%';
+                estimateStripeEl.style.width = stripeWidth + '%';
+
+                // アニメーション（stripe_warningモード）
+                if (displayMode === 'stripe_warning') {
+                    estimateStripeEl.classList.add('capacity-pulse-animate');
+                    estimateBarEl.classList.add('capacity-pulse-animate');
+                } else {
+                    estimateStripeEl.classList.remove('capacity-pulse-animate');
+                    estimateBarEl.classList.remove('capacity-pulse-animate');
+                }
+            }
+
+            // テキスト色を赤に
+            if (estimateTextEl) estimateTextEl.style.color = '#dc2626';
+        } else {
+            // 通常表示
+            const clampedPercent = Math.min(estimatePercent, 130);
+            const displayWidth = clampedPercent * SCALE_FACTOR;
+            estimateBarEl.style.width = displayWidth + '%';
+            estimateBarEl.style.borderRadius = '12px';
+
+            if (isOverCapacity) {
+                estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
+                if (estimateTextEl) estimateTextEl.style.color = '#dc2626';
+            } else {
+                estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
+                if (estimateTextEl) estimateTextEl.style.color = '#334155';
+            }
+
+            if (estimateStripeEl) {
+                estimateStripeEl.style.display = 'none';
+                estimateStripeEl.classList.remove('capacity-pulse-animate');
+            }
+            estimateBarEl.classList.remove('capacity-pulse-animate');
+        }
+    }
+
+    // 実績バー
+    const actualBarEl = el('capacityActualBar');
+    const actualTextEl = el('capacityActualText');
+    if (actualBarEl && actualTextEl) {
+        const clampedPercent = Math.min(actualPercent, 130);
+        const displayWidth = clampedPercent * SCALE_FACTOR;
+        actualBarEl.style.width = displayWidth + '%';
+        actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+
+        const opacity = getBarOpacity(actualPercent);
+        actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+    }
+}
+
+/**
+ * ゲージ表示を更新
+ */
+function updateGaugeDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity) {
+    const el = (id) => document.getElementById(id);
+
+    // 針の角度を計算（-90度が0%、90度が130%）
+    const percentToAngle = (percent) => {
+        const clampedPercent = Math.min(Math.max(percent, 0), 130);
+        return -90 + (clampedPercent / 130) * 180;
+    };
+
+    // 見積ゲージ
+    const estimateNeedle = el('capacityEstimateNeedle');
+    const estimateGaugeValue = el('capacityEstimateGaugeValue');
+    const estimateGaugeLabel = el('capacityEstimateGaugeLabel');
+
+    if (estimateNeedle) {
+        estimateNeedle.style.transform = `translateX(-50%) rotate(${percentToAngle(estimatePercent)}deg)`;
+    }
+    if (estimateGaugeValue) {
+        estimateGaugeValue.textContent = `${estimatePercent.toFixed(0)}%`;
+        estimateGaugeValue.classList.toggle('over', isOverCapacity);
+    }
+    if (estimateGaugeLabel) {
+        estimateGaugeLabel.textContent = `見積 ${totalEstimate.toFixed(1)}h`;
+    }
+
+    // 実績ゲージ
+    const actualNeedle = el('capacityActualNeedle');
+    const actualGaugeValue = el('capacityActualGaugeValue');
+    const actualGaugeLabel = el('capacityActualGaugeLabel');
+    const isActualOverCapacity = actualPercent > 100;
+
+    if (actualNeedle) {
+        actualNeedle.style.transform = `translateX(-50%) rotate(${percentToAngle(actualPercent)}deg)`;
+    }
+    if (actualGaugeValue) {
+        actualGaugeValue.textContent = `${actualPercent.toFixed(0)}%`;
+        // 100%超過時は赤、それ以外は緑
+        if (isActualOverCapacity) {
+            actualGaugeValue.classList.add('over');
+            actualGaugeValue.style.color = '#dc2626';
+        } else {
+            actualGaugeValue.classList.remove('over');
+            actualGaugeValue.style.color = '#22c55e';
+        }
+    }
+    if (actualGaugeLabel) {
+        actualGaugeLabel.textContent = `実績 ${totalActual.toFixed(1)}h`;
     }
 }
 

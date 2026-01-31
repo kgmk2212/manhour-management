@@ -564,43 +564,92 @@
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 18px;">📊</span>
                             <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #334155;">キャパシティ分析</h4>
+                            <span id="capacityWarningBadge" class="capacity-warning-badge" style="display: none;">⚠️ 超過中</span>
                         </div>
-                        <div style="font-size: 14px; color: #64748b;">
-                            標準: <strong id="capacityStandard" style="color: #334155; font-size: 16px;">176h</strong>
-                            <span style="font-size: 12px; color: #94a3b8;" id="capacityStandardDetail">(22日×8h×1人)</span>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 14px; color: #64748b;">
+                                標準: <strong id="capacityStandard" style="color: #334155; font-size: 16px;">176h</strong>
+                                <span style="font-size: 12px; color: #94a3b8;" id="capacityStandardDetail">(22日×8h×1人)</span>
+                            </div>
+                            <!-- 設定ボタン -->
+                            <div style="position: relative;">
+                                <button id="capacitySettingsBtn" class="capacity-settings-btn" title="表示設定">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    </svg>
+                                </button>
+                                <div id="capacitySettingsDropdown" class="capacity-settings-dropdown">
+                                    <label><input type="radio" name="capacityDisplayMode" value="stripe"> ストライプのみ</label>
+                                    <label><input type="radio" name="capacityDisplayMode" value="stripe_warning"> ストライプ + 警告アニメ</label>
+                                    <label><input type="radio" name="capacityDisplayMode" value="stripe_bg" checked> ストライプ + 背景変化</label>
+                                    <label><input type="radio" name="capacityDisplayMode" value="gauge"> ゲージ表示</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <!-- ラベル列 -->
-                        <div style="display: flex; flex-direction: column; gap: 6px; width: 45px; flex-shrink: 0;">
-                            <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">見積</div>
-                            <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">実績</div>
-                        </div>
-                        <!-- バーコンテナ（130%まで表示可能、100%ラインは76.9%の位置） -->
-                        <div style="flex: 1; position: relative;">
-                            <!-- 見積バー -->
-                            <div style="position: relative; height: 24px; margin-bottom: 6px;">
-                                <!-- 100%の背景（76.9%幅） -->
-                                <div style="position: absolute; left: 0; top: 0; width: 76.9%; height: 100%; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></div>
-                                <!-- 実際のバー（スケール調整済み） -->
-                                <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 70%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
+
+                    <!-- バー表示（デフォルト） -->
+                    <div id="capacityBarView">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <!-- ラベル列 -->
+                            <div style="display: flex; flex-direction: column; gap: 6px; width: 45px; flex-shrink: 0;">
+                                <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">見積</div>
+                                <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">実績</div>
                             </div>
-                            <!-- 実績バー -->
-                            <div style="position: relative; height: 24px;">
-                                <!-- 100%の背景（76.9%幅） -->
-                                <div style="position: absolute; left: 0; top: 0; width: 76.9%; height: 100%; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></div>
-                                <!-- 実際のバー（スケール調整済み） -->
-                                <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 52%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
+                            <!-- バーコンテナ（130%まで表示可能、100%ラインは76.9%の位置） -->
+                            <div id="capacityBarContainer" style="flex: 1; position: relative;">
+                                <!-- 見積バー -->
+                                <div id="capacityEstimateBarRow" style="position: relative; height: 24px; margin-bottom: 6px;">
+                                    <!-- 100%の背景（76.9%幅） -->
+                                    <div style="position: absolute; left: 0; top: 0; width: 76.9%; height: 100%; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></div>
+                                    <!-- 実際のバー（スケール調整済み） -->
+                                    <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 70%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
+                                    <!-- ストライプ部分（超過時のみ表示） -->
+                                    <div id="capacityEstimateStripe" class="capacity-bar-stripe" style="display: none;"></div>
+                                </div>
+                                <!-- 実績バー -->
+                                <div style="position: relative; height: 24px;">
+                                    <!-- 100%の背景（76.9%幅） -->
+                                    <div style="position: absolute; left: 0; top: 0; width: 76.9%; height: 100%; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></div>
+                                    <!-- 実際のバー（スケール調整済み） -->
+                                    <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 52%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
+                                </div>
+                                <!-- 100%ライン（76.9%の位置） -->
+                                <div id="capacity100Line" style="position: absolute; left: 76.9%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px; z-index: 10;"></div>
                             </div>
-                            <!-- 100%ライン（76.9%の位置） -->
-                            <div id="capacity100Line" style="position: absolute; left: 76.9%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px; z-index: 10;"></div>
-                        </div>
-                        <!-- 数値列 -->
-                        <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px; flex-shrink: 0;">
-                            <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
-                            <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
+                            <!-- 数値列 -->
+                            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px; flex-shrink: 0;">
+                                <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- ゲージ表示（切り替え時） -->
+                    <div id="capacityGaugeView" class="capacity-gauge-container" style="display: none;">
+                        <!-- 見積ゲージ -->
+                        <div class="capacity-gauge" id="capacityEstimateGauge">
+                            <div class="capacity-gauge-bg"></div>
+                            <div class="capacity-gauge-fill"></div>
+                            <div class="capacity-gauge-mask"></div>
+                            <div class="capacity-gauge-needle" id="capacityEstimateNeedle" style="transform: translateX(-50%) rotate(-90deg);"></div>
+                            <div class="capacity-gauge-center"></div>
+                            <div class="capacity-gauge-value" id="capacityEstimateGaugeValue">0%</div>
+                            <div class="capacity-gauge-label" id="capacityEstimateGaugeLabel">見積 0h</div>
+                        </div>
+                        <!-- 実績ゲージ -->
+                        <div class="capacity-gauge" id="capacityActualGauge">
+                            <div class="capacity-gauge-bg"></div>
+                            <div class="capacity-gauge-fill"></div>
+                            <div class="capacity-gauge-mask"></div>
+                            <div class="capacity-gauge-needle" id="capacityActualNeedle" style="transform: translateX(-50%) rotate(-90deg);"></div>
+                            <div class="capacity-gauge-center"></div>
+                            <div class="capacity-gauge-value" id="capacityActualGaugeValue" style="color: #22c55e;">0%</div>
+                            <div class="capacity-gauge-label" id="capacityActualGaugeLabel">実績 0h</div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px;">
                         <div id="capacityDiffContainer">
                             <span style="color: #64748b;">余裕:</span>

@@ -508,6 +508,14 @@ document.addEventListener('DOMContentLoaded', function () {
     Report.updateReport();
     Vacation.renderCompanyHolidayList();
 
+    // キャパシティ表示設定の初期化
+    Report.initCapacitySettings();
+
+    // キャパシティ表示モード変更時の再描画
+    document.addEventListener('capacityDisplayModeChanged', () => {
+        Report.updateReport();
+    });
+
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
 

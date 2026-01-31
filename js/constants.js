@@ -189,7 +189,10 @@ export const STORAGE_KEYS = {
     // その他
     AUTO_BACKUP: 'manhour_autoBackup',
     QUICK_INPUT_MODE: 'manhour_quickInputMode',
-    DEBUG_MODE: 'manhour_debugMode'
+    DEBUG_MODE: 'manhour_debugMode',
+
+    // キャパシティ表示
+    CAPACITY_DISPLAY_MODE: 'manhour_capacityDisplayMode'
 };
 
 /**
@@ -309,6 +312,16 @@ export const SCHEDULE = {
         HOLIDAY: '#FFF3E0',       // 祝日背景
         GRID: '#E0E0E0'           // グリッド線
     }
+};
+
+/**
+ * キャパシティ超過表示モード
+ */
+export const CAPACITY_DISPLAY_MODE = {
+    STRIPE: 'stripe',           // 案1: ストライプパターンのみ
+    STRIPE_WARNING: 'stripe_warning', // 案1+3: ストライプ + 警告アイコン/アニメーション
+    STRIPE_BG: 'stripe_bg',     // 案1+6: ストライプ + 背景色変化
+    GAUGE: 'gauge'              // 案4: ゲージ表示
 };
 
 // タスク用カラーパレット（自動割当用）
