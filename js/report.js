@@ -943,15 +943,20 @@ export function generateProgressBar(version, task, process) {
         }
     }
 
-    // 進捗率を計算
+    // 微小値・負の値は0として扱う
+    if (remainingHours < 0.05) {
+        remainingHours = 0;
+    }
+
+    // 進捗率を計算（実績 / (実績 + 見込み残存) × 100）
     let progressRate = 0;
 
-    if (remainingHours === 0 && actualHours > 0) {
+    if (remainingHours <= 0 && actualHours > 0) {
         // 見込残存が0hで実績があれば100%（完了）
         progressRate = 100;
-    } else if (remainingHours === 0 && actualHours === 0) {
-        // 見込残存が0hで実績もなし → 完了または作業不要（100%）
-        progressRate = 100;
+    } else if (remainingHours <= 0 && actualHours === 0) {
+        // 見込残存が0hで実績もなし → 0%（作業開始前）
+        progressRate = 0;
     } else if (actualHours + remainingHours > 0) {
         // 見込残存データがあれば計算
         progressRate = (actualHours / (actualHours + remainingHours)) * 100;
@@ -2371,11 +2376,18 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         const remainingData = remainingEstimates.filter(
                             r => r.version === version && r.task === taskGroup.task && r.process === proc
                         );
-                        let cellRemainingHours = remainingData.reduce((sum, r) => sum + r.remainingHours, 0);
-                        if (remainingData.length === 0 && est.hours > 0) {
+                        // NaN防止: r.remainingHours が undefined/null の場合は 0 として扱う
+                        let cellRemainingHours = remainingData.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
+                        const usedFallback = remainingData.length === 0 && est.hours > 0;
+                        if (usedFallback) {
                             // フォールバック: 見積 - 実績（マイナスは0）
                             cellRemainingHours = Math.max(0, est.hours - act.hours);
                         }
+                        // NaN/無効値のチェック
+                        if (isNaN(cellRemainingHours) || cellRemainingHours < 0) {
+                            cellRemainingHours = 0;
+                        }
+
                         totalRemainingHours += cellRemainingHours;
 
                         const bgColor = bgColorMode === 'month' ? getMonthColor(est.workMonths || []).bg : '';
@@ -2458,29 +2470,28 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     let isSafeBright = false;
     let isSafeNormal = false;
 
-    // 4-Stage Color Logic
-    if (est.hours > 0) {
-        let comparisonValue;
-        if (remainingHours !== null && remainingHours > 0) {
-            comparisonValue = act.hours + remainingHours;
-        } else {
-            comparisonValue = act.hours;
-        }
+    // remainingHoursを数値として正規化（NaN/null/undefined対策）
+    const remaining = (remainingHours !== null && !isNaN(remainingHours)) ? Number(remainingHours) : 0;
 
-        if (comparisonValue > 0) {
-            const ratio = comparisonValue / est.hours;
+    // 4-Stage Color Logic: (実績 + 見込み残存) / 見積 の比率で判定
+    if (est.hours > 0) {
+        // 予測総工数 = 実績 + 見込み残存
+        const eac = act.hours + remaining;
+
+        if (eac > 0 || act.hours > 0) {
+            const ratio = eac / est.hours;
             if (ratio > 1.1) {
-                isOver = true;
+                isOver = true;        // 10%超過 → 赤
             } else if (ratio > 1.0) {
-                isWarning = true;
+                isWarning = true;     // 0-10%超過 → 黄
             } else if (ratio < 0.9) {
-                isSafeBright = true;
+                isSafeBright = true;  // 10%以上余裕 → 明るい緑
             } else {
-                isSafeNormal = true;
+                isSafeNormal = true;  // 0-10%余裕 → 緑
             }
         }
     } else if (est.hours === 0 && act.hours > 0) {
-        isOver = true;
+        isOver = true;  // 見積なしで実績あり → 赤
     }
 
     const actColorClass = isOver ? 'over' : (isWarning ? 'warning' : (isSafeBright ? 'safe-bright' : (isSafeNormal ? 'safe-normal' : '')));
@@ -2493,25 +2504,31 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
         memberDisplay = Array.from(est.members).join(',');
     }
 
+    // 複数人かどうかを判定
+    const totalMembers = new Set([...(est.members || []), ...(act.members || [])]);
+    const isMultiMember = totalMembers.size > 1;
+
     // 進捗バーの生成
     let progressBarHtml = '';
     if (showProgressBarsSetting && process !== 'total') {
         // 実績時間
         const actualHours = act.hours || 0;
-        // 残時間（渡されたremainingHoursを使用、なければest-actでフォールバック）
-        let remaining = remainingHours;
-        if (remaining === null && est.hours > 0) {
-            remaining = Math.max(0, est.hours - actualHours);
+        // 残時間（渡されたremainingHoursを使用）
+        let remaining = Number(remainingHours) || 0;
+
+        // デバッグ：渡された値を確認
+        if (debugModeEnabled) {
+            console.log(`[ProgressBar] task=${task}, proc=${process}, remainingHours=${remainingHours}, remaining=${remaining}, actualHours=${actualHours}`);
         }
 
-        // 進捗率を計算
+        // 進捗率を計算（実績 / (実績 + 見込み残存) × 100）
         let progressRate = 0;
-        if (remaining === 0 && actualHours > 0) {
-            progressRate = 100;
-        } else if (remaining === 0 && actualHours === 0) {
-            progressRate = 100;
-        } else if (actualHours + remaining > 0) {
-            progressRate = (actualHours / (actualHours + remaining)) * 100;
+        const total = actualHours + remaining;
+        if (total > 0) {
+            progressRate = (actualHours / total) * 100;
+        } else {
+            // 実績も残存もない場合は0%
+            progressRate = 0;
         }
 
         if (est.hours > 0 || actualHours > 0) {
@@ -2583,7 +2600,9 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div style="font-weight: 600; white-space: nowrap;">${estText}</div>
             <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
-            ${memberDisplay ? `<div style="font-size: 12px; color: #666; white-space: nowrap;">(${memberDisplay})</div>` : ''}
+            ${memberDisplay ? (isMultiMember 
+                ? `<div style="font-size: 12px; color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${version.replace(/'/g, "\\'")}', '${task.replace(/'/g, "\\'")}', '${process.replace(/'/g, "\\'")}')" title="クリックで担当者別内訳を表示">(${memberDisplay})</div>`
+                : `<div style="font-size: 12px; color: #666; white-space: nowrap;">(${memberDisplay})</div>`) : ''}
             ${progressBarHtml}
         </div>
     `;
@@ -2591,15 +2610,11 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
 // セルクリック時のイベント取得
 function getCellOnclick(version, task, process, est, act) {
-    const totalMembers = new Set([...est.members, ...act.members]);
     const v = version.replace(/'/g, "\\'");
     const t = task.replace(/'/g, "\\'");
     const p = process.replace(/'/g, "\\'");
-    if (totalMembers.size > 1) {
-        return `onclick="openProcessBreakdown('${v}', '${t}', '${p}')"`;
-    } else {
-        return `onclick="openRemainingHoursModal('${v}', '${t}', '${p}')"`;
-    }
+    // 複数人でも詳細モーダルを開く（名前部分クリック時のみ内訳モーダル）
+    return `onclick="openRemainingHoursModal('${v}', '${t}', '${p}')"`;
 }
 
 // 担当者別見積vs実績比較グラフを描画
@@ -3190,6 +3205,45 @@ function updateGaugeDisplay(totalEstimate, totalActual, estimatePercent, actualP
     }
     if (actualGaugeLabel) {
         actualGaugeLabel.textContent = `実績 ${totalActual.toFixed(1)}h`;
+    }
+}
+
+// ============================================
+// 進捗管理セクション折りたたみ
+// ============================================
+
+/**
+ * 進捗管理セクションの折りたたみ/展開を切り替え
+ */
+export function toggleProgressSection() {
+    const content = document.getElementById('progressSectionContent');
+    const icon = document.getElementById('progressSectionIcon');
+    if (!content || !icon) return;
+
+    const isCollapsed = content.style.display === 'none';
+
+    if (isCollapsed) {
+        content.style.display = '';
+        icon.textContent = '▼';
+        localStorage.setItem('manhour_progressSectionCollapsed', 'false');
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+        localStorage.setItem('manhour_progressSectionCollapsed', 'true');
+    }
+}
+
+/**
+ * 進捗管理セクションの初期状態を復元（デフォルトは折りたたみ）
+ */
+export function initProgressSectionState() {
+    const saved = localStorage.getItem('manhour_progressSectionCollapsed');
+    // 明示的に'false'が保存されている場合のみ展開
+    if (saved === 'false') {
+        const content = document.getElementById('progressSectionContent');
+        const icon = document.getElementById('progressSectionIcon');
+        if (content) content.style.display = '';
+        if (icon) icon.textContent = '▼';
     }
 }
 

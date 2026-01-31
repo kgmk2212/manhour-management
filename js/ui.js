@@ -2172,6 +2172,9 @@ export function handleReportFilterTypeChange() {
         if (!filterTypeEl) return;
 
         const filterType = filterTypeEl.value;
+        
+        // フィルタタイプを保存
+        setReportFilterState({ filterType: filterType });
         const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
         const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
 
@@ -2228,6 +2231,68 @@ export function setReportFilterType(type) {
         handleReportFilterTypeChange();
     } catch (e) {
         console.error('setReportFilterType error:', e);
+    }
+}
+
+/**
+ * 保存されたレポートフィルタ条件を復元する
+ * リロード時に前回のフィルタ状態を維持するため
+ */
+export function restoreReportFilterState() {
+    try {
+        const savedState = localStorage.getItem('manhour_reportFilterState');
+        console.log('[Filter] Restoring report filter state:', savedState);
+        if (!savedState) return false;
+
+        const state = JSON.parse(savedState);
+        let restored = false;
+
+        // フィルタタイプの復元
+        if (state.filterType) {
+            const reportFilterType = document.getElementById('reportFilterType');
+            if (reportFilterType) {
+                reportFilterType.value = state.filterType;
+                handleReportFilterTypeChange();
+                restored = true;
+            }
+        }
+
+        // 版数フィルタの復元
+        if (state.version) {
+            const reportVersion = document.getElementById('reportVersion');
+            const reportVersion2 = document.getElementById('reportVersion2');
+            if (reportVersion) {
+                // 選択肢に存在する場合のみ復元
+                const optionExists = Array.from(reportVersion.options).some(opt => opt.value === state.version);
+                if (optionExists) {
+                    reportVersion.value = state.version;
+                    if (reportVersion2) reportVersion2.value = state.version;
+                    updateSegmentButtonSelection('reportVersionButtons2', state.version);
+                    restored = true;
+                }
+            }
+        }
+
+        // 月フィルタの復元
+        if (state.month) {
+            const reportMonth = document.getElementById('reportMonth');
+            const reportMonth2 = document.getElementById('reportMonth2');
+            if (reportMonth) {
+                // 選択肢に存在する場合のみ復元
+                const optionExists = Array.from(reportMonth.options).some(opt => opt.value === state.month);
+                if (optionExists) {
+                    reportMonth.value = state.month;
+                    if (reportMonth2) reportMonth2.value = state.month;
+                    updateSegmentButtonSelection('reportMonthButtons2', state.month);
+                    restored = true;
+                }
+            }
+        }
+
+        return restored;
+    } catch (e) {
+        console.warn('Failed to restore report filter state:', e);
+        return false;
     }
 }
 

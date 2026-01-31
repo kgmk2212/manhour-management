@@ -360,6 +360,7 @@ window.renderMemberReport = Report.renderMemberReport;
 window.renderVersionReport = Report.renderVersionReport;
 window.renderReportGrouped = Report.renderReportGrouped;
 window.renderReportMatrix = Report.renderReportMatrix;
+window.toggleProgressSection = Report.toggleProgressSection;
 
 // schedule.js の関数
 window.initScheduleModule = Schedule.initScheduleModule;
@@ -480,13 +481,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (filterTypeElement) {
         filterTypeElement.value = 'version';
         UI.setEstimateFilterType('version');
-
-        // レポートのフィルタタイプも同期
-        const reportFilterType = document.getElementById('reportFilterType');
-        if (reportFilterType) {
-            reportFilterType.value = 'version';
-            UI.handleReportFilterTypeChange();
-        }
     }
 
     // クイック入力の見積登録フォームを初期化
@@ -495,7 +489,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // 各タブのデフォルト月を設定
     UI.setDefaultEstimateMonth();
     UI.setDefaultActualMonth();
-    UI.setDefaultReportMonth();
+
+    // 保存されたレポートフィルタ条件を復元（リロード時）
+    // 復元できなかった場合のみデフォルト設定を適用
+    const reportFilterRestored = UI.restoreReportFilterState();
+    if (!reportFilterRestored) {
+        // レポートのフィルタタイプをデフォルト設定
+        const reportFilterType = document.getElementById('reportFilterType');
+        if (reportFilterType) {
+            reportFilterType.value = 'version';
+            UI.handleReportFilterTypeChange();
+        }
+        UI.setDefaultReportMonth();
+    }
 
     // デフォルトの表示形式を適用（View Type）
     Theme.applyDefaultEstimateViewType();
@@ -510,6 +516,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // キャパシティ表示設定の初期化
     Report.initCapacitySettings();
+
+    // 進捗管理セクションの折りたたみ状態を復元
+    Report.initProgressSectionState();
 
     // キャパシティ表示モード変更時の再描画
     document.addEventListener('capacityDisplayModeChanged', () => {
