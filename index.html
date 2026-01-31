@@ -570,26 +570,29 @@
                             <span style="font-size: 12px; color: #94a3b8;" id="capacityStandardDetail">(22日×8h×1人)</span>
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <!-- 見積バー -->
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 45px; font-size: 13px; color: #64748b; text-align: right; font-weight: 500;">見積</div>
-                            <div style="flex: 1; position: relative; height: 28px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 14px; overflow: visible; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
-                                <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 91%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 14px; transition: width 0.3s ease;"></div>
-                                <!-- 100%ライン -->
-                                <div style="position: absolute; left: 100%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px;"></div>
-                            </div>
-                            <div style="min-width: 100px; font-size: 15px; font-weight: 600; color: #334155;" id="capacityEstimateText">160h (91%)</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- ラベル列 -->
+                        <div style="display: flex; flex-direction: column; gap: 6px; width: 45px;">
+                            <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">見積</div>
+                            <div style="font-size: 13px; color: #64748b; text-align: right; font-weight: 500; height: 24px; line-height: 24px;">実績</div>
                         </div>
-                        <!-- 実績バー -->
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 45px; font-size: 13px; color: #64748b; text-align: right; font-weight: 500;">実績</div>
-                            <div style="flex: 1; position: relative; height: 28px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 14px; overflow: visible; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
-                                <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 68%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 14px; transition: width 0.3s ease;"></div>
-                                <!-- 100%ライン -->
-                                <div style="position: absolute; left: 100%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px;"></div>
+                        <!-- バーコンテナ（共通の100%ライン） -->
+                        <div style="flex: 1; position: relative;">
+                            <!-- 見積バー -->
+                            <div style="position: relative; height: 24px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 6px;">
+                                <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 91%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
                             </div>
-                            <div style="min-width: 100px; font-size: 15px; font-weight: 600; color: #334155;" id="capacityActualText">120h (68%)</div>
+                            <!-- 実績バー -->
+                            <div style="position: relative; height: 24px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 12px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 68%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
+                            </div>
+                            <!-- 共通の100%ライン -->
+                            <div style="position: absolute; left: 100%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px;"></div>
+                        </div>
+                        <!-- 数値列 -->
+                        <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px;">
+                            <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #334155; height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px;">

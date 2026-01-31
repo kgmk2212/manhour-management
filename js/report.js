@@ -2975,14 +2975,14 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         const absDiff = Math.abs(diffHours);
         const labelSpan = diffContainerEl.querySelector('span');
         if (isOverCapacity) {
-            // 超過: 見積が標準を上回っている → プラスで表示
+            // 超過: 見積が標準を上回っている
             if (labelSpan) labelSpan.textContent = '超過:';
-            diffEl.textContent = `+${absDiff.toFixed(1)}h`;
+            diffEl.textContent = `${absDiff.toFixed(1)}h`;
             diffEl.style.color = '#dc2626';
         } else {
-            // 余裕: 見積が標準を下回っている → マイナスで表示
+            // 余裕: 見積が標準を下回っている
             if (labelSpan) labelSpan.textContent = '余裕:';
-            diffEl.textContent = `-${absDiff.toFixed(1)}h`;
+            diffEl.textContent = `${absDiff.toFixed(1)}h`;
             diffEl.style.color = '#16a34a';
         }
     }
@@ -2991,11 +2991,7 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
     const remainingEl = el('capacityRemaining');
     if (remainingEl) {
         const remaining = standardHours - totalActual;
-        if (remaining >= 0) {
-            remainingEl.textContent = `-${remaining.toFixed(1)}h`;
-        } else {
-            remainingEl.textContent = `+${Math.abs(remaining).toFixed(1)}h`;
-        }
+        remainingEl.textContent = `${Math.abs(remaining).toFixed(1)}h`;
     }
 }
 
