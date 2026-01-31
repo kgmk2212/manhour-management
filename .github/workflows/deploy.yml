@@ -2,11 +2,12 @@
 name: Deploy to GitHub Pages
 
 on:
-  # mainブランチまたはfeature/gantt-chartブランチへのpush時に実行
+  # mainブランチまたは開発ブランチへのpush時に実行
   push:
     branches:
       - main
       - feature/gantt-chart
+      - experiment/sandbox
   # 手動実行も可能
   workflow_dispatch:
 
@@ -41,6 +42,13 @@ jobs:
           path: feature-gantt-chart
         continue-on-error: true
 
+      - name: Checkout experiment/sandbox branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/sandbox
+          path: experiment-sandbox
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -54,6 +62,15 @@ jobs:
             echo "✅ feature/gantt-chart をプレビューディレクトリに追加しました"
           else
             echo "⚠️ feature/gantt-chart ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/sandboxブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-sandbox" ]; then
+            mkdir -p deploy/preview/sandbox
+            cp -r experiment-sandbox/* deploy/preview/sandbox/
+            echo "✅ experiment/sandbox をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/sandbox ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
