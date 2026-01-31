@@ -92,7 +92,8 @@ export function toggleTabFilterDrawer() {
 }
 
 // 現在のタブに応じたフィルタ内容を更新
-export function updateTabFilterContent() {
+// scrollToActive: 初期表示時にアクティブボタンをスクロールするかどうか（デフォルト: true）
+export function updateTabFilterContent(scrollToActive = true) {
     const content = document.getElementById('tabFilterContent');
     if (!content) return;
 
@@ -104,9 +105,9 @@ export function updateTabFilterContent() {
 
     // タブに応じてフィルタ内容を生成
     if (tabId === 'report') {
-        renderReportFilters(content);
+        renderReportFilters(content, scrollToActive);
     } else if (tabId === 'estimate') {
-        renderEstimateFilters(content);
+        renderEstimateFilters(content, scrollToActive);
     } else {
         // フィルタが不要なタブ
         content.innerHTML = '';
@@ -115,7 +116,7 @@ export function updateTabFilterContent() {
 }
 
 // レポートタブ用フィルタ
-function renderReportFilters(container) {
+function renderReportFilters(container, scrollToActive = true) {
     showFilterToggle();
 
     const reportMonth = document.getElementById('reportMonth');
@@ -126,13 +127,19 @@ function renderReportFilters(container) {
         return;
     }
 
+    // 再描画前にスクロール位置を保存
+    const oldVersionContainer = document.getElementById('tabFilterVersionButtons');
+    const oldMonthContainer = document.getElementById('tabFilterMonthButtons');
+    const savedVersionScroll = oldVersionContainer ? oldVersionContainer.scrollLeft : 0;
+    const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
+
     // 月フィルタボタンを生成
     const monthButtons = generateFilterButtons(reportMonth, (value) => {
         reportMonth.value = value;
         if (typeof window.handleReportMonthChange === 'function') {
             window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     // 版数フィルタボタンを生成
@@ -141,7 +148,7 @@ function renderReportFilters(container) {
         if (typeof window.handleReportVersionChange === 'function') {
             window.handleReportVersionChange(value, 'reportVersionButtons2');
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     container.innerHTML = `
@@ -161,7 +168,7 @@ function renderReportFilters(container) {
         if (typeof window.handleReportVersionChange === 'function') {
             window.handleReportVersionChange(value, 'reportVersionButtons2');
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     setupFilterButtonEvents(container, 'tabFilterMonthButtons', reportMonth, (value) => {
@@ -169,7 +176,7 @@ function renderReportFilters(container) {
         if (typeof window.handleReportMonthChange === 'function') {
             window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     // ドラッグスクロールを有効化
@@ -178,13 +185,19 @@ function renderReportFilters(container) {
     if (versionBtnContainer) enableDragScroll(versionBtnContainer);
     if (monthBtnContainer) enableDragScroll(monthBtnContainer);
 
-    // 選択中ボタンを中央にスクロール
-    scrollToActiveButton(versionBtnContainer);
-    scrollToActiveButton(monthBtnContainer);
+    // 初期表示時のみ、選択中ボタンを表示エリア内にスクロール
+    // それ以外は保存したスクロール位置を復元
+    if (scrollToActive) {
+        scrollToActiveButton(versionBtnContainer);
+        scrollToActiveButton(monthBtnContainer);
+    } else {
+        if (versionBtnContainer) versionBtnContainer.scrollLeft = savedVersionScroll;
+        if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+    }
 }
 
 // 見積タブ用フィルタ
-function renderEstimateFilters(container) {
+function renderEstimateFilters(container, scrollToActive = true) {
     showFilterToggle();
 
     const estimateMonth = document.getElementById('estimateMonthFilter');
@@ -195,6 +208,12 @@ function renderEstimateFilters(container) {
         return;
     }
 
+    // 再描画前にスクロール位置を保存
+    const oldVersionContainer = document.getElementById('tabFilterEstVersionButtons');
+    const oldMonthContainer = document.getElementById('tabFilterEstMonthButtons');
+    const savedVersionScroll = oldVersionContainer ? oldVersionContainer.scrollLeft : 0;
+    const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
+
     // 月フィルタボタンを生成
     const monthButtons = generateFilterButtons(estimateMonth, (value) => {
         estimateMonth.value = value;
@@ -203,7 +222,7 @@ function renderEstimateFilters(container) {
         } else {
             estimateMonth.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     // 版数フィルタボタンを生成（ソート済み）
@@ -214,7 +233,7 @@ function renderEstimateFilters(container) {
         } else {
             estimateVersion.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     }, true);
 
     container.innerHTML = `
@@ -236,7 +255,7 @@ function renderEstimateFilters(container) {
         } else {
             estimateVersion.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     setupFilterButtonEvents(container, 'tabFilterEstMonthButtons', estimateMonth, (value) => {
@@ -246,7 +265,7 @@ function renderEstimateFilters(container) {
         } else {
             estimateMonth.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent();
+        updateTabFilterContent(false); // クリック時はスクロールしない
     });
 
     // ドラッグスクロールを有効化
@@ -255,9 +274,15 @@ function renderEstimateFilters(container) {
     if (versionBtnContainer) enableDragScroll(versionBtnContainer);
     if (monthBtnContainer) enableDragScroll(monthBtnContainer);
 
-    // 選択中ボタンを中央にスクロール
-    scrollToActiveButton(versionBtnContainer);
-    scrollToActiveButton(monthBtnContainer);
+    // 初期表示時のみ、選択中ボタンを表示エリア内にスクロール
+    // それ以外は保存したスクロール位置を復元
+    if (scrollToActive) {
+        scrollToActiveButton(versionBtnContainer);
+        scrollToActiveButton(monthBtnContainer);
+    } else {
+        if (versionBtnContainer) versionBtnContainer.scrollLeft = savedVersionScroll;
+        if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+    }
 }
 
 // フィルタボタンのHTML生成
@@ -289,6 +314,11 @@ function setupFilterButtonEvents(container, containerId, selectElement, onChange
     buttonContainer.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            // スクロール検出を一時停止（タブが隠れるのを防ぐ）
+            window.isTabInteracting = true;
+            setTimeout(() => {
+                window.isTabInteracting = false;
+            }, 300);
             const value = btn.dataset.value;
             onChange(value);
         });

@@ -92,6 +92,9 @@ function restoreTableScrollRatio(tableElement, ratio) {
 
 // タブ切り替え中かどうかのフラグ
 let isTabSwitching = false;
+// タブエリア操作中かどうかのフラグ（フィルタボタンクリック時など）
+// window オブジェクトで共有（tab-filter.js からも設定される）
+window.isTabInteracting = false;
 
 export function showTab(tabName) {
     isTabSwitching = true;
@@ -288,7 +291,8 @@ export function initSmartSticky() {
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
-                if (isTabSwitching) {
+                // タブ切り替え中またはタブエリア操作中はスクロール検出をスキップ
+                if (isTabSwitching || window.isTabInteracting) {
                     lastScrollY = window.scrollY;
                     ticking = false;
                     return;
@@ -338,6 +342,14 @@ export function initSmartSticky() {
     // タブエリアにマウスが乗っている間は隠さない
     tabs.addEventListener('mouseenter', () => {
         tabs.classList.remove('is-hidden');
+    });
+
+    // タブエリア内クリック時はスクロール検出を一時停止（フィルタボタンクリック時の誤検出防止）
+    tabs.addEventListener('click', () => {
+        window.isTabInteracting = true;
+        setTimeout(() => {
+            window.isTabInteracting = false;
+        }, 300);
     });
 
     // タブエリアクリックでの表示復帰（Mobile:下部クリック）

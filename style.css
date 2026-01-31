@@ -53,13 +53,22 @@
             opacity: 0;
         }
 
+        /* タブボタンラッパー（トグルボタンを固定表示するため） */
+        .tab-buttons-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
         /* タブボタンエリア */
         .tab-buttons-area {
             display: flex;
             gap: 4px;
             padding: 8px;
+            padding-right: 4px;
             overflow-x: auto;
             align-items: center;
+            flex: 1;
+            min-width: 0;
         }
 
         /* 表示状態 */
@@ -1861,7 +1870,7 @@
                 order: 2; /* タブボタンの下に表示 */
             }
 
-            .tab-buttons-area {
+            .tab-buttons-wrapper {
                 order: 1; /* タブボタンが先 */
             }
 
@@ -2868,13 +2877,13 @@
             border-color: transparent;
         }
 
-        /* フィルタトグルボタン */
+        /* フィルタトグルボタン（固定表示） */
         .tab-filter-toggle {
             padding: 8px 12px !important;
+            padding-right: 8px;
             background: transparent !important;
             border: none !important;
             cursor: pointer;
-            margin-left: auto;
             flex-shrink: 0;
             display: flex;
             align-items: center;

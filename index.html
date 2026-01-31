@@ -143,14 +143,16 @@
                 </div>
             </div>
             <!-- タブボタンエリア -->
-            <div class="tab-buttons-area">
-                <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
-                <button class="tab" data-tab="report">レポート</button>
-                <button class="tab" data-tab="estimate">見積一覧</button>
-                <button class="tab" data-tab="actual">実績一覧</button>
-                <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
-                <button class="tab" data-tab="settings">⚙️ 設定</button>
-                <!-- フィルタトグルボタン -->
+            <div class="tab-buttons-wrapper">
+                <div class="tab-buttons-area">
+                    <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
+                    <button class="tab" data-tab="report">レポート</button>
+                    <button class="tab" data-tab="estimate">見積一覧</button>
+                    <button class="tab" data-tab="actual">実績一覧</button>
+                    <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
+                    <button class="tab" data-tab="settings">⚙️ 設定</button>
+                </div>
+                <!-- フィルタトグルボタン（固定表示） -->
                 <button class="tab-filter-toggle" id="tabFilterToggle" title="フィルタ">
                     <span class="filter-icon">▼</span>
                 </button>
