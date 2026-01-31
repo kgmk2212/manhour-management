@@ -2940,12 +2940,15 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
     };
 
-    // 見積バー
+    // 見積バー（コンテナは130%まで表示可能、100%ラインは76.9%の位置）
+    // スケール: 実際のパーセント * (100/130) = コンテナ内の幅
+    const SCALE_FACTOR = 100 / 130; // ≈ 0.769
     const estimateBarEl = el('capacityEstimateBar');
     const estimateTextEl = el('capacityEstimateText');
     if (estimateBarEl && estimateTextEl) {
-        const displayPercent = Math.min(estimatePercent, 150);
-        estimateBarEl.style.width = Math.min(displayPercent, 100) + '%';
+        const clampedPercent = Math.min(estimatePercent, 130);
+        const displayWidth = clampedPercent * SCALE_FACTOR;
+        estimateBarEl.style.width = displayWidth + '%';
         estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
 
         const opacity = getBarOpacity(estimatePercent);
@@ -2956,12 +2959,13 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         }
     }
 
-    // 実績バー
+    // 実績バー（同じスケール）
     const actualBarEl = el('capacityActualBar');
     const actualTextEl = el('capacityActualText');
     if (actualBarEl && actualTextEl) {
-        const displayPercent = Math.min(actualPercent, 150);
-        actualBarEl.style.width = Math.min(displayPercent, 100) + '%';
+        const clampedPercent = Math.min(actualPercent, 130);
+        const displayWidth = clampedPercent * SCALE_FACTOR;
+        actualBarEl.style.width = displayWidth + '%';
         actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
 
         const opacity = getBarOpacity(actualPercent);
