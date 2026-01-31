@@ -21,6 +21,7 @@ import * as EstimateEdit from './estimate-edit.js';
 import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
+import * as Schedule from './schedule.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -251,6 +252,10 @@ window.actualLayout = State.actualLayout;
 window.reportLayout = State.reportLayout;
 window.isEstimateTabFirstView = State.isEstimateTabFirstView;
 window.isReportTabFirstView = State.isReportTabFirstView;
+window.estimateFilterState = State.estimateFilterState;
+window.reportFilterState = State.reportFilterState;
+window.setEstimateFilterState = State.setEstimateFilterState;
+window.setReportFilterState = State.setReportFilterState;
 
 // quick.js の関数
 window.updateQuickTaskList = Quick.updateQuickTaskList;
@@ -352,6 +357,57 @@ window.renderVersionReport = Report.renderVersionReport;
 window.renderReportGrouped = Report.renderReportGrouped;
 window.renderReportMatrix = Report.renderReportMatrix;
 
+// schedule.js の関数
+window.initScheduleModule = Schedule.initScheduleModule;
+window.renderScheduleView = Schedule.renderScheduleView;
+window.navigateScheduleMonth = Schedule.navigateScheduleMonth;
+window.goToScheduleToday = Schedule.goToScheduleToday;
+window.setScheduleViewMode = Schedule.setScheduleViewMode;
+window.addSchedule = Schedule.addSchedule;
+window.updateSchedule = Schedule.updateSchedule;
+window.deleteSchedule = Schedule.deleteSchedule;
+window.openCreateScheduleModal = Schedule.openCreateScheduleModal;
+window.closeCreateScheduleModal = Schedule.closeCreateScheduleModal;
+window.openScheduleDetailModal = Schedule.openScheduleDetailModal;
+window.closeScheduleDetailModal = Schedule.closeScheduleDetailModal;
+window.saveScheduleFromModal = Schedule.saveScheduleFromModal;
+window.saveScheduleDetailChanges = Schedule.saveScheduleDetailChanges;
+window.deleteScheduleFromModal = Schedule.deleteScheduleFromModal;
+window.updateScheduleVersionOptions = Schedule.updateScheduleVersionOptions;
+window.updateScheduleTaskOptions = Schedule.updateScheduleTaskOptions;
+window.updateScheduleProcessOptions = Schedule.updateScheduleProcessOptions;
+window.updateScheduleMemberOptions = Schedule.updateScheduleMemberOptions;
+window.populateScheduleEstimateHours = Schedule.populateScheduleEstimateHours;
+window.recalculateScheduleEndDate = Schedule.recalculateScheduleEndDate;
+window.recalculateScheduleEndDateDetail = Schedule.recalculateScheduleEndDateDetail;
+window.saveScheduleRemainingHours = Schedule.saveScheduleRemainingHours;
+window.isBusinessDay = Schedule.isBusinessDay;
+window.countBusinessDays = Schedule.countBusinessDays;
+window.generateSchedulesFromEstimates = Schedule.generateSchedulesFromEstimates;
+window.openAutoGenerateModal = Schedule.openAutoGenerateModal;
+window.closeAutoGenerateModal = Schedule.closeAutoGenerateModal;
+window.updateAutoGenerateVersionOptions = Schedule.updateAutoGenerateVersionOptions;
+window.updateAutoGenerateTargetOptions = Schedule.updateAutoGenerateTargetOptions;
+window.updateAutoGeneratePreview = Schedule.updateAutoGeneratePreview;
+window.executeAutoGenerate = Schedule.executeAutoGenerate;
+window.handleScheduleDrag = Schedule.handleScheduleDrag;
+window.setScheduleStatus = Schedule.setScheduleStatus;
+window.getFilteredSchedules = Schedule.getFilteredSchedules;
+window.applyScheduleFilters = Schedule.applyScheduleFilters;
+window.clearScheduleFilters = Schedule.clearScheduleFilters;
+window.updateScheduleFilterOptions = Schedule.updateScheduleFilterOptions;
+window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
+window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
+window.showToast = Schedule.showToast;
+window.updateFilterResultCount = Schedule.updateFilterResultCount;
+window.calculateEndDate = Schedule.calculateEndDate;
+window.getTaskColor = Schedule.getTaskColor;
+
+// state.js のスケジュール関連エクスポート
+window.schedules = State.schedules;
+window.scheduleSettings = State.scheduleSettings;
+window.taskColorMap = State.taskColorMap;
+
 // ============================================
 // 初期化処理
 // ============================================
@@ -368,6 +424,9 @@ window.companyHolidays = State.companyHolidays;
 window.vacations = State.vacations;
 window.remainingEstimates = State.remainingEstimates;
 window.memberOrder = State.memberOrder;
+window.schedules = State.schedules;
+window.scheduleSettings = State.scheduleSettings;
+window.taskColorMap = State.taskColorMap;
 
 console.log('✅ init.js: データロード完了', {
     estimates: State.estimates.length,
@@ -485,6 +544,9 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {
         // localStorageエラーは無視
     }
+
+    // スケジュール（ガントチャート）モジュールの初期化
+    Schedule.initScheduleModule();
 
     console.log('✅ init.js: 初期化処理完了');
 });

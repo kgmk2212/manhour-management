@@ -7,7 +7,9 @@ import {
     showMonthColorsSetting, reportMatrixBgColorMode,
     showProgressBarsSetting, showProgressPercentageSetting,
     progressBarStyle, matrixEstActFormat,
-    memberOrder, setMemberOrder, debugModeEnabled
+    memberOrder, setMemberOrder, debugModeEnabled,
+    estimateFilterState, reportFilterState,
+    setEstimateFilterState, setReportFilterState
 } from './state.js';
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
@@ -489,6 +491,17 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
 
         container.appendChild(button);
     });
+
+    // 初期選択ボタンを表示エリア内にスクロール
+    setTimeout(() => {
+        const activeBtn = container.querySelector('button.active');
+        if (activeBtn) {
+            const containerRect = container.getBoundingClientRect();
+            const btnRect = activeBtn.getBoundingClientRect();
+            const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+            container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+        }
+    }, 0);
 }
 
 export function updateSegmentButtonSelection(containerId, value) {
@@ -1198,13 +1211,20 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
 
         if (!select) return;
 
-        const isFirstLoad = !select.dataset.initialized;
-        const lastVersion = sortedVersions.length > 0 ? sortedVersions[sortedVersions.length - 1] : 'all';
-        let currentValue = isFirstLoad ? lastVersion : (select.value || 'all');
-
-        // 現在の値が新しいリストに含まれているかチェック
-        if (currentValue !== 'all' && !sortedVersions.includes(currentValue)) {
+        // フィルタ状態を確認: 保存された値 > デフォルト（全版数）
+        let currentValue;
+        if (reportFilterState.version !== null) {
+            // 保存された値が有効かチェック
+            if (reportFilterState.version === 'all' || sortedVersions.includes(reportFilterState.version)) {
+                currentValue = reportFilterState.version;
+            } else {
+                // 保存された値が無効な場合はデフォルトを適用
+                currentValue = 'all';
+            }
+        } else {
+            // 初回表示時はデフォルト（全版数）を適用
             currentValue = 'all';
+            setReportFilterState({ version: currentValue });
         }
 
         select.innerHTML = '<option value="all">全版数</option>';
@@ -1226,7 +1246,6 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
 
         select.value = currentValue;
         if (select2) select2.value = currentValue;
-        select.dataset.initialized = 'true';
 
         // セグメントボタン版を生成
         const items = [
@@ -1304,6 +1323,25 @@ export function updateMonthOptions(selectedVersion = 'all') {
         }
     });
 
+    // フィルタ状態を確認: 保存された値 > デフォルト（最新月）
+    let currentValue;
+    if (reportFilterState.month !== null) {
+        // 保存された値が有効かチェック
+        if (reportFilterState.month === 'all' || sortedMonths.includes(reportFilterState.month)) {
+            currentValue = reportFilterState.month;
+        } else {
+            // 保存された値が無効な場合はデフォルトを適用
+            currentValue = getDefaultMonth(select);
+        }
+    } else {
+        // 初回表示時はデフォルト（最新月）を適用
+        currentValue = getDefaultMonth(select);
+        setReportFilterState({ month: currentValue });
+    }
+
+    select.value = currentValue;
+    if (select2) select2.value = currentValue;
+
     const items = [
         { value: 'all', label: '全期間' },
         ...sortedMonths.slice().map(month => {
@@ -1314,12 +1352,6 @@ export function updateMonthOptions(selectedVersion = 'all') {
             };
         })
     ];
-    let currentValue = select.value || 'all';
-
-    // 現在の値が新しいリストに含まれているかチェック
-    if (currentValue !== 'all' && !sortedMonths.includes(currentValue)) {
-        currentValue = 'all';
-    }
 
     createSegmentButtons(
         'reportMonthButtons2',
@@ -1370,6 +1402,25 @@ export function updateEstimateMonthOptions() {
         }
     });
 
+    // フィルタ状態を確認: 保存された値 > 現在のselect値 > デフォルト（最新月）
+    let currentValue;
+    if (estimateFilterState.month !== null) {
+        // 保存された値が有効かチェック
+        if (estimateFilterState.month === 'all' || sortedMonths.includes(estimateFilterState.month)) {
+            currentValue = estimateFilterState.month;
+        } else {
+            // 保存された値が無効な場合はデフォルトを適用
+            currentValue = getDefaultMonth(select);
+        }
+    } else {
+        // 初回表示時はデフォルト（最新月）を適用
+        currentValue = getDefaultMonth(select);
+        setEstimateFilterState({ month: currentValue });
+    }
+
+    select.value = currentValue;
+    if (select2) select2.value = currentValue;
+
     const items = [
         { value: 'all', label: '全期間' },
         ...sortedMonths.map(month => {
@@ -1380,7 +1431,6 @@ export function updateEstimateMonthOptions() {
             };
         })
     ];
-    const currentValue = select.value || 'all';
     createSegmentButtons(
         'estimateMonthButtons2',
         'estimateMonthFilter2',
@@ -1423,9 +1473,24 @@ export function updateEstimateVersionOptions() {
         }
     });
 
-    const defaultValue = sortedVersions.length > 0 ? sortedVersions[0] : 'all';
-    select.value = defaultValue;
-    if (select2) select2.value = defaultValue;
+    // フィルタ状態を確認: 保存された値 > デフォルト（全版数）
+    let currentValue;
+    if (estimateFilterState.version !== null) {
+        // 保存された値が有効かチェック
+        if (estimateFilterState.version === 'all' || sortedVersions.includes(estimateFilterState.version)) {
+            currentValue = estimateFilterState.version;
+        } else {
+            // 保存された値が無効な場合はデフォルトを適用
+            currentValue = 'all';
+        }
+    } else {
+        // 初回表示時はデフォルト（全版数）を適用
+        currentValue = 'all';
+        setEstimateFilterState({ version: currentValue });
+    }
+
+    select.value = currentValue;
+    if (select2) select2.value = currentValue;
 
     const items = [
         { value: 'all', label: '全版数' },
@@ -1440,7 +1505,7 @@ export function updateEstimateVersionOptions() {
         'estimateVersionButtons2',
         'estimateVersionFilter2',
         items,
-        defaultValue,
+        currentValue,
         8,
         handleEstimateVersionChange
     );
@@ -1851,6 +1916,9 @@ export function handleEstimateMonthChange(value, containerId) {
         filterElement.value = value;
     }
 
+    // フィルタ状態を保存
+    setEstimateFilterState({ month: value });
+
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'month';
 
@@ -1875,6 +1943,9 @@ export function handleEstimateVersionChange(value, containerId) {
     if (filterElement) {
         filterElement.value = value;
     }
+
+    // フィルタ状態を保存
+    setEstimateFilterState({ version: value });
 
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'version';
@@ -1919,6 +1990,9 @@ export function handleReportMonthChange(value, containerId) {
 
     const filterTypeEl = document.getElementById('reportFilterType');
     if (filterTypeEl) filterTypeEl.value = 'month';
+
+    // フィルタ状態を保存
+    setReportFilterState({ month: value });
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -1967,6 +2041,9 @@ export function handleReportVersionChange(value, containerId) {
 
     const filterTypeEl = document.getElementById('reportFilterType');
     if (filterTypeEl) filterTypeEl.value = 'version';
+
+    // フィルタ状態を保存
+    setReportFilterState({ version: value });
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -2028,16 +2105,8 @@ export function handleEstimateFilterTypeChange() {
             }
         }
     } else {
-        const estimateVersionEl = document.getElementById('estimateVersionFilter');
-        if (estimateVersionEl && (!estimateVersionEl.value || estimateVersionEl.value === 'all')) {
-            const options = estimateVersionEl.options;
-            if (options.length > 1) {
-                estimateVersionEl.value = options[1].value;
-                const estimateVersion2El = document.getElementById('estimateVersionFilter2');
-                if (estimateVersion2El) estimateVersion2El.value = options[1].value;
-                updateSegmentButtonSelection('estimateVersionButtons2', options[1].value);
-            }
-        }
+        // 版数別フィルタの場合: 保存された状態または現在の選択を維持
+        // デフォルトは全版数（'all'）のまま上書きしない
     }
 
     syncFilterTypeToReport(filterType);
@@ -2109,16 +2178,8 @@ export function handleReportFilterTypeChange() {
                 }
             }
         } else {
-            const reportVersionEl = document.getElementById('reportVersion');
-            if (reportVersionEl && (!reportVersionEl.value || reportVersionEl.value === 'all')) {
-                const options = reportVersionEl.options;
-                if (options.length > 1) {
-                    reportVersionEl.value = options[1].value;
-                    const reportVersion2El = document.getElementById('reportVersion2');
-                    if (reportVersion2El) reportVersion2El.value = options[1].value;
-                    updateSegmentButtonSelection('reportVersionButtons2', options[1].value);
-                }
-            }
+            // 版数別フィルタの場合: 保存された状態または現在の選択を維持
+            // デフォルトは全版数（'all'）のまま上書きしない
         }
 
         syncFilterTypeToEstimate(filterType);

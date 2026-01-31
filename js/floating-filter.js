@@ -4,6 +4,20 @@
 
 import { enableDragScroll } from './utils.js';
 
+// 選択中ボタンを表示エリア内にスクロールするヘルパー関数
+function scrollToActiveButton(container) {
+    if (!container) return;
+    setTimeout(() => {
+        const activeBtn = container.querySelector('button.active');
+        if (activeBtn) {
+            const containerRect = container.getBoundingClientRect();
+            const btnRect = activeBtn.getBoundingClientRect();
+            const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+            container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+        }
+    }, 10);
+}
+
 // ============================================
 // スティッキーフィルタ
 // ============================================
@@ -346,6 +360,10 @@ export function syncFloatingEstimateFilters() {
     // ドラッグスクロールを有効化
     if (floatingMonthButtons) enableDragScroll(floatingMonthButtons);
     if (floatingVersionButtons) enableDragScroll(floatingVersionButtons);
+
+    // 選択中ボタンを表示エリア内にスクロール
+    scrollToActiveButton(floatingMonthButtons);
+    scrollToActiveButton(floatingVersionButtons);
 }
 
 // 見揮: フィルタタイプ設定
@@ -529,6 +547,10 @@ export function syncFloatingFilters() {
     // ドラッグスクロールを有効化
     if (floatingMonthButtons) enableDragScroll(floatingMonthButtons);
     if (floatingVersionButtons) enableDragScroll(floatingVersionButtons);
+
+    // 選択中ボタンを表示エリア内にスクロール
+    scrollToActiveButton(floatingMonthButtons);
+    scrollToActiveButton(floatingVersionButtons);
 }
 
 // フィルタタイプの設定（月別/版数別）

@@ -2135,7 +2135,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
 export function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-    const bgColorMode = window.reportMatrixBgColorMode || 'deviation';
+    const bgColorMode = window.reportMatrixBgColorMode || 'month';
     const showMonthColors = bgColorMode === 'month';
     const isMobile = window.innerWidth <= 768;
 
