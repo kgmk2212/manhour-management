@@ -44,7 +44,7 @@ export function saveStickyFilterSetting() {
 // フィルタ固定表示設定の読み込み
 export function loadStickyFilterSetting() {
     const saved = localStorage.getItem('stickyFilterEnabled');
-    const enabled = saved === null || saved === 'true';
+    const enabled = saved === 'true'; // デフォルトOFF
     const checkbox = document.getElementById('stickyFilterEnabled');
     if (checkbox) {
         checkbox.checked = enabled;
@@ -194,7 +194,7 @@ export function saveFloatingFilterSetting() {
 // フローティングフィルタ設定の読み込み
 export function loadFloatingFilterSetting() {
     const saved = localStorage.getItem('floatingFilterEnabled');
-    const enabled = saved === null || saved === 'true';
+    const enabled = saved === 'true'; // デフォルトOFF
     const checkbox = document.getElementById('floatingFilterEnabled');
     if (checkbox) {
         checkbox.checked = enabled;

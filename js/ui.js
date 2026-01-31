@@ -241,6 +241,11 @@ export function showTab(tabName) {
     const tabs = document.querySelector('.tabs');
     if (tabs) tabs.classList.remove('is-hidden');
 
+    // タブ内フィルタドロワーを更新
+    if (typeof window.onTabFilterChange === 'function') {
+        window.onTabFilterChange(tabName);
+    }
+
     // 少し待ってからフラグを解除（スクロールイベントの発生を待つ）
     setTimeout(() => {
         isTabSwitching = false;

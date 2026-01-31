@@ -20,6 +20,9 @@
                     if (parsed.themeColor) {
                         window.__earlyThemeColor = parsed.themeColor;
                     }
+                    if (parsed.themeBackgroundColor) {
+                        window.__earlyBackgroundColor = parsed.themeBackgroundColor;
+                    }
                 }
                 // 保存されたタブを読み込み
                 var savedTab = localStorage.getItem('manhour_currentTab');
@@ -32,7 +35,8 @@
     <style>
         /* 早期テーマ適用用のCSS変数 */
         :root {
-            --early-theme-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --early-theme-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --early-bg-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         }
     </style>
 </head>
@@ -41,7 +45,8 @@
     <!-- 早期テーマ適用スクリプト -->
     <script>
         (function () {
-            var themeColor = window.__earlyThemeColor || 'purple';
+            var themeColor = window.__earlyThemeColor || 'deep-blue';
+            var backgroundColor = window.__earlyBackgroundColor || 'same';
             var gradients = {
                 'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
@@ -55,10 +60,19 @@
                 'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
                 'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
             };
-            var gradient = gradients[themeColor] || gradients['purple'];
+            var gradient = gradients[themeColor] || gradients['deep-blue'];
+
+            // 背景色を決定（'same'または'default'ならメインカラー、それ以外は指定色）
+            var bgGradient;
+            if (backgroundColor === 'same' || backgroundColor === 'default') {
+                bgGradient = gradient;
+            } else {
+                bgGradient = gradients[backgroundColor] || gradient;
+            }
 
             // CSS変数を設定
             document.documentElement.style.setProperty('--early-theme-gradient', gradient);
+            document.documentElement.style.setProperty('--early-bg-gradient', bgGradient);
             document.documentElement.dataset.earlyTheme = themeColor;
 
             // 保存されたタブを早期適用
@@ -88,7 +102,7 @@
 
         /* ページ読込中の背景安定化 */
         body {
-            background: var(--early-theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--early-bg-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)));
         }
 
         /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
@@ -122,12 +136,25 @@
         </header>
 
         <div class="tabs">
-            <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
-            <button class="tab" data-tab="report">レポート</button>
-            <button class="tab" data-tab="estimate">見積一覧</button>
-            <button class="tab" data-tab="actual">実績一覧</button>
-            <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
-            <button class="tab" data-tab="settings">⚙️ 設定</button>
+            <!-- フィルタドロワー（展開時に表示） -->
+            <div class="tab-filter-drawer" id="tabFilterDrawer">
+                <div class="tab-filter-content" id="tabFilterContent">
+                    <!-- タブに応じてフィルタ内容が動的に切り替わる -->
+                </div>
+            </div>
+            <!-- タブボタンエリア -->
+            <div class="tab-buttons-area">
+                <button class="tab active tab-theme-purple" data-tab="quick">クイック入力</button>
+                <button class="tab" data-tab="report">レポート</button>
+                <button class="tab" data-tab="estimate">見積一覧</button>
+                <button class="tab" data-tab="actual">実績一覧</button>
+                <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
+                <button class="tab" data-tab="settings">⚙️ 設定</button>
+                <!-- フィルタトグルボタン -->
+                <button class="tab-filter-toggle" id="tabFilterToggle" title="フィルタ">
+                    <span class="filter-icon">▼</span>
+                </button>
+            </div>
         </div>
 
         <div class="content">
@@ -528,6 +555,52 @@
                     <div class="stat-card theme-bg theme-purple">
                         <h3>実績率</h3>
                         <div class="value" id="actualRate">0%</div>
+                    </div>
+                </div>
+
+                <!-- キャパシティ分析 -->
+                <div id="capacityAnalysis" class="capacity-analysis-section" style="margin: 20px 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px 24px; border-radius: 12px; border: 1px solid #cbd5e1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 18px;">📊</span>
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #334155;">キャパシティ分析</h4>
+                        </div>
+                        <div style="font-size: 14px; color: #64748b;">
+                            標準: <strong id="capacityStandard" style="color: #334155; font-size: 16px;">176h</strong>
+                            <span style="font-size: 12px; color: #94a3b8;" id="capacityStandardDetail">(22日×8h×1人)</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- 見積バー -->
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 45px; font-size: 13px; color: #64748b; text-align: right; font-weight: 500;">見積</div>
+                            <div style="flex: 1; position: relative; height: 28px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 14px; overflow: visible; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 91%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 14px; transition: width 0.3s ease;"></div>
+                                <!-- 100%ライン -->
+                                <div style="position: absolute; left: 100%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px;"></div>
+                            </div>
+                            <div style="min-width: 100px; font-size: 15px; font-weight: 600; color: #334155;" id="capacityEstimateText">160h (91%)</div>
+                        </div>
+                        <!-- 実績バー -->
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 45px; font-size: 13px; color: #64748b; text-align: right; font-weight: 500;">実績</div>
+                            <div style="flex: 1; position: relative; height: 28px; background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%); border-radius: 14px; overflow: visible; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 68%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 14px; transition: width 0.3s ease;"></div>
+                                <!-- 100%ライン -->
+                                <div style="position: absolute; left: 100%; top: -3px; bottom: -3px; width: 2px; background: #334155; border-radius: 1px;"></div>
+                            </div>
+                            <div style="min-width: 100px; font-size: 15px; font-weight: 600; color: #334155;" id="capacityActualText">120h (68%)</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px;">
+                        <div id="capacityDiffContainer">
+                            <span style="color: #64748b;">余裕:</span>
+                            <strong id="capacityDiff" style="color: #16a34a; font-size: 16px;">+16h</strong>
+                        </div>
+                        <div>
+                            <span style="color: #64748b;">実績残り:</span>
+                            <strong id="capacityRemaining" style="color: #334155; font-size: 16px;">56h</strong>
+                        </div>
                     </div>
                 </div>
 
@@ -964,7 +1037,7 @@
                     <div class="form-group">
                         <label>色</label>
                         <select id="themeColor">
-                            <option value="purple">紫（現在）</option>
+                            <option value="purple">紫</option>
                             <option value="deep-blue">ディープブルー</option>
                             <option value="teal">ティール</option>
                             <option value="cyan">シアン</option>
@@ -1267,8 +1340,7 @@
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="stickyFilterEnabled" style="width: auto; margin-right: 10px;"
-                                checked>
+                            <input type="checkbox" id="stickyFilterEnabled" style="width: auto; margin-right: 10px;">
                             <span>フィルタ固定表示（Sticky）を有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
@@ -1278,12 +1350,31 @@
 
                     <div class="form-group" style="margin-top: 15px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="floatingFilterEnabled" style="width: auto; margin-right: 10px;"
-                                checked>
+                            <input type="checkbox" id="floatingFilterEnabled" style="width: auto; margin-right: 10px;">
                             <span>フローティングフィルタパネルを有効にする</span>
                         </label>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
                             レポートタブで画面右下にフィルタ設定ボタンを表示します。スクロール位置に関係なくフィルタを変更できます。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="tabBarAlwaysVisible" style="width: auto; margin-right: 10px;">
+                            <span>タブバーを常に表示する</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            スクロール時もタブバーを隠さずに常に表示します。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="tabFilterAlwaysExpanded" style="width: auto; margin-right: 10px;">
+                            <span>タブ内フィルタを常に展開する</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
+                            タブバー内のフィルタセクションを常に展開状態で表示します。
                         </small>
                     </div>
 
