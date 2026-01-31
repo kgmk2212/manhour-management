@@ -53,3 +53,10 @@ logs/
 
 # Personal notes and task lists
 修正案リスト.md
+
+# Archive folder (old/unused files)
+archive/
+
+# Temporary style/script files
+temp_*.css
+temp_*.js
