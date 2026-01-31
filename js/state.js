@@ -243,9 +243,9 @@ export let workMonthSelectionMode = false; // 作業月選択モード
 export const selectedEstimateIds = new Set(); // 選択された見積ID
 
 // テーマカラー関連
-export let currentThemeColor = 'purple';
+export let currentThemeColor = 'deep-blue';
 export let currentThemePattern = 'gradient';
-export let currentTabColor = 'purple';
+export let currentTabColor = 'deep-blue';
 export let currentBackgroundColor = 'default';
 
 // レイアウト設定（セグメント表示に固定）

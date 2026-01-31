@@ -42,19 +42,24 @@
 
         .tabs {
             display: flex;
-            gap: 4px;
+            flex-direction: column;
             background: #ecf0f1;
-            padding: 8px;
-            overflow-x: auto;
             position: sticky;
             top: 0;
             z-index: 1000;
-            /* ヘッダーや他要素より上に表示 */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, opacity 0.3s ease;
             transform: translateY(-100%);
-            /* デフォルトで隠す */
             opacity: 0;
+        }
+
+        /* タブボタンエリア */
+        .tab-buttons-area {
+            display: flex;
+            gap: 4px;
+            padding: 8px;
+            overflow-x: auto;
+            align-items: center;
         }
 
         /* 表示状態 */
@@ -66,6 +71,12 @@
         .tabs.is-hidden {
             transform: translateY(-100%);
             opacity: 0;
+        }
+
+        /* タブバー常時表示モード */
+        .tabs.is-always-visible {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
         }
 
         .tab {
@@ -1844,6 +1855,48 @@
             .floating-filter-toggle {
                 bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
             }
+
+            /* モバイル：タブ内フィルタドロワー */
+            .tab-filter-drawer {
+                order: 2; /* タブボタンの下に表示 */
+            }
+
+            .tab-buttons-area {
+                order: 1; /* タブボタンが先 */
+            }
+
+            .tab-filter-drawer.is-expanded,
+            .tab-filter-drawer.is-always-expanded {
+                border-bottom: none;
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+            }
+
+            .tab-filter-content {
+                padding: 0 8px;
+            }
+
+            .tab-filter-drawer.is-expanded .tab-filter-content,
+            .tab-filter-drawer.is-always-expanded .tab-filter-content {
+                padding: 10px 8px;
+            }
+
+            .tab-filter-row {
+                gap: 8px;
+            }
+
+            .tab-filter-label {
+                font-size: 11px;
+            }
+
+            .tab-filter-buttons button {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+
+            /* タブバー常時表示時 */
+            .tabs.is-always-visible {
+                transform: translateY(0) !important;
+            }
         }
 
         /* ============================================ */
@@ -2721,4 +2774,136 @@
         .keyboard-hint:hover {
             background: #e9ecef;
             color: #333;
+        }
+
+        /* ============================================ */
+        /* タブ内フィルタドロワー */
+        /* ============================================ */
+
+        .tab-filter-drawer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(248, 249, 252, 0.98));
+            border-bottom: 1px solid transparent;
+            box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-filter-drawer.is-expanded {
+            max-height: 200px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-filter-content {
+            padding: 0 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease 0.1s;
+        }
+
+        .tab-filter-drawer.is-expanded .tab-filter-content {
+            padding: 12px;
+            opacity: 1;
+        }
+
+        /* フィルタ行 */
+        .tab-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tab-filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .tab-filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .tab-filter-buttons {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            flex: 1;
+            padding: 2px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-filter-buttons button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .tab-filter-buttons button:hover:not(.active) {
+            border-color: var(--theme-color, #667eea);
+            background: #f8f9ff;
+        }
+
+        .tab-filter-buttons button.active {
+            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            color: white;
+            border-color: transparent;
+        }
+
+        /* フィルタトグルボタン */
+        .tab-filter-toggle {
+            padding: 8px 12px !important;
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer;
+            margin-left: auto;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border-radius: 6px !important;
+        }
+
+        .tab-filter-toggle:hover {
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .tab-filter-toggle .filter-icon {
+            font-size: 10px;
+            transition: transform 0.3s ease;
+            color: #666;
+        }
+
+        .tab-filter-toggle.is-active .filter-icon {
+            transform: rotate(180deg);
+            color: var(--theme-color, #667eea);
+        }
+
+        /* フィルタが非表示のタブではトグルボタンを隠す */
+        .tabs[data-filter-hidden="true"] .tab-filter-toggle {
+            display: none;
+        }
+
+        /* 常時展開モード */
+        .tab-filter-drawer.is-always-expanded {
+            max-height: 200px !important;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-filter-drawer.is-always-expanded .tab-filter-content {
+            padding: 12px;
+            opacity: 1;
+        }
+
+        /* 常時展開時はトグルボタンを隠す */
+        .tabs.filter-always-expanded .tab-filter-toggle {
+            display: none;
         }

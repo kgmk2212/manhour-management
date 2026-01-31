@@ -16,6 +16,7 @@ import * as Report from './report.js';
 import * as EstimateAdd from './estimate-add.js';
 import * as OtherWork from './other-work.js';
 import * as FloatingFilter from './floating-filter.js';
+import * as TabFilter from './tab-filter.js';
 import * as Modal from './modal.js';
 import * as EstimateEdit from './estimate-edit.js';
 import * as EstimateSelection from './estimate-selection.js';
@@ -353,6 +354,7 @@ window.getProgressColor = Report.getProgressColor;
 window.generateProgressBar = Report.generateProgressBar;
 window.getAnalysisGradients = Report.getAnalysisGradients;
 window.updateReport = Report.updateReport;
+window.updateCapacityAnalysis = Report.updateCapacityAnalysis;
 window.renderReportAnalytics = Report.renderReportAnalytics;
 window.renderMemberReport = Report.renderMemberReport;
 window.renderVersionReport = Report.renderVersionReport;
@@ -534,6 +536,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // フローティングフィルタイベントの初期化
     FloatingFilter.initFloatingFilterEvents();
+
+    // タブ内フィルタドロワーの初期化
+    TabFilter.initTabFilter();
 
     // グローバルイベントハンドラの初期化（index.htmlから移行）
     initEventHandlers();

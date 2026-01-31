@@ -1189,6 +1189,20 @@ export function updateReport() {
     // サマリー表示
     displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
 
+    // キャパシティ分析を更新
+    const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
+    const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+    // 担当者数を取得（フィルタ済みデータからユニークな担当者を抽出）
+    const uniqueMembers = new Set([
+        ...filteredEstimates.map(e => e.member),
+        ...filteredActuals.map(a => a.member)
+    ]);
+    const headcount = Math.max(1, uniqueMembers.size);
+
+    // 換算基準と同じロジックで営業日数を計算
+    const capacityWorkingDays = calculateWorkingDaysForCapacity(filterType, selectedMonth, filteredEstimates);
+    updateCapacityAnalysis(totalEst, totalAct, capacityWorkingDays.days, headcount, 8, capacityWorkingDays.label);
+
     // レポート詳細ビューをクリア
     const container = document.getElementById('reportDetailView');
     let reportHtml = '';
@@ -2831,6 +2845,158 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
         ctx.fillText(`${process}: ${processHours[process].toFixed(1)}h`, 22, legendY + 8);
         legendY += 14;
     });
+}
+
+// ============================================
+// キャパシティ分析
+// ============================================
+
+/**
+ * キャパシティ分析用の営業日数を計算（換算基準と同じロジック）
+ * @param {string} filterType - フィルタタイプ（'month'または'version'）
+ * @param {string} selectedMonth - 選択された月（'all'または'YYYY-MM'）
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @returns {Object} { days: number, label: string }
+ */
+function calculateWorkingDaysForCapacity(filterType, selectedMonth, filteredEstimates) {
+    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
+    const normalizeEstimate = typeof window.normalizeEstimate === 'function' ? window.normalizeEstimate : (e) => e;
+
+    let workingDays = 20;
+    let label = '20日';
+
+    if (selectedMonth && selectedMonth !== 'all') {
+        // 特定の月が選択されている場合
+        const [year, month] = selectedMonth.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        if (calculatedDays > 0) {
+            workingDays = calculatedDays;
+            label = `${workingDays}日`;
+        }
+    } else {
+        // 月が全期間の場合: 見積もりに含まれる作業月の営業日数を合計
+        const workMonthsSet = new Set();
+        filteredEstimates.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths && est.workMonths.length > 0) {
+                est.workMonths.forEach(m => workMonthsSet.add(m));
+            }
+        });
+
+        if (workMonthsSet.size > 0) {
+            let totalDays = 0;
+            workMonthsSet.forEach(m => {
+                const [year, month] = m.split('-');
+                totalDays += getWorkingDays(parseInt(year), parseInt(month));
+            });
+
+            // 全期間の場合は合計
+            workingDays = totalDays;
+            if (workMonthsSet.size === 1) {
+                label = `${workingDays}日`;
+            } else {
+                label = `${workMonthsSet.size}ヶ月計${workingDays}日`;
+            }
+        }
+    }
+
+    return { days: workingDays, label };
+}
+
+/**
+ * キャパシティ分析を更新
+ * @param {number} totalEstimate - 総見積工数（時間）
+ * @param {number} totalActual - 総実績工数（時間）
+ * @param {number} workingDays - 営業日数
+ * @param {number} headcount - 人数
+ * @param {number} hoursPerDay - 1日の稼働時間（デフォルト8）
+ * @param {string} daysLabel - 日数のラベル
+ */
+export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, headcount = 1, hoursPerDay = 8, daysLabel = '') {
+    const standardHours = workingDays * hoursPerDay * headcount;
+    const diffHours = standardHours - totalEstimate;
+    const estimatePercent = standardHours > 0 ? (totalEstimate / standardHours) * 100 : 0;
+    const actualPercent = standardHours > 0 ? (totalActual / standardHours) * 100 : 0;
+    const isOverCapacity = totalEstimate > standardHours;
+
+    const el = (id) => document.getElementById(id);
+
+    // 標準工数
+    const standardEl = el('capacityStandard');
+    const detailEl = el('capacityStandardDetail');
+    if (standardEl) {
+        standardEl.textContent = standardHours + 'h';
+    }
+    if (detailEl) {
+        const displayLabel = daysLabel || `${workingDays}日`;
+        detailEl.textContent = `(${displayLabel}×${hoursPerDay}h×${headcount}人)`;
+    }
+
+    // 色の濃さを割合に応じて計算（0-100%の範囲で濃さを調整）
+    const getBarOpacity = (percent) => {
+        const minOpacity = 0.4;
+        const maxOpacity = 1.0;
+        const clampedPercent = Math.min(Math.max(percent, 0), 100);
+        return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
+    };
+
+    // 見積バー
+    const estimateBarEl = el('capacityEstimateBar');
+    const estimateTextEl = el('capacityEstimateText');
+    if (estimateBarEl && estimateTextEl) {
+        const displayPercent = Math.min(estimatePercent, 150);
+        estimateBarEl.style.width = Math.min(displayPercent, 100) + '%';
+        estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
+
+        const opacity = getBarOpacity(estimatePercent);
+        if (isOverCapacity) {
+            estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
+        } else {
+            estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
+        }
+    }
+
+    // 実績バー
+    const actualBarEl = el('capacityActualBar');
+    const actualTextEl = el('capacityActualText');
+    if (actualBarEl && actualTextEl) {
+        const displayPercent = Math.min(actualPercent, 150);
+        actualBarEl.style.width = Math.min(displayPercent, 100) + '%';
+        actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+
+        const opacity = getBarOpacity(actualPercent);
+        actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+    }
+
+    // 差異（見積と標準の差）
+    const diffEl = el('capacityDiff');
+    const diffContainerEl = el('capacityDiffContainer');
+    if (diffEl && diffContainerEl) {
+        const absDiff = Math.abs(diffHours);
+        const labelSpan = diffContainerEl.querySelector('span');
+        if (isOverCapacity) {
+            // 超過: 見積が標準を上回っている → プラスで表示
+            if (labelSpan) labelSpan.textContent = '超過:';
+            diffEl.textContent = `+${absDiff.toFixed(1)}h`;
+            diffEl.style.color = '#dc2626';
+        } else {
+            // 余裕: 見積が標準を下回っている → マイナスで表示
+            if (labelSpan) labelSpan.textContent = '余裕:';
+            diffEl.textContent = `-${absDiff.toFixed(1)}h`;
+            diffEl.style.color = '#16a34a';
+        }
+    }
+
+    // 実績残り（標準 - 実績）
+    const remainingEl = el('capacityRemaining');
+    if (remainingEl) {
+        const remaining = standardHours - totalActual;
+        if (remaining >= 0) {
+            remainingEl.textContent = `-${remaining.toFixed(1)}h`;
+        } else {
+            remainingEl.textContent = `+${Math.abs(remaining).toFixed(1)}h`;
+        }
+    }
 }
 
 console.log('✅ モジュール report.js loaded');
