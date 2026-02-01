@@ -3080,11 +3080,21 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         }
     }
 
-    // 実績残り（標準 - 実績）
+    // 実績残り/超過（標準 - 実績）
     const remainingEl = el('capacityRemaining');
+    const remainingLabelEl = el('capacityRemainingLabel');
     if (remainingEl) {
         const remaining = standardHours - totalActual;
         remainingEl.textContent = `${Math.abs(remaining).toFixed(1)}h`;
+
+        // 超過時はラベルと色を変更
+        if (remaining < 0) {
+            if (remainingLabelEl) remainingLabelEl.textContent = '実績超過:';
+            remainingEl.style.color = '#dc2626';
+        } else {
+            if (remainingLabelEl) remainingLabelEl.textContent = '実績残り:';
+            remainingEl.style.color = '#334155';
+        }
     }
 }
 
