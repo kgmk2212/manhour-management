@@ -3182,32 +3182,32 @@
 /* モバイル用ゲージ表示調整 */
 @media (max-width: 600px) {
     .capacity-gauge-container {
-        gap: 20px;
-        padding-bottom: 70px;
+        gap: 24px;
+        padding-bottom: 75px;
     }
 
     .capacity-gauge {
-        width: 110px;
-        height: 75px;
+        width: 125px;
+        height: 82px;
     }
 
     .capacity-gauge-bg,
     .capacity-gauge-fill {
-        width: 110px;
-        height: 55px;
-        border-radius: 55px 55px 0 0;
+        width: 125px;
+        height: 62px;
+        border-radius: 62px 62px 0 0;
     }
 
     .capacity-gauge-mask {
-        top: 10px;
-        left: 10px;
-        width: 90px;
-        height: 45px;
-        border-radius: 45px 45px 0 0;
+        top: 11px;
+        left: 11px;
+        width: 103px;
+        height: 51px;
+        border-radius: 51px 51px 0 0;
     }
 
     .capacity-gauge-needle {
-        height: 38px;
+        height: 42px;
         bottom: 20px;
     }
 
@@ -3216,13 +3216,13 @@
     }
 
     .capacity-gauge-value {
-        font-size: 15px;
-        bottom: -5px;
+        font-size: 16px;
+        bottom: -12px;
     }
 
     .capacity-gauge-label {
-        font-size: 11px;
-        bottom: -22px;
+        font-size: 12px;
+        bottom: -30px;
     }
 }
 
