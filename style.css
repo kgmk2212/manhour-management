@@ -3300,7 +3300,8 @@
     }
 
     .tabs.is-dock:has(.tab-indicator) .tab.active {
-        transform: translateY(-2px);
+        /* transformを削除 - インジケーターの位置ずれを防止 */
+        transform: none;
     }
 
     /* Capsuleスタイル用の調整 */
@@ -3310,7 +3311,8 @@
     }
 
     .tabs.is-capsule:has(.tab-indicator) .tab.active {
-        transform: scale(1.05);
+        /* transformを削除 - インジケーターの位置ずれを防止 */
+        transform: none;
     }
 
     /* Classicスタイル用の調整 */

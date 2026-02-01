@@ -165,6 +165,13 @@ export function showTab(tabName, options = {}) {
     // タブインジケーターを更新（スワイプ完了時はアニメーションなし）
     updateTabIndicator(tabName, !skipAnimation);
 
+    // タブボタンを画面内にスクロール（モバイルのみ、スタイル適用後に実行）
+    if (targetTabBtn && window.innerWidth <= 768) {
+        requestAnimationFrame(() => {
+            scrollTabButtonIntoView(targetTabBtn);
+        });
+    }
+
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
     if (tabContent) {
@@ -304,8 +311,8 @@ export function initTabIndicator() {
     tabIndicator.className = 'tab-indicator';
     tabButtonsArea.appendChild(tabIndicator);
 
-    // 初期位置を設定
-    updateTabIndicator();
+    // 初期位置はshowTab内のupdateTabIndicatorで設定される
+    // ここでは要素の作成のみ行う
 
     // リサイズ時に再計算
     window.addEventListener('resize', () => {
@@ -323,41 +330,82 @@ export function initTabIndicator() {
 export function updateTabIndicator(targetTabName, animate = true) {
     if (!tabIndicator || window.innerWidth > 768) return;
 
+    // インジケーターに幅が設定されていない場合は初期化時
+    // タブボタンに transition: all 0.3s があるため、初期化時のみ遅延を入れる
+    const isInitial = !tabIndicator.style.width;
+    const delay = isInitial ? 350 : 0;  // 初期化時は0.3sトランジション完了を待つ
+
+    const doUpdate = () => {
+        requestAnimationFrame(() => {
+            const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+            if (!tabButtonsArea) return;
+
+            // 対象のタブボタンを取得
+            let targetTab;
+            if (targetTabName) {
+                targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
+            } else {
+                targetTab = tabButtonsArea.querySelector('.tab.active');
+            }
+
+            if (!targetTab) return;
+
+            // タブボタンの位置とサイズを取得
+            const width = targetTab.offsetWidth;
+            const height = targetTab.offsetHeight;
+            const left = targetTab.offsetLeft;
+            const top = targetTab.offsetTop;
+
+            // アニメーション制御
+            if (!animate) {
+                tabIndicator.classList.add('swiping');
+            } else {
+                tabIndicator.classList.remove('swiping');
+            }
+
+            // スタイルを適用（位置とサイズ両方）
+            tabIndicator.style.width = `${width}px`;
+            tabIndicator.style.height = `${height}px`;
+            tabIndicator.style.top = `${top}px`;
+            tabIndicator.style.transform = `translateX(${left}px)`;
+        });
+    };
+
+    // 遅延が必要な場合はsetTimeoutで待機
+    if (delay > 0) {
+        setTimeout(doUpdate, delay);
+    } else {
+        doUpdate();
+    }
+}
+
+/**
+ * タブボタンを画面内にスクロール
+ * @param {HTMLElement} tabButton - スクロール対象のタブボタン
+ */
+function scrollTabButtonIntoView(tabButton) {
     const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
-    if (!tabButtonsArea) return;
+    if (!tabButtonsArea || !tabButton) return;
 
-    // 対象のタブボタンを取得
-    let targetTab;
-    if (targetTabName) {
-        targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
-    } else {
-        targetTab = tabButtonsArea.querySelector('.tab.active');
-    }
-
-    if (!targetTab) return;
-
-    // タブボタンの位置とサイズを取得
     const areaRect = tabButtonsArea.getBoundingClientRect();
-    const tabRect = targetTab.getBoundingClientRect();
+    const buttonRect = tabButton.getBoundingClientRect();
 
-    // インジケーターの位置とサイズを計算
-    const left = tabRect.left - areaRect.left + tabButtonsArea.scrollLeft;
-    const top = tabRect.top - areaRect.top;
-    const width = tabRect.width;
-    const height = tabRect.height;
-
-    // アニメーション制御
-    if (!animate) {
-        tabIndicator.classList.add('swiping');
-    } else {
-        tabIndicator.classList.remove('swiping');
+    // タブボタンが左側にはみ出している場合
+    if (buttonRect.left < areaRect.left) {
+        const scrollAmount = buttonRect.left - areaRect.left - 8; // 8px余裕
+        tabButtonsArea.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+        });
     }
-
-    // スタイルを適用（位置とサイズ両方）
-    tabIndicator.style.width = `${width}px`;
-    tabIndicator.style.height = `${height}px`;
-    tabIndicator.style.top = `${top}px`;
-    tabIndicator.style.transform = `translateX(${left}px)`;
+    // タブボタンが右側にはみ出している場合
+    else if (buttonRect.right > areaRect.right) {
+        const scrollAmount = buttonRect.right - areaRect.right + 8; // 8px余裕
+        tabButtonsArea.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+        });
+    }
 }
 
 /**
@@ -533,6 +581,9 @@ export function initTabSwipe() {
     let nextTabEl = null;
     let prevTabEl = null;
 
+    // インジケーター用のタブ位置キャッシュ
+    let indicatorCache = null;
+
     // 設定
     const SWIPE_THRESHOLD = 0.2;  // 画面幅の20%以上でタブ切り替え
     const VELOCITY_THRESHOLD = 0.5;  // px/msの速度閾値
@@ -637,6 +688,61 @@ export function initTabSwipe() {
         const maxHeight = Math.max(currentHeight, nextHeight, prevHeight);
         content.style.minHeight = (maxHeight + parseFloat(paddingTop)) + 'px';
 
+        // インジケーター用のタブボタン位置をキャッシュ（パフォーマンス最適化）
+        const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+        if (tabButtonsArea && tabIndicator) {
+            const areaRect = tabButtonsArea.getBoundingClientRect();
+            const currentBtn = tabButtonsArea.querySelector(`.tab[data-tab="${currentTab.id}"]`);
+            const nextBtn = nextTabEl ? tabButtonsArea.querySelector(`.tab[data-tab="${nextTabEl.id}"]`) : null;
+            const prevBtn = prevTabEl ? tabButtonsArea.querySelector(`.tab[data-tab="${prevTabEl.id}"]`) : null;
+
+            // offsetLeft/offsetWidth を使用してスケール前のサイズを取得
+            const areaWidth = tabButtonsArea.clientWidth;
+            const currentScroll = tabButtonsArea.scrollLeft;
+
+            // タブボタンを画面内に表示するために必要なスクロール量を計算
+            const calcTargetScroll = (btn) => {
+                if (!btn) return currentScroll;
+                const btnLeft = btn.offsetLeft;
+                const btnRight = btnLeft + btn.offsetWidth;
+                const visibleLeft = currentScroll;
+                const visibleRight = currentScroll + areaWidth;
+
+                // 左にはみ出している場合
+                if (btnLeft < visibleLeft) {
+                    return btnLeft - 8;  // 8px余裕
+                }
+                // 右にはみ出している場合
+                if (btnRight > visibleRight) {
+                    return btnRight - areaWidth + 8;  // 8px余裕
+                }
+                return currentScroll;  // 既に見えている場合は変更なし
+            };
+
+            indicatorCache = {
+                current: currentBtn ? {
+                    left: currentBtn.offsetLeft,
+                    width: currentBtn.offsetWidth
+                } : null,
+                next: nextBtn ? {
+                    left: nextBtn.offsetLeft,
+                    width: nextBtn.offsetWidth
+                } : null,
+                prev: prevBtn ? {
+                    left: prevBtn.offsetLeft,
+                    width: prevBtn.offsetWidth
+                } : null,
+                // タブバーのスクロール用キャッシュ
+                scrollArea: tabButtonsArea,
+                scrollCurrent: currentScroll,
+                scrollNext: calcTargetScroll(nextBtn),
+                scrollPrev: calcTargetScroll(prevBtn)
+            };
+
+            // スワイプ中はインジケーターのトランジションを無効化
+            tabIndicator.classList.add('swiping');
+        }
+
         return true;
     }
 
@@ -666,13 +772,37 @@ export function initTabSwipe() {
             prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px + ${adjustedDeltaX}px))`;
         }
 
-        // タブインジケーターを追従させる（抵抗なしのdeltaXを使用）
-        const screenWidth = window.innerWidth;
-        const progress = deltaX / screenWidth;  // -1〜1（左が負、右が正）
-        const currentTabName = currentTab ? currentTab.id : null;
-        const nextTabName = nextTabEl ? nextTabEl.id : null;
-        const prevTabName = prevTabEl ? prevTabEl.id : null;
-        updateTabIndicatorProgress(progress, currentTabName, nextTabName, prevTabName);
+        // タブインジケーターを追従させる（キャッシュを使用して高速化）
+        if (indicatorCache && tabIndicator) {
+            const screenWidth = window.innerWidth;
+            const progress = adjustedDeltaX / screenWidth;  // -1〜1
+
+            let targetLeft = indicatorCache.current.left;
+            let targetWidth = indicatorCache.current.width;
+            let targetScroll = indicatorCache.scrollCurrent;
+
+            if (progress < 0 && indicatorCache.next) {
+                // 次のタブへ
+                const t = Math.min(Math.abs(progress), 1);
+                targetLeft = indicatorCache.current.left + (indicatorCache.next.left - indicatorCache.current.left) * t;
+                targetWidth = indicatorCache.current.width + (indicatorCache.next.width - indicatorCache.current.width) * t;
+                targetScroll = indicatorCache.scrollCurrent + (indicatorCache.scrollNext - indicatorCache.scrollCurrent) * t;
+            } else if (progress > 0 && indicatorCache.prev) {
+                // 前のタブへ
+                const t = Math.min(Math.abs(progress), 1);
+                targetLeft = indicatorCache.current.left + (indicatorCache.prev.left - indicatorCache.current.left) * t;
+                targetWidth = indicatorCache.current.width + (indicatorCache.prev.width - indicatorCache.current.width) * t;
+                targetScroll = indicatorCache.scrollCurrent + (indicatorCache.scrollPrev - indicatorCache.scrollCurrent) * t;
+            }
+
+            tabIndicator.style.width = `${targetWidth}px`;
+            tabIndicator.style.transform = `translateX(${targetLeft}px)`;
+
+            // タブバーもスワイプに追従してスクロール
+            if (indicatorCache.scrollArea && targetScroll !== indicatorCache.scrollCurrent) {
+                indicatorCache.scrollArea.scrollLeft = targetScroll;
+            }
+        }
     }
 
     /**
@@ -706,6 +836,12 @@ export function initTabSwipe() {
             prevTabEl.style.transition = `transform ${duration} ${easing}`;
         }
 
+        // インジケーターのトランジションを有効化
+        if (tabIndicator) {
+            tabIndicator.classList.remove('swiping');
+            tabIndicator.style.transition = `transform ${duration} ${easing}, width ${duration} ${easing}`;
+        }
+
         if (shouldSwitchNext && nextTabEl) {
             // 次のタブへ切り替え
             const targetId = nextTabEl.id;
@@ -714,6 +850,12 @@ export function initTabSwipe() {
             // 完全に画面外に出るようにギャップ分も含める
             currentTab.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
             nextTabEl.style.transform = 'translateX(0)';
+
+            // インジケーターを次のタブの位置へアニメーション
+            if (indicatorCache && indicatorCache.next && tabIndicator) {
+                tabIndicator.style.width = `${indicatorCache.next.width}px`;
+                tabIndicator.style.transform = `translateX(${indicatorCache.next.left}px)`;
+            }
 
             setTimeout(() => {
                 // showTab()の前に、使われていないタブを非表示にする
@@ -732,6 +874,12 @@ export function initTabSwipe() {
             // 完全に画面外に出るようにギャップ分も含める
             currentTab.style.transform = `translateX(calc(100% + ${PAGE_GAP}px))`;
             prevTabEl.style.transform = 'translateX(0)';
+
+            // インジケーターを前のタブの位置へアニメーション
+            if (indicatorCache && indicatorCache.prev && tabIndicator) {
+                tabIndicator.style.width = `${indicatorCache.prev.width}px`;
+                tabIndicator.style.transform = `translateX(${indicatorCache.prev.left}px)`;
+            }
 
             setTimeout(() => {
                 // showTab()の前に、使われていないタブを非表示にする
@@ -754,9 +902,11 @@ export function initTabSwipe() {
                 prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
             }
 
-            // インジケーターも元の位置に戻す（アニメーションあり）
-            finalizeTabIndicator(true);
-            updateTabIndicator();
+            // インジケーターも元の位置に戻す（キャッシュを使用してアニメーション）
+            if (indicatorCache && indicatorCache.current && tabIndicator) {
+                tabIndicator.style.width = `${indicatorCache.current.width}px`;
+                tabIndicator.style.transform = `translateX(${indicatorCache.current.left}px)`;
+            }
 
             setTimeout(() => {
                 cleanupSwipe();
@@ -786,6 +936,13 @@ export function initTabSwipe() {
         nextTabEl = null;
         prevTabEl = null;
         currentTranslateX = 0;
+        indicatorCache = null;
+
+        // インジケーターのスタイルをクリア
+        if (tabIndicator) {
+            tabIndicator.classList.remove('swiping');
+            tabIndicator.style.transition = '';
+        }
 
         // 次フレームで全てのスタイルをクリア（display: noneが適用された後）
         requestAnimationFrame(() => {
@@ -877,6 +1034,13 @@ export function initTabSwipe() {
         nextTabEl = null;
         prevTabEl = null;
         currentTranslateX = 0;
+        indicatorCache = null;
+
+        // インジケーターのスタイルをクリア
+        if (tabIndicator) {
+            tabIndicator.classList.remove('swiping');
+            tabIndicator.style.transition = '';
+        }
     }
 
     // タッチイベントリスナー
