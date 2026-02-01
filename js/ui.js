@@ -342,7 +342,9 @@ export function updateTabIndicator(targetTabName, animate = true) {
 
     // インジケーターの位置とサイズを計算
     const left = tabRect.left - areaRect.left + tabButtonsArea.scrollLeft;
+    const top = tabRect.top - areaRect.top;
     const width = tabRect.width;
+    const height = tabRect.height;
 
     // アニメーション制御
     if (!animate) {
@@ -351,8 +353,10 @@ export function updateTabIndicator(targetTabName, animate = true) {
         tabIndicator.classList.remove('swiping');
     }
 
-    // スタイルを適用
+    // スタイルを適用（位置とサイズ両方）
     tabIndicator.style.width = `${width}px`;
+    tabIndicator.style.height = `${height}px`;
+    tabIndicator.style.top = `${top}px`;
     tabIndicator.style.transform = `translateX(${left}px)`;
 }
 
@@ -662,9 +666,9 @@ export function initTabSwipe() {
             prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px + ${adjustedDeltaX}px))`;
         }
 
-        // タブインジケーターを追従させる
+        // タブインジケーターを追従させる（抵抗なしのdeltaXを使用）
         const screenWidth = window.innerWidth;
-        const progress = adjustedDeltaX / screenWidth;  // -1〜1（左が負、右が正）
+        const progress = deltaX / screenWidth;  // -1〜1（左が負、右が正）
         const currentTabName = currentTab ? currentTab.id : null;
         const nextTabName = nextTabEl ? nextTabEl.id : null;
         const prevTabName = prevTabEl ? prevTabEl.id : null;
