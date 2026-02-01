@@ -518,6 +518,9 @@ document.addEventListener('DOMContentLoaded', function () {
     Theme.applyDefaultEstimateViewType();
     Theme.applyDefaultReportViewType();
 
+    // 全ての設定をUI要素に同期（描画前に実行して担当者順等を反映）
+    UI.syncSettingsToUI();
+
     // 表示の更新
     Estimate.renderEstimateList();
     Actual.renderActualList();
@@ -541,9 +544,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // レイアウト設定を適用（loadDataはDOMContentLoaded前に実行されるため、ここで再適用）
     UI.applyLayoutSettings();
-
-    // 全ての設定をUI要素に同期
-    UI.syncSettingsToUI();
 
     // モバイルでタブのスワイプ切り替え機能を追加
     UI.initTabSwipe();
