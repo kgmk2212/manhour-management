@@ -1885,19 +1885,19 @@
                 bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
             }
 
-            /* モバイル：タブ内フィルタドロワー */
+            /* モバイル：タブ内フィルタドロワー（タブボタンの上に表示） */
             .tab-filter-drawer {
-                order: 2; /* タブボタンの下に表示 */
+                order: 0; /* タブボタンの上に表示 */
             }
 
             .tab-buttons-wrapper {
-                order: 1; /* タブボタンが先 */
+                order: 1; /* タブボタンが後 */
             }
 
             .tab-filter-drawer.is-expanded,
             .tab-filter-drawer.is-always-expanded {
-                border-bottom: none;
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
+                border-top: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             }
 
             .tab-filter-content {
@@ -3133,7 +3133,7 @@
 
 .capacity-gauge-needle {
     position: absolute;
-    bottom: 0;
+    bottom: 20px;
     left: 50%;
     width: 3px;
     height: 50px;
@@ -3145,13 +3145,14 @@
 
 .capacity-gauge-center {
     position: absolute;
-    bottom: -5px;
+    bottom: 13px;
     left: 50%;
     transform: translateX(-50%);
     width: 14px;
     height: 14px;
     background: #334155;
     border-radius: 50%;
+    z-index: 5;
 }
 
 .capacity-gauge-value {
@@ -3207,16 +3208,21 @@
 
     .capacity-gauge-needle {
         height: 38px;
+        bottom: 20px;
+    }
+
+    .capacity-gauge-center {
+        bottom: 13px;
     }
 
     .capacity-gauge-value {
         font-size: 15px;
-        bottom: -25px;
+        bottom: -5px;
     }
 
     .capacity-gauge-label {
         font-size: 11px;
-        bottom: -42px;
+        bottom: -22px;
     }
 }
 
