@@ -14,7 +14,7 @@ import {
     showAlert
 } from './utils.js';
 
-import { saveRemainingEstimate, renderEstimateList } from './estimate.js';
+import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList } from './estimate.js';
 
 // ============================================
 // 見積編集
@@ -202,6 +202,13 @@ export function saveEstimateEdit() {
     }
 
     const oldEstimate = estimates[estimateIndex];
+    
+    // キー項目（version/task/process/member）が変更されたかチェック
+    const keyChanged = 
+        oldEstimate.version !== version ||
+        oldEstimate.task !== task ||
+        oldEstimate.process !== process ||
+        oldEstimate.member !== member;
 
     estimates[estimateIndex] = {
         ...estimates[estimateIndex],
@@ -215,11 +222,21 @@ export function saveEstimateEdit() {
         monthlyHours: monthlyHours
     };
 
+    // キー項目が変更された場合、旧データの見込み残存を削除
+    if (keyChanged) {
+        deleteRemainingEstimate(
+            oldEstimate.version,
+            oldEstimate.task,
+            oldEstimate.process,
+            oldEstimate.member
+        );
+    }
+
     const existingRemaining = remainingEstimates.find(r =>
-        r.version === oldEstimate.version &&
-        r.task === oldEstimate.task &&
-        r.process === oldEstimate.process &&
-        r.member === oldEstimate.member
+        r.version === version &&
+        r.task === task &&
+        r.process === process &&
+        r.member === member
     );
 
     if (!existingRemaining) {

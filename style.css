@@ -2932,7 +2932,7 @@
             }
         }
 
-        /* モバイル表示時：丸ボタンをPC表示と同じサイズに */
+        /* モバイル表示時（PC小画面）：ボタンを小さめに */
         @media (max-width: 768px) {
             .tab-filter-buttons button {
                 padding: 5px 10px;
@@ -2943,6 +2943,19 @@
             .tabs.is-capsule .tab-filter-drawer.style-segment .tab-filter-buttons button {
                 border-radius: 16px;
                 padding: 5px 10px;
+            }
+        }
+
+        /* 実際のモバイルデバイス（タッチスクリーン）：ボタンを少し大きく */
+        @media (pointer: coarse) and (max-width: 768px) {
+            .tab-filter-buttons button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .tabs.is-capsule .tab-filter-drawer.style-segment .tab-filter-buttons button {
+                border-radius: 16px;
+                padding: 6px 12px;
             }
         }
 

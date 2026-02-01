@@ -173,6 +173,8 @@ window.isOtherWork = Estimate.isOtherWork;
 window.calculateDefaultWorkMonths = Estimate.calculateDefaultWorkMonths;
 window.saveRemainingEstimate = Estimate.saveRemainingEstimate;
 window.getRemainingEstimate = Estimate.getRemainingEstimate;
+window.deleteRemainingEstimate = Estimate.deleteRemainingEstimate;
+window.cleanupOrphanedRemainingEstimates = Estimate.cleanupOrphanedRemainingEstimates;
 window.renderEstimateList = Estimate.renderEstimateList;
 window.renderEstimateGrouped = Estimate.renderEstimateGrouped;
 window.renderEstimateMatrix = Estimate.renderEstimateMatrix;
@@ -432,6 +434,12 @@ window.memberOrder = State.memberOrder;
 window.schedules = State.schedules;
 window.scheduleSettings = State.scheduleSettings;
 window.taskColorMap = State.taskColorMap;
+
+// 孤立した見込残存データをクリーンアップ（担当者変更などで残った不要データを削除）
+const cleanedCount = Estimate.cleanupOrphanedRemainingEstimates();
+if (cleanedCount > 0) {
+    console.log(`✅ init.js: ${cleanedCount}件の孤立した見込残存データを削除しました`);
+}
 
 console.log('✅ init.js: データロード完了', {
     estimates: State.estimates.length,

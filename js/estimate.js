@@ -159,6 +159,87 @@ export function getRemainingEstimate(version, task, process, member) {
     );
 }
 
+/**
+ * 見込残存時間を削除する関数
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ * @param {string} process - 工程
+ * @param {string} member - 担当者名
+ * @returns {boolean} 削除に成功したかどうか
+ */
+export function deleteRemainingEstimate(version, task, process, member) {
+    const index = remainingEstimates.findIndex(r =>
+        r.version === version &&
+        r.task === task &&
+        r.process === process &&
+        r.member === member
+    );
+    
+    if (index >= 0) {
+        const removed = remainingEstimates[index];
+        remainingEstimates.splice(index, 1);
+        localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
+        console.log(`[RemainingEstimate] 削除: ${version}/${task}/${process}/${member} (${removed.remainingHours}h)`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 孤立した見込残存データをクリーンアップする関数
+ * 対応する見積データが存在しない見込残存データを削除する
+ * 
+ * 安全性の保証：
+ * - 見積データ（version/task/process/member）に完全一致するレコードが存在する場合は絶対に削除しない
+ * - 見積データに対応するレコードが存在しない場合のみ削除対象とする
+ * 
+ * @returns {number} 削除したレコード数
+ */
+export function cleanupOrphanedRemainingEstimates() {
+    if (!remainingEstimates || remainingEstimates.length === 0) {
+        return 0;
+    }
+    
+    const orphanedIndices = [];
+    
+    // 各見込残存データに対して、対応する見積データが存在するかチェック
+    remainingEstimates.forEach((remaining, index) => {
+        // 対応する見積データを検索
+        const matchingEstimate = estimates.find(e =>
+            e.version === remaining.version &&
+            e.task === remaining.task &&
+            e.process === remaining.process &&
+            e.member === remaining.member
+        );
+        
+        // 対応する見積データが存在しない場合、孤立データとしてマーク
+        if (!matchingEstimate) {
+            orphanedIndices.push(index);
+        }
+    });
+    
+    // 孤立データがない場合は終了
+    if (orphanedIndices.length === 0) {
+        return 0;
+    }
+    
+    // インデックスを降順にソートして、後ろから削除（インデックスがずれないように）
+    orphanedIndices.sort((a, b) => b - a);
+    
+    // 削除実行（ログ出力）
+    orphanedIndices.forEach(index => {
+        const removed = remainingEstimates[index];
+        console.log(`[Cleanup] 孤立した見込残存データを削除: ${removed.version}/${removed.task}/${removed.process}/${removed.member} (${removed.remainingHours}h)`);
+        remainingEstimates.splice(index, 1);
+    });
+    
+    // localStorageに保存
+    localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
+    
+    console.log(`[Cleanup] ${orphanedIndices.length}件の孤立データを削除しました`);
+    return orphanedIndices.length;
+}
+
 // ============================================
 // 見積一覧レンダリング
 // ============================================
@@ -914,6 +995,9 @@ export function deleteEstimate(id) {
     const warning = '【警告】この操作は取り消せません。\n本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
 
+    // 関連する見込み残存データも削除
+    deleteRemainingEstimate(estimate.version, estimate.task, estimate.process, estimate.member);
+
     const newEstimates = estimates.filter(e => e.id !== id);
     setEstimates(newEstimates);
 
@@ -940,6 +1024,11 @@ export function deleteTask(version, task) {
 
     const warning = '【警告】この操作は取り消せません。\nこの対応に含まれる全ての工程が削除されます。\n本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
+
+    // 関連する見込み残存データも削除
+    taskEstimates.forEach(est => {
+        deleteRemainingEstimate(est.version, est.task, est.process, est.member);
+    });
 
     const newEstimates = estimates.filter(e => !(e.version === version && e.task === task));
     setEstimates(newEstimates);

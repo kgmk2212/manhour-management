@@ -679,41 +679,48 @@
                 <h3 style="margin-top: 20px;">版数別進捗</h3>
                 <div id="versionReport"></div>
 
-                <!-- 進捗管理セクション -->
+                <!-- 進捗管理セクション（折りたたみ可能） -->
                 <div style="margin-top: 30px; background: #f8f9fa; padding: 20px 0; border-radius: 8px;">
-                    <h3>進捗管理（見込残存時間ベース）</h3>
-                    <p style="color: #666; margin-bottom: 15px; font-size: 13px;">
-                        見込残存時間を入力すると、より正確な進捗率と予測総工数が表示されます。
-                    </p>
+                    <h3 onclick="window.toggleProgressSection && window.toggleProgressSection()" 
+                        style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;">
+                        <span id="progressSectionIcon" style="font-size: 12px; width: 16px;">▶</span>
+                        進捗管理（見込残存時間ベース）
+                    </h3>
+                    
+                    <div id="progressSectionContent" style="display: none;">
+                        <p style="color: #666; margin-bottom: 15px; font-size: 13px;">
+                            見込残存時間を入力すると、より正確な進捗率と予測総工数が表示されます。
+                        </p>
 
-                    <!-- フィルタ -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-                        <select id="progressVersionFilter"
-                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="all">全版数</option>
-                        </select>
-                        <select id="progressStatusFilter"
-                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="all">全ステータス</option>
-                            <option value="completed">完了</option>
-                            <option value="ontrack">順調</option>
-                            <option value="warning">注意</option>
-                            <option value="exceeded">超過</option>
-                        </select>
-                        <button class="btn btn-primary" id="btnOpenBulkRemaining"
-                            style="padding: 8px 16px; font-size: 13px;">
-                            一括編集
-                        </button>
-                    </div>
+                        <!-- フィルタ -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                            <select id="progressVersionFilter"
+                                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="all">全版数</option>
+                            </select>
+                            <select id="progressStatusFilter"
+                                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="all">全ステータス</option>
+                                <option value="completed">完了</option>
+                                <option value="ontrack">順調</option>
+                                <option value="warning">注意</option>
+                                <option value="exceeded">超過</option>
+                            </select>
+                            <button class="btn btn-primary" id="btnOpenBulkRemaining"
+                                style="padding: 8px 16px; font-size: 13px;">
+                                一括編集
+                            </button>
+                        </div>
 
-                    <!-- 進捗サマリーカード -->
-                    <div class="stats-grid" id="progressSummaryCards">
-                        <!-- 動的に生成 -->
-                    </div>
+                        <!-- 進捗サマリーカード -->
+                        <div class="stats-grid" id="progressSummaryCards">
+                            <!-- 動的に生成 -->
+                        </div>
 
-                    <!-- 詳細テーブル -->
-                    <div id="progressDetailTable" style="margin-top: 20px;">
-                        <!-- 動的に生成 -->
+                        <!-- 詳細テーブル -->
+                        <div id="progressDetailTable" style="margin-top: 20px;">
+                            <!-- 動的に生成 -->
+                        </div>
                     </div>
                 </div>
 

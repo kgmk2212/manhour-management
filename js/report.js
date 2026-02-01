@@ -238,7 +238,7 @@ export function calculateProgress(version, task, process = null, member = null) 
             (process === null || r.process === process) &&
             (member === null || r.member === member)
         )
-        .reduce((sum, r) => sum + r.remainingHours, 0);
+        .reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
 
     // 予測総工数 = 実績 + 見込残存
     const eac = actualHours + remainingHours;
@@ -307,7 +307,7 @@ export function calculateVersionProgress(version) {
 
     const estimatedHours = versionEstimates.reduce((sum, e) => sum + e.hours, 0);
     const actualHours = versionActuals.reduce((sum, a) => sum + a.hours, 0);
-    const remainingHours = versionRemaining.reduce((sum, r) => sum + r.remainingHours, 0);
+    const remainingHours = versionRemaining.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
 
     const eac = actualHours + remainingHours;
     const progressRate = (actualHours + remainingHours) > 0
@@ -927,8 +927,8 @@ export function generateProgressBar(version, task, process) {
     const remainingData = remainingEstimates
         .filter(r => r.version === version && r.task === task && r.process === process);
 
-    // 見込残存時間を集計
-    let remainingHours = remainingData.reduce((sum, r) => sum + r.remainingHours, 0);
+    // 見込残存時間を集計（NaN/undefined対策）
+    let remainingHours = remainingData.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
 
     // 見込残存時間のデータが存在しない場合は、見積時間から算出（フォールバック）
     if (remainingData.length === 0) {
@@ -2373,9 +2373,20 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
                         // 残存時間を計算（remainingEstimatesから取得、なければ見積-実績でフォールバック）
-                        const remainingData = remainingEstimates.filter(
-                            r => r.version === version && r.task === taskGroup.task && r.process === proc
-                        );
+                        // 「その他付随作業」の場合は元のversion（空文字列含む）でもマッチするようにする
+                        const remainingData = remainingEstimates.filter(r => {
+                            const rIsOtherWork = !r.version || r.version.trim() === '' || !r.task || r.task.trim() === '';
+                            const targetIsOtherWork = version === 'その他付随作業';
+                            
+                            if (targetIsOtherWork && rIsOtherWork) {
+                                // 両方とも「その他付随作業」の場合、taskとprocessで比較
+                                return r.task === taskGroup.task && r.process === proc;
+                            } else if (!targetIsOtherWork && !rIsOtherWork) {
+                                // 両方とも通常のデータの場合、version/task/processで比較
+                                return r.version === version && r.task === taskGroup.task && r.process === proc;
+                            }
+                            return false;
+                        });
                         // NaN防止: r.remainingHours が undefined/null の場合は 0 として扱う
                         let cellRemainingHours = remainingData.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
                         const usedFallback = remainingData.length === 0 && est.hours > 0;
@@ -2386,6 +2397,15 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         // NaN/無効値のチェック
                         if (isNaN(cellRemainingHours) || cellRemainingHours < 0) {
                             cellRemainingHours = 0;
+                        }
+                        
+                        // デバッグ: 問題調査用ログ
+                        if (debugModeEnabled) {
+                            const eac = act.hours + cellRemainingHours;
+                            const ratio = est.hours > 0 ? eac / est.hours : 0;
+                            const progressRate = (act.hours + cellRemainingHours) > 0 
+                                ? (act.hours / (act.hours + cellRemainingHours)) * 100 : 0;
+                            console.log(`[Matrix Debug] ${version}/${taskGroup.task}/${proc}: est=${est.hours}, act=${act.hours}, remaining=${cellRemainingHours}, remainingDataCount=${remainingData.length}, usedFallback=${usedFallback}, eac=${eac}, ratio=${ratio.toFixed(2)}, progress=${progressRate.toFixed(1)}%`);
                         }
 
                         totalRemainingHours += cellRemainingHours;
