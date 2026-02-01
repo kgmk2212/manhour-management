@@ -3033,7 +3033,6 @@
     position: absolute;
     top: 0;
     height: 100%;
-    border-radius: 0 12px 12px 0;
     background: repeating-linear-gradient(
         45deg,
         rgba(220, 38, 38, 1),
@@ -3041,19 +3040,18 @@
         rgba(239, 68, 68, 1) 4px,
         rgba(239, 68, 68, 1) 8px
     );
-    overflow: hidden;
 }
 
-/* 右端の丸みを確保するためのマスク */
+/* 右端を丸くするためのキャップ */
 .capacity-bar-stripe::after {
     content: '';
     position: absolute;
     top: 0;
-    right: 0;
-    width: 100%;
+    right: -12px;
+    width: 24px;
     height: 100%;
-    border-radius: 0 12px 12px 0;
-    background: inherit;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(230, 53, 53, 1) 0%, rgba(220, 38, 38, 1) 100%);
 }
 
 /* パルスアニメーション */
