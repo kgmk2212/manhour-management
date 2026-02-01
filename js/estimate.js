@@ -355,7 +355,7 @@ function applyTotalCardTheme() {
         'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
         'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
     };
-    totalCard.style.background = gradients[currentThemeColor] || gradients['purple'];
+    totalCard.style.background = gradients[currentThemeColor] || gradients['deep-blue'];
 }
 
 /**
@@ -426,7 +426,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
         'green': '#047857',
         'emerald': '#059669'
     };
-    const borderColor = themeColors[currentThemeColor] || '#667eea';
+    const borderColor = themeColors[currentThemeColor] || '#1e3c72';
 
     let memberHtml = '';
     sortedMembers.forEach(member => {

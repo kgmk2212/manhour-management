@@ -28,9 +28,9 @@ export function getActiveChartColorScheme() {
         if (chartColorSchemes[window.currentThemeColor]) {
             return chartColorSchemes[window.currentThemeColor];
         }
-        return chartColorSchemes['purple'];
+        return chartColorSchemes['deep-blue'];
     } else {
-        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['purple'];
+        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['deep-blue'];
     }
 }
 
@@ -167,7 +167,7 @@ export function applyTheme() {
     if (colorEl && colorEl.value) {
         setCurrentThemeColor(colorEl.value);
     } else if (!window.currentThemeColor) {
-        setCurrentThemeColor('purple');
+        setCurrentThemeColor('deep-blue');
     }
 
     if (patternEl && patternEl.value) {
@@ -250,12 +250,12 @@ export function updateThemeElements() {
         'emerald': '#059669'
     };
 
-    document.documentElement.style.setProperty('--theme-gradient', gradients[window.currentThemeColor] || gradients['purple']);
-    document.documentElement.style.setProperty('--theme-color', solidColors[window.currentThemeColor] || solidColors['purple']);
+    document.documentElement.style.setProperty('--theme-gradient', gradients[window.currentThemeColor] || gradients['deep-blue']);
+    document.documentElement.style.setProperty('--theme-color', solidColors[window.currentThemeColor] || solidColors['deep-blue']);
 
     // 早期テーマ適用用のCSS変数とdata属性も更新（ちらつき防止スクリプトとの同期）
-    document.documentElement.style.setProperty('--early-theme-gradient', gradients[window.currentThemeColor] || gradients['purple']);
-    document.documentElement.dataset.earlyTheme = window.currentThemeColor || 'purple';
+    document.documentElement.style.setProperty('--early-theme-gradient', gradients[window.currentThemeColor] || gradients['deep-blue']);
+    document.documentElement.dataset.earlyTheme = window.currentThemeColor || 'deep-blue';
 
     updateBodyBackground();
 
@@ -299,7 +299,7 @@ export function updateThemeElements() {
     // 見積合計カード
     const estimateTotalCard = document.getElementById('estimateTotalCard');
     if (estimateTotalCard) {
-        estimateTotalCard.style.background = gradients[window.currentThemeColor] || gradients['purple'];
+        estimateTotalCard.style.background = gradients[window.currentThemeColor] || gradients['deep-blue'];
     }
 
     // 見積一覧の担当者別合計カード（見積タブがアクティブな場合のみ）
@@ -329,7 +329,7 @@ export function updateFloatingFilterTheme() {
         'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
     };
 
-    const gradient = gradients[window.currentThemeColor] || gradients['purple'];
+    const gradient = gradients[window.currentThemeColor] || gradients['deep-blue'];
 
     const toggle = document.getElementById('floatingFilterToggle');
     if (toggle) {
@@ -361,7 +361,7 @@ export function updateBodyBackground() {
         ? window.currentBackgroundColor
         : window.currentThemeColor;
 
-    const gradient = colorGradients[bgColorToUse] || colorGradients['purple'];
+    const gradient = colorGradients[bgColorToUse] || colorGradients['deep-blue'];
     document.body.style.background = gradient;
 }
 

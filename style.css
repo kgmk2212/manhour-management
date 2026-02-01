@@ -638,7 +638,7 @@
 
         /* モーダルヘッダーのデフォルト色（テーマ適用前） */
         .modal-header:not([class*="modal-theme-"]) {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         }
 
         /* モーダル用テーマ色 */
@@ -1483,7 +1483,7 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             border: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1540,7 +1540,7 @@
         }
 
         .floating-filter-panel-header {
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             padding: 12px 16px;
             font-weight: 600;
@@ -1604,13 +1604,13 @@
         }
 
         .floating-filter-select:hover {
-            border-color: #667eea;
+            border-color: #1e3c72;
         }
 
         .floating-filter-select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
         }
 
         .floating-filter-buttons {
@@ -1630,13 +1630,13 @@
         }
 
         .floating-filter-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             border-color: transparent;
         }
 
         .floating-filter-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #667eea);
+            border-color: var(--theme-color, #1e3c72);
             background: #f8f9ff;
         }
 
@@ -1676,13 +1676,13 @@
         }
 
         .floating-segment-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             border-color: transparent;
         }
 
         .floating-segment-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #667eea);
+            border-color: var(--theme-color, #1e3c72);
             background: #f8f9ff;
         }
 
@@ -1722,13 +1722,13 @@
         }
 
         .segment-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             border-color: transparent;
         }
 
         .segment-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #667eea);
+            border-color: var(--theme-color, #1e3c72);
             background: #f8f9ff;
         }
 
@@ -2881,12 +2881,12 @@
         }
 
         .tab-filter-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #667eea);
+            border-color: var(--theme-color, #1e3c72);
             background: #f8f9ff;
         }
 
         .tab-filter-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
             color: white;
             border-color: transparent;
         }
@@ -2986,7 +2986,7 @@
 
         .tab-filter-toggle.is-active .filter-icon {
             transform: rotate(180deg);
-            color: var(--theme-color, #667eea);
+            color: var(--theme-color, #1e3c72);
         }
 
         /* フィルタが非表示のタブではトグルボタンを隠す */

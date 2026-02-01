@@ -1057,7 +1057,7 @@ export function getAnalysisGradients() {
             phase3: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
         }
     };
-    return gradients[currentThemeColor] || gradients['purple'];
+    return gradients[currentThemeColor] || gradients['deep-blue'];
 }
 
 /**

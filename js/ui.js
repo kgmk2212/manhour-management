@@ -622,7 +622,7 @@ export function getThemeColor() {
         'green': '#047857',
         'emerald': '#059669'
     };
-    return themeColors[window.currentThemeColor] || '#667eea';
+    return themeColors[window.currentThemeColor] || '#1e3c72';
 }
 
 // ============================================
@@ -979,7 +979,7 @@ export function updateSegmentedButtons() {
         'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
         'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
     };
-    const gradient = gradients[window.currentThemeColor] || gradients['purple'];
+    const gradient = gradients[window.currentThemeColor] || gradients['deep-blue'];
 
     // 全てのセグメントボタンにテーマカラーを適用
     // 通常のセグメントボタンと、フローティングフィルタボタンの両方を対象にする
