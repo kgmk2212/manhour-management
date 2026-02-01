@@ -209,6 +209,20 @@
             margin-top: 10px;
         }
 
+        /* 日付入力フィールドのはみ出し防止 */
+        .quick-form-date {
+            overflow: hidden;
+        }
+
+        .quick-form-date input[type="date"] {
+            -webkit-appearance: none;
+            appearance: none;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
         /* クイック入力フォームのグリッドレイアウト */
         .quick-form-grid {
             display: grid;
