@@ -571,14 +571,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // グローバルイベントハンドラの初期化（index.htmlから移行）
     initEventHandlers();
 
+    // タブインジケーター（スライドアニメーション）を初期化
+    // ※showTabの前に初期化して、showTab内でupdateTabIndicatorが呼ばれるようにする
+    UI.initTabIndicator();
+
     // 保存されたタブを復元（リロード時に前回のタブに戻る）
+    // ※initTabIndicator後に呼ぶことで、showTab内のupdateTabIndicatorが正しく動作する
     try {
         const savedTab = localStorage.getItem('manhour_currentTab');
         if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(savedTab)) {
             UI.showTab(savedTab);
+        } else {
+            // savedTabがない場合は現在のアクティブタブでインジケーターを更新
+            UI.updateTabIndicator();
         }
     } catch (e) {
         // localStorageエラーは無視
+        UI.updateTabIndicator();
     }
 
     // スケジュール（ガントチャート）モジュールの初期化
