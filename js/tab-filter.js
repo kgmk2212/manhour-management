@@ -39,6 +39,60 @@ export function loadTabFilterAlwaysExpanded() {
     return enabled;
 }
 
+export function saveTabFilterButtonStyle() {
+    const select = document.getElementById('tabFilterButtonStyle');
+    if (!select) return;
+    localStorage.setItem('tabFilterButtonStyle', select.value);
+    applyFilterButtonStyle();
+}
+
+export function loadTabFilterButtonStyle() {
+    const saved = localStorage.getItem('tabFilterButtonStyle');
+    const style = saved || 'pill';
+    const select = document.getElementById('tabFilterButtonStyle');
+    if (select) {
+        select.value = style;
+    }
+    return style;
+}
+
+// フィルタボタンスタイルの適用
+export function applyFilterButtonStyle() {
+    const drawer = document.getElementById('tabFilterDrawer');
+    if (!drawer) return;
+
+    const style = loadTabFilterButtonStyle();
+    drawer.classList.remove('style-pill', 'style-segment');
+    drawer.classList.add(`style-${style}`);
+}
+
+export function saveTabFilterLayout() {
+    const select = document.getElementById('tabFilterLayout');
+    if (!select) return;
+    localStorage.setItem('tabFilterLayout', select.value);
+    applyFilterLayout();
+}
+
+export function loadTabFilterLayout() {
+    const saved = localStorage.getItem('tabFilterLayout');
+    const layout = saved || 'two-lines';
+    const select = document.getElementById('tabFilterLayout');
+    if (select) {
+        select.value = layout;
+    }
+    return layout;
+}
+
+// フィルタレイアウトの適用
+export function applyFilterLayout() {
+    const drawer = document.getElementById('tabFilterDrawer');
+    if (!drawer) return;
+
+    const layout = loadTabFilterLayout();
+    drawer.classList.remove('layout-one-line', 'layout-two-lines');
+    drawer.classList.add(`layout-${layout}`);
+}
+
 // タブバー常時表示の適用
 export function applyTabBarVisibility() {
     const tabs = document.querySelector('.tabs');
@@ -75,10 +129,19 @@ export function applyFilterExpansion() {
 export function toggleTabFilterDrawer() {
     const drawer = document.getElementById('tabFilterDrawer');
     const toggle = document.getElementById('tabFilterToggle');
+    const tabs = document.querySelector('.tabs');
     if (!drawer) return;
 
     // 常時展開モードの場合は何もしない
     if (drawer.classList.contains('is-always-expanded')) return;
+
+    // スクロール検出を一時停止（ドロワー展開によるレイアウト変更で誤検出されるのを防ぐ）
+    window.isTabInteracting = true;
+
+    // タブバーを強制的に表示状態にする（PC表示時の消失防止）
+    if (tabs) {
+        tabs.classList.remove('is-hidden');
+    }
 
     const isExpanded = drawer.classList.toggle('is-expanded');
     if (toggle) {
@@ -89,6 +152,11 @@ export function toggleTabFilterDrawer() {
     if (isExpanded) {
         updateTabFilterContent();
     }
+
+    // アニメーション完了後にフラグを解除（CSSトランジション0.3sより長く設定）
+    setTimeout(() => {
+        window.isTabInteracting = false;
+    }, 400);
 }
 
 // 現在のタブに応じたフィルタ内容を更新
@@ -387,10 +455,14 @@ export function initTabFilter() {
     // 設定を読み込み
     loadTabBarAlwaysVisible();
     loadTabFilterAlwaysExpanded();
+    loadTabFilterButtonStyle();
+    loadTabFilterLayout();
 
     // 設定を適用
     applyTabBarVisibility();
     applyFilterExpansion();
+    applyFilterButtonStyle();
+    applyFilterLayout();
 
     // トグルボタンのイベント
     const toggle = document.getElementById('tabFilterToggle');
@@ -410,6 +482,18 @@ export function initTabFilter() {
     const filterCheckbox = document.getElementById('tabFilterAlwaysExpanded');
     if (filterCheckbox) {
         filterCheckbox.addEventListener('change', saveTabFilterAlwaysExpanded);
+    }
+
+    // ボタンスタイル選択のイベント
+    const styleSelect = document.getElementById('tabFilterButtonStyle');
+    if (styleSelect) {
+        styleSelect.addEventListener('change', saveTabFilterButtonStyle);
+    }
+
+    // レイアウト選択のイベント
+    const layoutSelect = document.getElementById('tabFilterLayout');
+    if (layoutSelect) {
+        layoutSelect.addEventListener('change', saveTabFilterLayout);
     }
 
     // 初期タブのフィルタ状態を設定

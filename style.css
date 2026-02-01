@@ -57,6 +57,12 @@
         .tab-buttons-wrapper {
             display: flex;
             align-items: center;
+            order: 1; /* PC表示時: タブボタンを先に表示 */
+        }
+
+        /* PC表示時: フィルタドロワーをタブボタンの下に表示 */
+        .tab-filter-drawer {
+            order: 2;
         }
 
         /* タブボタンエリア */
@@ -1895,11 +1901,18 @@
 
             .tab-filter-label {
                 font-size: 11px;
+                min-width: 44px;
             }
 
             .tab-filter-buttons button {
                 padding: 5px 10px;
                 font-size: 11px;
+            }
+
+            /* Floating Capsule時は四角ボタン設定でも丸ボタンにする */
+            .tabs.is-capsule .tab-filter-drawer.style-segment .tab-filter-buttons button {
+                border-radius: 16px;
+                padding: 5px 10px;
             }
 
             /* タブバー常時表示時 */
@@ -2843,6 +2856,7 @@
             font-weight: 600;
             color: #666;
             flex-shrink: 0;
+            min-width: 48px; /* ラベル幅を揃える（「表示月:」に合わせる） */
         }
 
         .tab-filter-buttons {
@@ -2875,6 +2889,61 @@
             background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
             color: white;
             border-color: transparent;
+        }
+
+        /* セグメントスタイル（四角ボタン） */
+        .tab-filter-drawer.style-segment .tab-filter-buttons button {
+            border-radius: 6px;
+            padding: 6px 11px;
+            font-size: 11px;
+        }
+
+        /* PC表示時 */
+        @media (min-width: 769px) {
+            /* PC用：丸ボタンは少し小さく */
+            .tab-filter-buttons button {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+
+            .tab-filter-drawer.style-segment .tab-filter-buttons button {
+                padding: 5px 11px;
+            }
+
+            /* 1行表示レイアウト */
+            .tab-filter-drawer.layout-one-line .tab-filter-content {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 16px;
+                align-items: center;
+            }
+
+            .tab-filter-drawer.layout-one-line .tab-filter-row {
+                margin-bottom: 0;
+                flex-wrap: nowrap;
+            }
+
+            .tab-filter-drawer.layout-one-line .tab-filter-buttons {
+                flex-wrap: nowrap;
+            }
+
+            .tab-filter-drawer.layout-one-line .tab-filter-label {
+                min-width: auto; /* 1行表示時はラベル幅を自動に */
+            }
+        }
+
+        /* モバイル表示時：丸ボタンをPC表示と同じサイズに */
+        @media (max-width: 768px) {
+            .tab-filter-buttons button {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+
+            /* Floating Capsule時は四角ボタン設定でも丸ボタンにする */
+            .tabs.is-capsule .tab-filter-drawer.style-segment .tab-filter-buttons button {
+                border-radius: 16px;
+                padding: 5px 10px;
+            }
         }
 
         /* フィルタトグルボタン（固定表示） */
