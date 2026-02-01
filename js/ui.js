@@ -96,7 +96,8 @@ let isTabSwitching = false;
 // window オブジェクトで共有（tab-filter.js からも設定される）
 window.isTabInteracting = false;
 
-export function showTab(tabName) {
+export function showTab(tabName, options = {}) {
+    const { skipAnimation = false } = options;
     isTabSwitching = true;
 
     // 現在アクティブなタブのスクロール位置を保存
@@ -110,11 +111,11 @@ export function showTab(tabName) {
         window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
     }
 
-    // アニメーション方向の決定
+    // アニメーション方向の決定（skipAnimation時はスキップ）
     let animationClassOut = '';
     let animationClassIn = '';
 
-    if (currentTabId && currentTabId !== tabName) {
+    if (!skipAnimation && currentTabId && currentTabId !== tabName) {
         const currentIndex = TAB_ORDER.indexOf(currentTabId);
         const nextIndex = TAB_ORDER.indexOf(tabName);
 
@@ -371,15 +372,27 @@ export function initTabSwipe() {
     const content = document.querySelector('.content');
     if (!content) return;
 
+    // スワイプ状態管理
+    let isSwiping = false;
+    let isSwipeActive = false;  // 横スワイプとして認識されたか
     let touchStartX = 0;
     let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
+    let touchStartTime = 0;
     let touchStartTarget = null;
+    let currentTranslateX = 0;
+    let currentTab = null;
+    let nextTabEl = null;
+    let prevTabEl = null;
 
-    const minSwipeDistance = 100;
-    const maxVerticalDistance = 50;
+    // 設定
+    const SWIPE_THRESHOLD = 0.2;  // 画面幅の20%以上でタブ切り替え
+    const VELOCITY_THRESHOLD = 0.5;  // px/msの速度閾値
+    const MAX_VERTICAL_RATIO = 0.5;  // 縦/横比がこれ以下なら横スワイプと判定
+    const PAGE_GAP = 16;  // ページ間のギャップ（px）
 
+    /**
+     * スワイプを無効にすべき要素かどうか
+     */
     function shouldDisableSwipe(target) {
         if (!target) return false;
 
@@ -395,41 +408,389 @@ export function initTabSwipe() {
         return element !== null;
     }
 
-    content.addEventListener('touchstart', function (e) {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-        touchStartTarget = e.target;
-    }, { passive: true });
+    /**
+     * 現在のタブと前後のタブを取得
+     */
+    function getTabElements() {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (!activeTab) return { current: null, next: null, prev: null };
 
-    content.addEventListener('touchend', function (e) {
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        handleSwipe();
-    }, { passive: true });
+        const currentIndex = TAB_ORDER.indexOf(activeTab.id);
+        const nextId = currentIndex < TAB_ORDER.length - 1 ? TAB_ORDER[currentIndex + 1] : null;
+        const prevId = currentIndex > 0 ? TAB_ORDER[currentIndex - 1] : null;
 
-    function handleSwipe() {
-        if (shouldDisableSwipe(touchStartTarget)) {
-            return;
+        return {
+            current: activeTab,
+            next: nextId ? document.getElementById(nextId) : null,
+            prev: prevId ? document.getElementById(prevId) : null
+        };
+    }
+
+    /**
+     * スワイプ開始時の準備
+     */
+    function prepareSwipe() {
+        const tabs = getTabElements();
+        currentTab = tabs.current;
+        nextTabEl = tabs.next;
+        prevTabEl = tabs.prev;
+
+        if (!currentTab) return false;
+
+        // .contentのpaddingを取得
+        const contentStyle = getComputedStyle(content);
+        const paddingLeft = contentStyle.paddingLeft;
+        const paddingRight = contentStyle.paddingRight;
+        const paddingTop = contentStyle.paddingTop;
+
+        // contentとbodyにswipingクラス/overflowを設定し、スクロールバーを非表示にする
+        // （スクロールバーの有無による幅の変化を防ぐ）
+        content.classList.add('swiping');
+        content.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+
+        // タブの幅をcontentの内側幅から計算（スクロールバー有無に関係なく一定）
+        // contentのclientWidthからpaddingを引いた値がタブの幅になる
+        const tabWidth = (content.clientWidth - parseFloat(paddingLeft) - parseFloat(paddingRight)) + 'px';
+
+        // 現在のタブをabsoluteにして、プレビュータブと同じ座標系で動かす
+        currentTab.classList.add('swiping');
+        currentTab.style.transition = 'none';
+        currentTab.style.willChange = 'transform';
+        currentTab.style.top = paddingTop;
+        currentTab.style.left = paddingLeft;
+        currentTab.style.width = tabWidth;
+
+        // 次/前のタブを表示準備（paddingとギャップを考慮した位置に配置）
+        if (nextTabEl) {
+            nextTabEl.classList.add('swipe-preview');
+            nextTabEl.style.transition = 'none';
+            nextTabEl.style.willChange = 'transform';
+            nextTabEl.style.top = paddingTop;
+            nextTabEl.style.left = paddingLeft;
+            nextTabEl.style.width = tabWidth;
+            nextTabEl.style.transform = `translateX(calc(100% + ${PAGE_GAP}px))`;
+        }
+        if (prevTabEl) {
+            prevTabEl.classList.add('swipe-preview');
+            prevTabEl.style.transition = 'none';
+            prevTabEl.style.willChange = 'transform';
+            prevTabEl.style.top = paddingTop;
+            prevTabEl.style.left = paddingLeft;
+            prevTabEl.style.width = tabWidth;
+            prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
         }
 
-        const diffX = touchEndX - touchStartX;
-        const diffY = Math.abs(touchEndY - touchStartY);
-        const absDiffX = Math.abs(diffX);
+        // swipe-preview追加後に高さを取得（display: blockになった後）
+        const currentHeight = currentTab.offsetHeight;
+        const nextHeight = nextTabEl ? nextTabEl.offsetHeight : 0;
+        const prevHeight = prevTabEl ? prevTabEl.offsetHeight : 0;
+        const maxHeight = Math.max(currentHeight, nextHeight, prevHeight);
+        content.style.minHeight = (maxHeight + parseFloat(paddingTop)) + 'px';
 
-        if (diffY > maxVerticalDistance) {
-            return;
+        return true;
+    }
+
+    /**
+     * スワイプ中の更新
+     */
+    function updateSwipe(deltaX) {
+        // 抵抗を加える（端でのオーバースクロール防止）
+        let adjustedDeltaX = deltaX;
+
+        // 端に達した場合は抵抗を加える
+        if ((deltaX > 0 && !prevTabEl) || (deltaX < 0 && !nextTabEl)) {
+            adjustedDeltaX = deltaX * 0.3;  // 抵抗係数
         }
 
-        if (diffY > absDiffX) {
-            return;
+        currentTranslateX = adjustedDeltaX;
+
+        if (currentTab) {
+            currentTab.style.transform = `translateX(${adjustedDeltaX}px)`;
         }
 
-        if (diffX < -minSwipeDistance) {
-            nextTab();
-        } else if (diffX > minSwipeDistance) {
-            prevTab();
+        // 次/前のタブも連動して動かす（ギャップを維持）
+        if (nextTabEl && deltaX < 0) {
+            nextTabEl.style.transform = `translateX(calc(100% + ${PAGE_GAP}px + ${adjustedDeltaX}px))`;
+        }
+        if (prevTabEl && deltaX > 0) {
+            prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px + ${adjustedDeltaX}px))`;
         }
     }
+
+    /**
+     * スワイプ終了時の処理
+     */
+    function endSwipe(deltaX, velocity) {
+        const screenWidth = window.innerWidth;
+        const threshold = screenWidth * SWIPE_THRESHOLD;
+
+        // 判定：距離または速度でタブ切り替えを決定
+        let shouldSwitchNext = false;
+        let shouldSwitchPrev = false;
+
+        if (deltaX < -threshold || (velocity < -VELOCITY_THRESHOLD && deltaX < -30)) {
+            shouldSwitchNext = !!nextTabEl;
+        } else if (deltaX > threshold || (velocity > VELOCITY_THRESHOLD && deltaX > 30)) {
+            shouldSwitchPrev = !!prevTabEl;
+        }
+
+        // アニメーションで完了
+        const duration = '0.25s';
+        const easing = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
+        if (currentTab) {
+            currentTab.style.transition = `transform ${duration} ${easing}`;
+        }
+        if (nextTabEl) {
+            nextTabEl.style.transition = `transform ${duration} ${easing}`;
+        }
+        if (prevTabEl) {
+            prevTabEl.style.transition = `transform ${duration} ${easing}`;
+        }
+
+        if (shouldSwitchNext && nextTabEl) {
+            // 次のタブへ切り替え
+            const targetId = nextTabEl.id;
+            const targetTab = nextTabEl;
+            const unusedTab = prevTabEl;  // 使われていないタブ
+            // 完全に画面外に出るようにギャップ分も含める
+            currentTab.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
+            nextTabEl.style.transform = 'translateX(0)';
+
+            setTimeout(() => {
+                // showTab()の前に、使われていないタブを非表示にする
+                if (unusedTab) {
+                    unusedTab.classList.remove('swipe-preview');
+                }
+                currentTab.classList.remove('swiping');
+                showTab(targetId, { skipAnimation: true });
+                cleanupSwipeWithTransition(targetTab);
+            }, 250);
+        } else if (shouldSwitchPrev && prevTabEl) {
+            // 前のタブへ切り替え
+            const targetId = prevTabEl.id;
+            const targetTab = prevTabEl;
+            const unusedTab = nextTabEl;  // 使われていないタブ
+            // 完全に画面外に出るようにギャップ分も含める
+            currentTab.style.transform = `translateX(calc(100% + ${PAGE_GAP}px))`;
+            prevTabEl.style.transform = 'translateX(0)';
+
+            setTimeout(() => {
+                // showTab()の前に、使われていないタブを非表示にする
+                if (unusedTab) {
+                    unusedTab.classList.remove('swipe-preview');
+                }
+                currentTab.classList.remove('swiping');
+                showTab(targetId, { skipAnimation: true });
+                cleanupSwipeWithTransition(targetTab);
+            }, 250);
+        } else {
+            // 元の位置にバウンスバック（ギャップを維持）
+            if (currentTab) {
+                currentTab.style.transform = 'translateX(0)';
+            }
+            if (nextTabEl) {
+                nextTabEl.style.transform = `translateX(calc(100% + ${PAGE_GAP}px))`;
+            }
+            if (prevTabEl) {
+                prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
+            }
+
+            setTimeout(() => {
+                cleanupSwipe();
+            }, 250);
+        }
+    }
+
+    /**
+     * スワイプ状態のクリーンアップ（タブ切り替え成功時）
+     * @param {HTMLElement} newActiveTab - 新しくアクティブになるタブ
+     */
+    function cleanupSwipeWithTransition(newActiveTab) {
+        content.classList.remove('swiping');
+        content.style.minHeight = '';
+        content.style.overflow = '';
+        document.body.style.overflow = '';
+
+        // 参照を保持（後でクリアするため）
+        const oldCurrentTab = currentTab;
+        const oldNextTabEl = nextTabEl;
+        const oldPrevTabEl = prevTabEl;
+
+        // 状態をリセット
+        isSwiping = false;
+        isSwipeActive = false;
+        currentTab = null;
+        nextTabEl = null;
+        prevTabEl = null;
+        currentTranslateX = 0;
+
+        // 次フレームで全てのスタイルをクリア（display: noneが適用された後）
+        requestAnimationFrame(() => {
+            // 元のタブのスタイルをクリア
+            if (oldCurrentTab && oldCurrentTab !== newActiveTab) {
+                oldCurrentTab.classList.remove('swiping');
+                oldCurrentTab.style.transition = '';
+                oldCurrentTab.style.transform = '';
+                oldCurrentTab.style.willChange = '';
+                oldCurrentTab.style.top = '';
+                oldCurrentTab.style.left = '';
+                oldCurrentTab.style.width = '';
+            }
+
+            // 新しいタブ以外のプレビューをクリア
+            if (oldNextTabEl && oldNextTabEl !== newActiveTab) {
+                oldNextTabEl.classList.remove('swipe-preview');
+                oldNextTabEl.style.transition = '';
+                oldNextTabEl.style.transform = '';
+                oldNextTabEl.style.willChange = '';
+                oldNextTabEl.style.top = '';
+                oldNextTabEl.style.left = '';
+                oldNextTabEl.style.width = '';
+            }
+            if (oldPrevTabEl && oldPrevTabEl !== newActiveTab) {
+                oldPrevTabEl.classList.remove('swipe-preview');
+                oldPrevTabEl.style.transition = '';
+                oldPrevTabEl.style.transform = '';
+                oldPrevTabEl.style.willChange = '';
+                oldPrevTabEl.style.top = '';
+                oldPrevTabEl.style.left = '';
+                oldPrevTabEl.style.width = '';
+            }
+
+            // 新しいタブのスタイルをクリア
+            if (newActiveTab) {
+                newActiveTab.style.transition = '';
+                newActiveTab.classList.remove('swipe-preview');
+                newActiveTab.classList.remove('swiping');
+                newActiveTab.style.transform = '';
+                newActiveTab.style.willChange = '';
+                newActiveTab.style.top = '';
+                newActiveTab.style.left = '';
+                newActiveTab.style.width = '';
+            }
+        });
+    }
+
+    /**
+     * スワイプ状態のクリーンアップ（キャンセル/バウンスバック時）
+     */
+    function cleanupSwipe() {
+        content.classList.remove('swiping');
+        content.style.minHeight = '';
+        content.style.overflow = '';
+        document.body.style.overflow = '';
+
+        if (currentTab) {
+            currentTab.classList.remove('swiping');
+            currentTab.style.transition = '';
+            currentTab.style.transform = '';
+            currentTab.style.willChange = '';
+            currentTab.style.top = '';
+            currentTab.style.left = '';
+            currentTab.style.width = '';
+        }
+        if (nextTabEl) {
+            nextTabEl.classList.remove('swipe-preview');
+            nextTabEl.style.transition = '';
+            nextTabEl.style.transform = '';
+            nextTabEl.style.willChange = '';
+            nextTabEl.style.top = '';
+            nextTabEl.style.left = '';
+            nextTabEl.style.width = '';
+        }
+        if (prevTabEl) {
+            prevTabEl.classList.remove('swipe-preview');
+            prevTabEl.style.transition = '';
+            prevTabEl.style.transform = '';
+            prevTabEl.style.willChange = '';
+            prevTabEl.style.top = '';
+            prevTabEl.style.left = '';
+            prevTabEl.style.width = '';
+        }
+
+        isSwiping = false;
+        isSwipeActive = false;
+        currentTab = null;
+        nextTabEl = null;
+        prevTabEl = null;
+        currentTranslateX = 0;
+    }
+
+    // タッチイベントリスナー
+    content.addEventListener('touchstart', function(e) {
+        if (window.innerWidth > 768) return;  // モバイルのみ
+        if (shouldDisableSwipe(e.target)) return;
+
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        touchStartTarget = e.target;
+        isSwiping = true;
+        isSwipeActive = false;
+    }, { passive: true });
+
+    content.addEventListener('touchmove', function(e) {
+        if (!isSwiping || window.innerWidth > 768) return;
+
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - touchStartX;
+        const deltaY = touchY - touchStartY;
+
+        // まだ横スワイプと確定していない場合
+        if (!isSwipeActive) {
+            // 一定距離移動したら方向を判定
+            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                // 縦方向が主なら無視
+                if (Math.abs(deltaY) > Math.abs(deltaX) * MAX_VERTICAL_RATIO) {
+                    isSwiping = false;
+                    return;
+                }
+                // 横スワイプとして確定
+                isSwipeActive = true;
+                if (!prepareSwipe()) {
+                    isSwiping = false;
+                    return;
+                }
+            } else {
+                return;  // まだ判定できない
+            }
+        }
+
+        // スクロールを防止（cancelableな場合のみ）
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+
+        // 指に追従してタブを移動
+        updateSwipe(deltaX);
+    }, { passive: false });
+
+    content.addEventListener('touchend', function(e) {
+        if (!isSwiping || window.innerWidth > 768) return;
+
+        if (!isSwipeActive) {
+            // 横スワイプとして認識されなかった場合はクリーンアップのみ
+            isSwiping = false;
+            return;
+        }
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndTime = Date.now();
+        const deltaX = touchEndX - touchStartX;
+        const deltaTime = touchEndTime - touchStartTime;
+        const velocity = deltaTime > 0 ? deltaX / deltaTime : 0;
+
+        endSwipe(deltaX, velocity);
+    }, { passive: true });
+
+    content.addEventListener('touchcancel', function() {
+        if (isSwiping) {
+            cleanupSwipe();
+        }
+    }, { passive: true });
 }
 
 // ============================================

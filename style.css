@@ -3212,3 +3212,42 @@
 .capacity-settings-dropdown input[type="radio"] {
     margin: 0;
 }
+
+/* ============================================ */
+/* スワイプ指追従型タブ切り替え */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    /* スクロールバー用のスペースを常に確保（スワイプ中の幅変化を防ぐ） */
+    html {
+        scrollbar-gutter: stable;
+    }
+
+    /* スワイプ中: .contentにoverflow:hiddenを適用し、高さを維持 */
+    .content.swiping {
+        overflow: hidden;
+    }
+
+    /* スワイプ中のアクティブタブ（absoluteで配置し、プレビュータブと同じ座標系で動かす） */
+    /* top/left/rightはJSで.contentのpaddingに合わせて設定 */
+    .tab-content.active.swiping {
+        position: absolute;
+        z-index: 2;
+    }
+
+    /* スワイプ中のプレビュータブ（次/前のタブ） */
+    /* top/left/rightはJSで.contentのpaddingに合わせて設定 */
+    .tab-content.swipe-preview {
+        display: block !important;
+        position: absolute;
+        /* top/left/rightはJSで設定される */
+        z-index: 1;
+    }
+
+
+    /* 切り替え完了直後：activeかつswipe-previewがまだ付いている状態 */
+    .tab-content.active.swipe-preview {
+        position: relative;
+        z-index: 2;
+    }
+}
