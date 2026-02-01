@@ -3251,3 +3251,65 @@
         z-index: 2;
     }
 }
+
+/* ============================================ */
+/* タブインジケーター（スライドアニメーション） */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    /* タブバーを相対配置に（インジケーターの基準） */
+    .tabs .tab-buttons-area {
+        position: relative;
+    }
+
+    /* スライドインジケーター */
+    .tab-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 100%;
+        background: var(--early-theme-gradient);
+        border-radius: 35px;
+        pointer-events: none;
+        z-index: 0;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform, width;
+    }
+
+    /* スワイプ中はトランジションを無効化 */
+    .tab-indicator.swiping {
+        transition: none;
+    }
+
+    /* インジケーターがある場合、タブボタンの背景を透明に */
+    .tabs:has(.tab-indicator) .tab {
+        background: transparent !important;
+        position: relative;
+        z-index: 1;
+    }
+
+    .tabs:has(.tab-indicator) .tab.active {
+        background: transparent !important;
+        color: white;
+        box-shadow: none;
+        transform: none;
+    }
+
+    /* Dockスタイル用の調整 */
+    .tabs.is-dock .tab-indicator {
+        border-radius: 16px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Capsuleスタイル用の調整 */
+    .tabs.is-capsule .tab-indicator {
+        border-radius: 35px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Classicスタイル用の調整 */
+    .tabs.is-classic .tab-indicator {
+        border-radius: 6px;
+    }
+}

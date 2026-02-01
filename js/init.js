@@ -548,6 +548,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // モバイルでタブのスワイプ切り替え機能を追加
     UI.initTabSwipe();
 
+    // タブインジケーター（スライドアニメーション）を初期化
+    UI.initTabIndicator();
+
     // スマートStickyタブ（スクロール連動表示）を初期化
     if (typeof UI.initSmartSticky === 'function') {
         UI.initSmartSticky();

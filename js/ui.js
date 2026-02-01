@@ -157,11 +157,13 @@ export function showTab(tabName, options = {}) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
     // 対象のタブボタンを見つけてactiveクラスを追加
-    // 対象のタブボタンを見つけてactiveクラスを追加
     const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
     if (targetTabBtn) {
         targetTabBtn.classList.add('active');
     }
+
+    // タブインジケーターを更新（スワイプ完了時はアニメーションなし）
+    updateTabIndicator(tabName, !skipAnimation);
 
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
@@ -275,6 +277,149 @@ export function prevTab() {
     );
     if (currentIndex > 0) {
         showTab(TAB_ORDER[currentIndex - 1]);
+    }
+}
+
+// ============================================
+// タブインジケーター（スライドアニメーション）
+// ============================================
+
+let tabIndicator = null;
+
+/**
+ * タブインジケーターを初期化
+ */
+export function initTabIndicator() {
+    if (window.innerWidth > 768) return;  // モバイルのみ
+
+    const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+    if (!tabButtonsArea) return;
+
+    // 既存のインジケーターがあれば削除
+    const existing = tabButtonsArea.querySelector('.tab-indicator');
+    if (existing) existing.remove();
+
+    // インジケーター要素を作成
+    tabIndicator = document.createElement('div');
+    tabIndicator.className = 'tab-indicator';
+    tabButtonsArea.appendChild(tabIndicator);
+
+    // 初期位置を設定
+    updateTabIndicator();
+
+    // リサイズ時に再計算
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768) {
+            updateTabIndicator();
+        }
+    });
+}
+
+/**
+ * タブインジケーターの位置を更新
+ * @param {string} [targetTabName] - 対象のタブ名（省略時はアクティブなタブ）
+ * @param {boolean} [animate=true] - アニメーションするか
+ */
+export function updateTabIndicator(targetTabName, animate = true) {
+    if (!tabIndicator || window.innerWidth > 768) return;
+
+    const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+    if (!tabButtonsArea) return;
+
+    // 対象のタブボタンを取得
+    let targetTab;
+    if (targetTabName) {
+        targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
+    } else {
+        targetTab = tabButtonsArea.querySelector('.tab.active');
+    }
+
+    if (!targetTab) return;
+
+    // タブボタンの位置とサイズを取得
+    const areaRect = tabButtonsArea.getBoundingClientRect();
+    const tabRect = targetTab.getBoundingClientRect();
+
+    // インジケーターの位置とサイズを計算
+    const left = tabRect.left - areaRect.left + tabButtonsArea.scrollLeft;
+    const width = tabRect.width;
+
+    // アニメーション制御
+    if (!animate) {
+        tabIndicator.classList.add('swiping');
+    } else {
+        tabIndicator.classList.remove('swiping');
+    }
+
+    // スタイルを適用
+    tabIndicator.style.width = `${width}px`;
+    tabIndicator.style.transform = `translateX(${left}px)`;
+}
+
+/**
+ * スワイプ中のインジケーター位置を更新
+ * @param {number} progress - スワイプ進行度（-1〜1、負が次、正が前）
+ * @param {string} currentTabName - 現在のタブ名
+ * @param {string|null} nextTabName - 次のタブ名
+ * @param {string|null} prevTabName - 前のタブ名
+ */
+export function updateTabIndicatorProgress(progress, currentTabName, nextTabName, prevTabName) {
+    if (!tabIndicator || window.innerWidth > 768) return;
+
+    const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+    if (!tabButtonsArea) return;
+
+    const currentTab = tabButtonsArea.querySelector(`.tab[data-tab="${currentTabName}"]`);
+    if (!currentTab) return;
+
+    const areaRect = tabButtonsArea.getBoundingClientRect();
+    const currentRect = currentTab.getBoundingClientRect();
+    const currentLeft = currentRect.left - areaRect.left + tabButtonsArea.scrollLeft;
+    const currentWidth = currentRect.width;
+
+    let targetLeft = currentLeft;
+    let targetWidth = currentWidth;
+
+    // 進行度に応じて次/前のタブとの間を補間
+    if (progress < 0 && nextTabName) {
+        // 次のタブへ向かう
+        const nextTab = tabButtonsArea.querySelector(`.tab[data-tab="${nextTabName}"]`);
+        if (nextTab) {
+            const nextRect = nextTab.getBoundingClientRect();
+            const nextLeft = nextRect.left - areaRect.left + tabButtonsArea.scrollLeft;
+            const nextWidth = nextRect.width;
+            const t = Math.abs(progress);  // 0〜1
+            targetLeft = currentLeft + (nextLeft - currentLeft) * t;
+            targetWidth = currentWidth + (nextWidth - currentWidth) * t;
+        }
+    } else if (progress > 0 && prevTabName) {
+        // 前のタブへ向かう
+        const prevTab = tabButtonsArea.querySelector(`.tab[data-tab="${prevTabName}"]`);
+        if (prevTab) {
+            const prevRect = prevTab.getBoundingClientRect();
+            const prevLeft = prevRect.left - areaRect.left + tabButtonsArea.scrollLeft;
+            const prevWidth = prevRect.width;
+            const t = Math.abs(progress);  // 0〜1
+            targetLeft = currentLeft + (prevLeft - currentLeft) * t;
+            targetWidth = currentWidth + (prevWidth - currentWidth) * t;
+        }
+    }
+
+    // トランジションを無効化してすぐに反映
+    tabIndicator.classList.add('swiping');
+    tabIndicator.style.width = `${targetWidth}px`;
+    tabIndicator.style.transform = `translateX(${targetLeft}px)`;
+}
+
+/**
+ * スワイプ終了時のインジケーター処理
+ * @param {boolean} animate - アニメーションを有効にするか
+ */
+export function finalizeTabIndicator(animate = true) {
+    if (!tabIndicator) return;
+
+    if (animate) {
+        tabIndicator.classList.remove('swiping');
     }
 }
 
@@ -516,6 +661,14 @@ export function initTabSwipe() {
         if (prevTabEl && deltaX > 0) {
             prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px + ${adjustedDeltaX}px))`;
         }
+
+        // タブインジケーターを追従させる
+        const screenWidth = window.innerWidth;
+        const progress = adjustedDeltaX / screenWidth;  // -1〜1（左が負、右が正）
+        const currentTabName = currentTab ? currentTab.id : null;
+        const nextTabName = nextTabEl ? nextTabEl.id : null;
+        const prevTabName = prevTabEl ? prevTabEl.id : null;
+        updateTabIndicatorProgress(progress, currentTabName, nextTabName, prevTabName);
     }
 
     /**
@@ -596,6 +749,10 @@ export function initTabSwipe() {
             if (prevTabEl) {
                 prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
             }
+
+            // インジケーターも元の位置に戻す（アニメーションあり）
+            finalizeTabIndicator(true);
+            updateTabIndicator();
 
             setTimeout(() => {
                 cleanupSwipe();
