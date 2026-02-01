@@ -1228,19 +1228,38 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
 
         if (!select) return;
 
-        // フィルタ状態を確認: 保存された値 > デフォルト（全版数）
+        // フィルタ状態を確認: localStorage > state > デフォルト（全版数）
         let currentValue;
-        if (reportFilterState.version !== null) {
-            // 保存された値が有効かチェック
+        
+        // まずlocalStorageを直接確認（stateより優先）
+        let savedVersion = null;
+        try {
+            const savedState = localStorage.getItem('manhour_reportFilterState');
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                savedVersion = parsed.version;
+            }
+        } catch (e) {
+            // ignore
+        }
+        
+        if (savedVersion !== null && (savedVersion === 'all' || sortedVersions.includes(savedVersion))) {
+            // localStorageに有効な値がある
+            currentValue = savedVersion;
+        } else if (reportFilterState.version !== null) {
+            // stateに値がある
             if (reportFilterState.version === 'all' || sortedVersions.includes(reportFilterState.version)) {
                 currentValue = reportFilterState.version;
             } else {
-                // 保存された値が無効な場合はデフォルトを適用
                 currentValue = 'all';
             }
         } else {
             // 初回表示時はデフォルト（全版数）を適用
             currentValue = 'all';
+        }
+        
+        // stateも更新
+        if (reportFilterState.version !== currentValue) {
             setReportFilterState({ version: currentValue });
         }
 
@@ -1340,19 +1359,38 @@ export function updateMonthOptions(selectedVersion = 'all') {
         }
     });
 
-    // フィルタ状態を確認: 保存された値 > デフォルト（最新月）
+    // フィルタ状態を確認: localStorage > state > デフォルト（最新月）
     let currentValue;
-    if (reportFilterState.month !== null) {
-        // 保存された値が有効かチェック
+    
+    // まずlocalStorageを直接確認（stateより優先）
+    let savedMonth = null;
+    try {
+        const savedState = localStorage.getItem('manhour_reportFilterState');
+        if (savedState) {
+            const parsed = JSON.parse(savedState);
+            savedMonth = parsed.month;
+        }
+    } catch (e) {
+        // ignore
+    }
+    
+    if (savedMonth !== null && (savedMonth === 'all' || sortedMonths.includes(savedMonth))) {
+        // localStorageに有効な値がある
+        currentValue = savedMonth;
+    } else if (reportFilterState.month !== null) {
+        // stateに値がある
         if (reportFilterState.month === 'all' || sortedMonths.includes(reportFilterState.month)) {
             currentValue = reportFilterState.month;
         } else {
-            // 保存された値が無効な場合はデフォルトを適用
             currentValue = getDefaultMonth(select);
         }
     } else {
         // 初回表示時はデフォルト（最新月）を適用
         currentValue = getDefaultMonth(select);
+    }
+    
+    // stateも更新
+    if (reportFilterState.month !== currentValue) {
         setReportFilterState({ month: currentValue });
     }
 
@@ -1419,19 +1457,38 @@ export function updateEstimateMonthOptions() {
         }
     });
 
-    // フィルタ状態を確認: 保存された値 > 現在のselect値 > デフォルト（最新月）
+    // フィルタ状態を確認: localStorage > state > デフォルト（最新月）
     let currentValue;
-    if (estimateFilterState.month !== null) {
-        // 保存された値が有効かチェック
+    
+    // まずlocalStorageを直接確認（stateより優先）
+    let savedMonth = null;
+    try {
+        const savedState = localStorage.getItem('manhour_estimateFilterState');
+        if (savedState) {
+            const parsed = JSON.parse(savedState);
+            savedMonth = parsed.month;
+        }
+    } catch (e) {
+        // ignore
+    }
+    
+    if (savedMonth !== null && (savedMonth === 'all' || sortedMonths.includes(savedMonth))) {
+        // localStorageに有効な値がある
+        currentValue = savedMonth;
+    } else if (estimateFilterState.month !== null) {
+        // stateに値がある
         if (estimateFilterState.month === 'all' || sortedMonths.includes(estimateFilterState.month)) {
             currentValue = estimateFilterState.month;
         } else {
-            // 保存された値が無効な場合はデフォルトを適用
             currentValue = getDefaultMonth(select);
         }
     } else {
         // 初回表示時はデフォルト（最新月）を適用
         currentValue = getDefaultMonth(select);
+    }
+    
+    // stateも更新（localStorageへの保存はsetEstimateFilterStateで行われる）
+    if (estimateFilterState.month !== currentValue) {
         setEstimateFilterState({ month: currentValue });
     }
 
@@ -1490,19 +1547,38 @@ export function updateEstimateVersionOptions() {
         }
     });
 
-    // フィルタ状態を確認: 保存された値 > デフォルト（全版数）
+    // フィルタ状態を確認: localStorage > state > デフォルト（全版数）
     let currentValue;
-    if (estimateFilterState.version !== null) {
-        // 保存された値が有効かチェック
+    
+    // まずlocalStorageを直接確認（stateより優先）
+    let savedVersion = null;
+    try {
+        const savedState = localStorage.getItem('manhour_estimateFilterState');
+        if (savedState) {
+            const parsed = JSON.parse(savedState);
+            savedVersion = parsed.version;
+        }
+    } catch (e) {
+        // ignore
+    }
+    
+    if (savedVersion !== null && (savedVersion === 'all' || sortedVersions.includes(savedVersion))) {
+        // localStorageに有効な値がある
+        currentValue = savedVersion;
+    } else if (estimateFilterState.version !== null) {
+        // stateに値がある
         if (estimateFilterState.version === 'all' || sortedVersions.includes(estimateFilterState.version)) {
             currentValue = estimateFilterState.version;
         } else {
-            // 保存された値が無効な場合はデフォルトを適用
             currentValue = 'all';
         }
     } else {
         // 初回表示時はデフォルト（全版数）を適用
         currentValue = 'all';
+    }
+    
+    // stateも更新
+    if (estimateFilterState.version !== currentValue) {
         setEstimateFilterState({ version: currentValue });
     }
 
@@ -1681,6 +1757,9 @@ export function syncMonthToReport(value) {
     if (reportMonthButtons2) {
         updateSegmentButtonSelection('reportMonthButtons2', value);
     }
+    
+    // 同期後にlocalStorageも更新
+    saveReportFilterToStorage();
 }
 
 export function syncMonthToEstimate(value) {
@@ -1696,6 +1775,9 @@ export function syncMonthToEstimate(value) {
 
     // 版数フィルタの選択肢を連動して更新（レポート用）
     updateReportVersionOptions(null, value);
+    
+    // 同期後にlocalStorageも更新
+    saveEstimateFilterToStorage();
 }
 
 export function syncVersionToReport(value) {
@@ -1708,6 +1790,9 @@ export function syncVersionToReport(value) {
     if (reportVersionButtons2) {
         updateSegmentButtonSelection('reportVersionButtons2', value);
     }
+    
+    // 同期後にlocalStorageも更新
+    saveReportFilterToStorage();
 }
 
 export function syncVersionToEstimate(value) {
@@ -1723,6 +1808,9 @@ export function syncVersionToEstimate(value) {
 
     // 月フィルタの選択肢を連動して更新
     updateMonthOptions(value);
+    
+    // 同期後にlocalStorageも更新
+    saveEstimateFilterToStorage();
 }
 
 export function syncFilterTypeToReport(type) {
@@ -1935,6 +2023,9 @@ export function handleEstimateMonthChange(value, containerId) {
 
     // フィルタ状態を保存
     setEstimateFilterState({ month: value });
+    
+    // localStorageに直接保存（リロード時の復元用）
+    saveEstimateFilterToStorage();
 
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'month';
@@ -1963,6 +2054,9 @@ export function handleEstimateVersionChange(value, containerId) {
 
     // フィルタ状態を保存
     setEstimateFilterState({ version: value });
+    
+    // localStorageに直接保存（リロード時の復元用）
+    saveEstimateFilterToStorage();
 
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'version';
@@ -2010,6 +2104,9 @@ export function handleReportMonthChange(value, containerId) {
 
     // フィルタ状態を保存
     setReportFilterState({ month: value });
+    
+    // localStorageに直接保存（リロード時の復元用）
+    saveReportFilterToStorage();
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -2061,6 +2158,9 @@ export function handleReportVersionChange(value, containerId) {
 
     // フィルタ状態を保存
     setReportFilterState({ version: value });
+    
+    // localStorageに直接保存（リロード時の復元用）
+    saveReportFilterToStorage();
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -2175,6 +2275,10 @@ export function handleReportFilterTypeChange() {
         
         // フィルタタイプを保存
         setReportFilterState({ filterType: filterType });
+        
+        // localStorageに直接保存（リロード時の復元用）
+        saveReportFilterToStorage();
+        
         const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
         const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
 
@@ -2238,6 +2342,91 @@ export function setReportFilterType(type) {
  * 保存されたレポートフィルタ条件を復元する
  * リロード時に前回のフィルタ状態を維持するため
  */
+
+/**
+ * localStorageからフィルタ状態をstateモジュールに復元する（DOMは更新しない）
+ * オプション更新より前に呼び出す必要がある
+ */
+
+/**
+ * 見積フィルタの現在の値をlocalStorageに保存する
+ */
+function saveEstimateFilterToStorage() {
+    try {
+        const monthEl = document.getElementById('estimateMonthFilter');
+        const versionEl = document.getElementById('estimateVersionFilter');
+        const state = {
+            month: monthEl ? monthEl.value : null,
+            version: versionEl ? versionEl.value : null
+        };
+        localStorage.setItem('manhour_estimateFilterState', JSON.stringify(state));
+        console.log('[Filter] Saved estimate filter to storage:', state);
+    } catch (e) {
+        console.warn('Failed to save estimate filter:', e);
+    }
+}
+
+/**
+ * レポートフィルタの現在の値をlocalStorageに保存する
+ */
+function saveReportFilterToStorage() {
+    try {
+        const filterTypeEl = document.getElementById('reportFilterType');
+        const monthEl = document.getElementById('reportMonth');
+        const versionEl = document.getElementById('reportVersion');
+        const state = {
+            filterType: filterTypeEl ? filterTypeEl.value : 'version',
+            month: monthEl ? monthEl.value : null,
+            version: versionEl ? versionEl.value : null
+        };
+        localStorage.setItem('manhour_reportFilterState', JSON.stringify(state));
+        console.log('[Filter] Saved report filter to storage:', state);
+    } catch (e) {
+        console.warn('Failed to save report filter:', e);
+    }
+}
+
+export function loadFilterStatesFromStorage() {
+    // 見積フィルタ
+    try {
+        const savedEstimate = localStorage.getItem('manhour_estimateFilterState');
+        if (savedEstimate) {
+            const state = JSON.parse(savedEstimate);
+            // stateモジュールを直接更新（localStorageには書き込まない）
+            if (state.month !== undefined) {
+                setEstimateFilterState({ month: state.month });
+            }
+            if (state.version !== undefined) {
+                setEstimateFilterState({ version: state.version });
+            }
+            console.log('[Filter] Loaded estimate filter state to memory:', state);
+        }
+    } catch (e) {
+        console.warn('Failed to load estimate filter state:', e);
+    }
+    
+    // レポートフィルタ
+    try {
+        const savedReport = localStorage.getItem('manhour_reportFilterState');
+        if (savedReport) {
+            const state = JSON.parse(savedReport);
+            // stateモジュールを直接更新（localStorageには書き込まない）
+            if (state.filterType !== undefined) {
+                setReportFilterState({ filterType: state.filterType });
+            }
+            if (state.month !== undefined) {
+                setReportFilterState({ month: state.month });
+            }
+            if (state.version !== undefined) {
+                setReportFilterState({ version: state.version });
+            }
+            console.log('[Filter] Loaded report filter state to memory:', state);
+        }
+    } catch (e) {
+        console.warn('Failed to load report filter state:', e);
+    }
+}
+
 export function restoreReportFilterState() {
     try {
         const savedState = localStorage.getItem('manhour_reportFilterState');
@@ -2247,12 +2436,16 @@ export function restoreReportFilterState() {
         const state = JSON.parse(savedState);
         let restored = false;
 
-        // フィルタタイプの復元
+        // フィルタタイプの復元（handleReportFilterTypeChangeは呼ばない - デフォルト設定が上書きされるため）
         if (state.filterType) {
             const reportFilterType = document.getElementById('reportFilterType');
             if (reportFilterType) {
                 reportFilterType.value = state.filterType;
-                handleReportFilterTypeChange();
+                // UIの表示/非表示を直接制御
+                const monthFilterSegmented = document.getElementById('reportMonthFilterSegmented');
+                const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
+                if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
+                if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
                 restored = true;
             }
         }
@@ -2289,9 +2482,68 @@ export function restoreReportFilterState() {
             }
         }
 
+        // 状態をstateモジュールにも反映
+        if (restored) {
+            setReportFilterState(state);
+        }
+
         return restored;
     } catch (e) {
         console.warn('Failed to restore report filter state:', e);
+        return false;
+    }
+}
+
+
+/**
+ * 保存された見積フィルタ条件を復元する
+ * リロード時に前回のフィルタ状態を維持するため
+ */
+export function restoreEstimateFilterState() {
+    try {
+        const savedState = localStorage.getItem('manhour_estimateFilterState');
+        console.log('[Filter] Restoring estimate filter state:', savedState);
+        if (!savedState) return false;
+
+        const state = JSON.parse(savedState);
+        let restored = false;
+
+        // 版数フィルタの復元
+        if (state.version) {
+            const estimateVersion = document.getElementById('estimateVersionFilter');
+            if (estimateVersion) {
+                // 選択肢に存在する場合のみ復元
+                const optionExists = Array.from(estimateVersion.options).some(opt => opt.value === state.version);
+                if (optionExists) {
+                    estimateVersion.value = state.version;
+                    updateSegmentButtonSelection('estimateVersionButtons', state.version);
+                    restored = true;
+                }
+            }
+        }
+
+        // 月フィルタの復元
+        if (state.month) {
+            const estimateMonth = document.getElementById('estimateMonthFilter');
+            if (estimateMonth) {
+                // 選択肢に存在する場合のみ復元
+                const optionExists = Array.from(estimateMonth.options).some(opt => opt.value === state.month);
+                if (optionExists) {
+                    estimateMonth.value = state.month;
+                    updateSegmentButtonSelection('estimateMonthButtons', state.month);
+                    restored = true;
+                }
+            }
+        }
+
+        // 状態をstateモジュールにも反映（localStorageへの再保存をスキップするため直接設定）
+        if (restored) {
+            setEstimateFilterState(state);
+        }
+
+        return restored;
+    } catch (e) {
+        console.warn('Failed to restore estimate filter state:', e);
         return false;
     }
 }

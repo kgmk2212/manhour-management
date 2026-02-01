@@ -463,6 +463,9 @@ document.addEventListener('DOMContentLoaded', function () {
     Report.loadDebugModeSetting();
     Report.loadDevFeaturesSetting();
 
+    // localStorageからフィルタ状態を復元（オプション更新より前に実行）
+    UI.loadFilterStatesFromStorage();
+
     // オプションの更新
     UI.updateMonthOptions();
     UI.updateEstimateMonthOptions();
@@ -494,8 +497,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // クイック入力の見積登録フォームを初期化
     Quick.initQuickEstimateForm();
 
-    // 各タブのデフォルト月を設定
-    UI.setDefaultEstimateMonth();
+    // 各タブのデフォルト月を設定（localStorageから復元された場合はスキップ）
+    // 見積タブはupdateEstimateMonthOptionsで既に設定済みなのでスキップ
     UI.setDefaultActualMonth();
 
     // 保存されたレポートフィルタ条件を復元（リロード時）

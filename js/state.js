@@ -496,11 +496,4 @@ export function setEstimateFilterState(state) {
 
 export function setReportFilterState(state) {
     reportFilterState = { ...reportFilterState, ...state };
-    // localStorage にも保存（リロード時に復元するため）
-    try {
-        localStorage.setItem('manhour_reportFilterState', JSON.stringify(reportFilterState));
-        console.log('[Filter] Saved report filter state:', reportFilterState);
-    } catch (e) {
-        console.warn('Failed to save report filter state:', e);
-    }
 }
