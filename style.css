@@ -3272,8 +3272,9 @@
         border-radius: 35px;
         pointer-events: none;
         z-index: 0;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* よりスムーズなスプリングアニメーション */
+        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                    width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         will-change: transform, width;
     }
 
@@ -3282,18 +3283,15 @@
         transition: none;
     }
 
-    /* インジケーターがある場合、タブボタンの背景を透明に */
+    /* インジケーターがある場合、アクティブタブの背景のみ透明に（他のスタイルは維持） */
     .tabs:has(.tab-indicator) .tab {
-        background: transparent !important;
         position: relative;
         z-index: 1;
     }
 
     .tabs:has(.tab-indicator) .tab.active {
         background: transparent !important;
-        color: white;
-        box-shadow: none;
-        transform: none;
+        box-shadow: none !important;
     }
 
     /* Dockスタイル用の調整 */
@@ -3302,10 +3300,18 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
+    .tabs.is-dock:has(.tab-indicator) .tab.active {
+        transform: translateY(-2px);
+    }
+
     /* Capsuleスタイル用の調整 */
     .tabs.is-capsule .tab-indicator {
         border-radius: 35px;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    }
+
+    .tabs.is-capsule:has(.tab-indicator) .tab.active {
+        transform: scale(1.05);
     }
 
     /* Classicスタイル用の調整 */
