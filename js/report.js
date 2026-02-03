@@ -3100,88 +3100,93 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
 
 /**
  * バー表示を更新
+ * グレー背景=100%、超過分はグレーからはみ出して赤で表示
  */
 function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode) {
     const el = (id) => document.getElementById(id);
-    const SCALE_FACTOR = 100 / 130;
 
     const getBarOpacity = (percent) => {
-        const minOpacity = 0.4;
+        const minOpacity = 0.5;
         const maxOpacity = 1.0;
         const clampedPercent = Math.min(Math.max(percent, 0), 100);
         return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
     };
 
+    // 見積バー
     const estimateBarEl = el('capacityEstimateBar');
     const estimateTextEl = el('capacityEstimateText');
-    const estimateStripeEl = el('capacityEstimateStripe');
-    const estimateBarRowEl = el('capacityEstimateBarRow');
+    const estimateOverflowEl = el('capacityEstimateStripe');
 
     if (estimateBarEl && estimateTextEl) {
         estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
         const opacity = getBarOpacity(Math.min(estimatePercent, 100));
 
-        if (isOverCapacity && ['stripe', 'stripe_warning', 'stripe_bg'].includes(displayMode)) {
-            // ストライプ表示: 100%まで赤バー、超過分はストライプ
-            const baseWidth = 76.9; // 100%の位置
-            estimateBarEl.style.width = baseWidth + '%';
+        if (estimatePercent > 100) {
+            // 超過時: 100%まで赤バー + はみ出し部分
+            estimateBarEl.style.width = '100%';
             estimateBarEl.style.borderRadius = '12px 0 0 12px';
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
+            estimateTextEl.style.color = '#dc2626';
 
-            // ストライプ部分
-            if (estimateStripeEl) {
-                const overPercent = Math.min(estimatePercent - 100, 30); // 最大30%超過まで表示
-                const stripeWidth = overPercent * SCALE_FACTOR;
-                estimateStripeEl.style.display = 'block';
-                estimateStripeEl.style.left = baseWidth + '%';
-                estimateStripeEl.style.width = stripeWidth + '%';
+            // はみ出し部分を表示
+            if (estimateOverflowEl) {
+                const overPercent = Math.min(estimatePercent - 100, 50); // 最大50%超過まで表示
+                estimateOverflowEl.style.display = 'block';
+                estimateOverflowEl.style.left = '100%';
+                estimateOverflowEl.style.width = overPercent + '%';
 
-                // アニメーション（stripe_warningモード）
+                // アニメーション
                 if (displayMode === 'stripe_warning') {
-                    estimateStripeEl.classList.add('capacity-pulse-animate');
-                    estimateBarEl.classList.add('capacity-pulse-animate');
+                    estimateOverflowEl.classList.add('capacity-pulse-animate');
                 } else {
-                    estimateStripeEl.classList.remove('capacity-pulse-animate');
-                    estimateBarEl.classList.remove('capacity-pulse-animate');
+                    estimateOverflowEl.classList.remove('capacity-pulse-animate');
                 }
             }
-
-            // テキスト色を赤に
-            if (estimateTextEl) estimateTextEl.style.color = '#dc2626';
         } else {
-            // 通常表示
-            const clampedPercent = Math.min(estimatePercent, 130);
-            const displayWidth = clampedPercent * SCALE_FACTOR;
-            estimateBarEl.style.width = displayWidth + '%';
+            // 通常: バーは実際の割合で表示
+            estimateBarEl.style.width = estimatePercent + '%';
             estimateBarEl.style.borderRadius = '12px';
+            estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
+            estimateTextEl.style.color = '#334155';
 
-            if (isOverCapacity) {
-                estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
-                if (estimateTextEl) estimateTextEl.style.color = '#dc2626';
-            } else {
-                estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
-                if (estimateTextEl) estimateTextEl.style.color = '#334155';
+            if (estimateOverflowEl) {
+                estimateOverflowEl.style.display = 'none';
+                estimateOverflowEl.classList.remove('capacity-pulse-animate');
             }
-
-            if (estimateStripeEl) {
-                estimateStripeEl.style.display = 'none';
-                estimateStripeEl.classList.remove('capacity-pulse-animate');
-            }
-            estimateBarEl.classList.remove('capacity-pulse-animate');
         }
     }
 
     // 実績バー
     const actualBarEl = el('capacityActualBar');
     const actualTextEl = el('capacityActualText');
-    if (actualBarEl && actualTextEl) {
-        const clampedPercent = Math.min(actualPercent, 130);
-        const displayWidth = clampedPercent * SCALE_FACTOR;
-        actualBarEl.style.width = displayWidth + '%';
-        actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+    const actualOverflowEl = el('capacityActualStripe');
 
-        const opacity = getBarOpacity(actualPercent);
-        actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+    if (actualBarEl && actualTextEl) {
+        actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+        const opacity = getBarOpacity(Math.min(actualPercent, 100));
+
+        if (actualPercent > 100) {
+            // 超過時: 100%まで濃い緑バー + はみ出し部分は赤
+            actualBarEl.style.width = '100%';
+            actualBarEl.style.borderRadius = '12px 0 0 12px';
+            actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+
+            if (actualOverflowEl) {
+                const overPercent = Math.min(actualPercent - 100, 50);
+                actualOverflowEl.style.display = 'block';
+                actualOverflowEl.style.left = '100%';
+                actualOverflowEl.style.width = overPercent + '%';
+            }
+        } else {
+            // 通常
+            actualBarEl.style.width = actualPercent + '%';
+            actualBarEl.style.borderRadius = '12px';
+            actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
+
+            if (actualOverflowEl) {
+                actualOverflowEl.style.display = 'none';
+            }
+        }
     }
 }
 
