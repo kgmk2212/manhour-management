@@ -591,6 +591,23 @@
             font-size: 14px;
         }
 
+        .custom-dropdown-group {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+        }
+
+        .custom-dropdown-new {
+            color: #3498db;
+            font-weight: 500;
+            border-top: 1px solid #e0e0e0;
+        }
+
         #quickTaskSearch {
             cursor: text;
         }

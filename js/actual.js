@@ -11,6 +11,17 @@ import { showAlert, sortMembers } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate } from './estimate.js';
 
 // ============================================
+// 実績入力モーダル用の変数
+// ============================================
+
+// 検索ドロップダウン用のタスクリスト
+let allEditActualTasks = [];
+// 選択されたタスク情報
+let selectedEditActualTask = null;
+// 現在の担当者（カレンダーから開いた場合）
+let currentEditActualMember = null;
+
+// ============================================
 // 祝日・曜日判定
 // ============================================
 
@@ -409,7 +420,7 @@ export function renderMemberCalendar() {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(1)}h</p>
+            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(2)}h</p>
         </div>`;
     }
 
@@ -461,7 +472,7 @@ export function renderMemberCalendar() {
     html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
     html += `<td>総合計</td>`;
     html += `<td style="text-align: right;">${workedDays}日稼働</td>`;
-    html += `<td style="text-align: center;">${totalHours.toFixed(1)}h</td>`;
+    html += `<td style="text-align: center;">${totalHours.toFixed(2)}h</td>`;
     html += `</tr>`;
 
     html += '</table></div>';
@@ -603,10 +614,10 @@ export function renderActualMatrix() {
         members.forEach(member => {
             const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
             monthGrandTotal += memberTotal;
-            html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(1)}h</th>`;
+            html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(2)}h</th>`;
         });
 
-        html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
+        html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(2)}h</th>`;
         html += '</tr>';
 
         html += '<tr><th style="min-width: 100px;">日付</th>';
@@ -643,9 +654,9 @@ export function renderActualMatrix() {
             html += '<tr style="background: #fff3cd; font-weight: 600;">';
             html += `<td>${currentMonth} 小計</td>`;
             members.forEach(member => {
-                html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
+                html += `<td style="text-align: center;">${monthTotals[member].toFixed(2)}h</td>`;
             });
-            html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
+            html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(2)}h</td>`;
             html += '</tr>';
 
             members.forEach(m => monthTotals[m] = 0);
@@ -702,7 +713,7 @@ export function renderActualMatrix() {
             if (memberDayTotal > 0) {
                 cellBgColor = '#e3f2fd';
                 onclick = `showWorkDetail('${member}', '${date}')`;
-                cellContent = `<strong>${memberDayTotal.toFixed(1)}</strong>`;
+                cellContent = `<strong>${memberDayTotal.toFixed(2)}</strong>`;
                 title = '';
             } else if (memberVacations.length > 0) {
                 cellBgColor = '#fff3e0';
@@ -727,7 +738,7 @@ export function renderActualMatrix() {
         monthTotal += dayTotal;
 
         if (dayTotal > 0) {
-            html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(1)}h</td>`;
+            html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(2)}h</td>`;
         } else {
             html += `<td class="daily-total" style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
         }
@@ -739,9 +750,9 @@ export function renderActualMatrix() {
         html += '<tr style="background: #fff3cd; font-weight: 600;">';
         html += `<td>${currentMonth} 小計</td>`;
         members.forEach(member => {
-            html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
+            html += `<td style="text-align: center;">${monthTotals[member].toFixed(2)}h</td>`;
         });
-        html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
+        html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(2)}h</td>`;
         html += '</tr>';
     }
 
@@ -752,10 +763,10 @@ export function renderActualMatrix() {
     members.forEach(member => {
         const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
         grandTotal += memberTotal;
-        html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
+        html += `<td style="text-align: center;">${memberTotal.toFixed(2)}h</td>`;
     });
 
-    html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${grandTotal.toFixed(1)}h</td>`;
+    html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${grandTotal.toFixed(2)}h</td>`;
     html += '</tr>';
 
     html += '</table></div>';
@@ -893,7 +904,7 @@ export function showWorkDetail(member, date) {
 
     html += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-            <strong style="font-size: 16px;">合計: ${totalHours.toFixed(1)}時間</strong>
+            <strong style="font-size: 16px;">合計: ${totalHours.toFixed(2)}時間</strong>
             <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
         </div>
         <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -987,10 +998,19 @@ export function addActualFromCalendar(member, date) {
         }
     }
 
-    document.getElementById('editActualTaskSelect').style.display = 'block';
-    document.getElementById('editActualTaskSelect').value = '';
-    document.getElementById('editActualTaskSearch').style.display = 'none';
-    document.getElementById('editActualTaskSearch').value = '';
+    // 検索ドロップダウンをリセット
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.placeholder = 'クリックして対応を選択...';
+        searchInput.style.display = 'block';
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    clearEditActualTaskSelection();
+
+    // セレクトボックスは非表示
+    document.getElementById('editActualTaskSelect').style.display = 'none';
 
     if (previousActual) {
         document.getElementById('editActualProcess').value = previousActual.process;
@@ -1021,9 +1041,26 @@ export function addActualFromCalendar(member, date) {
 
     updateEditActualTaskList(member, false, versionSelect.value, document.getElementById('editActualProcess').value);
 
+    // 前回の実績があればそれを選択
     if (previousActual) {
-        const taskSelect = document.getElementById('editActualTaskSelect');
-        taskSelect.value = previousActual.task;
+        const taskInfo = {
+            version: previousActual.version,
+            task: previousActual.task,
+            process: previousActual.process,
+            member: member
+        };
+        setSelectedEditActualTask(taskInfo);
+        
+        // 表示を更新
+        const displayTask = allEditActualTasks.find(t => 
+            t.version === taskInfo.version && 
+            t.task === taskInfo.task && 
+            t.process === taskInfo.process
+        );
+        if (searchInput && displayTask) {
+            searchInput.value = displayTask.display;
+            if (clearBtn) clearBtn.style.display = 'block';
+        }
     }
 
     document.getElementById('editActualOtherBtn').style.display = 'block';
@@ -1050,10 +1087,32 @@ export function editActual(id) {
 
     updateEditActualTaskList(actual.member, true, actual.version, actual.process);
 
-    const taskSelect = document.getElementById('editActualTaskSelect');
-    taskSelect.style.display = 'block';
-    document.getElementById('editActualTaskSearch').style.display = 'none';
-    taskSelect.value = actual.task;
+    // 検索ドロップダウンに選択内容を表示
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    
+    const taskInfo = {
+        version: actual.version,
+        task: actual.task,
+        process: actual.process,
+        member: actual.member
+    };
+    setSelectedEditActualTask(taskInfo);
+
+    // 表示を更新
+    const displayTask = allEditActualTasks.find(t => 
+        t.version === taskInfo.version && 
+        t.task === taskInfo.task && 
+        t.process === taskInfo.process
+    );
+    if (searchInput) {
+        searchInput.value = displayTask ? displayTask.display : actual.task;
+        searchInput.style.display = 'block';
+        if (clearBtn) clearBtn.style.display = 'block';
+    }
+
+    // セレクトボックスは非表示
+    document.getElementById('editActualTaskSelect').style.display = 'none';
 
     document.getElementById('editActualProcess').value = actual.process;
     document.getElementById('editActualHours').value = actual.hours;
@@ -1131,15 +1190,29 @@ export function closeEditActualModal() {
 export function saveActualEdit() {
     const id = parseFloat(document.getElementById('editActualId').value);
     const date = document.getElementById('editActualDate').value;
-    const version = document.getElementById('editActualVersion').value;
+    let version = document.getElementById('editActualVersion').value;
 
-    const taskSelect = document.getElementById('editActualTaskSelect');
+    // 検索ドロップダウンから選択された情報を取得
+    const selected = getSelectedEditActualTask();
     const taskInput = document.getElementById('editActualTaskSearch');
-    const task = taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__'
-        ? taskSelect.value
-        : taskInput.value;
+    
+    let task;
+    let process = document.getElementById('editActualProcess').value;
+    
+    if (selected) {
+        // ドロップダウンから選択された場合
+        task = selected.task;
+        version = selected.version || version;
+        process = selected.process || process;
+    } else if (taskInput && taskInput.value) {
+        // 新規入力の場合
+        task = taskInput.value;
+    } else {
+        // フォールバック: 旧セレクトボックス
+        const taskSelect = document.getElementById('editActualTaskSelect');
+        task = taskSelect.value && taskSelect.value !== '__NEW__' ? taskSelect.value : '';
+    }
 
-    const process = document.getElementById('editActualProcess').value;
     const member = document.getElementById('editActualMember').value;
     const hours = parseFloat(document.getElementById('editActualHours').value);
     const remainingHoursInput = document.getElementById('editActualRemainingHours');
@@ -1265,6 +1338,7 @@ export function getLatestActualBeforeDate(beforeDate) {
  */
 export function updateEditActualTaskList(member, isEditMode = false, selectedVersion = null, selectedProcess = null) {
     const select = document.getElementById('editActualTaskSelect');
+    const dropdown = document.getElementById('editActualTaskDropdown');
 
     if (!selectedVersion) {
         const versionSelect = document.getElementById('editActualVersion');
@@ -1295,9 +1369,9 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
 
         let displayText;
         if (remaining > 0) {
-            displayText = `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`;
+            displayText = `${est.task} [${est.process}] (残: ${remaining.toFixed(2)}h)`;
         } else if (remaining < 0) {
-            displayText = `${est.task} [${est.process}] (超過: ${Math.abs(remaining).toFixed(1)}h)`;
+            displayText = `${est.task} [${est.process}] (超過: ${Math.abs(remaining).toFixed(2)}h)`;
         } else {
             displayText = `${est.task} [${est.process}] (完了)`;
         }
@@ -1310,11 +1384,36 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
             version: est.version,
             task: est.task,
             process: est.process,
+            member: est.member,
             remaining: remaining,
             display: displayText
         });
     });
 
+    // allEditActualTasks を更新（検索フィルタ用）
+    allEditActualTasks = [];
+    currentEditActualMember = member;
+
+    // 自分の担当を先に追加
+    if (tasksByMember[member]) {
+        tasksByMember[member].forEach(task => {
+            allEditActualTasks.push(task);
+        });
+    }
+
+    // 他の担当者を追加
+    const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
+    const otherMembers = Object.keys(tasksByMember).filter(m => m !== member);
+    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
+
+    sortedOtherMembers.forEach(otherMember => {
+        tasksByMember[otherMember].forEach(task => {
+            allEditActualTasks.push(task);
+        });
+    });
+
+    // セレクトボックスも更新（互換性のため維持）
     select.innerHTML = '<option value="">-- 対応を選択 --</option>';
 
     if (tasksByMember[member] && tasksByMember[member].length > 0) {
@@ -1330,12 +1429,6 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
         });
         select.appendChild(optgroup);
     }
-
-    const memberOrderEl = document.getElementById('memberOrder');
-    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
-
-    const otherMembers = Object.keys(tasksByMember).filter(m => m !== member);
-    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
 
     sortedOtherMembers.forEach(otherMember => {
         if (tasksByMember[otherMember].length > 0) {
@@ -1357,6 +1450,11 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
     newOption.value = '__NEW__';
     newOption.textContent = '新規入力...';
     select.appendChild(newOption);
+
+    // ドロップダウンも更新
+    if (dropdown) {
+        renderEditActualTaskDropdown();
+    }
 }
 
 /**
@@ -1491,41 +1589,294 @@ export function handleActualProcessChange() {
     const version = versionSelect ? versionSelect.value : null;
     const process = processSelect.value;
 
-    // プロセス変更時に現在の選択済みタスクを保持する試み
-    let currentTask = null;
-    const taskSelect = document.getElementById('editActualTaskSelect');
-    const taskInput = document.getElementById('editActualTaskSearch');
+    // 選択中のタスクを保持
+    const currentSelected = getSelectedEditActualTask();
 
-    if (taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__') {
-        currentTask = taskSelect.value;
-    } else if (taskInput.style.display !== 'none' && taskInput.value) {
-        // テキスト入力モードの場合は名前だけで保持（完全一致するかは不明だが試行）
-        // ただし updateEditActualTaskList は select を再構築するので、
-        // テキスト入力モードから戻ることは想定しにくいが、念のため。
-    }
-
-    // 現在選択されている対応名を保持したいが、プロセスが変わるとリスト内容が変わるため、
-    // 基本的にはリセットされるか、同じ名前があればそれが選ばれる挙動になる。
+    // リストを更新
     updateEditActualTaskList(member, true, version, process);
 
-    // 同じタスク名が新しいプロセスのリストにも存在すれば、それを選択し直す
-    if (currentTask) {
-        // オプションが存在するか確認
-        const options = Array.from(taskSelect.options);
-        const exists = options.some(opt => opt.value === currentTask);
-        if (exists) {
-            taskSelect.value = currentTask;
-            // 再選択したことによる残存時間の更新などは handleActualTaskSelect で行われるため、
-            // 必要に応じて呼び出すか、ここでも更新する。
-            // ループしないように注意。ここでは値セットだけにして、残時間は再度計算。
-
-            const existingRemaining = getRemainingEstimate(version, currentTask, process, member);
+    // 同じタスクが新しいリストにも存在すれば、それを再選択
+    if (currentSelected) {
+        const stillExists = allEditActualTasks.find(t => 
+            t.version === currentSelected.version && 
+            t.task === currentSelected.task && 
+            t.process === currentSelected.process
+        );
+        
+        if (stillExists) {
+            setSelectedEditActualTask(currentSelected);
+            const searchInput = document.getElementById('editActualTaskSearch');
+            const clearBtn = document.getElementById('editActualTaskClearBtn');
+            if (searchInput) {
+                searchInput.value = stillExists.display;
+                if (clearBtn) clearBtn.style.display = 'block';
+            }
+            
+            // 残存時間を更新
+            const existingRemaining = getRemainingEstimate(currentSelected.version, currentSelected.task, currentSelected.process, member);
             const remainingInput = document.getElementById('editActualRemainingHours');
             if (remainingInput) {
                 remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
             }
+        } else {
+            // 選択がリストから消えた場合はクリア
+            clearEditActualTaskSelection();
         }
     }
+}
+
+// ============================================
+// 実績入力モーダル - 検索ドロップダウン機能
+// ============================================
+
+/**
+ * ドロップダウンを描画（グループ付き）
+ */
+export function renderEditActualTaskDropdown(filterText = '') {
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    if (!dropdown) return;
+
+    const searchLower = filterText.toLowerCase();
+    const member = currentEditActualMember;
+
+    // フィルタリング
+    let filtered = allEditActualTasks;
+    if (searchLower) {
+        filtered = filtered.filter(task => 
+            task.display.toLowerCase().includes(searchLower) ||
+            task.task.toLowerCase().includes(searchLower)
+        );
+    }
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="custom-dropdown-empty">該当する対応が見つかりません</div>';
+        return;
+    }
+
+    // グループ化して表示
+    let html = '';
+    let currentGroup = null;
+
+    // 自分の担当を先に
+    const myTasks = filtered.filter(t => t.member === member);
+    const otherTasks = filtered.filter(t => t.member !== member);
+
+    // 担当者順でソート
+    const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
+    const otherMembers = [...new Set(otherTasks.map(t => t.member))];
+    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
+
+    // 自分の担当
+    if (myTasks.length > 0) {
+        html += `<div class="custom-dropdown-group">担当：${member}</div>`;
+        myTasks.forEach(task => {
+            const value = JSON.stringify({
+                version: task.version,
+                task: task.task,
+                process: task.process,
+                member: task.member
+            }).replace(/"/g, '&quot;');
+            html += `<div class="custom-dropdown-item" data-value="${value}">${task.display}</div>`;
+        });
+    }
+
+    // 他の担当者
+    sortedOtherMembers.forEach(otherMember => {
+        const memberTasks = otherTasks.filter(t => t.member === otherMember);
+        if (memberTasks.length > 0) {
+            html += `<div class="custom-dropdown-group">担当：${otherMember}</div>`;
+            memberTasks.forEach(task => {
+                const value = JSON.stringify({
+                    version: task.version,
+                    task: task.task,
+                    process: task.process,
+                    member: task.member
+                }).replace(/"/g, '&quot;');
+                html += `<div class="custom-dropdown-item" data-value="${value}">${task.display}</div>`;
+            });
+        }
+    });
+
+    // 新規入力オプション
+    html += `<div class="custom-dropdown-item custom-dropdown-new" data-value="__NEW__">＋ 新規入力...</div>`;
+
+    dropdown.innerHTML = html;
+}
+
+/**
+ * 検索ドロップダウンを表示
+ */
+export function showEditActualTaskDropdown() {
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    const searchInput = document.getElementById('editActualTaskSearch');
+    if (!dropdown || !searchInput) return;
+
+    renderEditActualTaskDropdown(searchInput.value);
+    dropdown.style.display = 'block';
+}
+
+/**
+ * 検索ドロップダウンを非表示
+ */
+export function hideEditActualTaskDropdown() {
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+}
+
+/**
+ * 検索フィルタリング
+ */
+export function filterEditActualTaskList() {
+    const searchInput = document.getElementById('editActualTaskSearch');
+    if (!searchInput) return;
+    renderEditActualTaskDropdown(searchInput.value);
+}
+
+/**
+ * タスクを選択
+ */
+export function selectEditActualTask(valueStr) {
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+    const remainingInput = document.getElementById('editActualRemainingHours');
+    const memberSelect = document.getElementById('editActualMember');
+
+    if (valueStr === '__NEW__') {
+        // 新規入力モード
+        selectedEditActualTask = null;
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.placeholder = '対応名を入力...';
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+        hideEditActualTaskDropdown();
+        return;
+    }
+
+    const value = JSON.parse(valueStr);
+    selectedEditActualTask = value;
+
+    // 検索欄に選択内容を表示
+    const displayTask = allEditActualTasks.find(t => 
+        t.version === value.version && 
+        t.task === value.task && 
+        t.process === value.process &&
+        t.member === value.member
+    );
+
+    if (searchInput) {
+        searchInput.value = displayTask ? displayTask.display : value.task;
+    }
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    // 版数・工程を追従
+    if (versionSelect && value.version) {
+        versionSelect.value = value.version;
+    }
+    if (processSelect && value.process) {
+        processSelect.value = value.process;
+    }
+
+    // 残存時間を更新
+    if (remainingInput && value.version && value.task && value.process) {
+        const member = memberSelect ? memberSelect.value : value.member;
+        const existingRemaining = getRemainingEstimate(value.version, value.task, value.process, member);
+        remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
+    }
+
+    hideEditActualTaskDropdown();
+}
+
+/**
+ * 選択をクリア
+ */
+export function clearEditActualTaskSelection() {
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+
+    selectedEditActualTask = null;
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.placeholder = 'クリックして対応を選択...';
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+}
+
+/**
+ * 選択されたタスク情報を取得
+ */
+export function getSelectedEditActualTask() {
+    return selectedEditActualTask;
+}
+
+/**
+ * タスク情報をセット（編集時用）
+ */
+export function setSelectedEditActualTask(taskInfo) {
+    selectedEditActualTask = taskInfo;
+}
+
+/**
+ * 検索ドロップダウンのイベントハンドラを初期化
+ */
+export function initEditActualTaskDropdownHandler() {
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+
+    if (!searchInput || !dropdown) return;
+
+    // フォーカス時にドロップダウン表示
+    searchInput.addEventListener('focus', () => {
+        showEditActualTaskDropdown();
+    });
+
+    // 入力時にフィルタリング
+    searchInput.addEventListener('input', () => {
+        filterEditActualTaskList();
+        // 入力中は選択解除
+        if (selectedEditActualTask) {
+            selectedEditActualTask = null;
+        }
+        // クリアボタン表示制御
+        if (clearBtn) {
+            clearBtn.style.display = searchInput.value ? 'block' : 'none';
+        }
+    });
+
+    // クリアボタン
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearEditActualTaskSelection();
+            searchInput.focus();
+            showEditActualTaskDropdown();
+        });
+    }
+
+    // ドロップダウン項目クリック
+    dropdown.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('.custom-dropdown-item');
+        if (item) {
+            e.preventDefault();
+            const value = item.dataset.value;
+            selectEditActualTask(value);
+        }
+    });
+
+    // 外部クリックで閉じる
+    document.addEventListener('click', (e) => {
+        const container = searchInput.closest('.form-group');
+        if (container && !container.contains(e.target)) {
+            hideEditActualTaskDropdown();
+        }
+    });
 }
 
 console.log('✅ モジュール actual.js loaded');
