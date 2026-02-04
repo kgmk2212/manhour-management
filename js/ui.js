@@ -2470,9 +2470,28 @@ export function syncMonthToEstimate(value) {
 
     // 版数フィルタの選択肢を連動して更新（レポート用）
     updateReportVersionOptions(null, value);
-    
+
     // 同期後にlocalStorageも更新
     saveEstimateFilterToStorage();
+}
+
+export function syncMonthToActual(value) {
+    const actualMonthFilter = document.getElementById('actualMonthFilter');
+    const actualMonthFilter2 = document.getElementById('actualMonthFilter2');
+
+    // オプションが存在する場合のみ同期
+    if (actualMonthFilter) {
+        const optionExists = Array.from(actualMonthFilter.options).some(opt => opt.value === value);
+        if (optionExists) {
+            actualMonthFilter.value = value;
+            if (actualMonthFilter2) actualMonthFilter2.value = value;
+
+            const actualMonthButtons2 = document.getElementById('actualMonthButtons2');
+            if (actualMonthButtons2) {
+                updateSegmentButtonSelection('actualMonthButtons2', value);
+            }
+        }
+    }
 }
 
 export function syncVersionToReport(value) {
@@ -2686,6 +2705,11 @@ export function handleActualMonthChange(value, containerId) {
     if (select) select.value = value;
     if (select2) select2.value = value;
     updateSegmentButtonSelection(containerId, value);
+
+    // 他のタブと月フィルタを同期
+    syncMonthToReport(value);
+    syncMonthToEstimate(value);
+
     if (typeof window.renderActualList === 'function') {
         window.renderActualList();
     }
@@ -2727,6 +2751,7 @@ export function handleEstimateMonthChange(value, containerId) {
 
     updateSegmentButtonSelection(containerId, value);
     syncMonthToReport(value);
+    syncMonthToActual(value);
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
@@ -2823,6 +2848,7 @@ export function handleReportMonthChange(value, containerId) {
 
     updateSegmentButtonSelection(containerId, value);
     syncMonthToEstimate(value);
+    syncMonthToActual(value);
 
     // 版数フィルタの選択肢を連動して更新
     updateReportVersionOptions(null, value);
