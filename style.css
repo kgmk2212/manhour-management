@@ -1470,6 +1470,21 @@
             background: #219a52 !important;
         }
 
+        /* 見積登録フォーム コンパクト版 */
+        .estimate-form-compact .form-group {
+            margin-bottom: 10px;
+        }
+
+        .estimate-form-compact .form-group label {
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+
+        .estimate-form-compact .form-group select,
+        .estimate-form-compact .form-group input[type="text"] {
+            padding: 6px 10px;
+        }
+
         /* セグメントボタンコンテナのスクロールバースタイル */
         #estimateMonthButtons2,
         #actualMemberButtons2,
