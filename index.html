@@ -2078,7 +2078,7 @@
                 <h3>📝 見積登録</h3>
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
             </div>
-            <div class="modal-body estimate-form-compact">
+            <div class="modal-body">
                 <!-- セグメントコントロール -->
                 <div class="segment-control" id="addEstModeSelector">
                     <button type="button" class="segment-btn active" data-mode="normal" onclick="switchEstimateMode('normal')">通常の見積</button>
@@ -2086,7 +2086,7 @@
                 </div>
 
                 <!-- ========== 通常モードのフォーム ========== -->
-                <div id="addEstNormalForm">
+                <div id="addEstNormalForm" class="estimate-form-compact">
                     <div class="form-group">
                         <label>版数</label>
                         <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
@@ -2107,16 +2107,16 @@
                     </div>
                     <div class="form-group">
                         <label>作業月</label>
-                        <div style="display: flex; gap: 12px; margin-bottom: 6px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 4px;">
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="single" checked
                                     onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
-                                <span>単一月</span>
+                                <span style="font-size: 13px;">単一月</span>
                             </label>
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()"
                                     style="width: auto; margin-right: 4px;">
-                                <span>複数月</span>
+                                <span style="font-size: 13px;">複数月</span>
                             </label>
                         </div>
                         <div id="addEstMonthInputs">
@@ -2132,50 +2132,64 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 各工程の見積（横並びレイアウト） -->
-                    <div class="form-group">
-                        <label>各工程の見積</label>
-                        <div class="process-grid-horizontal">
-                            <table class="process-table-horizontal" id="addEstimateTable">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th><span class="badge badge-ui">UI</span></th>
-                                        <th><span class="badge badge-pg">PG</span></th>
-                                        <th><span class="badge badge-pt">PT</span></th>
-                                        <th><span class="badge badge-it">IT</span></th>
-                                        <th><span class="badge badge-st">ST</span></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="row-label">担当</td>
-                                        <td><select id="addEstUI_member"></select></td>
-                                        <td><select id="addEstPG_member" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                        <td><select id="addEstPT_member" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                        <td><select id="addEstIT_member" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                        <td><select id="addEstST_member" onchange="autoFillMember('addEstST_member')"></select></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="row-label">時間</td>
-                                        <td><input type="number" id="addEstUI" placeholder="h" step="0.5" oninput="updateAddEstimateTotals()"></td>
-                                        <td><input type="number" id="addEstPG" placeholder="h" step="0.5" oninput="updateAddEstimateTotals()"></td>
-                                        <td><input type="number" id="addEstPT" placeholder="h" step="0.5" oninput="updateAddEstimateTotals()"></td>
-                                        <td><input type="number" id="addEstIT" placeholder="h" step="0.5" oninput="updateAddEstimateTotals()"></td>
-                                        <td><input type="number" id="addEstST" placeholder="h" step="0.5" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <h4 style="margin: 10px 0 6px 0; font-size: 14px;">各工程の見積</h4>
+                    <div class="estimate-table-wrapper">
+                        <table class="estimate-table" id="addEstimateTable" style="width: 100%; margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px; padding: 5px; text-align: center;">工程</th>
+                                    <th style="width: 120px; padding: 5px;">担当</th>
+                                    <th style="width: 80px; padding: 5px;">時間</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; padding: 4px;"><span class="badge badge-ui">UI</span></td>
+                                    <td style="padding: 4px;"><select id="addEstUI_member" style="margin: 0;"></select></td>
+                                    <td style="padding: 4px;"><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;"
+                                            oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding: 4px;"><span class="badge badge-pg">PG</span></td>
+                                    <td style="padding: 4px;"><select id="addEstPG_member" style="margin: 0;"
+                                            onchange="autoFillMember('addEstPG_member')"></select></td>
+                                    <td style="padding: 4px;"><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;"
+                                            oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding: 4px;"><span class="badge badge-pt">PT</span></td>
+                                    <td style="padding: 4px;"><select id="addEstPT_member" style="margin: 0;"
+                                            onchange="autoFillMember('addEstPT_member')"></select></td>
+                                    <td style="padding: 4px;"><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;"
+                                            oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding: 4px;"><span class="badge badge-it">IT</span></td>
+                                    <td style="padding: 4px;"><select id="addEstIT_member" style="margin: 0;"
+                                            onchange="autoFillMember('addEstIT_member')"></select></td>
+                                    <td style="padding: 4px;"><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;"
+                                            oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding: 4px;"><span class="badge badge-st">ST</span></td>
+                                    <td style="padding: 4px;"><select id="addEstST_member" style="margin: 0;"
+                                            onchange="autoFillMember('addEstST_member')"></select></td>
+                                    <td style="padding: 4px;"><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;"
+                                            oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- 合計表示エリア -->
-                    <div id="addEstimateTotals" class="estimate-totals-inline">
-                        <span class="totals-label">合計:</span>
-                        <span class="totals-value"><strong id="addEstTotalHours">0.0</strong> h</span>
-                        <span class="totals-sub">(<span id="addEstTotalDays">0.0</span> 人日)</span>
-                        <span class="totals-sub">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
+                    <div id="addEstimateTotals"
+                        style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; margin-top: 10px; border-left: 3px solid #1976d2; font-size: 13px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-weight: 600; color: #1565c0;">合計:</span>
+                            <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
+                            <span style="color: #1976d2;">(<span id="addEstTotalDays">0.0</span> 人日)</span>
+                            <span style="color: #1976d2;">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
+                        </div>
                     </div>
                 </div>
 
