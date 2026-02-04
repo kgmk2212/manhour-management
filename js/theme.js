@@ -200,6 +200,8 @@ export function applyTheme() {
     if (tabs) {
         tabs.classList.remove('is-classic', 'is-dock', 'is-capsule');
         tabs.classList.add(`is-${window.mobileTabDesign || 'classic'}`);
+        // スタイル適用完了を示すクラスを追加（ちらつき防止）
+        tabs.classList.add('style-ready');
     }
 
     if (typeof window.saveData === 'function') {
