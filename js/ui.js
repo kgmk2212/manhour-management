@@ -323,6 +323,9 @@ export function initTabIndicator() {
         tabResizeObserver = null;
     }
 
+    // 位置キャッシュをリセット（新しい初期化で確実に更新されるように）
+    lastIndicatorPosition = { width: 0, left: 0 };
+
     // インジケーター要素を作成
     tabIndicator = document.createElement('div');
     tabIndicator.className = 'tab-indicator';
@@ -363,7 +366,15 @@ function updateTabIndicatorImmediate(animate = false) {
     const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
     if (!tabButtonsArea) return;
 
-    const targetTab = tabButtonsArea.querySelector('.tab.active');
+    // 早期タブ適用中は、data-early-tab属性のタブを優先
+    const earlyTab = document.documentElement.dataset.earlyTab;
+    let targetTab;
+    if (earlyTab) {
+        targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
+    }
+    if (!targetTab) {
+        targetTab = tabButtonsArea.querySelector('.tab.active');
+    }
     if (!targetTab) return;
 
     const width = targetTab.offsetWidth;
@@ -420,7 +431,14 @@ export function updateTabIndicator(targetTabName, animate = true) {
                 if (targetTabName) {
                     targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
                 } else {
-                    targetTab = tabButtonsArea.querySelector('.tab.active');
+                    // 早期タブ適用中は、data-early-tab属性のタブを優先
+                    const earlyTab = document.documentElement.dataset.earlyTab;
+                    if (earlyTab) {
+                        targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
+                    }
+                    if (!targetTab) {
+                        targetTab = tabButtonsArea.querySelector('.tab.active');
+                    }
                 }
 
                 if (!targetTab) return;
@@ -654,6 +672,7 @@ export function initTabSwipe() {
     let currentTab = null;
     let nextTabEl = null;
     let prevTabEl = null;
+    let swipeStartScrollY = 0;  // スワイプ開始時のスクロール位置
 
     // インジケーター用のタブ位置キャッシュ
     let indicatorCache = null;
@@ -711,21 +730,35 @@ export function initTabSwipe() {
 
         if (!currentTab) return false;
 
+        // 現在のスクロール位置を保存
+        swipeStartScrollY = window.scrollY;
+
         // .contentのpaddingを取得
         const contentStyle = getComputedStyle(content);
         const paddingLeft = contentStyle.paddingLeft;
         const paddingRight = contentStyle.paddingRight;
         const paddingTop = contentStyle.paddingTop;
+        const paddingTopPx = parseFloat(paddingTop);
 
-        // contentとbodyにswipingクラス/overflowを設定し、スクロールバーを非表示にする
-        // （スクロールバーの有無による幅の変化を防ぐ）
+        // bodyをfixedにしてスクロールを完全にロック（縦スクロール位置を固定）
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${swipeStartScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.overflow = 'hidden';
+
+        // contentにswipingクラスを設定
         content.classList.add('swiping');
         content.style.overflow = 'hidden';
-        document.body.style.overflow = 'hidden';
 
         // タブの幅をcontentの内側幅から計算（スクロールバー有無に関係なく一定）
         // contentのclientWidthからpaddingを引いた値がタブの幅になる
         const tabWidth = (content.clientWidth - parseFloat(paddingLeft) - parseFloat(paddingRight)) + 'px';
+
+        // 各タブの保存されたスクロール位置を取得
+        const currentScrollY = window.tabScrollPositions[currentTab.id] || 0;
+        const nextScrollY = nextTabEl ? (window.tabScrollPositions[nextTabEl.id] || 0) : 0;
+        const prevScrollY = prevTabEl ? (window.tabScrollPositions[prevTabEl.id] || 0) : 0;
 
         // 現在のタブをabsoluteにして、プレビュータブと同じ座標系で動かす
         currentTab.classList.add('swiping');
@@ -736,20 +769,25 @@ export function initTabSwipe() {
         currentTab.style.width = tabWidth;
 
         // 次/前のタブを表示準備（paddingとギャップを考慮した位置に配置）
+        // topを調整して、各タブの保存されたスクロール位置での表示にする
         if (nextTabEl) {
+            // 調整量 = 現在のスクロール位置 - 次タブの保存されたスクロール位置
+            const scrollAdjust = swipeStartScrollY - nextScrollY;
             nextTabEl.classList.add('swipe-preview');
             nextTabEl.style.transition = 'none';
             nextTabEl.style.willChange = 'transform';
-            nextTabEl.style.top = paddingTop;
+            nextTabEl.style.top = `${paddingTopPx - scrollAdjust}px`;
             nextTabEl.style.left = paddingLeft;
             nextTabEl.style.width = tabWidth;
             nextTabEl.style.transform = `translateX(calc(100% + ${PAGE_GAP}px))`;
         }
         if (prevTabEl) {
+            // 調整量 = 現在のスクロール位置 - 前タブの保存されたスクロール位置
+            const scrollAdjust = swipeStartScrollY - prevScrollY;
             prevTabEl.classList.add('swipe-preview');
             prevTabEl.style.transition = 'none';
             prevTabEl.style.willChange = 'transform';
-            prevTabEl.style.top = paddingTop;
+            prevTabEl.style.top = `${paddingTopPx - scrollAdjust}px`;
             prevTabEl.style.left = paddingLeft;
             prevTabEl.style.width = tabWidth;
             prevTabEl.style.transform = `translateX(calc(-100% - ${PAGE_GAP}px))`;
@@ -937,6 +975,11 @@ export function initTabSwipe() {
                     unusedTab.classList.remove('swipe-preview');
                 }
                 currentTab.classList.remove('swiping');
+                // bodyのfixed解除（showTabでのscrollToが効くように）
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
                 showTab(targetId, { skipAnimation: true });
                 cleanupSwipeWithTransition(targetTab);
             }, 250);
@@ -961,6 +1004,11 @@ export function initTabSwipe() {
                     unusedTab.classList.remove('swipe-preview');
                 }
                 currentTab.classList.remove('swiping');
+                // bodyのfixed解除（showTabでのscrollToが効くように）
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
                 showTab(targetId, { skipAnimation: true });
                 cleanupSwipeWithTransition(targetTab);
             }, 250);
@@ -996,6 +1044,7 @@ export function initTabSwipe() {
         content.classList.remove('swiping');
         content.style.minHeight = '';
         content.style.overflow = '';
+        // bodyのfixedスタイルは既にshowTab前に解除済み
         document.body.style.overflow = '';
 
         // 参照を保持（後でクリアするため）
@@ -1072,7 +1121,13 @@ export function initTabSwipe() {
         content.classList.remove('swiping');
         content.style.minHeight = '';
         content.style.overflow = '';
+        // bodyのfixedを解除し、元のスクロール位置に戻す
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
         document.body.style.overflow = '';
+        window.scrollTo(0, swipeStartScrollY);
 
         if (currentTab) {
             currentTab.classList.remove('swiping');
