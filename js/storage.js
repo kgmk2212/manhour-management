@@ -508,6 +508,8 @@ export function handleFileImport(event) {
 
                     // UI更新
                     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+                    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
+                    if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
                     if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
                     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
                     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
