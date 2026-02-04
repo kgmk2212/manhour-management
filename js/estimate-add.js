@@ -70,7 +70,6 @@ export function switchEstimateMode(mode) {
     const normalForm = document.getElementById('addEstNormalForm');
     const otherForm = document.getElementById('addEstOtherForm');
     const segmentBtns = document.querySelectorAll('#addEstModeSelector .segment-btn');
-    const submitBtn = document.getElementById('addEstSubmitBtn');
 
     // セグメントボタンのアクティブ状態を更新
     segmentBtns.forEach(btn => {
@@ -81,23 +80,13 @@ export function switchEstimateMode(mode) {
         }
     });
 
-    // フォームの表示切替とボタンスタイル変更
+    // フォームの表示切替
     if (mode === 'other') {
         normalForm.style.display = 'none';
         otherForm.style.display = 'block';
-        // ボタンを緑に
-        if (submitBtn) {
-            submitBtn.classList.remove('btn-primary');
-            submitBtn.classList.add('btn-success');
-        }
     } else {
         normalForm.style.display = 'block';
         otherForm.style.display = 'none';
-        // ボタンを青に
-        if (submitBtn) {
-            submitBtn.classList.remove('btn-success');
-            submitBtn.classList.add('btn-primary');
-        }
     }
 }
 
