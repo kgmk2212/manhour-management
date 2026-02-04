@@ -125,6 +125,21 @@
         [data-early-tab="settings"] #settings.tab-content {
             display: block !important;
         }
+
+        /* 早期タブ適用：タブボタンのactive状態も切り替え */
+        [data-early-tab] .tab[data-tab="quick"].active {
+            background: transparent !important;
+            color: inherit !important;
+            box-shadow: none !important;
+        }
+
+        [data-early-tab="estimate"] .tab[data-tab="estimate"],
+        [data-early-tab="actual"] .tab[data-tab="actual"],
+        [data-early-tab="report"] .tab[data-tab="report"],
+        [data-early-tab="settings"] .tab[data-tab="settings"] {
+            background: var(--early-theme-gradient) !important;
+            color: white !important;
+        }
     </style>
     <div class="container">
         <header>

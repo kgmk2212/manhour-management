@@ -301,6 +301,8 @@ export function prevTab() {
 // ============================================
 
 let tabIndicator = null;
+let tabResizeObserver = null;
+let lastIndicatorPosition = { width: 0, left: 0 };
 
 /**
  * タブインジケーターを初期化
@@ -315,13 +317,26 @@ export function initTabIndicator() {
     const existing = tabButtonsArea.querySelector('.tab-indicator');
     if (existing) existing.remove();
 
+    // 既存のResizeObserverを解除
+    if (tabResizeObserver) {
+        tabResizeObserver.disconnect();
+        tabResizeObserver = null;
+    }
+
     // インジケーター要素を作成
     tabIndicator = document.createElement('div');
     tabIndicator.className = 'tab-indicator';
     tabButtonsArea.appendChild(tabIndicator);
 
-    // 初期位置はshowTab内のupdateTabIndicatorで設定される
-    // ここでは要素の作成のみ行う
+    // ResizeObserverでタブボタンのサイズ変更を監視
+    // フォントロードやレイアウト変更でタブボタンのサイズが変わったら自動で再計算
+    tabResizeObserver = new ResizeObserver(() => {
+        updateTabIndicatorImmediate();
+    });
+
+    // 全てのタブボタンを監視
+    const tabButtons = tabButtonsArea.querySelectorAll('.tab');
+    tabButtons.forEach(tab => tabResizeObserver.observe(tab));
 
     // リサイズ時に再計算
     window.addEventListener('resize', () => {
@@ -329,6 +344,60 @@ export function initTabIndicator() {
             updateTabIndicator();
         }
     });
+
+    // フォントロード完了を待ってから初期位置を設定
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+            updateTabIndicatorImmediate();
+        });
+    }
+}
+
+/**
+ * タブインジケーターの位置を即座に更新（ResizeObserverから呼ばれる）
+ * @param {boolean} [animate=false] - アニメーションするか
+ */
+function updateTabIndicatorImmediate(animate = false) {
+    if (!tabIndicator || window.innerWidth > 768) return;
+
+    const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+    if (!tabButtonsArea) return;
+
+    const targetTab = tabButtonsArea.querySelector('.tab.active');
+    if (!targetTab) return;
+
+    const width = targetTab.offsetWidth;
+    const height = targetTab.offsetHeight;
+    const left = targetTab.offsetLeft;
+    const top = targetTab.offsetTop;
+
+    // サイズや位置が変わっていない場合はスキップ（無限ループ防止）
+    if (lastIndicatorPosition.width === width && lastIndicatorPosition.left === left) {
+        return;
+    }
+    lastIndicatorPosition = { width, left };
+
+    // アニメーション制御
+    if (!animate) {
+        tabIndicator.classList.add('swiping');
+    } else {
+        tabIndicator.classList.remove('swiping');
+    }
+
+    // スタイルを適用
+    tabIndicator.style.width = `${width}px`;
+    tabIndicator.style.height = `${height}px`;
+    tabIndicator.style.top = `${top}px`;
+    tabIndicator.style.transform = `translateX(${left}px)`;
+
+    // 次フレームでswipingクラスを外す（トランジションを有効に戻す）
+    if (!animate) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                tabIndicator.classList.remove('swiping');
+            });
+        });
+    }
 }
 
 /**
@@ -339,53 +408,49 @@ export function initTabIndicator() {
 export function updateTabIndicator(targetTabName, animate = true) {
     if (!tabIndicator || window.innerWidth > 768) return;
 
-    // インジケーターに幅が設定されていない場合は初期化時
-    // タブボタンに transition: all 0.3s があるため、初期化時のみ遅延を入れる
-    const isInitial = !tabIndicator.style.width;
-    const delay = isInitial ? 350 : 0;  // 初期化時は0.3sトランジション完了を待つ
-
     const doUpdate = () => {
+        // 二重のrequestAnimationFrameでレイアウト確定を保証
         requestAnimationFrame(() => {
-            const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
-            if (!tabButtonsArea) return;
+            requestAnimationFrame(() => {
+                const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+                if (!tabButtonsArea) return;
 
-            // 対象のタブボタンを取得
-            let targetTab;
-            if (targetTabName) {
-                targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
-            } else {
-                targetTab = tabButtonsArea.querySelector('.tab.active');
-            }
+                // 対象のタブボタンを取得
+                let targetTab;
+                if (targetTabName) {
+                    targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
+                } else {
+                    targetTab = tabButtonsArea.querySelector('.tab.active');
+                }
 
-            if (!targetTab) return;
+                if (!targetTab) return;
 
-            // タブボタンの位置とサイズを取得
-            const width = targetTab.offsetWidth;
-            const height = targetTab.offsetHeight;
-            const left = targetTab.offsetLeft;
-            const top = targetTab.offsetTop;
+                // タブボタンの位置とサイズを取得
+                const width = targetTab.offsetWidth;
+                const height = targetTab.offsetHeight;
+                const left = targetTab.offsetLeft;
+                const top = targetTab.offsetTop;
 
-            // アニメーション制御
-            if (!animate) {
-                tabIndicator.classList.add('swiping');
-            } else {
-                tabIndicator.classList.remove('swiping');
-            }
+                // 位置を記録
+                lastIndicatorPosition = { width, left };
 
-            // スタイルを適用（位置とサイズ両方）
-            tabIndicator.style.width = `${width}px`;
-            tabIndicator.style.height = `${height}px`;
-            tabIndicator.style.top = `${top}px`;
-            tabIndicator.style.transform = `translateX(${left}px)`;
+                // アニメーション制御
+                if (!animate) {
+                    tabIndicator.classList.add('swiping');
+                } else {
+                    tabIndicator.classList.remove('swiping');
+                }
+
+                // スタイルを適用（位置とサイズ両方）
+                tabIndicator.style.width = `${width}px`;
+                tabIndicator.style.height = `${height}px`;
+                tabIndicator.style.top = `${top}px`;
+                tabIndicator.style.transform = `translateX(${left}px)`;
+            });
         });
     };
 
-    // 遅延が必要な場合はsetTimeoutで待機
-    if (delay > 0) {
-        setTimeout(doUpdate, delay);
-    } else {
-        doUpdate();
-    }
+    doUpdate();
 }
 
 /**
