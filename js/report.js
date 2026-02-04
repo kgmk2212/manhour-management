@@ -3100,10 +3100,17 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
 
 /**
  * バー表示を更新
- * グレー背景=100%、超過分はグレーからはみ出して赤で表示
+ * 最大130%表示、100%ラインで目盛り表示
  */
 function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode) {
     const el = (id) => document.getElementById(id);
+    const MAX_PERCENT = 130; // バー全体が表す最大パーセント
+
+    // パーセントをバー幅に変換（130% = 100%幅）
+    const percentToWidth = (percent) => {
+        const clamped = Math.min(Math.max(percent, 0), MAX_PERCENT);
+        return (clamped / MAX_PERCENT) * 100;
+    };
 
     const getBarOpacity = (percent) => {
         const minOpacity = 0.5;
@@ -3115,77 +3122,44 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
     // 見積バー
     const estimateBarEl = el('capacityEstimateBar');
     const estimateTextEl = el('capacityEstimateText');
-    const estimateOverflowEl = el('capacityEstimateStripe');
 
     if (estimateBarEl && estimateTextEl) {
         estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
+        const barWidth = percentToWidth(estimatePercent);
         const opacity = getBarOpacity(Math.min(estimatePercent, 100));
 
+        estimateBarEl.style.width = barWidth + '%';
+        estimateBarEl.style.borderRadius = '12px';
+
         if (estimatePercent > 100) {
-            // 超過時: 100%まで赤バー + はみ出し部分
-            estimateBarEl.style.width = '100%';
-            estimateBarEl.style.borderRadius = '12px 0 0 12px';
+            // 超過時: 赤系バー
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
             estimateTextEl.style.color = '#dc2626';
-
-            // はみ出し部分を表示
-            if (estimateOverflowEl) {
-                const overPercent = Math.min(estimatePercent - 100, 50); // 最大50%超過まで表示
-                estimateOverflowEl.style.display = 'block';
-                estimateOverflowEl.style.left = '100%';
-                estimateOverflowEl.style.width = overPercent + '%';
-
-                // アニメーション
-                if (displayMode === 'stripe_warning') {
-                    estimateOverflowEl.classList.add('capacity-pulse-animate');
-                } else {
-                    estimateOverflowEl.classList.remove('capacity-pulse-animate');
-                }
-            }
         } else {
-            // 通常: バーは実際の割合で表示
-            estimateBarEl.style.width = estimatePercent + '%';
-            estimateBarEl.style.borderRadius = '12px';
+            // 通常: 青系バー
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
             estimateTextEl.style.color = '#334155';
-
-            if (estimateOverflowEl) {
-                estimateOverflowEl.style.display = 'none';
-                estimateOverflowEl.classList.remove('capacity-pulse-animate');
-            }
         }
     }
 
     // 実績バー
     const actualBarEl = el('capacityActualBar');
     const actualTextEl = el('capacityActualText');
-    const actualOverflowEl = el('capacityActualStripe');
 
     if (actualBarEl && actualTextEl) {
         actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+        const barWidth = percentToWidth(actualPercent);
         const opacity = getBarOpacity(Math.min(actualPercent, 100));
 
+        actualBarEl.style.width = barWidth + '%';
+        actualBarEl.style.borderRadius = '12px';
+
         if (actualPercent > 100) {
-            // 超過時: 100%まで濃い緑バー + はみ出し部分は赤
-            actualBarEl.style.width = '100%';
-            actualBarEl.style.borderRadius = '12px 0 0 12px';
-            actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
-
-            if (actualOverflowEl) {
-                const overPercent = Math.min(actualPercent - 100, 50);
-                actualOverflowEl.style.display = 'block';
-                actualOverflowEl.style.left = '100%';
-                actualOverflowEl.style.width = overPercent + '%';
-            }
+            // 超過時: 赤系バー
+            actualBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
         } else {
-            // 通常
-            actualBarEl.style.width = actualPercent + '%';
-            actualBarEl.style.borderRadius = '12px';
+            // 通常: 緑系バー
             actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
-
-            if (actualOverflowEl) {
-                actualOverflowEl.style.display = 'none';
-            }
         }
     }
 }
