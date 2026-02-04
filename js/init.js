@@ -117,6 +117,7 @@ window.getDefaultMonth = UI.getDefaultMonth;
 window.setDefaultActualMonth = UI.setDefaultActualMonth;
 window.setDefaultReportMonth = UI.setDefaultReportMonth;
 window.setDefaultEstimateMonth = UI.setDefaultEstimateMonth;
+window.setDefaultEstimateVersion = UI.setDefaultEstimateVersion;
 window.syncMonthToReport = UI.syncMonthToReport;
 window.syncMonthToEstimate = UI.syncMonthToEstimate;
 window.syncVersionToReport = UI.syncVersionToReport;
@@ -182,6 +183,10 @@ window.renderEstimateDetailList = Estimate.renderEstimateDetailList;
 window.deleteEstimate = Estimate.deleteEstimate;
 window.deleteTask = Estimate.deleteTask;
 window.updateWorkMonthOptions = Estimate.updateWorkMonthOptions;
+window.showEstimateDetail = Estimate.showEstimateDetail;
+window.closeEstimateDetailModal = Estimate.closeEstimateDetailModal;
+window.editEstimateFromModal = Estimate.editEstimateFromModal;
+window.deleteEstimateFromModal = Estimate.deleteEstimateFromModal;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
@@ -193,7 +198,7 @@ window.updateEditManualTotal = EstimateEdit.updateEditManualTotal;
 window.editTask = EstimateEdit.editTask;
 window.closeEditTaskModal = EstimateEdit.closeEditTaskModal;
 window.saveTaskEdit = EstimateEdit.saveTaskEdit;
-window.toggleEstimateEditMode = EstimateEdit.toggleEstimateEditMode;
+
 
 // estimate-selection.js の関数
 window.toggleWorkMonthSelectionMode = EstimateSelection.toggleWorkMonthSelectionMode;
@@ -243,7 +248,7 @@ window.openOtherWorkModalWithContext = Actual.openOtherWorkModalWithContext;
 window.handleActualTaskSelect = Actual.handleActualTaskSelect;
 
 // state.js の追加エクスポート（テーマ・レイアウト関連）
-window.estimateEditMode = State.estimateEditMode;
+
 window.workMonthSelectionMode = State.workMonthSelectionMode;
 window.selectedEstimateIds = State.selectedEstimateIds;
 window.currentThemeColor = State.currentThemeColor;
