@@ -2943,7 +2943,14 @@ function calculateWorkingDaysForCapacity(filterType, selectedMonth, filteredEsti
  * @returns {string} 表示モード
  */
 function getCapacityDisplayMode() {
-    return localStorage.getItem('manhour_capacityDisplayMode') || 'stripe_bg';
+    const mode = localStorage.getItem('manhour_capacityDisplayMode');
+    // 旧モード名を新モード名に変換
+    const modeMap = {
+        'stripe': 'simple',
+        'stripe_warning': 'warning_badge',
+        'stripe_bg': 'warning_bg'
+    };
+    return modeMap[mode] || mode || 'warning_bg';
 }
 
 /**
@@ -3043,18 +3050,18 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode);
     }
 
-    // 背景色変化（stripe_bgモード）
+    // 背景色変化（warning_bgモード）
     if (analysisSection) {
-        if (displayMode === 'stripe_bg' && isOverCapacity) {
+        if (displayMode === 'warning_bg' && isOverCapacity) {
             analysisSection.classList.add('capacity-over-bg');
         } else {
             analysisSection.classList.remove('capacity-over-bg');
         }
     }
 
-    // 警告バッジ（stripe_warningモード）
+    // 警告バッジ（warning_badgeモード）
     if (warningBadge) {
-        if (displayMode === 'stripe_warning' && isOverCapacity) {
+        if (displayMode === 'warning_badge' && isOverCapacity) {
             warningBadge.style.display = 'inline-flex';
             warningBadge.classList.add('capacity-pulse-animate');
         } else {
