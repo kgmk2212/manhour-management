@@ -48,7 +48,7 @@ import {
     closeVacationModal,
     saveVacationFromModal
 } from './vacation.js';
-import { renderEstimateList } from './estimate.js';
+import { renderEstimateList, closeEstimateDetailModal } from './estimate.js';
 import {
     toggleEstimateEditMode,
     closeEditEstimateModal,
