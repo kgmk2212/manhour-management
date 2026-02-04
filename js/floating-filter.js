@@ -339,21 +339,6 @@ export function syncFloatingEstimateFilters() {
         setFloatingEstViewType(viewType, false);
     }
 
-    // 編集モードの同期
-    const mainEditMode = document.getElementById('estimateEditMode2');
-    const floatingEditMode = document.getElementById('floatingEstimateEditMode');
-    if (mainEditMode && floatingEditMode) {
-        // mainEditMode自体がinput要素（またはinputを含むlabelかもしれないがIDはinputについている）
-        // IDがinput要素についている場合はそのままcheckedを参照
-        if (mainEditMode.tagName === 'INPUT') {
-            floatingEditMode.checked = mainEditMode.checked;
-        } else {
-            // 万が一コンテナだった場合のフォールバック
-            const input = mainEditMode.querySelector('input');
-            if (input) floatingEditMode.checked = input.checked;
-        }
-    }
-
     // テーマとボタンのスタイルを更新
     if (typeof window.updateFloatingFilterTheme === 'function') {
         window.updateFloatingFilterTheme();
@@ -468,17 +453,6 @@ export function syncFloatingEstVersionFilter(value) {
             mainVersion.dispatchEvent(new Event('change'));
         }
         syncFloatingEstimateFilters();
-    }
-}
-
-// 編集モード切り替え
-window.toggleEstimateEditMode = function (checked) {
-    const mainEditMode = document.getElementById('estimateEditMode2');
-    if (mainEditMode) {
-        const checkbox = mainEditMode.querySelector('input');
-        if (checkbox && checkbox.checked !== checked) {
-            checkbox.click(); // クリックイベントを発火させて既存のロジックを実行
-        }
     }
 }
 
