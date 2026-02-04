@@ -825,11 +825,6 @@
                             <input type="checkbox" id="workMonthSelectionMode" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
-                        <label
-                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 12px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="estimateEditMode" style="width: auto; margin-right: 5px;">
-                            <span>編集モード</span>
-                        </label>
                     </div>
                 </div>
 
@@ -867,11 +862,6 @@
                             style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="workMonthSelectionMode2" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
-                        </label>
-                        <label
-                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; white-space: nowrap;">
-                            <input type="checkbox" id="estimateEditMode2" style="width: auto; margin-right: 5px;">
-                            <span>編集モード</span>
                         </label>
                     </div>
                 </div>
@@ -1709,6 +1699,17 @@
             </div>
             <div class="modal-body" id="modalBody">
             </div>
+        </div>
+    </div>
+
+    <!-- 見積詳細モーダル -->
+    <div id="estimateDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="estimateDetailModalTitle">見積詳細</h3>
+                <button class="modal-close" id="btnCloseEstimateDetailModal">&times;</button>
+            </div>
+            <div class="modal-body" id="estimateDetailModalBody"></div>
         </div>
     </div>
 

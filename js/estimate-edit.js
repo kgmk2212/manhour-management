@@ -3,8 +3,7 @@
 // ============================================
 
 import {
-    estimates, actuals, remainingEstimates,
-    estimateEditMode, setEstimateEditMode
+    estimates, actuals, remainingEstimates
 } from './state.js';
 
 import {
@@ -528,34 +527,4 @@ export function saveTaskEdit() {
 }
 
 // ============================================
-// 編集モードトグル
-// ============================================
-
-/**
- * 見積編集モードのトグル
- */
-export function toggleEstimateEditMode() {
-    const checkbox1 = document.getElementById('estimateEditMode');
-    const checkbox2 = document.getElementById('estimateEditMode2');
-
-    if (checkbox1 && checkbox2) {
-        if (event && event.target === checkbox1) {
-            checkbox2.checked = checkbox1.checked;
-            setEstimateEditMode(checkbox1.checked);
-        } else if (event && event.target === checkbox2) {
-            checkbox1.checked = checkbox2.checked;
-            setEstimateEditMode(checkbox2.checked);
-        } else {
-            setEstimateEditMode(checkbox1.checked);
-            checkbox2.checked = checkbox1.checked;
-        }
-    } else if (checkbox1) {
-        setEstimateEditMode(checkbox1.checked);
-    } else if (checkbox2) {
-        setEstimateEditMode(checkbox2.checked);
-    }
-
-    renderEstimateList();
-}
-
 console.log('✅ モジュール estimate-edit.js loaded');

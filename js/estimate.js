@@ -5,7 +5,6 @@
 import {
     estimates, actuals, filteredEstimates, remainingEstimates,
     setEstimates, setFilteredEstimates,
-    estimateEditMode, setEstimateEditMode,
     workMonthSelectionMode, setWorkMonthSelectionMode,
     selectedEstimateIds,
     currentThemeColor,
@@ -594,11 +593,6 @@ export function renderEstimateGrouped() {
 
     let html = '<div style="margin-bottom: 30px;">';
 
-    // 換算基準は共通エリアに表示するため、ここでは表示しない
-    // html += `<div style="background: #e3f2fd; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #1565c0;">
-    //    <strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）
-    // </div>`;
-
     Object.keys(versionGroups).sort().forEach(version => {
         const versionDisplay = version || 'その他工数';
         html += `<div style="margin-bottom: 30px;">`;
@@ -606,17 +600,9 @@ export function renderEstimateGrouped() {
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
-            if (estimateEditMode) {
-                html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 100px;">操作</th></tr>';
-            } else {
-                html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
-            }
+            html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         } else {
-            if (estimateEditMode) {
-                html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th><th style="min-width: 100px;">操作</th></tr>';
-            } else {
-                html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
-            }
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         }
 
         Object.values(versionGroups[version]).forEach(taskGroup => {
@@ -704,16 +690,7 @@ export function renderEstimateGrouped() {
                 }
 
                 if (index === 0) {
-                    if (estimateEditMode) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">
-                            <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                <div style="flex: 1; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</div>
-                                <span onclick="deleteTask('${version}', '${taskGroup.task.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer; font-size: 18px; color: #dc3545; flex-shrink: 0;" title="対応ごと削除">🗑️</span>
-                            </div>
-                        </td>`;
-                    } else {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
-                    }
+                    html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                 }
 
                 if (workMonthSelectionMode) {
@@ -727,7 +704,7 @@ export function renderEstimateGrouped() {
                         <div class="work-month-block">${processWorkMonthBlock}</div>
                     </td>`;
                 } else {
-                    html += `<td style="${grayStyle}"><span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
+                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
                 }
 
                 html += `<td style="${grayStyle}">${proc.member}</td>`;
@@ -740,12 +717,6 @@ export function renderEstimateGrouped() {
                     </td>`;
                 }
 
-                if (estimateEditMode) {
-                    html += `<td style="text-align: center;">
-                        <span onclick="editEstimate(${proc.id})" style="cursor: pointer; font-size: 18px; margin-right: 10px;" title="編集">✏️</span>
-                        <span onclick="deleteEstimate(${proc.id})" style="cursor: pointer; font-size: 18px; color: #dc3545;" title="削除">🗑️</span>
-                    </td>`;
-                }
                 html += '</tr>';
             });
         });
@@ -765,9 +736,6 @@ export function renderEstimateGrouped() {
         html += `<td style="text-align: right;">
             <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
         </td>`;
-        if (estimateEditMode) {
-            html += `<td></td>`;
-        }
         html += `</tr>`;
 
         html += '</table></div>';
@@ -858,16 +826,7 @@ export function renderEstimateMatrix() {
             }
 
             html += '<tr>';
-            if (estimateEditMode) {
-                html += `<td style="font-weight: 600;">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <div style="flex: 1; cursor: pointer; color: #007bff;" onclick="editTask('${version}', '${group.task.replace(/'/g, "\\'")}')" title="クリックして対応名を編集">${taskDisplayHtml}</div>
-                        <span onclick="deleteTask('${version}', '${group.task.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer; font-size: 18px; color: #dc3545; flex-shrink: 0;" title="対応ごと削除">🗑️</span>
-                    </div>
-                </td>`;
-            } else {
-                html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
-            }
+            html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
 
             let total = 0;
             processOrder.forEach(proc => {
@@ -878,22 +837,14 @@ export function renderEstimateMatrix() {
                     const monthColor = showMonthColors ? getMonthColor(p.workMonths) : { bg: '', tooltip: '' };
                     const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
-                    if (estimateEditMode) {
-                        html += `<td style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
-                            onclick="editEstimate(${p.id})"
-                            ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
-                            onmouseover="this.style.background='#e3f2fd'"
-                            onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
-                            <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                            <div style="font-size: 12px; color: #666;">(${p.member})</div>
-                            <div style="font-size: 10px; color: #1976d2; margin-top: 2px;">✏️ 編集</div>
-                        </td>`;
-                    } else {
-                        html += `<td style="text-align: center; ${bgStyle}" ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}>
-                            <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                            <div style="font-size: 12px; color: #666;">(${p.member})</div>
-                        </td>`;
-                    }
+                    html += `<td class="clickable-cell" style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
+                        onclick="showEstimateDetail(${p.id})"
+                        ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
+                        onmouseover="this.style.background='#e3f2fd'"
+                        onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
+                        <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
+                        <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                    </td>`;
                 } else {
                     html += `<td style="text-align: center; color: #ccc;">-</td>`;
                 }
@@ -1086,6 +1037,108 @@ export function updateWorkMonthOptions() {
 
     // filterの更新はui.jsのupdateEstimateMonthOptionsで行うため削除
     // if (filter) { ... }
+}
+
+// ============================================
+// 見積詳細モーダル
+// ============================================
+
+/**
+ * 見積詳細モーダルを表示
+ * @param {number} estimateId - 見積ID
+ */
+export function showEstimateDetail(estimateId) {
+    const estimate = estimates.find(e => e.id === estimateId);
+    if (!estimate) return;
+
+    const est = normalizeEstimate(estimate);
+
+    document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
+
+    // 作業月表示
+    let workMonthDisplay = '<span style="color: #999;">未設定</span>';
+    if (est.workMonths && est.workMonths.length > 0) {
+        if (est.workMonths.length === 1) {
+            const [y, m] = est.workMonths[0].split('-');
+            workMonthDisplay = `${y}年${parseInt(m)}月`;
+        } else {
+            const months = est.workMonths.map(wm => {
+                const [y, m] = wm.split('-');
+                const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : '0.0';
+                return `${y}年${parseInt(m)}月: ${hours}h`;
+            });
+            workMonthDisplay = months.join('<br>');
+        }
+    }
+
+    const html = `
+        <div class="estimate-detail-item">
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">版数:</span>
+                <span class="estimate-detail-value">${est.version || '(なし)'}</span>
+            </div>
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">対応名:</span>
+                <span class="estimate-detail-value">${est.task}</span>
+            </div>
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">工程:</span>
+                <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
+            </div>
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">担当:</span>
+                <span class="estimate-detail-value">${est.member}</span>
+            </div>
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">見積工数:</span>
+                <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${est.hours.toFixed(1)}h</span>
+            </div>
+            <div class="estimate-detail-row">
+                <span class="estimate-detail-label">作業予定月:</span>
+                <span class="estimate-detail-value">${workMonthDisplay}</span>
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="editEstimateFromModal(${est.id})"
+                    style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                編集
+            </button>
+            <button onclick="deleteEstimateFromModal(${est.id})"
+                    style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                削除
+            </button>
+        </div>
+    `;
+
+    document.getElementById('estimateDetailModalBody').innerHTML = html;
+    document.getElementById('estimateDetailModal').style.display = 'flex';
+}
+
+/**
+ * 見積詳細モーダルを閉じる
+ */
+export function closeEstimateDetailModal() {
+    document.getElementById('estimateDetailModal').style.display = 'none';
+}
+
+/**
+ * 見積詳細モーダルから編集画面へ
+ * @param {number} id - 見積ID
+ */
+export function editEstimateFromModal(id) {
+    closeEstimateDetailModal();
+    if (typeof window.editEstimate === 'function') {
+        window.editEstimate(id);
+    }
+}
+
+/**
+ * 見積詳細モーダルから削除実行
+ * @param {number} id - 見積ID
+ */
+export function deleteEstimateFromModal(id) {
+    closeEstimateDetailModal();
+    deleteEstimate(id);
 }
 
 console.log('✅ モジュール estimate.js loaded');

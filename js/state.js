@@ -237,8 +237,7 @@ export let debugModeEnabled = false; // デバッグモード設定
 export let devFeaturesEnabled = false; // 開発中の機能を表示するか
 export let memberOrder = ''; // 担当者の表示順
 
-// 見積編集モード関連
-export let estimateEditMode = false; // 見積編集モード
+// 見積関連
 export let workMonthSelectionMode = false; // 作業月選択モード
 export const selectedEstimateIds = new Set(); // 選択された見積ID
 
@@ -372,11 +371,6 @@ export function setDebugModeEnabled(value) {
 export function setDevFeaturesEnabled(value) {
     devFeaturesEnabled = value;
     window.devFeaturesEnabled = value;
-}
-
-export function setEstimateEditMode(value) {
-    estimateEditMode = value;
-    window.estimateEditMode = value;
 }
 
 export function setWorkMonthSelectionMode(value) {

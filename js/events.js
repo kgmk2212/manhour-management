@@ -312,9 +312,6 @@ export function initEventHandlers() {
     const workMonthSelectionMode = document.getElementById('workMonthSelectionMode');
     if (workMonthSelectionMode) workMonthSelectionMode.addEventListener('change', toggleWorkMonthSelectionMode);
 
-    const estimateEditMode = document.getElementById('estimateEditMode');
-    if (estimateEditMode) estimateEditMode.addEventListener('change', toggleEstimateEditMode);
-
     // Segmented Buttons (Version 2 Layout)
     const btnEstimateFilterMonth = document.getElementById('btnEstimateFilterMonth');
     if (btnEstimateFilterMonth) btnEstimateFilterMonth.addEventListener('click', () => setEstimateFilterType('month'));
@@ -350,9 +347,6 @@ export function initEventHandlers() {
 
     const workMonthSelectionMode2 = document.getElementById('workMonthSelectionMode2');
     if (workMonthSelectionMode2) workMonthSelectionMode2.addEventListener('change', toggleWorkMonthSelectionMode);
-
-    const estimateEditMode2 = document.getElementById('estimateEditMode2');
-    if (estimateEditMode2) estimateEditMode2.addEventListener('change', toggleEstimateEditMode);
 
     // 作業月割り当てモードパネル
     const btnCloseWorkMonthAssignment = document.getElementById('btnCloseWorkMonthAssignmentMode');
@@ -696,6 +690,17 @@ export function initEventHandlers() {
 
     const btnCloseWorkModal = document.getElementById('btnCloseWorkModal');
     if (btnCloseWorkModal) btnCloseWorkModal.addEventListener('click', closeWorkModal);
+
+    // Estimate Detail Modal
+    const btnCloseEstimateDetailModal = document.getElementById('btnCloseEstimateDetailModal');
+    if (btnCloseEstimateDetailModal) btnCloseEstimateDetailModal.addEventListener('click', closeEstimateDetailModal);
+
+    const estimateDetailModal = document.getElementById('estimateDetailModal');
+    if (estimateDetailModal) {
+        estimateDetailModal.addEventListener('click', (e) => {
+            if (e.target === estimateDetailModal) closeEstimateDetailModal();
+        });
+    }
 
     // Edit Actual Modal
     const btnCloseEditActualModal = document.getElementById('btnCloseEditActualModal');
