@@ -110,9 +110,20 @@ export function initOtherWorkMemberSelect() {
     State.actuals.forEach(a => { if (a.member) members.add(a.member); });
 
     select.innerHTML = '<option value="">-- 担当者を選択 --</option>';
+    select.innerHTML += '<option value="__all__">全員</option>';
     Array.from(members).sort().forEach(member => {
         select.innerHTML += `<option value="${member}">${member}</option>`;
     });
+}
+
+/**
+ * 全担当者のリストを取得
+ */
+function getAllMembers() {
+    const members = new Set();
+    State.estimates.forEach(e => { if (e.member) members.add(e.member); });
+    State.actuals.forEach(a => { if (a.member) members.add(a.member); });
+    return Array.from(members).sort();
 }
 
 // 担当者の自動コピー機能（PG↔PT、IT↔ST）
@@ -372,7 +383,7 @@ export function addEstimateFromModal() {
  */
 function addOtherWorkEstimate() {
     const taskName = document.getElementById('addEstOtherTask').value.trim();
-    const member = document.getElementById('addEstOtherMember').value;
+    const memberValue = document.getElementById('addEstOtherMember').value;
     const workMonth = document.getElementById('addEstOtherMonth').value;
     const hours = parseFloat(document.getElementById('addEstOtherHours').value) || 0;
 
@@ -381,7 +392,7 @@ function addOtherWorkEstimate() {
         return;
     }
 
-    if (!member) {
+    if (!memberValue) {
         alert('担当者を選択してください');
         return;
     }
@@ -396,21 +407,30 @@ function addOtherWorkEstimate() {
         return;
     }
 
-    // その他工数として登録（version は空）
-    const est = {
-        id: Date.now() + Math.random(),
-        version: '',
-        task: taskName,
-        process: '',
-        member: member,
-        hours: hours,
-        workMonth: workMonth,
-        workMonths: [workMonth],
-        monthlyHours: { [workMonth]: hours },
-        createdAt: new Date().toISOString()
-    };
+    // 登録対象の担当者リストを決定
+    const members = memberValue === '__all__' ? getAllMembers() : [memberValue];
 
-    State.estimates.push(est);
+    if (members.length === 0) {
+        alert('登録対象の担当者がいません');
+        return;
+    }
+
+    // 各担当者分の見積を登録
+    members.forEach((member, index) => {
+        const est = {
+            id: Date.now() + index + Math.random(),
+            version: '',
+            task: taskName,
+            process: '',
+            member: member,
+            hours: hours,
+            workMonth: workMonth,
+            workMonths: [workMonth],
+            monthlyHours: { [workMonth]: hours },
+            createdAt: new Date().toISOString()
+        };
+        State.estimates.push(est);
+    });
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
@@ -418,7 +438,11 @@ function addOtherWorkEstimate() {
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
     closeAddEstimateModal();
-    Utils.showAlert('その他工数を登録しました', true);
+
+    const message = members.length > 1
+        ? `その他工数を${members.length}名分登録しました`
+        : 'その他工数を登録しました';
+    Utils.showAlert(message, true);
 }
 
 /**
