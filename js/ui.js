@@ -386,7 +386,8 @@ function updateTabIndicatorImmediate(animate = false) {
     }
     if (!targetTab) return;
 
-    const width = targetTab.offsetWidth;
+    // サブピクセル対応でwidthを取得
+    const width = Math.ceil(targetTab.getBoundingClientRect().width);
     const height = targetTab.offsetHeight;
     const left = targetTab.offsetLeft;
     const top = targetTab.offsetTop;
@@ -452,8 +453,9 @@ export function updateTabIndicator(targetTabName, animate = true) {
 
                 if (!targetTab) return;
 
-                // タブボタンの位置とサイズを取得
-                const width = targetTab.offsetWidth;
+                // タブボタンの位置とサイズを取得（サブピクセル対応）
+                const rect = targetTab.getBoundingClientRect();
+                const width = Math.ceil(rect.width);
                 const height = targetTab.offsetHeight;
                 const left = targetTab.offsetLeft;
                 const top = targetTab.offsetTop;
@@ -485,10 +487,26 @@ export function updateTabIndicator(targetTabName, animate = true) {
 
     // readyクラスがない場合（初回）はレイアウトが安定するまで待つ
     if (!tabIndicator.classList.contains('ready')) {
+        const MAX_WAIT_TIME = 500; // 最大待機時間(ms)
+        const POLL_INTERVAL = 20;  // ポーリング間隔(ms)
+        const STABLE_COUNT = 3;    // 安定と判断するための連続一致回数
+        const startTime = Date.now();
+        let stableCount = 0;
+        let lastLeft = null;
+        let lastWidth = null;
+
         const waitForStableLayout = () => {
+            const elapsed = Date.now() - startTime;
+
+            // 最大待機時間を超えたら強制的に位置を設定
+            if (elapsed > MAX_WAIT_TIME) {
+                doUpdate();
+                return;
+            }
+
             const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
             if (!tabButtonsArea) {
-                setTimeout(waitForStableLayout, 50);
+                setTimeout(waitForStableLayout, POLL_INTERVAL);
                 return;
             }
 
@@ -506,41 +524,49 @@ export function updateTabIndicator(targetTabName, animate = true) {
             }
 
             if (!targetTab) {
-                setTimeout(waitForStableLayout, 50);
+                setTimeout(waitForStableLayout, POLL_INTERVAL);
                 return;
             }
 
-            // 現在のサイズを取得
+            // 現在のサイズを取得（サブピクセル対応）
             const currentLeft = targetTab.offsetLeft;
-            const currentWidth = targetTab.offsetWidth;
+            const currentWidth = Math.ceil(targetTab.getBoundingClientRect().width);
 
-            // 前回の値と比較（初回は保存のみ）
-            if (tabIndicator._lastCheckLeft !== undefined) {
-                if (currentLeft === tabIndicator._lastCheckLeft &&
-                    currentWidth === tabIndicator._lastCheckWidth) {
+            // 前回と同じ値なら安定カウントを増やす
+            if (currentLeft === lastLeft && currentWidth === lastWidth) {
+                stableCount++;
+                if (stableCount >= STABLE_COUNT) {
                     // レイアウトが安定した
-                    delete tabIndicator._lastCheckLeft;
-                    delete tabIndicator._lastCheckWidth;
                     doUpdate();
                     return;
                 }
+            } else {
+                // 値が変わったらカウントリセット
+                stableCount = 0;
             }
 
             // 値を保存して再チェック
-            tabIndicator._lastCheckLeft = currentLeft;
-            tabIndicator._lastCheckWidth = currentWidth;
-            setTimeout(waitForStableLayout, 30);
+            lastLeft = currentLeft;
+            lastWidth = currentWidth;
+            setTimeout(waitForStableLayout, POLL_INTERVAL);
         };
 
-        // フォントロード後にポーリング開始
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(() => {
+        // フォントロード後、少し待ってからポーリング開始
+        const startPolling = () => {
+            // フォント適用後の追加待機（レイアウト再計算のため）
+            setTimeout(() => {
                 requestAnimationFrame(() => {
-                    waitForStableLayout();
+                    requestAnimationFrame(() => {
+                        waitForStableLayout();
+                    });
                 });
-            });
+            }, 50);
+        };
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(startPolling);
         } else {
-            setTimeout(waitForStableLayout, 100);
+            setTimeout(startPolling, 100);
         }
     } else {
         doUpdate();
