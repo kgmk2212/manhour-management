@@ -2079,23 +2079,36 @@
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>版数</label>
-                    <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
-                        <option value="">-- 版数を選択 --</option>
-                    </select>
+                <!-- その他工数モード切替 -->
+                <div class="form-group other-work-toggle">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="addEstOtherWorkMode" onchange="toggleOtherWorkMode()">
+                        <span>その他工数として登録</span>
+                    </label>
+                    <small style="color: #666; display: block; margin-top: 5px;">打ち合わせや付随作業など、版数・帳票名に紐付かない工数</small>
                 </div>
-                <div class="form-group">
-                    <label>帳票名</label>
-                    <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
-                        <option value="">-- 帳票名を選択 --</option>
-                        <option value="__new__">新規入力</option>
-                    </select>
-                    <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
-                    <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
+
+                <!-- 版数・帳票名グループ（その他工数モードで非表示） -->
+                <div id="addEstVersionTaskGroup">
+                    <div class="form-group">
+                        <label>版数</label>
+                        <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
+                            <option value="">-- 版数を選択 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>帳票名</label>
+                        <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
+                            <option value="">-- 帳票名を選択 --</option>
+                            <option value="__new__">新規入力</option>
+                        </select>
+                        <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
+                        <small style="color: #666; display: block; margin-top: 5px;">既存の帳票名を選択、または新規入力できます</small>
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label>対応名</label>
+                    <label id="addEstTaskLabel">対応名</label>
                     <input type="text" id="addEstTask" placeholder="X対応">
                 </div>
                 <div class="form-group">

@@ -1408,6 +1408,28 @@
             animation: fadeIn 0.3s;
         }
 
+        /* その他工数トグル（見積モーダル用） */
+        .other-work-toggle {
+            padding: 10px 14px;
+            background: var(--bg-secondary, #f8f9fa);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color, #e0e0e0);
+        }
+
+        .other-work-toggle .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .other-work-toggle .checkbox-label input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
         /* セグメントボタンコンテナのスクロールバースタイル */
         #estimateMonthButtons2,
         #actualMemberButtons2,

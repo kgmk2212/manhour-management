@@ -600,8 +600,9 @@ export function renderEstimateGrouped() {
     // </div>`;
 
     Object.keys(versionGroups).sort().forEach(version => {
+        const versionDisplay = version || 'その他工数';
         html += `<div style="margin-bottom: 30px;">`;
-        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
@@ -838,8 +839,9 @@ export function renderEstimateMatrix() {
     }
 
     Object.keys(versionGroups).sort().forEach(version => {
+        const versionDisplay = version || 'その他工数';
         html += `<div style="margin-bottom: 30px;">`;
-        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
         html += '<tr><th style="min-width: 200px;">対応名</th>';
         processOrder.forEach(proc => {

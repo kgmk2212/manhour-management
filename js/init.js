@@ -290,6 +290,7 @@ window.checkAddMonthTotal = EstimateAdd.checkAddMonthTotal;
 window.addEstimateFromModal = EstimateAdd.addEstimateFromModal;
 window.addEstimateFromModalNormal = EstimateAdd.addEstimateFromModalNormal;
 window.addEstimateFromModalWithMonthSplit = EstimateAdd.addEstimateFromModalWithMonthSplit;
+window.toggleOtherWorkMode = EstimateAdd.toggleOtherWorkMode;
 
 // other-work.js の関数
 window.addMeeting = OtherWork.addMeeting;

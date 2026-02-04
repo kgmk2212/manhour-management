@@ -21,6 +21,13 @@ export function closeAddEstimateModal() {
     // フォームをリセット
     document.getElementById('addEstVersion').value = '';
 
+    // その他工数モードをリセット
+    const otherWorkMode = document.getElementById('addEstOtherWorkMode');
+    if (otherWorkMode) {
+        otherWorkMode.checked = false;
+        toggleOtherWorkMode();
+    }
+
     // 帳票名のselectとinputをリセット
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
@@ -46,6 +53,28 @@ export function closeAddEstimateModal() {
     document.getElementById('addEnableMonthSplit').checked = false;
     toggleAddMonthSplit();
     updateAddEstimateTotals();
+}
+
+/**
+ * その他工数モードの切り替え
+ */
+export function toggleOtherWorkMode() {
+    const isOtherWork = document.getElementById('addEstOtherWorkMode').checked;
+    const versionTaskGroup = document.getElementById('addEstVersionTaskGroup');
+    const taskLabel = document.getElementById('addEstTaskLabel');
+    const taskInput = document.getElementById('addEstTask');
+
+    if (isOtherWork) {
+        // その他工数モード
+        versionTaskGroup.style.display = 'none';
+        taskLabel.textContent = '作業名';
+        taskInput.placeholder = '打ち合わせ、レビュー等';
+    } else {
+        // 通常モード
+        versionTaskGroup.style.display = '';
+        taskLabel.textContent = '対応名';
+        taskInput.placeholder = 'X対応';
+    }
 }
 
 // 担当者の自動コピー機能（PG↔PT、IT↔ST）
@@ -372,13 +401,7 @@ export function checkAddMonthTotal() {
 }
 
 export function addEstimateFromModal() {
-    const version = document.getElementById('addEstVersion').value;
-
-    // 帳票名を取得（selectまたはinputから）
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
-    const formNameInput = document.getElementById('addEstFormName');
-    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
-
+    const isOtherWorkMode = document.getElementById('addEstOtherWorkMode').checked;
     const taskName = document.getElementById('addEstTask').value.trim();
 
     // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
@@ -393,23 +416,43 @@ export function addEstimateFromModal() {
         endMonth = document.getElementById('addEstEndMonth').value;
     }
 
-    if (!version || version === '新規追加') {
-        alert('版数を選択してください');
-        return;
-    }
+    let version, task;
 
-    if (!formName) {
-        alert('帳票名を入力してください');
-        return;
-    }
+    if (isOtherWorkMode) {
+        // その他工数モード: 版数・帳票名は空
+        if (!taskName) {
+            alert('作業名を入力してください');
+            return;
+        }
+        version = '';
+        task = taskName;
+    } else {
+        // 通常モード: 版数・帳票名・対応名を検証
+        version = document.getElementById('addEstVersion').value;
 
-    if (!taskName) {
-        alert('対応名を入力してください');
-        return;
-    }
+        // 帳票名を取得（selectまたはinputから）
+        const formNameSelect = document.getElementById('addEstFormNameSelect');
+        const formNameInput = document.getElementById('addEstFormName');
+        const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
 
-    // 帳票名と対応名を結合
-    const task = `${formName}：${taskName}`;
+        if (!version || version === '新規追加') {
+            alert('版数を選択してください');
+            return;
+        }
+
+        if (!formName) {
+            alert('帳票名を入力してください');
+            return;
+        }
+
+        if (!taskName) {
+            alert('対応名を入力してください');
+            return;
+        }
+
+        // 帳票名と対応名を結合
+        task = `${formName}：${taskName}`;
+    }
 
     if (!startMonth) {
         alert('作業月を選択してください');
