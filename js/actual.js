@@ -998,28 +998,20 @@ export function addActualFromCalendar(member, date) {
         }
     }
 
-    const isMobile = window.innerWidth <= 768;
+    // 検索入力欄を表示（モバイル・デスクトップ共通）
     const searchInput = document.getElementById('editActualTaskSearch');
     const searchContainer = searchInput ? searchInput.closest('div[style*="position: relative"]') : null;
     const clearBtn = document.getElementById('editActualTaskClearBtn');
     const taskSelect = document.getElementById('editActualTaskSelect');
 
-    if (isMobile) {
-        // モバイル: ネイティブセレクトを使用
-        if (searchContainer) searchContainer.style.display = 'none';
-        taskSelect.style.display = 'block';
-        clearEditActualTaskSelection();
-    } else {
-        // デスクトップ: 検索ドロップダウンを使用
-        if (searchContainer) searchContainer.style.display = 'block';
-        if (searchInput) {
-            searchInput.value = '';
-            searchInput.placeholder = 'クリックして対応を選択...';
-        }
-        if (clearBtn) clearBtn.style.display = 'none';
-        taskSelect.style.display = 'none';
-        clearEditActualTaskSelection();
+    if (searchContainer) searchContainer.style.display = 'block';
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.placeholder = 'タップして対応を選択...';
     }
+    if (clearBtn) clearBtn.style.display = 'none';
+    taskSelect.style.display = 'none';
+    clearEditActualTaskSelection();
 
     if (previousActual) {
         document.getElementById('editActualProcess').value = previousActual.process;
@@ -1060,20 +1052,14 @@ export function addActualFromCalendar(member, date) {
         };
         setSelectedEditActualTask(taskInfo);
         
-        if (isMobile) {
-            // モバイル: セレクトボックスの値を設定
-            taskSelect.value = previousActual.task;
-        } else {
-            // デスクトップ: 検索欄に表示
-            const displayTask = allEditActualTasks.find(t => 
-                t.version === taskInfo.version && 
-                t.task === taskInfo.task && 
-                t.process === taskInfo.process
-            );
-            if (searchInput && displayTask) {
-                searchInput.value = displayTask.display;
-                if (clearBtn) clearBtn.style.display = 'block';
-            }
+        const displayTask = allEditActualTasks.find(t => 
+            t.version === taskInfo.version && 
+            t.task === taskInfo.task && 
+            t.process === taskInfo.process
+        );
+        if (searchInput && displayTask) {
+            searchInput.value = displayTask.display;
+            if (clearBtn) clearBtn.style.display = 'block';
         }
     }
 
@@ -1101,7 +1087,7 @@ export function editActual(id) {
 
     updateEditActualTaskList(actual.member, true, actual.version, actual.process);
 
-    const isMobile = window.innerWidth <= 768;
+    // 検索入力欄を表示（モバイル・デスクトップ共通）
     const searchInput = document.getElementById('editActualTaskSearch');
     const searchContainer = searchInput ? searchInput.closest('div[style*="position: relative"]') : null;
     const clearBtn = document.getElementById('editActualTaskClearBtn');
@@ -1115,25 +1101,17 @@ export function editActual(id) {
     };
     setSelectedEditActualTask(taskInfo);
 
-    if (isMobile) {
-        // モバイル: ネイティブセレクトを使用
-        if (searchContainer) searchContainer.style.display = 'none';
-        taskSelect.style.display = 'block';
-        taskSelect.value = actual.task;
-    } else {
-        // デスクトップ: 検索ドロップダウンを使用
-        if (searchContainer) searchContainer.style.display = 'block';
-        taskSelect.style.display = 'none';
-        
-        const displayTask = allEditActualTasks.find(t => 
-            t.version === taskInfo.version && 
-            t.task === taskInfo.task && 
-            t.process === taskInfo.process
-        );
-        if (searchInput) {
-            searchInput.value = displayTask ? displayTask.display : actual.task;
-            if (clearBtn) clearBtn.style.display = 'block';
-        }
+    if (searchContainer) searchContainer.style.display = 'block';
+    taskSelect.style.display = 'none';
+    
+    const displayTask = allEditActualTasks.find(t => 
+        t.version === taskInfo.version && 
+        t.task === taskInfo.task && 
+        t.process === taskInfo.process
+    );
+    if (searchInput) {
+        searchInput.value = displayTask ? displayTask.display : actual.task;
+        if (clearBtn) clearBtn.style.display = 'block';
     }
 
     document.getElementById('editActualProcess').value = actual.process;
@@ -1214,36 +1192,19 @@ export function saveActualEdit() {
     const date = document.getElementById('editActualDate').value;
     let version = document.getElementById('editActualVersion').value;
 
-    const isMobile = window.innerWidth <= 768;
-    const taskSelect = document.getElementById('editActualTaskSelect');
     const taskInput = document.getElementById('editActualTaskSearch');
     const selected = getSelectedEditActualTask();
     
     let task;
     let process = document.getElementById('editActualProcess').value;
     
-    if (isMobile) {
-        // モバイル: セレクトボックスから取得
-        if (taskSelect.value && taskSelect.value !== '__NEW__') {
-            task = taskSelect.value;
-            // セレクトボックスのdata属性から版数・工程を取得
-            const selectedOption = taskSelect.options[taskSelect.selectedIndex];
-            if (selectedOption) {
-                const dataVersion = selectedOption.getAttribute('data-version');
-                const dataProcess = selectedOption.getAttribute('data-process');
-                if (dataVersion) version = dataVersion;
-                if (dataProcess) process = dataProcess;
-            }
-        } else {
-            task = '';
-        }
-    } else if (selected) {
-        // デスクトップ: ドロップダウンから選択された場合
+    if (selected) {
+        // ドロップダウン/フルスクリーンから選択された場合
         task = selected.task;
         version = selected.version || version;
         process = selected.process || process;
     } else if (taskInput && taskInput.value) {
-        // デスクトップ: 新規入力の場合
+        // 新規入力の場合
         task = taskInput.value;
     } else {
         task = '';
@@ -1618,18 +1579,15 @@ export function handleActualProcessChange() {
     const memberSelect = document.getElementById('editActualMember');
     const versionSelect = document.getElementById('editActualVersion');
     const processSelect = document.getElementById('editActualProcess');
-    const taskSelect = document.getElementById('editActualTaskSelect');
 
     if (!memberSelect || !processSelect) return;
 
     const member = memberSelect.value;
     const version = versionSelect ? versionSelect.value : null;
     const process = processSelect.value;
-    const isMobile = window.innerWidth <= 768;
 
     // 選択中のタスクを保持
     const currentSelected = getSelectedEditActualTask();
-    const currentTaskValue = taskSelect ? taskSelect.value : null;
 
     // リストを更新
     updateEditActualTaskList(member, true, version, process);
@@ -1645,17 +1603,11 @@ export function handleActualProcessChange() {
         if (stillExists) {
             setSelectedEditActualTask(currentSelected);
             
-            if (isMobile) {
-                // モバイル: セレクトボックスの値を設定
-                if (taskSelect) taskSelect.value = currentSelected.task;
-            } else {
-                // デスクトップ: 検索欄に表示
-                const searchInput = document.getElementById('editActualTaskSearch');
-                const clearBtn = document.getElementById('editActualTaskClearBtn');
-                if (searchInput) {
-                    searchInput.value = stillExists.display;
-                    if (clearBtn) clearBtn.style.display = 'block';
-                }
+            const searchInput = document.getElementById('editActualTaskSearch');
+            const clearBtn = document.getElementById('editActualTaskClearBtn');
+            if (searchInput) {
+                searchInput.value = stillExists.display;
+                if (clearBtn) clearBtn.style.display = 'block';
             }
             
             // 残存時間を更新
@@ -1667,7 +1619,6 @@ export function handleActualProcessChange() {
         } else {
             // 選択がリストから消えた場合はクリア
             clearEditActualTaskSelection();
-            if (isMobile && taskSelect) taskSelect.value = '';
         }
     }
 }
@@ -1878,19 +1829,33 @@ export function initEditActualTaskDropdownHandler() {
 
     if (!searchInput || !dropdown) return;
 
-    // フォーカス時にドロップダウン表示
-    searchInput.addEventListener('focus', () => {
-        showEditActualTaskDropdown();
+    // フォーカス/クリック時の処理
+    searchInput.addEventListener('click', (e) => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            e.preventDefault();
+            openTaskSelectFullscreen();
+        } else {
+            showEditActualTaskDropdown();
+        }
     });
 
-    // 入力時にフィルタリング
+    searchInput.addEventListener('focus', (e) => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            e.target.blur(); // モバイルではフォーカスを外してキーボードを出さない
+            openTaskSelectFullscreen();
+        } else {
+            showEditActualTaskDropdown();
+        }
+    });
+
+    // 入力時にフィルタリング（デスクトップ用）
     searchInput.addEventListener('input', () => {
         filterEditActualTaskList();
-        // 入力中は選択解除
         if (selectedEditActualTask) {
             selectedEditActualTask = null;
         }
-        // クリアボタン表示制御
         if (clearBtn) {
             clearBtn.style.display = searchInput.value ? 'block' : 'none';
         }
@@ -1902,12 +1867,15 @@ export function initEditActualTaskDropdownHandler() {
             e.preventDefault();
             e.stopPropagation();
             clearEditActualTaskSelection();
-            searchInput.focus();
-            showEditActualTaskDropdown();
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) {
+                searchInput.focus();
+                showEditActualTaskDropdown();
+            }
         });
     }
 
-    // ドロップダウン項目クリック
+    // ドロップダウン項目クリック（デスクトップ用）
     dropdown.addEventListener('mousedown', (e) => {
         const item = e.target.closest('.custom-dropdown-item');
         if (item) {
@@ -1917,13 +1885,233 @@ export function initEditActualTaskDropdownHandler() {
         }
     });
 
-    // 外部クリックで閉じる
+    // 外部クリックで閉じる（デスクトップ用）
     document.addEventListener('click', (e) => {
         const container = searchInput.closest('.form-group');
         if (container && !container.contains(e.target)) {
             hideEditActualTaskDropdown();
         }
     });
+
+    // フルスクリーンモーダルのイベント初期化
+    initTaskSelectFullscreen();
+}
+
+// ============================================
+// フルスクリーン選択モーダル（モバイル用）
+// ============================================
+
+/**
+ * フルスクリーンモーダルを開く
+ */
+export function openTaskSelectFullscreen() {
+    const modal = document.getElementById('taskSelectFullscreenModal');
+    const searchInput = document.getElementById('taskSelectSearchInput');
+    
+    if (!modal) return;
+    
+    modal.classList.add('active');
+    renderTaskSelectFullscreen('');
+    
+    if (searchInput) {
+        searchInput.value = '';
+        // 少し遅延してフォーカス（モーダルアニメーション後）
+        setTimeout(() => searchInput.focus(), 100);
+    }
+}
+
+/**
+ * フルスクリーンモーダルを閉じる
+ */
+export function closeTaskSelectFullscreen() {
+    const modal = document.getElementById('taskSelectFullscreenModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+/**
+ * フルスクリーンモーダルのリストを描画
+ */
+export function renderTaskSelectFullscreen(filterText = '') {
+    const listContainer = document.getElementById('taskSelectList');
+    if (!listContainer) return;
+
+    const searchLower = filterText.toLowerCase();
+    const member = currentEditActualMember;
+
+    // フィルタリング
+    let filtered = allEditActualTasks;
+    if (searchLower) {
+        filtered = filtered.filter(task => 
+            task.display.toLowerCase().includes(searchLower) ||
+            task.task.toLowerCase().includes(searchLower)
+        );
+    }
+
+    if (filtered.length === 0 && !searchLower) {
+        listContainer.innerHTML = '<div class="task-select-empty">対応がありません</div>';
+        return;
+    }
+
+    if (filtered.length === 0) {
+        listContainer.innerHTML = `
+            <div class="task-select-empty">該当する対応が見つかりません</div>
+            <div class="task-select-item task-select-item-new" data-value="__NEW__">＋ 「${filterText}」を新規入力</div>
+        `;
+        return;
+    }
+
+    // グループ化して表示
+    let html = '';
+
+    // 自分の担当を先に
+    const myTasks = filtered.filter(t => t.member === member);
+    const otherTasks = filtered.filter(t => t.member !== member);
+
+    // 担当者順でソート
+    const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
+    const otherMembers = [...new Set(otherTasks.map(t => t.member))];
+    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
+
+    // 自分の担当
+    if (myTasks.length > 0) {
+        html += `<div class="task-select-group">`;
+        html += `<div class="task-select-group-header">担当：${member}</div>`;
+        myTasks.forEach(task => {
+            const value = JSON.stringify({
+                version: task.version,
+                task: task.task,
+                process: task.process,
+                member: task.member
+            }).replace(/"/g, '&quot;');
+            html += `<div class="task-select-item" data-value="${value}">${task.display}</div>`;
+        });
+        html += `</div>`;
+    }
+
+    // 他の担当者
+    sortedOtherMembers.forEach(otherMember => {
+        const memberTasks = otherTasks.filter(t => t.member === otherMember);
+        if (memberTasks.length > 0) {
+            html += `<div class="task-select-group">`;
+            html += `<div class="task-select-group-header">担当：${otherMember}</div>`;
+            memberTasks.forEach(task => {
+                const value = JSON.stringify({
+                    version: task.version,
+                    task: task.task,
+                    process: task.process,
+                    member: task.member
+                }).replace(/"/g, '&quot;');
+                html += `<div class="task-select-item" data-value="${value}">${task.display}</div>`;
+            });
+            html += `</div>`;
+        }
+    });
+
+    // 新規入力オプション
+    html += `<div class="task-select-item task-select-item-new" data-value="__NEW__">＋ 新規入力...</div>`;
+
+    listContainer.innerHTML = html;
+}
+
+/**
+ * フルスクリーンモーダルでタスクを選択
+ */
+export function selectTaskFromFullscreen(valueStr) {
+    const searchInput = document.getElementById('editActualTaskSearch');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+    const remainingInput = document.getElementById('editActualRemainingHours');
+    const memberSelect = document.getElementById('editActualMember');
+    const fullscreenSearchInput = document.getElementById('taskSelectSearchInput');
+
+    if (valueStr === '__NEW__') {
+        // 新規入力モード
+        selectedEditActualTask = null;
+        const newTaskName = fullscreenSearchInput ? fullscreenSearchInput.value : '';
+        if (searchInput) {
+            searchInput.value = newTaskName;
+            searchInput.placeholder = '対応名を入力...';
+        }
+        if (clearBtn) clearBtn.style.display = newTaskName ? 'block' : 'none';
+        closeTaskSelectFullscreen();
+        return;
+    }
+
+    const value = JSON.parse(valueStr);
+    selectedEditActualTask = value;
+
+    // 検索欄に選択内容を表示
+    const displayTask = allEditActualTasks.find(t => 
+        t.version === value.version && 
+        t.task === value.task && 
+        t.process === value.process &&
+        t.member === value.member
+    );
+
+    if (searchInput) {
+        searchInput.value = displayTask ? displayTask.display : value.task;
+    }
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    // 版数・工程を追従
+    if (versionSelect && value.version) {
+        versionSelect.value = value.version;
+    }
+    if (processSelect && value.process) {
+        processSelect.value = value.process;
+    }
+
+    // 残存時間を更新
+    if (remainingInput && value.version && value.task && value.process) {
+        const member = memberSelect ? memberSelect.value : value.member;
+        const existingRemaining = getRemainingEstimate(value.version, value.task, value.process, member);
+        remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
+    }
+
+    closeTaskSelectFullscreen();
+}
+
+/**
+ * フルスクリーンモーダルのイベント初期化
+ */
+export function initTaskSelectFullscreen() {
+    const modal = document.getElementById('taskSelectFullscreenModal');
+    const backBtn = document.getElementById('btnTaskSelectBack');
+    const closeBtn = document.getElementById('btnTaskSelectClose');
+    const searchInput = document.getElementById('taskSelectSearchInput');
+    const listContainer = document.getElementById('taskSelectList');
+
+    if (!modal) return;
+
+    // 戻る/閉じるボタン
+    if (backBtn) {
+        backBtn.addEventListener('click', closeTaskSelectFullscreen);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeTaskSelectFullscreen);
+    }
+
+    // 検索入力
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            renderTaskSelectFullscreen(searchInput.value);
+        });
+    }
+
+    // リスト項目クリック
+    if (listContainer) {
+        listContainer.addEventListener('click', (e) => {
+            const item = e.target.closest('.task-select-item');
+            if (item) {
+                const value = item.dataset.value;
+                selectTaskFromFullscreen(value);
+            }
+        });
+    }
 }
 
 console.log('✅ モジュール actual.js loaded');

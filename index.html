@@ -1795,6 +1795,21 @@
         </div>
     </div>
 
+    <!-- 対応選択フルスクリーンモーダル（モバイル用） -->
+    <div id="taskSelectFullscreenModal" class="fullscreen-modal">
+        <div class="fullscreen-modal-header">
+            <button class="fullscreen-modal-back" id="btnTaskSelectBack">←</button>
+            <h3>対応を選択</h3>
+            <button class="fullscreen-modal-close" id="btnTaskSelectClose">×</button>
+        </div>
+        <div class="fullscreen-modal-search">
+            <input type="text" id="taskSelectSearchInput" placeholder="検索..." autocomplete="off">
+        </div>
+        <div class="fullscreen-modal-body" id="taskSelectList">
+            <!-- JavaScriptで動的に生成 -->
+        </div>
+    </div>
+
     <!-- 見込残存時間一括編集モーダル -->
     <div id="bulkRemainingModal" class="modal">
         <div class="modal-content" style="max-width: 1000px; max-height: 85vh;">
