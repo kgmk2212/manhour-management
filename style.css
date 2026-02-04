@@ -1481,8 +1481,93 @@
         }
 
         .estimate-form-compact .form-group select,
-        .estimate-form-compact .form-group input[type="text"] {
-            padding: 6px 10px;
+        .estimate-form-compact .form-group input[type="text"],
+        .estimate-form-compact .form-group input[type="number"] {
+            padding: 8px 10px;
+        }
+
+        /* 横並びプロセステーブル */
+        .process-grid-horizontal {
+            overflow-x: auto;
+        }
+
+        .process-table-horizontal {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .process-table-horizontal th,
+        .process-table-horizontal td {
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .process-table-horizontal th {
+            font-weight: normal;
+            padding-bottom: 8px;
+        }
+
+        .process-table-horizontal th .badge {
+            padding: 3px 8px;
+            font-size: 11px;
+        }
+
+        .process-table-horizontal .row-label {
+            text-align: right;
+            padding-right: 10px;
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            width: 45px;
+        }
+
+        .process-table-horizontal select {
+            width: 100%;
+            min-width: 55px;
+            max-width: 70px;
+            padding: 6px 4px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .process-table-horizontal input[type="number"] {
+            width: 100%;
+            min-width: 45px;
+            max-width: 60px;
+            padding: 6px 4px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* 合計表示エリア（インライン） */
+        .estimate-totals-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .estimate-totals-inline .totals-label {
+            color: #666;
+        }
+
+        .estimate-totals-inline .totals-value {
+            font-size: 15px;
+            color: #2c3e50;
+        }
+
+        .estimate-totals-inline .totals-sub {
+            color: #888;
+            font-size: 12px;
         }
 
         /* セグメントボタンコンテナのスクロールバースタイル */
