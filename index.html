@@ -2132,35 +2132,41 @@
                             </div>
                         </div>
                     </div>
-                    <h4 style="margin: 10px 0 6px 0; font-size: 14px;">各工程の見積</h4>
+                    <h4 style="margin-bottom: 10px; margin-top: 20px;">各工程の見積</h4>
                     <div class="estimate-table-wrapper">
                         <table class="estimate-table" id="addEstimateTable" style="width: 100%; margin: 0;">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px; padding: 5px; background: #e8f5e9; border-right: 2px solid #4caf50; border-bottom: none;"></th>
-                                    <th style="padding: 5px; text-align: center; background: transparent; border-bottom: none;"><span class="badge badge-ui">UI</span></th>
-                                    <th style="padding: 5px; text-align: center; background: transparent; border-bottom: none;"><span class="badge badge-pg">PG</span></th>
-                                    <th style="padding: 5px; text-align: center; background: transparent; border-bottom: none;"><span class="badge badge-pt">PT</span></th>
-                                    <th style="padding: 5px; text-align: center; background: transparent; border-bottom: none;"><span class="badge badge-it">IT</span></th>
-                                    <th style="padding: 5px; text-align: center; background: transparent; border-bottom: none;"><span class="badge badge-st">ST</span></th>
+                                    <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
+                                    <th style="width: 120px; padding: 8px;">担当</th>
+                                    <th style="width: 100px; padding: 8px;">時間</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td style="padding: 6px 8px; font-size: 12px; background: #e8f5e9; color: #2c3e50; font-weight: 500; border-right: 2px solid #4caf50;">担当</td>
-                                    <td style="padding: 4px;"><select id="addEstUI_member" style="margin: 0;"></select></td>
-                                    <td style="padding: 4px;"><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                    <td style="padding: 4px;"><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                    <td style="padding: 4px;"><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                    <td style="padding: 4px;"><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                    <td><select id="addEstUI_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 6px 8px; font-size: 12px; background: #e8f5e9; color: #2c3e50; font-weight: 500; border-right: 2px solid #4caf50;">時間</td>
-                                    <td style="padding: 4px;"><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td style="padding: 4px;"><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td style="padding: 4px;"><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td style="padding: 4px;"><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td style="padding: 4px;"><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
+                                    <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
+                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
+                                    <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
+                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
+                                    <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
+                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
+                                    <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
+                                    <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -2168,12 +2174,14 @@
 
                     <!-- 合計表示エリア -->
                     <div id="addEstimateTotals"
-                        style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; margin-top: 10px; border-left: 3px solid #1976d2; font-size: 13px;">
-                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            <span style="font-weight: 600; color: #1565c0;">合計:</span>
-                            <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
-                            <span style="color: #1976d2;">(<span id="addEstTotalDays">0.0</span> 人日)</span>
-                            <span style="color: #1976d2;">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
+                        style="background: #e3f2fd; padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <span style="font-weight: 600; color: #1565c0;">対応合計:</span>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
+                                <span style="color: #1976d2;">(<span id="addEstTotalDays">0.0</span> 人日)</span>
+                                <span style="color: #1976d2;">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
