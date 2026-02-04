@@ -313,10 +313,6 @@ export function initTabIndicator() {
     const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
     if (!tabButtonsArea) return;
 
-    // 既存のインジケーターがあれば削除
-    const existing = tabButtonsArea.querySelector('.tab-indicator');
-    if (existing) existing.remove();
-
     // 既存のResizeObserverを解除
     if (tabResizeObserver) {
         tabResizeObserver.disconnect();
@@ -337,10 +333,15 @@ export function initTabIndicator() {
         // localStorageエラーは無視
     }
 
-    // インジケーター要素を作成
-    tabIndicator = document.createElement('div');
-    tabIndicator.className = 'tab-indicator';
-    tabButtonsArea.appendChild(tabIndicator);
+    // 既存のインジケーターがあれば再利用、なければ作成
+    const existing = tabButtonsArea.querySelector('.tab-indicator');
+    if (existing) {
+        tabIndicator = existing;
+    } else {
+        tabIndicator = document.createElement('div');
+        tabIndicator.className = 'tab-indicator';
+        tabButtonsArea.appendChild(tabIndicator);
+    }
 
     // ResizeObserverでタブボタンのサイズ変更を監視
     tabResizeObserver = new ResizeObserver(() => {
