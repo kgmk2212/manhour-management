@@ -326,10 +326,39 @@ export function initTabIndicator() {
     // 位置キャッシュをリセット（新しい初期化で確実に更新されるように）
     lastIndicatorPosition = { width: 0, left: 0 };
 
+    // 保存されたタブを取得（初期位置を正確に設定するため）
+    let savedTab = 'quick';
+    try {
+        const stored = localStorage.getItem('manhour_currentTab');
+        if (stored && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(stored)) {
+            savedTab = stored;
+        }
+    } catch (e) {
+        // localStorageエラーは無視
+    }
+
     // インジケーター要素を作成
     tabIndicator = document.createElement('div');
     tabIndicator.className = 'tab-indicator';
     tabButtonsArea.appendChild(tabIndicator);
+
+    // 初期位置を即座に設定（ちらつき防止）
+    const targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${savedTab}"]`);
+    if (targetTab) {
+        const width = targetTab.offsetWidth;
+        const height = targetTab.offsetHeight;
+        const left = targetTab.offsetLeft;
+        const top = targetTab.offsetTop;
+
+        tabIndicator.style.width = `${width}px`;
+        tabIndicator.style.height = `${height}px`;
+        tabIndicator.style.top = `${top}px`;
+        tabIndicator.style.transform = `translateX(${left}px)`;
+        lastIndicatorPosition = { width, left };
+
+        // 位置設定後すぐに表示
+        tabIndicator.classList.add('ready');
+    }
 
     // ResizeObserverでタブボタンのサイズ変更を監視
     // フォントロードやレイアウト変更でタブボタンのサイズが変わったら自動で再計算
@@ -348,7 +377,7 @@ export function initTabIndicator() {
         }
     });
 
-    // フォントロード完了を待ってから初期位置を設定
+    // フォントロード完了を待ってから位置を再計算（フォントロードでサイズが変わる場合の対策）
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => {
             updateTabIndicatorImmediate();
