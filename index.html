@@ -170,6 +170,10 @@
                 background: var(--early-theme-gradient) !important;
                 color: white !important;
             }
+            [data-early-tab-design="classic"] .tabs:has(.tab-indicator.ready) .tab.active {
+                background: transparent !important;
+                box-shadow: none !important;
+            }
 
             /* Dock */
             [data-early-tab-design="dock"] .tabs {
@@ -190,6 +194,11 @@
                 background: var(--early-theme-gradient) !important;
                 color: white !important;
                 box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+            }
+            [data-early-tab-design="dock"] .tabs:has(.tab-indicator.ready) .tab.active {
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
             }
 
             /* Capsule */
@@ -213,6 +222,11 @@
                 background: var(--early-theme-gradient) !important;
                 color: white !important;
                 box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
+            }
+            [data-early-tab-design="capsule"] .tabs:has(.tab-indicator.ready) .tab.active {
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
             }
         }
     </style>
