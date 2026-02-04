@@ -67,8 +67,7 @@ import {
     openOtherWorkFromCalendar,
     openVacationFromCalendar,
     handleActualTaskSelect,
-    handleActualProcessChange,
-    initEditActualTaskDropdownHandler
+    handleActualProcessChange
 } from './actual.js';
 import {
     saveStickyFilterSetting,
@@ -723,9 +722,6 @@ export function initEventHandlers() {
 
     const editActualProcess = document.getElementById('editActualProcess');
     if (editActualProcess) editActualProcess.addEventListener('change', handleActualProcessChange);
-
-    // 実績入力モーダルの検索ドロップダウン初期化
-    initEditActualTaskDropdownHandler();
 
     // その他作業・休暇登録ボタン (カレンダーからの新規登録時に表示)
     // イベント委譲を使用して確実にイベントをキャッチする

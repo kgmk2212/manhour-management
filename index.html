@@ -29,11 +29,6 @@
                 if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
-                // モバイルタブデザインを読み込み
-                var mobileTabDesign = localStorage.getItem('mobileTabDesign');
-                if (mobileTabDesign && ['classic', 'dock', 'capsule'].indexOf(mobileTabDesign) !== -1) {
-                    window.__earlyMobileTabDesign = mobileTabDesign;
-                }
             } catch (e) { }
         })();
     </script>
@@ -84,10 +79,6 @@
             if (window.__earlySavedTab && window.__earlySavedTab !== 'quick') {
                 document.documentElement.dataset.earlyTab = window.__earlySavedTab;
             }
-
-            // モバイルタブデザインを早期適用
-            var tabDesign = window.__earlyMobileTabDesign || 'capsule';
-            document.documentElement.dataset.earlyTabDesign = tabDesign;
         })();
     </script>
     <style>
@@ -148,86 +139,6 @@
         [data-early-tab="settings"] .tab[data-tab="settings"] {
             background: var(--early-theme-gradient) !important;
             color: white !important;
-        }
-
-        /* 早期モバイルタブデザイン適用（ちらつき防止） */
-        @media (max-width: 768px) {
-            /* Classic */
-            [data-early-tab-design="classic"] .tabs {
-                background: rgba(255, 255, 255, 0.95) !important;
-                border-top: 1px solid #ddd !important;
-                padding: 10px 5px calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
-                border-radius: 0 !important;
-                bottom: 0 !important;
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
-            }
-            [data-early-tab-design="classic"] .tabs .tab {
-                background: white !important;
-                color: #333 !important;
-                border-radius: 6px !important;
-            }
-            [data-early-tab-design="classic"] .tabs .tab.active {
-                background: var(--early-theme-gradient) !important;
-                color: white !important;
-            }
-            [data-early-tab-design="classic"] .tabs:has(.tab-indicator) .tab.active {
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-
-            /* Dock */
-            [data-early-tab-design="dock"] .tabs {
-                bottom: 0 !important;
-                padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
-                border-radius: 24px 24px 0 0 !important;
-                background: rgba(255, 255, 255, 0.98) !important;
-                backdrop-filter: blur(25px) !important;
-                box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.12) !important;
-                border: none !important;
-            }
-            [data-early-tab-design="dock"] .tabs .tab {
-                border-radius: 16px !important;
-                background: rgba(0, 0, 0, 0.05) !important;
-                padding: 12px 20px !important;
-            }
-            [data-early-tab-design="dock"] .tabs .tab.active {
-                background: var(--early-theme-gradient) !important;
-                color: white !important;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
-            }
-            [data-early-tab-design="dock"] .tabs:has(.tab-indicator) .tab.active {
-                background: transparent !important;
-                box-shadow: none !important;
-                transform: none !important;
-            }
-
-            /* Capsule */
-            [data-early-tab-design="capsule"] .tabs {
-                bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
-                left: 12px !important;
-                right: 12px !important;
-                padding: 8px !important;
-                border-radius: 40px !important;
-                background: rgba(255, 255, 255, 0.88) !important;
-                backdrop-filter: blur(30px) saturate(180%) !important;
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18) !important;
-                border: 1px solid rgba(255, 255, 255, 0.5) !important;
-            }
-            [data-early-tab-design="capsule"] .tabs .tab {
-                border-radius: 35px !important;
-                background: transparent !important;
-                padding: 12px 18px !important;
-            }
-            [data-early-tab-design="capsule"] .tabs .tab.active {
-                background: var(--early-theme-gradient) !important;
-                color: white !important;
-                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
-            }
-            [data-early-tab-design="capsule"] .tabs:has(.tab-indicator) .tab.active {
-                background: transparent !important;
-                box-shadow: none !important;
-                transform: none !important;
-            }
         }
     </style>
     <div class="container">
@@ -315,7 +226,7 @@
                             </div>
                             <div class="form-group quick-form-hours">
                                 <label>実績工数 (h)</label>
-                                <input type="number" id="quickHours" step="0.25" min="0" value="8"
+                                <input type="number" id="quickHours" step="0.5" min="0" value="8"
                                     style="background: rgba(255,255,255,0.95); color: #333; border: none;">
                             </div>
                         </div>
@@ -1822,6 +1733,14 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>対応名</label>
+                    <select id="editActualTaskSelect" style="margin-bottom: 10px;">
+                        <option value="">-- 対応を選択 --</option>
+                    </select>
+                    <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
+
+                </div>
+                <div class="form-group">
                     <label>工程</label>
                     <select id="editActualProcess">
                         <option value="">全工程</option>
@@ -1836,22 +1755,6 @@
                     </small>
                 </div>
                 <div class="form-group">
-                    <label>対応名</label>
-                    <div style="position: relative;">
-                        <input type="text" id="editActualTaskSearch" placeholder="クリックして対応を選択..." autocomplete="off"
-                            style="padding-right: 35px;">
-                        <button id="editActualTaskClearBtn"
-                            style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #666; cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
-                            title="クリア">×</button>
-                        <div id="editActualTaskDropdown" class="custom-dropdown" style="display: none;">
-                            <!-- JavaScriptで動的に生成 -->
-                        </div>
-                    </div>
-                    <select id="editActualTaskSelect" style="display: none;">
-                        <option value="">-- 対応を選択 --</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label>担当</label>
                     <select id="editActualMember">
                     </select>
@@ -1860,12 +1763,12 @@
                 </div>
                 <div class="form-group">
                     <label>実績工数</label>
-                    <input type="number" id="editActualHours" step="0.25" min="0" placeholder="8">
+                    <input type="number" id="editActualHours" step="0.5" min="0" placeholder="8">
                 </div>
                 <div class="form-group" id="remainingHoursGroup">
                     <label>見込残存時間</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" id="editActualRemainingHours" step="0.25" min="0" placeholder="0"
+                        <input type="number" id="editActualRemainingHours" step="0.5" min="0" placeholder="0"
                             style="flex: 1; max-width: 120px;">
                         <span style="color: #666; font-size: 13px;">時間</span>
                     </div>
@@ -1881,21 +1784,6 @@
                         style="background: #95a5a6; color: white;">キャンセル</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 対応選択フルスクリーンモーダル（モバイル用） -->
-    <div id="taskSelectFullscreenModal" class="fullscreen-modal">
-        <div class="fullscreen-modal-header">
-            <button class="fullscreen-modal-back" id="btnTaskSelectBack">←</button>
-            <h3>対応を選択</h3>
-            <button class="fullscreen-modal-close" id="btnTaskSelectClose">×</button>
-        </div>
-        <div class="fullscreen-modal-search">
-            <input type="text" id="taskSelectSearchInput" placeholder="検索..." autocomplete="off">
-        </div>
-        <div class="fullscreen-modal-body" id="taskSelectList">
-            <!-- JavaScriptで動的に生成 -->
         </div>
     </div>
 
@@ -2663,7 +2551,7 @@
                     <div class="schedule-info-row schedule-remaining-edit">
                         <span class="schedule-info-label">見込み残</span>
                         <div class="schedule-remaining-input-group">
-                            <input type="number" id="detailUserRemainingHours" step="0.25" min="0" placeholder="0.0">
+                            <input type="number" id="detailUserRemainingHours" step="0.5" min="0" placeholder="0.0">
                             <span class="input-suffix">h</span>
                             <button onclick="saveScheduleRemainingHours()" class="btn btn-sm btn-outline">更新</button>
                         </div>
