@@ -176,6 +176,8 @@ export function updateTabFilterContent(scrollToActive = true) {
         renderReportFilters(content, scrollToActive);
     } else if (tabId === 'estimate') {
         renderEstimateFilters(content, scrollToActive);
+    } else if (tabId === 'actual') {
+        renderActualFilters(content, scrollToActive);
     } else {
         // フィルタが不要なタブ
         content.innerHTML = '';
@@ -353,6 +355,62 @@ function renderEstimateFilters(container, scrollToActive = true) {
     }
 }
 
+// 実績タブ用フィルタ
+function renderActualFilters(container, scrollToActive = true) {
+    showFilterToggle();
+
+    const actualMonth = document.getElementById('actualMonthFilter');
+
+    if (!actualMonth) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // 再描画前にスクロール位置を保存
+    const oldMonthContainer = document.getElementById('tabFilterActualMonthButtons');
+    const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
+
+    // 月フィルタボタンを生成
+    const monthButtons = generateFilterButtons(actualMonth, (value) => {
+        actualMonth.value = value;
+        if (typeof window.handleActualMonthChange === 'function') {
+            window.handleActualMonthChange(value, 'actualMonthButtons2');
+        } else {
+            actualMonth.dispatchEvent(new Event('change'));
+        }
+        updateTabFilterContent(false);
+    });
+
+    container.innerHTML = `
+        <div class="tab-filter-row">
+            <span class="tab-filter-label">表示月:</span>
+            <div class="tab-filter-buttons" id="tabFilterActualMonthButtons">${monthButtons}</div>
+        </div>
+    `;
+
+    // ボタンにイベントを設定
+    setupFilterButtonEvents(container, 'tabFilterActualMonthButtons', actualMonth, (value) => {
+        actualMonth.value = value;
+        if (typeof window.handleActualMonthChange === 'function') {
+            window.handleActualMonthChange(value, 'actualMonthButtons2');
+        } else {
+            actualMonth.dispatchEvent(new Event('change'));
+        }
+        updateTabFilterContent(false);
+    });
+
+    // ドラッグスクロールを有効化
+    const monthBtnContainer = document.getElementById('tabFilterActualMonthButtons');
+    if (monthBtnContainer) enableDragScroll(monthBtnContainer);
+
+    // 初期表示時のみ、選択中ボタンを表示エリア内にスクロール
+    if (scrollToActive) {
+        scrollToActiveButton(monthBtnContainer);
+    } else {
+        if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+    }
+}
+
 // フィルタボタンのHTML生成
 function generateFilterButtons(selectElement, onChange, sortVersion = false) {
     const currentValue = selectElement.value;
@@ -434,7 +492,7 @@ export function onTabChange(tabId) {
     const toggle = document.getElementById('tabFilterToggle');
 
     // フィルタが必要なタブかどうか
-    const filterTabs = ['report', 'estimate'];
+    const filterTabs = ['report', 'estimate', 'actual'];
     const needsFilter = filterTabs.includes(tabId);
 
     if (needsFilter) {
