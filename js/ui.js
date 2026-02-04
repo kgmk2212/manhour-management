@@ -2591,25 +2591,6 @@ export function setDefaultEstimateMonth() {
     return defaultMonth;
 }
 
-export function setDefaultEstimateVersion() {
-    const select = document.getElementById('estimateVersionFilter');
-    if (!select || select.options.length <= 1) return 'all';
-
-    // 最新版数を選択（2番目のオプション = 最新版数、1番目は「全版数」）
-    const latestVersion = select.options[1]?.value || 'all';
-    select.value = latestVersion;
-
-    // セグメントボタンと2番目のselectも更新
-    const select2 = document.getElementById('estimateVersionFilter2');
-    if (select2) select2.value = latestVersion;
-    updateSegmentButtonSelection('estimateVersionButtons2', latestVersion);
-
-    // stateも更新
-    setEstimateFilterState({ version: latestVersion });
-
-    return latestVersion;
-}
-
 // ============================================
 // フィルタ同期ハンドラ
 // ============================================

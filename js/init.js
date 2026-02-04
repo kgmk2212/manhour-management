@@ -117,7 +117,6 @@ window.getDefaultMonth = UI.getDefaultMonth;
 window.setDefaultActualMonth = UI.setDefaultActualMonth;
 window.setDefaultReportMonth = UI.setDefaultReportMonth;
 window.setDefaultEstimateMonth = UI.setDefaultEstimateMonth;
-window.setDefaultEstimateVersion = UI.setDefaultEstimateVersion;
 window.syncMonthToReport = UI.syncMonthToReport;
 window.syncMonthToEstimate = UI.syncMonthToEstimate;
 window.syncVersionToReport = UI.syncVersionToReport;
@@ -490,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 見積一覧のデフォルトを版数別の最新版数に設定
+    // 見積一覧のデフォルトを版数別（全版数・現在月）に設定
     const filterTypeElement = document.getElementById('estimateFilterType');
     if (filterTypeElement) {
         filterTypeElement.value = 'version';
