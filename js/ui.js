@@ -401,6 +401,14 @@ function updateTabIndicatorImmediate(animate = false) {
     tabIndicator.style.top = `${top}px`;
     tabIndicator.style.transform = `translateX(${left}px)`;
 
+    // 位置確定後に表示（ちらつき防止）
+    if (!tabIndicator.classList.contains('ready')) {
+        // 次フレームでreadyクラスを追加（位置適用後に表示）
+        requestAnimationFrame(() => {
+            tabIndicator.classList.add('ready');
+        });
+    }
+
     // 次フレームでswipingクラスを外す（トランジションを有効に戻す）
     if (!animate) {
         requestAnimationFrame(() => {
@@ -464,6 +472,11 @@ export function updateTabIndicator(targetTabName, animate = true) {
                 tabIndicator.style.height = `${height}px`;
                 tabIndicator.style.top = `${top}px`;
                 tabIndicator.style.transform = `translateX(${left}px)`;
+
+                // 位置確定後に表示（ちらつき防止）
+                if (!tabIndicator.classList.contains('ready')) {
+                    tabIndicator.classList.add('ready');
+                }
             });
         });
     };

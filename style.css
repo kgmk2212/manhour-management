@@ -3407,10 +3407,17 @@
         border-radius: 35px;
         pointer-events: none;
         z-index: 0;
+        /* 位置確定前は非表示（ちらつき防止） */
+        opacity: 0;
         /* よりスムーズなスプリングアニメーション */
         transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
                     width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         will-change: transform, width;
+    }
+
+    /* 位置確定後に表示 */
+    .tab-indicator.ready {
+        opacity: 1;
     }
 
     /* スワイプ中はトランジションを無効化 */
