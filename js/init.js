@@ -286,7 +286,7 @@ window.updateDefaultAddProcessMonths = EstimateAdd.updateDefaultAddProcessMonths
 window.updateAddEstimateTotals = EstimateAdd.updateAddEstimateTotals;
 window.addEstimateFromModal = EstimateAdd.addEstimateFromModal;
 window.addEstimateFromModalNormal = EstimateAdd.addEstimateFromModalNormal;
-window.toggleOtherWorkMode = EstimateAdd.toggleOtherWorkMode;
+window.switchEstimateMode = EstimateAdd.switchEstimateMode;
 
 // other-work.js の関数
 window.addMeeting = OtherWork.addMeeting;

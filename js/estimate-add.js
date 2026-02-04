@@ -18,17 +18,13 @@ export function openAddEstimateModal() {
 
 export function closeAddEstimateModal() {
     document.getElementById('addEstimateModal').style.display = 'none';
-    // フォームをリセット
+
+    // モードを通常に戻す
+    switchEstimateMode('normal');
+
+    // 通常モードのフォームをリセット
     document.getElementById('addEstVersion').value = '';
 
-    // その他工数モードをリセット
-    const otherWorkMode = document.getElementById('addEstOtherWorkMode');
-    if (otherWorkMode) {
-        otherWorkMode.checked = false;
-        toggleOtherWorkMode();
-    }
-
-    // 帳票名のselectとinputをリセット
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
     formNameSelect.value = '';
@@ -51,28 +47,67 @@ export function closeAddEstimateModal() {
     });
 
     updateAddEstimateTotals();
+
+    // その他工数フォームをリセット
+    const otherTask = document.getElementById('addEstOtherTask');
+    const otherMember = document.getElementById('addEstOtherMember');
+    const otherHours = document.getElementById('addEstOtherHours');
+    if (otherTask) otherTask.value = '';
+    if (otherMember) otherMember.value = '';
+    if (otherHours) otherHours.value = '';
+}
+
+// 現在の見積モード（'normal' or 'other'）
+let currentEstimateMode = 'normal';
+
+/**
+ * 見積モードの切り替え（セグメントコントロール）
+ * @param {string} mode - 'normal' または 'other'
+ */
+export function switchEstimateMode(mode) {
+    currentEstimateMode = mode;
+
+    const normalForm = document.getElementById('addEstNormalForm');
+    const otherForm = document.getElementById('addEstOtherForm');
+    const segmentBtns = document.querySelectorAll('#addEstModeSelector .segment-btn');
+
+    // セグメントボタンのアクティブ状態を更新
+    segmentBtns.forEach(btn => {
+        if (btn.dataset.mode === mode) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // フォームの表示切替
+    if (mode === 'other') {
+        normalForm.style.display = 'none';
+        otherForm.style.display = 'block';
+    } else {
+        normalForm.style.display = 'block';
+        otherForm.style.display = 'none';
+    }
 }
 
 /**
- * その他工数モードの切り替え
+ * 現在の見積モードを取得
  */
-export function toggleOtherWorkMode() {
-    const isOtherWork = document.getElementById('addEstOtherWorkMode').checked;
-    const versionTaskGroup = document.getElementById('addEstVersionTaskGroup');
-    const taskLabel = document.getElementById('addEstTaskLabel');
-    const taskInput = document.getElementById('addEstTask');
+export function getCurrentEstimateMode() {
+    return currentEstimateMode;
+}
 
-    if (isOtherWork) {
-        // その他工数モード
-        versionTaskGroup.style.display = 'none';
-        taskLabel.textContent = '作業名';
-        taskInput.placeholder = '打ち合わせ、レビュー等';
-    } else {
-        // 通常モード
-        versionTaskGroup.style.display = '';
-        taskLabel.textContent = '対応名';
-        taskInput.placeholder = 'X対応';
-    }
+/**
+ * その他工数フォームの担当者セレクト初期化
+ */
+export function initOtherWorkMemberSelect() {
+    const select = document.getElementById('addEstOtherMember');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- 担当者を選択 --</option>';
+    State.members.forEach(member => {
+        select.innerHTML += `<option value="${member}">${member}</option>`;
+    });
 }
 
 // 担当者の自動コピー機能（PG↔PT、IT↔ST）
@@ -121,6 +156,10 @@ export function initAddEstimateForm() {
     Utils.generateMonthOptions('addEstStartMonth', currentMonth);
     Utils.generateMonthOptions('addEstStartMonthMulti', currentMonth);
     Utils.generateMonthOptions('addEstEndMonth', currentMonth);
+
+    // その他工数フォームの初期化
+    Utils.generateMonthOptions('addEstOtherMonth', currentMonth);
+    initOtherWorkMemberSelect();
 
     // 複数月選択の期間変更時にリアルタイム更新
     const startMonthMulti = document.getElementById('addEstStartMonthMulti');
@@ -315,7 +354,72 @@ export function updateAddEstimateTotals() {
 }
 
 export function addEstimateFromModal() {
-    const isOtherWorkMode = document.getElementById('addEstOtherWorkMode').checked;
+    // モードに応じて処理を分岐
+    if (currentEstimateMode === 'other') {
+        addOtherWorkEstimate();
+    } else {
+        addNormalEstimate();
+    }
+}
+
+/**
+ * その他工数の登録
+ */
+function addOtherWorkEstimate() {
+    const taskName = document.getElementById('addEstOtherTask').value.trim();
+    const member = document.getElementById('addEstOtherMember').value;
+    const workMonth = document.getElementById('addEstOtherMonth').value;
+    const hours = parseFloat(document.getElementById('addEstOtherHours').value) || 0;
+
+    if (!taskName) {
+        alert('作業名を入力してください');
+        return;
+    }
+
+    if (!member) {
+        alert('担当者を選択してください');
+        return;
+    }
+
+    if (!workMonth) {
+        alert('作業月を選択してください');
+        return;
+    }
+
+    if (hours <= 0) {
+        alert('見積工数を入力してください');
+        return;
+    }
+
+    // その他工数として登録（version は空）
+    const est = {
+        id: Date.now() + Math.random(),
+        version: '',
+        task: taskName,
+        process: '',
+        member: member,
+        hours: hours,
+        workMonth: workMonth,
+        workMonths: [workMonth],
+        monthlyHours: { [workMonth]: hours },
+        createdAt: new Date().toISOString()
+    };
+
+    State.estimates.push(est);
+
+    if (typeof window.saveData === 'function') window.saveData();
+    if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+    if (typeof window.updateReport === 'function') window.updateReport();
+    closeAddEstimateModal();
+    Utils.showAlert('その他工数を登録しました', true);
+}
+
+/**
+ * 通常の見積登録
+ */
+function addNormalEstimate() {
     const taskName = document.getElementById('addEstTask').value.trim();
 
     // ラジオボタンの選択に応じて適切なセレクトボックスから値を取得
@@ -330,43 +434,31 @@ export function addEstimateFromModal() {
         endMonth = document.getElementById('addEstEndMonth').value;
     }
 
-    let version, task;
+    // 通常モード: 版数・帳票名・対応名を検証
+    const version = document.getElementById('addEstVersion').value;
 
-    if (isOtherWorkMode) {
-        // その他工数モード: 版数・帳票名は空
-        if (!taskName) {
-            alert('作業名を入力してください');
-            return;
-        }
-        version = '';
-        task = taskName;
-    } else {
-        // 通常モード: 版数・帳票名・対応名を検証
-        version = document.getElementById('addEstVersion').value;
+    // 帳票名を取得（selectまたはinputから）
+    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    const formNameInput = document.getElementById('addEstFormName');
+    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
 
-        // 帳票名を取得（selectまたはinputから）
-        const formNameSelect = document.getElementById('addEstFormNameSelect');
-        const formNameInput = document.getElementById('addEstFormName');
-        const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
-
-        if (!version || version === '新規追加') {
-            alert('版数を選択してください');
-            return;
-        }
-
-        if (!formName) {
-            alert('帳票名を入力してください');
-            return;
-        }
-
-        if (!taskName) {
-            alert('対応名を入力してください');
-            return;
-        }
-
-        // 帳票名と対応名を結合
-        task = `${formName}：${taskName}`;
+    if (!version || version === '新規追加') {
+        alert('版数を選択してください');
+        return;
     }
+
+    if (!formName) {
+        alert('帳票名を入力してください');
+        return;
+    }
+
+    if (!taskName) {
+        alert('対応名を入力してください');
+        return;
+    }
+
+    // 帳票名と対応名を結合
+    const task = `${formName}：${taskName}`;
 
     if (!startMonth) {
         alert('作業月を選択してください');

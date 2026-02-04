@@ -1408,26 +1408,37 @@
             animation: fadeIn 0.3s;
         }
 
-        /* その他工数トグル（見積モーダル用） */
-        .other-work-toggle {
-            padding: 10px 14px;
-            background: var(--bg-secondary, #f8f9fa);
-            border-radius: 8px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-color, #e0e0e0);
-        }
-
-        .other-work-toggle .checkbox-label {
+        /* セグメントコントロール（見積モード切替用） */
+        .segment-control {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-weight: 500;
+            background: var(--bg-secondary, #e9ecef);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+            gap: 4px;
         }
 
-        .other-work-toggle .checkbox-label input[type="checkbox"] {
-            width: auto;
-            margin: 0;
+        .segment-control .segment-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary, #666);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .segment-control .segment-btn:hover {
+            color: var(--text-primary, #333);
+        }
+
+        .segment-control .segment-btn.active {
+            background: var(--bg-primary, #fff);
+            color: var(--primary-color, #3498db);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         /* セグメントボタンコンテナのスクロールバースタイル */
