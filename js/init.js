@@ -283,13 +283,9 @@ window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
 window.switchAddEstMonthType = EstimateAdd.switchAddEstMonthType;
 window.updateAddEstimateTableHeader = EstimateAdd.updateAddEstimateTableHeader;
 window.updateDefaultAddProcessMonths = EstimateAdd.updateDefaultAddProcessMonths;
-window.toggleAddMonthSplit = EstimateAdd.toggleAddMonthSplit;
 window.updateAddEstimateTotals = EstimateAdd.updateAddEstimateTotals;
-window.updateAddMonthPreview = EstimateAdd.updateAddMonthPreview;
-window.checkAddMonthTotal = EstimateAdd.checkAddMonthTotal;
 window.addEstimateFromModal = EstimateAdd.addEstimateFromModal;
 window.addEstimateFromModalNormal = EstimateAdd.addEstimateFromModalNormal;
-window.addEstimateFromModalWithMonthSplit = EstimateAdd.addEstimateFromModalWithMonthSplit;
 window.toggleOtherWorkMode = EstimateAdd.toggleOtherWorkMode;
 
 // other-work.js の関数

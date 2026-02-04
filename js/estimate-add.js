@@ -50,8 +50,6 @@ export function closeAddEstimateModal() {
         if (hoursEl) hoursEl.value = '';
     });
 
-    document.getElementById('addEnableMonthSplit').checked = false;
-    toggleAddMonthSplit();
     updateAddEstimateTotals();
 }
 
@@ -123,8 +121,6 @@ export function initAddEstimateForm() {
     Utils.generateMonthOptions('addEstStartMonth', currentMonth);
     Utils.generateMonthOptions('addEstStartMonthMulti', currentMonth);
     Utils.generateMonthOptions('addEstEndMonth', currentMonth);
-    Utils.generateMonthOptions('addStartMonth', currentMonth);
-    Utils.generateMonthOptions('addEndMonth', currentMonth);
 
     // 複数月選択の期間変更時にリアルタイム更新
     const startMonthMulti = document.getElementById('addEstStartMonthMulti');
@@ -301,17 +297,6 @@ export function updateDefaultAddProcessMonths(startMonth, endMonth) {
     });
 }
 
-export function toggleAddMonthSplit() {
-    const enabled = document.getElementById('addEnableMonthSplit').checked;
-    const panel = document.getElementById('addMonthSplitPanel');
-
-    if (enabled) {
-        panel.style.display = 'block';
-    } else {
-        panel.style.display = 'none';
-    }
-}
-
 export function updateAddEstimateTotals() {
     const processes = PROCESS.TYPES;
     let totalHours = 0;
@@ -327,77 +312,6 @@ export function updateAddEstimateTotals() {
     document.getElementById('addEstTotalHours').textContent = totalHours.toFixed(1);
     document.getElementById('addEstTotalDays').textContent = totalDays;
     document.getElementById('addEstTotalMonths').textContent = totalMonths;
-}
-
-export function updateAddMonthPreview() {
-    const startMonth = document.getElementById('addStartMonth').value;
-    const endMonth = document.getElementById('addEndMonth').value;
-    const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
-    const method = document.querySelector('input[name="addSplitMethod"]:checked').value;
-    const preview = document.getElementById('addMonthPreview');
-
-    if (!startMonth || !endMonth || totalHours <= 0) {
-        preview.innerHTML = '';
-        return;
-    }
-
-    const months = Utils.generateMonthRange(startMonth, endMonth);
-    if (months.length === 0) {
-        preview.innerHTML = '';
-        return;
-    }
-
-    let html = '<div style="background: #f0f0f0; padding: 10px; border-radius: 5px;">';
-    html += '<strong>分割プレビュー:</strong><br>';
-
-    if (method === 'equal') {
-        const hoursPerMonth = (totalHours / months.length).toFixed(1);
-        months.forEach(month => {
-            html += `<div style="margin-top: 5px;">${month}: ${hoursPerMonth}h</div>`;
-        });
-    } else {
-        months.forEach(month => {
-            html += `<div style="margin-top: 5px; display: flex; align-items: center; gap: 10px;">`;
-            html += `<span style="min-width: 100px;">${month}:</span>`;
-            html += `<input type="number" id="addMonthHours_${month}" step="0.1" min="0" placeholder="0" style="width: 80px; padding: 4px;" oninput="checkAddMonthTotal()"> h`;
-            html += `</div>`;
-        });
-    }
-
-    html += '</div>';
-    preview.innerHTML = html;
-}
-
-export function checkAddMonthTotal() {
-    const startMonth = document.getElementById('addStartMonth').value;
-    const endMonth = document.getElementById('addEndMonth').value;
-    const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
-
-    if (!startMonth || !endMonth) return;
-
-    const months = Utils.generateMonthRange(startMonth, endMonth);
-    let sum = 0;
-
-    months.forEach(month => {
-        const input = document.getElementById(`addMonthHours_${month}`);
-        if (input) {
-            sum += parseFloat(input.value) || 0;
-        }
-    });
-
-    const preview = document.getElementById('addMonthPreview');
-    const existingWarning = preview.querySelector('.total-warning');
-    if (existingWarning) {
-        existingWarning.remove();
-    }
-
-    if (Math.abs(sum - totalHours) > 0.01) {
-        const warning = document.createElement('div');
-        warning.className = 'total-warning';
-        warning.style.cssText = 'color: #d32f2f; margin-top: 10px; font-weight: 600;';
-        warning.textContent = `⚠️ 合計: ${sum.toFixed(1)}h（総工数: ${totalHours.toFixed(1)}h）`;
-        preview.appendChild(warning);
-    }
 }
 
 export function addEstimateFromModal() {
@@ -460,27 +374,7 @@ export function addEstimateFromModal() {
     }
 
     const processes = PROCESS.TYPES;
-    const monthSplitEnabled = document.getElementById('addEnableMonthSplit').checked;
-
-    if (monthSplitEnabled) {
-        // 月分割モード
-        const splitProcesses = [];
-        processes.forEach(proc => {
-            if (document.getElementById(`addSplit${proc}`).checked) {
-                splitProcesses.push(proc);
-            }
-        });
-
-        if (splitProcesses.length === 0) {
-            alert('分割する工程を少なくとも一つ選択してください');
-            return;
-        }
-
-        addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses);
-    } else {
-        // 通常モード
-        addEstimateFromModalNormal(version, task, processes, startMonth, endMonth);
-    }
+    addEstimateFromModalNormal(version, task, processes, startMonth, endMonth);
 }
 
 export function addEstimateFromModalNormal(version, task, processes, startMonth, endMonth) {
@@ -546,94 +440,6 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
 
             // 見込残存時間も自動設定（見積時間と同じ）
             Estimate.saveRemainingEstimate(version, task, proc, member, hours);
-        }
-    });
-
-    if (typeof window.saveData === 'function') window.saveData();
-    if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
-    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
-    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
-    if (typeof window.updateReport === 'function') window.updateReport();
-    closeAddEstimateModal();
-    Utils.showAlert('見積を登録しました', true);
-}
-
-export function addEstimateFromModalWithMonthSplit(version, task, processes, splitProcesses) {
-    const startMonth = document.getElementById('addStartMonth').value;
-    const endMonth = document.getElementById('addEndMonth').value;
-    const totalHours = parseFloat(document.getElementById('addTotalHours').value) || 0;
-    const method = document.querySelector('input[name="addSplitMethod"]:checked').value;
-
-    if (!startMonth || !endMonth) {
-        alert('作業期間を選択してください');
-        return;
-    }
-
-    if (totalHours <= 0) {
-        alert('総工数を入力してください');
-        return;
-    }
-
-    const months = Utils.generateMonthRange(startMonth, endMonth);
-
-    if (months.length === 0) {
-        alert('有効な作業期間を選択してください');
-        return;
-    }
-
-    let monthlyHours = {};
-
-    if (method === 'equal') {
-        const hoursPerMonth = totalHours / months.length;
-        months.forEach(month => {
-            monthlyHours[month] = hoursPerMonth;
-        });
-    } else {
-        let total = 0;
-        months.forEach(month => {
-            const input = document.getElementById(`addMonthHours_${month}`);
-            const hours = parseFloat(input.value) || 0;
-            monthlyHours[month] = hours;
-            total += hours;
-        });
-
-        if (Math.abs(total - totalHours) > 0.01) {
-            alert(`月別工数の合計（${total}h）が総工数（${totalHours}h）と一致しません`);
-            return;
-        }
-    }
-
-    processes.forEach(proc => {
-        const member = document.getElementById(`addEst${proc}_member`).value;
-        const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
-
-        if (hours > 0) {
-            const est = {
-                id: Date.now() + Math.random(),
-                version: version,
-                task: task,
-                process: proc,
-                member: member,
-                hours: totalHours,
-                workMonth: startMonth,
-                workMonths: months,
-                monthlyHours: monthlyHours,
-                createdAt: new Date().toISOString()
-            };
-
-            if (splitProcesses.includes(proc)) {
-                State.estimates.push(est);
-                // 見込残存時間も自動設定（総工数と同じ）
-                Estimate.saveRemainingEstimate(version, task, proc, member, totalHours);
-            } else {
-                // 分割対象外の工程は通常通り登録
-                est.hours = hours;
-                est.monthlyHours = { [startMonth]: hours };
-                est.workMonths = [startMonth];
-                State.estimates.push(est);
-                // 見込残存時間も自動設定（見積時間と同じ）
-                Estimate.saveRemainingEstimate(version, task, proc, member, hours);
-            }
         }
     });
 
