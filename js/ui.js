@@ -1329,6 +1329,26 @@ export function setEstimateViewType(type) {
         btnList.classList.add('active');
     }
 
+    // 作業月割り当てチェックボックスの表示制御（グループ表示時のみ）
+    const workMonthCheckbox1 = document.getElementById('workMonthSelectionMode');
+    const workMonthCheckbox2 = document.getElementById('workMonthSelectionMode2');
+    const isGrouped = type === 'grouped';
+
+    if (workMonthCheckbox1 && workMonthCheckbox1.parentElement) {
+        workMonthCheckbox1.parentElement.style.display = isGrouped ? '' : 'none';
+    }
+    if (workMonthCheckbox2 && workMonthCheckbox2.parentElement) {
+        workMonthCheckbox2.parentElement.style.display = isGrouped ? '' : 'none';
+    }
+
+    // グループ表示以外に変更され、作業月割り当てモードがオンの場合は解除
+    if (!isGrouped && workMonthCheckbox1 && workMonthCheckbox1.checked) {
+        workMonthCheckbox1.checked = false;
+        if (workMonthCheckbox2) workMonthCheckbox2.checked = false;
+        const modePanel = document.getElementById('workMonthAssignmentMode');
+        if (modePanel) modePanel.style.display = 'none';
+    }
+
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
     }
