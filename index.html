@@ -7,10 +7,7 @@
     <title>工数管理システム</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <!-- 早期テーマ・タブ読み込み：ちらつき防止 -->
+    <!-- 早期テーマ・タブ読み込み：CSS読み込み前に実行してちらつき防止 -->
     <script>
         (function () {
             try {
@@ -29,9 +26,17 @@
                 if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
+                // モバイルタブデザインを読み込み・即座に適用（CSS読み込み前）
+                var mobileTabDesign = localStorage.getItem('mobileTabDesign') || 'capsule';
+                if (['classic', 'dock', 'capsule'].indexOf(mobileTabDesign) !== -1) {
+                    document.documentElement.dataset.earlyTabDesign = mobileTabDesign;
+                }
             } catch (e) { }
         })();
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
+    <link rel="stylesheet" href="style.css">
     <style>
         /* 早期テーマ適用用のCSS変数 */
         :root {
@@ -227,7 +232,7 @@
                             </div>
                             <div class="form-group quick-form-hours">
                                 <label>実績工数 (h)</label>
-                                <input type="number" id="quickHours" step="0.5" min="0" value="8"
+                                <input type="number" id="quickHours" step="0.25" min="0" value="8"
                                     style="background: rgba(255,255,255,0.95); color: #333; border: none;">
                             </div>
                         </div>
@@ -1764,12 +1769,12 @@
                 </div>
                 <div class="form-group">
                     <label>実績工数</label>
-                    <input type="number" id="editActualHours" step="0.5" min="0" placeholder="8">
+                    <input type="number" id="editActualHours" step="0.25" min="0" placeholder="8">
                 </div>
                 <div class="form-group" id="remainingHoursGroup">
                     <label>見込残存時間</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" id="editActualRemainingHours" step="0.5" min="0" placeholder="0"
+                        <input type="number" id="editActualRemainingHours" step="0.25" min="0" placeholder="0"
                             style="flex: 1; max-width: 120px;">
                         <span style="color: #666; font-size: 13px;">時間</span>
                     </div>
@@ -2552,7 +2557,7 @@
                     <div class="schedule-info-row schedule-remaining-edit">
                         <span class="schedule-info-label">見込み残</span>
                         <div class="schedule-remaining-input-group">
-                            <input type="number" id="detailUserRemainingHours" step="0.5" min="0" placeholder="0.0">
+                            <input type="number" id="detailUserRemainingHours" step="0.25" min="0" placeholder="0.0">
                             <span class="input-suffix">h</span>
                             <button onclick="saveScheduleRemainingHours()" class="btn btn-sm btn-outline">更新</button>
                         </div>
