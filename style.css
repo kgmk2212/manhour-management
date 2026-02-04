@@ -1473,8 +1473,8 @@
         /* 見積登録フォーム 2カラムレイアウト */
         .estimate-form-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 3fr 2fr;
+            gap: 24px;
         }
 
         .estimate-form-left,
@@ -1503,16 +1503,37 @@
             font-size: 14px;
         }
 
+        .estimate-table.compact {
+            table-layout: fixed;
+        }
+
         .estimate-table.compact th,
         .estimate-table.compact td {
             padding: 5px 6px;
             font-size: 13px;
         }
 
+        .estimate-table.compact th:nth-child(1),
+        .estimate-table.compact td:nth-child(1) {
+            width: 44px;
+        }
+
+        .estimate-table.compact th:nth-child(2),
+        .estimate-table.compact td:nth-child(2) {
+            width: auto;
+        }
+
+        .estimate-table.compact th:nth-child(3),
+        .estimate-table.compact td:nth-child(3) {
+            width: 60px;
+        }
+
         .estimate-table.compact select,
         .estimate-table.compact input {
             padding: 4px 6px;
             font-size: 13px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .estimate-totals-compact {
