@@ -1829,28 +1829,17 @@ export function initEditActualTaskDropdownHandler() {
 
     if (!searchInput || !dropdown) return;
 
-    // フォーカス/クリック時の処理
-    searchInput.addEventListener('click', (e) => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            e.preventDefault();
-            openTaskSelectFullscreen();
-        } else {
-            showEditActualTaskDropdown();
-        }
+    // クリック時にドロップダウン表示（クイック入力と同じ方式）
+    searchInput.addEventListener('click', () => {
+        showEditActualTaskDropdown();
     });
 
-    searchInput.addEventListener('focus', (e) => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            e.target.blur(); // モバイルではフォーカスを外してキーボードを出さない
-            openTaskSelectFullscreen();
-        } else {
-            showEditActualTaskDropdown();
-        }
+    // フォーカス時にもドロップダウン表示
+    searchInput.addEventListener('focus', () => {
+        showEditActualTaskDropdown();
     });
 
-    // 入力時にフィルタリング（デスクトップ用）
+    // 入力時にフィルタリング
     searchInput.addEventListener('input', () => {
         filterEditActualTaskList();
         if (selectedEditActualTask) {
@@ -1867,15 +1856,12 @@ export function initEditActualTaskDropdownHandler() {
             e.preventDefault();
             e.stopPropagation();
             clearEditActualTaskSelection();
-            const isMobile = window.innerWidth <= 768;
-            if (!isMobile) {
-                searchInput.focus();
-                showEditActualTaskDropdown();
-            }
+            searchInput.focus();
+            showEditActualTaskDropdown();
         });
     }
 
-    // ドロップダウン項目クリック（デスクトップ用）
+    // ドロップダウン項目クリック（mousedownを使用）
     dropdown.addEventListener('mousedown', (e) => {
         const item = e.target.closest('.custom-dropdown-item');
         if (item) {
@@ -1885,16 +1871,13 @@ export function initEditActualTaskDropdownHandler() {
         }
     });
 
-    // 外部クリックで閉じる（デスクトップ用）
+    // 外部クリックで閉じる
     document.addEventListener('click', (e) => {
         const container = searchInput.closest('.form-group');
         if (container && !container.contains(e.target)) {
             hideEditActualTaskDropdown();
         }
     });
-
-    // フルスクリーンモーダルのイベント初期化
-    initTaskSelectFullscreen();
 }
 
 // ============================================
