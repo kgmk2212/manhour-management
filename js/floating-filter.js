@@ -180,9 +180,10 @@ export function saveFloatingFilterSetting() {
     localStorage.setItem('floatingFilterEnabled', enabled);
 
     // 設定変更時にボタンの表示/非表示を切り替え
-    // レポートタブにいる場合のみ反映
-    const reportTab = document.getElementById('report');
-    if (reportTab && reportTab.classList.contains('active')) {
+    // フィルタ対応タブ（レポート・見積・実績）にいる場合のみ反映
+    const activeTab = document.querySelector('.tab-content.active');
+    const activeTabId = activeTab ? activeTab.id : null;
+    if (activeTabId === 'report' || activeTabId === 'estimate' || activeTabId === 'actual') {
         if (enabled) {
             showFloatingFilterButton();
         } else {
