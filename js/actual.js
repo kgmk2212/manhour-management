@@ -998,19 +998,28 @@ export function addActualFromCalendar(member, date) {
         }
     }
 
-    // 検索ドロップダウンをリセット
+    const isMobile = window.innerWidth <= 768;
     const searchInput = document.getElementById('editActualTaskSearch');
+    const searchContainer = searchInput ? searchInput.closest('div[style*="position: relative"]') : null;
     const clearBtn = document.getElementById('editActualTaskClearBtn');
-    if (searchInput) {
-        searchInput.value = '';
-        searchInput.placeholder = 'クリックして対応を選択...';
-        searchInput.style.display = 'block';
-    }
-    if (clearBtn) clearBtn.style.display = 'none';
-    clearEditActualTaskSelection();
+    const taskSelect = document.getElementById('editActualTaskSelect');
 
-    // セレクトボックスは非表示
-    document.getElementById('editActualTaskSelect').style.display = 'none';
+    if (isMobile) {
+        // モバイル: ネイティブセレクトを使用
+        if (searchContainer) searchContainer.style.display = 'none';
+        taskSelect.style.display = 'block';
+        clearEditActualTaskSelection();
+    } else {
+        // デスクトップ: 検索ドロップダウンを使用
+        if (searchContainer) searchContainer.style.display = 'block';
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.placeholder = 'クリックして対応を選択...';
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+        taskSelect.style.display = 'none';
+        clearEditActualTaskSelection();
+    }
 
     if (previousActual) {
         document.getElementById('editActualProcess').value = previousActual.process;
@@ -1051,15 +1060,20 @@ export function addActualFromCalendar(member, date) {
         };
         setSelectedEditActualTask(taskInfo);
         
-        // 表示を更新
-        const displayTask = allEditActualTasks.find(t => 
-            t.version === taskInfo.version && 
-            t.task === taskInfo.task && 
-            t.process === taskInfo.process
-        );
-        if (searchInput && displayTask) {
-            searchInput.value = displayTask.display;
-            if (clearBtn) clearBtn.style.display = 'block';
+        if (isMobile) {
+            // モバイル: セレクトボックスの値を設定
+            taskSelect.value = previousActual.task;
+        } else {
+            // デスクトップ: 検索欄に表示
+            const displayTask = allEditActualTasks.find(t => 
+                t.version === taskInfo.version && 
+                t.task === taskInfo.task && 
+                t.process === taskInfo.process
+            );
+            if (searchInput && displayTask) {
+                searchInput.value = displayTask.display;
+                if (clearBtn) clearBtn.style.display = 'block';
+            }
         }
     }
 
@@ -1087,9 +1101,11 @@ export function editActual(id) {
 
     updateEditActualTaskList(actual.member, true, actual.version, actual.process);
 
-    // 検索ドロップダウンに選択内容を表示
+    const isMobile = window.innerWidth <= 768;
     const searchInput = document.getElementById('editActualTaskSearch');
+    const searchContainer = searchInput ? searchInput.closest('div[style*="position: relative"]') : null;
     const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const taskSelect = document.getElementById('editActualTaskSelect');
     
     const taskInfo = {
         version: actual.version,
@@ -1099,20 +1115,26 @@ export function editActual(id) {
     };
     setSelectedEditActualTask(taskInfo);
 
-    // 表示を更新
-    const displayTask = allEditActualTasks.find(t => 
-        t.version === taskInfo.version && 
-        t.task === taskInfo.task && 
-        t.process === taskInfo.process
-    );
-    if (searchInput) {
-        searchInput.value = displayTask ? displayTask.display : actual.task;
-        searchInput.style.display = 'block';
-        if (clearBtn) clearBtn.style.display = 'block';
+    if (isMobile) {
+        // モバイル: ネイティブセレクトを使用
+        if (searchContainer) searchContainer.style.display = 'none';
+        taskSelect.style.display = 'block';
+        taskSelect.value = actual.task;
+    } else {
+        // デスクトップ: 検索ドロップダウンを使用
+        if (searchContainer) searchContainer.style.display = 'block';
+        taskSelect.style.display = 'none';
+        
+        const displayTask = allEditActualTasks.find(t => 
+            t.version === taskInfo.version && 
+            t.task === taskInfo.task && 
+            t.process === taskInfo.process
+        );
+        if (searchInput) {
+            searchInput.value = displayTask ? displayTask.display : actual.task;
+            if (clearBtn) clearBtn.style.display = 'block';
+        }
     }
-
-    // セレクトボックスは非表示
-    document.getElementById('editActualTaskSelect').style.display = 'none';
 
     document.getElementById('editActualProcess').value = actual.process;
     document.getElementById('editActualHours').value = actual.hours;
@@ -1192,25 +1214,39 @@ export function saveActualEdit() {
     const date = document.getElementById('editActualDate').value;
     let version = document.getElementById('editActualVersion').value;
 
-    // 検索ドロップダウンから選択された情報を取得
-    const selected = getSelectedEditActualTask();
+    const isMobile = window.innerWidth <= 768;
+    const taskSelect = document.getElementById('editActualTaskSelect');
     const taskInput = document.getElementById('editActualTaskSearch');
+    const selected = getSelectedEditActualTask();
     
     let task;
     let process = document.getElementById('editActualProcess').value;
     
-    if (selected) {
-        // ドロップダウンから選択された場合
+    if (isMobile) {
+        // モバイル: セレクトボックスから取得
+        if (taskSelect.value && taskSelect.value !== '__NEW__') {
+            task = taskSelect.value;
+            // セレクトボックスのdata属性から版数・工程を取得
+            const selectedOption = taskSelect.options[taskSelect.selectedIndex];
+            if (selectedOption) {
+                const dataVersion = selectedOption.getAttribute('data-version');
+                const dataProcess = selectedOption.getAttribute('data-process');
+                if (dataVersion) version = dataVersion;
+                if (dataProcess) process = dataProcess;
+            }
+        } else {
+            task = '';
+        }
+    } else if (selected) {
+        // デスクトップ: ドロップダウンから選択された場合
         task = selected.task;
         version = selected.version || version;
         process = selected.process || process;
     } else if (taskInput && taskInput.value) {
-        // 新規入力の場合
+        // デスクトップ: 新規入力の場合
         task = taskInput.value;
     } else {
-        // フォールバック: 旧セレクトボックス
-        const taskSelect = document.getElementById('editActualTaskSelect');
-        task = taskSelect.value && taskSelect.value !== '__NEW__' ? taskSelect.value : '';
+        task = '';
     }
 
     const member = document.getElementById('editActualMember').value;
@@ -1582,15 +1618,18 @@ export function handleActualProcessChange() {
     const memberSelect = document.getElementById('editActualMember');
     const versionSelect = document.getElementById('editActualVersion');
     const processSelect = document.getElementById('editActualProcess');
+    const taskSelect = document.getElementById('editActualTaskSelect');
 
     if (!memberSelect || !processSelect) return;
 
     const member = memberSelect.value;
     const version = versionSelect ? versionSelect.value : null;
     const process = processSelect.value;
+    const isMobile = window.innerWidth <= 768;
 
     // 選択中のタスクを保持
     const currentSelected = getSelectedEditActualTask();
+    const currentTaskValue = taskSelect ? taskSelect.value : null;
 
     // リストを更新
     updateEditActualTaskList(member, true, version, process);
@@ -1605,11 +1644,18 @@ export function handleActualProcessChange() {
         
         if (stillExists) {
             setSelectedEditActualTask(currentSelected);
-            const searchInput = document.getElementById('editActualTaskSearch');
-            const clearBtn = document.getElementById('editActualTaskClearBtn');
-            if (searchInput) {
-                searchInput.value = stillExists.display;
-                if (clearBtn) clearBtn.style.display = 'block';
+            
+            if (isMobile) {
+                // モバイル: セレクトボックスの値を設定
+                if (taskSelect) taskSelect.value = currentSelected.task;
+            } else {
+                // デスクトップ: 検索欄に表示
+                const searchInput = document.getElementById('editActualTaskSearch');
+                const clearBtn = document.getElementById('editActualTaskClearBtn');
+                if (searchInput) {
+                    searchInput.value = stillExists.display;
+                    if (clearBtn) clearBtn.style.display = 'block';
+                }
             }
             
             // 残存時間を更新
@@ -1621,6 +1667,7 @@ export function handleActualProcessChange() {
         } else {
             // 選択がリストから消えた場合はクリア
             clearEditActualTaskSelection();
+            if (isMobile && taskSelect) taskSelect.value = '';
         }
     }
 }
