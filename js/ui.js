@@ -487,9 +487,9 @@ export function updateTabIndicator(targetTabName, animate = true) {
 
     // readyクラスがない場合（初回）はレイアウトが安定するまで待つ
     if (!tabIndicator.classList.contains('ready')) {
-        const MAX_WAIT_TIME = 500; // 最大待機時間(ms)
-        const POLL_INTERVAL = 20;  // ポーリング間隔(ms)
-        const STABLE_COUNT = 3;    // 安定と判断するための連続一致回数
+        const MAX_WAIT_TIME = 300; // 最大待機時間(ms)
+        const POLL_INTERVAL = 16;  // ポーリング間隔(ms) ≒ 1フレーム
+        const STABLE_COUNT = 2;    // 安定と判断するための連続一致回数
         const startTime = Date.now();
         let stableCount = 0;
         let lastLeft = null;
@@ -556,11 +556,9 @@ export function updateTabIndicator(targetTabName, animate = true) {
             // フォント適用後の追加待機（レイアウト再計算のため）
             setTimeout(() => {
                 requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        waitForStableLayout();
-                    });
+                    waitForStableLayout();
                 });
-            }, 50);
+            }, 30);
         };
 
         if (document.fonts && document.fonts.ready) {
