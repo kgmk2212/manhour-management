@@ -3100,17 +3100,23 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
 
 /**
  * バー表示を更新
- * 最大130%表示、100%ラインで目盛り表示
+ * 動的スケール：100%以下は従来通り、100%超は最大値が右端になるよう自動調整
  */
 function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPercent, isOverCapacity, displayMode) {
     const el = (id) => document.getElementById(id);
-    const MAX_PERCENT = 130; // バー全体が表す最大パーセント
 
-    // パーセントをバー幅に変換（130% = 100%幅）
+    // 動的スケール計算：最大値が100%超なら、その値をスケール上限に
+    const maxPercent = Math.max(estimatePercent, actualPercent, 100);
+    const scale = maxPercent;
+
+    // パーセントをバー幅に変換
     const percentToWidth = (percent) => {
-        const clamped = Math.min(Math.max(percent, 0), MAX_PERCENT);
-        return (clamped / MAX_PERCENT) * 100;
+        const clamped = Math.min(Math.max(percent, 0), scale);
+        return (clamped / scale) * 100;
     };
+
+    // 100%ラインの位置（%）
+    const line100Position = (100 / scale) * 100;
 
     const getBarOpacity = (percent) => {
         const minOpacity = 0.5;
@@ -3118,6 +3124,30 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
         const clampedPercent = Math.min(Math.max(percent, 0), 100);
         return minOpacity + (maxOpacity - minOpacity) * (clampedPercent / 100);
     };
+
+    // 100%ライン表示（超過時のみ）
+    const line100El = el('capacity100Line');
+    if (line100El) {
+        if (isOverCapacity) {
+            line100El.style.display = 'block';
+            line100El.style.left = line100Position + '%';
+        } else {
+            line100El.style.display = 'none';
+        }
+    }
+
+    // 背景のグラデーション更新（超過ゾーン表示）
+    const estimateBgEl = el('capacityEstimateBg');
+    const actualBgEl = el('capacityActualBg');
+    if (isOverCapacity) {
+        const bgGradient = `linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 ${line100Position}%, #fecaca ${line100Position}%, #fca5a5 100%)`;
+        if (estimateBgEl) estimateBgEl.style.background = bgGradient;
+        if (actualBgEl) actualBgEl.style.background = bgGradient;
+    } else {
+        const bgGradient = 'linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%)';
+        if (estimateBgEl) estimateBgEl.style.background = bgGradient;
+        if (actualBgEl) actualBgEl.style.background = bgGradient;
+    }
 
     // 見積バー
     const estimateBarEl = el('capacityEstimateBar');
