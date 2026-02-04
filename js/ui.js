@@ -227,8 +227,17 @@ export function showTab(tabName, options = {}) {
         if (typeof window.syncFloatingFilters === 'function') {
             window.syncFloatingFilters();
         }
+    } else if (tabName === 'actual') {
+        // フローティングフィルタボタンを表示
+        if (typeof window.showFloatingFilterButton === 'function') {
+            window.showFloatingFilterButton();
+        }
+        // フローティングパネルの状態を同期
+        if (typeof window.syncFloatingActualFilters === 'function') {
+            window.syncFloatingActualFilters();
+        }
     } else {
-        // 見積・レポートタブ以外ではフローティングフィルタボタンを非表示
+        // 見積・レポート・実績タブ以外ではフローティングフィルタボタンを非表示
         if (typeof window.hideFloatingFilterButton === 'function') {
             window.hideFloatingFilterButton();
         }

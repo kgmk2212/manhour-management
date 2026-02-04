@@ -316,6 +316,7 @@ window.setFloatingEstFilterType = FloatingFilter.setFloatingEstFilterType;
 window.setFloatingEstViewType = FloatingFilter.setFloatingEstViewType;
 window.syncFloatingEstimateFilters = FloatingFilter.syncFloatingEstimateFilters;
 window.syncFloatingEstMonthFilter = FloatingFilter.syncFloatingEstMonthFilter;
+window.syncFloatingActualFilters = FloatingFilter.syncFloatingActualFilters;
 
 // modal.js の関数
 window.showProcessBreakdown = Modal.showProcessBreakdown;

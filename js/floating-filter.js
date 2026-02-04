@@ -242,6 +242,8 @@ export function toggleFloatingFilterPanel(event) {
     let targetPanelId = 'floatingFilterPanel'; // デフォルト（レポート用）
     if (activeTabId === 'estimate') {
         targetPanelId = 'floatingFilterPanelEstimate';
+    } else if (activeTabId === 'actual') {
+        targetPanelId = 'floatingFilterPanelActual';
     }
 
     const targetPanel = document.getElementById(targetPanelId);
@@ -262,6 +264,8 @@ export function toggleFloatingFilterPanel(event) {
             // パネルを開く時に状態を同期
             if (activeTabId === 'estimate') {
                 syncFloatingEstimateFilters();
+            } else if (activeTabId === 'actual') {
+                syncFloatingActualFilters();
             } else {
                 syncFloatingFilters();
             }
@@ -623,6 +627,132 @@ export function syncFloatingVersionFilter(value) {
         // ボタンの状態を更新
         syncFloatingFilters();
     }
+}
+
+// ============================================
+// 実績一覧用フローティングフィルタ
+// ============================================
+
+// 実績フィルタの状態をフローティングパネルに同期
+export function syncFloatingActualFilters() {
+    // 表示モードの同期
+    const mainViewMode = document.getElementById('actualViewMode');
+    if (mainViewMode) {
+        const viewMode = mainViewMode.value;
+        updateFloatingActualViewModeButtons(viewMode);
+
+        // 担当者グループの表示/非表示
+        const memberGroup = document.getElementById('floatingActualMemberGroup');
+        if (memberGroup) {
+            memberGroup.style.display = viewMode === 'member' ? 'block' : 'none';
+        }
+    }
+
+    // 担当者フィルタの同期
+    const mainMember = document.getElementById('actualMemberSelect');
+    const floatingMemberButtons = document.getElementById('floatingActualMemberButtons');
+    if (mainMember && floatingMemberButtons) {
+        const currentValue = mainMember.value;
+        floatingMemberButtons.innerHTML = '';
+        Array.from(mainMember.options).forEach(option => {
+            const btn = document.createElement('button');
+            btn.textContent = option.text;
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                setFloatingActualMember(option.value);
+            };
+            if (String(option.value) === String(currentValue)) btn.classList.add('active');
+            floatingMemberButtons.appendChild(btn);
+        });
+        enableDragScroll(floatingMemberButtons);
+    }
+
+    // 表示形式の同期
+    const mainViewType = document.getElementById('actualViewType');
+    if (mainViewType) {
+        updateFloatingActualViewTypeButtons(mainViewType.value);
+    }
+
+    // 月フィルタの同期
+    const mainMonth = document.getElementById('actualMonthFilter');
+    const floatingMonthButtons = document.getElementById('floatingActualMonthButtons');
+    if (mainMonth && floatingMonthButtons) {
+        const currentValue = mainMonth.value;
+        floatingMonthButtons.innerHTML = '';
+        Array.from(mainMonth.options).forEach(option => {
+            const btn = document.createElement('button');
+            btn.textContent = option.text;
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                setFloatingActualMonth(option.value);
+            };
+            if (String(option.value) === String(currentValue)) btn.classList.add('active');
+            floatingMonthButtons.appendChild(btn);
+        });
+        enableDragScroll(floatingMonthButtons);
+        scrollToActiveButton(floatingMonthButtons);
+    }
+
+    // テーマ更新
+    if (typeof window.updateFloatingFilterTheme === 'function') {
+        window.updateFloatingFilterTheme();
+    }
+}
+
+// 表示モードボタンの状態を更新
+function updateFloatingActualViewModeButtons(mode) {
+    const btnAll = document.getElementById('floatingActualViewModeAll');
+    const btnMember = document.getElementById('floatingActualViewModeMember');
+    if (btnAll) btnAll.classList.toggle('active', mode === 'all');
+    if (btnMember) btnMember.classList.toggle('active', mode === 'member');
+}
+
+// 表示形式ボタンの状態を更新
+function updateFloatingActualViewTypeButtons(type) {
+    const btnMatrix = document.getElementById('floatingActualViewTypeMatrix');
+    const btnList = document.getElementById('floatingActualViewTypeList');
+    if (btnMatrix) btnMatrix.classList.toggle('active', type === 'matrix');
+    if (btnList) btnList.classList.toggle('active', type === 'list');
+}
+
+// 表示モード変更
+window.setFloatingActualViewMode = function(mode) {
+    const mainViewMode = document.getElementById('actualViewMode');
+    if (mainViewMode) {
+        mainViewMode.value = mode;
+        mainViewMode.dispatchEvent(new Event('change'));
+    }
+    syncFloatingActualFilters();
+};
+
+// 担当者変更
+function setFloatingActualMember(value) {
+    const mainMember = document.getElementById('actualMemberSelect');
+    if (mainMember) {
+        mainMember.value = value;
+        mainMember.dispatchEvent(new Event('change'));
+    }
+    syncFloatingActualFilters();
+}
+
+// 表示形式変更
+window.setFloatingActualViewType = function(type) {
+    const mainViewType = document.getElementById('actualViewType');
+    if (mainViewType) {
+        mainViewType.value = type;
+        mainViewType.dispatchEvent(new Event('change'));
+    }
+    syncFloatingActualFilters();
+};
+
+// 月フィルタ変更
+function setFloatingActualMonth(value) {
+    const mainMonth = document.getElementById('actualMonthFilter');
+    if (mainMonth) {
+        mainMonth.value = value;
+        mainMonth.dispatchEvent(new Event('change'));
+    }
+    syncFloatingActualFilters();
 }
 
 // パネル外クリックで閉じるイベントの初期化

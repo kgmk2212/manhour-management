@@ -2368,6 +2368,46 @@
         </div>
     </div>
 
+    <!-- 実績一覧用フローティングフィルタパネル -->
+    <div id="floatingFilterPanelActual" class="floating-filter-panel">
+        <div class="floating-filter-panel-header">
+            <span>実績フィルタ設定</span>
+            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
+        </div>
+        <div class="floating-filter-panel-body">
+            <!-- 表示モード -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">表示モード</label>
+                <div class="floating-segment-buttons" id="floatingActualViewModeButtons">
+                    <button id="floatingActualViewModeAll" onclick="setFloatingActualViewMode('all')">全担当者</button>
+                    <button id="floatingActualViewModeMember" onclick="setFloatingActualViewMode('member')">担当者別</button>
+                </div>
+            </div>
+
+            <!-- 担当者選択（担当者別モード時のみ表示） -->
+            <div class="floating-filter-group" id="floatingActualMemberGroup" style="display: none;">
+                <label class="floating-filter-label">担当者</label>
+                <div class="floating-segment-buttons" id="floatingActualMemberButtons"></div>
+            </div>
+
+            <!-- 表示形式 -->
+            <div class="floating-filter-group">
+                <label class="floating-filter-label">表示形式</label>
+                <div class="floating-segment-buttons" id="floatingActualViewTypeButtons">
+                    <button id="floatingActualViewTypeMatrix" onclick="setFloatingActualViewType('matrix')">カレンダー</button>
+                    <button id="floatingActualViewTypeList" onclick="setFloatingActualViewType('list')">リスト</button>
+                </div>
+            </div>
+
+            <!-- 月別フィルタ -->
+            <div class="floating-filter-group" id="floatingActualMonthGroup">
+                <label class="floating-filter-label">表示月</label>
+                <div class="floating-segment-buttons" id="floatingActualMonthButtons"></div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- フローティングフィルタパネル -->
     <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel(event)">
         🔍
