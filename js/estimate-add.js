@@ -104,8 +104,13 @@ export function initOtherWorkMemberSelect() {
     const select = document.getElementById('addEstOtherMember');
     if (!select) return;
 
+    // 担当者を estimates と actuals から取得
+    const members = new Set();
+    State.estimates.forEach(e => { if (e.member) members.add(e.member); });
+    State.actuals.forEach(a => { if (a.member) members.add(a.member); });
+
     select.innerHTML = '<option value="">-- 担当者を選択 --</option>';
-    State.members.forEach(member => {
+    Array.from(members).sort().forEach(member => {
         select.innerHTML += `<option value="${member}">${member}</option>`;
     });
 }
