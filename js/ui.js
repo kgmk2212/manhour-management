@@ -342,28 +342,12 @@ export function initTabIndicator() {
     tabIndicator.className = 'tab-indicator';
     tabButtonsArea.appendChild(tabIndicator);
 
-    // 初期位置を即座に設定（ちらつき防止）
-    const targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${savedTab}"]`);
-    if (targetTab) {
-        const width = targetTab.offsetWidth;
-        const height = targetTab.offsetHeight;
-        const left = targetTab.offsetLeft;
-        const top = targetTab.offsetTop;
-
-        tabIndicator.style.width = `${width}px`;
-        tabIndicator.style.height = `${height}px`;
-        tabIndicator.style.top = `${top}px`;
-        tabIndicator.style.transform = `translateX(${left}px)`;
-        lastIndicatorPosition = { width, left };
-
-        // 位置設定後すぐに表示
-        tabIndicator.classList.add('ready');
-    }
-
     // ResizeObserverでタブボタンのサイズ変更を監視
-    // フォントロードやレイアウト変更でタブボタンのサイズが変わったら自動で再計算
     tabResizeObserver = new ResizeObserver(() => {
-        updateTabIndicatorImmediate();
+        // readyクラスが付いている場合のみ更新（フォントロード完了後）
+        if (tabIndicator.classList.contains('ready')) {
+            updateTabIndicatorImmediate();
+        }
     });
 
     // 全てのタブボタンを監視
@@ -377,12 +361,8 @@ export function initTabIndicator() {
         }
     });
 
-    // フォントロード完了を待ってから位置を再計算（フォントロードでサイズが変わる場合の対策）
-    if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-            updateTabIndicatorImmediate();
-        });
-    }
+    // 注意: 初期位置はshowTab()内のupdateTabIndicator()で設定される
+    // フォントロードの待機もupdateTabIndicator()内で行う
 }
 
 /**
@@ -429,14 +409,6 @@ function updateTabIndicatorImmediate(animate = false) {
     tabIndicator.style.height = `${height}px`;
     tabIndicator.style.top = `${top}px`;
     tabIndicator.style.transform = `translateX(${left}px)`;
-
-    // 位置確定後に表示（ちらつき防止）
-    if (!tabIndicator.classList.contains('ready')) {
-        // 次フレームでreadyクラスを追加（位置適用後に表示）
-        requestAnimationFrame(() => {
-            tabIndicator.classList.add('ready');
-        });
-    }
 
     // 次フレームでswipingクラスを外す（トランジションを有効に戻す）
     if (!animate) {
@@ -502,15 +474,77 @@ export function updateTabIndicator(targetTabName, animate = true) {
                 tabIndicator.style.top = `${top}px`;
                 tabIndicator.style.transform = `translateX(${left}px)`;
 
-                // 位置確定後に表示（ちらつき防止）
-                if (!tabIndicator.classList.contains('ready')) {
-                    tabIndicator.classList.add('ready');
-                }
+                // readyクラスがあれば表示済み
+                if (tabIndicator.classList.contains('ready')) return;
+
+                // 初回表示: readyクラスを追加して表示
+                tabIndicator.classList.add('ready');
             });
         });
     };
 
-    doUpdate();
+    // readyクラスがない場合（初回）はレイアウトが安定するまで待つ
+    if (!tabIndicator.classList.contains('ready')) {
+        const waitForStableLayout = () => {
+            const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+            if (!tabButtonsArea) {
+                setTimeout(waitForStableLayout, 50);
+                return;
+            }
+
+            let targetTab;
+            if (targetTabName) {
+                targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
+            } else {
+                const earlyTab = document.documentElement.dataset.earlyTab;
+                if (earlyTab) {
+                    targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
+                }
+                if (!targetTab) {
+                    targetTab = tabButtonsArea.querySelector('.tab.active');
+                }
+            }
+
+            if (!targetTab) {
+                setTimeout(waitForStableLayout, 50);
+                return;
+            }
+
+            // 現在のサイズを取得
+            const currentLeft = targetTab.offsetLeft;
+            const currentWidth = targetTab.offsetWidth;
+
+            // 前回の値と比較（初回は保存のみ）
+            if (tabIndicator._lastCheckLeft !== undefined) {
+                if (currentLeft === tabIndicator._lastCheckLeft &&
+                    currentWidth === tabIndicator._lastCheckWidth) {
+                    // レイアウトが安定した
+                    delete tabIndicator._lastCheckLeft;
+                    delete tabIndicator._lastCheckWidth;
+                    doUpdate();
+                    return;
+                }
+            }
+
+            // 値を保存して再チェック
+            tabIndicator._lastCheckLeft = currentLeft;
+            tabIndicator._lastCheckWidth = currentWidth;
+            setTimeout(waitForStableLayout, 30);
+        };
+
+        // フォントロード後にポーリング開始
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                requestAnimationFrame(() => {
+                    waitForStableLayout();
+                });
+            });
+        } else {
+            setTimeout(waitForStableLayout, 100);
+        }
+    } else {
+        doUpdate();
+    }
 }
 
 /**
