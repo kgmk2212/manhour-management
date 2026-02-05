@@ -3407,10 +3407,17 @@
         border-radius: 35px;
         pointer-events: none;
         z-index: 0;
+        /* 位置確定前は非表示（ちらつき防止） */
+        opacity: 0;
         /* よりスムーズなスプリングアニメーション */
         transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
                     width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         will-change: transform, width;
+    }
+
+    /* 位置確定後に表示 */
+    .tab-indicator.ready {
+        opacity: 1;
     }
 
     /* スワイプ中はトランジションを無効化 */
@@ -3455,4 +3462,48 @@
     .tabs.is-classic .tab-indicator {
         border-radius: 6px;
     }
+}
+
+/* ============================================
+   見積詳細モーダル
+   ============================================ */
+.estimate-detail-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #1976d2;
+}
+
+.estimate-detail-row {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+.estimate-detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.estimate-detail-label {
+    font-weight: 600;
+    color: #555;
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.estimate-detail-value {
+    color: #2c3e50;
+    flex: 1;
+}
+
+/* マトリクス・グループ表示のクリック可能セル */
+.estimate-matrix td.clickable-cell,
+.estimate-grouped td.clickable-cell {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.estimate-matrix td.clickable-cell:hover,
+.estimate-grouped td.clickable-cell:hover {
+    background: #e3f2fd !important;
 }
