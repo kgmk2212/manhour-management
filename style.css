@@ -3436,13 +3436,20 @@
         box-shadow: none !important;
     }
 
+    /* アニメーション中の旧タブも透明に維持（ちらつき防止） */
+    .tabs:has(.tab-indicator) .tab.tab-leaving {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
     /* Dockスタイル用の調整 */
     .tabs.is-dock .tab-indicator {
         border-radius: 16px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .tabs.is-dock:has(.tab-indicator) .tab.active {
+    .tabs.is-dock:has(.tab-indicator) .tab.active,
+    .tabs.is-dock:has(.tab-indicator) .tab.tab-leaving {
         /* transformを削除 - インジケーターの位置ずれを防止 */
         transform: none;
     }
@@ -3453,7 +3460,8 @@
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     }
 
-    .tabs.is-capsule:has(.tab-indicator) .tab.active {
+    .tabs.is-capsule:has(.tab-indicator) .tab.active,
+    .tabs.is-capsule:has(.tab-indicator) .tab.tab-leaving {
         /* transformを削除 - インジケーターの位置ずれを防止 */
         transform: none;
     }

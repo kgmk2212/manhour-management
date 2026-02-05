@@ -143,6 +143,19 @@ export function showTab(tabName, options = {}) {
     document.documentElement.removeAttribute('data-early-tab');
     document.documentElement.removeAttribute('data-early-theme');
 
+    // 現在のアクティブなタブボタンを取得（インジケーターアニメーション用）
+    const currentActiveTabBtn = document.querySelector('.tab.active');
+
+    // インジケーターがready状態の場合、旧タブにleaving クラスを追加
+    // （アニメーション中も背景を透明に維持するため）
+    if (currentActiveTabBtn && tabIndicator?.classList.contains('ready')) {
+        currentActiveTabBtn.classList.add('tab-leaving');
+        // アニメーション完了後にクラスを削除（CSSのtransition: 0.35s に合わせる）
+        setTimeout(() => {
+            currentActiveTabBtn.classList.remove('tab-leaving');
+        }, 350);
+    }
+
     // 全タブからactiveクラスとテーマクラスを削除
     document.querySelectorAll('.tab').forEach(t => {
         t.classList.remove('active');
