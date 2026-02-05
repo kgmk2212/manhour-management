@@ -446,30 +446,45 @@ export function updateTabIndicator(targetTabName, animate = true) {
         // 位置を記録
         lastIndicatorPosition = { width, left };
 
+        // 高さと上位置は即座に設定
+        tabIndicator.style.height = `${height}px`;
+        tabIndicator.style.top = `${top}px`;
+
         if (!animate) {
             // アニメーションなし: 即座に位置を設定
             tabIndicator.classList.add('swiping');
             tabIndicator.style.width = `${width}px`;
-            tabIndicator.style.height = `${height}px`;
-            tabIndicator.style.top = `${top}px`;
             tabIndicator.style.transform = `translateX(${left}px)`;
         } else {
-            // アニメーションあり: 現在位置から確実にアニメーション
-            // 1. 現在のtransformを読み取り（開始位置を確定）
-            const currentTransform = getComputedStyle(tabIndicator).transform;
-            // 2. トランジション無効のまま現在位置を明示的に設定
-            tabIndicator.classList.add('swiping');
-            tabIndicator.style.transition = '';
-            tabIndicator.style.transform = currentTransform;
-            // 3. 強制レイアウト（開始位置を確定）
-            void tabIndicator.offsetWidth;
-            // 4. トランジション有効化
-            tabIndicator.classList.remove('swiping');
-            // 5. 新しい位置を設定（アニメーション開始）
-            tabIndicator.style.width = `${width}px`;
-            tabIndicator.style.height = `${height}px`;
-            tabIndicator.style.top = `${top}px`;
-            tabIndicator.style.transform = `translateX(${left}px)`;
+            // アニメーションあり: Web Animations API を使用
+            tabIndicator.classList.add('swiping'); // CSSトランジションを無効化
+
+            // 現在の位置を取得
+            const currentWidth = tabIndicator.offsetWidth || width;
+            const transformMatch = tabIndicator.style.transform.match(/translateX\(([^)]+)\)/);
+            const currentLeft = transformMatch ? parseFloat(transformMatch[1]) : left;
+
+            // Web Animations API でアニメーション
+            const animation = tabIndicator.animate([
+                {
+                    width: `${currentWidth}px`,
+                    transform: `translateX(${currentLeft}px)`
+                },
+                {
+                    width: `${width}px`,
+                    transform: `translateX(${left}px)`
+                }
+            ], {
+                duration: 350,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                fill: 'forwards'
+            });
+
+            // アニメーション完了後にスタイルを確定
+            animation.onfinish = () => {
+                tabIndicator.style.width = `${width}px`;
+                tabIndicator.style.transform = `translateX(${left}px)`;
+            };
         }
     };
 
