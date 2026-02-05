@@ -165,9 +165,11 @@ export function showTab(tabName, options = {}) {
     // タブインジケーターを更新（スワイプ完了時はアニメーションなし）
     updateTabIndicator(tabName, !skipAnimation);
 
-    // タブボタンを画面内にスクロール（モバイルのみ）
+    // タブボタンを画面内にスクロール（モバイルのみ、スタイル適用後に実行）
     if (targetTabBtn && window.innerWidth <= 768) {
-        scrollTabButtonIntoView(targetTabBtn);
+        requestAnimationFrame(() => {
+            scrollTabButtonIntoView(targetTabBtn);
+        });
     }
 
     // タブコンテンツを表示
