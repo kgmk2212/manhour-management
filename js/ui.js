@@ -583,8 +583,9 @@ function scrollTabButtonIntoView(tabButton) {
     const areaRect = tabButtonsArea.getBoundingClientRect();
     const buttonRect = tabButton.getBoundingClientRect();
 
-    // 右側のフィルタトグルボタンを取得
+    // 右側のフィルタトグルボタンの幅を取得（存在する場合）
     const filterToggle = document.querySelector('.tab-filter-toggle');
+    const rightMargin = filterToggle ? filterToggle.offsetWidth : 8; // トグルボタン幅のみ
 
     // タブボタンが左側にはみ出している場合
     if (buttonRect.left < areaRect.left) {
@@ -594,26 +595,13 @@ function scrollTabButtonIntoView(tabButton) {
             behavior: 'smooth'
         });
     }
-    // タブボタンが右側にはみ出している場合
-    else if (filterToggle) {
-        // フィルタトグルボタンがある場合：トグルボタン幅ぎりぎりまで
-        const rightMargin = filterToggle.offsetWidth;
-        if (buttonRect.right > areaRect.right - rightMargin) {
-            const scrollAmount = buttonRect.right - (areaRect.right - rightMargin);
-            tabButtonsArea.scrollBy({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        }
-    } else {
-        // フィルタトグルボタンがない場合：8px余裕を持たせる
-        if (buttonRect.right > areaRect.right) {
-            const scrollAmount = buttonRect.right - areaRect.right + 8;
-            tabButtonsArea.scrollBy({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        }
+    // タブボタンが右側にはみ出している場合（フィルタトグルボタンに隠れる場合も含む）
+    else if (buttonRect.right > areaRect.right - rightMargin) {
+        const scrollAmount = buttonRect.right - (areaRect.right - rightMargin); // ぎりぎり見える位置
+        tabButtonsArea.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+        });
     }
 }
 
