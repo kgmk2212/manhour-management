@@ -203,14 +203,14 @@ function renderReportFilters(container, scrollToActive = true) {
     const savedVersionScroll = oldVersionContainer ? oldVersionContainer.scrollLeft : 0;
     const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
 
-    // 月フィルタボタンを生成
+    // 月フィルタボタンを生成（昇順ソート）
     const monthButtons = generateFilterButtons(reportMonth, (value) => {
         reportMonth.value = value;
         if (typeof window.handleReportMonthChange === 'function') {
             window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
         updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+    }, 'month');
 
     // 版数フィルタボタンを生成
     const versionButtons = generateFilterButtons(reportVersion, (value) => {
@@ -284,7 +284,7 @@ function renderEstimateFilters(container, scrollToActive = true) {
     const savedVersionScroll = oldVersionContainer ? oldVersionContainer.scrollLeft : 0;
     const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
 
-    // 月フィルタボタンを生成
+    // 月フィルタボタンを生成（昇順ソート）
     const monthButtons = generateFilterButtons(estimateMonth, (value) => {
         estimateMonth.value = value;
         if (typeof window.handleEstimateMonthChange === 'function') {
@@ -293,7 +293,7 @@ function renderEstimateFilters(container, scrollToActive = true) {
             estimateMonth.dispatchEvent(new Event('change'));
         }
         updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+    }, 'month');
 
     // 版数フィルタボタンを生成（ソート済み）
     const versionButtons = generateFilterButtons(estimateVersion, (value) => {
@@ -370,7 +370,7 @@ function renderActualFilters(container, scrollToActive = true) {
     const oldMonthContainer = document.getElementById('tabFilterActualMonthButtons');
     const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
 
-    // 月フィルタボタンを生成
+    // 月フィルタボタンを生成（昇順ソート）
     const monthButtons = generateFilterButtons(actualMonth, (value) => {
         actualMonth.value = value;
         if (typeof window.handleActualMonthChange === 'function') {
@@ -379,7 +379,7 @@ function renderActualFilters(container, scrollToActive = true) {
             actualMonth.dispatchEvent(new Event('change'));
         }
         updateTabFilterContent(false);
-    });
+    }, 'month');
 
     container.innerHTML = `
         <div class="tab-filter-row">
@@ -412,15 +412,25 @@ function renderActualFilters(container, scrollToActive = true) {
 }
 
 // フィルタボタンのHTML生成
-function generateFilterButtons(selectElement, onChange, sortVersion = false) {
+// sortType: 'none' | 'version' | 'month'
+function generateFilterButtons(selectElement, onChange, sortType = 'none') {
     const currentValue = selectElement.value;
     let options = Array.from(selectElement.options);
 
-    // 版数の場合はソート
-    if (sortVersion) {
+    // 版数の場合は昇順ソート（後方互換: sortType === true も対応）
+    if (sortType === 'version' || sortType === true) {
         const allOption = options.find(o => o.value === 'all');
         const otherOptions = options.filter(o => o.value !== 'all');
         otherOptions.sort((a, b) => a.text.localeCompare(b.text));
+        options = [];
+        if (allOption) options.push(allOption);
+        options.push(...otherOptions);
+    }
+    // 月の場合は昇順ソート（YYYY-MM形式なので文字列ソートでOK）
+    else if (sortType === 'month') {
+        const allOption = options.find(o => o.value === 'all');
+        const otherOptions = options.filter(o => o.value !== 'all');
+        otherOptions.sort((a, b) => a.value.localeCompare(b.value));
         options = [];
         if (allOption) options.push(allOption);
         options.push(...otherOptions);

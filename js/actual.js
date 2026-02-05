@@ -243,7 +243,10 @@ export function renderActualList() {
         if (memberSelectGroup2) memberSelectGroup2.style.display = 'none';
     }
 
-    if (actuals.length === 0) {
+    // 全期間選択時に実績データがない場合のみメッセージ表示
+    // 特定月が選択されている場合はカレンダーを表示する
+    const selectedMonth = document.getElementById('actualMonthFilter').value;
+    if (actuals.length === 0 && selectedMonth === 'all') {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">実績データがありません</p>';
         return;
     }
@@ -366,7 +369,9 @@ export function renderMemberCalendar() {
         filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
     }
 
-    if (filteredActuals.length === 0) {
+    // 全期間選択でデータがない場合のみメッセージ表示
+    // 特定月が選択されている場合はデータがなくてもカレンダーを表示
+    if (filteredActuals.length === 0 && selectedMonth === 'all') {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
         return;
     }
@@ -382,13 +387,16 @@ export function renderMemberCalendar() {
         startDate = `${year}-${month}-01`;
         const lastDay = new Date(yearNum, monthNum, 0).getDate();
         endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-    } else {
+    } else if (dates.length > 0) {
         const [minYear, minMonth] = dates[0].split('-');
         const [maxYear, maxMonth] = dates[dates.length - 1].split('-');
 
         startDate = `${minYear}-${minMonth}-01`;
         const lastDay = new Date(parseInt(maxYear), parseInt(maxMonth), 0).getDate();
         endDate = `${maxYear}-${maxMonth}-${String(lastDay).padStart(2, '0')}`;
+    } else {
+        // ここには到達しないはず（全期間でデータなしは上で早期リターン）
+        return;
     }
 
     const allDates = [];
@@ -403,13 +411,22 @@ export function renderMemberCalendar() {
     const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
     const workedDays = new Set(filteredActuals.map(a => a.date)).size;
 
+    // 営業日数を計算（土日祝を除く）
+    const businessDays = allDates.filter(date => {
+        const dayOfWeek = getDayOfWeek(date);
+        const holiday = getHoliday(date);
+        const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
+        const isHoliday = holiday !== null;
+        return !isWeekend && !isHoliday;
+    }).length;
+
     let html = `<h3 style="margin-bottom: 10px;">${selectedMember}の実績カレンダー</h3>`;
 
     if (selectedMonth !== 'all') {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${formatHours(totalHours)}h</p>
+            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 営業日数: ${businessDays}日 / 合計工数: ${formatHours(totalHours)}h</p>
         </div>`;
     }
 
@@ -460,7 +477,7 @@ export function renderMemberCalendar() {
 
     html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
     html += `<td>総合計</td>`;
-    html += `<td style="text-align: right;">${workedDays}日稼働</td>`;
+    html += `<td style="text-align: right;">${workedDays}日稼働 / ${businessDays}営業日</td>`;
     html += `<td style="text-align: center;">${formatHours(totalHours)}h</td>`;
     html += `</tr>`;
 
@@ -540,17 +557,26 @@ export function renderActualMatrix() {
         filteredActuals = actuals.filter(a => a.date && a.date.startsWith(selectedMonth));
     }
 
-    if (filteredActuals.length === 0) {
+    // 全期間選択でデータがない場合のみメッセージ表示
+    // 特定月が選択されている場合はデータがなくてもカレンダーを表示
+    if (filteredActuals.length === 0 && selectedMonth === 'all') {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
         return;
     }
 
-    let members = [...new Set(filteredActuals.map(a => a.member))];
-
-    // memberOrderInput is already defined above
-    // members is already defined above
+    // メンバーリストは全実績・見積から取得（選択月にデータがなくても表示できるように）
+    const allMembers = new Set();
+    actuals.forEach(a => allMembers.add(a.member));
+    estimates.forEach(e => allMembers.add(e.member));
+    let members = [...allMembers];
 
     members = sortMembers(members, memberOrderInput);
+
+    // メンバーがいない場合はメッセージ表示
+    if (members.length === 0) {
+        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">担当者データがありません</p>';
+        return;
+    }
 
     const dates = filteredActuals.map(a => a.date).sort();
 
@@ -563,7 +589,7 @@ export function renderActualMatrix() {
         startDate = `${year}-${month}-01`;
         const lastDay = new Date(yearNum, monthNum, 0).getDate();
         endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-    } else {
+    } else if (dates.length > 0) {
         const minDate = dates[0];
         const maxDate = dates[dates.length - 1];
 
@@ -573,6 +599,9 @@ export function renderActualMatrix() {
         startDate = `${minYear}-${minMonth}-01`;
         const lastDay = new Date(parseInt(maxYear), parseInt(maxMonth), 0).getDate();
         endDate = `${maxYear}-${maxMonth}-${String(lastDay).padStart(2, '0')}`;
+    } else {
+        // ここには到達しないはず
+        return;
     }
 
     const allDates = [];
@@ -584,6 +613,15 @@ export function renderActualMatrix() {
         currentDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
     }
 
+    // 営業日数を計算（土日祝を除く）
+    const businessDays = allDates.filter(date => {
+        const dayOfWeek = getDayOfWeek(date);
+        const holiday = getHoliday(date);
+        const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
+        const isHoliday = holiday !== null;
+        return !isWeekend && !isHoliday;
+    }).length;
+
     let html = '';
 
     if (selectedMonth !== 'all') {
@@ -592,7 +630,7 @@ export function renderActualMatrix() {
 
         html += `<div style="margin-bottom: 15px;">
             <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日</p>
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 営業日数: ${businessDays}日</p>
         </div>`;
 
         html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
