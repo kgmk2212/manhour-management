@@ -373,10 +373,6 @@ export function initTabIndicator() {
 function updateTabIndicatorImmediate(animate = false) {
     if (!tabIndicator || window.innerWidth > 768) return;
 
-    // タブ切り替え中はResizeObserverからの更新をスキップ
-    // （showTab内のupdateTabIndicatorで正しくアニメーションさせるため）
-    if (isTabSwitching) return;
-
     const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
     if (!tabButtonsArea) return;
 
@@ -434,99 +430,55 @@ function updateTabIndicatorImmediate(animate = false) {
 export function updateTabIndicator(targetTabName, animate = true) {
     if (!tabIndicator || window.innerWidth > 768) return;
 
-    // インジケーターの位置を更新する共通処理
-    const applyPosition = (targetTab) => {
-        // タブボタンの位置とサイズを取得（サブピクセル対応）
-        const rect = targetTab.getBoundingClientRect();
-        const width = Math.ceil(rect.width);
-        const height = targetTab.offsetHeight;
-        const left = targetTab.offsetLeft;
-        const top = targetTab.offsetTop;
-
-        // 位置を記録
-        lastIndicatorPosition = { width, left };
-
-        // 高さと上位置は即座に設定
-        tabIndicator.style.height = `${height}px`;
-        tabIndicator.style.top = `${top}px`;
-
-        if (!animate) {
-            // アニメーションなし: 即座に位置を設定
-            tabIndicator.classList.add('swiping');
-            tabIndicator.style.width = `${width}px`;
-            tabIndicator.style.transform = `translateX(${left}px)`;
-        } else {
-            // アニメーションあり: Web Animations API を使用
-            tabIndicator.classList.add('swiping'); // CSSトランジションを無効化
-
-            // 現在の位置を取得
-            const currentWidth = tabIndicator.offsetWidth || width;
-            const transformMatch = tabIndicator.style.transform.match(/translateX\(([^)]+)\)/);
-            const currentLeft = transformMatch ? parseFloat(transformMatch[1]) : left;
-
-            // Web Animations API でアニメーション
-            const animation = tabIndicator.animate([
-                {
-                    width: `${currentWidth}px`,
-                    transform: `translateX(${currentLeft}px)`
-                },
-                {
-                    width: `${width}px`,
-                    transform: `translateX(${left}px)`
-                }
-            ], {
-                duration: 350,
-                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                fill: 'forwards'
-            });
-
-            // アニメーション完了後にスタイルを確定
-            animation.onfinish = () => {
-                tabIndicator.style.width = `${width}px`;
-                tabIndicator.style.transform = `translateX(${left}px)`;
-            };
-        }
-    };
-
-    // 対象タブを取得する共通処理
-    const getTargetTab = () => {
-        const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
-        if (!tabButtonsArea) return null;
-
-        let targetTab;
-        if (targetTabName) {
-            targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
-        } else {
-            // 早期タブ適用中は、data-early-tab属性のタブを優先
-            const earlyTab = document.documentElement.dataset.earlyTab;
-            if (earlyTab) {
-                targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
-            }
-            if (!targetTab) {
-                targetTab = tabButtonsArea.querySelector('.tab.active');
-            }
-        }
-        return targetTab;
-    };
-
-    // 既にreadyの場合（タブクリック時）は即座に更新
-    if (tabIndicator.classList.contains('ready')) {
-        const targetTab = getTargetTab();
-        if (targetTab) {
-            applyPosition(targetTab);
-        }
-        return;
-    }
-
-    // 初回表示用の遅延処理
     const doUpdate = () => {
         // 二重のrequestAnimationFrameでレイアウト確定を保証
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                const targetTab = getTargetTab();
+                const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
+                if (!tabButtonsArea) return;
+
+                // 対象のタブボタンを取得
+                let targetTab;
+                if (targetTabName) {
+                    targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
+                } else {
+                    // 早期タブ適用中は、data-early-tab属性のタブを優先
+                    const earlyTab = document.documentElement.dataset.earlyTab;
+                    if (earlyTab) {
+                        targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
+                    }
+                    if (!targetTab) {
+                        targetTab = tabButtonsArea.querySelector('.tab.active');
+                    }
+                }
+
                 if (!targetTab) return;
 
-                applyPosition(targetTab);
+                // タブボタンの位置とサイズを取得（サブピクセル対応）
+                const rect = targetTab.getBoundingClientRect();
+                const width = Math.ceil(rect.width);
+                const height = targetTab.offsetHeight;
+                const left = targetTab.offsetLeft;
+                const top = targetTab.offsetTop;
+
+                // 位置を記録
+                lastIndicatorPosition = { width, left };
+
+                // アニメーション制御
+                if (!animate) {
+                    tabIndicator.classList.add('swiping');
+                } else {
+                    tabIndicator.classList.remove('swiping');
+                }
+
+                // スタイルを適用（位置とサイズ両方）
+                tabIndicator.style.width = `${width}px`;
+                tabIndicator.style.height = `${height}px`;
+                tabIndicator.style.top = `${top}px`;
+                tabIndicator.style.transform = `translateX(${left}px)`;
+
+                // readyクラスがあれば表示済み
+                if (tabIndicator.classList.contains('ready')) return;
 
                 // 初回表示: readyクラスを追加して表示
                 tabIndicator.classList.add('ready');
