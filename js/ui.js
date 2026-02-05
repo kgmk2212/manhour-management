@@ -313,6 +313,10 @@ export function initTabIndicator() {
     const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
     if (!tabButtonsArea) return;
 
+    // 既存のインジケーターがあれば削除
+    const existing = tabButtonsArea.querySelector('.tab-indicator');
+    if (existing) existing.remove();
+
     // 既存のResizeObserverを解除
     if (tabResizeObserver) {
         tabResizeObserver.disconnect();
@@ -322,33 +326,15 @@ export function initTabIndicator() {
     // 位置キャッシュをリセット（新しい初期化で確実に更新されるように）
     lastIndicatorPosition = { width: 0, left: 0 };
 
-    // 保存されたタブを取得（初期位置を正確に設定するため）
-    let savedTab = 'quick';
-    try {
-        const stored = localStorage.getItem('manhour_currentTab');
-        if (stored && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(stored)) {
-            savedTab = stored;
-        }
-    } catch (e) {
-        // localStorageエラーは無視
-    }
-
-    // 既存のインジケーターがあれば再利用、なければ作成
-    const existing = tabButtonsArea.querySelector('.tab-indicator');
-    if (existing) {
-        tabIndicator = existing;
-    } else {
-        tabIndicator = document.createElement('div');
-        tabIndicator.className = 'tab-indicator';
-        tabButtonsArea.appendChild(tabIndicator);
-    }
+    // インジケーター要素を作成
+    tabIndicator = document.createElement('div');
+    tabIndicator.className = 'tab-indicator';
+    tabButtonsArea.appendChild(tabIndicator);
 
     // ResizeObserverでタブボタンのサイズ変更を監視
+    // フォントロードやレイアウト変更でタブボタンのサイズが変わったら自動で再計算
     tabResizeObserver = new ResizeObserver(() => {
-        // readyクラスが付いている場合のみ更新（フォントロード完了後）
-        if (tabIndicator.classList.contains('ready')) {
-            updateTabIndicatorImmediate();
-        }
+        updateTabIndicatorImmediate();
     });
 
     // 全てのタブボタンを監視
@@ -362,8 +348,12 @@ export function initTabIndicator() {
         }
     });
 
-    // 注意: 初期位置はshowTab()内のupdateTabIndicator()で設定される
-    // フォントロードの待機もupdateTabIndicator()内で行う
+    // フォントロード完了を待ってから初期位置を設定
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+            updateTabIndicatorImmediate();
+        });
+    }
 }
 
 /**
@@ -387,8 +377,7 @@ function updateTabIndicatorImmediate(animate = false) {
     }
     if (!targetTab) return;
 
-    // サブピクセル対応でwidthを取得
-    const width = Math.ceil(targetTab.getBoundingClientRect().width);
+    const width = targetTab.offsetWidth;
     const height = targetTab.offsetHeight;
     const left = targetTab.offsetLeft;
     const top = targetTab.offsetTop;
@@ -454,9 +443,8 @@ export function updateTabIndicator(targetTabName, animate = true) {
 
                 if (!targetTab) return;
 
-                // タブボタンの位置とサイズを取得（サブピクセル対応）
-                const rect = targetTab.getBoundingClientRect();
-                const width = Math.ceil(rect.width);
+                // タブボタンの位置とサイズを取得
+                const width = targetTab.offsetWidth;
                 const height = targetTab.offsetHeight;
                 const left = targetTab.offsetLeft;
                 const top = targetTab.offsetTop;
@@ -476,100 +464,11 @@ export function updateTabIndicator(targetTabName, animate = true) {
                 tabIndicator.style.height = `${height}px`;
                 tabIndicator.style.top = `${top}px`;
                 tabIndicator.style.transform = `translateX(${left}px)`;
-
-                // readyクラスがあれば表示済み
-                if (tabIndicator.classList.contains('ready')) return;
-
-                // 初回表示: readyクラスを追加して表示
-                tabIndicator.classList.add('ready');
             });
         });
     };
 
-    // readyクラスがない場合（初回）はレイアウトが安定するまで待つ
-    if (!tabIndicator.classList.contains('ready')) {
-        const MAX_WAIT_TIME = 300; // 最大待機時間(ms)
-        const POLL_INTERVAL = 16;  // ポーリング間隔(ms) ≒ 1フレーム
-        const STABLE_COUNT = 2;    // 安定と判断するための連続一致回数
-        const startTime = Date.now();
-        let stableCount = 0;
-        let lastLeft = null;
-        let lastWidth = null;
-
-        const waitForStableLayout = () => {
-            const elapsed = Date.now() - startTime;
-
-            // 最大待機時間を超えたら強制的に位置を設定
-            if (elapsed > MAX_WAIT_TIME) {
-                doUpdate();
-                return;
-            }
-
-            const tabButtonsArea = document.querySelector('.tabs .tab-buttons-area');
-            if (!tabButtonsArea) {
-                setTimeout(waitForStableLayout, POLL_INTERVAL);
-                return;
-            }
-
-            let targetTab;
-            if (targetTabName) {
-                targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${targetTabName}"]`);
-            } else {
-                const earlyTab = document.documentElement.dataset.earlyTab;
-                if (earlyTab) {
-                    targetTab = tabButtonsArea.querySelector(`.tab[data-tab="${earlyTab}"]`);
-                }
-                if (!targetTab) {
-                    targetTab = tabButtonsArea.querySelector('.tab.active');
-                }
-            }
-
-            if (!targetTab) {
-                setTimeout(waitForStableLayout, POLL_INTERVAL);
-                return;
-            }
-
-            // 現在のサイズを取得（サブピクセル対応）
-            const currentLeft = targetTab.offsetLeft;
-            const currentWidth = Math.ceil(targetTab.getBoundingClientRect().width);
-
-            // 前回と同じ値なら安定カウントを増やす
-            if (currentLeft === lastLeft && currentWidth === lastWidth) {
-                stableCount++;
-                if (stableCount >= STABLE_COUNT) {
-                    // レイアウトが安定した
-                    doUpdate();
-                    return;
-                }
-            } else {
-                // 値が変わったらカウントリセット
-                stableCount = 0;
-            }
-
-            // 値を保存して再チェック
-            lastLeft = currentLeft;
-            lastWidth = currentWidth;
-            setTimeout(waitForStableLayout, POLL_INTERVAL);
-        };
-
-        // フォントロード後、少し待ってからポーリング開始
-        const startPolling = () => {
-            // フォント適用後の追加待機（レイアウト再計算のため）
-            setTimeout(() => {
-                requestAnimationFrame(() => {
-                    waitForStableLayout();
-                });
-            }, 30);
-        };
-
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(startPolling);
-        } else {
-            setTimeout(startPolling, 100);
-        }
-    } else {
-        doUpdate();
-    }
+    doUpdate();
 }
 
 /**
@@ -583,9 +482,6 @@ function scrollTabButtonIntoView(tabButton) {
     const areaRect = tabButtonsArea.getBoundingClientRect();
     const buttonRect = tabButton.getBoundingClientRect();
 
-    // 右側のフィルタトグルボタンを取得
-    const filterToggle = document.querySelector('.tab-filter-toggle');
-
     // タブボタンが左側にはみ出している場合
     if (buttonRect.left < areaRect.left) {
         const scrollAmount = buttonRect.left - areaRect.left - 8; // 8px余裕
@@ -595,25 +491,12 @@ function scrollTabButtonIntoView(tabButton) {
         });
     }
     // タブボタンが右側にはみ出している場合
-    else if (filterToggle) {
-        // フィルタトグルボタンがある場合：トグルボタン幅ぎりぎりまで
-        const rightMargin = filterToggle.offsetWidth;
-        if (buttonRect.right > areaRect.right - rightMargin) {
-            const scrollAmount = buttonRect.right - (areaRect.right - rightMargin);
-            tabButtonsArea.scrollBy({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        }
-    } else {
-        // フィルタトグルボタンがない場合：8px余裕を持たせる
-        if (buttonRect.right > areaRect.right) {
-            const scrollAmount = buttonRect.right - areaRect.right + 8;
-            tabButtonsArea.scrollBy({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        }
+    else if (buttonRect.right > areaRect.right) {
+        const scrollAmount = buttonRect.right - areaRect.right + 8; // 8px余裕
+        tabButtonsArea.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+        });
     }
 }
 
