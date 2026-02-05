@@ -849,7 +849,8 @@ export function initTabSwipe() {
         if (segmentButton) return true;
 
         // table-wrapperとestimate-table-wrapperは除外（スクロール端で許可）
-        const element = target.closest('.matrix-container, .matrix-table, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
+        // matrix-containerも除外（内部のtable-wrapperでスクロール端判定）
+        const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
         return element !== null;
     }
 
