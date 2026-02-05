@@ -654,7 +654,20 @@ export function syncFloatingActualFilters() {
     if (mainMonth && floatingMonthButtons) {
         const currentValue = mainMonth.value;
         floatingMonthButtons.innerHTML = '';
-        Array.from(mainMonth.options).forEach(option => {
+
+        // オプションを取得して並び替え（全月を先頭に、残りを昇順に）
+        const options = Array.from(mainMonth.options);
+        const allOption = options.find(o => o.value === 'all');
+        const otherOptions = options.filter(o => o.value !== 'all');
+
+        // 昇順にソート（YYYY-MM形式なので文字列ソートでOK）
+        otherOptions.sort((a, b) => a.value.localeCompare(b.value));
+
+        const sortedOptions = [];
+        if (allOption) sortedOptions.push(allOption);
+        sortedOptions.push(...otherOptions);
+
+        sortedOptions.forEach(option => {
             const btn = document.createElement('button');
             btn.textContent = option.text;
             btn.onclick = function (e) {
