@@ -47,10 +47,7 @@
         @media (max-width: 768px) {
             .tabs:not(.style-ready) {
                 opacity: 0 !important;
-            }
-            .tabs.style-ready {
-                opacity: 1;
-                transition: opacity 0.15s ease-out;
+                transform: translateY(calc(120% + env(safe-area-inset-bottom, 0px))) !important;
             }
         }
     </style>
