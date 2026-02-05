@@ -3521,6 +3521,7 @@ export function restoreReportFilterState() {
         let restored = false;
 
         // フィルタタイプの復元（handleReportFilterTypeChangeは呼ばない - デフォルト設定が上書きされるため）
+        // 注意: filterTypeだけの復元ではrestoredをtrueにしない（月/版数も復元された場合のみtrueにする）
         if (state.filterType) {
             const reportFilterType = document.getElementById('reportFilterType');
             if (reportFilterType) {
@@ -3530,7 +3531,7 @@ export function restoreReportFilterState() {
                 const versionFilterSegmented = document.getElementById('reportVersionFilterSegmented');
                 if (monthFilterSegmented) monthFilterSegmented.style.display = 'flex';
                 if (versionFilterSegmented) versionFilterSegmented.style.display = 'flex';
-                restored = true;
+                // filterTypeだけではrestoredをtrueにしない
             }
         }
 
