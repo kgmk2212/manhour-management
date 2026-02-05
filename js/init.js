@@ -584,12 +584,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(savedTab)) {
             UI.showTab(savedTab);
         } else {
-            // savedTabがない場合は現在のアクティブタブでインジケーターを更新
-            UI.updateTabIndicator();
+            // savedTabがない場合はデフォルトタブを表示（is-hidden解除のためshowTabを呼ぶ）
+            UI.showTab('quick');
         }
     } catch (e) {
-        // localStorageエラーは無視
-        UI.updateTabIndicator();
+        // localStorageエラーは無視、デフォルトタブを表示
+        UI.showTab('quick');
     }
 
     // スケジュール（ガントチャート）モジュールの初期化
