@@ -3425,19 +3425,14 @@
         transition: none;
     }
 
-    /* インジケーターがある場合、アクティブタブの背景のみ透明に（他のスタイルは維持） */
+    /* インジケーターがある場合、タブの位置関係を設定 */
     .tabs:has(.tab-indicator) .tab {
         position: relative;
         z-index: 1;
     }
 
-    .tabs:has(.tab-indicator) .tab.active {
-        background: transparent !important;
-        box-shadow: none !important;
-    }
-
-    /* アニメーション中の旧タブも透明に維持（ちらつき防止） */
-    .tabs:has(.tab-indicator) .tab.tab-leaving {
+    /* インジケーターが準備完了後は全タブの背景を透明に（ちらつき完全防止） */
+    .tabs:has(.tab-indicator.ready) .tab {
         background: transparent !important;
         box-shadow: none !important;
     }
@@ -3448,8 +3443,7 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .tabs.is-dock:has(.tab-indicator) .tab.active,
-    .tabs.is-dock:has(.tab-indicator) .tab.tab-leaving {
+    .tabs.is-dock:has(.tab-indicator.ready) .tab {
         /* transformを削除 - インジケーターの位置ずれを防止 */
         transform: none;
     }
@@ -3460,8 +3454,7 @@
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     }
 
-    .tabs.is-capsule:has(.tab-indicator) .tab.active,
-    .tabs.is-capsule:has(.tab-indicator) .tab.tab-leaving {
+    .tabs.is-capsule:has(.tab-indicator.ready) .tab {
         /* transformを削除 - インジケーターの位置ずれを防止 */
         transform: none;
     }
