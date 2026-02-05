@@ -2595,16 +2595,42 @@ export function updateActualMonthOptions() {
 
     const currentValue = select ? select.value : 'all';
 
-    const months = new Set();
-
+    // 実績データから最古の月を特定
+    let oldestMonth = null;
     actuals.forEach(a => {
         if (a.date) {
             const month = a.date.substring(0, 7);
-            months.add(month);
+            if (!oldestMonth || month < oldestMonth) {
+                oldestMonth = month;
+            }
         }
     });
 
-    const sortedMonths = Array.from(months).sort().reverse();
+    // 最古の月が無い場合は現在年の1月から
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    if (!oldestMonth) {
+        oldestMonth = `${currentYear}-01`;
+    }
+
+    // 来年の12月まで
+    const endMonth = `${currentYear + 1}-12`;
+
+    // 最古の月から来年12月までの全ての月を生成
+    const allMonths = [];
+    const [startYear, startM] = oldestMonth.split('-').map(Number);
+    const [endYear, endM] = endMonth.split('-').map(Number);
+
+    for (let y = startYear; y <= endYear; y++) {
+        const mStart = (y === startYear) ? startM : 1;
+        const mEnd = (y === endYear) ? endM : 12;
+        for (let m = mStart; m <= mEnd; m++) {
+            allMonths.push(`${y}-${String(m).padStart(2, '0')}`);
+        }
+    }
+
+    // 降順（新しい順）にソート
+    const sortedMonths = allMonths.slice().sort().reverse();
 
     if (select) {
         select.innerHTML = '<option value="all">全期間</option>';
@@ -2634,7 +2660,7 @@ export function updateActualMonthOptions() {
 
     const items = [
         { value: 'all', label: '全期間' },
-        ...sortedMonths.slice().reverse().map(month => {
+        ...allMonths.map(month => {
             const [year, monthNum] = month.split('-');
             return {
                 value: month,
