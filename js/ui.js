@@ -588,7 +588,7 @@ function scrollTabButtonIntoView(tabButton) {
         const scrollAmount = buttonRect.left - areaRect.left - 8; // 8px余裕
         tabButtonsArea.scrollBy({
             left: scrollAmount,
-            behavior: 'smooth'
+            behavior: 'auto'
         });
     }
     // タブボタンが右側にはみ出している場合
@@ -599,7 +599,7 @@ function scrollTabButtonIntoView(tabButton) {
             const scrollAmount = buttonRect.right - (areaRect.right - rightMargin);
             tabButtonsArea.scrollBy({
                 left: scrollAmount,
-                behavior: 'smooth'
+                behavior: 'auto'
             });
         }
     } else {
@@ -608,7 +608,7 @@ function scrollTabButtonIntoView(tabButton) {
             const scrollAmount = buttonRect.right - areaRect.right + 8;
             tabButtonsArea.scrollBy({
                 left: scrollAmount,
-                behavior: 'smooth'
+                behavior: 'auto'
             });
         }
     }
@@ -1464,7 +1464,7 @@ export function updateSegmentButtonSelection(containerId, value) {
                 const containerRect = container.getBoundingClientRect();
                 const btnRect = btn.getBoundingClientRect();
                 const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
-                container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                container.scrollTo({ left: scrollLeft, behavior: 'auto' });
             }, 10);
         } else {
             btn.classList.remove('active');
