@@ -962,6 +962,11 @@ export function generateProgressBar(version, task, process) {
         progressRate = (actualHours / (actualHours + remainingHours)) * 100;
     }
 
+    // 進捗率が0%の場合はバーを表示しない（罫線と紛らわしいため）
+    if (progressRate === 0) {
+        return '';
+    }
+
     const barColor = getProgressColor(progressRate);
     const barWidth = Math.min(progressRate, 100); // 100%を超えても表示は100%まで
     const displayRate = progressRate.toFixed(0);
@@ -2551,7 +2556,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             progressRate = 0;
         }
 
-        if (est.hours > 0 || actualHours > 0) {
+        // 進捗率が0%の場合はバーを表示しない（罫線と紛らわしいため）
+        if ((est.hours > 0 || actualHours > 0) && progressRate > 0) {
             const barColor = getProgressColor(progressRate);
             const barWidth = Math.min(progressRate, 100);
             const displayRate = progressRate.toFixed(0);
