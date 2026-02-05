@@ -160,14 +160,15 @@ export function showTab(tabName, options = {}) {
     const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
     if (targetTabBtn) {
         targetTabBtn.classList.add('active');
-        // タブボタンを画面内にスクロール（モバイルのみ、即座に実行）
-        if (window.innerWidth <= 768) {
-            scrollTabButtonIntoView(targetTabBtn);
-        }
     }
 
     // タブインジケーターを更新（スワイプ完了時はアニメーションなし）
     updateTabIndicator(tabName, !skipAnimation);
+
+    // タブボタンを画面内にスクロール（モバイルのみ）
+    if (targetTabBtn && window.innerWidth <= 768) {
+        scrollTabButtonIntoView(targetTabBtn);
+    }
 
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
