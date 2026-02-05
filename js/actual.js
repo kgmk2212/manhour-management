@@ -426,7 +426,7 @@ export function renderMemberCalendar() {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 営業日数: ${businessDays}日 / 合計工数: ${formatHours(totalHours)}h</p>
+            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
         </div>`;
     }
 
@@ -477,7 +477,7 @@ export function renderMemberCalendar() {
 
     html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
     html += `<td>総合計</td>`;
-    html += `<td style="text-align: right;">${workedDays}日稼働 / ${businessDays}営業日</td>`;
+    html += `<td style="text-align: right;">${workedDays}日稼働<span style="margin-left: 16px;">${businessDays}営業日</span></td>`;
     html += `<td style="text-align: center;">${formatHours(totalHours)}h</td>`;
     html += `</tr>`;
 
@@ -630,7 +630,7 @@ export function renderActualMatrix() {
 
         html += `<div style="margin-bottom: 15px;">
             <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 営業日数: ${businessDays}日</p>
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span></p>
         </div>`;
 
         html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
