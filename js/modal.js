@@ -4,6 +4,7 @@
 
 import * as State from './state.js';
 import * as Estimate from './estimate.js';
+import { formatHours } from './utils.js';
 
 // ============================================
 // 工程内訳モーダル
@@ -103,9 +104,9 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
 
         html += '<tr>';
         html += `<td><strong>${member}</strong></td>`;
-        html += `<td style="text-align: right;">${data.estimate.toFixed(1)}h</td>`;
-        html += `<td style="text-align: right;">${data.actual.toFixed(1)}h</td>`;
-        html += `<td style="text-align: right; color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right;">${formatHours(data.estimate)}h</td>`;
+        html += `<td style="text-align: right;">${formatHours(data.actual)}h</td>`;
+        html += `<td style="text-align: right; color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${formatHours(diff)}h</td>`;
         html += '</tr>';
     });
 
@@ -113,9 +114,9 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
     const totalDiff = totalAct - totalEst;
     html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
     html += '<td>合計</td>';
-    html += `<td style="text-align: right;">${totalEst.toFixed(1)}h</td>`;
-    html += `<td style="text-align: right;">${totalAct.toFixed(1)}h</td>`;
-    html += `<td style="text-align: right; color: ${totalDiff >= 0 ? '#e74c3c' : '#27ae60'}">${(totalDiff >= 0 ? '+' : '')}${totalDiff.toFixed(1)}h</td>`;
+    html += `<td style="text-align: right;">${formatHours(totalEst)}h</td>`;
+    html += `<td style="text-align: right;">${formatHours(totalAct)}h</td>`;
+    html += `<td style="text-align: right; color: ${totalDiff >= 0 ? '#e74c3c' : '#27ae60'}">${(totalDiff >= 0 ? '+' : '')}${formatHours(totalDiff)}h</td>`;
     html += '</tr>';
 
     html += '</table></div>';
@@ -197,7 +198,7 @@ export function drawBreakdownDonutChart(canvasId, memberData, dataType, members,
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(total.toFixed(1) + 'h', centerX, centerY - 5);
+    ctx.fillText(formatHours(total) + 'h', centerX, centerY - 5);
     ctx.font = '11px sans-serif';
     ctx.fillText(dataType === 'estimate' ? '合計見積' : '合計実績', centerX, centerY + 12);
 
@@ -382,14 +383,14 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
                         <div style="font-weight: 500; color: #333;">${dateStr}</div>
                         ${actual.memo ? `<div style="color: #666; font-size: 12px; margin-top: 2px;">${actual.memo}</div>` : ''}
                     </div>
-                    <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${actual.hours.toFixed(1)}h</div>
+                    <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${formatHours(actual.hours)}h</div>
                 </div>
             `;
         });
 
         // 合計時間を計算して最後に表示
         const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
-        html += `<div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; font-weight: 600; color: #333;">合計: ${totalHours.toFixed(1)}h</div>`;
+        html += `<div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; font-weight: 600; color: #333;">合計: ${formatHours(totalHours)}h</div>`;
 
         html += '</div>';
         actualsContentDiv.innerHTML = html;

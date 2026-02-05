@@ -433,15 +433,26 @@ export function determineProgressStatus(estimatedHours, actualHours, remainingHo
 }
 
 /**
- * 工数を見やすくフォーマット
+ * 工数を見やすくフォーマット（0.25h単位対応）
  * @param {number} hours - 工数
- * @param {number} decimalPlaces - 小数点以下の桁数（デフォルト1）
+ * @param {number} decimalPlaces - 小数点以下の桁数（デフォルト: 自動判定）
  * @returns {string} - フォーマットされた工数
  */
-export function formatHours(hours, decimalPlaces = 1) {
-    if (hours === 0) return '0';
-    if (!hours || isNaN(hours)) return '-';
-    return hours.toFixed(decimalPlaces);
+export function formatHours(hours, decimalPlaces = null) {
+    if (hours === 0) return '0.0';
+    if (!hours || isNaN(hours)) return '0.0';
+
+    // decimalPlacesが指定された場合は従来通り
+    if (decimalPlaces !== null) {
+        return hours.toFixed(decimalPlaces);
+    }
+
+    // 0.25単位に対応：末尾が0なら1桁に（8.50 → 8.5, 8.00 → 8.0, 8.25 → 8.25）
+    const fixed2 = hours.toFixed(2);
+    if (fixed2.endsWith('0')) {
+        return hours.toFixed(1);
+    }
+    return fixed2;
 }
 
 /**
