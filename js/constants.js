@@ -337,4 +337,3 @@ export const TASK_COLORS = [
     '#3498DB', // 明るい青
     '#2ECC71'  // 明るい緑
 ];
-

@@ -8,8 +8,7 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert,
-    formatHours
+    showAlert
 } from './utils.js';
 
 import { renderEstimateList } from './estimate.js';
@@ -33,7 +32,7 @@ export function openSplitEstimateModal(id) {
     document.getElementById('splitEstimateId').value = id;
     document.getElementById('splitEstimateInfo').innerHTML = `
         <strong>${est.version}</strong> - ${est.task} [${est.process}] (${est.member})<br>
-        現在の工数: ${formatHours(est.hours)}h
+        現在の工数: ${est.hours.toFixed(1)}h
     `;
     document.getElementById('splitTotalHours').value = est.hours;
 
@@ -101,7 +100,7 @@ export function updateSplitPreview() {
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {
-        const hoursPerMonth = formatHours(totalHours / months.length);
+        const hoursPerMonth = (totalHours / months.length).toFixed(1);
         months.forEach(month => {
             const [y, m] = month.split('-');
             html += `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">`;
@@ -126,13 +125,13 @@ export function updateSplitPreview() {
         html += `<div id="splitManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
         const isMatch = Math.abs(calculatedTotal - totalHours) < 0.01;
         const color = isMatch ? '#27ae60' : '#e74c3c';
-        html += `合計: <span style="color: ${color};">${formatHours(calculatedTotal)}h</span> / 目標: ${totalHours}h`;
+        html += `合計: <span style="color: ${color};">${calculatedTotal.toFixed(1)}h</span> / 目標: ${totalHours}h`;
         if (Math.abs(calculatedTotal - totalHours) >= 0.01) {
             const diff = calculatedTotal - totalHours;
             if (diff > 0) {
-                html += ` <span style="color: #e74c3c;">(+${formatHours(diff)}h 超過)</span>`;
+                html += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
             } else {
-                html += ` <span style="color: #f39c12;">(${formatHours(diff)}h 不足)</span>`;
+                html += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
             }
         } else {
             html += ' <span style="color: #27ae60;">✓</span>';
@@ -168,14 +167,14 @@ export function updateSplitManualTotal() {
     if (manualTotalDiv) {
         const diff = total - totalHours;
         const color = Math.abs(diff) < 0.01 ? '#27ae60' : (diff > 0 ? '#e74c3c' : '#f39c12');
-        manualTotalDiv.innerHTML = `合計: <span style="color: ${color};">${formatHours(total)}h</span> / 目標: ${totalHours}h`;
+        manualTotalDiv.innerHTML = `合計: <span style="color: ${color};">${total.toFixed(1)}h</span> / 目標: ${totalHours}h`;
 
         if (Math.abs(diff) < 0.01) {
             manualTotalDiv.innerHTML += ' <span style="color: #27ae60;">✓</span>';
         } else if (diff > 0) {
-            manualTotalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${formatHours(diff)}h 超過)</span>`;
+            manualTotalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
         } else {
-            manualTotalDiv.innerHTML += ` <span style="color: #f39c12;">(${formatHours(diff)}h 不足)</span>`;
+            manualTotalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
         }
     }
 }
@@ -218,7 +217,7 @@ export function executeSplitEstimate() {
         });
 
         if (Math.abs(total - totalHours) > 0.01) {
-            alert(`月別工数の合計(${formatHours(total)}h)が総工数(${totalHours}h)と一致しません`);
+            alert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${totalHours}h)と一致しません`);
             return;
         }
     }
@@ -313,7 +312,7 @@ export function updateMonthPreview() {
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {
-        const hoursPerMonth = formatHours(totalHours / months.length);
+        const hoursPerMonth = (totalHours / months.length).toFixed(1);
         months.forEach(month => {
             const [y, m] = month.split('-');
             html += `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">`;
@@ -365,14 +364,14 @@ export function updateManualTotal() {
     if (manualTotalDiv) {
         const diff = total - totalHours;
         const color = Math.abs(diff) < 0.01 ? '#27ae60' : (diff > 0 ? '#e74c3c' : '#f39c12');
-        manualTotalDiv.innerHTML = `合計: <span style="color: ${color};">${formatHours(total)}h</span> / 目標: ${totalHours}h`;
+        manualTotalDiv.innerHTML = `合計: <span style="color: ${color};">${total.toFixed(1)}h</span> / 目標: ${totalHours}h`;
 
         if (Math.abs(diff) < 0.01) {
             manualTotalDiv.innerHTML += ' <span style="color: #27ae60;">✓</span>';
         } else if (diff > 0) {
-            manualTotalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${formatHours(diff)}h 超過)</span>`;
+            manualTotalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
         } else {
-            manualTotalDiv.innerHTML += ` <span style="color: #f39c12;">(${formatHours(diff)}h 不足)</span>`;
+            manualTotalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
         }
     }
 }

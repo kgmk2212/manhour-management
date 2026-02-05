@@ -19,8 +19,7 @@ import {
     getMonthColor,
     generateMonthColorLegend,
     showAlert,
-    sortMembers,
-    formatHours
+    sortMembers
 } from './utils.js';
 
 // ============================================
@@ -316,7 +315,7 @@ function displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, mont
 
     const totalHoursElement = document.getElementById('estimateTotalHours');
     const totalManpowerElement = document.getElementById('estimateTotalManpower');
-    if (totalHoursElement) totalHoursElement.textContent = formatHours(totalHours) + 'h';
+    if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
     if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
     // 換算基準を表示
@@ -436,7 +435,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
         memberHtml += `
             <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
                 <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
-                <div style="font-size: 18px; font-weight: 700; color: #333;">${formatHours(hours)}h</div>
+                <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
                 <div style="font-size: 12px; color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
             </div>
         `;
@@ -843,7 +842,7 @@ export function renderEstimateMatrix() {
                         ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
                         onmouseover="this.style.background='#e3f2fd'"
                         onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
-                        <div style="font-weight: 600;">${formatHours(p.hours)}h</div>
+                        <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
                         <div style="font-size: 12px; color: #666;">(${p.member})</div>
                     </td>`;
                 } else {
@@ -855,8 +854,8 @@ export function renderEstimateMatrix() {
             const totalMonths = totalDays / 20;
 
             html += `<td style="text-align: center;">
-                <div style="font-weight: 700; color: #1976d2;">${formatHours(total)}h</div>
-                <div style="font-size: 11px; color: #666;">${totalDays.toFixed(2)}人日</div>
+                <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
+                <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
                 <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
             </td>`;
             html += '</tr>';
@@ -905,7 +904,7 @@ export function renderEstimateDetailList() {
                     const [y, m] = month.split('-');
                     const hours = est.monthlyHours[month] || 0;
                     if (idx > 0) workMonthDisplay += ', ';
-                    workMonthDisplay += `${y}年${parseInt(m)}月:${formatHours(hours)}h`;
+                    workMonthDisplay += `${y}年${parseInt(m)}月:${hours.toFixed(1)}h`;
                 });
                 workMonthDisplay += '</small>';
             }
@@ -917,7 +916,7 @@ export function renderEstimateDetailList() {
                 <td>${est.task}</td>
                 <td><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></td>
                 <td>${est.member}</td>
-                <td>${formatHours(displayHours)}h</td>
+                <td>${displayHours.toFixed(1)}h</td>
                 <td>${workMonthDisplay}</td>
                 <td>
                     <button class="btn btn-primary btn-small" onclick="editEstimate(${est.id})" style="margin-right: 5px;">編集</button>
@@ -1065,7 +1064,7 @@ export function showEstimateDetail(estimateId) {
         } else {
             const months = est.workMonths.map(wm => {
                 const [y, m] = wm.split('-');
-                const hours = est.monthlyHours && est.monthlyHours[wm] ? formatHours(est.monthlyHours[wm]) : '0.0';
+                const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : '0.0';
                 return `${y}年${parseInt(m)}月: ${hours}h`;
             });
             workMonthDisplay = months.join('<br>');
@@ -1092,7 +1091,7 @@ export function showEstimateDetail(estimateId) {
             </div>
             <div class="estimate-detail-row">
                 <span class="estimate-detail-label">見積工数:</span>
-                <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${formatHours(est.hours)}h</span>
+                <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${est.hours.toFixed(1)}h</span>
             </div>
             <div class="estimate-detail-row">
                 <span class="estimate-detail-label">作業予定月:</span>

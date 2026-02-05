@@ -361,10 +361,10 @@ export function updateAddEstimateTotals() {
         totalHours += hours;
     });
 
-    const totalDays = (totalHours / 8).toFixed(2);
+    const totalDays = (totalHours / 8).toFixed(1);
     const totalMonths = (totalHours / 160).toFixed(2);
 
-    document.getElementById('addEstTotalHours').textContent = Utils.formatHours(totalHours);
+    document.getElementById('addEstTotalHours').textContent = totalHours.toFixed(1);
     document.getElementById('addEstTotalDays').textContent = totalDays;
     document.getElementById('addEstTotalMonths').textContent = totalMonths;
 }

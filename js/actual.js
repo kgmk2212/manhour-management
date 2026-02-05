@@ -7,7 +7,7 @@ import {
     setActuals
 } from './state.js';
 
-import { showAlert, sortMembers, formatHours } from './utils.js';
+import { showAlert, sortMembers } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate } from './estimate.js';
 
 // ============================================
@@ -409,7 +409,7 @@ export function renderMemberCalendar() {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${formatHours(totalHours)}h</p>
+            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日 / 合計工数: ${totalHours.toFixed(1)}h</p>
         </div>`;
     }
 
@@ -461,7 +461,7 @@ export function renderMemberCalendar() {
     html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
     html += `<td>総合計</td>`;
     html += `<td style="text-align: right;">${workedDays}日稼働</td>`;
-    html += `<td style="text-align: center;">${formatHours(totalHours)}h</td>`;
+    html += `<td style="text-align: center;">${totalHours.toFixed(1)}h</td>`;
     html += `</tr>`;
 
     html += '</table></div>';
@@ -603,10 +603,10 @@ export function renderActualMatrix() {
         members.forEach(member => {
             const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
             monthGrandTotal += memberTotal;
-            html += `<th style="text-align: center; min-width: 80px;">${formatHours(memberTotal)}h</th>`;
+            html += `<th style="text-align: center; min-width: 80px;">${memberTotal.toFixed(1)}h</th>`;
         });
 
-        html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${formatHours(monthGrandTotal)}h</th>`;
+        html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${monthGrandTotal.toFixed(1)}h</th>`;
         html += '</tr>';
 
         html += '<tr><th style="min-width: 100px;">日付</th>';
@@ -643,9 +643,9 @@ export function renderActualMatrix() {
             html += '<tr style="background: #fff3cd; font-weight: 600;">';
             html += `<td>${currentMonth} 小計</td>`;
             members.forEach(member => {
-                html += `<td style="text-align: center;">${formatHours(monthTotals[member])}h</td>`;
+                html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
             });
-            html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${formatHours(monthTotal)}h</td>`;
+            html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
             html += '</tr>';
 
             members.forEach(m => monthTotals[m] = 0);
@@ -702,7 +702,7 @@ export function renderActualMatrix() {
             if (memberDayTotal > 0) {
                 cellBgColor = '#e3f2fd';
                 onclick = `showWorkDetail('${member}', '${date}')`;
-                cellContent = `<strong>${formatHours(memberDayTotal)}</strong>`;
+                cellContent = `<strong>${memberDayTotal.toFixed(1)}</strong>`;
                 title = '';
             } else if (memberVacations.length > 0) {
                 cellBgColor = '#fff3e0';
@@ -727,7 +727,7 @@ export function renderActualMatrix() {
         monthTotal += dayTotal;
 
         if (dayTotal > 0) {
-            html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${formatHours(dayTotal)}h</td>`;
+            html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${dayTotal.toFixed(1)}h</td>`;
         } else {
             html += `<td class="daily-total" style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
         }
@@ -739,9 +739,9 @@ export function renderActualMatrix() {
         html += '<tr style="background: #fff3cd; font-weight: 600;">';
         html += `<td>${currentMonth} 小計</td>`;
         members.forEach(member => {
-            html += `<td style="text-align: center;">${formatHours(monthTotals[member])}h</td>`;
+            html += `<td style="text-align: center;">${monthTotals[member].toFixed(1)}h</td>`;
         });
-        html += `<td style="background: #ffc107; color: white; text-align: center;">${formatHours(monthTotal)}h</td>`;
+        html += `<td style="background: #ffc107; color: white; text-align: center;">${monthTotal.toFixed(1)}h</td>`;
         html += '</tr>';
     }
 
@@ -752,10 +752,10 @@ export function renderActualMatrix() {
     members.forEach(member => {
         const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
         grandTotal += memberTotal;
-        html += `<td style="text-align: center;">${formatHours(memberTotal)}h</td>`;
+        html += `<td style="text-align: center;">${memberTotal.toFixed(1)}h</td>`;
     });
 
-    html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${formatHours(grandTotal)}h</td>`;
+    html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${grandTotal.toFixed(1)}h</td>`;
     html += '</tr>';
 
     html += '</table></div>';
@@ -893,7 +893,7 @@ export function showWorkDetail(member, date) {
 
     html += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-            <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}時間</strong>
+            <strong style="font-size: 16px;">合計: ${totalHours.toFixed(1)}時間</strong>
             <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
         </div>
         <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -1295,9 +1295,9 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
 
         let displayText;
         if (remaining > 0) {
-            displayText = `${est.task} [${est.process}] (残: ${formatHours(remaining)}h)`;
+            displayText = `${est.task} [${est.process}] (残: ${remaining.toFixed(1)}h)`;
         } else if (remaining < 0) {
-            displayText = `${est.task} [${est.process}] (超過: ${formatHours(Math.abs(remaining))}h)`;
+            displayText = `${est.task} [${est.process}] (超過: ${Math.abs(remaining).toFixed(1)}h)`;
         } else {
             displayText = `${est.task} [${est.process}] (完了)`;
         }

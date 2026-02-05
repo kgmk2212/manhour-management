@@ -340,11 +340,7 @@ export function handleFileImport(event) {
             try {
                 const data = JSON.parse(e.target.result);
 
-                // データが空の場合は確認をスキップ
-                const hasExistingData = estimates.length > 0 || actuals.length > 0 ||
-                    companyHolidays.length > 0 || vacations.length > 0 || remainingEstimates.length > 0;
-
-                if (!hasExistingData || confirm('現在のデータを復元したデータで上書きしますか？')) {
+                if (confirm('現在のデータを復元したデータで上書きしますか？')) {
                     setEstimates(data.estimates || []);
                     setActuals(data.actuals || []);
                     setCompanyHolidays(data.companyHolidays || []);
