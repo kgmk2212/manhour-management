@@ -5,6 +5,7 @@
 import { schedules, scheduleSettings, estimates, actuals, vacations, companyHolidays, taskColorMap, remainingEstimates } from './state.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
 import { getTaskColor, calculateEndDate, isBusinessDay } from './schedule.js';
+import { formatHours } from './utils.js';
 import { isCompanyHoliday } from './vacation.js';
 import holiday_jp from 'https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm';
 
@@ -775,8 +776,8 @@ function showTooltip(schedule, x, y, renderer) {
 
     // 残時間の表示（ユーザー入力がある場合は★マーク付き）
     const remainingDisplay = progressInfo.hasUserRemaining
-        ? `${progressInfo.remainingHours.toFixed(1)}h ★`
-        : `${progressInfo.remainingHours.toFixed(1)}h`;
+        ? `${formatHours(progressInfo.remainingHours)}h ★`
+        : `${formatHours(progressInfo.remainingHours)}h`;
 
     tooltip.innerHTML = `
         <div class="tooltip-header">
@@ -798,7 +799,7 @@ function showTooltip(schedule, x, y, renderer) {
             </div>
             <div class="tooltip-row">
                 <span class="tooltip-label">進捗:</span>
-                <span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${progressInfo.actualHours.toFixed(1)}h / ${progressInfo.estimatedHours}h)</span>
+                <span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${formatHours(progressInfo.actualHours)}h / ${progressInfo.estimatedHours}h)</span>
             </div>
             <div class="tooltip-row">
                 <span class="tooltip-label">残:</span>

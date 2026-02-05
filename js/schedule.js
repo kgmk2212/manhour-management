@@ -10,6 +10,7 @@ import {
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
+import { formatHours } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler } from './schedule-render.js';
 
 // ============================================
@@ -136,7 +137,7 @@ export function updateScheduleSummary() {
     if (completedEl) completedEl.textContent = `${completed}/${total}`;
     if (inProgressEl) inProgressEl.textContent = `${inProgress}件`;
     if (delayedEl) delayedEl.textContent = `${delayed}件`;
-    if (remainingEl) remainingEl.textContent = `${remaining.toFixed(1)}h`;
+    if (remainingEl) remainingEl.textContent = `${formatHours(remaining)}h`;
     if (todayEl) todayEl.textContent = `${todaySchedules}件`;
 }
 
@@ -564,13 +565,13 @@ export function openScheduleDetailModal(scheduleId) {
         `${schedule.startDate} 〜 ${schedule.endDate}`;
     document.getElementById('detailEstimatedHours').textContent = 
         `${schedule.estimatedHours}h`;
-    document.getElementById('detailActualHours').textContent = 
-        `${progress.actualHours.toFixed(1)}h`;
-    
+    document.getElementById('detailActualHours').textContent =
+        `${formatHours(progress.actualHours)}h`;
+
     // 残作業表示（見込み残存時間がある場合は★マーク付き）
-    const remainingText = progress.hasUserRemaining 
-        ? `${progress.remainingHours.toFixed(1)}h ★`
-        : `${progress.remainingHours.toFixed(1)}h`;
+    const remainingText = progress.hasUserRemaining
+        ? `${formatHours(progress.remainingHours)}h ★`
+        : `${formatHours(progress.remainingHours)}h`;
     document.getElementById('detailRemainingHours').textContent = remainingText;
     
     // 見込み残存時間入力欄
@@ -877,8 +878,8 @@ export function saveScheduleRemainingHours() {
     if (progressBar) progressBar.style.width = `${progress.progressRate}%`;
     if (progressRate) progressRate.textContent = `${progress.progressRate.toFixed(0)}%`;
     
-    const remainingText = `${progress.remainingHours.toFixed(1)}h ★`;
-    document.getElementById('detailRemainingHours').textContent = remainingText;
+    const remainingText2 = `${formatHours(progress.remainingHours)}h ★`;
+    document.getElementById('detailRemainingHours').textContent = remainingText2;
     
     // ガントチャートを再描画
     renderScheduleView();
@@ -1125,7 +1126,7 @@ export function updateAutoGeneratePreview() {
     previewContainer.innerHTML = `
         <div class="preview-stats">
             <p><strong>生成対象:</strong> ${newEstimates.length}件</p>
-            <p><strong>合計工数:</strong> ${totalHours.toFixed(1)}h</p>
+            <p><strong>合計工数:</strong> ${formatHours(totalHours)}h</p>
             ${existingCount > 0 ? `<p class="text-warning">※ ${existingCount}件は既にスケジュールが存在するためスキップされます</p>` : ''}
         </div>
         <div class="preview-list">

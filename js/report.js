@@ -563,14 +563,14 @@ export function renderProgressSummaryCards(versionFilter) {
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>予測総工数</h3>
-            <div class="value">${totalEac.toFixed(1)}h</div>
+            <div class="value">${formatHours(totalEac)}h</div>
             <div style="font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 5px;">
-                見積: ${totalEstimated.toFixed(1)}h / 差異: ${variance >= 0 ? '+' : ''}${variance.toFixed(1)}h
+                見積: ${formatHours(totalEstimated)}h / 差異: ${variance >= 0 ? '+' : ''}${formatHours(variance)}h
             </div>
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>実績 / 残存</h3>
-            <div class="value">${totalActual.toFixed(1)}h / ${totalRemaining.toFixed(1)}h</div>
+            <div class="value">${formatHours(totalActual)}h / ${formatHours(totalRemaining)}h</div>
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>状態別</h3>
@@ -643,18 +643,18 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
                 <tr style="border-left: 4px solid ${borderColor};">
                     <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${version}</strong></td>
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">${task}</td>
-                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${progress.estimatedHours.toFixed(1)}h</td>
-                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${progress.actualHours.toFixed(1)}h</td>
+                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${formatHours(progress.estimatedHours)}h</td>
+                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${formatHours(progress.actualHours)}h</td>
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">
                         ${progress.hasRemainingData
-                    ? progress.remainingHours.toFixed(1) + 'h'
+                    ? formatHours(progress.remainingHours) + 'h'
                     : '<span style="color: #999;">未設定</span>'}
                     </td>
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">
-                        ${progress.eac.toFixed(1)}h
+                        ${formatHours(progress.eac)}h
                         ${progress.variance !== 0
                     ? `<span style="font-size: 13px; color: ${progress.variance > 0 ? '#e74c3c' : '#27ae60'};">
-                                (${progress.variance > 0 ? '+' : ''}${progress.variance.toFixed(1)})
+                                (${progress.variance > 0 ? '+' : ''}${progress.formatHours(variance)})
                                </span>`
                     : ''}
                     </td>
@@ -761,20 +761,20 @@ export function renderBulkRemainingTable() {
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.task}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.process}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.member}</td>
-                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.estimatedHours.toFixed(1)}h</td>
-                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.actualHours.toFixed(1)}h</td>
+                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${formatHours(data.estimatedHours)}h</td>
+                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${formatHours(data.actualHours)}h</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">
                         <input type="number"
                                class="bulk-remaining-input"
                                value="${remainingHours}"
-                               step="0.5"
+                               step="0.25"
                                min="0"
                                placeholder="0"
                                onchange="updateBulkRowStatus(this)"
                                style="width: 70px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; text-align: right;">
                     </td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;" class="bulk-eac">
-                        ${remainingHours !== '' ? eac.toFixed(1) + 'h' : '-'}
+                        ${remainingHours !== '' ? formatHours(eac) + 'h' : '-'}
                     </td>
                     <td style="padding: 8px; text-align: center; border-bottom: 1px solid #eee;" class="bulk-status">
                         ${createStatusBadge(status, statusLabel)}
@@ -814,7 +814,7 @@ export function updateBulkRowStatus(input) {
 
     if (!isNaN(remainingHours)) {
         const eac = actualHours + remainingHours;
-        eacCell.textContent = eac.toFixed(1) + 'h';
+        eacCell.textContent = formatHours(eac) + 'h';
 
         // 状態判定
         let status = 'unknown';
@@ -965,14 +965,14 @@ export function generateProgressBar(version, task, process) {
     const barColor = getProgressColor(progressRate);
     const barWidth = Math.min(progressRate, 100); // 100%を超えても表示は100%まで
     const displayRate = progressRate.toFixed(0);
-    const remainingDisplay = remainingHours.toFixed(1);
+    const remainingDisplay = formatHours(remainingHours);
 
     let progressBarHtml = '';
 
     if (progressBarStyle === 'bottom') {
         // セル下部に表示するスタイル（未進捗部分も表示）
         progressBarHtml = `
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${formatHours(actualHours)}h | 残: ${remainingDisplay}h">
                 <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
             </div>
         `;
@@ -983,7 +983,7 @@ export function generateProgressBar(version, task, process) {
             : '';
 
         progressBarHtml = `
-            <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+            <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${formatHours(actualHours)}h | 残: ${remainingDisplay}h">
                 <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
                     <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                 </div>
@@ -1157,9 +1157,9 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
     const actManDays = (totalAct / 8).toFixed(1);
     const actManMonths = (totalAct / 8 / workingDaysPerMonth).toFixed(2);
 
-    document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
-    document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
-    document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'h';
+    document.getElementById('totalEstimate').textContent = formatHours(totalEst) + 'h';
+    document.getElementById('totalActual').textContent = formatHours(totalAct) + 'h';
+    document.getElementById('totalDiff').textContent = (diff >= 0 ? '+' : '') + formatHours(diff) + 'h';
     document.getElementById('actualRate').textContent = rate + '%';
 
     document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
@@ -1338,7 +1338,7 @@ function renderProcessAccuracy(filteredEstimates, filteredActuals) {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
         html += `<div style="font-size: 22px; font-weight: bold; color: ${isOverrun ? '#dc3545' : isGood ? '#28a745' : '#ffc107'};">${accuracy}%</div>`;
-        html += `<div style="font-size: 14px; color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
+        html += `<div style="font-size: 14px; color: #6c757d;">${formatHours(data.estimate)}h → ${formatHours(data.actual)}h</div>`;
         html += '</div>';
     });
 
@@ -1390,7 +1390,7 @@ function renderAnomalyDetection(filteredEstimates, filteredActuals) {
     anomalies.slice(0, 10).forEach(anomaly => {
         html += '<div style="background: #ffffff; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 13px; border: 1px solid #f5c6cb;">';
         html += `<div style="font-weight: 600; color: #495057;">${anomaly.version} - ${anomaly.task} [${anomaly.process}]</div>`;
-        html += `<div style="color: #495057;">見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
+        html += `<div style="color: #495057;">見積: ${formatHours(anomaly.estimate)}h → 実績: ${formatHours(anomaly.actual)}h <span style="color: #dc3545; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
         html += '</div>';
     });
 
@@ -1447,7 +1447,7 @@ function renderWarningTasks(filteredEstimates, filteredActuals) {
     warnings.slice(0, 5).forEach((warning, idx) => {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${warning.version} - ${warning.task}</div>`;
-        html += `<div style="font-size: 13px; color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
+        html += `<div style="font-size: 13px; color: #495057;">見積: ${formatHours(warning.estimate)}h → 実績: ${formatHours(warning.actual)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
         html += `<div style="font-size: 12px; color: #6c757d;">工程数: ${warning.processCount}</div>`;
         html += '</div>';
     });
@@ -1536,12 +1536,12 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${formatHours(data.estimate)}h</span>`;
         html += '</div></div>';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${formatHours(data.actual)}h</span>`;
         html += '</div></div>';
         html += '</div></div>';
     });
@@ -1607,17 +1607,17 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${formatHours(data.estimate)}h</span>`;
         html += '</div>';
         html += '<div style="display: flex; align-items: center; gap: 5px;">';
         html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">実績</span>';
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${formatHours(data.actual)}h</span>`;
         html += '</div>';
         html += '</div>';
-        html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+        html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${formatHours(diff)}h</div>`;
         html += '</div></div>';
     });
 
@@ -1754,12 +1754,12 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 
         html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${member}</div>`;
-        html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
+        html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">見積: ${formatHours(data.estimate)}h</div>`;
         html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
-        html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
+        html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">実績: ${formatHours(data.actual)}h</div>`;
         html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
         html += `<div style="font-size: 13px; color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
-        html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
+        html += `<div style="font-size: 13px; color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${formatHours(diff)}h</span></div>`;
         html += `<div style="font-size: 12px; color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
         html += '</div>';
     });
@@ -1966,9 +1966,9 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         html += `
             <tr>
                 <td><strong>${member}</strong></td>
-                <td>${est.toFixed(1)}h</td>
-                <td>${act.toFixed(1)}h</td>
-                <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
+                <td>${formatHours(est)}h</td>
+                <td>${formatHours(act)}h</td>
+                <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${formatHours(diff)}h</td>
                 <td>${rate}%</td>
             </tr>
         `;
@@ -2001,8 +2001,8 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
         html += `
             <tr>
                 <td><strong>${version}</strong></td>
-                <td>${est.toFixed(1)}h</td>
-                <td>${act.toFixed(1)}h</td>
+                <td>${formatHours(est)}h</td>
+                <td>${formatHours(act)}h</td>
                 <td>${progress}%</td>
             </tr>
         `;
@@ -2155,18 +2155,18 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                 }
                 tableBody += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
                 tableBody += `<td style="word-break: break-word;">${memberDisplay}</td>`;
-                tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
-                tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
-                tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
+                tableBody += `<td style="text-align: right;">${est.hours > 0 ? formatHours(est.hours) + 'h' : '-'}</td>`;
+                tableBody += `<td style="text-align: right;">${act.hours > 0 ? formatHours(act.hours) + 'h' : '-'}</td>`;
+                tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + formatHours(diff) + 'h' : '-'}</td>`;
                 const progressCellStyle = progressBarHtml && progressBarStyle === 'bottom'
                     ? 'min-width: 100px; padding: 8px 8px 12px 8px; position: relative;'
                     : 'min-width: 100px; padding: 8px;';
                 tableBody += `<td style="${progressCellStyle}">${progressBarHtml || '<span style="color: #ccc; font-size: 13px;">-</span>'}</td>`;
                 if (index === 0) {
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
-                        <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
-                        <div style="font-weight: 600;">実績: ${totalAct.toFixed(1)}h</div>
-                        <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">差異: ${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}h</div>
+                        <div style="font-weight: 600;">見積: ${formatHours(totalEst)}h</div>
+                        <div style="font-weight: 600;">実績: ${formatHours(totalAct)}h</div>
+                        <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">差異: ${totalDiff > 0 ? '+' : ''}${formatHours(totalDiff)}h</div>
                     </td>`;
                 }
                 tableBody += '</tr>';
@@ -2186,9 +2186,9 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
             html += `<td style="padding: 12px; position: sticky; left: 0; background: #f5f5f5; z-index: 1;">合計</td>`;
             html += '<td></td>';
             html += '<td></td>';
-            html += `<td style="text-align: right;">${versionTotalEst.toFixed(1)}h</td>`;
-            html += `<td style="text-align: right;">${versionTotalAct.toFixed(1)}h</td>`;
-            html += `<td style="text-align: right; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}h</td>`;
+            html += `<td style="text-align: right;">${formatHours(versionTotalEst)}h</td>`;
+            html += `<td style="text-align: right;">${formatHours(versionTotalAct)}h</td>`;
+            html += `<td style="text-align: right; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${formatHours(versionTotalDiff)}h</td>`;
             html += '<td></td>';
             html += '<td></td>';
             html += '</tr>';
@@ -2466,10 +2466,10 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             const versionTotalEstMonths = versionTotalEstDays / workingDaysPerMonth;
             const versionTotalActMonths = versionTotalActDays / workingDaysPerMonth;
             html += `<td style="text-align: center; background: ${vBg};">
-                <div style="font-weight: 600;">${versionTotalEst.toFixed(1)}h</div>
-                <div style="font-weight: 700; color: #1976d2;">${versionTotalAct.toFixed(1)}h</div>
+                <div style="font-weight: 600;">${formatHours(versionTotalEst)}h</div>
+                <div style="font-weight: 700; color: #1976d2;">${formatHours(versionTotalAct)}h</div>
                 <div class="total-manpower">
-                    <div style="font-size: 11px; color: #666;">${versionTotalEstDays.toFixed(1)}/${versionTotalActDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${versionTotalEstDays.toFixed(2)}/${versionTotalActDays.toFixed(2)}人日</div>
                     <div style="font-size: 11px; color: #666;">${versionTotalEstMonths.toFixed(2)}/${versionTotalActMonths.toFixed(2)}人月</div>
                 </div>
             </td></tr></table></div>`;
@@ -2560,7 +2560,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             if (progressBarStyle === 'bottom') {
                 // セル下部に表示するスタイル
                 progressBarHtml = `
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${formatHours(actualHours)}h | 残: ${remainingDisplay}h">
                         <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                     </div>
                 `;
@@ -2571,7 +2571,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
                     : '';
 
                 progressBarHtml = `
-                    <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                    <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${formatHours(actualHours)}h | 残: ${remainingDisplay}h">
                         <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
                             <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                         </div>
@@ -2591,10 +2591,10 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
         return `
             <div style="text-align: center;">
-                <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}h</div>
-                <div style="font-weight: 700; color: #1976d2;" class="act-color ${actColorClass}">${act.hours > 0 ? act.hours.toFixed(1) : '-'}h</div>
+                <div style="font-weight: 600;">${est.hours > 0 ? formatHours(est.hours) : '-'}h</div>
+                <div style="font-weight: 700; color: #1976d2;" class="act-color ${actColorClass}">${act.hours > 0 ? formatHours(act.hours) : '-'}h</div>
                 <div class="total-manpower">
-                    <div style="font-size: 11px; color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${estDays.toFixed(2)}/${actDays.toFixed(2)}人日</div>
                     <div style="font-size: 11px; color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
                 </div>
             </div>
@@ -2602,14 +2602,14 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     }
 
     // 工程セル（見積一覧タブのスタイルに合わせる）
-    const estText = est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-';
-    const actText = act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-';
+    const estText = est.hours > 0 ? formatHours(est.hours) + 'h' : '-';
+    const actText = act.hours > 0 ? formatHours(act.hours) + 'h' : '-';
 
     // 人日表示（広い画面のみ）
     const estDays = est.hours / 8;
     const actDays = act.hours / 8;
     const manDaysHtml = (est.hours > 0 || act.hours > 0)
-        ? `<div class="cell-mandays" style="font-size: 10px; color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
+        ? `<div class="cell-mandays" style="font-size: 10px; color: #888;">${estDays.toFixed(2)}/${actDays.toFixed(2)}人日</div>`
         : '';
 
     // bottomスタイルの場合、セルにposition: relativeが必要
@@ -2867,7 +2867,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(total.toFixed(1) + 'h', centerX, centerY);
+    ctx.fillText(formatHours(total) + 'h', centerX, centerY);
 
     // 凡例
     let legendY = isMobile ? centerY + radius + 20 : height - (processes.length * 15) - 10;
@@ -2877,7 +2877,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
         ctx.fillStyle = processColors[process] || '#adb5bd';
         ctx.fillRect(10, legendY, 8, 8);
         ctx.fillStyle = '#495057';
-        ctx.fillText(`${process}: ${processHours[process].toFixed(1)}h`, 22, legendY + 8);
+        ctx.fillText(`${process}: ${formatHours(processHours[process])}h`, 22, legendY + 8);
         legendY += 14;
     });
 }
@@ -3078,11 +3078,11 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
         const labelSpan = diffContainerEl.querySelector('span');
         if (isOverCapacity) {
             if (labelSpan) labelSpan.textContent = '超過:';
-            diffEl.textContent = `${absDiff.toFixed(1)}h`;
+            diffEl.textContent = `${formatHours(absDiff)}h`;
             diffEl.style.color = '#dc2626';
         } else {
             if (labelSpan) labelSpan.textContent = '余裕:';
-            diffEl.textContent = `${absDiff.toFixed(1)}h`;
+            diffEl.textContent = `${formatHours(absDiff)}h`;
             diffEl.style.color = '#16a34a';
         }
     }
@@ -3092,7 +3092,7 @@ export function updateCapacityAnalysis(totalEstimate, totalActual, workingDays, 
     const remainingLabelEl = el('capacityRemainingLabel');
     if (remainingEl) {
         const remaining = standardHours - totalActual;
-        remainingEl.textContent = `${Math.abs(remaining).toFixed(1)}h`;
+        remainingEl.textContent = `${formatHours(Math.abs(remaining))}h`;
 
         // 超過時はラベルと色を変更
         if (remaining < 0) {
@@ -3130,7 +3130,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
         if (estimatePercent > 100) {
             // 超過時: バーは100%で止め、数値で超過分を強調
             const overPercent = (estimatePercent - 100).toFixed(0);
-            estimateTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${totalEstimate.toFixed(1)}h (+${overPercent}%)</span>`;
+            estimateTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${formatHours(totalEstimate)}h (+${overPercent}%)</span>`;
             estimateBarEl.style.width = '100%';
             estimateBarEl.style.borderRadius = '12px';
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
@@ -3141,7 +3141,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             }
         } else {
             // 通常: バーは実際の割合で表示
-            estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
+            estimateTextEl.textContent = `${formatHours(totalEstimate)}h (${estimatePercent.toFixed(0)}%)`;
             estimateBarEl.style.width = estimatePercent + '%';
             estimateBarEl.style.borderRadius = '12px';
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
@@ -3163,7 +3163,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
         if (actualPercent > 100) {
             // 超過時: バーは100%で止め、数値で超過分を強調
             const overPercent = (actualPercent - 100).toFixed(0);
-            actualTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${totalActual.toFixed(1)}h (+${overPercent}%)</span>`;
+            actualTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${formatHours(totalActual)}h (+${overPercent}%)</span>`;
             actualBarEl.style.width = '100%';
             actualBarEl.style.borderRadius = '12px';
             actualBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
@@ -3174,7 +3174,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             }
         } else {
             // 通常
-            actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
+            actualTextEl.textContent = `${formatHours(totalActual)}h (${actualPercent.toFixed(0)}%)`;
             actualBarEl.style.width = actualPercent + '%';
             actualBarEl.style.borderRadius = '12px';
             actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
@@ -3211,7 +3211,7 @@ function updateGaugeDisplay(totalEstimate, totalActual, estimatePercent, actualP
         estimateGaugeValue.classList.toggle('over', isOverCapacity);
     }
     if (estimateGaugeLabel) {
-        estimateGaugeLabel.textContent = `見積 ${totalEstimate.toFixed(1)}h`;
+        estimateGaugeLabel.textContent = `見積 ${formatHours(totalEstimate)}h`;
     }
 
     // 実績ゲージ
@@ -3235,7 +3235,7 @@ function updateGaugeDisplay(totalEstimate, totalActual, estimatePercent, actualP
         }
     }
     if (actualGaugeLabel) {
-        actualGaugeLabel.textContent = `実績 ${totalActual.toFixed(1)}h`;
+        actualGaugeLabel.textContent = `実績 ${formatHours(totalActual)}h`;
     }
 }
 

@@ -10,7 +10,8 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert
+    showAlert,
+    formatHours
 } from './utils.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList } from './estimate.js';
@@ -194,7 +195,7 @@ export function saveEstimateEdit() {
             });
 
             if (Math.abs(total - hours) > 0.01) {
-                alert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${hours}h)と一致しません`);
+                alert(`月別工数の合計(${formatHours(total)}h)が総工数(${hours}h)と一致しません`);
                 return;
             }
         }
@@ -316,7 +317,7 @@ export function updateEditMonthPreview() {
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {
-        const hoursPerMonth = (totalHours / months.length).toFixed(1);
+        const hoursPerMonth = formatHours(totalHours / months.length);
         months.forEach(month => {
             const [y, m] = month.split('-');
             html += `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">`;
@@ -342,7 +343,7 @@ export function updateEditMonthPreview() {
         html += `<div id="editManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
         const isMatch = Math.abs(calculatedTotal - totalHours) < 0.01;
         const color = isMatch ? '#27ae60' : '#e74c3c';
-        html += `合計: <span style="color: ${color};">${calculatedTotal.toFixed(1)}h</span> / 目標: ${totalHours}h`;
+        html += `合計: <span style="color: ${color};">${formatHours(calculatedTotal)}h</span> / 目標: ${totalHours}h`;
         html += `</div>`;
     }
 
@@ -374,14 +375,14 @@ export function updateEditManualTotal() {
     if (totalDiv) {
         const diff = total - totalHours;
         const color = Math.abs(diff) < 0.01 ? '#27ae60' : (diff > 0 ? '#e74c3c' : '#f39c12');
-        totalDiv.innerHTML = `合計: <span style="color: ${color};">${total.toFixed(1)}h</span> / 目標: ${totalHours}h`;
+        totalDiv.innerHTML = `合計: <span style="color: ${color};">${formatHours(total)}h</span> / 目標: ${totalHours}h`;
 
         if (Math.abs(diff) < 0.01) {
             totalDiv.innerHTML += ' <span style="color: #27ae60;">✓</span>';
         } else if (diff > 0) {
-            totalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${diff.toFixed(1)}h 超過)</span>`;
+            totalDiv.innerHTML += ` <span style="color: #e74c3c;">(+${formatHours(diff)}h 超過)</span>`;
         } else {
-            totalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
+            totalDiv.innerHTML += ` <span style="color: #f39c12;">(${formatHours(diff)}h 不足)</span>`;
         }
     }
 }

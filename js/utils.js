@@ -438,10 +438,14 @@ export function determineProgressStatus(estimatedHours, actualHours, remainingHo
  * @param {number} decimalPlaces - 小数点以下の桁数（デフォルト1）
  * @returns {string} - フォーマットされた工数
  */
-export function formatHours(hours, decimalPlaces = 1) {
-    if (hours === 0) return '0';
-    if (!hours || isNaN(hours)) return '-';
-    return hours.toFixed(decimalPlaces);
+export function formatHours(hours) {
+    if (hours == null || isNaN(hours)) return '0.0';
+    // 0.25単位に対応：末尾が0なら1桁に（8.50 → 8.5, 8.00 → 8.0）
+    const fixed2 = hours.toFixed(2);
+    if (fixed2.endsWith('0')) {
+        return hours.toFixed(1);
+    }
+    return fixed2;
 }
 
 /**

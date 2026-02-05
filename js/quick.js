@@ -7,7 +7,7 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode
 } from './state.js';
-import { generateMonthOptions, generateMonthRange, showAlert, sortMembers } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, formatHours } from './utils.js';
 import * as Estimate from './estimate.js';
 
 // クイック入力用の状態変数
@@ -464,10 +464,10 @@ export function updateQuickEstimateTotals() {
         totalHours += hours;
     });
 
-    const totalDays = (totalHours / 8).toFixed(1);
+    const totalDays = (totalHours / 8).toFixed(2);
     const totalMonths = (totalHours / 160).toFixed(2);
 
-    document.getElementById('quickEstTotalHours').textContent = totalHours.toFixed(1);
+    document.getElementById('quickEstTotalHours').textContent = formatHours(totalHours);
     document.getElementById('quickEstTotalDays').textContent = totalDays;
     document.getElementById('quickEstTotalMonths').textContent = totalMonths;
 

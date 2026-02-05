@@ -9,6 +9,7 @@ import {
 } from './state.js';
 
 import { getCurrentMonthWorkingDays, renderEstimateList, updateWorkMonthOptions } from './estimate.js';
+import { formatHours } from './utils.js';
 
 // ============================================
 // 作業月選択モード
@@ -104,7 +105,7 @@ export function updateSelectedWorkHours() {
     const months = days / workingDaysPerMonth;
 
     document.getElementById('selectedWorkHours').textContent =
-        `選択中: ${totalHours.toFixed(1)}h (${days.toFixed(1)}人日 / ${months.toFixed(2)}人月)`;
+        `選択中: ${formatHours(totalHours)}h (${days.toFixed(2)}人日 / ${months.toFixed(2)}人月)`;
 }
 
 /**
