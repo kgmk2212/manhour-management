@@ -823,6 +823,7 @@ export function initTabSwipe() {
     let nextTabEl = null;
     let prevTabEl = null;
     let swipeStartScrollY = 0;  // スワイプ開始時のスクロール位置
+    let scrollableContainer = null;  // タッチ開始時のスクロール可能なコンテナ
 
     // インジケーター用のタブ位置キャッシュ
     let indicatorCache = null;
@@ -847,8 +848,45 @@ export function initTabSwipe() {
         const segmentButton = target.closest('[id$="Buttons2"]');
         if (segmentButton) return true;
 
-        const element = target.closest('.table-wrapper, .estimate-table-wrapper, .matrix-container, .matrix-table, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
+        // table-wrapperとestimate-table-wrapperは除外（スクロール端で許可）
+        const element = target.closest('.matrix-container, .matrix-table, .modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
         return element !== null;
+    }
+
+    /**
+     * 横スクロール可能なコンテナを取得
+     */
+    function getScrollableContainer(target) {
+        return target.closest('.table-wrapper, .estimate-table-wrapper');
+    }
+
+    /**
+     * コンテナが指定方向にスクロール可能かどうか
+     * @param {HTMLElement} container スクロールコンテナ
+     * @param {number} deltaX スワイプの移動量（正: 右スワイプ、負: 左スワイプ）
+     * @returns {boolean} その方向にスクロール可能かどうか
+     */
+    function canContainerScroll(container, deltaX) {
+        if (!container) return false;
+
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        const maxScroll = scrollWidth - clientWidth;
+
+        // スクロールの必要がない（コンテンツがコンテナより小さい）
+        if (maxScroll <= 0) return false;
+
+        // 右スワイプ（前のタブへ）= 表を右にスクロール = scrollLeftを減らす
+        if (deltaX > 0) {
+            // 左端にいなければ表をスクロールできる
+            return scrollLeft > 1;  // 1px の余裕を持たせる
+        }
+        // 左スワイプ（次のタブへ）= 表を左にスクロール = scrollLeftを増やす
+        else {
+            // 右端にいなければ表をスクロールできる
+            return scrollLeft < maxScroll - 1;  // 1px の余裕を持たせる
+        }
     }
 
     /**
@@ -1210,6 +1248,7 @@ export function initTabSwipe() {
         prevTabEl = null;
         currentTranslateX = 0;
         indicatorCache = null;
+        scrollableContainer = null;
 
         // インジケーターのスタイルをクリア
         if (tabIndicator) {
@@ -1314,6 +1353,7 @@ export function initTabSwipe() {
         prevTabEl = null;
         currentTranslateX = 0;
         indicatorCache = null;
+        scrollableContainer = null;
 
         // インジケーターのスタイルをクリア
         if (tabIndicator) {
@@ -1331,6 +1371,7 @@ export function initTabSwipe() {
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
         touchStartTarget = e.target;
+        scrollableContainer = getScrollableContainer(e.target);
         isSwiping = true;
         isSwipeActive = false;
     }, { passive: true });
@@ -1350,6 +1391,12 @@ export function initTabSwipe() {
                 // 縦方向が主なら無視
                 if (Math.abs(deltaY) > Math.abs(deltaX) * MAX_VERTICAL_RATIO) {
                     isSwiping = false;
+                    return;
+                }
+                // 表がスワイプ方向にスクロール可能なら、表のスクロールを優先
+                if (canContainerScroll(scrollableContainer, deltaX)) {
+                    isSwiping = false;
+                    scrollableContainer = null;
                     return;
                 }
                 // 横スワイプとして確定
@@ -3514,6 +3561,8 @@ export function restoreReportFilterState() {
                     reportMonth.value = state.month;
                     if (reportMonth2) reportMonth2.value = state.month;
                     updateSegmentButtonSelection('reportMonthButtons2', state.month);
+                    // 版数オプションを月でフィルタリング
+                    updateReportVersionOptions(null, state.month);
                     restored = true;
                 }
             }
