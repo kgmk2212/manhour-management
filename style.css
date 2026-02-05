@@ -1836,7 +1836,7 @@
         @media (max-width: 768px) {
             .tabs {
                 position: fixed;
-                bottom: calc(env(safe-area-inset-bottom, 0) + 12px);
+                bottom: env(safe-area-inset-bottom, 0);
                 top: auto !important;
                 /* PC用のtop:0を打ち消し */
                 left: 0;
