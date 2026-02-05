@@ -51,6 +51,7 @@
             transition: transform 0.3s ease, opacity 0.3s ease;
             transform: translateY(-100%);
             opacity: 0;
+            margin-top: 12px;
         }
 
         /* タブボタンラッパー（トグルボタンを固定表示するため） */
