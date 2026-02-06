@@ -117,6 +117,11 @@
             background: var(--early-bg-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)));
         }
 
+        /* 早期テーマ適用：ヘッダーにテーマカラーを反映 */
+        [data-early-theme] header {
+            background: var(--early-theme-gradient) !important;
+        }
+
         /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
         [data-early-tab] #quick.tab-content.active {
             display: none !important;

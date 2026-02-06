@@ -261,6 +261,12 @@ export function updateThemeElements() {
 
     updateBodyBackground();
 
+    // ページヘッダー
+    const headerEl = document.querySelector('header');
+    if (headerEl) {
+        headerEl.style.background = gradients[window.currentThemeColor] || gradients['deep-blue'];
+    }
+
     // クイック入力エリア
     const quickInput = document.querySelector('.quick-input');
     if (quickInput) {
