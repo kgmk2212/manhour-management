@@ -106,7 +106,7 @@ import {
     closeProcessBreakdownModal,
     closeRemainingHoursModal
 } from './modal.js';
-import { debugModeEnabled, setWorkDetailStyle } from './state.js';
+import { debugModeEnabled, setWorkDetailStyle, setModalDesignStyle } from './state.js';
 
 export function initEventHandlers() {
     if (debugModeEnabled) console.log('✅ events.js: イベントハンドラ初期化開始');
@@ -609,6 +609,14 @@ export function initEventHandlers() {
     if (workDetailStyleDropdown) {
         workDetailStyleDropdown.addEventListener('change', () => {
             setWorkDetailStyle(workDetailStyleDropdown.value);
+            saveData(true);
+        });
+    }
+
+    const modalDesignStyleDropdown = document.getElementById('modalDesignStyle');
+    if (modalDesignStyleDropdown) {
+        modalDesignStyleDropdown.addEventListener('change', () => {
+            setModalDesignStyle(modalDesignStyleDropdown.value);
             saveData(true);
         });
     }

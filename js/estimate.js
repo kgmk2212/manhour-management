@@ -1052,47 +1052,109 @@ export function showEstimateDetail(estimateId) {
     if (!estimate) return;
 
     const est = normalizeEstimate(estimate);
+    const isClassic = window.modalDesignStyle === 'classic';
 
-    document.getElementById('estimateDetailModalTitle').textContent = '見積詳細';
+    let html;
 
-    // 作業月カード
-    let workMonthCards = '';
-    if (est.workMonths && est.workMonths.length > 0) {
-        const monthItems = est.workMonths.map(wm => {
-            const [y, m] = wm.split('-');
-            const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : null;
+    if (isClassic) {
+        // クラシック: main と同じレイアウト
+        document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
+
+        let workMonthDisplay = '<span style="color: #999;">未設定</span>';
+        if (est.workMonths && est.workMonths.length > 0) {
             if (est.workMonths.length === 1) {
-                return `<span class="ed-month-tag">${y}年${parseInt(m)}月</span>`;
+                const [y, m] = est.workMonths[0].split('-');
+                workMonthDisplay = `${y}年${parseInt(m)}月`;
+            } else {
+                const months = est.workMonths.map(wm => {
+                    const [y, m] = wm.split('-');
+                    const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : '0.0';
+                    return `${y}年${parseInt(m)}月: ${hours}h`;
+                });
+                workMonthDisplay = months.join('<br>');
             }
-            return `<span class="ed-month-tag">${y}年${parseInt(m)}月<strong>${hours || '0.0'}h</strong></span>`;
-        });
-        workMonthCards = monthItems.join('');
-    }
+        }
 
-    const html = `
-        <div class="ed-hero">
-            <div class="ed-version">${est.version || '版数なし'}</div>
-            <div class="ed-task-name">${est.task}</div>
-            <div class="ed-hours-row">
-                <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
-                <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+        html = `
+            <div class="estimate-detail-item">
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">版数:</span>
+                    <span class="estimate-detail-value">${est.version || '(なし)'}</span>
+                </div>
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">対応名:</span>
+                    <span class="estimate-detail-value">${est.task}</span>
+                </div>
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">工程:</span>
+                    <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
+                </div>
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">担当:</span>
+                    <span class="estimate-detail-value">${est.member}</span>
+                </div>
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">見積工数:</span>
+                    <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${est.hours.toFixed(1)}h</span>
+                </div>
+                <div class="estimate-detail-row">
+                    <span class="estimate-detail-label">作業予定月:</span>
+                    <span class="estimate-detail-value">${workMonthDisplay}</span>
+                </div>
             </div>
-            <div class="ed-hours-label">見積工数</div>
-        </div>
-        <div class="ed-meta">
-            <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${est.member}</span>
-        </div>
-        ${workMonthCards ? `
-        <div class="ed-section">
-            <div class="ed-section-label">作業予定月</div>
-            <div class="ed-months">${workMonthCards}</div>
-        </div>
-        ` : ''}
-        <div class="ed-actions">
-            <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
-            <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
-        </div>
-    `;
+            <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="editEstimateFromModal(${est.id})"
+                        style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                    編集
+                </button>
+                <button onclick="deleteEstimateFromModal(${est.id})"
+                        style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                    削除
+                </button>
+            </div>
+        `;
+    } else {
+        // モダン: 新デザイン
+        document.getElementById('estimateDetailModalTitle').textContent = '見積詳細';
+
+        let workMonthCards = '';
+        if (est.workMonths && est.workMonths.length > 0) {
+            const monthItems = est.workMonths.map(wm => {
+                const [y, m] = wm.split('-');
+                const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : null;
+                if (est.workMonths.length === 1) {
+                    return `<span class="ed-month-tag">${y}年${parseInt(m)}月</span>`;
+                }
+                return `<span class="ed-month-tag">${y}年${parseInt(m)}月<strong>${hours || '0.0'}h</strong></span>`;
+            });
+            workMonthCards = monthItems.join('');
+        }
+
+        html = `
+            <div class="ed-hero">
+                <div class="ed-version">${est.version || '版数なし'}</div>
+                <div class="ed-task-name">${est.task}</div>
+                <div class="ed-hours-row">
+                    <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
+                    <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+                </div>
+                <div class="ed-hours-label">見積工数</div>
+            </div>
+            <div class="ed-meta">
+                <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${est.member}</span>
+            </div>
+            ${workMonthCards ? `
+            <div class="ed-section">
+                <div class="ed-section-label">作業予定月</div>
+                <div class="ed-months">${workMonthCards}</div>
+            </div>
+            ` : ''}
+            <div class="ed-actions">
+                <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
+                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
+            </div>
+        `;
+    }
 
     document.getElementById('estimateDetailModalBody').innerHTML = html;
     document.getElementById('estimateDetailModal').style.display = 'flex';

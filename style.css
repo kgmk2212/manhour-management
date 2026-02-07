@@ -853,6 +853,49 @@
             color: #333;
         }
 
+        /* カスタムアラート - クラシックスタイル */
+        .custom-alert-content.classic-alert {
+            background-color: white;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-radius: 4px;
+            max-width: 360px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            border: 1px solid #ccc;
+            animation: none;
+        }
+
+        .classic-alert .custom-alert-accent {
+            display: none;
+        }
+
+        .classic-alert .custom-alert-icon-wrap {
+            display: none;
+        }
+
+        .classic-alert .custom-alert-body {
+            padding: 20px;
+            font-weight: normal;
+        }
+
+        .classic-alert .custom-alert-footer {
+            padding: 0 20px 20px;
+        }
+
+        .classic-alert .custom-alert-footer .btn {
+            min-width: 80px;
+            padding: 6px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            background: #3498db;
+            color: white;
+        }
+
+        .classic-alert .custom-alert-footer .btn:hover {
+            background: #2980b9;
+            color: white;
+        }
+
         .modal-header {
             color: white;
             padding: 12px 20px;

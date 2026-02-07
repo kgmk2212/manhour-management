@@ -261,6 +261,7 @@ export let quickInputMode = 'actual'; // クイック入力のモード
 export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
 export let mobileTabDesign = 'capsule'; // モバイルタブのデザイン: 'classic', 'dock', 'capsule'
 export let workDetailStyle = 'modern'; // 作業詳細モーダルのスタイル: 'modern', 'classic'
+export let modalDesignStyle = 'modern'; // モーダル全体のデザインスタイル: 'modern', 'classic'
 
 // フィルタ状態の保持（画面遷移・データ更新時に維持するため）
 export let estimateFilterState = {
@@ -449,6 +450,10 @@ export function setWorkDetailStyle(value) {
     window.workDetailStyle = value;
 }
 
+export function setModalDesignStyle(value) {
+    modalDesignStyle = value;
+    window.modalDesignStyle = value;
+}
 
 // ============================================
 // [GANTT-CHART] スケジュール関連変数

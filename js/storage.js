@@ -25,7 +25,7 @@ import {
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap,
-    setWorkDetailStyle
+    setWorkDetailStyle, setModalDesignStyle
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -88,7 +88,8 @@ export function saveData(skipAutoBackup = false) {
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
             chartColorScheme: selectedChartColorScheme,
-            workDetailStyle: window.workDetailStyle
+            workDetailStyle: window.workDetailStyle,
+            modalDesignStyle: window.modalDesignStyle
         }
     };
 
@@ -229,6 +230,12 @@ export function loadData() {
                 setWorkDetailStyle(settings.workDetailStyle);
                 const el = document.getElementById('workDetailStyle');
                 if (el) el.value = settings.workDetailStyle;
+            }
+            // モーダル全体のデザインスタイル設定を読み込み
+            if (settings.modalDesignStyle) {
+                setModalDesignStyle(settings.modalDesignStyle);
+                const el = document.getElementById('modalDesignStyle');
+                if (el) el.value = settings.modalDesignStyle;
             }
 
         } catch (error) {

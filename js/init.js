@@ -50,6 +50,7 @@ window.progressBarStyle = State.progressBarStyle;
 window.matrixEstActFormat = State.matrixEstActFormat;
 window.mobileTabDesign = State.mobileTabDesign;
 window.workDetailStyle = State.workDetailStyle;
+window.modalDesignStyle = State.modalDesignStyle;
 
 window.debugModeEnabled = State.debugModeEnabled;
 window.memberOrder = State.memberOrder;
