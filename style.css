@@ -4575,6 +4575,20 @@ textarea:focus {
     gap: 10px;
 }
 
+/* fm-row内のフォーム要素を統一サイズに */
+.fm-row input:not([type="radio"]):not([type="checkbox"]),
+.fm-row select {
+    height: 42px;
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 0 12px;
+}
+
+.fm-row input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 @media (max-width: 359px) {
     .fm-row {
         grid-template-columns: 1fr;
