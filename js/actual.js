@@ -886,23 +886,34 @@ export function showWorkDetail(member, date) {
     const dayOfWeek = getDayOfWeek(date);
 
     document.getElementById('modalTitle').textContent =
-        `${member}さんの作業 - ${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
+        `${member} - ${parseInt(month)}/${parseInt(day)}(${dayOfWeek})`;
 
     let html = '';
     const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+    const vacationHours = memberVacations.reduce((sum, v) => sum + (v.hours || 0), 0);
+    const grandTotal = totalHours + vacationHours;
 
+    // ヒーローエリア（合計工数を大きく表示）
+    html += `
+        <div class="wd-hero">
+            <div class="wd-hero-hours">${formatHours(grandTotal)}<span class="wd-hours-unit">h</span></div>
+            <div class="wd-hero-label">合計工数${dayActuals.length > 0 ? ` (${dayActuals.length}件)` : ''}</div>
+        </div>
+    `;
+
+    // 休暇セクション
     if (memberVacations.length > 0) {
-        html += '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f57c00;">';
-        html += '<div style="font-weight: 600; color: #f57c00; margin-bottom: 10px;">休暇</div>';
+        html += '<div class="wd-section">';
+        html += '<div class="wd-section-label">休暇</div>';
         memberVacations.forEach(vacation => {
             html += `
-                <div style="margin-bottom: 8px; padding: 10px; background: white; border-radius: 4px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>${vacation.vacationType}</strong>
-                            <span style="color: #666; font-size: 14px; margin-left: 10px;">${vacation.hours}h</span>
-                        </div>
-                        <button onclick="deleteVacationFromModal(${vacation.id}, '${member}', '${date}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                <div class="wd-vacation">
+                    <div class="wd-vacation-header">
+                        <span class="wd-vacation-type">${vacation.vacationType}</span>
+                        <span class="wd-vacation-hours">${vacation.hours}h</span>
+                    </div>
+                    <div class="wd-vacation-actions">
+                        <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteVacationFromModal(${vacation.id}, '${member}', '${date}')">削除</a>
                     </div>
                 </div>
             `;
@@ -910,37 +921,39 @@ export function showWorkDetail(member, date) {
         html += '</div>';
     }
 
-    dayActuals.forEach(actual => {
-        html += `
-            <div class="work-item">
-                <div class="work-item-header">
-                    <div class="work-item-title">${actual.task}</div>
-                    <div class="work-item-hours">${actual.hours}h</div>
+    // 作業内容セクション
+    if (dayActuals.length > 0) {
+        html += '<div class="wd-section">';
+        html += '<div class="wd-section-label">作業内容</div>';
+        dayActuals.forEach(actual => {
+            html += `
+                <div class="wd-card">
+                    <div class="wd-card-header">
+                        <div class="wd-card-title">${actual.task}</div>
+                        <div class="wd-card-hours">${actual.hours}h</div>
+                    </div>
+                    <div class="wd-card-meta">
+                        <span>${actual.version || '版数なし'}</span>
+                        <span style="color: #ccc;">·</span>
+                        ${actual.process ? `<span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span>` : '<span>工程なし</span>'}
+                    </div>
+                    <div class="wd-card-actions">
+                        <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editActualFromModal(${actual.id})">編集</a>
+                        <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteActualFromModal(${actual.id}, '${member}', '${date}')">削除</a>
+                    </div>
                 </div>
-                <div class="work-item-details">
-                    <span><strong>版数:</strong> ${actual.version || '(なし)'}</span>
-                    <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span>` : '(なし)'}</span>
-                </div>
-                <div style="margin-top: 8px; text-align: right;">
-                    <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: #3498db; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
-                    <button onclick="deleteActualFromModal(${actual.id}, '${member}', '${date}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
-                </div>
-            </div>
-        `;
-    });
+            `;
+        });
+        html += '</div>';
+    }
 
+    // 追加ボタン
     html += `
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-            <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}時間</strong>
-            <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
-        </div>
-        <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="addActualFromCalendar('${member}', '${date}'); closeWorkModal();"
-                    style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-                + 新しい実績を追加
+        <div class="wd-add-actions">
+            <button class="wd-add-btn wd-add-btn-actual" onclick="addActualFromCalendar('${member}', '${date}'); closeWorkModal();">
+                + 実績を追加
             </button>
-            <button onclick="addVacationFromCalendar('${member}', '${date}'); closeWorkModal();"
-                    style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+            <button class="wd-add-btn wd-add-btn-vacation" onclick="addVacationFromCalendar('${member}', '${date}'); closeWorkModal();">
                 + 休暇を追加
             </button>
         </div>
