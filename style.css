@@ -4543,13 +4543,14 @@ textarea:focus {
 
 /* ============================================
    fm-* フォームモーダル レイアウトクラス
+   Quiet Depth: 薄い層の重なりで奥行きを出す
    ============================================ */
 
-/* --- レイアウト --- */
+/* --- セクション区切り --- */
 .fm-section {
-    padding-top: 16px;
-    margin-top: 16px;
-    border-top: 1px solid #f0f0f0;
+    padding-top: 14px;
+    margin-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .fm-section:first-child {
@@ -4559,18 +4560,19 @@ textarea:focus {
 }
 
 .fm-section-label {
-    font-size: 11px;
-    color: #999;
+    font-size: 10px;
+    color: #aaa;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    margin-bottom: 12px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-bottom: 10px;
 }
 
+/* --- グリッド行 --- */
 .fm-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
 }
 
 @media (max-width: 359px) {
@@ -4579,112 +4581,45 @@ textarea:focus {
     }
 }
 
-/* --- モバイル省スペース --- */
-@media (max-width: 768px) {
-    .modal-header {
-        padding: 12px 16px;
-    }
-
-    .modal-body {
-        padding: 14px 16px;
-    }
-
-    .form-group {
-        margin-bottom: 10px;
-    }
-
-    .fm-section {
-        padding-top: 10px;
-        margin-top: 10px;
-    }
-
-    .fm-section-label {
-        margin-bottom: 8px;
-    }
-
-    .fm-row {
-        gap: 8px;
-    }
-
-    .fm-info-card {
-        padding: 10px 12px;
-        margin-bottom: 10px;
-    }
-
-    .fm-readonly-field {
-        padding: 7px 10px;
-        font-size: 13px;
-    }
-
-    .fm-pill-option span {
-        padding: 6px 8px;
-        font-size: 12px;
-    }
-
-    .fm-callout {
-        padding: 10px 12px;
-        margin-bottom: 10px;
-    }
-
-    .fm-actions {
-        padding-top: 12px;
-        margin-top: 14px;
-    }
-
-    .fm-summary-bar {
-        padding: 10px 12px;
-    }
-
-    .fm-hint {
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    input:not([type="radio"]):not([type="checkbox"]),
-    select {
-        padding: 8px 10px;
-    }
-
-    .btn {
-        padding: 8px 16px;
-    }
-}
-
-/* --- 情報表示 --- */
+/* --- 情報カード: 薄いガラス層 --- */
 .fm-info-card {
-    background: #f8f9fa;
+    background: rgba(0, 0, 0, 0.025);
     border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .fm-info-card-label {
-    font-size: 11px;
-    color: #999;
-    font-weight: 600;
+    font-size: 10px;
+    color: #aaa;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     margin-bottom: 4px;
 }
 
 .fm-readonly-field {
-    padding: 10px 12px;
-    background: #f5f5f5;
-    border-radius: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
     font-weight: 600;
     font-size: 14px;
     color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
+/* --- ヒントテキスト --- */
 .fm-hint {
-    font-size: 12px;
-    color: #888;
-    line-height: 1.5;
-    margin-top: 5px;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.4;
+    margin-top: 4px;
 }
 
-/* --- ピル型ラジオ --- */
+/* --- ピル型セグメントコントロール --- */
 .fm-pill-group {
     display: flex;
-    background: #f0f2f5;
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     padding: 3px;
     gap: 2px;
@@ -4703,52 +4638,54 @@ textarea:focus {
 
 .fm-pill-option span {
     display: block;
-    padding: 8px 12px;
+    padding: 7px 10px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
-    color: #666;
-    transition: all 0.2s ease;
+    color: #777;
+    transition: all 0.2s cubic-bezier(0.34, 1, 0.64, 1);
     user-select: none;
 }
 
 .fm-pill-option:has(input:checked) span {
     background: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03);
     color: var(--theme-color, #3498db);
     font-weight: 600;
 }
 
 /* --- 注意カード --- */
 .fm-callout {
-    background: #fef9f4;
-    border-left: 3px solid #f59e0b;
+    background: linear-gradient(135deg, #fffbf5, #fef6ec);
+    border-left: 3px solid #f0a050;
     border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
 }
 
 .fm-callout-title {
-    font-weight: 600;
-    font-size: 13px;
-    color: #92400e;
-    margin-bottom: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    color: #8b5e2f;
+    margin-bottom: 3px;
+    letter-spacing: 0.02em;
 }
 
 .fm-callout-text {
     font-size: 12px;
-    color: #92400e;
+    color: #8b5e2f;
     line-height: 1.5;
+    opacity: 0.85;
 }
 
 /* --- アクション行 --- */
 .fm-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
-    padding-top: 16px;
-    border-top: 1px solid #f0f0f0;
-    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    margin-top: 16px;
 }
 
 .fm-actions-end {
@@ -4757,11 +4694,12 @@ textarea:focus {
 
 /* --- サマリーバー --- */
 .fm-summary-bar {
-    background: #e3f2fd;
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.06), rgba(25, 118, 210, 0.03));
     border-radius: 10px;
-    padding: 14px 16px;
-    margin-top: 15px;
-    border-left: 4px solid var(--theme-color, #1976d2);
+    padding: 12px 14px;
+    margin-top: 12px;
+    border: 1px solid rgba(25, 118, 210, 0.08);
+    border-left: 3px solid var(--theme-color, #1976d2);
 }
 
 .fm-summary-bar .fm-summary-row {
@@ -4769,18 +4707,21 @@ textarea:focus {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .fm-summary-bar .fm-summary-label {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 12px;
     color: var(--theme-color, #1565c0);
+    letter-spacing: 0.02em;
 }
 
 .fm-summary-bar .fm-summary-values {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
+    font-size: 13px;
     color: var(--theme-color, #1976d2);
 }
 
@@ -4788,33 +4729,33 @@ textarea:focus {
 .fm-tab-bar {
     display: flex;
     gap: 0;
-    background: #f0f2f5;
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     padding: 3px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .fm-tab-btn {
     flex: 1;
-    padding: 9px 16px;
+    padding: 8px 14px;
     border: none;
     background: transparent;
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    color: #666;
-    transition: all 0.2s ease;
+    color: #777;
+    transition: all 0.2s cubic-bezier(0.34, 1, 0.64, 1);
 }
 
 .fm-tab-btn.active {
     background: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03);
     font-weight: 600;
     color: #333;
 }
 
-/* --- 見積テーブル強化 --- */
+/* --- 見積テーブル --- */
 .fm-process-table {
     border-collapse: separate;
     border-spacing: 0;
@@ -4822,22 +4763,23 @@ textarea:focus {
     overflow: hidden;
     width: 100%;
     margin: 0;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .fm-process-table th {
-    background: #f8f9fa;
-    font-size: 11px;
+    background: rgba(0, 0, 0, 0.025);
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-    color: #888;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #aaa;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .fm-process-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .fm-process-table tr:last-child td {
@@ -4858,19 +4800,19 @@ textarea:focus {
 }
 
 .fm-bulk-table thead tr {
-    background: #f8f9fa;
+    background: rgba(0, 0, 0, 0.025);
 }
 
 .fm-bulk-table th {
-    padding: 10px 12px;
+    padding: 8px 10px;
     text-align: left;
-    border-bottom: 2px solid #e0e0e0;
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 10px;
+    font-weight: 700;
+    color: #aaa;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: #f8f9fa;
+    letter-spacing: 0.06em;
+    background: rgba(0, 0, 0, 0.025);
 }
 
 .fm-bulk-table th:nth-child(n+5) {
@@ -4882,8 +4824,98 @@ textarea:focus {
 }
 
 .fm-bulk-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* --- モバイル省スペース --- */
+@media (max-width: 768px) {
+    .modal-header {
+        padding: 12px 16px;
+    }
+
+    .modal-body {
+        padding: 14px 16px;
+    }
+
+    .form-group {
+        margin-bottom: 8px;
+    }
+
+    .form-group > label:first-child {
+        margin-bottom: 3px;
+    }
+
+    .fm-section {
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    .fm-section-label {
+        margin-bottom: 6px;
+    }
+
+    .fm-row {
+        gap: 6px;
+    }
+
+    .fm-info-card {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+    }
+
+    .fm-readonly-field {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+
+    .fm-pill-option span {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .fm-callout {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+    }
+
+    .fm-actions {
+        padding-top: 10px;
+        margin-top: 12px;
+        gap: 6px;
+    }
+
+    .fm-summary-bar {
+        padding: 10px 12px;
+        margin-top: 8px;
+    }
+
+    .fm-tab-bar {
+        margin-bottom: 12px;
+    }
+
+    .fm-hint {
+        font-size: 10px;
+        margin-top: 2px;
+    }
+
+    .fm-process-table th {
+        padding: 6px 8px;
+    }
+
+    .fm-process-table td {
+        padding: 6px 8px;
+    }
+
+    input:not([type="radio"]):not([type="checkbox"]),
+    select {
+        padding: 8px 10px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
 }
 
 /* ============================================
@@ -4940,12 +4972,14 @@ textarea:focus {
 [data-modal-design="classic"] .fm-info-card {
     background: #f0f0f0;
     border-radius: 5px;
+    border: none;
     padding: 10px;
 }
 
 [data-modal-design="classic"] .fm-readonly-field {
     background: #f5f5f5;
     border-radius: 6px;
+    border: none;
     padding: 10px;
 }
 
@@ -4962,6 +4996,7 @@ textarea:focus {
 
 [data-modal-design="classic"] .fm-callout-text {
     color: #856404;
+    opacity: 1;
 }
 
 [data-modal-design="classic"] .fm-actions {
@@ -4996,6 +5031,7 @@ textarea:focus {
 [data-modal-design="classic"] .fm-process-table {
     border-collapse: collapse;
     border-radius: 0;
+    border: none;
     overflow: visible;
 }
 
@@ -5017,6 +5053,7 @@ textarea:focus {
 [data-modal-design="classic"] .fm-summary-bar {
     background: #e3f2fd;
     border-radius: 8px;
+    border: none;
     border-left: 4px solid #1976d2;
 }
 
