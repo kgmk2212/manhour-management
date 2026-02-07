@@ -309,7 +309,18 @@ export function updateEditMonthPreview() {
     const estimateId = parseFloat(document.getElementById('editEstimateId').value);
     const currentEstimate = estimates.find(e => e.id === estimateId);
     const normalizedEstimate = normalizeEstimate(currentEstimate);
-    const currentMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
+    const savedMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
+
+    // 既存のDOM入力フィールドから編集中の値を取得（再生成時に値が失われないようにする）
+    const editedMonthlyHours = {};
+    months.forEach((month, index) => {
+        const input = document.getElementById(`editMonthHours_${index}`);
+        if (input) {
+            editedMonthlyHours[month] = parseFloat(input.value) || 0;
+        }
+    });
+    const hasEditedValues = Object.keys(editedMonthlyHours).length > 0;
+    const currentMonthlyHours = hasEditedValues ? editedMonthlyHours : savedMonthlyHours;
 
     let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #3498db; max-height: 300px; overflow-y: auto;">';
     html += '<strong style="color: #2c3e50;">📋 月別工数</strong><br>';
