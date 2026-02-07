@@ -854,7 +854,7 @@ export function initTabSwipe() {
 
         // table-wrapperとestimate-table-wrapperは除外（スクロール端で許可）
         // matrix-containerも除外（内部のtable-wrapperでスクロール端判定）
-        const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode');
+        const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode, #calendarTableWrapper');
         return element !== null;
     }
 
