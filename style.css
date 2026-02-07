@@ -368,6 +368,21 @@
             z-index: 2;
         }
 
+        /* シンプルなテーブル（担当者別工数、版数別進捗など）: 固定列不要 */
+        table.simple-table {
+            width: 100%;
+            table-layout: auto;
+        }
+
+        table.simple-table tr td:first-child,
+        table.simple-table tr th:first-child {
+            position: static;
+            width: auto;
+            min-width: auto !important;
+            max-width: none !important;
+            white-space: nowrap;
+        }
+
         /* レポートタブ専用のマトリクスレイアウト（最新版：常に画面内に収める＆列幅固定） */
         table.estimate-matrix.report-matrix {
             min-width: 0;
@@ -1916,6 +1931,18 @@
         .floating-segment-buttons button:hover:not(.active) {
             border-color: var(--theme-color, #1e3c72);
             background: #f8f9ff;
+        }
+
+        /* フローティングフィルタパネルのボタンスタイル（丸ボタン） */
+        .floating-filter-panel.style-pill .floating-segment-buttons button,
+        .floating-filter-panel.style-pill .floating-filter-buttons button {
+            border-radius: 16px;
+        }
+
+        /* フローティングフィルタパネルのボタンスタイル（四角ボタン）- デフォルト */
+        .floating-filter-panel.style-segment .floating-segment-buttons button,
+        .floating-filter-panel.style-segment .floating-filter-buttons button {
+            border-radius: 6px;
         }
 
         /* 各タブのセグメントボタン共通スタイル */

@@ -1960,7 +1960,7 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         ? '<tr><th>担当</th><th>見積</th><th>実績</th><th>差</th><th>率</th></tr>'
         : '<tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th></tr>';
 
-    let html = `<div class="table-wrapper"><table>${headers}`;
+    let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
     members.forEach(member => {
         const est = adjustedEstimates[member] || 0;
@@ -1996,7 +1996,7 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
         ? '<tr><th>版</th><th>見積</th><th>実績</th><th>進捗</th></tr>'
         : '<tr><th>版数</th><th>見積工数</th><th>実績工数</th><th>進捗率</th></tr>';
 
-    let html = `<div class="table-wrapper"><table>${headers}`;
+    let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
     versions.forEach(version => {
         const est = filteredEstimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
