@@ -3784,14 +3784,22 @@
 /* アクションボタン */
 .ed-actions {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
     margin-top: 18px;
     padding-top: 16px;
     border-top: 1px solid #f0f0f0;
 }
 
-.ed-actions .btn {
-    flex: 1;
+.ed-delete-link {
+    font-size: 12px;
+    color: #999;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.ed-delete-link:hover {
+    color: #e74c3c;
 }
 
 /* マトリクス・グループ表示のクリック可能セル */

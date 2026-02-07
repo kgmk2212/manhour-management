@@ -1090,7 +1090,7 @@ export function showEstimateDetail(estimateId) {
         ` : ''}
         <div class="ed-actions">
             <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
-            <button class="btn btn-danger" onclick="deleteEstimateFromModal(${est.id})">削除</button>
+            <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
         </div>
     `;
 
