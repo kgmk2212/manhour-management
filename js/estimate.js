@@ -1053,7 +1053,7 @@ export function showEstimateDetail(estimateId) {
 
     const est = normalizeEstimate(estimate);
 
-    document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
+    document.getElementById('estimateDetailModalTitle').textContent = '見積詳細';
 
     // 作業月カード
     let workMonthCards = '';
@@ -1071,6 +1071,7 @@ export function showEstimateDetail(estimateId) {
 
     const html = `
         <div class="ed-hero">
+            <div class="ed-task-name">${est.task}</div>
             <div class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></div>
             <div class="ed-hours-label">見積工数</div>
         </div>

@@ -3666,6 +3666,15 @@
     margin: -15px -20px 0;
 }
 
+.ed-task-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
 .ed-hours {
     font-size: 40px;
     font-weight: 800;
