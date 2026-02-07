@@ -4269,7 +4269,6 @@
     font-size: 12px;
     font-weight: 600;
     color: #555;
-    text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-bottom: 6px;
 }
@@ -4446,7 +4445,6 @@ textarea:focus {
 
 [data-modal-design="classic"] .form-group > label:first-child {
     font-size: 13px;
-    text-transform: none;
     letter-spacing: normal;
     color: inherit;
     font-weight: 500;
@@ -4541,6 +4539,426 @@ textarea:focus {
     margin-top: 15px;
     padding-top: 0;
     border-top: none;
+}
+
+/* ============================================
+   fm-* フォームモーダル レイアウトクラス
+   ============================================ */
+
+/* --- レイアウト --- */
+.fm-section {
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.fm-section:first-child {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+}
+
+.fm-section-label {
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.fm-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .fm-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- 情報表示 --- */
+.fm-info-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.fm-info-card-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.fm-readonly-field {
+    padding: 10px 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+.fm-hint {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.5;
+    margin-top: 5px;
+}
+
+/* --- ピル型ラジオ --- */
+.fm-pill-group {
+    display: flex;
+    background: #f0f2f5;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+    margin-bottom: 10px;
+}
+
+.fm-pill-option {
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+}
+
+.fm-pill-option input[type="radio"] {
+    display: none;
+}
+
+.fm-pill-option span {
+    display: block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.fm-pill-option:has(input:checked) span {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    color: var(--theme-color, #3498db);
+    font-weight: 600;
+}
+
+/* --- 注意カード --- */
+.fm-callout {
+    background: #fef9f4;
+    border-left: 3px solid #f59e0b;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.fm-callout-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #92400e;
+    margin-bottom: 4px;
+}
+
+.fm-callout-text {
+    font-size: 12px;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+/* --- アクション行 --- */
+.fm-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 20px;
+}
+
+.fm-actions-end {
+    justify-content: flex-end;
+}
+
+/* --- サマリーバー --- */
+.fm-summary-bar {
+    background: #e3f2fd;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 15px;
+    border-left: 4px solid var(--theme-color, #1976d2);
+}
+
+.fm-summary-bar .fm-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.fm-summary-bar .fm-summary-label {
+    font-weight: 600;
+    color: var(--theme-color, #1565c0);
+}
+
+.fm-summary-bar .fm-summary-values {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: var(--theme-color, #1976d2);
+}
+
+/* --- タブバー --- */
+.fm-tab-bar {
+    display: flex;
+    gap: 0;
+    background: #f0f2f5;
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 20px;
+}
+
+.fm-tab-btn {
+    flex: 1;
+    padding: 9px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.fm-tab-btn.active {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    color: #333;
+}
+
+/* --- 見積テーブル強化 --- */
+.fm-process-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    margin: 0;
+}
+
+.fm-process-table th {
+    background: #f8f9fa;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: #888;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.fm-process-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.fm-process-table tr:last-child td {
+    border-bottom: none;
+}
+
+.fm-process-table select,
+.fm-process-table input {
+    margin: 0;
+}
+
+/* --- 一括編集テーブル --- */
+.fm-bulk-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+}
+
+.fm-bulk-table thead tr {
+    background: #f8f9fa;
+}
+
+.fm-bulk-table th {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #f8f9fa;
+}
+
+.fm-bulk-table th:nth-child(n+5) {
+    text-align: right;
+}
+
+.fm-bulk-table th:last-child {
+    text-align: center;
+}
+
+.fm-bulk-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* ============================================
+   fm-* クラシック復元
+   ============================================ */
+
+[data-modal-design="classic"] .fm-section {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+[data-modal-design="classic"] .fm-section-label {
+    display: none;
+}
+
+[data-modal-design="classic"] .fm-row {
+    display: block;
+}
+
+[data-modal-design="classic"] .fm-row > * {
+    margin-bottom: 10px;
+}
+
+[data-modal-design="classic"] .fm-pill-group {
+    display: flex;
+    gap: 10px;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+[data-modal-design="classic"] .fm-pill-option input[type="radio"] {
+    display: inline;
+    width: auto;
+}
+
+[data-modal-design="classic"] .fm-pill-option span {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    font-weight: normal;
+    color: inherit;
+}
+
+[data-modal-design="classic"] .fm-pill-option:has(input:checked) span {
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font-weight: normal;
+}
+
+[data-modal-design="classic"] .fm-info-card {
+    background: #f0f0f0;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+[data-modal-design="classic"] .fm-readonly-field {
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+[data-modal-design="classic"] .fm-callout {
+    background: #fff3cd;
+    border-left: none;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+[data-modal-design="classic"] .fm-callout-title {
+    color: #856404;
+}
+
+[data-modal-design="classic"] .fm-callout-text {
+    color: #856404;
+}
+
+[data-modal-design="classic"] .fm-actions {
+    border: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+[data-modal-design="classic"] .fm-tab-bar {
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    gap: 10px;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 20px;
+}
+
+[data-modal-design="classic"] .fm-tab-btn {
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 10px 16px;
+}
+
+[data-modal-design="classic"] .fm-tab-btn.active {
+    background: transparent;
+    box-shadow: none;
+    border-bottom: 2px solid #3498db;
+    color: #3498db;
+}
+
+[data-modal-design="classic"] .fm-process-table {
+    border-collapse: collapse;
+    border-radius: 0;
+    overflow: visible;
+}
+
+[data-modal-design="classic"] .fm-process-table th {
+    background: #e8f5e9;
+    color: #2c3e50;
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: normal;
+    padding: 8px;
+    border-bottom: 2px solid #4caf50;
+}
+
+[data-modal-design="classic"] .fm-process-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+}
+
+[data-modal-design="classic"] .fm-summary-bar {
+    background: #e3f2fd;
+    border-radius: 8px;
+    border-left: 4px solid #1976d2;
+}
+
+[data-modal-design="classic"] .fm-bulk-table th {
+    background: #f8f9fa;
+    font-size: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    color: inherit;
+}
+
+[data-modal-design="classic"] .fm-hint {
+    color: #666;
 }
 
 /* ============================================
