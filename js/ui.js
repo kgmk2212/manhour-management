@@ -228,6 +228,10 @@ export function showTab(tabName, options = {}) {
             window.syncFloatingFilters();
         }
     } else if (tabName === 'actual') {
+        // 実績一覧を再描画（他タブで月フィルタが変更されている可能性があるため）
+        if (typeof window.renderActualList === 'function') {
+            window.renderActualList();
+        }
         // フローティングフィルタボタンを表示
         if (typeof window.showFloatingFilterButton === 'function') {
             window.showFloatingFilterButton();

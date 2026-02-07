@@ -203,6 +203,35 @@ export function loadFloatingFilterSetting() {
     return enabled;
 }
 
+// フローティングフィルタボタンスタイル設定の保存
+export function saveFloatingFilterButtonStyle() {
+    const select = document.getElementById('floatingFilterButtonStyle');
+    if (!select) return;
+    localStorage.setItem('floatingFilterButtonStyle', select.value);
+    applyFloatingFilterButtonStyle();
+}
+
+// フローティングフィルタボタンスタイル設定の読み込み
+export function loadFloatingFilterButtonStyle() {
+    const saved = localStorage.getItem('floatingFilterButtonStyle');
+    const style = saved || 'pill'; // デフォルトは丸ボタン
+    const select = document.getElementById('floatingFilterButtonStyle');
+    if (select) {
+        select.value = style;
+    }
+    return style;
+}
+
+// フローティングフィルタボタンスタイルの適用
+export function applyFloatingFilterButtonStyle() {
+    const style = loadFloatingFilterButtonStyle();
+    const panels = document.querySelectorAll('.floating-filter-panel');
+    panels.forEach(panel => {
+        panel.classList.remove('style-pill', 'style-segment');
+        panel.classList.add(`style-${style}`);
+    });
+}
+
 // フローティングフィルタボタンを表示
 export function showFloatingFilterButton() {
     const enabled = loadFloatingFilterSetting();

@@ -71,7 +71,8 @@ import {
 } from './actual.js';
 import {
     saveStickyFilterSetting,
-    saveFloatingFilterSetting
+    saveFloatingFilterSetting,
+    saveFloatingFilterButtonStyle
 } from './floating-filter.js';
 import {
     updateReport,
@@ -591,6 +592,9 @@ export function initEventHandlers() {
 
     const floatingFilterEnabled = document.getElementById('floatingFilterEnabled');
     if (floatingFilterEnabled) floatingFilterEnabled.addEventListener('change', saveFloatingFilterSetting);
+
+    const floatingFilterButtonStyle = document.getElementById('floatingFilterButtonStyle');
+    if (floatingFilterButtonStyle) floatingFilterButtonStyle.addEventListener('change', saveFloatingFilterButtonStyle);
 
     // 会社休日
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');
