@@ -772,7 +772,7 @@
 
         .custom-alert-accent {
             height: 3px;
-            background: linear-gradient(90deg, #1abc9c, #16a085);
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
         }
 
         .custom-alert-content[data-type="error"] .custom-alert-accent {
@@ -792,8 +792,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #1abc9c, #16a085);
-            box-shadow: 0 4px 14px rgba(26, 188, 156, 0.3);
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
         }
 
         .custom-alert-content[data-type="error"] .custom-alert-icon {
