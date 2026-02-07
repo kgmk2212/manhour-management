@@ -886,7 +886,7 @@ export function showWorkDetail(member, date) {
     const dayOfWeek = getDayOfWeek(date);
 
     document.getElementById('modalTitle').textContent =
-        `${member}さんの作業 - ${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
+        `${member}さんの作業 - ${parseInt(month)}/${parseInt(day)}(${dayOfWeek})`;
 
     let html = '';
     const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
