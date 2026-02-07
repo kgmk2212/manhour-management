@@ -369,14 +369,15 @@
         }
 
         /* シンプルなテーブル（担当者別工数、版数別進捗など） */
-        /* PC: 自然なバランスで配置 */
         table.simple-table {
             table-layout: auto;
         }
 
         table.simple-table tr td:first-child,
         table.simple-table tr th:first-child {
+            width: 1%;
             white-space: nowrap;
+            padding-right: 16px;
         }
 
         /* レポートタブ専用のマトリクスレイアウト（最新版：常に画面内に収める＆列幅固定） */
