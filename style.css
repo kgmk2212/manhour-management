@@ -368,12 +368,14 @@
             z-index: 2;
         }
 
-        /* シンプルなテーブル（担当者別工数、版数別進捗など）: 固定列幅をコンテンツに合わせる */
+        /* シンプルなテーブル（担当者別工数、版数別進捗など） */
+        /* PC: 自然なバランスで配置 */
+        table.simple-table {
+            table-layout: auto;
+        }
+
         table.simple-table tr td:first-child,
         table.simple-table tr th:first-child {
-            width: 1%;
-            min-width: auto !important;
-            max-width: none !important;
             white-space: nowrap;
         }
 
@@ -470,6 +472,22 @@
                 /* 固定列の最小幅を70pxに制限 (80→70) */
                 padding: 6px 4px;
             }
+
+            /* シンプルテーブル: 画面内に収めて固定列幅を適切に */
+            table.simple-table {
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            table.simple-table tr td:first-child,
+            table.simple-table tr th:first-child {
+                width: 25%;
+                min-width: auto !important;
+                max-width: none !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
 
         /* 小型モバイル */
@@ -493,6 +511,14 @@
                 min-width: 60px !important;
                 /* 固定列の最小幅を60pxに制限 (70→60) */
                 padding: 4px 3px;
+            }
+
+            /* シンプルテーブル: 小型モバイル向け */
+            table.simple-table tr td:first-child,
+            table.simple-table tr th:first-child {
+                width: 22%;
+                min-width: auto !important;
+                max-width: none !important;
             }
 
             /* コンテンツエリアをさらに縮小 */
