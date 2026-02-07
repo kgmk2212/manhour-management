@@ -368,16 +368,10 @@
             z-index: 2;
         }
 
-        /* シンプルなテーブル（担当者別工数、版数別進捗など）: 固定列不要 */
-        table.simple-table {
-            width: 100%;
-            table-layout: auto;
-        }
-
+        /* シンプルなテーブル（担当者別工数、版数別進捗など）: 固定列幅をコンテンツに合わせる */
         table.simple-table tr td:first-child,
         table.simple-table tr th:first-child {
-            position: static;
-            width: auto;
+            width: 1%;
             min-width: auto !important;
             max-width: none !important;
             white-space: nowrap;
