@@ -215,6 +215,7 @@
                             <label>作業日</label>
                             <input type="date" id="quickWorkDate"
                                 style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; width: 100%; max-width: 100%; box-sizing: border-box;">
+                            <script>document.getElementById('quickWorkDate').value=new Date().toLocaleDateString('sv-SE');</script>
                         </div>
 
                         <!-- 2. 対応検索 -->
@@ -479,6 +480,7 @@
                         <div class="form-group">
                             <label>日付</label>
                             <input type="date" id="quickVacationDate" style="max-width: 200px;">
+                            <script>document.getElementById('quickVacationDate').value=new Date().toLocaleDateString('sv-SE');</script>
                         </div>
                         <div class="form-group">
                             <label>休暇タイプ</label>
