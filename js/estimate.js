@@ -1055,58 +1055,41 @@ export function showEstimateDetail(estimateId) {
 
     document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
 
-    // 作業月表示
-    let workMonthDisplay = '<span style="color: #999;">未設定</span>';
+    // 作業月カード
+    let workMonthCards = '';
     if (est.workMonths && est.workMonths.length > 0) {
-        if (est.workMonths.length === 1) {
-            const [y, m] = est.workMonths[0].split('-');
-            workMonthDisplay = `${y}年${parseInt(m)}月`;
-        } else {
-            const months = est.workMonths.map(wm => {
-                const [y, m] = wm.split('-');
-                const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : '0.0';
-                return `${y}年${parseInt(m)}月: ${hours}h`;
-            });
-            workMonthDisplay = months.join('<br>');
-        }
+        const monthItems = est.workMonths.map(wm => {
+            const [y, m] = wm.split('-');
+            const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : null;
+            if (est.workMonths.length === 1) {
+                return `<span class="ed-month-tag">${y}年${parseInt(m)}月</span>`;
+            }
+            return `<span class="ed-month-tag">${y}年${parseInt(m)}月<strong>${hours || '0.0'}h</strong></span>`;
+        });
+        workMonthCards = monthItems.join('');
     }
 
     const html = `
-        <div class="estimate-detail-item">
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">版数:</span>
-                <span class="estimate-detail-value">${est.version || '(なし)'}</span>
-            </div>
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">対応名:</span>
-                <span class="estimate-detail-value">${est.task}</span>
-            </div>
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">工程:</span>
-                <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
-            </div>
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">担当:</span>
-                <span class="estimate-detail-value">${est.member}</span>
-            </div>
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">見積工数:</span>
-                <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${est.hours.toFixed(1)}h</span>
-            </div>
-            <div class="estimate-detail-row">
-                <span class="estimate-detail-label">作業予定月:</span>
-                <span class="estimate-detail-value">${workMonthDisplay}</span>
-            </div>
+        <div class="ed-hero">
+            <div class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></div>
+            <div class="ed-hours-label">見積工数</div>
         </div>
-        <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="editEstimateFromModal(${est.id})"
-                    style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-                編集
-            </button>
-            <button onclick="deleteEstimateFromModal(${est.id})"
-                    style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-                削除
-            </button>
+        <div class="ed-meta">
+            <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
+            <span class="ed-meta-sep"></span>
+            <span class="ed-meta-item">${est.version || '版数なし'}</span>
+            <span class="ed-meta-sep"></span>
+            <span class="ed-meta-item">${est.member}</span>
+        </div>
+        ${workMonthCards ? `
+        <div class="ed-section">
+            <div class="ed-section-label">作業予定月</div>
+            <div class="ed-months">${workMonthCards}</div>
+        </div>
+        ` : ''}
+        <div class="ed-actions">
+            <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
+            <button class="btn btn-danger" onclick="deleteEstimateFromModal(${est.id})">削除</button>
         </div>
     `;
 
