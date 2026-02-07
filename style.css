@@ -273,6 +273,10 @@
             margin-bottom: 15px;
         }
 
+        .quick-input .form-group > label:first-child {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
         .quick-form {
             display: grid;
             gap: 8px;
