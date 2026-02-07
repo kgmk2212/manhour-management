@@ -1071,16 +1071,16 @@ export function showEstimateDetail(estimateId) {
 
     const html = `
         <div class="ed-hero">
+            <div class="ed-version">${est.version || '版数なし'}</div>
             <div class="ed-task-name">${est.task}</div>
-            <div class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></div>
+            <div class="ed-hours-row">
+                <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
+                <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+            </div>
             <div class="ed-hours-label">見積工数</div>
         </div>
         <div class="ed-meta">
-            <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
-            <span class="ed-meta-sep"></span>
-            <span class="ed-meta-item">${est.version || '版数なし'}</span>
-            <span class="ed-meta-sep"></span>
-            <span class="ed-meta-item">${est.member}</span>
+            <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${est.member}</span>
         </div>
         ${workMonthCards ? `
         <div class="ed-section">
