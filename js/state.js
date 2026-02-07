@@ -260,6 +260,7 @@ export let isReportTabFirstView = true;
 export let quickInputMode = 'actual'; // クイック入力のモード
 export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
 export let mobileTabDesign = 'capsule'; // モバイルタブのデザイン: 'classic', 'dock', 'capsule'
+export let workDetailStyle = 'modern'; // 作業詳細モーダルのスタイル: 'modern', 'classic'
 
 // フィルタ状態の保持（画面遷移・データ更新時に維持するため）
 export let estimateFilterState = {
@@ -441,6 +442,11 @@ export function setRememberQuickInputMode(value) {
 export function setMobileTabDesign(value) {
     mobileTabDesign = value;
     window.mobileTabDesign = value;
+}
+
+export function setWorkDetailStyle(value) {
+    workDetailStyle = value;
+    window.workDetailStyle = value;
 }
 
 

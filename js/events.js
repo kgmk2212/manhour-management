@@ -106,7 +106,7 @@ import {
     closeProcessBreakdownModal,
     closeRemainingHoursModal
 } from './modal.js';
-import { debugModeEnabled } from './state.js';
+import { debugModeEnabled, setWorkDetailStyle } from './state.js';
 
 export function initEventHandlers() {
     if (debugModeEnabled) console.log('✅ events.js: イベントハンドラ初期化開始');
@@ -603,6 +603,14 @@ export function initEventHandlers() {
     const mobileTabDesignDropdown = document.getElementById('mobileTabDesign');
     if (mobileTabDesignDropdown) {
         mobileTabDesignDropdown.addEventListener('change', changeMobileTabDesign);
+    }
+
+    const workDetailStyleDropdown = document.getElementById('workDetailStyle');
+    if (workDetailStyleDropdown) {
+        workDetailStyleDropdown.addEventListener('change', () => {
+            setWorkDetailStyle(workDetailStyleDropdown.value);
+            saveData(true);
+        });
     }
 
     // Excel・ファイル

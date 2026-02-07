@@ -24,7 +24,8 @@ import {
     // [GANTT-CHART] スケジュール関連
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
-    taskColorMap, setTaskColorMap
+    taskColorMap, setTaskColorMap,
+    setWorkDetailStyle
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -86,7 +87,8 @@ export function saveData(skipAutoBackup = false) {
 
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
-            chartColorScheme: selectedChartColorScheme
+            chartColorScheme: selectedChartColorScheme,
+            workDetailStyle: window.workDetailStyle
         }
     };
 
@@ -222,6 +224,12 @@ export function loadData() {
             if (settings.devFeaturesEnabled !== undefined) {
                 setDevFeaturesEnabled(settings.devFeaturesEnabled);
             }
+            // 作業詳細モーダルのスタイル設定を読み込み
+            if (settings.workDetailStyle) {
+                setWorkDetailStyle(settings.workDetailStyle);
+                const el = document.getElementById('workDetailStyle');
+                if (el) el.value = settings.workDetailStyle;
+            }
 
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
@@ -270,7 +278,8 @@ export function autoBackup() {
         stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
         floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
         debugModeEnabled: debugModeEnabled,
-        devFeaturesEnabled: devFeaturesEnabled
+        devFeaturesEnabled: devFeaturesEnabled,
+        workDetailStyle: window.workDetailStyle
     };
 
     const data = {

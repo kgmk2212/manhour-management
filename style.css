@@ -4104,6 +4104,26 @@
     color: #333;
 }
 
+/* 作業詳細モーダル - クラシックスタイル */
+[data-wd-style="classic"] .wd-card {
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+}
+
+[data-wd-style="classic"] .wd-add-btn-actual {
+    background: #4caf50;
+}
+
+[data-wd-style="classic"] .wd-add-btn-vacation {
+    background: #f57c00;
+    color: white;
+}
+
+[data-wd-style="classic"] .wd-add-btn-vacation:hover {
+    background: #e56900;
+    color: white;
+}
+
 /* マトリクス・グループ表示のクリック可能セル */
 .estimate-matrix td.clickable-cell,
 .estimate-grouped td.clickable-cell {

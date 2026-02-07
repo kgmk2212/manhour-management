@@ -886,7 +886,7 @@ export function showWorkDetail(member, date) {
     const dayOfWeek = getDayOfWeek(date);
 
     document.getElementById('modalTitle').textContent =
-        `${member} - ${parseInt(month)}/${parseInt(day)}(${dayOfWeek})`;
+        `${member}さんの作業 - ${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})`;
 
     let html = '';
     const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
@@ -960,7 +960,9 @@ export function showWorkDetail(member, date) {
     `;
 
     document.getElementById('modalBody').innerHTML = html;
-    document.getElementById('workModal').style.display = 'flex';
+    const workModal = document.getElementById('workModal');
+    workModal.dataset.wdStyle = window.workDetailStyle || 'modern';
+    workModal.style.display = 'flex';
 }
 
 /**
