@@ -321,6 +321,9 @@ window.setFloatingEstViewType = FloatingFilter.setFloatingEstViewType;
 window.syncFloatingEstimateFilters = FloatingFilter.syncFloatingEstimateFilters;
 window.syncFloatingEstMonthFilter = FloatingFilter.syncFloatingEstMonthFilter;
 window.syncFloatingActualFilters = FloatingFilter.syncFloatingActualFilters;
+window.saveFloatingFilterButtonStyle = FloatingFilter.saveFloatingFilterButtonStyle;
+window.loadFloatingFilterButtonStyle = FloatingFilter.loadFloatingFilterButtonStyle;
+window.applyFloatingFilterButtonStyle = FloatingFilter.applyFloatingFilterButtonStyle;
 
 // modal.js の関数
 window.showProcessBreakdown = Modal.showProcessBreakdown;
@@ -503,8 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 見積タブはupdateEstimateMonthOptionsで既に設定済みなのでスキップ
     UI.setDefaultActualMonth();
 
-    // 保存されたレポートフィルタ条件を復元（リロード時）
-    // 復元できなかった場合のみデフォルト設定を適用
+    // 保存されたレポートフィルタ条件を復元（版数のみ復元、月は常に現在月）
     const reportFilterRestored = UI.restoreReportFilterState();
     if (!reportFilterRestored) {
         // レポートのフィルタタイプをデフォルト設定
@@ -513,8 +515,9 @@ document.addEventListener('DOMContentLoaded', function () {
             reportFilterType.value = 'version';
             UI.handleReportFilterTypeChange();
         }
-        UI.setDefaultReportMonth();
     }
+    // 月フィルタは常に現在月をデフォルトに設定
+    UI.setDefaultReportMonth();
 
     // デフォルトの表示形式を適用（View Type）
     Theme.applyDefaultEstimateViewType();
@@ -563,6 +566,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // フローティングフィルタ設定を読み込み
     FloatingFilter.loadFloatingFilterSetting();
+
+    // フローティングフィルタボタンスタイル設定を読み込み・適用
+    FloatingFilter.loadFloatingFilterButtonStyle();
+    FloatingFilter.applyFloatingFilterButtonStyle();
 
     // フローティングフィルタイベントの初期化
     FloatingFilter.initFloatingFilterEvents();
