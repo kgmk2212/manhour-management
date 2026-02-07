@@ -453,6 +453,12 @@ export function setWorkDetailStyle(value) {
 export function setModalDesignStyle(value) {
     modalDesignStyle = value;
     window.modalDesignStyle = value;
+    // CSS側でスタイル切り替えに使用
+    if (value === 'classic') {
+        document.documentElement.dataset.modalDesign = 'classic';
+    } else {
+        delete document.documentElement.dataset.modalDesign;
+    }
 }
 
 // ============================================

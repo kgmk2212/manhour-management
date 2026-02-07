@@ -26,6 +26,10 @@
                 if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
+                // モーダルデザインスタイルを早期適用
+                if (parsed && parsed.modalDesignStyle === 'classic') {
+                    document.documentElement.dataset.modalDesign = 'classic';
+                }
                 // モバイルタブデザインを読み込み・即座に適用（CSS読み込み前）
                 var mobileTabDesign = localStorage.getItem('mobileTabDesign') || 'capsule';
                 if (['classic', 'dock', 'capsule'].indexOf(mobileTabDesign) !== -1) {
