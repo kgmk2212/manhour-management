@@ -560,7 +560,7 @@ export function renderActualMatrix() {
     // 全期間選択でデータがない場合のみメッセージ表示
     // 特定月が選択されている場合はデータがなくてもカレンダーを表示
     if (filteredActuals.length === 0 && selectedMonth === 'all') {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
+        container.innerHTML = '<p class="cm-no-data">選択した期間に実績データがありません</p>';
         return;
     }
 
@@ -574,7 +574,7 @@ export function renderActualMatrix() {
 
     // メンバーがいない場合はメッセージ表示
     if (members.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">担当者データがありません</p>';
+        container.innerHTML = '<p class="cm-no-data">担当者データがありません</p>';
         return;
     }
 
@@ -628,39 +628,39 @@ export function renderActualMatrix() {
         const [year, month] = selectedMonth.split('-');
         const workedDays = new Set(filteredActuals.map(a => a.date)).size;
 
-        html += `<div style="margin-bottom: 15px;">
-            <h3 style="margin: 0 0 5px 0;">${year}年${parseInt(month)}月の合計</h3>
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span></p>
+        html += `<div class="cm-summary">
+            <h3 class="cm-summary-title">${year}年${parseInt(month)}月の合計</h3>
+            <p class="cm-summary-meta">稼働日数: ${workedDays}日<span class="cm-summary-spacer">営業日数: ${businessDays}日</span></p>
         </div>`;
 
         html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
 
-        html += '<tr style="background: #1565c0; color: white; font-weight: 700;"><th style="min-width: 100px;">総合計</th>';
+        html += '<tr class="cm-row-month-header"><th class="cm-th-date">総合計</th>';
 
         let monthGrandTotal = 0;
         members.forEach(member => {
             const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
             monthGrandTotal += memberTotal;
-            html += `<th style="text-align: center; min-width: 80px;">${formatHours(memberTotal)}h</th>`;
+            html += `<th class="cm-th-member-total">${formatHours(memberTotal)}h</th>`;
         });
 
-        html += `<th class="daily-total" style="background: #ff9800; text-align: center; min-width: 80px;">${formatHours(monthGrandTotal)}h</th>`;
+        html += `<th class="cm-daily-total cm-th-daily-total-accent">${formatHours(monthGrandTotal)}h</th>`;
         html += '</tr>';
 
-        html += '<tr><th style="min-width: 100px;">日付</th>';
+        html += '<tr><th class="cm-th-date">日付</th>';
 
         members.forEach(member => {
-            html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
+            html += `<th class="cm-th-member">${member}</th>`;
         });
-        html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
+        html += '<th class="cm-daily-total cm-th-daily-total">日別合計</th></tr>';
     } else {
         html += '<div id="calendarTableWrapper" class="table-wrapper"><table class="actual-matrix">';
-        html += '<tr><th style="min-width: 100px;">日付</th>';
+        html += '<tr><th class="cm-th-date">日付</th>';
 
         members.forEach(member => {
-            html += `<th style="min-width: 80px; text-align: center;">${member}</th>`;
+            html += `<th class="cm-th-member">${member}</th>`;
         });
-        html += '<th class="daily-total" style="min-width: 80px; text-align: center;">日別合計</th></tr>';
+        html += '<th class="cm-daily-total cm-th-daily-total">日別合計</th></tr>';
     }
 
     let currentMonth = '';
@@ -678,12 +678,12 @@ export function renderActualMatrix() {
         const isHoliday = holiday !== null;
 
         if (selectedMonth === 'all' && currentMonth && currentMonth !== month) {
-            html += '<tr style="background: #fff3cd; font-weight: 600;">';
+            html += '<tr class="cm-row-subtotal">';
             html += `<td>${currentMonth} 小計</td>`;
             members.forEach(member => {
-                html += `<td style="text-align: center;">${formatHours(monthTotals[member])}h</td>`;
+                html += `<td class="cm-subtotal-cell">${formatHours(monthTotals[member])}h</td>`;
             });
-            html += `<td class="daily-total" style="background: #ffc107; color: white; text-align: center;">${formatHours(monthTotal)}h</td>`;
+            html += `<td class="cm-daily-total cm-daily-total-subtotal">${formatHours(monthTotal)}h</td>`;
             html += '</tr>';
 
             members.forEach(m => monthTotals[m] = 0);
@@ -695,32 +695,32 @@ export function renderActualMatrix() {
         const companyHolidayName = typeof window.getCompanyHolidayName === 'function' ? window.getCompanyHolidayName(date) : null;
         const isCompanyHol = companyHolidayName !== null;
 
-        let bgColor = 'white';
+        let rowClass = 'cm-row-normal';
         if (isWeekend || isHoliday) {
-            bgColor = '#ffebee';
+            rowClass = 'cm-row-weekend';
         } else if (isCompanyHol) {
-            bgColor = '#fff9c4';
+            rowClass = 'cm-row-company-holiday';
         }
-        html += `<tr style="background: ${bgColor};">`;
+        html += `<tr class="${rowClass}">`;
 
         const [year, m, day] = date.split('-');
-        let dateColor = '';
+        let dateClass = '';
         let dateDisplay = '';
 
         if (isHoliday) {
-            dateColor = 'color: #c62828;';
-            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`;
+            dateClass = ' cm-date-holiday';
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span class="cm-holiday-sub">${holiday}</span></span>`;
         } else if (isCompanyHol) {
-            dateColor = 'color: #f57c00;';
-            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${companyHolidayName}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${companyHolidayName}</span></span>`;
+            dateClass = ' cm-date-company-holiday';
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${companyHolidayName}</span><span class="holiday-break"><br><span class="cm-holiday-sub">${companyHolidayName}</span></span>`;
         } else if (isWeekend) {
-            dateColor = 'color: #c62828;';
+            dateClass = ' cm-date-holiday';
             dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
         } else {
             dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
         }
 
-        html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
+        html += `<td class="cm-date-cell${dateClass}">${dateDisplay}</td>`;
 
         let dayTotal = 0;
 
@@ -733,30 +733,30 @@ export function renderActualMatrix() {
             monthTotals[member] += memberDayTotal;
 
             let cellContent = '';
-            let cellBgColor = '#fafafa';
+            let cellClass = 'cm-cell cm-cell-empty';
             let onclick = `addActualFromCalendar('${member}', '${date}')`;
             let title = '実績を登録';
 
             if (memberDayTotal > 0) {
-                cellBgColor = '#e3f2fd';
+                cellClass = 'cm-cell cm-cell-work';
                 onclick = `showWorkDetail('${member}', '${date}')`;
                 cellContent = `<strong>${formatHours(memberDayTotal)}</strong>`;
                 title = '';
             } else if (memberVacations.length > 0) {
-                cellBgColor = '#fff3e0';
+                cellClass = 'cm-cell cm-cell-vacation';
                 onclick = `showWorkDetail('${member}', '${date}')`;
                 const vacationLabels = memberVacations.map(v => v.vacationType).join(',');
                 const totalVacationHours = memberVacations.reduce((sum, v) => sum + v.hours, 0);
-                cellContent = `<span style="color: #f57c00; font-weight: 600;">${vacationLabels}</span>`;
+                cellContent = `<span class="cm-vacation-label">${vacationLabels}</span>`;
                 if (totalVacationHours < 8) {
-                    cellContent += `<br><span style="font-size: 10px; color: #666;">${totalVacationHours}h</span>`;
+                    cellContent += `<br><span class="cm-vacation-hours">${totalVacationHours}h</span>`;
                 }
                 title = '休暇';
             } else {
-                cellContent = '<span style="color: #ccc;">-</span>';
+                cellContent = '<span class="cm-empty-dash">-</span>';
             }
 
-            html += `<td style="background: ${cellBgColor}; text-align: center; cursor: pointer;"
+            html += `<td class="${cellClass}"
                         onclick="${onclick}" title="${title}">
                 ${cellContent}
             </td>`;
@@ -765,35 +765,35 @@ export function renderActualMatrix() {
         monthTotal += dayTotal;
 
         if (dayTotal > 0) {
-            html += `<td class="daily-total" style="font-weight: 700; background: #fff3cd; text-align: center;">${formatHours(dayTotal)}h</td>`;
+            html += `<td class="cm-daily-total cm-daily-total-data">${formatHours(dayTotal)}h</td>`;
         } else {
-            html += `<td class="daily-total" style="background: #fafafa; text-align: center; color: #ccc;">-</td>`;
+            html += `<td class="cm-daily-total cm-daily-total-empty">-</td>`;
         }
 
         html += '</tr>';
     });
 
     if (selectedMonth === 'all' && currentMonth) {
-        html += '<tr style="background: #fff3cd; font-weight: 600;">';
+        html += '<tr class="cm-row-subtotal">';
         html += `<td>${currentMonth} 小計</td>`;
         members.forEach(member => {
-            html += `<td style="text-align: center;">${formatHours(monthTotals[member])}h</td>`;
+            html += `<td class="cm-subtotal-cell">${formatHours(monthTotals[member])}h</td>`;
         });
-        html += `<td style="background: #ffc107; color: white; text-align: center;">${formatHours(monthTotal)}h</td>`;
+        html += `<td class="cm-daily-total cm-daily-total-subtotal">${formatHours(monthTotal)}h</td>`;
         html += '</tr>';
     }
 
-    html += '<tr style="background: #2c3e50; color: white; font-weight: 700;">';
+    html += '<tr class="cm-row-grand-total">';
     html += '<td>総合計</td>';
     let grandTotal = 0;
 
     members.forEach(member => {
         const memberTotal = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
         grandTotal += memberTotal;
-        html += `<td style="text-align: center;">${formatHours(memberTotal)}h</td>`;
+        html += `<td class="cm-subtotal-cell">${formatHours(memberTotal)}h</td>`;
     });
 
-    html += `<td class="daily-total" style="background: #ffc107; text-align: center;">${formatHours(grandTotal)}h</td>`;
+    html += `<td class="cm-daily-total cm-daily-total-grand">${formatHours(grandTotal)}h</td>`;
     html += '</tr>';
 
     html += '</table></div>';

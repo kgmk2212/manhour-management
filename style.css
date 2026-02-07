@@ -453,7 +453,8 @@
         @media (max-width: 768px) {
 
             /* 日別合計列を非表示にしてスペースを節約 */
-            .daily-total {
+            .daily-total,
+            .cm-daily-total {
                 display: none !important;
             }
 
@@ -581,6 +582,35 @@
         table tr[style*="1565c0"] td[rowspan],
         table tr[style*="1565c0"] th:first-child {
             background: #1565c0;
+            color: white;
+        }
+
+        /* cm-* クラスベース スティッキー列背景 */
+        table tr.cm-row-weekend td:first-child,
+        table tr.cm-row-weekend td[rowspan] {
+            background: linear-gradient(135deg, #fff5f5, #ffebee);
+        }
+
+        table tr.cm-row-company-holiday td:first-child,
+        table tr.cm-row-company-holiday td[rowspan] {
+            background: linear-gradient(135deg, #fffdf0, #fff9c4);
+        }
+
+        table tr.cm-row-subtotal td:first-child,
+        table tr.cm-row-subtotal td[rowspan] {
+            background: linear-gradient(90deg, #fff8e1, #fff3cd);
+        }
+
+        table tr.cm-row-grand-total td:first-child,
+        table tr.cm-row-grand-total td[rowspan] {
+            background: linear-gradient(135deg, #263545, #2c3e50);
+            color: white;
+        }
+
+        table tr.cm-row-month-header td:first-child,
+        table tr.cm-row-month-header td[rowspan],
+        table tr.cm-row-month-header th:first-child {
+            background: var(--theme-gradient, linear-gradient(135deg, #1565c0, #1976d2));
             color: white;
         }
 
@@ -5085,6 +5115,295 @@ textarea:focus {
 
 [data-modal-design="classic"] .fm-hint {
     color: #666;
+}
+
+/* ============================================
+   cm-* カレンダーマトリクス レイアウトクラス
+   Quiet Depth: 行の層で奥行きと時間の流れを表現
+   ============================================ */
+
+/* --- 空状態メッセージ --- */
+.cm-no-data {
+    color: #999;
+    text-align: center;
+    padding: 40px;
+}
+
+/* --- サマリーセクション --- */
+.cm-summary {
+    margin-bottom: 16px;
+}
+
+.cm-summary-title {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #2c3e50;
+}
+
+.cm-summary-meta {
+    margin: 0 0 10px 0;
+    color: #888;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+}
+
+.cm-summary-spacer {
+    margin-left: 20px;
+}
+
+/* --- 行背景 --- */
+.cm-row-normal {
+    background: white;
+}
+
+.cm-row-weekend {
+    background: linear-gradient(135deg, #fff5f5, #ffebee);
+}
+
+.cm-row-company-holiday {
+    background: linear-gradient(135deg, #fffdf0, #fff9c4);
+}
+
+.cm-row-subtotal {
+    background: linear-gradient(90deg, #fff8e1, #fff3cd);
+    font-weight: 600;
+    border-top: 1px solid rgba(255, 193, 7, 0.2);
+    border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.cm-row-grand-total {
+    background: linear-gradient(135deg, #263545, #2c3e50);
+    color: white;
+    font-weight: 700;
+}
+
+.cm-row-month-header {
+    background: var(--theme-gradient, linear-gradient(135deg, #1565c0, #1976d2));
+    color: white;
+    font-weight: 700;
+}
+
+/* --- 日付セル --- */
+.cm-date-cell {
+    font-weight: 500;
+}
+
+.cm-date-holiday {
+    color: #c62828;
+}
+
+.cm-date-company-holiday {
+    color: #f57c00;
+}
+
+.cm-holiday-sub {
+    font-size: 11px;
+    font-weight: normal;
+}
+
+/* --- ヘッダーセル --- */
+.cm-th-date {
+    min-width: 100px;
+}
+
+.cm-th-member {
+    min-width: 80px;
+    text-align: center;
+}
+
+.cm-th-member-total {
+    text-align: center;
+    min-width: 80px;
+}
+
+.cm-th-daily-total {
+    min-width: 80px;
+    text-align: center;
+}
+
+.cm-th-daily-total-accent {
+    background: linear-gradient(135deg, #ff9800, #ffa726) !important;
+    text-align: center;
+    min-width: 80px;
+    color: white;
+}
+
+/* --- データセル --- */
+.cm-cell {
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+@media (hover: hover) {
+    .cm-cell:hover {
+        box-shadow: inset 0 0 0 2px rgba(25, 118, 210, 0.15);
+    }
+}
+
+.cm-cell-work {
+    background: linear-gradient(135deg, rgba(227, 242, 253, 0.7), #e3f2fd);
+}
+
+.cm-cell-vacation {
+    background: linear-gradient(135deg, rgba(255, 243, 224, 0.7), #fff3e0);
+}
+
+.cm-cell-empty {
+    background: #fafafa;
+}
+
+/* --- セル内容 --- */
+.cm-vacation-label {
+    color: #f57c00;
+    font-weight: 600;
+}
+
+.cm-vacation-hours {
+    font-size: 10px;
+    color: #666;
+}
+
+.cm-empty-dash {
+    color: #ccc;
+}
+
+/* --- 日別合計列 --- */
+.cm-daily-total-data {
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff8e1, #fff3cd);
+    text-align: center;
+}
+
+.cm-daily-total-empty {
+    background: #fafafa;
+    text-align: center;
+    color: #ccc;
+}
+
+.cm-daily-total-subtotal {
+    background: linear-gradient(135deg, #ffc107, #ffca28);
+    color: white;
+    text-align: center;
+    font-weight: 600;
+}
+
+.cm-daily-total-grand {
+    background: linear-gradient(135deg, #ffc107, #ffca28);
+    text-align: center;
+    font-weight: 700;
+}
+
+/* --- 小計/総合計メンバーセル --- */
+.cm-subtotal-cell {
+    text-align: center;
+}
+
+/* ============================================
+   cm-* カレンダーマトリクス - クラシック復元
+   ============================================ */
+
+[data-modal-design="classic"] .cm-summary {
+    margin-bottom: 15px;
+}
+
+[data-modal-design="classic"] .cm-summary-title {
+    margin: 0 0 5px 0;
+    font-size: inherit;
+    letter-spacing: normal;
+    color: inherit;
+}
+
+[data-modal-design="classic"] .cm-summary-meta {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 14px;
+    letter-spacing: normal;
+}
+
+[data-modal-design="classic"] .cm-row-weekend {
+    background: #ffebee;
+}
+
+[data-modal-design="classic"] .cm-row-company-holiday {
+    background: #fff9c4;
+}
+
+[data-modal-design="classic"] .cm-row-subtotal {
+    background: #fff3cd;
+    border-top: none;
+    border-bottom: none;
+}
+
+[data-modal-design="classic"] .cm-row-grand-total {
+    background: #2c3e50;
+}
+
+[data-modal-design="classic"] .cm-row-month-header {
+    background: #1565c0;
+}
+
+[data-modal-design="classic"] .cm-cell {
+    transition: none;
+}
+
+[data-modal-design="classic"] .cm-cell:hover {
+    box-shadow: none;
+}
+
+[data-modal-design="classic"] .cm-cell-work {
+    background: #e3f2fd;
+}
+
+[data-modal-design="classic"] .cm-cell-vacation {
+    background: #fff3e0;
+}
+
+[data-modal-design="classic"] .cm-daily-total-data {
+    background: #fff3cd;
+}
+
+[data-modal-design="classic"] .cm-daily-total-subtotal {
+    background: #ffc107;
+}
+
+[data-modal-design="classic"] .cm-daily-total-grand {
+    background: #ffc107;
+}
+
+[data-modal-design="classic"] .cm-th-daily-total-accent {
+    background: #ff9800 !important;
+}
+
+/* cm-* スティッキー列 クラシック復元 */
+[data-modal-design="classic"] table tr.cm-row-weekend td:first-child,
+[data-modal-design="classic"] table tr.cm-row-weekend td[rowspan] {
+    background: #ffebee;
+}
+
+[data-modal-design="classic"] table tr.cm-row-company-holiday td:first-child,
+[data-modal-design="classic"] table tr.cm-row-company-holiday td[rowspan] {
+    background: #fff9c4;
+}
+
+[data-modal-design="classic"] table tr.cm-row-subtotal td:first-child,
+[data-modal-design="classic"] table tr.cm-row-subtotal td[rowspan] {
+    background: #fff3cd;
+}
+
+[data-modal-design="classic"] table tr.cm-row-grand-total td:first-child,
+[data-modal-design="classic"] table tr.cm-row-grand-total td[rowspan] {
+    background: #2c3e50;
+    color: white;
+}
+
+[data-modal-design="classic"] table tr.cm-row-month-header td:first-child,
+[data-modal-design="classic"] table tr.cm-row-month-header td[rowspan],
+[data-modal-design="classic"] table tr.cm-row-month-header th:first-child {
+    background: #1565c0;
+    color: white;
 }
 
 /* ============================================
