@@ -1121,8 +1121,11 @@ export function editEstimateFromModal(id) {
  * @param {number} id - 見積ID
  */
 export function deleteEstimateFromModal(id) {
-    closeEstimateDetailModal();
+    const beforeCount = estimates.length;
     deleteEstimate(id);
+    if (estimates.length < beforeCount) {
+        closeEstimateDetailModal();
+    }
 }
 
 console.log('✅ モジュール estimate.js loaded');
