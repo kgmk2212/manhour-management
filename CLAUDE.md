@@ -12,9 +12,9 @@
 | ブランチ | 用途 | 作業内容 |
 |----------|------|----------|
 | `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
-| `feature/gantt-chart` | 新機能開発 | ガントチャート（スケジュール管理）機能 |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
-| `experiment/design-rebuild` | 実験用 | デザインシステムの全面再構築 |
+
+> **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
 
 ### Worktree構成
 
@@ -23,9 +23,7 @@
 | ディレクトリ | ブランチ | 用途 |
 |-------------|---------|------|
 | `manhour-management` | `main` | 安定版（メイン） |
-| `manhour-gantt` | `feature/gantt-chart` | ガントチャート開発 |
 | `manhour-experiment` | `experiment/sandbox` | 実験用 |
-| `manhour-design-rebuild` | `experiment/design-rebuild` | デザイン再構築 |
 
 ### 作業前の確認事項
 
@@ -39,36 +37,10 @@ git branch
 | ユーザーの依頼内容 | 作業ブランチ |
 |-------------------|--------------|
 | バグ修正、表示の微調整 | `main` |
-| 既存機能（見積・実績・レポート）の改善 | `main` |
-| ガントチャート機能の実装 | `feature/gantt-chart` |
-| スケジュール関連の作業 | `feature/gantt-chart` |
+| 既存機能（見積・実績・レポート・スケジュール）の改善 | `main` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
-| デザイン・UIの全面リニューアル | `experiment/design-rebuild` |
 
 **判断に迷う場合**: ユーザーに確認してください。
-
----
-
-## ガントチャート開発時の注意（競合回避）
-
-### 原則: 既存コードの中間に挿入しない
-
-| ファイル | 変更方法 |
-|----------|----------|
-| `js/schedule*.js` | 新規ファイル（自由に編集可） |
-| `js/state.js` | **末尾に追加**（`// === Schedule ===` セクション） |
-| `js/storage.js` | **末尾に追加**（既存関数は編集しない） |
-| `js/constants.js` | **末尾に追加**（`SCHEDULE` 定数） |
-| `js/init.js` | **末尾に追加**（schedule初期化処理） |
-| `index.html` | タブとモーダルを**既存構造の末尾に追加** |
-| `style.css` | **末尾に追加**（`.schedule-*` クラス） |
-
-### 絶対に触らないファイル（main側で編集される可能性が高い）
-
-- `js/report.js` - レポート機能（mainで改善される可能性）
-- `js/estimate*.js` - 見積機能
-- `js/actual.js` - 実績機能
-- `js/ui.js` - 共通UI（必要な場合はユーザーに確認）
 
 ---
 
