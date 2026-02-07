@@ -506,7 +506,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // 見積タブはupdateEstimateMonthOptionsで既に設定済みなのでスキップ
     UI.setDefaultActualMonth();
 
-    // 保存されたレポートフィルタ条件を復元（版数のみ復元、月は常に現在月）
+    // 保存されたレポートフィルタ条件を復元（リロード時）
+    // 復元できなかった場合のみデフォルト設定を適用
     const reportFilterRestored = UI.restoreReportFilterState();
     if (!reportFilterRestored) {
         // レポートのフィルタタイプをデフォルト設定
@@ -515,9 +516,8 @@ document.addEventListener('DOMContentLoaded', function () {
             reportFilterType.value = 'version';
             UI.handleReportFilterTypeChange();
         }
+        UI.setDefaultReportMonth();
     }
-    // 月フィルタは常に現在月をデフォルトに設定
-    UI.setDefaultReportMonth();
 
     // デフォルトの表示形式を適用（View Type）
     Theme.applyDefaultEstimateViewType();

@@ -515,7 +515,10 @@ export function handleFileImport(event) {
                     }
 
                     // UI更新
+                    // 復元後はレポートの保存済みフィルタをクリアしてデフォルト（現在月）を適用
+                    try { localStorage.removeItem('manhour_reportFilterState'); } catch (e) { /* ignore */ }
                     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+                    if (typeof window.setDefaultReportMonth === 'function') window.setDefaultReportMonth();
                     if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
                     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
                     if (typeof window.setDefaultEstimateMonth === 'function') window.setDefaultEstimateMonth();
