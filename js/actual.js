@@ -229,12 +229,11 @@ export function renderTodayActuals() {
 export function renderActualList() {
     const container = document.getElementById('actualList');
     const viewType = document.getElementById('actualViewType').value;
-    const viewMode = document.getElementById('actualViewMode').value;
 
-    // 担当者別モード時は担当者選択を表示
+    // リスト表示時は担当者選択を表示
     const memberSelectGroup = document.getElementById('memberSelectGroup');
     const memberSelectGroup2 = document.getElementById('memberSelectGroup2');
-    if (viewMode === 'member') {
+    if (viewType === 'list') {
         memberSelectGroup.style.display = 'flex';
         if (memberSelectGroup2) memberSelectGroup2.style.display = 'flex';
         updateMemberSelectOptions();
@@ -252,13 +251,9 @@ export function renderActualList() {
     }
 
     if (viewType === 'matrix') {
-        if (viewMode === 'member') {
-            renderMemberCalendar();
-        } else {
-            renderActualMatrix();
-        }
+        renderActualMatrix();
     } else {
-        renderActualListView();
+        renderMemberCalendar();
     }
 
     // セグメントボタンのハイライトを更新
@@ -306,6 +301,19 @@ export function updateMemberSelectOptions() {
     select.innerHTML = '';
     if (select2) select2.innerHTML = '';
 
+    // 「全員」オプションを先頭に追加
+    const allOption = document.createElement('option');
+    allOption.value = '__all__';
+    allOption.textContent = '全員';
+    select.appendChild(allOption);
+
+    if (select2) {
+        const allOption2 = document.createElement('option');
+        allOption2.value = '__all__';
+        allOption2.textContent = '全員';
+        select2.appendChild(allOption2);
+    }
+
     sortedMembers.forEach(member => {
         const option = document.createElement('option');
         option.value = member;
@@ -320,19 +328,19 @@ export function updateMemberSelectOptions() {
         }
     });
 
-    if (currentValue && sortedMembers.includes(currentValue)) {
+    if (currentValue && (currentValue === '__all__' || sortedMembers.includes(currentValue))) {
         select.value = currentValue;
         if (select2) select2.value = currentValue;
     } else if (sortedMembers.length > 0) {
-        select.value = sortedMembers[0];
-        if (select2) select2.value = sortedMembers[0];
+        select.value = '__all__';
+        if (select2) select2.value = '__all__';
     }
 
     // セグメントボタン版を生成
-    const items = sortedMembers.map(member => ({
+    const items = [{ value: '__all__', label: '全員' }, ...sortedMembers.map(member => ({
         value: member,
         label: member
-    }));
+    }))];
     const selectedValue = select.value;
     if (typeof window.createSegmentButtons === 'function') {
         window.createSegmentButtons(
@@ -358,19 +366,14 @@ export function renderMemberCalendar() {
     const container = document.getElementById('actualList');
     const selectedMonth = document.getElementById('actualMonthFilter').value;
     const selectedMember = document.getElementById('actualMemberSelect').value;
+    const isAllMembers = !selectedMember || selectedMember === '__all__';
 
-    if (!selectedMember) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">担当者を選択してください</p>';
-        return;
-    }
-
-    let filteredActuals = actuals.filter(a => a.member === selectedMember);
+    let filteredActuals = isAllMembers ? [...actuals] : actuals.filter(a => a.member === selectedMember);
     if (selectedMonth !== 'all') {
         filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
     }
 
     // 全期間選択でデータがない場合のみメッセージ表示
-    // 特定月が選択されている場合はデータがなくてもカレンダーを表示
     if (filteredActuals.length === 0 && selectedMonth === 'all') {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した期間に実績データがありません</p>';
         return;
@@ -395,7 +398,6 @@ export function renderMemberCalendar() {
         const lastDay = new Date(parseInt(maxYear), parseInt(maxMonth), 0).getDate();
         endDate = `${maxYear}-${maxMonth}-${String(lastDay).padStart(2, '0')}`;
     } else {
-        // ここには到達しないはず（全期間でデータなしは上で早期リターン）
         return;
     }
 
@@ -420,7 +422,16 @@ export function renderMemberCalendar() {
         return !isWeekend && !isHoliday;
     }).length;
 
-    let html = `<h3 style="margin-bottom: 10px;">${selectedMember}の実績カレンダー</h3>`;
+    // 担当者順を取得
+    const memberOrderInput = document.getElementById('memberOrder').value.trim();
+    const orderList = memberOrderInput ? memberOrderInput.split(',').map(m => m.trim()).filter(m => m) : [];
+    const getMemberIndex = (member) => {
+        const idx = orderList.indexOf(member);
+        return idx >= 0 ? idx : orderList.length + member.charCodeAt(0);
+    };
+
+    const title = isAllMembers ? '実績一覧（全員）' : `${selectedMember}の実績一覧`;
+    let html = `<h3 style="margin-bottom: 10px;">${title}</h3>`;
 
     if (selectedMonth !== 'all') {
         const [year, month] = selectedMonth.split('-');
@@ -431,45 +442,73 @@ export function renderMemberCalendar() {
     }
 
     html += '<div id="calendarTableWrapper" class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
-    html += '<tr><th style="min-width: 120px;">日付</th><th style="min-width: 300px;">作業内容</th><th style="min-width: 80px;">工数</th></tr>';
+    html += '<tr><th style="min-width: 120px;">日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th style="min-width: 60px;">工数</th><th style="min-width: 100px;">操作</th></tr>';
+
+    const escapeHtml = (str) => {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    };
 
     allDates.forEach(date => {
         const dayOfWeek = getDayOfWeek(date);
         const holiday = getHoliday(date);
         const isWeekend = dayOfWeek === '土' || dayOfWeek === '日';
         const isHoliday = holiday !== null;
+        const companyHolidayName = typeof window.getCompanyHolidayName === 'function' ? window.getCompanyHolidayName(date) : null;
+        const isCompanyHol = companyHolidayName !== null;
 
-        const dayActuals = filteredActuals.filter(a => a.date === date);
+        let dayActuals = filteredActuals.filter(a => a.date === date);
 
-        const bgColor = (isWeekend || isHoliday) ? '#ffebee' : 'white';
-        const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
+        // 全員表示時は担当者順でソート
+        if (isAllMembers && dayActuals.length > 1) {
+            dayActuals.sort((a, b) => getMemberIndex(a.member) - getMemberIndex(b.member));
+        }
+
+        let bgColor = 'white';
+        if (isWeekend || isHoliday) {
+            bgColor = '#ffebee';
+        } else if (isCompanyHol) {
+            bgColor = '#fff9c4';
+        }
 
         const [year, m, day] = date.split('-');
-        const dateDisplay = isHoliday
-            ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`
-            : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+        let dateColor = '';
+        let dateDisplay = '';
+
+        if (isHoliday) {
+            dateColor = 'color: #c62828;';
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${holiday}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${holiday}</span></span>`;
+        } else if (isCompanyHol) {
+            dateColor = 'color: #f57c00;';
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${companyHolidayName}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${companyHolidayName}</span></span>`;
+        } else if (isWeekend) {
+            dateColor = 'color: #c62828;';
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+        } else {
+            dateDisplay = `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+        }
 
         if (dayActuals.length === 0) {
             html += `<tr style="background: ${bgColor};">`;
             html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
-            html += `<td style="color: #999;">-</td>`;
-            html += `<td style="text-align: center; color: #999;">-</td>`;
+            html += `<td colspan="6" style="color: #999;">-</td>`;
             html += `</tr>`;
         } else {
             dayActuals.forEach((actual, index) => {
+                html += `<tr style="background: ${bgColor};">`;
                 if (index === 0) {
-                    html += `<tr style="background: ${bgColor};">`;
                     html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px;">${dateDisplay}</td>`;
-                } else {
-                    html += `<tr style="background: ${bgColor};">`;
                 }
-                const escapeHtml = (str) => {
-                    const div = document.createElement('div');
-                    div.textContent = str;
-                    return div.innerHTML;
-                };
-                html += `<td style="font-size: 14px;">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${actual.process}]</td>`;
+                html += `<td style="font-size: 14px;">${escapeHtml(actual.version)}</td>`;
+                html += `<td style="font-size: 14px;">${escapeHtml(actual.task)}</td>`;
+                html += `<td><span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span></td>`;
+                html += `<td style="font-size: 14px;">${escapeHtml(actual.member)}</td>`;
                 html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
+                html += `<td>
+                    <button class="btn btn-primary btn-small" onclick="editActual(${actual.id})" style="margin-right: 5px;">編集</button>
+                    <button class="btn btn-danger btn-small" onclick="deleteActual(${actual.id})">削除</button>
+                </td>`;
                 html += `</tr>`;
             });
         }
@@ -477,8 +516,9 @@ export function renderMemberCalendar() {
 
     html += `<tr style="background: #1565c0; color: white; font-weight: 700;">`;
     html += `<td>総合計</td>`;
-    html += `<td style="text-align: right;">${workedDays}日稼働<span style="margin-left: 16px;">${businessDays}営業日</span></td>`;
+    html += `<td colspan="4" style="text-align: right;">${workedDays}日稼働<span style="margin-left: 16px;">${businessDays}営業日</span></td>`;
     html += `<td style="text-align: center;">${formatHours(totalHours)}h</td>`;
+    html += `<td></td>`;
     html += `</tr>`;
 
     html += '</table></div>';
@@ -803,71 +843,6 @@ export function renderActualMatrix() {
     setupCalendarSwipe();
 }
 
-/**
- * 実績リスト表示
- */
-export function renderActualListView() {
-    const container = document.getElementById('actualList');
-    const viewMode = document.getElementById('actualViewMode').value;
-    const selectedMonth = document.getElementById('actualMonthFilter').value;
-
-    let filteredActuals = actuals;
-
-    if (viewMode === 'member') {
-        const selectedMember = document.getElementById('actualMemberSelect').value;
-        if (selectedMember) {
-            filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
-        }
-    }
-
-    if (selectedMonth !== 'all') {
-        filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
-    }
-
-    let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
-
-    // 担当者順を取得
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    const orderList = memberOrderInput ? memberOrderInput.split(',').map(m => m.trim()).filter(m => m) : [];
-
-    const getMemberIndex = (member) => {
-        const idx = orderList.indexOf(member);
-        return idx >= 0 ? idx : orderList.length + member.charCodeAt(0);
-    };
-
-    const sortedActuals = [...filteredActuals].sort((a, b) => {
-        // まず日付で降順ソート
-        const dateDiff = new Date(b.date) - new Date(a.date);
-        if (dateDiff !== 0) return dateDiff;
-        // 同日付なら担当者順でソート
-        return getMemberIndex(a.member) - getMemberIndex(b.member);
-    });
-
-    if (sortedActuals.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">選択した条件に該当する実績データがありません</p>';
-        return;
-    }
-
-    sortedActuals.forEach(a => {
-        html += `
-            <tr>
-                <td>${a.date}</td>
-                <td>${a.version}</td>
-                <td>${a.task}</td>
-                <td><span class="badge badge-${a.process.toLowerCase()}">${a.process}</span></td>
-                <td>${a.member}</td>
-                <td>${a.hours}h</td>
-                <td>
-                    <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
-                </td>
-            </tr>
-        `;
-    });
-
-    html += '</table></div>';
-    container.innerHTML = html;
-}
 
 // ============================================
 // 作業詳細モーダル

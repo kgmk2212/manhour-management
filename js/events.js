@@ -383,6 +383,11 @@ export function initEventHandlers() {
     }
 
     // フィルタ (Compact)
+    const actualViewTypeSelect = document.getElementById('actualViewType');
+    if (actualViewTypeSelect) {
+        actualViewTypeSelect.addEventListener('change', (e) => setActualViewType(e.target.value));
+    }
+
     const actualMemberSelect = document.getElementById('actualMemberSelect');
     if (actualMemberSelect) {
         actualMemberSelect.addEventListener('change', (e) => handleActualMemberChange(e.target.value, 'actualMemberButtons2'));
@@ -393,21 +398,7 @@ export function initEventHandlers() {
         actualMonthFilter.addEventListener('change', (e) => handleActualMonthChange(e.target.value, 'actualMonthButtons2'));
     }
 
-    const actualViewMode = document.getElementById('actualViewMode');
-    if (actualViewMode) {
-        actualViewMode.addEventListener('change', renderActualList);
-    }
-
     // Segmented layout specific
-    const actualViewMode2 = document.getElementById('actualViewMode2');
-    if (actualViewMode2) {
-        actualViewMode2.addEventListener('change', (e) => {
-            const mainMode = document.getElementById('actualViewMode');
-            if (mainMode) mainMode.value = e.target.value;
-            renderActualList();
-        });
-    }
-
     const actualMemberSelect2 = document.getElementById('actualMemberSelect2');
     if (actualMemberSelect2) {
         actualMemberSelect2.addEventListener('change', (e) => {

@@ -1755,10 +1755,8 @@ export function toggleFilterLayout(page, version) {
         const btnSegmented = document.getElementById('btnSettingsActualSegmented');
 
         if (version === 'compact') {
-            const viewMode = document.getElementById('actualViewMode2');
             const memberSelect = document.getElementById('actualMemberSelect2');
             const monthFilter = document.getElementById('actualMonthFilter2');
-            if (viewMode) document.getElementById('actualViewMode').value = viewMode.value;
             if (memberSelect) document.getElementById('actualMemberSelect').value = memberSelect.value;
             if (monthFilter) document.getElementById('actualMonthFilter').value = monthFilter.value;
 
@@ -1777,10 +1775,8 @@ export function toggleFilterLayout(page, version) {
                 window.renderActualList();
             }
         } else {
-            const viewMode = document.getElementById('actualViewMode');
             const memberSelect = document.getElementById('actualMemberSelect');
             const monthFilter = document.getElementById('actualMonthFilter');
-            if (viewMode) document.getElementById('actualViewMode2').value = viewMode.value;
             if (memberSelect) document.getElementById('actualMemberSelect2').value = memberSelect.value;
             if (monthFilter) document.getElementById('actualMonthFilter2').value = monthFilter.value;
 

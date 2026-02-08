@@ -228,7 +228,6 @@ window.updateMemberSelectOptions = Actual.updateMemberSelectOptions;
 window.renderMemberCalendar = Actual.renderMemberCalendar;
 window.setupCalendarSwipe = Actual.setupCalendarSwipe;
 window.renderActualMatrix = Actual.renderActualMatrix;
-window.renderActualListView = Actual.renderActualListView;
 window.showWorkDetail = Actual.showWorkDetail;
 window.closeWorkModal = Actual.closeWorkModal;
 window.deleteActual = Actual.deleteActual;

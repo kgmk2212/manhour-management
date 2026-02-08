@@ -946,10 +946,10 @@
                 <div id="actualFiltersCompact"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示モード:</label>
-                        <select id="actualViewMode" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="all">全担当者</option>
-                            <option value="member">担当者別</option>
+                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="actualViewType" style="padding: 3px 6px; font-size: 12px;">
+                            <option value="matrix">カレンダー</option>
+                            <option value="list">リスト</option>
                         </select>
                     </div>
 
@@ -960,19 +960,17 @@
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="actualViewType" style="padding: 3px 6px; font-size: 12px;">
-                            <option value="matrix">カレンダー</option>
-                            <option value="list">リスト</option>
-                        </select>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示期間:</label>
                         <select id="actualMonthFilter" style="padding: 3px 6px; font-size: 12px;">
                             <option value="all">全期間</option>
                         </select>
                     </div>
+
+                    <!-- 旧viewModeの互換用hidden -->
+                    <select id="actualViewMode" style="display: none;">
+                        <option value="all">全担当者</option>
+                        <option value="member">担当者別</option>
+                    </select>
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
@@ -980,11 +978,11 @@
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示モード:</label>
-                            <select id="actualViewMode2" style="padding: 4px 8px; font-size: 13px;">
-                                <option value="all">全担当者</option>
-                                <option value="member">担当者別</option>
-                            </select>
+                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <div class="segment-buttons">
+                                <button id="btnActualMatrix" class="active">カレンダー</button>
+                                <button id="btnActualList">リスト</button>
+                            </div>
                         </div>
 
                         <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
@@ -996,14 +994,6 @@
                             <!-- Select版（要素数が多い場合） -->
                             <select id="actualMemberSelect2" style="padding: 4px 8px; font-size: 13px; display: none;">
                             </select>
-                        </div>
-
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 13px; font-weight: 500; white-space: nowrap;">表示形式:</label>
-                            <div class="segment-buttons">
-                                <button id="btnActualMatrix" class="active">カレンダー</button>
-                                <button id="btnActualList">リスト</button>
-                            </div>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -2411,21 +2401,6 @@
             <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
         </div>
         <div class="floating-filter-panel-body">
-            <!-- 表示モード -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">表示モード</label>
-                <div class="floating-segment-buttons" id="floatingActualViewModeButtons">
-                    <button id="floatingActualViewModeAll" onclick="setFloatingActualViewMode('all')">全担当者</button>
-                    <button id="floatingActualViewModeMember" onclick="setFloatingActualViewMode('member')">担当者別</button>
-                </div>
-            </div>
-
-            <!-- 担当者選択（担当者別モード時のみ表示） -->
-            <div class="floating-filter-group" id="floatingActualMemberGroup" style="display: none;">
-                <label class="floating-filter-label">担当者</label>
-                <div class="floating-segment-buttons" id="floatingActualMemberButtons"></div>
-            </div>
-
             <!-- 表示形式 -->
             <div class="floating-filter-group">
                 <label class="floating-filter-label">表示形式</label>
@@ -2433,6 +2408,12 @@
                     <button id="floatingActualViewTypeMatrix" onclick="setFloatingActualViewType('matrix')">カレンダー</button>
                     <button id="floatingActualViewTypeList" onclick="setFloatingActualViewType('list')">リスト</button>
                 </div>
+            </div>
+
+            <!-- 担当者選択（リスト表示時のみ表示） -->
+            <div class="floating-filter-group" id="floatingActualMemberGroup" style="display: none;">
+                <label class="floating-filter-label">担当者</label>
+                <div class="floating-segment-buttons" id="floatingActualMemberButtons"></div>
             </div>
 
             <!-- 月別フィルタ -->

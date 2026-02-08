@@ -639,16 +639,16 @@ export function syncFloatingVersionFilter(value) {
 
 // 実績フィルタの状態をフローティングパネルに同期
 export function syncFloatingActualFilters() {
-    // 表示モードの同期
-    const mainViewMode = document.getElementById('actualViewMode');
-    if (mainViewMode) {
-        const viewMode = mainViewMode.value;
-        updateFloatingActualViewModeButtons(viewMode);
+    // 表示形式に応じて担当者グループの表示/非表示を切替
+    const mainViewType = document.getElementById('actualViewType');
+    if (mainViewType) {
+        const viewType = mainViewType.value;
+        updateFloatingActualViewTypeButtons(viewType);
 
-        // 担当者グループの表示/非表示
+        // リスト表示時のみ担当者グループを表示
         const memberGroup = document.getElementById('floatingActualMemberGroup');
         if (memberGroup) {
-            memberGroup.style.display = viewMode === 'member' ? 'block' : 'none';
+            memberGroup.style.display = viewType === 'list' ? 'block' : 'none';
         }
     }
 
@@ -669,12 +669,6 @@ export function syncFloatingActualFilters() {
             floatingMemberButtons.appendChild(btn);
         });
         enableDragScroll(floatingMemberButtons);
-    }
-
-    // 表示形式の同期
-    const mainViewType = document.getElementById('actualViewType');
-    if (mainViewType) {
-        updateFloatingActualViewTypeButtons(mainViewType.value);
     }
 
     // 月フィルタの同期
@@ -716,14 +710,6 @@ export function syncFloatingActualFilters() {
     }
 }
 
-// 表示モードボタンの状態を更新
-function updateFloatingActualViewModeButtons(mode) {
-    const btnAll = document.getElementById('floatingActualViewModeAll');
-    const btnMember = document.getElementById('floatingActualViewModeMember');
-    if (btnAll) btnAll.classList.toggle('active', mode === 'all');
-    if (btnMember) btnMember.classList.toggle('active', mode === 'member');
-}
-
 // 表示形式ボタンの状態を更新
 function updateFloatingActualViewTypeButtons(type) {
     const btnMatrix = document.getElementById('floatingActualViewTypeMatrix');
@@ -731,16 +717,6 @@ function updateFloatingActualViewTypeButtons(type) {
     if (btnMatrix) btnMatrix.classList.toggle('active', type === 'matrix');
     if (btnList) btnList.classList.toggle('active', type === 'list');
 }
-
-// 表示モード変更
-window.setFloatingActualViewMode = function(mode) {
-    const mainViewMode = document.getElementById('actualViewMode');
-    if (mainViewMode) {
-        mainViewMode.value = mode;
-        mainViewMode.dispatchEvent(new Event('change'));
-    }
-    syncFloatingActualFilters();
-};
 
 // 担当者変更
 function setFloatingActualMember(value) {
