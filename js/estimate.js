@@ -254,7 +254,9 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
     let filtered = estimates;
 
     // 版数フィルタを適用
-    if (versionFilter !== 'all') {
+    if (versionFilter === 'other_work') {
+        filtered = filtered.filter(e => isOtherWork(e));
+    } else if (versionFilter !== 'all') {
         filtered = filtered.filter(e => e.version === versionFilter);
     }
 
@@ -593,8 +595,64 @@ export function renderEstimateGrouped() {
 
     let html = '<div style="margin-bottom: 30px;">';
 
-    Object.keys(versionGroups).sort().forEach(version => {
+    // その他工数（空文字版）を末尾に配置するソート
+    const sortedVersionKeys = Object.keys(versionGroups).sort((a, b) => {
+        if (a === '' && b !== '') return 1;
+        if (a !== '' && b === '') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedVersionKeys.forEach(version => {
         const versionDisplay = version || 'その他工数';
+        const isOtherWorkVersion = !version;
+
+        // その他工数の場合、合計のみの簡略表示
+        if (isOtherWorkVersion) {
+            const versionTotal = Object.values(versionGroups[version])
+                .reduce((sum, taskGroup) => sum + taskGroup.processes.reduce((s, p) => s + p.hours, 0), 0);
+            const versionDays = versionTotal / 8;
+            const versionMonths = versionTotal / 8 / workingDaysPerMonth;
+
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += '<div class="table-wrapper"><table class="estimate-grouped">';
+
+            // 対応名ごとに1行で表示（工程列なし）
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">担当</th><th style="min-width: 150px;">工数</th></tr>';
+
+            Object.values(versionGroups[version]).forEach(taskGroup => {
+                const total = taskGroup.processes.reduce((sum, p) => sum + p.hours, 0);
+                const days = total / 8;
+                const months = total / 8 / workingDaysPerMonth;
+                const members = [...new Set(taskGroup.processes.map(p => p.member))].join(', ');
+
+                let taskDisplayHtml = taskGroup.task || '(未設定)';
+                const escapedTask = (taskGroup.task || '').replace(/'/g, "\\'");
+
+                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${version}', '${escapedTask}')">`;
+                html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                html += `<td>${members}</td>`;
+                html += `<td style="text-align: right;">
+                    <div style="font-weight: 700; color: #1976d2;">${formatNumber(total, 1)}h</div>
+                    <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                </td>`;
+                html += '</tr>';
+            });
+
+            html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
+            html += `<td style="text-align: right; padding-right: 20px;">その他工数 合計</td>`;
+            html += `<td></td>`;
+            html += `<td style="text-align: right;">
+                <div>${formatNumber(versionTotal, 1)}h</div>
+                <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
+            </td>`;
+            html += `</tr>`;
+
+            html += '</table></div>';
+            html += '</div>';
+            return;
+        }
+
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
@@ -726,11 +784,12 @@ export function renderEstimateGrouped() {
         const versionDays = versionTotal / 8;
         const versionMonths = versionTotal / 8 / workingDaysPerMonth;
 
+        const versionLabel = version || 'その他工数';
         html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
         if (workMonthSelectionMode) {
             html += `<td></td>`;
         }
-        html += `<td style="text-align: right; padding-right: 20px;">${version} 合計</td>`;
+        html += `<td style="text-align: right; padding-right: 20px;">${versionLabel} 合計</td>`;
         html += `<td colspan="2"></td>`;
         html += `<td style="text-align: right;">${formatNumber(versionTotal, 1)}h</td>`;
         html += `<td style="text-align: right;">
@@ -789,7 +848,9 @@ export function renderEstimateMatrix() {
             hasUnassigned = true;
         }
 
-        versionGroups[e.version][taskKey].processes[e.process] = {
+                // 工程が空の場合はIDをキーにして上書きを防止（その他工数は同じ空工程の複数アイテムがある）
+        const processKey = e.process || `_${e.id}`;
+        versionGroups[e.version][taskKey].processes[processKey] = {
             member: e.member,
             hours: displayHours,
             id: e.id,
@@ -806,8 +867,54 @@ export function renderEstimateMatrix() {
         html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
     }
 
-    Object.keys(versionGroups).sort().forEach(version => {
+    // その他工数（空文字版）を末尾に配置するソート
+    const sortedMatrixVersionKeys = Object.keys(versionGroups).sort((a, b) => {
+        if (a === '' && b !== '') return 1;
+        if (a !== '' && b === '') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedMatrixVersionKeys.forEach(version => {
         const versionDisplay = version || 'その他工数';
+        const isOtherWorkVersion = !version;
+
+        // その他工数の場合、対応名と合計のみの簡略表示
+        if (isOtherWorkVersion) {
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += '<div class="table-wrapper"><table class="estimate-matrix">';
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px; text-align: center;">担当</th><th style="min-width: 80px; text-align: center;">合計</th></tr>';
+
+            Object.values(versionGroups[version]).forEach(group => {
+                let taskDisplayHtml = group.task || '(未設定)';
+
+                let total = 0;
+                const members = new Set();
+                Object.values(group.processes).forEach(p => {
+                    total += p.hours;
+                    members.add(p.member);
+                });
+
+                const totalDays = total / 8;
+                const totalMonths = totalDays / 20;
+
+                const escapedTask = (group.task || '').replace(/'/g, "\\'");
+                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${version}', '${escapedTask}')">`;
+                html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                html += `<td style="text-align: center;">${[...members].join(', ')}</td>`;
+                html += `<td style="text-align: center;">
+                    <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
+                    <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
+                </td>`;
+                html += '</tr>';
+            });
+
+            html += '</table></div>';
+            html += '</div>';
+            return;
+        }
+
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
@@ -1054,11 +1161,12 @@ export function showEstimateDetail(estimateId) {
     const est = normalizeEstimate(estimate);
     const isClassic = window.modalDesignStyle === 'classic';
 
+    const isOther = isOtherWork(est);
     let html;
 
     if (isClassic) {
         // クラシック: main と同じレイアウト
-        document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
+        document.getElementById('estimateDetailModalTitle').textContent = isOther ? `その他工数 - ${est.task}` : `見積詳細 - ${est.task}`;
 
         let workMonthDisplay = '<span style="color: #999;">未設定</span>';
         if (est.workMonths && est.workMonths.length > 0) {
@@ -1077,18 +1185,18 @@ export function showEstimateDetail(estimateId) {
 
         html = `
             <div class="estimate-detail-item">
-                <div class="estimate-detail-row">
+                ${isOther ? '' : `<div class="estimate-detail-row">
                     <span class="estimate-detail-label">版数:</span>
                     <span class="estimate-detail-value">${est.version || '(なし)'}</span>
-                </div>
+                </div>`}
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">対応名:</span>
                     <span class="estimate-detail-value">${est.task}</span>
                 </div>
-                <div class="estimate-detail-row">
+                ${isOther ? '' : `<div class="estimate-detail-row">
                     <span class="estimate-detail-label">工程:</span>
                     <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
-                </div>
+                </div>`}
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">担当:</span>
                     <span class="estimate-detail-value">${est.member}</span>
@@ -1115,7 +1223,7 @@ export function showEstimateDetail(estimateId) {
         `;
     } else {
         // モダン: 新デザイン
-        document.getElementById('estimateDetailModalTitle').textContent = '見積詳細';
+        document.getElementById('estimateDetailModalTitle').textContent = isOther ? `その他工数` : '見積詳細';
 
         let workMonthCards = '';
         if (est.workMonths && est.workMonths.length > 0) {
@@ -1132,10 +1240,10 @@ export function showEstimateDetail(estimateId) {
 
         html = `
             <div class="ed-hero">
-                <div class="ed-version">${est.version || '版数なし'}</div>
+                ${isOther ? '' : `<div class="ed-version">${est.version || '版数なし'}</div>`}
                 <div class="ed-task-name">${est.task}</div>
                 <div class="ed-hours-row">
-                    <span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>
+                    ${isOther ? '' : `<span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>`}
                     <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
                 </div>
                 <div class="ed-hours-label">見積工数</div>
@@ -1155,6 +1263,67 @@ export function showEstimateDetail(estimateId) {
             </div>
         `;
     }
+
+    document.getElementById('estimateDetailModalBody').innerHTML = html;
+    document.getElementById('estimateDetailModal').style.display = 'flex';
+}
+
+/**
+ * その他工数のタスク詳細を表示（同一タスクの全見積を一覧表示）
+ * @param {string} version - 版数
+ * @param {string} task - タスク名
+ */
+export function showOtherWorkTaskDetail(version, task) {
+    const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
+    if (taskEstimates.length === 0) return;
+
+    // 1件だけの場合は通常の詳細表示
+    if (taskEstimates.length === 1) {
+        showEstimateDetail(taskEstimates[0].id);
+        return;
+    }
+
+    document.getElementById('estimateDetailModalTitle').textContent = `その他工数 - ${task || '(未設定)'}`;
+
+    const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
+
+    let html = '<div style="margin-bottom: 12px; font-size: 14px; color: #666;">このタスクには複数の見積があります</div>';
+    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+
+    taskEstimates.forEach(estimate => {
+        const est = normalizeEstimate(estimate);
+        let workMonthDisplay = '<span style="color: #999;">未設定</span>';
+        if (est.workMonths && est.workMonths.length > 0) {
+            if (est.workMonths.length === 1) {
+                const [y, m] = est.workMonths[0].split('-');
+                workMonthDisplay = `${y}年${parseInt(m)}月`;
+            } else {
+                const [y1, m1] = est.workMonths[0].split('-');
+                const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                workMonthDisplay = `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`;
+            }
+        }
+
+        html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
+        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+        html += `<span style="font-weight: 600;">${est.member}</span>`;
+        html += `<span style="font-weight: 700; color: #1976d2; font-size: 16px;">${est.hours.toFixed(1)}h</span>`;
+        html += `</div>`;
+        html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
+        html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
+        html += `<button onclick="editEstimateFromModal(${est.id})"
+                    style="padding: 6px 14px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    編集</button>`;
+        html += `<button onclick="deleteEstimateFromModal(${est.id})"
+                    style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    削除</button>`;
+        html += `</div></div>`;
+    });
+
+    html += '</div>';
+    html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; text-align: right;">`;
+    html += `<span style="font-weight: 700; font-size: 16px;">合計: <span style="color: #1976d2;">${totalHours.toFixed(1)}h</span></span>`;
+    html += `</div>`;
 
     document.getElementById('estimateDetailModalBody').innerHTML = html;
     document.getElementById('estimateDetailModal').style.display = 'flex';
