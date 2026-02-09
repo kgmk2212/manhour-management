@@ -13,7 +13,7 @@ import {
     showAlert
 } from './utils.js';
 
-import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList } from './estimate.js';
+import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
 
 // ============================================
 // 見積編集
@@ -29,11 +29,19 @@ export function editEstimate(id) {
         return;
     }
 
+    const isOther = isOtherWork(estimate);
+
     document.getElementById('editEstimateId').value = id;
     document.getElementById('editEstimateVersion').value = estimate.version;
     document.getElementById('editEstimateTaskSearch').value = estimate.task;
     document.getElementById('editEstimateProcess').value = estimate.process;
     document.getElementById('editEstimateHours').value = estimate.hours;
+
+    // その他工数の場合、版数・工程フィールドを非表示
+    const versionGroup = document.getElementById('editEstimateVersion').closest('.form-group');
+    const processGroup = document.getElementById('editEstimateProcess').closest('.form-group');
+    if (versionGroup) versionGroup.style.display = isOther ? 'none' : '';
+    if (processGroup) processGroup.style.display = isOther ? 'none' : '';
 
     const taskDatalist = document.getElementById('editEstimateTaskList');
     taskDatalist.innerHTML = '';
@@ -132,15 +140,24 @@ export function closeEditEstimateModal() {
  */
 export function saveEstimateEdit() {
     const id = parseFloat(document.getElementById('editEstimateId').value);
-    const version = document.getElementById('editEstimateVersion').value;
     const task = document.getElementById('editEstimateTaskSearch').value;
-    const process = document.getElementById('editEstimateProcess').value;
     const member = document.getElementById('editEstimateMember').value;
     const hours = parseFloat(document.getElementById('editEstimateHours').value);
     const mode = document.querySelector('input[name="editWorkMonthMode"]:checked').value;
 
-    if (!version || !task || !process || !member || !hours) {
+    // その他工数の場合、版数・工程は元の値を維持
+    const originalEstimate = estimates.find(e => e.id === id);
+    const isOther = originalEstimate && isOtherWork(originalEstimate);
+    const version = isOther ? (originalEstimate.version || '') : document.getElementById('editEstimateVersion').value;
+    const process = isOther ? (originalEstimate.process || '') : document.getElementById('editEstimateProcess').value;
+
+    if (!task || !member || !hours) {
         alert('すべての項目を入力してください');
+        return;
+    }
+
+    if (!isOther && (!version || !process)) {
+        alert('版数と工程を入力してください');
         return;
     }
 

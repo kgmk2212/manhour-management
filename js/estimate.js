@@ -889,6 +889,7 @@ export function renderEstimateMatrix() {
 
                 let total = 0;
                 const members = new Set();
+                const firstId = Object.values(group.processes)[0]?.id;
                 Object.values(group.processes).forEach(p => {
                     total += p.hours;
                     members.add(p.member);
@@ -898,7 +899,7 @@ export function renderEstimateMatrix() {
                 const totalMonths = totalDays / 20;
 
                 html += '<tr>';
-                html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                html += `<td style="font-weight: 600; cursor: pointer;" onclick="showEstimateDetail(${firstId})">${taskDisplayHtml}</td>`;
                 html += `<td style="text-align: center;">${[...members].join(', ')}</td>`;
                 html += `<td style="text-align: center;">
                     <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
@@ -1158,7 +1159,8 @@ export function showEstimateDetail(estimateId) {
 
     const est = normalizeEstimate(estimate);
 
-    document.getElementById('estimateDetailModalTitle').textContent = `見積詳細 - ${est.task}`;
+    const isOther = isOtherWork(est);
+    document.getElementById('estimateDetailModalTitle').textContent = isOther ? `その他工数 - ${est.task}` : `見積詳細 - ${est.task}`;
 
     // 作業月表示
     let workMonthDisplay = '<span style="color: #999;">未設定</span>';
@@ -1178,18 +1180,18 @@ export function showEstimateDetail(estimateId) {
 
     const html = `
         <div class="estimate-detail-item">
-            <div class="estimate-detail-row">
+            ${isOther ? '' : `<div class="estimate-detail-row">
                 <span class="estimate-detail-label">版数:</span>
                 <span class="estimate-detail-value">${est.version || '(なし)'}</span>
-            </div>
+            </div>`}
             <div class="estimate-detail-row">
                 <span class="estimate-detail-label">対応名:</span>
                 <span class="estimate-detail-value">${est.task}</span>
             </div>
-            <div class="estimate-detail-row">
+            ${isOther ? '' : `<div class="estimate-detail-row">
                 <span class="estimate-detail-label">工程:</span>
                 <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
-            </div>
+            </div>`}
             <div class="estimate-detail-row">
                 <span class="estimate-detail-label">担当:</span>
                 <span class="estimate-detail-value">${est.member}</span>
