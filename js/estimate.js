@@ -1283,47 +1283,98 @@ export function showOtherWorkTaskDetail(version, task) {
         return;
     }
 
-    document.getElementById('estimateDetailModalTitle').textContent = `その他工数 - ${task || '(未設定)'}`;
-
+    const isClassic = window.modalDesignStyle === 'classic';
     const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
+    let html;
 
-    let html = '<div style="margin-bottom: 12px; font-size: 14px; color: #666;">このタスクには複数の見積があります</div>';
-    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    if (isClassic) {
+        document.getElementById('estimateDetailModalTitle').textContent = `その他工数 - ${task || '(未設定)'}`;
 
-    taskEstimates.forEach(estimate => {
-        const est = normalizeEstimate(estimate);
-        let workMonthDisplay = '<span style="color: #999;">未設定</span>';
-        if (est.workMonths && est.workMonths.length > 0) {
-            if (est.workMonths.length === 1) {
-                const [y, m] = est.workMonths[0].split('-');
-                workMonthDisplay = `${y}年${parseInt(m)}月`;
-            } else {
-                const [y1, m1] = est.workMonths[0].split('-');
-                const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
-                workMonthDisplay = `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`;
+        html = '<div style="margin-bottom: 12px; font-size: 14px; color: #666;">このタスクには複数の見積があります</div>';
+        html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+
+        taskEstimates.forEach(estimate => {
+            const est = normalizeEstimate(estimate);
+            let workMonthDisplay = '<span style="color: #999;">未設定</span>';
+            if (est.workMonths && est.workMonths.length > 0) {
+                if (est.workMonths.length === 1) {
+                    const [y, m] = est.workMonths[0].split('-');
+                    workMonthDisplay = `${y}年${parseInt(m)}月`;
+                } else {
+                    const [y1, m1] = est.workMonths[0].split('-');
+                    const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                    workMonthDisplay = `${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月`;
+                }
             }
-        }
 
-        html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
-        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
-        html += `<span style="font-weight: 600;">${est.member}</span>`;
-        html += `<span style="font-weight: 700; color: #1976d2; font-size: 16px;">${est.hours.toFixed(1)}h</span>`;
+            html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+            html += `<span style="font-weight: 600;">${est.member}</span>`;
+            html += `<span style="font-weight: 700; color: #1976d2; font-size: 16px;">${est.hours.toFixed(1)}h</span>`;
+            html += `</div>`;
+            html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
+            html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
+            html += `<button onclick="editEstimateFromModal(${est.id})"
+                        style="padding: 6px 14px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        編集</button>`;
+            html += `<button onclick="deleteEstimateFromModal(${est.id})"
+                        style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        削除</button>`;
+            html += `</div></div>`;
+        });
+
+        html += '</div>';
+        html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; text-align: right;">`;
+        html += `<span style="font-weight: 700; font-size: 16px;">合計: <span style="color: #1976d2;">${totalHours.toFixed(1)}h</span></span>`;
         html += `</div>`;
-        html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
-        html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-        html += `<button onclick="editEstimateFromModal(${est.id})"
-                    style="padding: 6px 14px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    編集</button>`;
-        html += `<button onclick="deleteEstimateFromModal(${est.id})"
-                    style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    削除</button>`;
-        html += `</div></div>`;
-    });
+    } else {
+        // モダン: Quiet Depth デザイン
+        document.getElementById('estimateDetailModalTitle').textContent = 'その他工数';
 
-    html += '</div>';
-    html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; text-align: right;">`;
-    html += `<span style="font-weight: 700; font-size: 16px;">合計: <span style="color: #1976d2;">${totalHours.toFixed(1)}h</span></span>`;
-    html += `</div>`;
+        html = `
+            <div class="ed-hero">
+                <div class="ed-task-name">${task || '(未設定)'}</div>
+                <div class="ed-hours-row">
+                    <span class="ed-hours">${totalHours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+                </div>
+                <div class="ed-hours-label">${taskEstimates.length}名分の合計見積</div>
+            </div>
+            <div class="ed-section">
+                <div class="ed-section-label">担当者別内訳</div>
+        `;
+
+        taskEstimates.forEach(estimate => {
+            const est = normalizeEstimate(estimate);
+            let monthTag = '';
+            if (est.workMonths && est.workMonths.length > 0) {
+                if (est.workMonths.length === 1) {
+                    const [y, m] = est.workMonths[0].split('-');
+                    monthTag = `<span class="ed-month-tag">${parseInt(m)}月</span>`;
+                } else {
+                    const [y1, m1] = est.workMonths[0].split('-');
+                    const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                    monthTag = `<span class="ed-month-tag">${parseInt(m1)}月〜${parseInt(m2)}月</span>`;
+                }
+            }
+
+            html += `
+                <div class="wd-card">
+                    <div class="wd-card-header">
+                        <div>
+                            <span class="wd-card-title">${est.member}</span>
+                            ${monthTag}
+                        </div>
+                        <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
+                    </div>
+                    <div class="wd-card-actions">
+                        <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editEstimateFromModal(${est.id})">編集</a>
+                        <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
+                    </div>
+                </div>`;
+        });
+
+        html += '</div>';
+    }
 
     document.getElementById('estimateDetailModalBody').innerHTML = html;
     document.getElementById('estimateDetailModal').style.display = 'flex';
