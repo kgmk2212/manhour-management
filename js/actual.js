@@ -7,8 +7,8 @@ import {
     setActuals
 } from './state.js';
 
-import { showAlert, sortMembers, formatHours } from './utils.js';
-import { saveRemainingEstimate, getRemainingEstimate } from './estimate.js';
+import { showAlert, sortMembers, formatHours, normalizeEstimate } from './utils.js';
+import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -1319,29 +1319,72 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
         allEstimates = allEstimates.filter(e => e.process === selectedProcess);
     }
 
+    // 編集中の日付から月を取得（月ごとの見積計算用）
+    const editDateEl = document.getElementById('editActualDate');
+    const editDate = editDateEl ? editDateEl.value : '';
+    const editMonth = editDate ? editDate.substring(0, 7) : '';
+
     const actualTotals = {};
     actuals.forEach(a => {
-        const key = `${a.version}_${a.task}_${a.process}`;
+        // その他工数の場合は担当者ごと・月ごとに集計
+        const isOther = isOtherWork(a);
+        let key;
+        if (isOther) {
+            const aMonth = a.date ? a.date.substring(0, 7) : '';
+            key = `${a.version}_${a.task}_${a.process}_${a.member}_${aMonth}`;
+        } else {
+            key = `${a.version}_${a.task}_${a.process}`;
+        }
         actualTotals[key] = (actualTotals[key] || 0) + a.hours;
     });
 
     const tasksByMember = {};
     allEstimates.forEach(est => {
-        const key = `${est.version}_${est.task}_${est.process}`;
-        const actualHours = actualTotals[key] || 0;
-        const remaining = est.hours - actualHours;
+        const isOther = isOtherWork(est);
+        let actualHours, estHours;
+
+        if (isOther) {
+            // その他工数：担当者ごと・月ごとに残/超過を計算
+            const key = `${est.version}_${est.task}_${est.process}_${est.member}_${editMonth}`;
+            actualHours = actualTotals[key] || 0;
+            // 月ごとの見積工数を使用
+            const normalized = normalizeEstimate(est);
+            estHours = (normalized.monthlyHours && normalized.monthlyHours[editMonth]) || 0;
+        } else {
+            const key = `${est.version}_${est.task}_${est.process}`;
+            actualHours = actualTotals[key] || 0;
+            estHours = est.hours;
+        }
+
+        const remaining = estHours - actualHours;
 
         let displayText;
-        if (remaining > 0) {
-            displayText = `${est.task} [${est.process}] (残: ${formatHours(remaining)}h)`;
-        } else if (remaining < 0) {
-            displayText = `${est.task} [${est.process}] (超過: ${formatHours(Math.abs(remaining))}h)`;
+        if (isOther) {
+            if (remaining > 0) {
+                displayText = `${est.task} (残: ${formatHours(remaining)}h)`;
+            } else if (remaining < 0) {
+                displayText = `${est.task} (超過: ${formatHours(Math.abs(remaining))}h)`;
+            } else {
+                displayText = `${est.task} (完了)`;
+            }
         } else {
-            displayText = `${est.task} [${est.process}] (完了)`;
+            if (remaining > 0) {
+                displayText = `${est.task} [${est.process}] (残: ${formatHours(remaining)}h)`;
+            } else if (remaining < 0) {
+                displayText = `${est.task} [${est.process}] (超過: ${formatHours(Math.abs(remaining))}h)`;
+            } else {
+                displayText = `${est.task} [${est.process}] (完了)`;
+            }
         }
 
         if (!tasksByMember[est.member]) {
             tasksByMember[est.member] = [];
+        }
+
+        // その他工数の場合、同じタスクが複数月にまたがる見積は
+        // 編集中の月に該当する場合のみ表示
+        if (isOther && estHours === 0 && editMonth) {
+            return; // この月に見積がなければスキップ
         }
 
         tasksByMember[est.member].push({

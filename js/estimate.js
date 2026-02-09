@@ -254,10 +254,26 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
     let filtered = estimates;
 
     // 版数フィルタを適用
-    if (versionFilter === 'other_work') {
-        filtered = filtered.filter(e => isOtherWork(e));
-    } else if (versionFilter !== 'all') {
-        filtered = filtered.filter(e => e.version === versionFilter);
+    if (versionFilter !== 'all') {
+        // 選択された版数の作業予定月を収集
+        const versionMonths = new Set();
+        estimates.filter(e => e.version === versionFilter).forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths) {
+                est.workMonths.forEach(m => versionMonths.add(m));
+            }
+        });
+
+        filtered = filtered.filter(e => {
+            if (e.version === versionFilter) return true;
+            // その他工数は、版の作業予定月と重なるものを含める
+            if (isOtherWork(e)) {
+                const est = normalizeEstimate(e);
+                if (!est.workMonths || est.workMonths.length === 0) return true;
+                return est.workMonths.some(m => versionMonths.has(m));
+            }
+            return false;
+        });
     }
 
     // 月フィルタを適用

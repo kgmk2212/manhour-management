@@ -1079,12 +1079,38 @@ function filterReportData(filterType, selectedMonth, selectedVersion) {
     let filteredEstimates = estimates.map(e => normalizeEstimate(e));
 
     // 版数フィルタを適用
-    if (selectedVersion === 'other_work') {
-        filteredActuals = filteredActuals.filter(a => isOtherWork(a));
-        filteredEstimates = filteredEstimates.filter(e => isOtherWork(e));
-    } else if (selectedVersion !== 'all') {
-        filteredActuals = filteredActuals.filter(a => a.version === selectedVersion);
-        filteredEstimates = filteredEstimates.filter(e => e.version === selectedVersion);
+    if (selectedVersion !== 'all') {
+        // 選択された版数の作業予定月を収集
+        const versionMonths = new Set();
+        filteredEstimates.filter(e => e.version === selectedVersion).forEach(e => {
+            if (e.workMonths) {
+                e.workMonths.forEach(m => versionMonths.add(m));
+            }
+        });
+        // 実績の日付からも月を収集
+        filteredActuals.filter(a => a.version === selectedVersion).forEach(a => {
+            if (a.date) versionMonths.add(a.date.substring(0, 7));
+        });
+
+        filteredEstimates = filteredEstimates.filter(e => {
+            if (e.version === selectedVersion) return true;
+            // その他工数は、版の作業予定月と重なるものを含める
+            if (isOtherWork(e)) {
+                if (!e.workMonths || e.workMonths.length === 0) return true;
+                return e.workMonths.some(m => versionMonths.has(m));
+            }
+            return false;
+        });
+
+        filteredActuals = filteredActuals.filter(a => {
+            if (a.version === selectedVersion) return true;
+            // その他工数の実績は、版の作業予定月内のものを含める
+            if (isOtherWork(a)) {
+                if (!a.date) return true;
+                return versionMonths.has(a.date.substring(0, 7));
+            }
+            return false;
+        });
     }
 
     // 月フィルタを適用
@@ -1133,8 +1159,6 @@ function updateReportTitle(filterType, selectedMonth, selectedVersion) {
     let versionText = '';
     if (selectedVersion === 'all') {
         versionText = '全版数';
-    } else if (selectedVersion === 'other_work') {
-        versionText = 'その他工数';
     } else {
         versionText = selectedVersion;
     }
