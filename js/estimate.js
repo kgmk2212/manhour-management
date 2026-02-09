@@ -887,11 +887,9 @@ export function renderEstimateMatrix() {
 
                 let total = 0;
                 const members = new Set();
-                processOrder.forEach(proc => {
-                    if (group.processes[proc]) {
-                        total += group.processes[proc].hours;
-                        members.add(group.processes[proc].member);
-                    }
+                Object.values(group.processes).forEach(p => {
+                    total += p.hours;
+                    members.add(p.member);
                 });
 
                 const totalDays = total / 8;

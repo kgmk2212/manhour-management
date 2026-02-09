@@ -2347,12 +2347,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     });
 
     versions.forEach(version => {
-        // const versionProcesses = new Set();
-        // Object.values(versionGroups[version]).forEach(taskGroup => {
-        //     Object.keys(taskGroup.estimates).forEach(p => versionProcesses.add(p));
-        //     Object.keys(taskGroup.actuals).forEach(p => versionProcesses.add(p));
-        // });
-
+        const isOtherWorkVersion = version === 'その他付随作業';
         const displayProcesses = processOrder;
 
         let contentHtml = '';
@@ -2364,13 +2359,23 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             let totalAct = 0;
             const taskCells = [];
 
-            displayProcesses.forEach(proc => {
-                const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0, workMonths: [] };
-                const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
-                totalEst += est.hours;
-                totalAct += act.hours;
-                taskCells.push({ proc, est, act });
-            });
+            if (isOtherWorkVersion) {
+                // その他付随作業: 全プロセス（空文字含む）を集計
+                Object.values(taskGroup.estimates).forEach(est => {
+                    totalEst += est.hours;
+                });
+                Object.values(taskGroup.actuals).forEach(act => {
+                    totalAct += act.hours;
+                });
+            } else {
+                displayProcesses.forEach(proc => {
+                    const est = taskGroup.estimates[proc] || { members: new Set(), hours: 0, workMonths: [] };
+                    const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
+                    totalEst += est.hours;
+                    totalAct += act.hours;
+                    taskCells.push({ proc, est, act });
+                });
+            }
 
             if (totalEst > 0 || totalAct > 0) {
                 versionTotalEst += totalEst;
@@ -2381,6 +2386,32 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     const parts = taskGroup.task.split('：');
                     const restPart = parts.slice(1).join('：');
                     taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                }
+
+                // その他付随作業: 工程列なしの簡略表示
+                if (isOtherWorkVersion) {
+                    const totalDiff = totalAct - totalEst;
+                    const totalEstDays = (totalEst / 8).toFixed(1);
+                    const totalActDays = (totalAct / 8).toFixed(1);
+                    const totalEstMonths = (totalEst / 8 / workingDaysPerMonth).toFixed(2);
+                    const totalActMonths = (totalAct / 8 / workingDaysPerMonth).toFixed(2);
+                    const allMembers = new Set();
+                    Object.values(taskGroup.estimates).forEach(est => est.members.forEach(m => allMembers.add(m)));
+                    Object.values(taskGroup.actuals).forEach(act => act.members.forEach(m => allMembers.add(m)));
+
+                    contentHtml += '<tr>';
+                    contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                    contentHtml += `<td style="text-align: center;">${[...allMembers].join(', ')}</td>`;
+                    contentHtml += `<td style="text-align: center;">
+                        <div style="font-weight: 600;">${totalEst.toFixed(1)}h</div>
+                        <div style="font-weight: 700; color: #1976d2;">${totalAct.toFixed(1)}h</div>
+                        <div class="total-manpower">
+                            <div style="font-size: 11px; color: #666;">${totalEstDays}/${totalActDays}人日</div>
+                            <div style="font-size: 11px; color: #666;">${totalEstMonths}/${totalActMonths}人月</div>
+                        </div>
+                    </td>`;
+                    contentHtml += '</tr>';
+                    return;
                 }
 
                 contentHtml += '<tr>';
@@ -2467,15 +2498,23 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
 
             html += '<div class="table-wrapper"><table class="estimate-matrix report-matrix">';
-            html += '<tr><th style="min-width: 200px;">対応名</th>';
-            displayProcesses.forEach(proc => {
-                html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
-            });
-            html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
+            if (isOtherWorkVersion) {
+                html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px; text-align: center;">担当</th><th style="min-width: 80px; text-align: center;">合計</th></tr>';
+            } else {
+                html += '<tr><th style="min-width: 200px;">対応名</th>';
+                displayProcesses.forEach(proc => {
+                    html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
+                });
+                html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
+            }
             html += contentHtml;
             html += '<tr style="background: #f8fafc; font-weight: bold; border-top: 2px solid #ddd;">';
             html += `<td class="matrix-header-task">合計</td>`;
-            displayProcesses.forEach(() => html += '<td></td>');
+            if (isOtherWorkVersion) {
+                html += '<td></td>';
+            } else {
+                displayProcesses.forEach(() => html += '<td></td>');
+            }
             const vBg = bgColorMode === 'deviation' ? getDeviationColor(versionTotalEst, versionTotalAct) : '#f8fafc';
             const versionTotalEstDays = versionTotalEst / 8;
             const versionTotalActDays = versionTotalAct / 8;
