@@ -1274,7 +1274,7 @@ export function showEstimateDetail(estimateId) {
  * @param {string} task - タスク名
  */
 export function showOtherWorkTaskDetail(version, task) {
-    const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
+    const taskEstimates = filteredEstimates.filter(e => e.version === version && e.task === task);
     if (taskEstimates.length === 0) return;
 
     // 1件だけの場合は通常の詳細表示
