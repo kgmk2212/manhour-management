@@ -70,11 +70,6 @@ import {
     handleActualProcessChange
 } from './actual.js';
 import {
-    saveStickyFilterSetting,
-    saveFloatingFilterSetting,
-    saveFloatingFilterButtonStyle
-} from './floating-filter.js';
-import {
     updateReport,
     togglePhaseCollapse,
     loadReportSettings,
@@ -586,15 +581,6 @@ export function initEventHandlers() {
     const btnUpdateAllDisplays = document.getElementById('btnUpdateAllDisplays');
     if (btnUpdateAllDisplays) btnUpdateAllDisplays.addEventListener('click', updateAllDisplays);
 
-    // フィルタ固定
-    const stickyFilterEnabled = document.getElementById('stickyFilterEnabled');
-    if (stickyFilterEnabled) stickyFilterEnabled.addEventListener('change', saveStickyFilterSetting);
-
-    const floatingFilterEnabled = document.getElementById('floatingFilterEnabled');
-    if (floatingFilterEnabled) floatingFilterEnabled.addEventListener('change', saveFloatingFilterSetting);
-
-    const floatingFilterButtonStyle = document.getElementById('floatingFilterButtonStyle');
-    if (floatingFilterButtonStyle) floatingFilterButtonStyle.addEventListener('change', saveFloatingFilterButtonStyle);
 
     // 会社休日
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');
