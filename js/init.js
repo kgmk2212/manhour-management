@@ -183,6 +183,7 @@ window.deleteEstimate = Estimate.deleteEstimate;
 window.deleteTask = Estimate.deleteTask;
 window.updateWorkMonthOptions = Estimate.updateWorkMonthOptions;
 window.showEstimateDetail = Estimate.showEstimateDetail;
+window.showOtherWorkTaskDetail = Estimate.showOtherWorkTaskDetail;
 window.closeEstimateDetailModal = Estimate.closeEstimateDetailModal;
 window.editEstimateFromModal = Estimate.editEstimateFromModal;
 window.deleteEstimateFromModal = Estimate.deleteEstimateFromModal;
