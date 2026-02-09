@@ -1079,7 +1079,10 @@ function filterReportData(filterType, selectedMonth, selectedVersion) {
     let filteredEstimates = estimates.map(e => normalizeEstimate(e));
 
     // 版数フィルタを適用
-    if (selectedVersion !== 'all') {
+    if (selectedVersion === 'other_work') {
+        filteredActuals = filteredActuals.filter(a => isOtherWork(a));
+        filteredEstimates = filteredEstimates.filter(e => isOtherWork(e));
+    } else if (selectedVersion !== 'all') {
         filteredActuals = filteredActuals.filter(a => a.version === selectedVersion);
         filteredEstimates = filteredEstimates.filter(e => e.version === selectedVersion);
     }
@@ -1130,6 +1133,8 @@ function updateReportTitle(filterType, selectedMonth, selectedVersion) {
     let versionText = '';
     if (selectedVersion === 'all') {
         versionText = '全版数';
+    } else if (selectedVersion === 'other_work') {
+        versionText = 'その他工数';
     } else {
         versionText = selectedVersion;
     }
@@ -1999,13 +2004,14 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
     let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
     versions.forEach(version => {
+        const versionDisplay = (version && version.trim() !== '') ? version : 'その他工数';
         const est = filteredEstimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
         const act = filteredActuals.filter(a => a.version === version).reduce((sum, a) => sum + a.hours, 0);
         const progress = est > 0 ? (act / est * 100).toFixed(1) : 0;
 
         html += `
             <tr>
-                <td><strong>${version}</strong></td>
+                <td><strong>${versionDisplay}</strong></td>
                 <td>${est.toFixed(1)}h</td>
                 <td>${act.toFixed(1)}h</td>
                 <td>${progress}%</td>

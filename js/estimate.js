@@ -254,7 +254,9 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
     let filtered = estimates;
 
     // 版数フィルタを適用
-    if (versionFilter !== 'all') {
+    if (versionFilter === 'other_work') {
+        filtered = filtered.filter(e => isOtherWork(e));
+    } else if (versionFilter !== 'all') {
         filtered = filtered.filter(e => e.version === versionFilter);
     }
 
@@ -726,11 +728,12 @@ export function renderEstimateGrouped() {
         const versionDays = versionTotal / 8;
         const versionMonths = versionTotal / 8 / workingDaysPerMonth;
 
+        const versionLabel = version || 'その他工数';
         html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
         if (workMonthSelectionMode) {
             html += `<td></td>`;
         }
-        html += `<td style="text-align: right; padding-right: 20px;">${version} 合計</td>`;
+        html += `<td style="text-align: right; padding-right: 20px;">${versionLabel} 合計</td>`;
         html += `<td colspan="2"></td>`;
         html += `<td style="text-align: right;">${formatNumber(versionTotal, 1)}h</td>`;
         html += `<td style="text-align: right;">

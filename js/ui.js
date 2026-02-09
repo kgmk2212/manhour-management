@@ -2234,6 +2234,7 @@ export function updateFormNameOptions() {
 
 export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all') {
     try {
+        let hasOtherWork = false;
         if (!sortedVersions) {
             const versions = new Set();
             estimates.forEach(e => {
@@ -2244,6 +2245,8 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
                         if (!est.workMonths || !est.workMonths.includes(selectedMonth)) return;
                     }
                     versions.add(e.version);
+                } else {
+                    hasOtherWork = true;
                 }
             });
             actuals.forEach(a => {
@@ -2253,11 +2256,21 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
                         if (!a.date || !a.date.startsWith(selectedMonth)) return;
                     }
                     versions.add(a.version);
+                } else {
+                    hasOtherWork = true;
                 }
             });
+            // isOtherWork の定義に合わせ、task が空のアイテムもチェック
+            if (!hasOtherWork) {
+                hasOtherWork = estimates.some(e => typeof window.isOtherWork === 'function' && window.isOtherWork(e))
+                    || actuals.some(a => typeof window.isOtherWork === 'function' && window.isOtherWork(a));
+            }
             sortedVersions = Array.from(versions).sort();
         } else {
             sortedVersions = sortedVersions.slice().sort();
+            // 外部から渡された場合もその他工数を確認
+            hasOtherWork = estimates.some(e => typeof window.isOtherWork === 'function' && window.isOtherWork(e))
+                || actuals.some(a => typeof window.isOtherWork === 'function' && window.isOtherWork(a));
         }
 
         const select = document.getElementById('reportVersion');
@@ -2280,12 +2293,12 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
             // ignore
         }
         
-        if (savedVersion !== null && (savedVersion === 'all' || sortedVersions.includes(savedVersion))) {
+        if (savedVersion !== null && (savedVersion === 'all' || savedVersion === 'other_work' || sortedVersions.includes(savedVersion))) {
             // localStorageに有効な値がある
             currentValue = savedVersion;
         } else if (reportFilterState.version !== null) {
             // stateに値がある
-            if (reportFilterState.version === 'all' || sortedVersions.includes(reportFilterState.version)) {
+            if (reportFilterState.version === 'all' || reportFilterState.version === 'other_work' || sortedVersions.includes(reportFilterState.version)) {
                 currentValue = reportFilterState.version;
             } else {
                 currentValue = 'all';
@@ -2317,6 +2330,21 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
             }
         });
 
+        // その他工数オプションを追加
+        if (hasOtherWork) {
+            const option = document.createElement('option');
+            option.value = 'other_work';
+            option.textContent = 'その他工数';
+            select.appendChild(option);
+
+            if (select2) {
+                const option2 = document.createElement('option');
+                option2.value = 'other_work';
+                option2.textContent = 'その他工数';
+                select2.appendChild(option2);
+            }
+        }
+
         select.value = currentValue;
         if (select2) select2.value = currentValue;
 
@@ -2326,7 +2354,8 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
             ...sortedVersions.map(version => ({
                 value: version,
                 label: version
-            }))
+            })),
+            ...(hasOtherWork ? [{ value: 'other_work', label: 'その他工数' }] : [])
         ];
         createSegmentButtons(
             'reportVersionButtons2',
@@ -2346,11 +2375,15 @@ export function updateMonthOptions(selectedVersion = 'all') {
     const select2 = document.getElementById('reportMonth2');
     const months = new Set();
 
+    const isOtherWorkFn = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
+
     // 実績から月を収集
     actuals.forEach(a => {
         if (a.date) {
             // 版数フィルタが適用されている場合、該当する実績のみを確認
-            if (selectedVersion !== 'all' && a.version !== selectedVersion) return;
+            if (selectedVersion === 'other_work') {
+                if (!isOtherWorkFn(a)) return;
+            } else if (selectedVersion !== 'all' && a.version !== selectedVersion) return;
 
             const month = a.date.substring(0, 7);
             months.add(month);
@@ -2362,7 +2395,9 @@ export function updateMonthOptions(selectedVersion = 'all') {
         const est = normalizeEstimate(e);
 
         // 版数フィルタが適用されている場合、該当する見積のみを確認
-        if (selectedVersion !== 'all' && est.version !== selectedVersion) return;
+        if (selectedVersion === 'other_work') {
+            if (!isOtherWorkFn(e)) return;
+        } else if (selectedVersion !== 'all' && est.version !== selectedVersion) return;
 
         if (est.workMonths) {
             est.workMonths.forEach(m => {
@@ -2558,12 +2593,20 @@ export function updateEstimateVersionOptions() {
     if (!select) return;
 
     const versions = new Set();
+    let hasOtherWork = false;
 
     estimates.forEach(e => {
-        if (e.version) {
+        if (e.version && e.version.trim() !== '') {
             versions.add(e.version);
+        } else {
+            // version が空またはタスクが空の場合はその他工数
+            hasOtherWork = true;
         }
     });
+    // isOtherWork の定義に合わせ、task が空のアイテムもチェック
+    if (!hasOtherWork) {
+        hasOtherWork = estimates.some(e => typeof window.isOtherWork === 'function' && window.isOtherWork(e));
+    }
 
     const sortedVersions = Array.from(versions).sort().reverse();
 
@@ -2584,6 +2627,21 @@ export function updateEstimateVersionOptions() {
         }
     });
 
+    // その他工数オプションを追加
+    if (hasOtherWork) {
+        const option = document.createElement('option');
+        option.value = 'other_work';
+        option.textContent = 'その他工数';
+        select.appendChild(option);
+
+        if (select2) {
+            const option2 = document.createElement('option');
+            option2.value = 'other_work';
+            option2.textContent = 'その他工数';
+            select2.appendChild(option2);
+        }
+    }
+
     // フィルタ状態を確認: localStorage > state > デフォルト（全版数）
     let currentValue;
     
@@ -2599,12 +2657,12 @@ export function updateEstimateVersionOptions() {
         // ignore
     }
     
-    if (savedVersion !== null && (savedVersion === 'all' || sortedVersions.includes(savedVersion))) {
+    if (savedVersion !== null && (savedVersion === 'all' || savedVersion === 'other_work' || sortedVersions.includes(savedVersion))) {
         // localStorageに有効な値がある
         currentValue = savedVersion;
     } else if (estimateFilterState.version !== null) {
         // stateに値がある
-        if (estimateFilterState.version === 'all' || sortedVersions.includes(estimateFilterState.version)) {
+        if (estimateFilterState.version === 'all' || estimateFilterState.version === 'other_work' || sortedVersions.includes(estimateFilterState.version)) {
             currentValue = estimateFilterState.version;
         } else {
             currentValue = 'all';
@@ -2629,7 +2687,8 @@ export function updateEstimateVersionOptions() {
                 value: version,
                 label: version
             };
-        })
+        }),
+        ...(hasOtherWork ? [{ value: 'other_work', label: 'その他工数' }] : [])
     ];
     createSegmentButtons(
         'estimateVersionButtons2',
