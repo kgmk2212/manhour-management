@@ -847,7 +847,9 @@ export function renderEstimateMatrix() {
             hasUnassigned = true;
         }
 
-        versionGroups[e.version][taskKey].processes[e.process] = {
+                // 工程が空の場合はIDをキーにして上書きを防止（その他工数は同じ空工程の複数アイテムがある）
+        const processKey = e.process || `_${e.id}`;
+        versionGroups[e.version][taskKey].processes[processKey] = {
             member: e.member,
             hours: displayHours,
             id: e.id,
