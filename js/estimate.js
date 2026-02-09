@@ -595,8 +595,63 @@ export function renderEstimateGrouped() {
 
     let html = '<div style="margin-bottom: 30px;">';
 
-    Object.keys(versionGroups).sort().forEach(version => {
+    // その他工数（空文字版）を末尾に配置するソート
+    const sortedVersionKeys = Object.keys(versionGroups).sort((a, b) => {
+        if (a === '' && b !== '') return 1;
+        if (a !== '' && b === '') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedVersionKeys.forEach(version => {
         const versionDisplay = version || 'その他工数';
+        const isOtherWorkVersion = !version;
+
+        // その他工数の場合、合計のみの簡略表示
+        if (isOtherWorkVersion) {
+            const versionTotal = Object.values(versionGroups[version])
+                .reduce((sum, taskGroup) => sum + taskGroup.processes.reduce((s, p) => s + p.hours, 0), 0);
+            const versionDays = versionTotal / 8;
+            const versionMonths = versionTotal / 8 / workingDaysPerMonth;
+
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += '<div class="table-wrapper"><table class="estimate-grouped">';
+
+            // 対応名ごとに1行で表示（工程列なし）
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">担当</th><th style="min-width: 150px;">工数</th></tr>';
+
+            Object.values(versionGroups[version]).forEach(taskGroup => {
+                const total = taskGroup.processes.reduce((sum, p) => sum + p.hours, 0);
+                const days = total / 8;
+                const months = total / 8 / workingDaysPerMonth;
+                const members = [...new Set(taskGroup.processes.map(p => p.member))].join(', ');
+
+                let taskDisplayHtml = taskGroup.task || '(未設定)';
+
+                html += '<tr>';
+                html += `<td style="font-weight: 600; cursor: pointer;" onclick="showEstimateDetail(${taskGroup.processes[0].id})">${taskDisplayHtml}</td>`;
+                html += `<td>${members}</td>`;
+                html += `<td style="text-align: right;">
+                    <div style="font-weight: 700; color: #1976d2;">${formatNumber(total, 1)}h</div>
+                    <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                </td>`;
+                html += '</tr>';
+            });
+
+            html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
+            html += `<td style="text-align: right; padding-right: 20px;">その他工数 合計</td>`;
+            html += `<td></td>`;
+            html += `<td style="text-align: right;">
+                <div>${formatNumber(versionTotal, 1)}h</div>
+                <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
+            </td>`;
+            html += `</tr>`;
+
+            html += '</table></div>';
+            html += '</div>';
+            return;
+        }
+
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
@@ -809,8 +864,55 @@ export function renderEstimateMatrix() {
         html += generateMonthColorLegend(usedMonths, hasMultipleMonths, hasUnassigned);
     }
 
-    Object.keys(versionGroups).sort().forEach(version => {
+    // その他工数（空文字版）を末尾に配置するソート
+    const sortedMatrixVersionKeys = Object.keys(versionGroups).sort((a, b) => {
+        if (a === '' && b !== '') return 1;
+        if (a !== '' && b === '') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedMatrixVersionKeys.forEach(version => {
         const versionDisplay = version || 'その他工数';
+        const isOtherWorkVersion = !version;
+
+        // その他工数の場合、対応名と合計のみの簡略表示
+        if (isOtherWorkVersion) {
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += '<div class="table-wrapper"><table class="estimate-matrix">';
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px; text-align: center;">担当</th><th style="min-width: 80px; text-align: center;">合計</th></tr>';
+
+            Object.values(versionGroups[version]).forEach(group => {
+                let taskDisplayHtml = group.task || '(未設定)';
+
+                let total = 0;
+                const members = new Set();
+                processOrder.forEach(proc => {
+                    if (group.processes[proc]) {
+                        total += group.processes[proc].hours;
+                        members.add(group.processes[proc].member);
+                    }
+                });
+
+                const totalDays = total / 8;
+                const totalMonths = totalDays / 20;
+
+                html += '<tr>';
+                html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                html += `<td style="text-align: center;">${[...members].join(', ')}</td>`;
+                html += `<td style="text-align: center;">
+                    <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
+                    <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
+                    <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
+                </td>`;
+                html += '</tr>';
+            });
+
+            html += '</table></div>';
+            html += '</div>';
+            return;
+        }
+
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';

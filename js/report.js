@@ -1989,7 +1989,12 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
 }
 
 export function renderVersionReport(filteredActuals, filteredEstimates) {
-    const versions = [...new Set(filteredEstimates.map(e => e.version))];
+    const versions = [...new Set(filteredEstimates.map(e => e.version))].sort((a, b) => {
+        // その他工数（空文字版）を末尾に配置
+        if ((!a || a.trim() === '') && b && b.trim() !== '') return 1;
+        if (a && a.trim() !== '' && (!b || b.trim() === '')) return -1;
+        return (a || '').localeCompare(b || '');
+    });
 
     if (versions.length === 0) {
         document.getElementById('versionReport').innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当する見積データがありません</p>';
