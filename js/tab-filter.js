@@ -4,6 +4,9 @@
 
 import { enableDragScroll } from './utils.js';
 
+// 実績月フィルタの全月展開状態
+let _actualMonthExpanded = false;
+
 // 設定の保存/読み込み
 export function saveTabBarAlwaysVisible() {
     const checkbox = document.getElementById('tabBarAlwaysVisible');
@@ -406,16 +409,46 @@ function renderActualFilters(container, scrollToActive = true) {
     const oldMonthContainer = document.getElementById('tabFilterActualMonthButtons');
     const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
 
-    // 月フィルタボタンを生成（昇順ソート）
-    const monthButtons = generateFilterButtons(actualMonth, (value) => {
-        actualMonth.value = value;
-        if (typeof window.handleActualMonthChange === 'function') {
-            window.handleActualMonthChange(value, 'actualMonthButtons2');
-        } else {
-            actualMonth.dispatchEvent(new Event('change'));
-        }
-        updateTabFilterContent(false);
-    }, 'month');
+    // データがある月のSetを構築
+    const monthsWithData = new Set();
+    if (window.actuals) {
+        window.actuals.forEach(a => {
+            if (a.date) monthsWithData.add(a.date.substring(0, 7));
+        });
+    }
+
+    const isExpanded = _actualMonthExpanded;
+    const currentValue = actualMonth.value;
+
+    // ボタン生成（データあり/なしで出し分け）
+    const allOption = Array.from(actualMonth.options).find(o => o.value === 'all');
+    const monthOptions = Array.from(actualMonth.options)
+        .filter(o => o.value !== 'all')
+        .sort((a, b) => a.value.localeCompare(b.value));
+
+    let monthButtons = '';
+    if (allOption) {
+        const isActive = currentValue === 'all' ? 'active' : '';
+        monthButtons += `<button data-value="all" class="${isActive}">${allOption.text}</button>`;
+    }
+    monthOptions.forEach(opt => {
+        const hasData = monthsWithData.has(opt.value);
+        const isSelected = String(opt.value) === String(currentValue);
+        // 非展開時: データあり月 or 現在選択中の月のみ表示
+        if (!isExpanded && !hasData && !isSelected) return;
+        const classes = [
+            isSelected ? 'active' : '',
+            !hasData ? 'no-data' : ''
+        ].filter(Boolean).join(' ');
+        monthButtons += `<button data-value="${opt.value}" class="${classes}">${opt.text}</button>`;
+    });
+
+    // 全月表示トグルボタン（データなし月が存在する場合のみ）
+    const hasEmptyMonths = monthOptions.some(o => !monthsWithData.has(o.value));
+    if (hasEmptyMonths) {
+        const toggleLabel = isExpanded ? '◂ 絞込' : '▸ 全月';
+        monthButtons += `<button class="month-toggle-btn" id="actualMonthToggle">${toggleLabel}</button>`;
+    }
 
     // ページ内フィルタ非表示時はカレンダー/リスト切替を表示
     const hidden = loadHideInlineFilters();
@@ -461,7 +494,19 @@ function renderActualFilters(container, scrollToActive = true) {
         }
     }
 
-    // ボタンにイベントを設定
+    // 全月表示トグルのイベント
+    const toggleBtn = document.getElementById('actualMonthToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.isTabInteracting = true;
+            setTimeout(() => { window.isTabInteracting = false; }, 300);
+            _actualMonthExpanded = !_actualMonthExpanded;
+            renderActualFilters(container, false);
+        });
+    }
+
+    // 月ボタンにイベントを設定
     setupFilterButtonEvents(container, 'tabFilterActualMonthButtons', actualMonth, (value) => {
         actualMonth.value = value;
         if (typeof window.handleActualMonthChange === 'function') {
@@ -520,7 +565,7 @@ function setupFilterButtonEvents(container, containerId, selectElement, onChange
     const buttonContainer = document.getElementById(containerId);
     if (!buttonContainer) return;
 
-    buttonContainer.querySelectorAll('button').forEach(btn => {
+    buttonContainer.querySelectorAll('button[data-value]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             // スクロール検出を一時停止（タブが隠れるのを防ぐ）

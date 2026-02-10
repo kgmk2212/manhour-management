@@ -3111,6 +3111,29 @@
             font-size: 11px;
         }
 
+        /* データなし月ボタン */
+        .tab-filter-buttons button.no-data {
+            opacity: 0.4;
+            border-style: dashed;
+        }
+        .tab-filter-buttons button.no-data:hover {
+            opacity: 0.7;
+        }
+
+        /* 全月表示トグルボタン */
+        .tab-filter-buttons .month-toggle-btn {
+            background: transparent;
+            border: 1px solid #bbb;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .tab-filter-buttons .month-toggle-btn:hover {
+            border-color: var(--theme-color, #1e3c72);
+            color: var(--theme-color, #1e3c72);
+            background: rgba(0, 0, 0, 0.03);
+        }
+
         /* PC表示時 */
         @media (min-width: 769px) {
             /* PC用：丸ボタンは少し小さく */
