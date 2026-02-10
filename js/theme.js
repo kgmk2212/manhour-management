@@ -318,37 +318,8 @@ export function updateThemeElements() {
         }
     }
 
-    // フローティングフィルタ
-    updateFloatingFilterTheme();
 }
 
-export function updateFloatingFilterTheme() {
-    const gradients = {
-        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-        'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-        'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-        'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-    };
-
-    const gradient = gradients[window.currentThemeColor] || gradients['deep-blue'];
-
-    const toggle = document.getElementById('floatingFilterToggle');
-    if (toggle) {
-        toggle.style.background = gradient;
-    }
-
-    const headers = document.querySelectorAll('.floating-filter-panel-header');
-    headers.forEach(header => {
-        header.style.background = gradient;
-    });
-}
 
 export function updateBodyBackground() {
     const colorGradients = {

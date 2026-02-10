@@ -516,7 +516,7 @@
                 <h2>工数レポート</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="reportFiltersCompact" class="sticky-filter-container"
+                <div id="reportFiltersCompact"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
@@ -542,7 +542,7 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="reportFiltersSegmented" class="sticky-filter-container"
+                <div id="reportFiltersSegmented"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="reportVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
@@ -817,7 +817,7 @@
                 </button>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="estimateFiltersCompact" class="sticky-filter-container" style="margin-bottom: 20px;">
+                <div id="estimateFiltersCompact" style="margin-bottom: 20px;">
                     <div
                         style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
@@ -853,7 +853,7 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="estimateFiltersSegmented" class="sticky-filter-container"
+                <div id="estimateFiltersSegmented"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="estimateVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
@@ -1434,26 +1434,6 @@
                     <p style="color: #666; margin-bottom: 15px;">画面表示や操作性に関する設定です。</p>
 
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="stickyFilterEnabled" style="width: auto; margin-right: 10px;">
-                            <span>フィルタ固定表示（Sticky）を有効にする</span>
-                        </label>
-                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
-                            見積一覧・レポートのフィルタ設定部分をスクロール時に画面上部に固定表示します。
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="floatingFilterEnabled" style="width: auto; margin-right: 10px;">
-                            <span>フローティングフィルタパネルを有効にする</span>
-                        </label>
-                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
-                            レポートタブで画面右下にフィルタ設定ボタンを表示します。スクロール位置に関係なくフィルタを変更できます。
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="tabBarAlwaysVisible" style="width: auto; margin-right: 10px;">
                             <span>タブバーを常に表示する</span>
@@ -2368,106 +2348,6 @@
         </div>
     </div>
 
-    <div id="floatingFilterPanelEstimate" class="floating-filter-panel">
-        <div class="floating-filter-panel-header">
-            <span>見積フィルタ設定</span>
-            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
-        </div>
-        <div class="floating-filter-panel-body">
-            <!-- 編集モード -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label"
-                    style="display: flex; justify-content: space-between; align-items: center;">
-                    編集モード
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="floatingEstimateEditMode"
-                            onchange="toggleEstimateEditMode(this.checked)">
-                        <label for="floatingEstimateEditMode" class="toggle-label"></label>
-                    </div>
-                </label>
-            </div>
-
-            <!-- 版数別フィルタ -->
-            <div class="floating-filter-group" id="floatingEstVersionGroup">
-                <label class="floating-filter-label">版数</label>
-                <div class="floating-segment-buttons" id="floatingEstVersionButtons"></div>
-            </div>
-
-            <!-- 月別フィルタ -->
-            <div class="floating-filter-group" id="floatingEstMonthGroup">
-                <label class="floating-filter-label">表示月</label>
-                <div class="floating-segment-buttons" id="floatingEstMonthButtons"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- 実績一覧用フローティングフィルタパネル -->
-    <div id="floatingFilterPanelActual" class="floating-filter-panel">
-        <div class="floating-filter-panel-header">
-            <span>実績フィルタ設定</span>
-            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
-        </div>
-        <div class="floating-filter-panel-body">
-            <!-- 表示モード -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">表示モード</label>
-                <div class="floating-segment-buttons" id="floatingActualViewModeButtons">
-                    <button id="floatingActualViewModeAll" onclick="setFloatingActualViewMode('all')">全担当者</button>
-                    <button id="floatingActualViewModeMember" onclick="setFloatingActualViewMode('member')">担当者別</button>
-                </div>
-            </div>
-
-            <!-- 担当者選択（担当者別モード時のみ表示） -->
-            <div class="floating-filter-group" id="floatingActualMemberGroup" style="display: none;">
-                <label class="floating-filter-label">担当者</label>
-                <div class="floating-segment-buttons" id="floatingActualMemberButtons"></div>
-            </div>
-
-            <!-- 表示形式 -->
-            <div class="floating-filter-group">
-                <label class="floating-filter-label">表示形式</label>
-                <div class="floating-segment-buttons" id="floatingActualViewTypeButtons">
-                    <button id="floatingActualViewTypeMatrix" onclick="setFloatingActualViewType('matrix')">カレンダー</button>
-                    <button id="floatingActualViewTypeList" onclick="setFloatingActualViewType('list')">リスト</button>
-                </div>
-            </div>
-
-            <!-- 月別フィルタ -->
-            <div class="floating-filter-group" id="floatingActualMonthGroup">
-                <label class="floating-filter-label">表示月</label>
-                <div class="floating-segment-buttons" id="floatingActualMonthButtons"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- フローティングフィルタパネル -->
-    <button class="floating-filter-toggle" id="floatingFilterToggle" onclick="toggleFloatingFilterPanel(event)">
-        🔍
-    </button>
-
-    <div class="floating-filter-panel" id="floatingFilterPanel">
-        <div class="floating-filter-panel-header">
-            <span>フィルタ設定</span>
-            <button class="floating-filter-panel-close" onclick="toggleFloatingFilterPanel(event)">×</button>
-        </div>
-        <div class="floating-filter-panel-body">
-            <!-- 版数別フィルタ -->
-            <div class="floating-filter-group" id="floatingVersionGroup">
-                <label class="floating-filter-label">版数</label>
-                <div class="floating-segment-buttons" id="floatingVersionButtons"></div>
-            </div>
-
-            <!-- 月別フィルタ -->
-            <div class="floating-filter-group" id="floatingMonthGroup">
-                <label class="floating-filter-label">表示月</label>
-                <div class="floating-segment-buttons" id="floatingMonthButtons"></div>
-            </div>
-
-        </div>
-    </div>
-
     <!-- [GANTT-CHART] 予定作成モーダル -->
     <div id="createScheduleModal" class="modal">
         <div class="modal-content">
@@ -2662,7 +2542,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260210-1"></script>
+    <script type="module" src="js/init.js?v=20260210-3"></script>
 </body>
 
 </html>

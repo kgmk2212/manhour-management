@@ -282,8 +282,6 @@ export function autoBackup() {
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
         chartColorScheme: selectedChartColorScheme,
         memberOrder: memberOrderValue,
-        stickyFilterEnabled: localStorage.getItem('stickyFilterEnabled') !== 'false',
-        floatingFilterEnabled: localStorage.getItem('floatingFilterEnabled') !== 'false',
         debugModeEnabled: debugModeEnabled,
         devFeaturesEnabled: devFeaturesEnabled,
         workDetailStyle: window.workDetailStyle
@@ -471,28 +469,6 @@ export function handleFileImport(event) {
                             if (memberOrderEl) memberOrderEl.value = data.settings.memberOrder;
                         }
 
-                        // Stickyフィルタ設定を復元
-                        if (data.settings.stickyFilterEnabled !== undefined) {
-                            localStorage.setItem('stickyFilterEnabled', data.settings.stickyFilterEnabled);
-                            const checkbox = document.getElementById('stickyFilterEnabled');
-                            if (checkbox) checkbox.checked = data.settings.stickyFilterEnabled;
-                            if (data.settings.stickyFilterEnabled) {
-                                if (typeof window.enableStickyFilters === 'function') {
-                                    window.enableStickyFilters();
-                                }
-                            } else {
-                                if (typeof window.disableStickyFilters === 'function') {
-                                    window.disableStickyFilters();
-                                }
-                            }
-                        }
-
-                        // フローティングフィルタ設定を復元
-                        if (data.settings.floatingFilterEnabled !== undefined) {
-                            localStorage.setItem('floatingFilterEnabled', data.settings.floatingFilterEnabled);
-                            const checkbox = document.getElementById('floatingFilterEnabled');
-                            if (checkbox) checkbox.checked = data.settings.floatingFilterEnabled;
-                        }
 
                         // デバッグモード設定を復元
                         if (data.settings.debugModeEnabled !== undefined) {

@@ -15,7 +15,6 @@ import * as Quick from './quick.js';
 import * as Report from './report.js';
 import * as EstimateAdd from './estimate-add.js';
 import * as OtherWork from './other-work.js';
-import * as FloatingFilter from './floating-filter.js';
 import * as TabFilter from './tab-filter.js';
 import * as Modal from './modal.js';
 import * as EstimateEdit from './estimate-edit.js';
@@ -153,7 +152,6 @@ window.loadThemeSettings = Theme.loadThemeSettings;
 window.applyTheme = Theme.applyTheme;
 window.updateThemePreview = Theme.updateThemePreview;
 window.updateThemeElements = Theme.updateThemeElements;
-window.updateFloatingFilterTheme = Theme.updateFloatingFilterTheme;
 window.updateBodyBackground = Theme.updateBodyBackground;
 window.updateElementTheme = Theme.updateElementTheme;
 window.toggleMonthColorsSetting = Theme.toggleMonthColorsSetting;
@@ -302,31 +300,6 @@ window.openOtherWorkModal = OtherWork.openOtherWorkModal;
 window.closeOtherWorkModal = OtherWork.closeOtherWorkModal;
 window.switchOtherWorkTab = OtherWork.switchOtherWorkTab;
 
-// floating-filter.js の関数
-window.saveStickyFilterSetting = FloatingFilter.saveStickyFilterSetting;
-window.loadStickyFilterSetting = FloatingFilter.loadStickyFilterSetting;
-window.enableStickyFilters = FloatingFilter.enableStickyFilters;
-window.disableStickyFilters = FloatingFilter.disableStickyFilters;
-window.initStickyFilters = FloatingFilter.initStickyFilters;
-window.saveFloatingFilterSetting = FloatingFilter.saveFloatingFilterSetting;
-window.loadFloatingFilterSetting = FloatingFilter.loadFloatingFilterSetting;
-window.showFloatingFilterButton = FloatingFilter.showFloatingFilterButton;
-window.hideFloatingFilterButton = FloatingFilter.hideFloatingFilterButton;
-window.toggleFloatingFilterPanel = FloatingFilter.toggleFloatingFilterPanel;
-window.syncFloatingFilters = FloatingFilter.syncFloatingFilters;
-window.setFloatingFilterType = FloatingFilter.setFloatingFilterType;
-window.setFloatingViewType = FloatingFilter.setFloatingViewType;
-window.syncFloatingMonthFilter = FloatingFilter.syncFloatingMonthFilter;
-window.syncFloatingVersionFilter = FloatingFilter.syncFloatingVersionFilter;
-window.initFloatingFilterEvents = FloatingFilter.initFloatingFilterEvents;
-window.setFloatingEstFilterType = FloatingFilter.setFloatingEstFilterType;
-window.setFloatingEstViewType = FloatingFilter.setFloatingEstViewType;
-window.syncFloatingEstimateFilters = FloatingFilter.syncFloatingEstimateFilters;
-window.syncFloatingEstMonthFilter = FloatingFilter.syncFloatingEstMonthFilter;
-window.syncFloatingActualFilters = FloatingFilter.syncFloatingActualFilters;
-window.saveFloatingFilterButtonStyle = FloatingFilter.saveFloatingFilterButtonStyle;
-window.loadFloatingFilterButtonStyle = FloatingFilter.loadFloatingFilterButtonStyle;
-window.applyFloatingFilterButtonStyle = FloatingFilter.applyFloatingFilterButtonStyle;
 
 // modal.js の関数
 window.showProcessBreakdown = Modal.showProcessBreakdown;
@@ -454,7 +427,7 @@ console.log('✅ init.js: データロード完了', {
     actuals: State.actuals.length
 });
 
-console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report, estimate-add, other-work, floating-filter, modal, estimate-edit, estimate-selection, estimate-split)');
+console.log('✅ モジュール init.js loaded (state, utils, vacation, storage, ui, theme, estimate, actual, quick, report, estimate-add, other-work, modal, estimate-edit, estimate-selection, estimate-split)');
 
 // ============================================
 // DOMContentLoaded 初期化処理
@@ -564,18 +537,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // モーダルのクリックハンドラーをセットアップ
     Modal.setupModalHandlers();
 
-    // Stickyフィルタの初期化
-    FloatingFilter.initStickyFilters();
-
-    // フローティングフィルタ設定を読み込み
-    FloatingFilter.loadFloatingFilterSetting();
-
-    // フローティングフィルタボタンスタイル設定を読み込み・適用
-    FloatingFilter.loadFloatingFilterButtonStyle();
-    FloatingFilter.applyFloatingFilterButtonStyle();
-
-    // フローティングフィルタイベントの初期化
-    FloatingFilter.initFloatingFilterEvents();
 
     // タブ内フィルタドロワーの初期化
     TabFilter.initTabFilter();

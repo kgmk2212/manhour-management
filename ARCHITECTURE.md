@@ -25,7 +25,6 @@
 │   ├── vacation.js        (休暇・休日管理)
 │   ├── other-work.js      (その他作業・会議)
 │   ├── theme.js           (テーマ・UI設定)
-│   ├── floating-filter.js (フローティングフィルタ)
 │   ├── modal.js           (モーダル操作)
 │   ├── ui.js              (UI操作・DOM操作)
 │   ├── events.js          (イベントハンドラ統合)
@@ -351,29 +350,6 @@ export function setActuals(value) { actuals = value; }
 
 ---
 
-### **js/floating-filter.js** (24KB)
-**役割**: フローティングフィルタ管理（スマホ対応）
-
-**主要関数**:
-- `saveFloatingFilterSetting()` - Floating Filter設定保存
-- `loadFloatingFilterSetting()` - Floating Filter設定読み込み
-- `showFloatingFilterButton()` - Floating Filterボタン表示
-- `hideFloatingFilterButton()` - Floating Filterボタン非表示
-- `toggleFloatingFilterPanel(event)` - Floating Filterパネル切替
-- `syncFloatingFilters()` - Floating Filter同期
-- `setFloatingFilterType(type, applyToMain)` - Floating Filterタイプ設定
-- `setFloatingViewType(type, applyToMain)` - Floating Filter表示タイプ設定
-- `handleReportMonthChange(value, containerId)` - レポート月変更ハンドラ
-- `handleReportVersionChange(value, containerId)` - レポート版数変更ハンドラ
-- フィルタ同期・変更ハンドラ関数
-
-**依存関係**:
-- `state.js` - estimates, actuals
-- `ui.js` - UI更新
-- `report.js` - updateReport
-
----
-
 ### **js/modal.js** (~400行)
 **役割**: モーダル操作・ドラッグ処理
 
@@ -536,7 +512,7 @@ estimate.js   ↓     theme.js
   ├─ estimate-split.js
   └─ estimate-selection.js
     ↓         ↓         ↓
-actual.js     ↓     floating-filter.js
+actual.js     ↓
 vacation.js   ↓         ↓
 other-work.js ↓         ↓
     ↓         ↓         ↓
@@ -580,7 +556,7 @@ other-work.js ↓         ↓
 - アーキテクチャドキュメントを最新の構成に更新
 - 19個のJavaScriptモジュール構成に更新
 - estimate関連を5ファイルに分割（estimate.js, estimate-add.js, estimate-edit.js, estimate-split.js, estimate-selection.js）
-- filter.js → floating-filter.js に名称変更
+- floating-filter.js を削除（フローティングフィルタ・スティッキーフィルタ機能廃止）
 - events.js を追加（イベントハンドラ統合）
 - chart.js を削除（report.js に統合）
 - quick-input.js → quick.js に名称変更
