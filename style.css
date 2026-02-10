@@ -110,6 +110,16 @@
             border-color: rgba(255, 255, 255, 0.35);
         }
 
+        /* ページ内フィルタの初期非表示（ちらつき防止） */
+        /* JS読み込み前はすべて非表示、JSが設定に応じて表示を復元 */
+        .inline-filter {
+            display: none;
+        }
+        /* 非表示設定時はinline styleより優先して非表示 */
+        html[data-inline-filter="hidden"] .inline-filter {
+            display: none !important;
+        }
+
         .tabs {
             display: flex;
             flex-direction: column;

@@ -93,6 +93,42 @@ export function applyFilterLayout() {
     drawer.classList.add(`layout-${layout}`);
 }
 
+// ページ内フィルタ非表示設定
+export function saveHideInlineFilters() {
+    const checkbox = document.getElementById('hideInlineFilters');
+    if (!checkbox) return;
+    localStorage.setItem('hideInlineFilters', checkbox.checked);
+    applyInlineFilterVisibility();
+}
+
+export function loadHideInlineFilters() {
+    const saved = localStorage.getItem('hideInlineFilters');
+    const hidden = saved === 'true';
+    const checkbox = document.getElementById('hideInlineFilters');
+    if (checkbox) {
+        checkbox.checked = hidden;
+    }
+    return hidden;
+}
+
+export function applyInlineFilterVisibility() {
+    const hidden = loadHideInlineFilters();
+    if (hidden) {
+        document.documentElement.dataset.inlineFilter = 'hidden';
+    } else {
+        document.documentElement.dataset.inlineFilter = 'visible';
+    }
+    // 表示時はapplyLayoutSettings()で正しいcompact/segmentedを表示させる
+    if (!hidden && typeof window.applyLayoutSettings === 'function') {
+        window.applyLayoutSettings();
+    }
+    // タブフィルタの内容を更新（表示形式ボタンの追加/削除のため）
+    const drawer = document.getElementById('tabFilterDrawer');
+    if (drawer && (drawer.classList.contains('is-expanded') || drawer.classList.contains('is-always-expanded'))) {
+        updateTabFilterContent(false);
+    }
+}
+
 // タブバー常時表示の適用
 export function applyTabBarVisibility() {
     const tabs = document.querySelector('.tabs');
@@ -381,12 +417,49 @@ function renderActualFilters(container, scrollToActive = true) {
         updateTabFilterContent(false);
     }, 'month');
 
+    // ページ内フィルタ非表示時はカレンダー/リスト切替を表示
+    const hidden = loadHideInlineFilters();
+    let viewTypeRow = '';
+    if (hidden) {
+        const currentViewType = document.getElementById('actualViewType')?.value || 'matrix';
+        viewTypeRow = `
+            <div class="tab-filter-row">
+                <span class="tab-filter-label">表示:</span>
+                <div class="tab-filter-buttons" id="tabFilterActualViewType">
+                    <button data-value="matrix" class="${currentViewType === 'matrix' ? 'active' : ''}">カレンダー</button>
+                    <button data-value="list" class="${currentViewType === 'list' ? 'active' : ''}">リスト</button>
+                </div>
+            </div>
+        `;
+    }
+
     container.innerHTML = `
+        ${viewTypeRow}
         <div class="tab-filter-row">
             <span class="tab-filter-label">表示月:</span>
             <div class="tab-filter-buttons" id="tabFilterActualMonthButtons">${monthButtons}</div>
         </div>
     `;
+
+    // 表示形式ボタンのイベント設定（ページ内フィルタ非表示時のみ）
+    if (hidden) {
+        const viewTypeBtns = document.getElementById('tabFilterActualViewType');
+        if (viewTypeBtns) {
+            viewTypeBtns.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.isTabInteracting = true;
+                    setTimeout(() => { window.isTabInteracting = false; }, 300);
+                    const value = btn.dataset.value;
+                    viewTypeBtns.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (typeof window.setActualViewType === 'function') {
+                        window.setActualViewType(value);
+                    }
+                });
+            });
+        }
+    }
 
     // ボタンにイベントを設定
     setupFilterButtonEvents(container, 'tabFilterActualMonthButtons', actualMonth, (value) => {
@@ -523,12 +596,14 @@ export function initTabFilter() {
     loadTabFilterAlwaysExpanded();
     loadTabFilterButtonStyle();
     loadTabFilterLayout();
+    loadHideInlineFilters();
 
     // 設定を適用
     applyTabBarVisibility();
     applyFilterExpansion();
     applyFilterButtonStyle();
     applyFilterLayout();
+    applyInlineFilterVisibility();
 
     // トグルボタンのイベント
     const toggle = document.getElementById('tabFilterToggle');
@@ -560,6 +635,12 @@ export function initTabFilter() {
     const layoutSelect = document.getElementById('tabFilterLayout');
     if (layoutSelect) {
         layoutSelect.addEventListener('change', saveTabFilterLayout);
+    }
+
+    // ページ内フィルタ非表示チェックボックスのイベント
+    const hideInlineCheckbox = document.getElementById('hideInlineFilters');
+    if (hideInlineCheckbox) {
+        hideInlineCheckbox.addEventListener('change', saveHideInlineFilters);
     }
 
     // 初期タブのフィルタ状態を設定
