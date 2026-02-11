@@ -495,10 +495,10 @@ export function isBusinessDay(date, member) {
     
     // 担当者の休暇チェック
     if (member) {
-        const hasVacation = vacations.some(v => 
-            v.member === member && 
+        const hasVacation = vacations.some(v =>
+            v.member === member &&
             v.date === dateStr &&
-            (v.type === '全休' || v.type === 'full')
+            ((v.vacationType || v.type) === '全休' || (v.vacationType || v.type) === 'full')
         );
         if (hasVacation) {
             return false;
