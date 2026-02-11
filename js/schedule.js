@@ -13,6 +13,9 @@ import { SCHEDULE, TASK_COLORS } from './constants.js';
 import { formatHours } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, getRenderer } from './schedule-render.js';
 
+// getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
+export { getRenderer as getScheduleRenderer };
+
 // ============================================
 // 初期化
 // ============================================

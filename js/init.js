@@ -374,6 +374,7 @@ window.deleteScheduleFromModal = Schedule.deleteScheduleFromModal;
 window.openEstimateFromSchedule = Schedule.openEstimateFromSchedule;
 window.undoScheduleAction = Schedule.undoScheduleAction;
 window.redoScheduleAction = Schedule.redoScheduleAction;
+window.getScheduleRenderer = Schedule.getScheduleRenderer;
 window.updateScheduleVersionOptions = Schedule.updateScheduleVersionOptions;
 window.updateScheduleTaskOptions = Schedule.updateScheduleTaskOptions;
 window.updateScheduleProcessOptions = Schedule.updateScheduleProcessOptions;

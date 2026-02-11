@@ -225,11 +225,18 @@ export function showTab(tabName, options = {}) {
             window.renderActualList();
         }
     } else if (tabName === 'schedule') {
-        // スケジュールタブの横スクロール位置を復元
+        // スケジュールタブの横スクロール位置を復元（または現在月へスクロール）
         requestAnimationFrame(() => {
             const scrollEl = document.getElementById('ganttTimelineScroll');
             if (scrollEl && typeof window._ganttScrollLeft === 'number') {
                 scrollEl.scrollLeft = window._ganttScrollLeft;
+            } else if (scrollEl && typeof window.getScheduleRenderer === 'function') {
+                // 保存位置がない場合は現在月へスクロール
+                const renderer = window.getScheduleRenderer();
+                if (renderer && renderer.scrollToMonth) {
+                    const now = new Date();
+                    renderer.scrollToMonth(now.getFullYear(), now.getMonth() + 1, false);
+                }
             }
         });
     }
