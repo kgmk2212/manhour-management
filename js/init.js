@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ※initTabIndicator後に呼ぶことで、showTab内のupdateTabIndicatorが正しく動作する
     try {
         const savedTab = localStorage.getItem('manhour_currentTab');
-        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(savedTab)) {
+        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].includes(savedTab)) {
             UI.showTab(savedTab);
         } else {
             // savedTabがない場合はデフォルトタブを表示（is-hidden解除のためshowTabを呼ぶ）

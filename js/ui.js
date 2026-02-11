@@ -14,7 +14,7 @@ import {
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
-const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'settings'];
+const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
 
 // ============================================
 // スクロール比率ユーティリティ（表内相対位置）

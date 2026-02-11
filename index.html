@@ -23,7 +23,7 @@
                 }
                 // 保存されたタブを読み込み
                 var savedTab = localStorage.getItem('manhour_currentTab');
-                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
+                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
                 // モーダルデザインスタイルを早期適用
