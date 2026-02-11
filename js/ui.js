@@ -2753,23 +2753,29 @@ export function updateActualMonthOptions() {
     // トグルボタンを追加（データなし月が存在する場合のみ）
     const hasEmptyMonths = allMonths.some(m => !monthsWithData.has(m));
     const segContainer = document.getElementById('actualMonthButtons2');
-    if (segContainer && hasEmptyMonths) {
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'month-toggle-btn';
-        toggleBtn.textContent = isExpanded ? '◂ 絞込' : '▸ 全月';
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (typeof window.setActualMonthExpanded === 'function') {
-                window.setActualMonthExpanded(!isExpanded);
-            }
-            updateActualMonthOptions();
-            // タブフィルタも同期
-            if (typeof window.updateTabFilterContent === 'function') {
-                window.updateTabFilterContent(false);
-            }
-        });
-        // スクロールエリアの親に追加（スクロール外に固定表示）
-        segContainer.parentElement.appendChild(toggleBtn);
+    if (segContainer) {
+        // 既存のトグルボタンを削除
+        const oldToggle = segContainer.parentElement.querySelector('.month-toggle-btn');
+        if (oldToggle) oldToggle.remove();
+
+        if (hasEmptyMonths) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'month-toggle-btn';
+            toggleBtn.textContent = isExpanded ? '◂ 絞込' : '▸ 全月';
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof window.setActualMonthExpanded === 'function') {
+                    window.setActualMonthExpanded(!isExpanded);
+                }
+                updateActualMonthOptions();
+                // タブフィルタも同期
+                if (typeof window.updateTabFilterContent === 'function') {
+                    window.updateTabFilterContent(false);
+                }
+            });
+            // スクロールエリアの親に追加（スクロール外に固定表示）
+            segContainer.parentElement.appendChild(toggleBtn);
+        }
     }
 }
 
