@@ -2761,7 +2761,7 @@ export function updateActualMonthOptions() {
         if (hasEmptyMonths) {
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'month-toggle-btn';
-            toggleBtn.textContent = isExpanded ? '◂ 絞込' : '▸ 全月';
+            toggleBtn.textContent = isExpanded ? '◂' : '▸';
             toggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (typeof window.setActualMonthExpanded === 'function') {
