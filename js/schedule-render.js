@@ -3,9 +3,10 @@
 // 複数月連続表示対応（2キャンバス構成）
 // ============================================
 
-import { schedules, scheduleSettings, actuals, vacations, remainingEstimates } from './state.js';
+import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay } from './schedule.js';
+import { sortMembers } from './utils.js';
 
 // ============================================
 // 定数
@@ -282,6 +283,10 @@ export class GanttChartRenderer {
         const viewMode = scheduleSettings.viewMode;
         const rows = [];
 
+        // 担当者順の取得
+        const memberOrderEl = document.getElementById('memberOrder');
+        const orderString = memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
+
         if (viewMode === SCHEDULE.VIEW_MODE.MEMBER) {
             const memberMap = new Map();
             visibleSchedules.forEach(schedule => {
@@ -290,8 +295,9 @@ export class GanttChartRenderer {
                 }
                 memberMap.get(schedule.member).push(schedule);
             });
-            memberMap.forEach((scheduleList, member) => {
-                rows.push({ label: member, type: 'member', schedules: scheduleList });
+            const sortedMembers = sortMembers([...memberMap.keys()], orderString);
+            sortedMembers.forEach(member => {
+                rows.push({ label: member, type: 'member', schedules: memberMap.get(member) });
             });
         } else {
             const taskMap = new Map();
