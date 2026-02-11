@@ -761,27 +761,29 @@ export class GanttChartRenderer {
                 ctx.font = 'bold 10px sans-serif';
                 ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
             } else {
-                // バー内に収まらない: バー内に%、バー右外に工程
-                if (barWidth > 30) {
+                // バー内に収まらない: 工程を優先、%は余裕があれば表示
+                const availableWidth = barWidth - processLeftPad - rightPad;
+
+                // 工程+%が入るか（アイコン無しで）
+                const bothFitCompact = processWidth + gap + percentWidth <= availableWidth;
+
+                if (bothFitCompact) {
+                    // 工程と%だけ表示（アイコン省略）
+                    ctx.font = '11px sans-serif';
+                    ctx.fillStyle = '#333333';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(processText, barX + processLeftPad, barCenterY);
+
                     ctx.textAlign = 'right';
                     ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
                     ctx.font = 'bold 10px sans-serif';
                     ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
-
-                    if (statusIcon) {
-                        ctx.fillStyle = statusColor;
-                        ctx.font = 'bold 11px sans-serif';
-                        ctx.textAlign = 'right';
-                        ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
-                    }
-                }
-
-                // 工程テキストをバーの右外に表示
-                if (processText) {
+                } else if (processWidth <= availableWidth) {
+                    // 工程のみ表示（%省略）
                     ctx.font = '11px sans-serif';
-                    ctx.fillStyle = '#555555';
+                    ctx.fillStyle = '#333333';
                     ctx.textAlign = 'left';
-                    ctx.fillText(processText, barX + barWidth + 3, barCenterY);
+                    ctx.fillText(processText, barX + processLeftPad, barCenterY);
                 }
             }
         }
