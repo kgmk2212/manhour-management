@@ -11,7 +11,7 @@ import {
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
 import { formatHours } from './utils.js';
-import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler } from './schedule-render.js';
+import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, getRenderer } from './schedule-render.js';
 
 // ============================================
 // 初期化
@@ -47,10 +47,49 @@ export function initScheduleModule() {
     // キーボードショートカットをセットアップ
     setupKeyboardShortcuts();
     
+    // スクロール同期リスナーを設定
+    setupScrollSyncListener();
+
     // 初期描画
     renderScheduleView();
-    
+
     console.log('[Schedule] Module initialized');
+}
+
+/**
+ * スクロール同期リスナーを設定
+ * 横スクロール位置の中央月をcurrentMonthに反映
+ */
+let scrollSyncSetup = false;
+function setupScrollSyncListener() {
+    // initDualCanvas後にコンテナが存在するので、MutationObserverで監視
+    const observer = new MutationObserver(() => {
+        const scrollContainer = document.getElementById('ganttTimelineScroll');
+        if (scrollContainer && !scrollSyncSetup) {
+            scrollSyncSetup = true;
+            let scrollTimer = null;
+            scrollContainer.addEventListener('scroll', () => {
+                if (scrollTimer) clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(() => {
+                    const renderer = getRenderer();
+                    if (!renderer) return;
+                    const centerMonth = renderer.getVisibleCenterMonth();
+                    if (centerMonth) {
+                        const monthStr = `${centerMonth.year}-${String(centerMonth.month).padStart(2, '0')}`;
+                        if (monthStr !== scheduleSettings.currentMonth) {
+                            setScheduleSettings({ currentMonth: monthStr });
+                            updateCurrentMonthDisplay();
+                        }
+                    }
+                }, 150);
+            });
+            observer.disconnect();
+        }
+    });
+    const ganttContainer = document.getElementById('ganttContainer');
+    if (ganttContainer) {
+        observer.observe(ganttContainer, { childList: true, subtree: true });
+    }
 }
 
 /**
@@ -102,6 +141,14 @@ export function renderScheduleView() {
         if (scheduleSettings.currentMonth) {
             const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
             renderGanttChart(year, month, filteredSchedules);
+
+            // 初期スクロール位置: レイアウト完了後にcurrentMonthの位置へスクロール
+            const renderer = getRenderer();
+            if (renderer) {
+                requestAnimationFrame(() => {
+                    renderer.scrollToMonth(year, month, false);
+                });
+            }
         }
     }
 }
@@ -151,14 +198,29 @@ export function updateScheduleSummary() {
  */
 export function navigateScheduleMonth(delta) {
     if (!scheduleSettings.currentMonth) return;
-    
+
     const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
     const date = new Date(year, month - 1 + delta, 1);
-    const newMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    setScheduleSettings({ currentMonth: newMonth });
-    updateCurrentMonthDisplay();
-    renderScheduleView();
+    const newYear = date.getFullYear();
+    const newMonthNum = date.getMonth() + 1;
+    const newMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
+
+    const renderer = getRenderer();
+
+    // 描画範囲内ならスムーズスクロールのみ
+    if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
+        setScheduleSettings({ currentMonth: newMonth });
+        updateCurrentMonthDisplay();
+        renderer.scrollToMonth(newYear, newMonthNum, true);
+    } else {
+        // 範囲外なら再描画してからスクロール
+        setScheduleSettings({ currentMonth: newMonth });
+        updateCurrentMonthDisplay();
+        renderScheduleView();
+        if (renderer) {
+            renderer.scrollToMonth(newYear, newMonthNum, false);
+        }
+    }
 }
 
 /**
@@ -166,10 +228,26 @@ export function navigateScheduleMonth(delta) {
  */
 export function goToScheduleToday() {
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const newYear = now.getFullYear();
+    const newMonthNum = now.getMonth() + 1;
+    const currentMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
+
+    const renderer = getRenderer();
+
     setScheduleSettings({ currentMonth });
     updateCurrentMonthDisplay();
-    renderScheduleView();
+
+    // 範囲内なら今日の位置へスクロール
+    if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
+        renderer.scrollToToday(true);
+    } else {
+        // 範囲外なら再描画して今日へスクロール
+        renderScheduleView();
+        const newRenderer = getRenderer();
+        if (newRenderer) {
+            newRenderer.scrollToToday(false);
+        }
+    }
 }
 
 // ============================================
@@ -649,6 +727,35 @@ export function closeScheduleDetailModal() {
     const modal = document.getElementById('scheduleDetailModal');
     if (modal) modal.style.display = 'none';
     currentEditingScheduleId = null;
+}
+
+/**
+ * スケジュール詳細から対応する見積の編集モーダルを開く
+ */
+export function openEstimateFromSchedule() {
+    if (!currentEditingScheduleId) return;
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (!schedule) return;
+
+    // 対応する見積を検索
+    const estimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === schedule.member
+    );
+
+    if (!estimate) {
+        showToast('対応する見積データが見つかりません', 'warning');
+        return;
+    }
+
+    // スケジュール詳細モーダルを閉じてから見積編集モーダルを開く
+    closeScheduleDetailModal();
+
+    if (typeof window.editEstimate === 'function') {
+        window.editEstimate(estimate.id);
+    }
 }
 
 /**

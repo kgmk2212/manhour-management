@@ -2491,9 +2491,28 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button onclick="openEstimateFromSchedule()" class="btn btn-outline" title="対応する見積データを編集">見積を編集</button>
+                <div style="flex: 1;"></div>
                 <button onclick="deleteScheduleFromModal()" class="btn btn-danger">削除</button>
                 <button onclick="closeScheduleDetailModal()" class="btn btn-secondary">閉じる</button>
                 <button onclick="saveScheduleDetailChanges()" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- スケジュール変更確認モーダル -->
+    <div id="scheduleChangeConfirmModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>スケジュール更新の確認</h3>
+                <span class="close" onclick="closeScheduleChangeConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="scheduleChangeMessage"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="handleScheduleChangeOption('keep')" class="btn btn-secondary">そのまま</button>
+                <button onclick="handleScheduleChangeOption('update')" class="btn btn-primary">スケジュールも更新</button>
             </div>
         </div>
     </div>

@@ -298,7 +298,8 @@ export const SCHEDULE = {
         HEADER_HEIGHT: 50,
         DAY_WIDTH: 28,
         LABEL_WIDTH: 200,  // 長い名前に対応するため拡大
-        ROW_PADDING: 6
+        ROW_PADDING: 6,
+        DEFAULT_DISPLAY_MONTHS: 3  // デフォルト表示月数
     },
 
     // 色設定
@@ -310,7 +311,8 @@ export const SCHEDULE = {
         TODAY_LINE: '#FF5722',    // 今日ライン（オレンジ）
         WEEKEND: '#F5F5F5',       // 週末背景
         HOLIDAY: '#FFF3E0',       // 祝日背景
-        GRID: '#E0E0E0'           // グリッド線
+        GRID: '#E0E0E0',          // グリッド線
+        MONTH_SEPARATOR: '#B0BEC5' // 月境界線
     }
 };
 

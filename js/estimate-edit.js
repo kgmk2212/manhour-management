@@ -3,7 +3,7 @@
 // ============================================
 
 import {
-    estimates, actuals, remainingEstimates
+    estimates, actuals, remainingEstimates, schedules
 } from './state.js';
 
 import {
@@ -14,6 +14,7 @@ import {
 } from './utils.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
+import { updateSchedule, calculateEndDate, showToast } from './schedule.js';
 
 // ============================================
 // 見積編集
@@ -259,6 +260,57 @@ export function saveEstimateEdit() {
         saveRemainingEstimate(version, task, process, member, hours);
     }
 
+    // スケジュール連動チェック
+    if (keyChanged) {
+        // 旧キーで対応するスケジュールを検索
+        const relatedSchedule = schedules.find(s =>
+            s.version === oldEstimate.version &&
+            s.task === oldEstimate.task &&
+            s.process === oldEstimate.process &&
+            s.member === oldEstimate.member
+        );
+
+        if (relatedSchedule) {
+            // 変更前にデータを保存してからモーダルを表示
+            if (typeof window.saveData === 'function') window.saveData();
+            closeEditEstimateModal();
+
+            if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+            if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+            renderEstimateList();
+            if (typeof window.updateReport === 'function') window.updateReport();
+
+            showScheduleChangeConfirmModal(relatedSchedule, oldEstimate, {
+                version, task, process, member, hours
+            });
+            return;
+        }
+    } else {
+        // キー項目は同一だが工数が変更された場合
+        const relatedSchedule = schedules.find(s =>
+            s.version === version &&
+            s.task === task &&
+            s.process === process &&
+            s.member === member
+        );
+
+        if (relatedSchedule && relatedSchedule.estimatedHours !== hours) {
+            const newEndDate = calculateEndDate(relatedSchedule.startDate, hours, member);
+            updateSchedule(relatedSchedule.id, { estimatedHours: hours, endDate: newEndDate });
+            // saveDataはupdateSchedule内で呼ばれるため、ここでは呼ばない
+            closeEditEstimateModal();
+
+            if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+            if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+            renderEstimateList();
+            if (typeof window.updateReport === 'function') window.updateReport();
+
+            showToast(`見積工数の変更に伴い、スケジュールの終了日を ${newEndDate} に更新しました`, 'info', 5000);
+            showAlert('見積データを更新しました', true);
+            return;
+        }
+    }
+
     if (typeof window.saveData === 'function') window.saveData();
     closeEditEstimateModal();
 
@@ -269,6 +321,107 @@ export function saveEstimateEdit() {
 
     showAlert('見積データを更新しました', true);
 }
+
+// ============================================
+// スケジュール変更確認モーダル
+// ============================================
+
+/** 保留中のスケジュール変更情報 */
+let pendingScheduleChange = null;
+
+/**
+ * スケジュール変更確認モーダルを表示
+ */
+function showScheduleChangeConfirmModal(schedule, oldEstimate, newValues) {
+    const modal = document.getElementById('scheduleChangeConfirmModal');
+    if (!modal) return;
+
+    // 変更内容を組み立て
+    const changes = [];
+    if (oldEstimate.version !== newValues.version) {
+        changes.push(`版数: ${oldEstimate.version} → ${newValues.version}`);
+    }
+    if (oldEstimate.task !== newValues.task) {
+        changes.push(`対応名: ${oldEstimate.task} → ${newValues.task}`);
+    }
+    if (oldEstimate.process !== newValues.process) {
+        changes.push(`工程: ${oldEstimate.process} → ${newValues.process}`);
+    }
+    if (oldEstimate.member !== newValues.member) {
+        changes.push(`担当者: ${oldEstimate.member} → ${newValues.member}`);
+    }
+
+    // 新しい終了日を計算
+    const newEndDate = calculateEndDate(schedule.startDate, newValues.hours, newValues.member);
+
+    const messageEl = document.getElementById('scheduleChangeMessage');
+    if (messageEl) {
+        messageEl.innerHTML = `
+            <div style="margin-bottom: 12px;">
+                <strong>変更内容</strong>
+                <ul style="margin: 4px 0; padding-left: 20px;">
+                    ${changes.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <strong>対応するスケジュール</strong>
+                <div style="margin-top: 4px; padding: 8px; background: var(--bg-secondary, #f8f9fa); border-radius: 4px;">
+                    ${schedule.task} / ${schedule.process}<br>
+                    ${schedule.startDate} 〜 ${schedule.endDate}
+                </div>
+            </div>
+            <div>
+                スケジュールも更新すると、終了日が <strong>${newEndDate}</strong> に再計算されます。
+            </div>
+        `;
+    }
+
+    pendingScheduleChange = { schedule, oldEstimate, newValues, newEndDate };
+    modal.style.display = 'flex';
+}
+
+/**
+ * スケジュール変更確認モーダルを閉じる
+ */
+export function closeScheduleChangeConfirmModal() {
+    const modal = document.getElementById('scheduleChangeConfirmModal');
+    if (modal) modal.style.display = 'none';
+    pendingScheduleChange = null;
+}
+
+/**
+ * スケジュール変更の選択を処理
+ * @param {string} option - 'update' | 'keep'
+ */
+export function handleScheduleChangeOption(option) {
+    if (!pendingScheduleChange) return;
+
+    const { schedule, newValues, newEndDate } = pendingScheduleChange;
+
+    if (option === 'update') {
+        updateSchedule(schedule.id, {
+            version: newValues.version,
+            task: newValues.task,
+            process: newValues.process,
+            member: newValues.member,
+            estimatedHours: newValues.hours,
+            endDate: newEndDate
+        });
+        showToast(`スケジュールの担当者を「${newValues.member}」に更新しました（終了日: ${newEndDate}）`, 'success', 5000);
+    } else {
+        showToast('スケジュールは変更されませんでした。手動で調整が必要な場合があります。', 'info', 5000);
+    }
+
+    closeScheduleChangeConfirmModal();
+    showAlert('見積データを更新しました', true);
+
+    // ガントチャートを再描画
+    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+}
+
+// window にエクスポート
+window.closeScheduleChangeConfirmModal = closeScheduleChangeConfirmModal;
+window.handleScheduleChangeOption = handleScheduleChangeOption;
 
 /**
  * 作業月モードの切り替え

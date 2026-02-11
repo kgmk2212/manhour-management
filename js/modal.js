@@ -449,7 +449,11 @@ export function setupModalHandlers() {
         { id: 'processBreakdownModal', closeFunc: closeProcessBreakdownModal },
         { id: 'addEstimateModal', closeFunc: () => { if (typeof window.closeAddEstimateModal === 'function') window.closeAddEstimateModal(); }, preventOutsideClick: true },
         { id: 'splitEstimateModal', closeFunc: () => { if (typeof window.closeSplitEstimateModal === 'function') window.closeSplitEstimateModal(); } },
-        { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } }
+        { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } },
+        { id: 'createScheduleModal', closeFunc: () => { if (typeof window.closeCreateScheduleModal === 'function') window.closeCreateScheduleModal(); } },
+        { id: 'scheduleDetailModal', closeFunc: () => { if (typeof window.closeScheduleDetailModal === 'function') window.closeScheduleDetailModal(); } },
+        { id: 'autoGenerateModal', closeFunc: () => { if (typeof window.closeAutoGenerateModal === 'function') window.closeAutoGenerateModal(); } },
+        { id: 'scheduleChangeConfirmModal', closeFunc: () => { if (typeof window.closeScheduleChangeConfirmModal === 'function') window.closeScheduleChangeConfirmModal(); } }
     ];
 
     modals.forEach(modal => {

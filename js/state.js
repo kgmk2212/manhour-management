@@ -475,6 +475,7 @@ export let scheduleSettings = {
     displayRange: 'month',   // 'month' | 'week'
     hoursPerDay: 8,          // 1日の作業時間
     currentMonth: null,      // 表示中の月（YYYY-MM）
+    displayMonths: 3,        // 表示月数（複数月連続表示）
     filterVersion: '',       // フィルタ: 版数
     filterMember: '',        // フィルタ: 担当者
     filterStatus: ''         // フィルタ: ステータス

@@ -2432,11 +2432,33 @@
             background: white;
             border-radius: 8px;
             border: 1px solid #e9ecef;
-            overflow: auto;
+            overflow: hidden;
             min-height: 400px;
         }
 
         #ganttCanvas {
+            display: block;
+        }
+
+        /* 2キャンバス構成（複数月連続表示） */
+        .gantt-outer {
+            display: flex;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        #ganttLabelCanvas {
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .gantt-timeline-scroll {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        #ganttTimelineCanvas {
             display: block;
         }
 
