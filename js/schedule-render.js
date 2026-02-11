@@ -89,6 +89,7 @@ export class GanttChartRenderer {
         this.rows = [];
         this.filteredSchedulesCache = null;
         this.dpr = window.devicePixelRatio || 1;
+        this.highlightedScheduleId = null;
     }
 
     /**
@@ -688,6 +689,17 @@ export class GanttChartRenderer {
         ctx.lineWidth = 1;
         ctx.strokeRect(barX, barY, barWidth, BAR_HEIGHT);
 
+        // 長押しハイライト（モバイルドラッグ開始時）
+        if (this.highlightedScheduleId === schedule.id) {
+            ctx.save();
+            ctx.shadowColor = taskColor;
+            ctx.shadowBlur = 8;
+            ctx.strokeStyle = taskColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2);
+            ctx.restore();
+        }
+
         // 進捗情報
         const progressInfo = this.getScheduleProgress(schedule);
 
@@ -1143,6 +1155,9 @@ export function setupCanvasClickHandler(onScheduleClick) {
         if (canvas._clickSetup) return true;
 
         canvas.addEventListener('click', (event) => {
+            // タッチ後のsynthetic clickを抑止
+            if (Date.now() - lastTouchEndTime < 300) return;
+
             if (dragState.isDragging || dragState.wasDragging) {
                 dragState.wasDragging = false;
                 return;
@@ -1401,4 +1416,229 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+}
+
+// ============================================
+// タッチイベントハンドラ（モバイル対応）
+// ============================================
+
+const LONG_PRESS_DELAY = 500;
+const TOUCH_MOVE_THRESHOLD = 10;
+
+let lastTouchEndTime = 0;
+
+const touchState = {
+    touchId: null,
+    startX: 0,
+    startY: 0,
+    startClientX: 0,
+    startClientY: 0,
+    longPressTimer: null,
+    isLongPress: false,
+    isDragging: false,
+    schedule: null
+};
+
+function resetTouchState() {
+    if (touchState.longPressTimer) {
+        clearTimeout(touchState.longPressTimer);
+        touchState.longPressTimer = null;
+    }
+    touchState.touchId = null;
+    touchState.isLongPress = false;
+    touchState.isDragging = false;
+    touchState.schedule = null;
+}
+
+/**
+ * タッチイベントをセットアップ（クリック・ドラッグ統合）
+ * @param {Function} onScheduleClick - バータップ時のコールバック
+ * @param {Function} onScheduleUpdate - バードラッグ完了時のコールバック
+ */
+export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
+    const setupOnCanvas = () => {
+        const canvas = document.getElementById('ganttTimelineCanvas');
+        if (!canvas) return false;
+        if (canvas._touchSetup) return true;
+
+        // --- touchstart ---
+        canvas.addEventListener('touchstart', (event) => {
+            if (event.touches.length !== 1) return;
+
+            const touch = event.touches[0];
+            const renderer = getRenderer();
+            if (!renderer) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            touchState.touchId = touch.identifier;
+            touchState.startX = x;
+            touchState.startY = y;
+            touchState.startClientX = touch.clientX;
+            touchState.startClientY = touch.clientY;
+
+            const schedule = renderer.getScheduleAtPosition(x, y);
+            touchState.schedule = schedule;
+
+            if (schedule) {
+                touchState.longPressTimer = setTimeout(() => {
+                    touchState.isLongPress = true;
+                    touchState.isDragging = true;
+
+                    if (navigator.vibrate) navigator.vibrate(30);
+
+                    dragState.isDragging = true;
+                    dragState.schedule = schedule;
+                    dragState.startX = x;
+                    dragState.startY = y;
+                    dragState.originalStartDate = schedule.startDate;
+                    dragState.previewDate = null;
+
+                    renderer.highlightedScheduleId = schedule.id;
+                    renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+                }, LONG_PRESS_DELAY);
+            }
+        }, { passive: true });
+
+        // --- touchmove ---
+        canvas.addEventListener('touchmove', (event) => {
+            if (event.touches.length !== 1) return;
+
+            const touch = Array.from(event.touches).find(t => t.identifier === touchState.touchId);
+            if (!touch) return;
+
+            const dx = touch.clientX - touchState.startClientX;
+            const dy = touch.clientY - touchState.startClientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // 長押し前に動いたらタイマー解除、ネイティブスクロールに委譲
+            if (!touchState.isLongPress && distance > TOUCH_MOVE_THRESHOLD) {
+                if (touchState.longPressTimer) {
+                    clearTimeout(touchState.longPressTimer);
+                    touchState.longPressTimer = null;
+                }
+                return;
+            }
+
+            // ドラッグ中: スクロール抑止してバー移動
+            if (touchState.isDragging && dragState.isDragging) {
+                event.preventDefault();
+
+                const renderer = getRenderer();
+                if (!renderer) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+
+                const newDate = renderer.getDateAtPosition(x);
+                if (newDate) {
+                    const dateStr = formatDateForDrag(newDate);
+                    if (dateStr !== dragState.previewDate) {
+                        dragState.previewDate = dateStr;
+                        drawDragPreview(renderer, dragState.schedule, dateStr);
+                    }
+                }
+
+                // 端に近づいたら自動スクロール
+                const scrollContainer = renderer.scrollContainer;
+                if (scrollContainer) {
+                    const scrollRect = scrollContainer.getBoundingClientRect();
+                    const edgeZone = 40;
+                    const cursorX = touch.clientX - scrollRect.left;
+                    const containerWidth = scrollRect.width;
+
+                    if (dragState.autoScrollId) {
+                        cancelAnimationFrame(dragState.autoScrollId);
+                        dragState.autoScrollId = null;
+                    }
+
+                    if (cursorX < edgeZone) {
+                        const speed = Math.max(2, Math.round((edgeZone - cursorX) / 5));
+                        const autoScroll = () => {
+                            if (!dragState.isDragging) return;
+                            scrollContainer.scrollLeft -= speed;
+                            dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                        };
+                        dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                    } else if (cursorX > containerWidth - edgeZone) {
+                        const speed = Math.max(2, Math.round((cursorX - (containerWidth - edgeZone)) / 5));
+                        const autoScroll = () => {
+                            if (!dragState.isDragging) return;
+                            scrollContainer.scrollLeft += speed;
+                            dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                        };
+                        dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                    }
+                }
+            }
+        }, { passive: false });
+
+        // --- touchend ---
+        canvas.addEventListener('touchend', () => {
+            if (dragState.autoScrollId) {
+                cancelAnimationFrame(dragState.autoScrollId);
+                dragState.autoScrollId = null;
+            }
+
+            const renderer = getRenderer();
+
+            if (touchState.isDragging && dragState.isDragging) {
+                // ドラッグ完了
+                if (dragState.previewDate && onScheduleUpdate) {
+                    onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                }
+
+                dragState.isDragging = false;
+                dragState.wasDragging = true;
+                dragState.schedule = null;
+                dragState.previewDate = null;
+
+                if (renderer) {
+                    renderer.highlightedScheduleId = null;
+                    renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+                }
+            } else if (touchState.schedule && !touchState.isDragging) {
+                // タップ: 詳細モーダルを開く
+                if (onScheduleClick) {
+                    onScheduleClick(touchState.schedule);
+                }
+            }
+
+            // ツールチップ非表示
+            hideTooltip();
+            if (renderer) renderer.setHoverRow(-1);
+
+            lastTouchEndTime = Date.now();
+            resetTouchState();
+        }, { passive: true });
+
+        // --- touchcancel ---
+        canvas.addEventListener('touchcancel', () => {
+            if (dragState.autoScrollId) {
+                cancelAnimationFrame(dragState.autoScrollId);
+                dragState.autoScrollId = null;
+            }
+
+            dragState.isDragging = false;
+            dragState.schedule = null;
+            dragState.previewDate = null;
+
+            const renderer = getRenderer();
+            if (renderer) {
+                renderer.highlightedScheduleId = null;
+                renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+            }
+
+            resetTouchState();
+        }, { passive: true });
+
+        canvas._touchSetup = true;
+        return true;
+    };
+
+    if (!setupOnCanvas()) {
+        pendingSetupCallbacks.push(setupOnCanvas);
+    }
 }

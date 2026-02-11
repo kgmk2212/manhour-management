@@ -11,7 +11,7 @@ import {
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
 import { formatHours } from './utils.js';
-import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, getRenderer } from './schedule-render.js';
+import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -46,7 +46,13 @@ export function initScheduleModule() {
     
     // ツールチップハンドラをセットアップ
     setupTooltipHandler();
-    
+
+    // タッチイベントハンドラをセットアップ（モバイル対応）
+    setupTouchHandlers(
+        (schedule) => { openScheduleDetailModal(schedule.id); },
+        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); }
+    );
+
     // キーボードショートカットをセットアップ
     setupKeyboardShortcuts();
     
@@ -1630,6 +1636,39 @@ export async function exportSchedulesToExcel() {
     a.click();
     
     URL.revokeObjectURL(url);
+}
+
+/**
+ * スケジュールをJSON形式で出力（インポート対応フォーマット）
+ */
+export function exportSchedulesToJSON() {
+    const filteredSchedules = getFilteredSchedules();
+
+    if (filteredSchedules.length === 0) {
+        showToast('出力するスケジュールがありません', 'info');
+        return;
+    }
+
+    const exportData = {
+        exportType: 'schedule',
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        schedules: filteredSchedules,
+        scheduleSettings: { ...scheduleSettings },
+        taskColorMap: { ...taskColorMap }
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const today = new Date().toISOString().split('T')[0];
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `スケジュール_${today}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+    showToast('JSONファイルを出力しました', 'success');
 }
 
 // ============================================
