@@ -706,45 +706,69 @@ export class GanttChartRenderer {
             ctx.fillRect(barX, barY - 3, barWidth, 2);
         }
 
-        // ステータス装飾
-        if (schedule.status === SCHEDULE.STATUS.COMPLETED) {
-            ctx.fillStyle = COMPLETED;
-            ctx.font = 'bold 12px sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('✓', barX + barWidth - 3, barY + BAR_HEIGHT / 2);
-        } else if (this.isDelayed(schedule)) {
-            ctx.fillStyle = DELAYED;
-            ctx.font = 'bold 12px sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('!', barX + barWidth - 3, barY + BAR_HEIGHT / 2);
-        }
-
-        // テキスト表示
+        // テキスト表示（工程 | ステータスアイコン | %を重ならないよう配置）
         if (barWidth > 30) {
             const progressRate = Math.round(progressInfo.progressRate);
-            ctx.font = '11px sans-serif';
+            const barCenterY = barY + BAR_HEIGHT / 2;
             ctx.textBaseline = 'middle';
 
+            // 右側要素の幅を計算（%テキスト + ステータスアイコン）
+            const percentText = `${progressRate}%`;
+            ctx.font = 'bold 10px sans-serif';
+            const percentWidth = ctx.measureText(percentText).width;
+            const rightPad = 4;
+            const processLeftPad = 4;
+            const gap = 4;
+
+            // ステータスアイコン
+            let statusIcon = '';
+            let statusColor = '';
+            if (schedule.status === SCHEDULE.STATUS.COMPLETED) {
+                statusIcon = '✓';
+                statusColor = COMPLETED;
+            } else if (this.isDelayed(schedule)) {
+                statusIcon = '!';
+                statusColor = DELAYED;
+            }
+            ctx.font = 'bold 11px sans-serif';
+            const iconWidth = statusIcon ? ctx.measureText(statusIcon).width + 2 : 0;
+
+            // 右側全体の占有幅
+            const rightOccupied = percentWidth + iconWidth + rightPad;
+
+            // 工程テキスト（右側要素と被らない範囲で表示）
             if (barWidth > 60) {
-                ctx.fillStyle = '#333333';
-                ctx.textAlign = 'left';
-                let processText = schedule.process || '';
-                const maxTextWidth = barWidth - 45;
-                while (ctx.measureText(processText).width > maxTextWidth && processText.length > 0) {
-                    processText = processText.slice(0, -1);
+                const maxTextWidth = barWidth - rightOccupied - processLeftPad - gap;
+                if (maxTextWidth > 10) {
+                    ctx.font = '11px sans-serif';
+                    let processText = schedule.process || '';
+                    while (ctx.measureText(processText).width > maxTextWidth && processText.length > 0) {
+                        processText = processText.slice(0, -1);
+                    }
+                    if (processText.length > 0) {
+                        if (processText !== (schedule.process || '')) {
+                            processText += '…';
+                        }
+                        ctx.fillStyle = '#333333';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(processText, barX + processLeftPad, barCenterY);
+                    }
                 }
-                if (processText !== schedule.process) {
-                    processText += '…';
-                }
-                ctx.fillText(processText, barX + 4, barY + BAR_HEIGHT / 2);
             }
 
+            // ステータスアイコン（%の左側）
+            if (statusIcon) {
+                ctx.fillStyle = statusColor;
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
+            }
+
+            // %テキスト（右端）
             ctx.textAlign = 'right';
             ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
             ctx.font = 'bold 10px sans-serif';
-            ctx.fillText(`${progressRate}%`, barX + barWidth - 4, barY + BAR_HEIGHT / 2);
+            ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
         }
 
         // クリック判定用矩形
