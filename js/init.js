@@ -22,6 +22,12 @@ import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
+import holiday_jp from 'https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm';
+
+// ============================================
+// 祝日ライブラリをグローバルに公開
+// ============================================
+window.holiday_jp = holiday_jp;
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）

@@ -556,7 +556,10 @@ export class GanttChartRenderer {
                 ctx.fillRect(0, y, this.timelineWidth, ROW_HEIGHT);
             }
 
-            // 週末・祝日の背景（全日数分）
+            // 担当者名（担当者別ビューの場合、休暇チェック用）
+            const memberName = row.type === 'member' ? row.label : null;
+
+            // 週末・祝日・担当者休暇の背景（全日数分）
             for (let dayOffset = 0; dayOffset < this.totalDays; dayOffset++) {
                 const date = new Date(this.rangeStart);
                 date.setDate(date.getDate() + dayOffset);
@@ -566,8 +569,29 @@ export class GanttChartRenderer {
                     ctx.fillStyle = index % 2 === 0 ? '#F5F5F5' : '#EFEFEF';
                     ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
                 } else if (isHoliday(date)) {
-                    ctx.fillStyle = index % 2 === 0 ? '#FFF8E7' : '#FFF3D9';
+                    // 祝日・会社休日: オレンジ系背景 + 小さいマーカー
+                    ctx.fillStyle = index % 2 === 0 ? '#FFF0E0' : '#FFE8D0';
                     ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                    // セル下部に色付きインジケータ
+                    ctx.fillStyle = 'rgba(255, 138, 101, 0.35)';
+                    ctx.fillRect(x, y + ROW_HEIGHT - 3, DAY_WIDTH, 3);
+                } else if (memberName) {
+                    // 担当者休暇チェック（担当者別ビューのみ）
+                    const dateStr = formatDateString(date);
+                    const vacation = getMemberVacation(memberName, dateStr);
+                    if (vacation && (vacation.type === '全休' || vacation.type === 'full')) {
+                        ctx.fillStyle = index % 2 === 0 ? '#F3E5F5' : '#EDE0F0';
+                        ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                        // セル下部に紫色インジケータ
+                        ctx.fillStyle = 'rgba(156, 39, 176, 0.3)';
+                        ctx.fillRect(x, y + ROW_HEIGHT - 3, DAY_WIDTH, 3);
+                    } else if (vacation && (vacation.type === '半休' || vacation.type === 'half')) {
+                        // 半休: 下半分だけ色付き
+                        ctx.fillStyle = index % 2 === 0 ? '#F9F0FB' : '#F4EBF6';
+                        ctx.fillRect(x, y + ROW_HEIGHT / 2, DAY_WIDTH, ROW_HEIGHT / 2);
+                        ctx.fillStyle = 'rgba(156, 39, 176, 0.2)';
+                        ctx.fillRect(x, y + ROW_HEIGHT - 3, DAY_WIDTH, 3);
+                    }
                 }
             }
 
