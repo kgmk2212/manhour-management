@@ -695,9 +695,9 @@ export class GanttChartRenderer {
             ctx.fillRect(barX, barY, actualBarWidth, BAR_HEIGHT);
         }
 
-        // 休日ストライプ（最前面）
+        // 休日セル: 背景色で塗りつぶし、バーの色をかすかに残す
         holidayXs.forEach(hx => {
-            this.drawHolidayStripes(ctx, hx, barY, DAY_WIDTH, BAR_HEIGHT);
+            this.drawHolidayOverlay(ctx, hx, barY, DAY_WIDTH, BAR_HEIGHT);
         });
 
         // 見込み残存インジケータ
@@ -760,24 +760,15 @@ export class GanttChartRenderer {
     /**
      * 休日ストライプ描画
      */
-    drawHolidayStripes(ctx, x, y, width, height) {
+    /**
+     * 休日セルのバー部分を背景色で覆い、バーの色をかすかに残す
+     * セル背景とほぼ同じだが微かにバー色がわかり、休み明けの続きが視認できる
+     */
+    drawHolidayOverlay(ctx, x, y, width, height) {
         ctx.save();
-        ctx.beginPath();
-        ctx.rect(x, y, width, height);
-        ctx.clip();
-
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 0.5;
-        ctx.globalAlpha = 0.12;
-
-        const step = 3;
-        for (let i = -height; i < width + height; i += step) {
-            ctx.beginPath();
-            ctx.moveTo(x + i, y);
-            ctx.lineTo(x + i + height, y + height);
-            ctx.stroke();
-        }
-
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, y, width, height);
         ctx.restore();
     }
 
