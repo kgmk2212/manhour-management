@@ -399,7 +399,6 @@ window.applyScheduleFilters = Schedule.applyScheduleFilters;
 window.clearScheduleFilters = Schedule.clearScheduleFilters;
 window.updateScheduleFilterOptions = Schedule.updateScheduleFilterOptions;
 window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
-window.exportSchedulesToJSON = Schedule.exportSchedulesToJSON;
 window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
 window.showToast = Schedule.showToast;
 window.updateFilterResultCount = Schedule.updateFilterResultCount;

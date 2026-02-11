@@ -304,9 +304,12 @@ export function autoBackup() {
         companyHolidays: companyHolidays,
         vacations: vacations,
         remainingEstimates: remainingEstimates,
+        schedules: schedules,
+        scheduleSettings: { ...scheduleSettings },
+        taskColorMap: { ...taskColorMap },
         settings: settings,
         timestamp: new Date().toISOString(),
-        version: '1.0'
+        version: '1.1'
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -370,7 +373,8 @@ export function handleFileImport(event) {
                     actuals.length > 0 ||
                     companyHolidays.length > 0 ||
                     vacations.length > 0 ||
-                    remainingEstimates.length > 0;
+                    remainingEstimates.length > 0 ||
+                    schedules.length > 0;
 
                 // データがある場合のみ確認ダイアログを表示
                 if (!hasExistingData || confirm('現在のデータを復元したデータで上書きしますか？')) {
@@ -379,6 +383,23 @@ export function handleFileImport(event) {
                     setCompanyHolidays(data.companyHolidays || []);
                     setVacations(data.vacations || []);
                     setRemainingEstimates(data.remainingEstimates || []);
+
+                    // スケジュールデータの復元
+                    if (data.schedules) {
+                        setSchedules(data.schedules);
+                        // nextScheduleIdを設定
+                        const maxId = data.schedules.reduce((max, s) => {
+                            const match = s.id && s.id.match(/sch_(\d+)/);
+                            return match ? Math.max(max, parseInt(match[1], 10)) : max;
+                        }, 0);
+                        setNextScheduleId(maxId + 1);
+                    }
+                    if (data.scheduleSettings) {
+                        setScheduleSettings(data.scheduleSettings);
+                    }
+                    if (data.taskColorMap) {
+                        setTaskColorMap(data.taskColorMap);
+                    }
 
                     // 次のIDを設定
                     if (companyHolidays.length > 0) {
@@ -533,6 +554,7 @@ export function handleFileImport(event) {
                     if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
                     if (typeof window.updateReport === 'function') window.updateReport();
                     if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+                    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
 
                     showAlert('データを復元しました', true);
                 }
