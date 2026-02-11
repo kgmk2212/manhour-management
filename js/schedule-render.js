@@ -575,13 +575,16 @@ export class GanttChartRenderer {
                     // 担当者休暇チェック（担当者別ビューのみ）
                     const dateStr = formatDateString(date);
                     const vacation = getMemberVacation(memberName, dateStr);
-                    const vType = vacation ? (vacation.vacationType || vacation.type) : null;
-                    if (vType === '全休' || vType === 'full') {
-                        ctx.fillStyle = index % 2 === 0 ? '#F3E5F5' : '#EDE0F0';
-                        ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
-                    } else if (vType === '半休' || vType === 'half') {
-                        ctx.fillStyle = index % 2 === 0 ? '#F9F0FB' : '#F4EBF6';
-                        ctx.fillRect(x, y + ROW_HEIGHT / 2, DAY_WIDTH, ROW_HEIGHT / 2);
+                    if (vacation) {
+                        if (vacation.hours >= 8 || vacation.vacationType !== '時間休') {
+                            // 全日休暇（有休・特休・代休・振休 等）
+                            ctx.fillStyle = index % 2 === 0 ? '#F3E5F5' : '#EDE0F0';
+                            ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                        } else {
+                            // 時間休（部分休暇）
+                            ctx.fillStyle = index % 2 === 0 ? '#F9F0FB' : '#F4EBF6';
+                            ctx.fillRect(x, y + ROW_HEIGHT / 2, DAY_WIDTH, ROW_HEIGHT / 2);
+                        }
                     }
                 }
             }

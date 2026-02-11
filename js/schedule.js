@@ -498,7 +498,7 @@ export function isBusinessDay(date, member) {
         const hasVacation = vacations.some(v =>
             v.member === member &&
             v.date === dateStr &&
-            ((v.vacationType || v.type) === '全休' || (v.vacationType || v.type) === 'full')
+            (v.hours >= 8 || v.vacationType !== '時間休')
         );
         if (hasVacation) {
             return false;
