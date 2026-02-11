@@ -1483,6 +1483,9 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
         if (item.value === currentValue) {
             button.classList.add('active');
         }
+        if (item.noData) {
+            button.classList.add('no-data');
+        }
 
         // クリックイベント：ドラッグ中は実行しない
         button.addEventListener('click', (e) => {
@@ -2713,13 +2716,28 @@ export function updateActualMonthOptions() {
     if (select) select.value = validValue;
     if (select2) select2.value = validValue;
 
+    // データがある月のSetを構築
+    const monthsWithData = new Set();
+    actuals.forEach(a => {
+        if (a.date) monthsWithData.add(a.date.substring(0, 7));
+    });
+
+    const isExpanded = typeof window.getActualMonthExpanded === 'function' ? window.getActualMonthExpanded() : false;
+
+    // 絞込: データあり月 or 選択中の月のみ（展開時は全月）
+    const filteredMonths = allMonths.filter(month => {
+        if (isExpanded) return true;
+        return monthsWithData.has(month) || month === validValue;
+    });
+
     const items = [
         { value: 'all', label: '全期間' },
-        ...allMonths.map(month => {
+        ...filteredMonths.map(month => {
             const [year, monthNum] = month.split('-');
             return {
                 value: month,
-                label: `${year}/${parseInt(monthNum)}`
+                label: `${year}/${parseInt(monthNum)}`,
+                noData: !monthsWithData.has(month)
             };
         })
     ];
@@ -2731,6 +2749,28 @@ export function updateActualMonthOptions() {
         8,
         handleActualMonthChange
     );
+
+    // トグルボタンを追加（データなし月が存在する場合のみ）
+    const hasEmptyMonths = allMonths.some(m => !monthsWithData.has(m));
+    const segContainer = document.getElementById('actualMonthButtons2');
+    if (segContainer && hasEmptyMonths) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'month-toggle-btn';
+        toggleBtn.textContent = isExpanded ? '◂ 絞込' : '▸ 全月';
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof window.setActualMonthExpanded === 'function') {
+                window.setActualMonthExpanded(!isExpanded);
+            }
+            updateActualMonthOptions();
+            // タブフィルタも同期
+            if (typeof window.updateTabFilterContent === 'function') {
+                window.updateTabFilterContent(false);
+            }
+        });
+        // スクロールエリアの親に追加（スクロール外に固定表示）
+        segContainer.parentElement.appendChild(toggleBtn);
+    }
 }
 
 // ============================================

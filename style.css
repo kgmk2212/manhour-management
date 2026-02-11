@@ -1955,6 +1955,15 @@
             background: #f8f9ff;
         }
 
+        /* データなし月ボタン（セグメント版） */
+        .segment-buttons button.no-data {
+            opacity: 0.4;
+            border-style: dashed;
+        }
+        .segment-buttons button.no-data:hover {
+            opacity: 0.7;
+        }
+
         /* モバイル対応 */
         @media (max-width: 768px) {
         }
@@ -3121,17 +3130,25 @@
         }
 
         /* 全月表示トグルボタン */
-        .tab-filter-buttons .month-toggle-btn {
+        .month-toggle-btn {
+            padding: 6px 10px;
             background: transparent;
             border: 1px solid #bbb;
+            border-radius: 16px;
             color: #888;
             font-size: 11px;
             cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
         }
-        .tab-filter-buttons .month-toggle-btn:hover {
+        .month-toggle-btn:hover {
             border-color: var(--theme-color, #1e3c72);
             color: var(--theme-color, #1e3c72);
             background: rgba(0, 0, 0, 0.03);
+        }
+        .tab-filter-drawer.style-segment .month-toggle-btn {
+            border-radius: 6px;
         }
 
         /* PC表示時 */

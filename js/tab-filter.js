@@ -4,8 +4,10 @@
 
 import { enableDragScroll } from './utils.js';
 
-// 実績月フィルタの全月展開状態
+// 実績月フィルタの全月展開状態（ページ固定フィルタと共有）
 let _actualMonthExpanded = false;
+export function getActualMonthExpanded() { return _actualMonthExpanded; }
+export function setActualMonthExpanded(val) { _actualMonthExpanded = val; }
 
 // 設定の保存/読み込み
 export function saveTabBarAlwaysVisible() {
@@ -445,9 +447,10 @@ function renderActualFilters(container, scrollToActive = true) {
 
     // 全月表示トグルボタン（データなし月が存在する場合のみ）
     const hasEmptyMonths = monthOptions.some(o => !monthsWithData.has(o.value));
+    let toggleHtml = '';
     if (hasEmptyMonths) {
         const toggleLabel = isExpanded ? '◂ 絞込' : '▸ 全月';
-        monthButtons += `<button class="month-toggle-btn" id="actualMonthToggle">${toggleLabel}</button>`;
+        toggleHtml = `<button class="month-toggle-btn" id="actualMonthToggle">${toggleLabel}</button>`;
     }
 
     // ページ内フィルタ非表示時はカレンダー/リスト切替を表示
@@ -471,6 +474,7 @@ function renderActualFilters(container, scrollToActive = true) {
         <div class="tab-filter-row">
             <span class="tab-filter-label">表示月:</span>
             <div class="tab-filter-buttons" id="tabFilterActualMonthButtons">${monthButtons}</div>
+            ${toggleHtml}
         </div>
     `;
 
@@ -701,5 +705,7 @@ export function initTabFilter() {
 window.toggleTabFilterDrawer = toggleTabFilterDrawer;
 window.updateTabFilterContent = updateTabFilterContent;
 window.onTabFilterChange = onTabChange;
+window.getActualMonthExpanded = getActualMonthExpanded;
+window.setActualMonthExpanded = setActualMonthExpanded;
 
 console.log('tab-filter.js loaded');
