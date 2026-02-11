@@ -145,14 +145,21 @@ export function renderScheduleView() {
             const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
             renderGanttChart(year, month, filteredSchedules);
 
-            // スクロール位置の設定
+            // スクロール位置の保持: 再描画前の位置を復元
+            const scrollEl = document.getElementById('ganttTimelineScroll');
+            const prevScrollLeft = scrollEl ? scrollEl.scrollLeft : null;
+
             const renderer = getRenderer();
             if (renderer) {
                 requestAnimationFrame(() => {
-                    const scrollEl = document.getElementById('ganttTimelineScroll');
-                    if (scrollEl && typeof window._ganttScrollLeft === 'number') {
-                        // 保存済みの横スクロール位置を復元
-                        scrollEl.scrollLeft = window._ganttScrollLeft;
+                    const el = document.getElementById('ganttTimelineScroll');
+                    if (!el) return;
+                    if (prevScrollLeft !== null && prevScrollLeft > 0) {
+                        // 再描画: 直前のスクロール位置を維持
+                        el.scrollLeft = prevScrollLeft;
+                    } else if (typeof window._ganttScrollLeft === 'number' && window._ganttScrollLeft > 0) {
+                        // タブ復帰: 保存済み位置を復元
+                        el.scrollLeft = window._ganttScrollLeft;
                     } else {
                         // 初回: 現在月の位置へスクロール
                         renderer.scrollToMonth(year, month, false);
