@@ -767,10 +767,10 @@ export class GanttChartRenderer {
         ctx.clip();
 
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.12;
 
-        const step = 4;
+        const step = 3;
         for (let i = -height; i < width + height; i += step) {
             ctx.beginPath();
             ctx.moveTo(x + i, y);
