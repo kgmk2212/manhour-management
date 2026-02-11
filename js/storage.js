@@ -30,6 +30,7 @@ import {
 
 import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
+import { TASK_COLORS } from './constants.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -154,7 +155,17 @@ export function loadData() {
         const savedTaskColorMap = localStorage.getItem('manhour_taskColorMap');
         if (savedSchedules) setSchedules(JSON.parse(savedSchedules));
         if (savedScheduleSettings) setScheduleSettings(JSON.parse(savedScheduleSettings));
-        if (savedTaskColorMap) setTaskColorMap(JSON.parse(savedTaskColorMap));
+        if (savedTaskColorMap) {
+            const parsed = JSON.parse(savedTaskColorMap);
+            // パレット変更時: 古いパレットにない色が含まれていたらリセット
+            const currentPalette = new Set(TASK_COLORS);
+            const hasOldColors = Object.values(parsed).some(c => !currentPalette.has(c));
+            if (hasOldColors) {
+                setTaskColorMap({});
+            } else {
+                setTaskColorMap(parsed);
+            }
+        }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
         alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
