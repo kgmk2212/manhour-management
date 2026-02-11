@@ -22,12 +22,16 @@ import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
-import holiday_jp from 'https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm';
 
 // ============================================
-// 祝日ライブラリをグローバルに公開
+// 祝日ライブラリを非同期で読み込み（init.jsをブロックしない）
 // ============================================
-window.holiday_jp = holiday_jp;
+import('https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm')
+    .then(mod => {
+        window.holiday_jp = mod.default;
+        console.log('[holiday_jp] loaded');
+    })
+    .catch(e => console.warn('[holiday_jp] load failed:', e));
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）

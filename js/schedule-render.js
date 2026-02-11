@@ -911,10 +911,9 @@ export class GanttChartRenderer {
         if (!this.scrollContainer) return;
         const mb = this.monthBoundaries.find(m => m.year === year && m.month === month);
         if (mb) {
-            // 少し前のコンテキストが見えるよう、5%分手前にオフセット
-            const offset = this.scrollContainer.clientWidth * 0.05;
+            // 月の1日の左端をラベル列の右端にぴったり合わせる
             this.scrollContainer.scrollTo({
-                left: Math.max(0, mb.startDayOffset * DAY_WIDTH - offset),
+                left: mb.startDayOffset * DAY_WIDTH,
                 behavior: smooth ? 'smooth' : 'auto'
             });
         }
