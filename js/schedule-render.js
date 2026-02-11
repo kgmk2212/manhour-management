@@ -589,8 +589,11 @@ export class GanttChartRenderer {
                 }
             }
 
-            // スケジュールバーを描画
-            row.schedules.forEach(schedule => {
+            // スケジュールバーを描画（開始日昇順＝後のバーが手前に重なる）
+            const sorted = [...row.schedules].sort((a, b) =>
+                new Date(a.startDate) - new Date(b.startDate)
+            );
+            sorted.forEach(schedule => {
                 this.drawScheduleBar(schedule, y);
             });
         });
