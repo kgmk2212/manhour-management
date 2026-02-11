@@ -449,7 +449,7 @@ function renderActualFilters(container, scrollToActive = true) {
     const hasEmptyMonths = monthOptions.some(o => !monthsWithData.has(o.value));
     let toggleHtml = '';
     if (hasEmptyMonths) {
-        const toggleLabel = isExpanded ? '◂' : '▸';
+        const toggleLabel = isExpanded ? '◂ 絞込' : '▸ 全月';
         toggleHtml = `<button class="month-toggle-btn" id="actualMonthToggle">${toggleLabel}</button>`;
     }
 
