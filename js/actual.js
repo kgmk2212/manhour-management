@@ -28,12 +28,12 @@ export function getDayOfWeek(dateStr) {
  */
 export function getHoliday(dateStr) {
     // @holiday-jp/holiday_jp ライブラリを使用
-    if (typeof holiday_jp !== 'undefined' && typeof holiday_jp.isHoliday === 'function') {
+    if (typeof holiday_jp !== 'undefined' && typeof holiday_jp.between === 'function') {
         try {
             const date = new Date(dateStr + 'T00:00:00');
-            const holiday = holiday_jp.isHoliday(date);
-            if (holiday) {
-                return holiday.name || holiday;
+            const holidays = holiday_jp.between(date, date);
+            if (holidays && holidays.length > 0) {
+                return holidays[0].name;
             }
         } catch (error) {
             console.error('Holiday check error:', error);
