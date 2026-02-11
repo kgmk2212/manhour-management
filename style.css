@@ -4106,12 +4106,12 @@
     padding: 20px 24px;
 }
 
-/* フォームグループ */
-.form-group {
+/* フォームグループ（モーダル内のみ） */
+.modal .form-group {
     margin-bottom: 16px;
 }
 
-.form-group > label:first-child {
+.modal .form-group > label:first-child {
     font-size: 12px;
     font-weight: 600;
     color: #555;
@@ -4119,9 +4119,9 @@
     margin-bottom: 6px;
 }
 
-/* インプット・セレクト */
-input:not([type="radio"]):not([type="checkbox"]),
-select {
+/* インプット・セレクト（モーダル内のみ） */
+.modal input:not([type="radio"]):not([type="checkbox"]),
+.modal select {
     padding: 10px 12px;
     border: 1.5px solid #e0e0e0;
     border-radius: 8px;
@@ -4131,19 +4131,19 @@ select {
     color: #333;
 }
 
-input:not([type="radio"]):not([type="checkbox"]):focus,
-select:focus {
+.modal input:not([type="radio"]):not([type="checkbox"]):focus,
+.modal select:focus {
     border-color: var(--theme-color, #3498db);
     outline: none;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
     background: #fff;
 }
 
-input:not([type="radio"]):not([type="checkbox"])::placeholder {
+.modal input:not([type="radio"]):not([type="checkbox"])::placeholder {
     color: #bbb;
 }
 
-textarea {
+.modal textarea {
     padding: 10px 12px;
     border: 1.5px solid #e0e0e0;
     border-radius: 8px;
@@ -4153,23 +4153,23 @@ textarea {
     color: #333;
 }
 
-textarea:focus {
+.modal textarea:focus {
     border-color: var(--theme-color, #3498db);
     outline: none;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
     background: #fff;
 }
 
-/* small ヒントテキスト */
-.form-group small,
+/* small ヒントテキスト（モーダル内のみ） */
+.modal .form-group small,
 .modal-body small {
     color: #888;
     font-size: 12px;
     line-height: 1.5;
 }
 
-/* ボタンベース */
-.btn {
+/* ボタンベース（モーダル内のみ） */
+.modal .btn {
     padding: 10px 20px;
     border-radius: 8px;
     font-size: 14px;
@@ -4178,42 +4178,42 @@ textarea:focus {
     letter-spacing: -0.01em;
 }
 
-.btn:active {
+.modal .btn:active {
     transform: scale(0.97);
 }
 
-/* プライマリボタン - テーマグラデーション */
-.btn-primary {
+/* プライマリボタン - テーマグラデーション（モーダル内のみ） */
+.modal .btn-primary {
     background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.btn-primary:hover {
+.modal .btn-primary:hover {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     opacity: 0.95;
 }
 
-/* サクセスボタン */
-.btn-success {
+/* サクセスボタン（モーダル内のみ） */
+.modal .btn-success {
     background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
     color: white !important;
     box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
 }
 
-.btn-success:hover {
+.modal .btn-success:hover {
     box-shadow: 0 4px 14px rgba(39, 174, 96, 0.3) !important;
     opacity: 0.95;
 }
 
-/* デンジャーボタン */
-.btn-danger {
+/* デンジャーボタン（モーダル内のみ） */
+.modal .btn-danger {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     color: white;
     box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
 }
 
-.btn-danger:hover {
+.modal .btn-danger:hover {
     box-shadow: 0 4px 14px rgba(231, 76, 60, 0.3);
     opacity: 0.95;
 }
@@ -4767,12 +4767,12 @@ textarea:focus {
         padding: 6px 8px;
     }
 
-    input:not([type="radio"]):not([type="checkbox"]),
-    select {
+    .modal input:not([type="radio"]):not([type="checkbox"]),
+    .modal select {
         padding: 8px 10px;
     }
 
-    .btn {
+    .modal .btn {
         padding: 8px 14px;
         font-size: 13px;
     }
