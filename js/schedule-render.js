@@ -707,20 +707,17 @@ export class GanttChartRenderer {
         }
 
         // テキスト表示（工程 | ステータスアイコン | %を重ならないよう配置）
-        if (barWidth > 30) {
+        {
             const progressRate = Math.round(progressInfo.progressRate);
             const barCenterY = barY + BAR_HEIGHT / 2;
             ctx.textBaseline = 'middle';
 
-            // 右側要素の幅を計算（%テキスト + ステータスアイコン）
             const percentText = `${progressRate}%`;
-            ctx.font = 'bold 10px sans-serif';
-            const percentWidth = ctx.measureText(percentText).width;
             const rightPad = 4;
             const processLeftPad = 4;
             const gap = 4;
 
-            // ステータスアイコン
+            // ステータスアイコン判定
             let statusIcon = '';
             let statusColor = '';
             if (schedule.status === SCHEDULE.STATUS.COMPLETED) {
@@ -730,45 +727,63 @@ export class GanttChartRenderer {
                 statusIcon = '!';
                 statusColor = DELAYED;
             }
+
+            // 各要素の幅を測定
+            ctx.font = 'bold 10px sans-serif';
+            const percentWidth = ctx.measureText(percentText).width;
             ctx.font = 'bold 11px sans-serif';
             const iconWidth = statusIcon ? ctx.measureText(statusIcon).width + 2 : 0;
+            ctx.font = '11px sans-serif';
+            const processText = schedule.process || '';
+            const processWidth = ctx.measureText(processText).width;
 
-            // 右側全体の占有幅
+            // バー内に全要素が収まるか判定
             const rightOccupied = percentWidth + iconWidth + rightPad;
+            const allInsideWidth = processLeftPad + processWidth + gap + rightOccupied;
+            const fitsInside = barWidth >= allInsideWidth;
 
-            // 工程テキスト（右側要素と被らない範囲で表示）
-            if (barWidth > 60) {
-                const maxTextWidth = barWidth - rightOccupied - processLeftPad - gap;
-                if (maxTextWidth > 10) {
-                    ctx.font = '11px sans-serif';
-                    let processText = schedule.process || '';
-                    while (ctx.measureText(processText).width > maxTextWidth && processText.length > 0) {
-                        processText = processText.slice(0, -1);
-                    }
-                    if (processText.length > 0) {
-                        if (processText !== (schedule.process || '')) {
-                            processText += '…';
-                        }
-                        ctx.fillStyle = '#333333';
-                        ctx.textAlign = 'left';
-                        ctx.fillText(processText, barX + processLeftPad, barCenterY);
+            if (fitsInside) {
+                // バー内に全て収まる: [工程 ... アイコン %]
+                ctx.font = '11px sans-serif';
+                ctx.fillStyle = '#333333';
+                ctx.textAlign = 'left';
+                ctx.fillText(processText, barX + processLeftPad, barCenterY);
+
+                if (statusIcon) {
+                    ctx.fillStyle = statusColor;
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
+                }
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
+            } else {
+                // バー内に収まらない: バー内に%、バー右外に工程
+                if (barWidth > 30) {
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
+
+                    if (statusIcon) {
+                        ctx.fillStyle = statusColor;
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
                     }
                 }
-            }
 
-            // ステータスアイコン（%の左側）
-            if (statusIcon) {
-                ctx.fillStyle = statusColor;
-                ctx.font = 'bold 11px sans-serif';
-                ctx.textAlign = 'right';
-                ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
+                // 工程テキストをバーの右外に表示
+                if (processText) {
+                    ctx.font = '11px sans-serif';
+                    ctx.fillStyle = '#555555';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(processText, barX + barWidth + 3, barCenterY);
+                }
             }
-
-            // %テキスト（右端）
-            ctx.textAlign = 'right';
-            ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
-            ctx.font = 'bold 10px sans-serif';
-            ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
         }
 
         // クリック判定用矩形
