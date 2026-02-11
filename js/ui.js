@@ -109,6 +109,14 @@ export function showTab(tabName, options = {}) {
     if (currentActiveTab && currentActiveTab.id) {
         currentTabId = currentActiveTab.id;
         window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
+
+        // スケジュールタブの横スクロール位置を保存
+        if (currentActiveTab.id === 'schedule') {
+            const scrollEl = document.getElementById('ganttTimelineScroll');
+            if (scrollEl) {
+                window._ganttScrollLeft = scrollEl.scrollLeft;
+            }
+        }
     }
 
     // アニメーション方向の決定（skipAnimation時はスキップ）
@@ -216,6 +224,14 @@ export function showTab(tabName, options = {}) {
         if (typeof window.renderActualList === 'function') {
             window.renderActualList();
         }
+    } else if (tabName === 'schedule') {
+        // スケジュールタブの横スクロール位置を復元
+        requestAnimationFrame(() => {
+            const scrollEl = document.getElementById('ganttTimelineScroll');
+            if (scrollEl && typeof window._ganttScrollLeft === 'number') {
+                scrollEl.scrollLeft = window._ganttScrollLeft;
+            }
+        });
     }
 
     // 現在のタブをlocalStorageに保存（リロード時に復元用）

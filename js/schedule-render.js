@@ -768,7 +768,7 @@ export class GanttChartRenderer {
 
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = 0.3;
 
         const step = 4;
         for (let i = -height; i < width + height; i += step) {

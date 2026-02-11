@@ -142,11 +142,18 @@ export function renderScheduleView() {
             const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
             renderGanttChart(year, month, filteredSchedules);
 
-            // 初期スクロール位置: レイアウト完了後にcurrentMonthの位置へスクロール
+            // スクロール位置の設定
             const renderer = getRenderer();
             if (renderer) {
                 requestAnimationFrame(() => {
-                    renderer.scrollToMonth(year, month, false);
+                    const scrollEl = document.getElementById('ganttTimelineScroll');
+                    if (scrollEl && typeof window._ganttScrollLeft === 'number') {
+                        // 保存済みの横スクロール位置を復元
+                        scrollEl.scrollLeft = window._ganttScrollLeft;
+                    } else {
+                        // 初回: 現在月の位置へスクロール
+                        renderer.scrollToMonth(year, month, false);
+                    }
                 });
             }
         }
@@ -1284,6 +1291,68 @@ function updateStatusButtons(activeStatus) {
     });
 }
 
+// ============================================
+// Undo/Redo スタック
+// ============================================
+
+const undoStack = [];
+const redoStack = [];
+const MAX_UNDO_HISTORY = 50;
+
+/**
+ * Undo/Redo用に操作を記録
+ */
+function pushUndoAction(action) {
+    undoStack.push(action);
+    if (undoStack.length > MAX_UNDO_HISTORY) {
+        undoStack.shift();
+    }
+    // 新しい操作が入ったらRedoスタックをクリア
+    redoStack.length = 0;
+}
+
+/**
+ * Undo: 直前の操作を元に戻す
+ */
+export function undoScheduleAction() {
+    if (undoStack.length === 0) {
+        showToast('元に戻す操作がありません', 'info');
+        return;
+    }
+
+    const action = undoStack.pop();
+    redoStack.push(action);
+
+    // 元に戻す
+    updateSchedule(action.scheduleId, {
+        startDate: action.oldStartDate,
+        endDate: action.oldEndDate
+    });
+
+    showToast('元に戻しました', 'info');
+}
+
+/**
+ * Redo: 元に戻した操作をやり直す
+ */
+export function redoScheduleAction() {
+    if (redoStack.length === 0) {
+        showToast('やり直す操作がありません', 'info');
+        return;
+    }
+
+    const action = redoStack.pop();
+    undoStack.push(action);
+
+    // やり直す
+    updateSchedule(action.scheduleId, {
+        startDate: action.newStartDate,
+        endDate: action.newEndDate
+    });
+
+    showToast('やり直しました', 'info');
+}
+
 /**
  * ドラッグによるスケジュール移動を処理
  * @param {string} scheduleId - スケジュールID
@@ -1292,10 +1361,23 @@ function updateStatusButtons(activeStatus) {
 export function handleScheduleDrag(scheduleId, newStartDate) {
     const schedule = schedules.find(s => s.id === scheduleId);
     if (!schedule) return;
-    
+
+    // 移動前の状態を保存
+    const oldStartDate = schedule.startDate;
+    const oldEndDate = schedule.endDate;
+
     // 新しい終了日を計算
     const newEndDate = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
-    
+
+    // Undo用に記録
+    pushUndoAction({
+        scheduleId,
+        oldStartDate,
+        oldEndDate,
+        newStartDate,
+        newEndDate
+    });
+
     // スケジュールを更新
     updateSchedule(scheduleId, {
         startDate: newStartDate,
@@ -1619,12 +1701,24 @@ function setupKeyboardShortcuts() {
             return;
         }
         
+        // Ctrl+Z / Ctrl+Y: Undo/Redo（モーダル状態に関わらず動作）
+        if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            undoScheduleAction();
+            return;
+        }
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+            event.preventDefault();
+            redoScheduleAction();
+            return;
+        }
+
         // モーダルが開いている場合はEsc以外を無視
         const openModal = document.querySelector('.modal[style*="flex"]');
         if (openModal && event.key !== 'Escape') {
             return;
         }
-        
+
         switch (event.key) {
             case 'n':
             case 'N':
