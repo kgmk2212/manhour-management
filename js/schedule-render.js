@@ -329,41 +329,69 @@ export class GanttChartRenderer {
      */
     drawHeader() {
         const ctx = this.timelineCtx;
+        const monthRowH = 20; // 月名行の高さ
+        const dayZoneY = monthRowH; // 日付ゾーンの開始Y
 
-        // ヘッダー背景
+        // ヘッダー全体の背景
         ctx.fillStyle = '#F5F5F5';
         ctx.fillRect(0, 0, this.timelineWidth, HEADER_HEIGHT);
 
         const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
+        // 1) 日付ゾーンの背景（週末・祝日）を先に描画
         for (const mb of this.monthBoundaries) {
+            const monthX = mb.startDayOffset * DAY_WIDTH;
+            for (let day = 1; day <= mb.daysInMonth; day++) {
+                const x = monthX + (day - 1) * DAY_WIDTH;
+                const date = new Date(mb.year, mb.month - 1, day);
+
+                if (isWeekend(date)) {
+                    ctx.fillStyle = WEEKEND;
+                    ctx.fillRect(x, dayZoneY, DAY_WIDTH, HEADER_HEIGHT - dayZoneY);
+                } else if (isHoliday(date)) {
+                    ctx.fillStyle = HOLIDAY;
+                    ctx.fillRect(x, dayZoneY, DAY_WIDTH, HEADER_HEIGHT - dayZoneY);
+                }
+            }
+        }
+
+        // 2) 月名行の背景と月名テキスト（上段）
+        for (let i = 0; i < this.monthBoundaries.length; i++) {
+            const mb = this.monthBoundaries[i];
             const monthX = mb.startDayOffset * DAY_WIDTH;
             const monthWidth = mb.daysInMonth * DAY_WIDTH;
 
-            // 月名（上段）
-            ctx.fillStyle = '#333333';
+            // 月名行の交互背景で区別しやすく
+            ctx.fillStyle = i % 2 === 0 ? '#E8EEF4' : '#F0F4F8';
+            ctx.fillRect(monthX, 0, monthWidth, monthRowH);
+
+            // 月名テキスト
+            ctx.fillStyle = '#1a1a1a';
             ctx.font = 'bold 13px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`${mb.year}年${mb.month}月`, monthX + monthWidth / 2, HEADER_HEIGHT / 4);
+            ctx.fillText(`${mb.year}年${mb.month}月`, monthX + monthWidth / 2, monthRowH / 2);
+        }
 
-            // 日付（下段）
-            ctx.font = '12px sans-serif';
+        // 月名行と日付行の区切り線
+        ctx.strokeStyle = '#CCCCCC';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, monthRowH);
+        ctx.lineTo(this.timelineWidth, monthRowH);
+        ctx.stroke();
+
+        // 3) 日付・曜日テキスト（下段）
+        const dayNumY = dayZoneY + (HEADER_HEIGHT - dayZoneY) * 0.35;
+        const dayNameY = dayZoneY + (HEADER_HEIGHT - dayZoneY) * 0.75;
+
+        for (const mb of this.monthBoundaries) {
+            const monthX = mb.startDayOffset * DAY_WIDTH;
             for (let day = 1; day <= mb.daysInMonth; day++) {
                 const x = monthX + (day - 1) * DAY_WIDTH;
                 const date = new Date(mb.year, mb.month - 1, day);
                 const dayOfWeek = date.getDay();
 
-                // 背景色
-                if (isWeekend(date)) {
-                    ctx.fillStyle = WEEKEND;
-                    ctx.fillRect(x, 0, DAY_WIDTH, HEADER_HEIGHT);
-                } else if (isHoliday(date)) {
-                    ctx.fillStyle = HOLIDAY;
-                    ctx.fillRect(x, 0, DAY_WIDTH, HEADER_HEIGHT);
-                }
-
-                // 曜日の色
                 if (dayOfWeek === 0) {
                     ctx.fillStyle = '#E53935';
                 } else if (dayOfWeek === 6) {
@@ -375,12 +403,25 @@ export class GanttChartRenderer {
                 }
 
                 ctx.textAlign = 'center';
-                ctx.fillText(String(day), x + DAY_WIDTH / 2, HEADER_HEIGHT / 2);
+                ctx.textBaseline = 'middle';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(String(day), x + DAY_WIDTH / 2, dayNumY);
 
                 ctx.font = '10px sans-serif';
-                ctx.fillText(dayNames[dayOfWeek], x + DAY_WIDTH / 2, HEADER_HEIGHT * 3 / 4);
-                ctx.font = '12px sans-serif';
+                ctx.fillText(dayNames[dayOfWeek], x + DAY_WIDTH / 2, dayNameY);
             }
+        }
+
+        // 4) 月境界の区切り線（ヘッダー内）
+        for (const mb of this.monthBoundaries) {
+            if (mb.startDayOffset === 0) continue;
+            const x = mb.startDayOffset * DAY_WIDTH;
+            ctx.strokeStyle = '#90A4AE';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, HEADER_HEIGHT);
+            ctx.stroke();
         }
 
         // ヘッダー下部の線
@@ -445,7 +486,7 @@ export class GanttChartRenderer {
     }
 
     /**
-     * 月境界線を描画
+     * 月境界線を描画（ボディ部分）
      */
     drawMonthSeparators() {
         const ctx = this.timelineCtx;
@@ -453,10 +494,15 @@ export class GanttChartRenderer {
             if (mb.startDayOffset === 0) continue;
             const x = mb.startDayOffset * DAY_WIDTH;
 
-            ctx.strokeStyle = MONTH_SEPARATOR;
+            // 半透明の帯で境界を強調
+            ctx.fillStyle = 'rgba(144, 164, 174, 0.12)';
+            ctx.fillRect(x - 2, HEADER_HEIGHT, 4, this.totalHeight - HEADER_HEIGHT);
+
+            // 太めの実線
+            ctx.strokeStyle = '#78909C';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(x, 0);
+            ctx.moveTo(x, HEADER_HEIGHT);
             ctx.lineTo(x, this.totalHeight);
             ctx.stroke();
         }
