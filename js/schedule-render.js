@@ -1283,8 +1283,15 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const x = event.clientX - rect.left;
 
             const movedX = Math.abs(x - dragState.startX);
+            const movedY = Math.abs(event.clientY - rect.top - dragState.startY);
+            const didMove = movedX > 3 || movedY > 3;
+
             if (movedX > DAY_WIDTH / 2 && dragState.previewDate && onScheduleUpdate) {
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+            }
+
+            // 少しでも動いていたらクリック（モーダル表示）を抑止
+            if (didMove) {
                 dragState.wasDragging = true;
             }
 
