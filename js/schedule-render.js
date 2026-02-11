@@ -1196,6 +1196,8 @@ const dragState = {
     schedule: null,
     startX: 0,
     startY: 0,
+    maxMovedX: 0,
+    maxMovedY: 0,
     originalStartDate: null,
     previewDate: null,
     autoScrollId: null
@@ -1221,6 +1223,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.schedule = schedule;
                 dragState.startX = x;
                 dragState.startY = y;
+                dragState.maxMovedX = 0;
+                dragState.maxMovedY = 0;
                 dragState.originalStartDate = schedule.startDate;
                 dragState.previewDate = null;
                 canvas.style.cursor = 'grabbing';
@@ -1236,6 +1240,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const y = event.clientY - rect.top;
 
             if (dragState.isDragging && dragState.schedule) {
+                dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
+                dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
+
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
@@ -1298,8 +1305,7 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const x = event.clientX - rect.left;
 
             const movedX = Math.abs(x - dragState.startX);
-            const movedY = Math.abs(event.clientY - rect.top - dragState.startY);
-            const didMove = movedX > 3 || movedY > 3;
+            const didMove = dragState.maxMovedX > 3 || dragState.maxMovedY > 3;
 
             if (movedX > DAY_WIDTH / 2 && dragState.previewDate && onScheduleUpdate) {
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
