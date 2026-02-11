@@ -1136,7 +1136,8 @@ const dragState = {
     startX: 0,
     startY: 0,
     originalStartDate: null,
-    previewDate: null
+    previewDate: null,
+    autoScrollId: null
 };
 
 export function setupDragAndDrop(onScheduleUpdate) {
@@ -1182,6 +1183,40 @@ export function setupDragAndDrop(onScheduleUpdate) {
                         drawDragPreview(renderer, dragState.schedule, dateStr);
                     }
                 }
+
+                // 端に近づいたら自動横スクロール
+                const scrollContainer = renderer.scrollContainer;
+                if (scrollContainer) {
+                    const scrollRect = scrollContainer.getBoundingClientRect();
+                    const edgeZone = 40; // 端から40px以内でスクロール開始
+                    const cursorX = event.clientX - scrollRect.left;
+                    const containerWidth = scrollRect.width;
+
+                    if (dragState.autoScrollId) {
+                        cancelAnimationFrame(dragState.autoScrollId);
+                        dragState.autoScrollId = null;
+                    }
+
+                    if (cursorX < edgeZone) {
+                        // 左端: 左にスクロール
+                        const speed = Math.max(2, Math.round((edgeZone - cursorX) / 5));
+                        const autoScroll = () => {
+                            if (!dragState.isDragging) return;
+                            scrollContainer.scrollLeft -= speed;
+                            dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                        };
+                        dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                    } else if (cursorX > containerWidth - edgeZone) {
+                        // 右端: 右にスクロール
+                        const speed = Math.max(2, Math.round((cursorX - (containerWidth - edgeZone)) / 5));
+                        const autoScroll = () => {
+                            if (!dragState.isDragging) return;
+                            scrollContainer.scrollLeft += speed;
+                            dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                        };
+                        dragState.autoScrollId = requestAnimationFrame(autoScroll);
+                    }
+                }
             } else {
                 const schedule = renderer.getScheduleAtPosition(x, y);
                 canvas.style.cursor = schedule ? 'grab' : 'default';
@@ -1190,6 +1225,12 @@ export function setupDragAndDrop(onScheduleUpdate) {
 
         canvas.addEventListener('mouseup', (event) => {
             if (!dragState.isDragging) return;
+
+            // 自動スクロールを停止
+            if (dragState.autoScrollId) {
+                cancelAnimationFrame(dragState.autoScrollId);
+                dragState.autoScrollId = null;
+            }
 
             const renderer = getRenderer();
             const rect = canvas.getBoundingClientRect();
@@ -1212,6 +1253,12 @@ export function setupDragAndDrop(onScheduleUpdate) {
         });
 
         canvas.addEventListener('mouseleave', () => {
+            // 自動スクロールを停止
+            if (dragState.autoScrollId) {
+                cancelAnimationFrame(dragState.autoScrollId);
+                dragState.autoScrollId = null;
+            }
+
             if (dragState.isDragging) {
                 dragState.isDragging = false;
                 dragState.schedule = null;
@@ -1232,6 +1279,10 @@ export function setupDragAndDrop(onScheduleUpdate) {
     // Escキー
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && dragState.isDragging) {
+            if (dragState.autoScrollId) {
+                cancelAnimationFrame(dragState.autoScrollId);
+                dragState.autoScrollId = null;
+            }
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
