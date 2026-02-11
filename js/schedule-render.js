@@ -912,7 +912,9 @@ export class GanttChartRenderer {
     // ============================================
 
     getScheduleAtPosition(x, y) {
-        for (const rect of this.scheduleRects) {
+        // 後に描画された（手前に表示される）バーを優先するため逆順で検索
+        for (let i = this.scheduleRects.length - 1; i >= 0; i--) {
+            const rect = this.scheduleRects[i];
             if (x >= rect.x && x <= rect.x + rect.width &&
                 y >= rect.y && y <= rect.y + rect.height) {
                 return rect.schedule;
