@@ -452,8 +452,7 @@ export function setupModalHandlers() {
         { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } },
         { id: 'createScheduleModal', closeFunc: () => { if (typeof window.closeCreateScheduleModal === 'function') window.closeCreateScheduleModal(); } },
         { id: 'scheduleDetailModal', closeFunc: () => { if (typeof window.closeScheduleDetailModal === 'function') window.closeScheduleDetailModal(); } },
-        { id: 'autoGenerateModal', closeFunc: () => { if (typeof window.closeAutoGenerateModal === 'function') window.closeAutoGenerateModal(); } },
-        { id: 'scheduleChangeConfirmModal', closeFunc: () => { if (typeof window.closeScheduleChangeConfirmModal === 'function') window.closeScheduleChangeConfirmModal(); } }
+        { id: 'autoGenerateModal', closeFunc: () => { if (typeof window.closeAutoGenerateModal === 'function') window.closeAutoGenerateModal(); } }
     ];
 
     modals.forEach(modal => {
