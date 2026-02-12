@@ -856,7 +856,7 @@ export function initTabSwipe() {
      * 横スクロール可能なコンテナを取得
      */
     function getScrollableContainer(target) {
-        return target.closest('.table-wrapper, .estimate-table-wrapper');
+        return target.closest('.table-wrapper, .estimate-table-wrapper, .gantt-timeline-scroll');
     }
 
     /**
