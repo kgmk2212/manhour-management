@@ -11,8 +11,20 @@ import { PROCESS } from './constants.js';
 // 見積追加モーダル関連
 // ============================================
 
+// フォームに入力中のデータがあるか（モーダルを開いた後、閉じて再度開く時に保持する）
+let hasFormData = false;
+
 export function openAddEstimateModal() {
-    initAddEstimateForm();
+    // セレクトの選択肢は常に最新化（データ変更に追従）
+    if (typeof window.updateVersionOptions === 'function') window.updateVersionOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+
+    if (!hasFormData) {
+        // 新規: フォームを初期化
+        initAddEstimateForm();
+    }
+    // 保持中: そのまま表示（選択肢の更新のみ済み）
+
     document.getElementById('addEstimateModal').style.display = 'flex';
     constrainProcessTableOnMobile();
 }
@@ -58,8 +70,37 @@ function constrainProcessTableOnMobile() {
     });
 }
 
+/**
+ * モーダルを閉じる（入力中のデータは保持）
+ */
 export function closeAddEstimateModal() {
     document.getElementById('addEstimateModal').style.display = 'none';
+    // 何か入力されていればフラグを立てる
+    hasFormData = checkHasFormData();
+}
+
+/**
+ * フォームに入力データがあるかチェック
+ */
+function checkHasFormData() {
+    if (document.getElementById('addEstVersion')?.value) return true;
+    if (document.getElementById('addEstFormNameSelect')?.value) return true;
+    if (document.getElementById('addEstFormName')?.value) return true;
+    if (document.getElementById('addEstTask')?.value) return true;
+    for (const proc of PROCESS.TYPES) {
+        if (parseFloat(document.getElementById(`addEst${proc}`)?.value) > 0) return true;
+    }
+    // その他工数
+    if (document.getElementById('addEstOtherTask')?.value) return true;
+    if (parseFloat(document.getElementById('addEstOtherHours')?.value) > 0) return true;
+    return false;
+}
+
+/**
+ * フォームを完全にリセット（登録完了後に呼ぶ）
+ */
+export function resetAddEstimateForm() {
+    hasFormData = false;
 
     // モードを通常に戻す
     switchEstimateMode('normal');
@@ -491,7 +532,8 @@ function addOtherWorkEstimate() {
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
-    closeAddEstimateModal();
+    resetAddEstimateForm();
+    document.getElementById('addEstimateModal').style.display = 'none';
 
     const message = members.length > 1
         ? `その他工数を${members.length}名分登録しました`
@@ -623,7 +665,8 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
-    closeAddEstimateModal();
+    resetAddEstimateForm();
+    document.getElementById('addEstimateModal').style.display = 'none';
     Utils.showAlert('見積を登録しました', true);
 }
 

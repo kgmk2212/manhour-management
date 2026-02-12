@@ -297,6 +297,7 @@ window.initQuickTaskDropdownHandler = Quick.initQuickTaskDropdownHandler;
 // estimate-add.js の関数
 window.openAddEstimateModal = EstimateAdd.openAddEstimateModal;
 window.closeAddEstimateModal = EstimateAdd.closeAddEstimateModal;
+window.resetAddEstimateForm = EstimateAdd.resetAddEstimateForm;
 window.autoFillMember = EstimateAdd.autoFillMember;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
