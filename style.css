@@ -4222,15 +4222,10 @@
     transition: background 0.2s;
 }
 
-.estimate-matrix td.clickable-cell:hover,
-.estimate-grouped td.clickable-cell:hover {
-    background: #e3f2fd !important;
-}
-
-@media (max-width: 768px) {
+@media (hover: hover) {
     .estimate-matrix td.clickable-cell:hover,
     .estimate-grouped td.clickable-cell:hover {
-        background: inherit !important;
+        background: #e3f2fd !important;
     }
 }
 
