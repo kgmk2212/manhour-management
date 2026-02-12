@@ -3134,6 +3134,22 @@
             color: #333;
         }
 
+        .toast-undo {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 8px;
+            white-space: nowrap;
+            border-radius: 4px;
+        }
+
+        .toast-undo:active {
+            background: rgba(13, 110, 253, 0.1);
+        }
+
         .toast.toast-hide {
             animation: toast-slide-out 0.3s ease forwards;
         }

@@ -893,7 +893,7 @@ export function deleteScheduleFromModal() {
 
     deleteSchedule(currentEditingScheduleId);
     closeScheduleDetailModal();
-    showToast('予定を削除しました（Ctrl+Zで元に戻す）', 'success');
+    showToast('予定を削除しました', 'success', 3000, { onUndo: undoScheduleAction });
 }
 
 // ============================================
@@ -1609,7 +1609,7 @@ export function executeAutoGenerate() {
 
         highlightNewSchedules(generated.map(s => s.id));
 
-        showToast(`${generated.length}件のスケジュールを生成しました（Ctrl+Zで元に戻す）`, 'success');
+        showToast(`${generated.length}件のスケジュールを生成しました`, 'success', 3000, { onUndo: undoScheduleAction });
     } else {
         showToast('生成対象のスケジュールがありませんでした', 'info');
     }
@@ -1742,7 +1742,7 @@ export function deleteFilteredSchedules() {
     }
 
     renderScheduleView();
-    showToast(`${filteredSchedules.length}件のスケジュールを削除しました（Ctrl+Zで元に戻す）`, 'success');
+    showToast(`${filteredSchedules.length}件のスケジュールを削除しました`, 'success', 3000, { onUndo: undoScheduleAction });
 }
 
 /**
@@ -1851,32 +1851,55 @@ function createToastContainer() {
  * @param {string} type - 'success' | 'error' | 'info' | 'warning'
  * @param {number} duration - 表示時間（ms）
  */
-export function showToast(message, type = 'info', duration = 3000) {
+export function showToast(message, type = 'info', duration = 3000, options = {}) {
     const container = createToastContainer();
-    
+
     const icons = {
         success: '✓',
         error: '✕',
         info: 'ℹ',
         warning: '⚠'
     };
-    
+
+    // Undoボタン: モバイルではボタン表示、PCではテキスト付加
+    let undoHtml = '';
+    if (options.onUndo) {
+        if (window.innerWidth <= 768) {
+            undoHtml = '<button class="toast-undo">元に戻す</button>';
+            duration = 5000; // モバイルはタップしやすいよう長めに表示
+        } else {
+            message += '（Ctrl+Zで元に戻す）';
+        }
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
         <span class="toast-icon">${icons[type]}</span>
         <span class="toast-message">${message}</span>
+        ${undoHtml}
         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
     `;
-    
+
+    // Undoボタンのクリックイベント
+    if (options.onUndo) {
+        const undoBtn = toast.querySelector('.toast-undo');
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                options.onUndo();
+                toast.remove();
+            });
+        }
+    }
+
     container.appendChild(toast);
-    
+
     // 自動で消す
     setTimeout(() => {
         toast.classList.add('toast-hide');
         setTimeout(() => toast.remove(), 300);
     }, duration);
-    
+
     return toast;
 }
 
@@ -2290,7 +2313,7 @@ export function registerCheckedSchedules() {
 
         highlightNewSchedules(generatedSchedules.map(s => s.id));
 
-        showToast(`${generatedSchedules.length}件のスケジュールを作成しました（Ctrl+Zで元に戻す）`, 'success');
+        showToast(`${generatedSchedules.length}件のスケジュールを作成しました`, 'success', 3000, { onUndo: undoScheduleAction });
     } else {
         showToast('作成対象のスケジュールがありませんでした', 'info');
     }
