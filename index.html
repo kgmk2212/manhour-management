@@ -186,7 +186,7 @@
                     <button class="tab" data-tab="report">レポート</button>
                     <button class="tab" data-tab="estimate">見積一覧</button>
                     <button class="tab" data-tab="actual">実績一覧</button>
-                    <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
+                    <button class="tab" data-tab="schedule" id="scheduleTab">📅 スケジュール</button>
                     <button class="tab" data-tab="settings">⚙️ 設定</button>
                 </div>
                 <!-- フィルタトグルボタン（固定表示） -->
@@ -1029,7 +1029,7 @@
             <!-- /report -->
 
             <!-- [GANTT-CHART] スケジュールタブ -->
-            <div id="schedule" class="tab-content dev-feature" style="display: none;">
+            <div id="schedule" class="tab-content">
                 <!-- ツールバー -->
                 <div class="schedule-toolbar">
                     <div class="schedule-nav">
@@ -1520,7 +1520,8 @@
                         </small>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
+                    <!-- 開発中の機能設定（現在未使用・将来の機能追加時に再利用） -->
+                    <div class="form-group" style="margin-top: 15px; display: none;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="devFeaturesEnabled" style="width: auto; margin-right: 10px;">
                             <span>開発中の機能を表示する</span>
