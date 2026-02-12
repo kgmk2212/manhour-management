@@ -2,11 +2,10 @@
 name: Deploy to GitHub Pages
 
 on:
-  # mainブランチまたは開発ブランチへのpush時に実行
+  # mainブランチへのpush時に実行（sandboxはmainへの空コミットでデプロイを発火）
   push:
     branches:
       - main
-      - experiment/sandbox
   # 手動実行も可能
   workflow_dispatch:
 
