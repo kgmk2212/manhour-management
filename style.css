@@ -3772,14 +3772,20 @@
 /* タブインジケーター（スライドアニメーション） */
 /* ============================================ */
 
+/* デスクトップではインジケーターを非表示（モバイル専用UI） */
+.tab-indicator {
+    display: none;
+}
+
 @media (max-width: 768px) {
     /* タブバーを相対配置に（インジケーターの基準） */
     .tabs .tab-buttons-area {
         position: relative;
     }
 
-    /* スライドインジケーター */
+    /* スライドインジケーター（モバイルのみ表示） */
     .tab-indicator {
+        display: block;
         position: absolute;
         top: 0;
         left: 0;
