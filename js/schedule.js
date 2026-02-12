@@ -153,11 +153,12 @@ export function renderScheduleView() {
         // Canvas描画
         if (scheduleSettings.currentMonth) {
             const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
-            renderGanttChart(year, month, filteredSchedules);
 
-            // スクロール位置の保持: 再描画前の位置を復元
+            // スクロール位置を描画前に取得（描画でキャンバスサイズが変わるとリセットされるため）
             const scrollEl = document.getElementById('ganttTimelineScroll');
             const prevScrollLeft = scrollEl ? scrollEl.scrollLeft : null;
+
+            renderGanttChart(year, month, filteredSchedules);
 
             const renderer = getRenderer();
             if (renderer) {
