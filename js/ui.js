@@ -803,6 +803,39 @@ export function initSmartSticky() {
             }
         }
     }, true);
+
+    // モバイル↔デスクトップ切り替え時のリセット
+    const mql = window.matchMedia('(max-width: 768px)');
+    let wasMobile = mql.matches;
+
+    const handleBreakpointChange = (e) => {
+        const isMobile = e.matches;
+        if (wasMobile === isMobile) return;
+        wasMobile = isMobile;
+
+        // transition: all がモバイルCSSにあるため、ブレイクポイント切り替え時に
+        // position/top/left/right/width等が意図せずアニメーションしてしまう。
+        // 一時的にtransitionを無効化して即座にレイアウトを切り替える。
+        tabs.style.transition = 'none';
+        tabs.offsetHeight; // 強制リフロー
+
+        tabs.classList.remove('is-hidden');
+        lastScrollY = window.scrollY;
+
+        if (isMobile) {
+            // デスクトップ → モバイル: インジケーターを再初期化
+            if (typeof window.initTabIndicator === 'function') {
+                setTimeout(() => window.initTabIndicator(), 100);
+            }
+        }
+
+        // 次フレームでtransitionを復元
+        requestAnimationFrame(() => {
+            tabs.style.transition = '';
+        });
+    };
+
+    mql.addEventListener('change', handleBreakpointChange);
 }
 
 export function initTabSwipe() {

@@ -106,6 +106,7 @@ window.nextTab = UI.nextTab;
 window.prevTab = UI.prevTab;
 window.initTabSwipe = UI.initTabSwipe;
 window.initSmartSticky = UI.initSmartSticky;
+window.initTabIndicator = UI.initTabIndicator;
 window.createSegmentButtons = UI.createSegmentButtons;
 window.updateSegmentButtonSelection = UI.updateSegmentButtonSelection;
 window.setEstimateViewType = UI.setEstimateViewType;
