@@ -210,6 +210,9 @@ export class GanttChartRenderer {
         this.currentMonth = month;
         this.daysInMonth = getDaysInMonth(year, month);
 
+        // スクロール位置を保存（キャンバスリサイズでリセットされる場合の安全策）
+        const savedScrollLeft = this.scrollContainer ? this.scrollContainer.scrollLeft : null;
+
         // 2キャンバス構造を初期化
         this.initDualCanvas();
 
@@ -276,6 +279,11 @@ export class GanttChartRenderer {
         this.drawTodayLine();
         this.drawRows(rows);
         this.drawLabelColumn(rows);
+
+        // スクロール位置を復元（キャンバスリサイズでリセットされた場合）
+        if (this.scrollContainer && savedScrollLeft !== null && savedScrollLeft > 0) {
+            this.scrollContainer.scrollLeft = savedScrollLeft;
+        }
     }
 
     /**
@@ -1374,8 +1382,10 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const didMove = dragState.maxMovedX > 3 || dragState.maxMovedY > 3;
             const pressDuration = Date.now() - dragState.pressStartTime;
 
+            let didUpdate = false;
             if (movedX > DAY_WIDTH / 2 && dragState.previewDate && onScheduleUpdate) {
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                didUpdate = true;
             }
 
             // 移動距離または押下時間が閾値を超えていたらクリック（モーダル表示）を抑止
@@ -1388,7 +1398,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             dragState.previewDate = null;
             canvas.style.cursor = 'default';
 
-            if (renderer) {
+            // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
+            // 再描画が済んでいるため、ここでの再描画は不要（二重描画でスクロール位置が飛ぶ原因）
+            if (!didUpdate && renderer) {
                 renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
             }
         });
@@ -1662,8 +1674,15 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
 
             if (touchState.isDragging && dragState.isDragging) {
                 // ドラッグ完了
+                // ハイライトを先にクリア（renderScheduleView の描画に反映させるため）
+                if (renderer) {
+                    renderer.highlightedScheduleId = null;
+                }
+
+                let didUpdate = false;
                 if (dragState.previewDate && onScheduleUpdate) {
                     onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                    didUpdate = true;
                 }
 
                 dragState.isDragging = false;
@@ -1671,8 +1690,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 dragState.schedule = null;
                 dragState.previewDate = null;
 
-                if (renderer) {
-                    renderer.highlightedScheduleId = null;
+                // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
+                // 再描画が済んでいるため、ここでの再描画は不要
+                if (!didUpdate && renderer) {
                     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
                 }
             } else if (touchState.schedule && !touchState.isDragging && !touchState.hasMoved) {
