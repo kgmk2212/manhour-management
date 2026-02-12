@@ -4227,6 +4227,13 @@
     background: #e3f2fd !important;
 }
 
+@media (max-width: 768px) {
+    .estimate-matrix td.clickable-cell:hover,
+    .estimate-grouped td.clickable-cell:hover {
+        background: inherit !important;
+    }
+}
+
 /* ============================================
    フォームモーダル - Quiet Depth リデザイン
    ============================================ */
