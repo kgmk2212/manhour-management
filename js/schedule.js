@@ -2300,10 +2300,33 @@ export function registerCheckedSchedules() {
 }
 
 /**
- * ドロップダウンの左側はみ出しを修正
+ * ドロップダウンのはみ出しを修正
  */
 function fixDropdownOverflow(dropdown) {
     requestAnimationFrame(() => {
+        // モバイル時: 画面幅に合わせて固定配置
+        if (window.innerWidth <= 768) {
+            dropdown.style.position = 'fixed';
+            dropdown.style.right = '8px';
+            dropdown.style.left = '8px';
+            dropdown.style.top = '';
+            dropdown.style.maxWidth = 'none';
+            dropdown.style.minWidth = '0';
+            dropdown.style.width = 'auto';
+            // ボタンの直下に表示
+            const badge = document.getElementById('unscheduledBadge');
+            if (badge) {
+                const badgeRect = badge.getBoundingClientRect();
+                dropdown.style.top = (badgeRect.bottom + 6) + 'px';
+            }
+            return;
+        }
+
+        // PC時: 左側はみ出しのみ修正
+        dropdown.style.position = '';
+        dropdown.style.maxWidth = '';
+        dropdown.style.minWidth = '';
+        dropdown.style.width = '';
         const rect = dropdown.getBoundingClientRect();
         if (rect.left < 0) {
             dropdown.style.right = 'auto';
