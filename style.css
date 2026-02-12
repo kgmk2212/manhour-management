@@ -4961,12 +4961,32 @@
         margin-top: 2px;
     }
 
+    .fm-process-table {
+        table-layout: fixed;
+    }
+
+    .fm-process-table th:first-child,
+    .fm-process-table td:first-child {
+        width: 44px;
+    }
+
+    .fm-process-table th:last-child,
+    .fm-process-table td:last-child {
+        width: 64px;
+    }
+
     .fm-process-table th {
-        padding: 6px 8px;
+        padding: 6px 6px;
     }
 
     .fm-process-table td {
-        padding: 6px 8px;
+        padding: 6px 6px;
+    }
+
+    .fm-process-table select,
+    .fm-process-table input {
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .modal input:not([type="radio"]):not([type="checkbox"]),
