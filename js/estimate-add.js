@@ -19,7 +19,7 @@ export function openAddEstimateModal() {
 
 /**
  * モバイル表示時に工程テーブルの幅を画面内に収める
- * CSSキャッシュに依存せず、インラインスタイルで確実に適用
+ * テーブルの width:100% が正しく解決されないため、ピクセル値で直接指定する
  */
 function constrainProcessTableOnMobile() {
     if (window.innerWidth > 768) return;
@@ -27,24 +27,19 @@ function constrainProcessTableOnMobile() {
     const table = document.getElementById('addEstimateTable');
     if (!table) return;
 
-    // テーブル自体を固定レイアウトに
-    table.style.tableLayout = 'fixed';
-    table.style.width = '100%';
-
-    // ラッパーの幅を制御（overflow-x は auto にして切り取り防止）
     const wrapper = table.closest('.estimate-table-wrapper');
-    if (wrapper) {
-        wrapper.style.overflowX = 'auto';
-        wrapper.style.width = '100%';
-        wrapper.style.maxWidth = '100%';
-    }
+    if (!wrapper) return;
 
-    // モーダルコンテンツの幅も制御
-    const modalContent = table.closest('.modal-content');
-    if (modalContent) {
-        modalContent.style.maxWidth = '100vw';
-        modalContent.style.boxSizing = 'border-box';
-    }
+    // ラッパーの実際の幅をピクセルで取得
+    const wrapperWidth = wrapper.offsetWidth;
+    if (wrapperWidth <= 0) return;
+
+    // テーブル幅をピクセルで直接指定
+    // グローバル table { min-width: 600px } を上書きする必要がある
+    table.style.tableLayout = 'fixed';
+    table.style.width = wrapperWidth + 'px';
+    table.style.minWidth = '0';
+    table.style.maxWidth = wrapperWidth + 'px';
 
     // th の幅を設定（table-layout: fixed で最初の行が列幅を決定）
     const ths = table.querySelectorAll('thead th');
@@ -55,19 +50,11 @@ function constrainProcessTableOnMobile() {
     }
 
     // select要素を列幅に収める
-    table.querySelectorAll('select').forEach(sel => {
-        sel.style.width = '100%';
-        sel.style.maxWidth = '100%';
-        sel.style.minWidth = '0';
-        sel.style.boxSizing = 'border-box';
-    });
-
-    // input要素も同様に
-    table.querySelectorAll('input[type="number"]').forEach(inp => {
-        inp.style.width = '100%';
-        inp.style.maxWidth = '100%';
-        inp.style.minWidth = '0';
-        inp.style.boxSizing = 'border-box';
+    table.querySelectorAll('select, input[type="number"]').forEach(el => {
+        el.style.width = '100%';
+        el.style.maxWidth = '100%';
+        el.style.minWidth = '0';
+        el.style.boxSizing = 'border-box';
     });
 }
 
