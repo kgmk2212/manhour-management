@@ -1573,6 +1573,8 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
         startDate: newStartDate,
         endDate: newEndDate
     });
+
+    showToast('予定を移動しました', 'success', 3000, { onUndo: undoScheduleAction });
 }
 
 /**
