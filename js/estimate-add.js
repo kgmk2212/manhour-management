@@ -31,11 +31,19 @@ function constrainProcessTableOnMobile() {
     table.style.tableLayout = 'fixed';
     table.style.width = '100%';
 
-    // ラッパーのオーバーフローを制御
+    // ラッパーの幅を制御（overflow-x は auto にして切り取り防止）
     const wrapper = table.closest('.estimate-table-wrapper');
     if (wrapper) {
-        wrapper.style.overflowX = 'hidden';
+        wrapper.style.overflowX = 'auto';
         wrapper.style.width = '100%';
+        wrapper.style.maxWidth = '100%';
+    }
+
+    // モーダルコンテンツの幅も制御
+    const modalContent = table.closest('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxWidth = '100vw';
+        modalContent.style.boxSizing = 'border-box';
     }
 
     // th の幅を設定（table-layout: fixed で最初の行が列幅を決定）
@@ -45,11 +53,6 @@ function constrainProcessTableOnMobile() {
         ths[1].style.width = '';       // 担当（残りスペース）
         ths[2].style.width = '64px';   // 時間
     }
-
-    // セル内容のオーバーフローを隠す
-    table.querySelectorAll('td').forEach(td => {
-        td.style.overflow = 'hidden';
-    });
 
     // select要素を列幅に収める
     table.querySelectorAll('select').forEach(sel => {

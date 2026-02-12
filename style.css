@@ -4999,14 +4999,9 @@
     }
 
     .estimate-table-wrapper {
-        overflow-x: hidden;
+        overflow-x: auto;
         width: 100%;
         max-width: 100%;
-    }
-
-    /* モーダル内のコンテンツが横にはみ出さないよう制御 */
-    .modal .modal-content {
-        overflow-x: hidden;
     }
 
     .modal input:not([type="radio"]):not([type="checkbox"]),
