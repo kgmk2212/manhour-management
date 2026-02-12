@@ -2447,8 +2447,13 @@
             max-height: 600px;
         }
 
-        #ganttLabelCanvas {
+        .gantt-label-scroll {
             flex-shrink: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        #ganttLabelCanvas {
             display: block;
         }
 

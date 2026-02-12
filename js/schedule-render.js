@@ -13,7 +13,9 @@ import { sortMembers } from './utils.js';
 // ============================================
 
 const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS } = SCHEDULE.CANVAS;
-const LABEL_WIDTH_MOBILE = 100;
+const LABEL_WIDTH_MOBILE_MEMBER = 80;
+const LABEL_WIDTH_MOBILE_TASK = 120;
+const LABEL_PADDING = 15; // テキスト左右余白
 const { DELAYED, COMPLETED, TODAY_LINE, WEEKEND, HOLIDAY, GRID, MONTH_SEPARATOR } = SCHEDULE.COLORS;
 
 const ZEBRA_LIGHT = '#FFFFFF';
@@ -69,6 +71,7 @@ export class GanttChartRenderer {
         this.timelineCanvas = canvas; // 初期はsingle canvas、initDualCanvas後に変更
         this.timelineCtx = canvas.getContext('2d');
         this.scrollContainer = null;
+        this.labelScrollContainer = null;
         this.dualCanvasInitialized = false;
 
         // 複数月範囲
@@ -128,8 +131,14 @@ export class GanttChartRenderer {
         this.timelineCanvas.id = 'ganttTimelineCanvas';
         this.timelineCtx = this.timelineCanvas.getContext('2d');
 
+        // label scroll container（モバイル時のラベル横スクロール用）
+        this.labelScrollContainer = document.createElement('div');
+        this.labelScrollContainer.className = 'gantt-label-scroll';
+        this.labelScrollContainer.id = 'ganttLabelScroll';
+        this.labelScrollContainer.appendChild(this.labelCanvas);
+
         this.scrollContainer.appendChild(this.timelineCanvas);
-        outer.appendChild(this.labelCanvas);
+        outer.appendChild(this.labelScrollContainer);
         outer.appendChild(this.scrollContainer);
         container.appendChild(outer);
 
@@ -219,7 +228,12 @@ export class GanttChartRenderer {
         this.filteredSchedulesCache = filteredSchedules;
 
         // サイズ計算
-        this.labelWidth = window.innerWidth <= 768 ? LABEL_WIDTH_MOBILE : LABEL_WIDTH;
+        const isMobile = window.innerWidth <= 768;
+        const viewMode = scheduleSettings.viewMode;
+
+        // ラベル幅をコンテンツに合わせて計算
+        this.labelWidth = this.calculateLabelWidth(rows, isMobile, viewMode);
+
         this.timelineWidth = this.totalDays * DAY_WIDTH;
         this.totalWidth = this.labelWidth + this.timelineWidth;
         this.totalHeight = HEADER_HEIGHT + (rows.length * ROW_HEIGHT);
@@ -240,6 +254,17 @@ export class GanttChartRenderer {
         this.labelCanvas.style.width = this.labelWidth + 'px';
         this.labelCanvas.style.height = this.totalHeight + 'px';
         this.labelCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+        // モバイル時のラベルスクロールコンテナ設定
+        if (this.labelScrollContainer) {
+            if (isMobile) {
+                const maxVisible = viewMode === SCHEDULE.VIEW_MODE.TASK
+                    ? LABEL_WIDTH_MOBILE_TASK : LABEL_WIDTH_MOBILE_MEMBER;
+                this.labelScrollContainer.style.maxWidth = maxVisible + 'px';
+            } else {
+                this.labelScrollContainer.style.maxWidth = '';
+            }
+        }
 
         // 描画
         this.drawTimelineBackground();
@@ -319,6 +344,26 @@ export class GanttChartRenderer {
         }
 
         return rows;
+    }
+
+    /**
+     * ラベル列の最適幅を計算（コンテンツ幅ベース）
+     */
+    calculateLabelWidth(rows, isMobile, viewMode) {
+        if (!isMobile) return LABEL_WIDTH;
+
+        // canvasでテキスト幅を計測
+        const ctx = this.labelCtx;
+        ctx.font = '13px sans-serif';
+        let maxTextWidth = 0;
+        rows.forEach(row => {
+            const w = ctx.measureText(row.label).width;
+            if (w > maxTextWidth) maxTextWidth = w;
+        });
+
+        // テキスト幅 + 余白をキャンバス幅とする（最小40px）
+        const contentWidth = Math.max(40, Math.ceil(maxTextWidth + LABEL_PADDING));
+        return contentWidth;
     }
 
     // ============================================
