@@ -1462,6 +1462,7 @@ const touchState = {
     longPressTimer: null,
     isLongPress: false,
     isDragging: false,
+    hasMoved: false,
     schedule: null
 };
 
@@ -1473,6 +1474,7 @@ function resetTouchState() {
     touchState.touchId = null;
     touchState.isLongPress = false;
     touchState.isDragging = false;
+    touchState.hasMoved = false;
     touchState.schedule = null;
 }
 
@@ -1541,6 +1543,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
 
             // 長押し前に動いたらタイマー解除、ネイティブスクロールに委譲
             if (!touchState.isLongPress && distance > TOUCH_MOVE_THRESHOLD) {
+                touchState.hasMoved = true;
                 if (touchState.longPressTimer) {
                     clearTimeout(touchState.longPressTimer);
                     touchState.longPressTimer = null;
@@ -1625,7 +1628,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                     renderer.highlightedScheduleId = null;
                     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
                 }
-            } else if (touchState.schedule && !touchState.isDragging) {
+            } else if (touchState.schedule && !touchState.isDragging && !touchState.hasMoved) {
                 // タップ: 詳細モーダルを開く
                 if (onScheduleClick) {
                     onScheduleClick(touchState.schedule);
