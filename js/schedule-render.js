@@ -13,6 +13,7 @@ import { sortMembers } from './utils.js';
 // ============================================
 
 const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS } = SCHEDULE.CANVAS;
+const LABEL_WIDTH_MOBILE = 100;
 const { DELAYED, COMPLETED, TODAY_LINE, WEEKEND, HOLIDAY, GRID, MONTH_SEPARATOR } = SCHEDULE.COLORS;
 
 const ZEBRA_LIGHT = '#FFFFFF';
@@ -218,8 +219,9 @@ export class GanttChartRenderer {
         this.filteredSchedulesCache = filteredSchedules;
 
         // サイズ計算
+        this.labelWidth = window.innerWidth <= 768 ? LABEL_WIDTH_MOBILE : LABEL_WIDTH;
         this.timelineWidth = this.totalDays * DAY_WIDTH;
-        this.totalWidth = LABEL_WIDTH + this.timelineWidth;
+        this.totalWidth = this.labelWidth + this.timelineWidth;
         this.totalHeight = HEADER_HEIGHT + (rows.length * ROW_HEIGHT);
         this.totalHeight = Math.max(this.totalHeight, 300);
 
@@ -233,9 +235,9 @@ export class GanttChartRenderer {
         this.timelineCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
         // Label canvas サイズ設定
-        this.labelCanvas.width = LABEL_WIDTH * this.dpr;
+        this.labelCanvas.width = this.labelWidth * this.dpr;
         this.labelCanvas.height = this.totalHeight * this.dpr;
-        this.labelCanvas.style.width = LABEL_WIDTH + 'px';
+        this.labelCanvas.style.width = this.labelWidth + 'px';
         this.labelCanvas.style.height = this.totalHeight + 'px';
         this.labelCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
@@ -330,7 +332,7 @@ export class GanttChartRenderer {
 
     drawLabelBackground() {
         this.labelCtx.fillStyle = '#FFFFFF';
-        this.labelCtx.fillRect(0, 0, LABEL_WIDTH, this.totalHeight);
+        this.labelCtx.fillRect(0, 0, this.labelWidth, this.totalHeight);
     }
 
     /**
@@ -448,22 +450,22 @@ export class GanttChartRenderer {
     drawLabelHeader() {
         const ctx = this.labelCtx;
         ctx.fillStyle = '#F5F5F5';
-        ctx.fillRect(0, 0, LABEL_WIDTH, HEADER_HEIGHT);
+        ctx.fillRect(0, 0, this.labelWidth, HEADER_HEIGHT);
 
         // ヘッダー下部の線
         ctx.strokeStyle = GRID;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, HEADER_HEIGHT);
-        ctx.lineTo(LABEL_WIDTH, HEADER_HEIGHT);
+        ctx.lineTo(this.labelWidth, HEADER_HEIGHT);
         ctx.stroke();
 
         // 右端の区切り線
         ctx.strokeStyle = '#CCCCCC';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(LABEL_WIDTH - 0.5, 0);
-        ctx.lineTo(LABEL_WIDTH - 0.5, this.totalHeight);
+        ctx.moveTo(this.labelWidth - 0.5, 0);
+        ctx.lineTo(this.labelWidth - 0.5, this.totalHeight);
         ctx.stroke();
     }
 
@@ -613,12 +615,12 @@ export class GanttChartRenderer {
 
             // ゼブラ背景
             ctx.fillStyle = index % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
-            ctx.fillRect(0, y, LABEL_WIDTH, ROW_HEIGHT);
+            ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
 
             // ホバーハイライト
             if (index === this.hoverRowIndex) {
                 ctx.fillStyle = HOVER_HIGHLIGHT;
-                ctx.fillRect(0, y, LABEL_WIDTH, ROW_HEIGHT);
+                ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
             }
 
             // 横線
@@ -626,7 +628,7 @@ export class GanttChartRenderer {
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(0, y + ROW_HEIGHT);
-            ctx.lineTo(LABEL_WIDTH, y + ROW_HEIGHT);
+            ctx.lineTo(this.labelWidth, y + ROW_HEIGHT);
             ctx.stroke();
 
             // ラベルテキスト
@@ -635,7 +637,7 @@ export class GanttChartRenderer {
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
 
-            const maxLabelWidth = LABEL_WIDTH - 10;
+            const maxLabelWidth = this.labelWidth - 10;
             let labelText = row.label;
             while (ctx.measureText(labelText).width > maxLabelWidth && labelText.length > 0) {
                 labelText = labelText.slice(0, -1);
