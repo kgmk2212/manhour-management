@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - feature/gantt-chart
       - experiment/sandbox
   # 手動実行も可能
   workflow_dispatch:
@@ -35,13 +34,6 @@ jobs:
           ref: main
           path: main
 
-      - name: Checkout feature/gantt-chart branch
-        uses: actions/checkout@v4
-        with:
-          ref: feature/gantt-chart
-          path: feature-gantt-chart
-        continue-on-error: true
-
       - name: Checkout experiment/sandbox branch
         uses: actions/checkout@v4
         with:
@@ -54,15 +46,6 @@ jobs:
           # mainブランチの内容をデプロイディレクトリのルートにコピー
           mkdir -p deploy
           cp -r main/* deploy/
-
-          # feature/gantt-chartブランチが存在する場合、プレビューディレクトリにコピー
-          if [ -d "feature-gantt-chart" ]; then
-            mkdir -p deploy/preview/gantt-chart
-            cp -r feature-gantt-chart/* deploy/preview/gantt-chart/
-            echo "✅ feature/gantt-chart をプレビューディレクトリに追加しました"
-          else
-            echo "⚠️ feature/gantt-chart ブランチが見つかりません（スキップ）"
-          fi
 
           # experiment/sandboxブランチが存在する場合、プレビューディレクトリにコピー
           if [ -d "experiment-sandbox" ]; then
