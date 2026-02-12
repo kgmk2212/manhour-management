@@ -949,8 +949,14 @@ export function renderEstimateMatrix() {
                 taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
             }
 
+            const escapedVer = version.replace(/'/g, "\\'");
+            const escapedTsk = group.task.replace(/'/g, "\\'");
+
             html += '<tr>';
-            html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
+            html += `<td class="clickable-cell" style="font-weight: 600; cursor: pointer;"
+                onclick="showTaskDetail('${escapedVer}', '${escapedTsk}')"
+                onmouseover="this.style.color='var(--theme-color, #1976d2)'"
+                onmouseout="this.style.color=''">${taskDisplayHtml}</td>`;
 
             let total = 0;
             processOrder.forEach(proc => {
@@ -1327,6 +1333,258 @@ export function showEstimateDetail(estimateId) {
 
     document.getElementById('estimateDetailModalBody').innerHTML = html;
     document.getElementById('estimateDetailModal').style.display = 'flex';
+}
+
+/**
+ * 対応詳細モーダルを表示（全工程の一覧 + 未登録工程の追加）
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ */
+export function showTaskDetail(version, task) {
+    const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
+    if (taskEstimates.length === 0) return;
+
+    // 工程ごとにグループ化（同一工程に複数見積がある場合も対応）
+    const processEstimates = {};
+    processOrder.forEach(proc => {
+        processEstimates[proc] = taskEstimates.filter(e => e.process === proc);
+    });
+
+    const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
+    const existingCount = processOrder.filter(proc => processEstimates[proc].length > 0).length;
+    const totalDays = totalHours / 8;
+    const totalMonths = totalDays / 20;
+
+    const escapedVersion = version.replace(/'/g, "\\'");
+    const escapedTask = task.replace(/'/g, "\\'");
+
+    const isClassic = window.modalDesignStyle === 'classic';
+    let html;
+
+    if (isClassic) {
+        document.getElementById('estimateDetailModalTitle').textContent = `対応詳細 - ${task}`;
+
+        html = `<div style="margin-bottom: 12px; font-size: 14px; color: #666;">版数: ${version} | 合計: <strong style="color: #1976d2;">${totalHours.toFixed(1)}h</strong> (${totalDays.toFixed(1)}人日)</div>`;
+        html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+        processOrder.forEach(proc => {
+            const ests = processEstimates[proc];
+            if (ests.length > 0) {
+                ests.forEach(estimate => {
+                    const est = normalizeEstimate(estimate);
+                    let workMonthDisplay = '';
+                    if (est.workMonths && est.workMonths.length > 0) {
+                        if (est.workMonths.length === 1) {
+                            const [y, m] = est.workMonths[0].split('-');
+                            workMonthDisplay = `${parseInt(m)}月`;
+                        } else {
+                            const [, m1] = est.workMonths[0].split('-');
+                            const [, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                            workMonthDisplay = `${parseInt(m1)}月〜${parseInt(m2)}月`;
+                        }
+                    }
+
+                    html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
+                    html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">`;
+                    html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span>${est.member}</span>`;
+                    html += `<span style="font-weight: 700; color: #1976d2;">${est.hours.toFixed(1)}h</span>`;
+                    html += `</div>`;
+                    if (workMonthDisplay) {
+                        html += `<div style="font-size: 12px; color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
+                    }
+                    html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
+                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">編集</button>`;
+                    html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">削除</button>`;
+                    html += `</div></div>`;
+                });
+            } else {
+                html += `<div style="background: #fafafa; border-radius: 8px; padding: 12px; border: 1px dashed #ccc; opacity: 0.6;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span><span style="color: #999;">未登録</span></span>`;
+                html += `<button onclick="addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" style="padding: 4px 12px; background: #198754; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">追加</button>`;
+                html += `</div></div>`;
+            }
+        });
+
+        html += '</div>';
+        html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">`;
+        html += `<button onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応名を編集</button>`;
+        html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応を全削除</button>`;
+        html += `</div>`;
+    } else {
+        // モダン: Quiet Depth デザイン
+        document.getElementById('estimateDetailModalTitle').textContent = '対応詳細';
+
+        html = `
+            <div class="ed-hero">
+                <div class="ed-version">${version}</div>
+                <div class="ed-task-name">${task}</div>
+                <div class="ed-hours-row">
+                    <span class="ed-hours">${totalHours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+                </div>
+                <div class="ed-hours-label">${existingCount}工程 / 合計見積工数</div>
+            </div>
+            <div class="ed-section">
+                <div class="ed-section-label">工程別内訳</div>
+        `;
+
+        processOrder.forEach(proc => {
+            const ests = processEstimates[proc];
+            if (ests.length > 0) {
+                ests.forEach(estimate => {
+                    const est = normalizeEstimate(estimate);
+                    let monthTag = '';
+                    if (est.workMonths && est.workMonths.length > 0) {
+                        if (est.workMonths.length === 1) {
+                            const [, m] = est.workMonths[0].split('-');
+                            monthTag = `<span class="ed-month-tag">${parseInt(m)}月</span>`;
+                        } else {
+                            const [, m1] = est.workMonths[0].split('-');
+                            const [, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                            monthTag = `<span class="ed-month-tag">${parseInt(m1)}月〜${parseInt(m2)}月</span>`;
+                        }
+                    }
+
+                    html += `
+                        <div class="wd-card">
+                            <div class="wd-card-header">
+                                <div>
+                                    <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                                    <span class="wd-card-title">${est.member}</span>
+                                    ${monthTag}
+                                </div>
+                                <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
+                            </div>
+                            <div class="wd-card-actions">
+                                <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editEstimateFromModal(${est.id})">編集</a>
+                                <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})">削除</a>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                html += `
+                    <div class="wd-card wd-card-empty">
+                        <div class="wd-card-header">
+                            <div>
+                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                                <span style="color: #999; font-size: 13px;">未登録</span>
+                            </div>
+                            <span class="wd-card-hours" style="color: #ccc;">--</span>
+                        </div>
+                        <div class="wd-card-actions">
+                            <a href="#" class="wd-edit-link" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')">追加</a>
+                        </div>
+                    </div>`;
+            }
+        });
+
+        html += '</div>';
+
+        // 合計の人日/人月
+        html += `
+            <div class="ed-meta">
+                <span class="ed-meta-item"><span class="ed-meta-label">人日</span>${totalDays.toFixed(1)}</span>
+                <span class="ed-meta-item"><span class="ed-meta-label">人月</span>${totalMonths.toFixed(2)}</span>
+            </div>
+        `;
+
+        html += `
+            <div class="ed-actions">
+                <button class="btn btn-secondary" onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')">対応名を編集</button>
+                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
+            </div>`;
+    }
+
+    document.getElementById('estimateDetailModalBody').innerHTML = html;
+    document.getElementById('estimateDetailModal').style.display = 'flex';
+}
+
+/**
+ * 対応詳細モーダルから未登録工程を追加
+ */
+export function addProcessFromTaskModal(version, task, process) {
+    closeEstimateDetailModal();
+    if (typeof window.openAddEstimateModal === 'function') {
+        window.openAddEstimateModal();
+    }
+    // pre-fill（initAddEstimateFormの後にsetTimeoutで設定）
+    setTimeout(() => {
+        const versionSelect = document.getElementById('addEstVersion');
+        if (versionSelect) versionSelect.value = version;
+
+        // 帳票名と対応名を分割
+        const formNameSelect = document.getElementById('addEstFormNameSelect');
+        const formNameInput = document.getElementById('addEstFormName');
+        const taskInput = document.getElementById('addEstTask');
+
+        if (task.includes('：')) {
+            const parts = task.split('：');
+            if (formNameSelect) {
+                // セレクトに存在するか確認
+                let found = false;
+                for (let i = 0; i < formNameSelect.options.length; i++) {
+                    if (formNameSelect.options[i].value === parts[0]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    formNameSelect.value = parts[0];
+                    formNameSelect.style.display = 'block';
+                    if (formNameInput) formNameInput.style.display = 'none';
+                } else {
+                    formNameSelect.style.display = 'none';
+                    if (formNameInput) {
+                        formNameInput.style.display = 'block';
+                        formNameInput.value = parts[0];
+                    }
+                }
+            }
+            if (taskInput) taskInput.value = parts.slice(1).join('：');
+        } else {
+            if (taskInput) taskInput.value = task;
+        }
+
+        // 対象工程のフィールドにフォーカス
+        const hoursField = document.getElementById(`addEst${process}`);
+        if (hoursField) hoursField.focus();
+    }, 100);
+}
+
+/**
+ * 対応詳細モーダルから単一工程を削除（モーダルを再描画）
+ */
+export function deleteEstimateFromTaskModal(version, task, estimateId) {
+    const beforeCount = estimates.length;
+    deleteEstimate(estimateId);
+
+    if (estimates.length < beforeCount) {
+        const remaining = estimates.filter(e => e.version === version && e.task === task);
+        if (remaining.length === 0) {
+            closeEstimateDetailModal();
+        } else {
+            showTaskDetail(version, task);
+        }
+    }
+}
+
+/**
+ * 対応詳細モーダルから対応を全削除
+ */
+export function deleteTaskFromModal(version, task) {
+    closeEstimateDetailModal();
+    deleteTask(version, task);
+}
+
+/**
+ * 対応詳細モーダルから対応名を編集
+ */
+export function editTaskFromTaskModal(version, task) {
+    closeEstimateDetailModal();
+    if (typeof window.editTask === 'function') {
+        window.editTask(version, task);
+    }
 }
 
 /**

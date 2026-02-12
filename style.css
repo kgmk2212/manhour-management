@@ -4045,6 +4045,12 @@
     margin-bottom: 8px;
 }
 
+.wd-card-empty {
+    opacity: 0.5;
+    border: 1px dashed #ccc;
+    background: #fafafa;
+}
+
 .wd-card-header {
     display: flex;
     justify-content: space-between;

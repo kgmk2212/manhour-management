@@ -193,10 +193,15 @@ window.deleteEstimate = Estimate.deleteEstimate;
 window.deleteTask = Estimate.deleteTask;
 window.updateWorkMonthOptions = Estimate.updateWorkMonthOptions;
 window.showEstimateDetail = Estimate.showEstimateDetail;
+window.showTaskDetail = Estimate.showTaskDetail;
 window.showOtherWorkTaskDetail = Estimate.showOtherWorkTaskDetail;
 window.closeEstimateDetailModal = Estimate.closeEstimateDetailModal;
 window.editEstimateFromModal = Estimate.editEstimateFromModal;
 window.deleteEstimateFromModal = Estimate.deleteEstimateFromModal;
+window.addProcessFromTaskModal = Estimate.addProcessFromTaskModal;
+window.deleteEstimateFromTaskModal = Estimate.deleteEstimateFromTaskModal;
+window.deleteTaskFromModal = Estimate.deleteTaskFromModal;
+window.editTaskFromTaskModal = Estimate.editTaskFromTaskModal;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
