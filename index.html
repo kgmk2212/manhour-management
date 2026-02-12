@@ -1046,7 +1046,10 @@
                     </div>
                     <div class="schedule-actions">
                         <button onclick="exportSchedulesToExcel()" class="btn btn-outline" title="Excel出力">📥 出力</button>
-                        <button onclick="openAutoGenerateModal()" class="btn btn-secondary">⚡ 自動生成</button>
+                        <span class="unscheduled-wrapper">
+                            <button onclick="openAutoGenerateModal()" class="btn btn-secondary" style="position:relative;">⚡ 自動生成<span id="unscheduledBadge" class="unscheduled-badge" style="display:none;" onclick="event.stopPropagation(); toggleUnscheduledDropdown()"></span></button>
+                            <div id="unscheduledDropdown" class="unscheduled-dropdown" style="display:none;"></div>
+                        </span>
                         <button onclick="openCreateScheduleModal()" class="btn btn-primary" title="キーボード: N">+
                             予定作成</button>
                         <span class="keyboard-hint"

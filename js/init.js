@@ -402,6 +402,11 @@ window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
 window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
 window.showToast = Schedule.showToast;
 window.updateFilterResultCount = Schedule.updateFilterResultCount;
+window.updateUnscheduledBadge = Schedule.updateUnscheduledBadge;
+window.toggleUnscheduledDropdown = Schedule.toggleUnscheduledDropdown;
+window.toggleUnscheduledSelectAll = Schedule.toggleUnscheduledSelectAll;
+window.updateUnscheduledCount = Schedule.updateUnscheduledCount;
+window.registerCheckedSchedules = Schedule.registerCheckedSchedules;
 window.calculateEndDate = Schedule.calculateEndDate;
 window.getTaskColor = Schedule.getTaskColor;
 

@@ -4,6 +4,7 @@
 
 import {
     estimates, actuals, filteredEstimates, remainingEstimates,
+    schedules,
     setEstimates, setFilteredEstimates,
     workMonthSelectionMode, setWorkMonthSelectionMode,
     selectedEstimateIds,
@@ -1071,6 +1072,29 @@ export function deleteEstimate(id) {
     const warning = '【警告】この操作は取り消せません。\n本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
 
+    // 関連するスケジュールを検索
+    const relatedSchedule = schedules.find(s =>
+        s.version === estimate.version &&
+        s.task === estimate.task &&
+        s.process === estimate.process &&
+        s.member === estimate.member
+    );
+
+    if (relatedSchedule) {
+        if (confirm('対応するスケジュールも削除しますか？')) {
+            if (typeof window.deleteSchedule === 'function') {
+                window.deleteSchedule(relatedSchedule.id);
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('関連するスケジュールも削除しました', 'success');
+            }
+        } else {
+            if (typeof window.showToast === 'function') {
+                window.showToast('スケジュールは残っています', 'info');
+            }
+        }
+    }
+
     // 関連する見込み残存データも削除
     deleteRemainingEstimate(estimate.version, estimate.task, estimate.process, estimate.member);
 
@@ -1082,6 +1106,7 @@ export function deleteEstimate(id) {
     renderEstimateList();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     showAlert('見積を削除しました', true);
 }
 
@@ -1092,6 +1117,11 @@ export function deleteTask(version, task) {
     const taskEstimates = estimates.filter(e => e.version === version && e.task === task);
     if (taskEstimates.length === 0) return;
 
+    // 関連するスケジュールを検索
+    const relatedSchedules = schedules.filter(s =>
+        s.version === version && s.task === task
+    );
+
     const processes = taskEstimates.map(e => e.process).join(', ');
     const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
 
@@ -1100,6 +1130,20 @@ export function deleteTask(version, task) {
 
     const warning = '【警告】この操作は取り消せません。\nこの対応に含まれる全ての工程が削除されます。\n本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
+
+    // 関連するスケジュールを削除
+    if (relatedSchedules.length > 0) {
+        if (confirm(`対応するスケジュール（${relatedSchedules.length}件）も削除しますか？`)) {
+            relatedSchedules.forEach(s => {
+                if (typeof window.deleteSchedule === 'function') {
+                    window.deleteSchedule(s.id);
+                }
+            });
+            if (typeof window.showToast === 'function') {
+                window.showToast(`関連するスケジュール${relatedSchedules.length}件を削除しました`, 'success');
+            }
+        }
+    }
 
     // 関連する見込み残存データも削除
     taskEstimates.forEach(est => {
@@ -1113,6 +1157,7 @@ export function deleteTask(version, task) {
     renderEstimateList();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     showAlert('対応を削除しました', true);
 }
 

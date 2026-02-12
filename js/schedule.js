@@ -88,6 +88,7 @@ function setupScrollSyncListener() {
                         if (monthStr !== scheduleSettings.currentMonth) {
                             setScheduleSettings({ currentMonth: monthStr });
                             updateCurrentMonthDisplay();
+                            updateUnscheduledBadge();
                         }
                     }
                 }, 150);
@@ -118,12 +119,15 @@ export function updateCurrentMonthDisplay() {
 export function renderScheduleView() {
     // フィルタオプションを更新
     updateScheduleFilterOptions();
-    
+
     // フィルタ件数を更新
     updateFilterResultCount();
-    
+
     // サマリーを更新
     updateScheduleSummary();
+
+    // 未スケジュールバッジを更新
+    updateUnscheduledBadge();
     
     // フィルタされたスケジュールを取得
     const filteredSchedules = getFilteredSchedules();
@@ -234,6 +238,7 @@ export function navigateScheduleMonth(delta) {
     if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
         setScheduleSettings({ currentMonth: newMonth });
         updateCurrentMonthDisplay();
+        updateUnscheduledBadge();
         renderer.scrollToMonth(newYear, newMonthNum, true);
     } else {
         // 範囲外なら再描画してからスクロール
@@ -262,6 +267,7 @@ export function goToScheduleToday() {
 
     // 範囲内なら今日の位置へスクロール
     if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
+        updateUnscheduledBadge();
         renderer.scrollToToday(true);
     } else {
         // 範囲外なら再描画して今日へスクロール
@@ -324,12 +330,41 @@ export function addSchedule(data) {
     };
     
     setSchedules([...schedules, schedule]);
-    
+
     if (typeof window.saveData === 'function') {
         window.saveData();
     }
-    
+
     renderScheduleView();
+    return schedule;
+}
+
+/**
+ * 予定を追加（レンダリングなし、バッチ用）
+ * @param {Object} data - スケジュールデータ
+ * @returns {Object} 作成されたスケジュール
+ */
+function addScheduleSilent(data) {
+    const id = `sch_${nextScheduleId}`;
+    setNextScheduleId(nextScheduleId + 1);
+
+    const schedule = {
+        id,
+        version: data.version,
+        task: data.task,
+        process: data.process,
+        member: data.member,
+        startDate: data.startDate,
+        estimatedHours: data.estimatedHours,
+        endDate: data.endDate || calculateEndDate(data.startDate, data.estimatedHours, data.member),
+        status: SCHEDULE.STATUS.PENDING,
+        color: getTaskColor(data.task),
+        note: data.note || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    setSchedules([...schedules, schedule]);
     return schedule;
 }
 
@@ -798,10 +833,17 @@ export function saveScheduleFromModal() {
         return;
     }
     
-    addSchedule({
+    const newSchedule = addSchedule({
         version, task, process, member, estimatedHours, startDate, note
     });
-    
+
+    pushUndoAction({
+        type: 'create',
+        schedule: { ...newSchedule }
+    });
+
+    highlightNewSchedules([newSchedule.id]);
+
     closeCreateScheduleModal();
     showToast('予定を作成しました', 'success');
 }
@@ -811,16 +853,23 @@ export function saveScheduleFromModal() {
  */
 export function saveScheduleDetailChanges() {
     if (!currentEditingScheduleId) return;
-    
+
     const startDate = document.getElementById('detailStartDate')?.value;
     if (!startDate) return;
-    
+
     const schedule = schedules.find(s => s.id === currentEditingScheduleId);
     if (!schedule) return;
-    
+
     // 終了日を再計算
     const endDate = calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
-    
+
+    pushUndoAction({
+        type: 'update',
+        scheduleId: currentEditingScheduleId,
+        oldValues: { startDate: schedule.startDate, endDate: schedule.endDate },
+        newValues: { startDate, endDate }
+    });
+
     updateSchedule(currentEditingScheduleId, { startDate, endDate });
     closeScheduleDetailModal();
 }
@@ -830,11 +879,20 @@ export function saveScheduleDetailChanges() {
  */
 export function deleteScheduleFromModal() {
     if (!currentEditingScheduleId) return;
-    
+
     if (!confirm('この予定を削除しますか？')) return;
-    
+
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (schedule) {
+        pushUndoAction({
+            type: 'delete',
+            schedule: { ...schedule }
+        });
+    }
+
     deleteSchedule(currentEditingScheduleId);
     closeScheduleDetailModal();
+    showToast('予定を削除しました（Ctrl+Zで元に戻す）', 'success');
 }
 
 // ============================================
@@ -1105,8 +1163,8 @@ export function generateSchedulesFromEstimates(options) {
             // 終了日を計算
             const endDate = calculateEndDate(currentDate, est.hours, memberName);
             
-            // スケジュールを作成
-            const schedule = addSchedule({
+            // スケジュールを作成（バッチ用、レンダリングなし）
+            const schedule = addScheduleSilent({
                 version: est.version,
                 task: est.task,
                 process: est.process,
@@ -1116,9 +1174,9 @@ export function generateSchedulesFromEstimates(options) {
                 endDate: endDate,
                 note: `見積ID: ${est.id} から自動生成`
             });
-            
+
             generatedSchedules.push(schedule);
-            
+
             // 次のスケジュールの開始日を更新（終了日の翌営業日）
             const nextDate = new Date(endDate);
             nextDate.setDate(nextDate.getDate() + 1);
@@ -1128,7 +1186,13 @@ export function generateSchedulesFromEstimates(options) {
             currentDate = formatDateForCheck(nextDate);
         });
     });
-    
+
+    // バッチ完了後に1回だけ保存＆描画
+    if (generatedSchedules.length > 0) {
+        if (typeof window.saveData === 'function') window.saveData();
+        renderScheduleView();
+    }
+
     return generatedSchedules;
 }
 
@@ -1279,14 +1343,23 @@ export function updateAutoGeneratePreview() {
  */
 export function setScheduleStatus(status) {
     if (!currentEditingScheduleId) return;
-    
+
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (schedule) {
+        pushUndoAction({
+            type: 'status_change',
+            scheduleId: currentEditingScheduleId,
+            oldStatus: schedule.status || 'pending',
+            newStatus: status
+        });
+    }
+
     updateSchedule(currentEditingScheduleId, { status });
-    
+
     // ステータスボタンのアクティブ状態を更新
     updateStatusButtons(status);
-    
-    // 進捗表示を更新
-    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+
+    // 進捗表示を更新（上で取得した schedule を再利用）
     if (schedule) {
         const progress = calculateProgress(schedule);
         const progressRate = document.getElementById('detailProgressRate');
@@ -1339,13 +1412,62 @@ export function undoScheduleAction() {
     const action = undoStack.pop();
     redoStack.push(action);
 
-    // 元に戻す
-    updateSchedule(action.scheduleId, {
-        startDate: action.oldStartDate,
-        endDate: action.oldEndDate
-    });
+    switch (action.type) {
+        case 'move':
+            updateSchedule(action.scheduleId, {
+                startDate: action.oldStartDate,
+                endDate: action.oldEndDate
+            });
+            showToast('移動を元に戻しました', 'info');
+            break;
 
-    showToast('元に戻しました', 'info');
+        case 'create':
+            deleteSchedule(action.schedule.id);
+            showToast('作成を元に戻しました', 'info');
+            break;
+
+        case 'batch_create': {
+            const idsToRemove = new Set(action.schedules.map(s => s.id));
+            setSchedules(schedules.filter(s => !idsToRemove.has(s.id)));
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast(`${action.schedules.length}件の作成を元に戻しました`, 'info');
+            break;
+        }
+
+        case 'delete':
+            setSchedules([...schedules, action.schedule]);
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast('削除を元に戻しました', 'info');
+            break;
+
+        case 'batch_delete':
+            setSchedules([...schedules, ...action.schedules]);
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast(`${action.schedules.length}件の削除を元に戻しました`, 'info');
+            break;
+
+        case 'status_change':
+            updateSchedule(action.scheduleId, { status: action.oldStatus });
+            showToast('ステータス変更を元に戻しました', 'info');
+            break;
+
+        case 'update':
+            updateSchedule(action.scheduleId, action.oldValues);
+            showToast('変更を元に戻しました', 'info');
+            break;
+
+        default:
+            // 後方互換: type なしの旧エントリ（ドラッグ）
+            updateSchedule(action.scheduleId, {
+                startDate: action.oldStartDate,
+                endDate: action.oldEndDate
+            });
+            showToast('元に戻しました', 'info');
+            break;
+    }
 }
 
 /**
@@ -1360,13 +1482,63 @@ export function redoScheduleAction() {
     const action = redoStack.pop();
     undoStack.push(action);
 
-    // やり直す
-    updateSchedule(action.scheduleId, {
-        startDate: action.newStartDate,
-        endDate: action.newEndDate
-    });
+    switch (action.type) {
+        case 'move':
+            updateSchedule(action.scheduleId, {
+                startDate: action.newStartDate,
+                endDate: action.newEndDate
+            });
+            showToast('移動をやり直しました', 'info');
+            break;
 
-    showToast('やり直しました', 'info');
+        case 'create':
+            setSchedules([...schedules, action.schedule]);
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast('作成をやり直しました', 'info');
+            break;
+
+        case 'batch_create':
+            setSchedules([...schedules, ...action.schedules]);
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast(`${action.schedules.length}件の作成をやり直しました`, 'info');
+            break;
+
+        case 'delete':
+            setSchedules(schedules.filter(s => s.id !== action.schedule.id));
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast('削除をやり直しました', 'info');
+            break;
+
+        case 'batch_delete': {
+            const idsToRemove = new Set(action.schedules.map(s => s.id));
+            setSchedules(schedules.filter(s => !idsToRemove.has(s.id)));
+            if (typeof window.saveData === 'function') window.saveData();
+            renderScheduleView();
+            showToast(`${action.schedules.length}件の削除をやり直しました`, 'info');
+            break;
+        }
+
+        case 'status_change':
+            updateSchedule(action.scheduleId, { status: action.newStatus });
+            showToast('ステータス変更をやり直しました', 'info');
+            break;
+
+        case 'update':
+            updateSchedule(action.scheduleId, action.newValues);
+            showToast('変更をやり直しました', 'info');
+            break;
+
+        default:
+            updateSchedule(action.scheduleId, {
+                startDate: action.newStartDate,
+                endDate: action.newEndDate
+            });
+            showToast('やり直しました', 'info');
+            break;
+    }
 }
 
 /**
@@ -1387,6 +1559,7 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
 
     // Undo用に記録
     pushUndoAction({
+        type: 'move',
         scheduleId,
         oldStartDate,
         oldEndDate,
@@ -1424,11 +1597,18 @@ export function executeAutoGenerate() {
     };
     
     const generated = generateSchedulesFromEstimates(options);
-    
+
     closeAutoGenerateModal();
-    
+
     if (generated.length > 0) {
-        showToast(`${generated.length}件のスケジュールを生成しました`, 'success');
+        pushUndoAction({
+            type: 'batch_create',
+            schedules: generated.map(s => ({ ...s }))
+        });
+
+        highlightNewSchedules(generated.map(s => s.id));
+
+        showToast(`${generated.length}件のスケジュールを生成しました（Ctrl+Zで元に戻す）`, 'success');
     } else {
         showToast('生成対象のスケジュールがありませんでした', 'info');
     }
@@ -1544,18 +1724,24 @@ export function deleteFilteredSchedules() {
         return;
     }
     
+    // Undo用にコピーを保存
+    pushUndoAction({
+        type: 'batch_delete',
+        schedules: filteredSchedules.map(s => ({ ...s }))
+    });
+
     // 削除するIDのセット
     const idsToDelete = new Set(filteredSchedules.map(s => s.id));
-    
+
     // 削除を実行
     setSchedules(schedules.filter(s => !idsToDelete.has(s.id)));
-    
+
     if (typeof window.saveData === 'function') {
         window.saveData();
     }
-    
+
     renderScheduleView();
-    showToast(`${filteredSchedules.length}件のスケジュールを削除しました`, 'success');
+    showToast(`${filteredSchedules.length}件のスケジュールを削除しました（Ctrl+Zで元に戻す）`, 'success');
 }
 
 /**
@@ -1833,4 +2019,329 @@ export function updateScheduleFilterOptions() {
             memberSelect.innerHTML += `<option value="${m}"${m === currentValue ? ' selected' : ''}>${m}</option>`;
         });
     }
+}
+
+// ============================================
+// 未スケジュールバッジ
+// ============================================
+
+/**
+ * 現在の表示月に対応する未スケジュール見積を取得
+ * @returns {Array} 未スケジュールの見積一覧
+ */
+function getUnscheduledEstimates() {
+    const currentMonth = scheduleSettings.currentMonth; // e.g. "2026-02"
+    if (!currentMonth) return [];
+
+    return estimates.filter(est => {
+        // 作業月がガントチャートの表示月を含むか
+        if (!est.workMonths || !est.workMonths.includes(currentMonth)) return false;
+        // スケジュール未作成か
+        return !schedules.some(s =>
+            s.version === est.version &&
+            s.task === est.task &&
+            s.process === est.process &&
+            s.member === est.member
+        );
+    });
+}
+
+/**
+ * 未スケジュールの見積件数をバッジで表示
+ * ガントチャート表示月の見積で、スケジュール未作成の件数を「⚡ 自動生成」ボタンに表示
+ */
+export function updateUnscheduledBadge() {
+    const badge = document.getElementById('unscheduledBadge');
+    if (!badge) return;
+
+    const unscheduled = getUnscheduledEstimates();
+
+    if (unscheduled.length > 0) {
+        badge.textContent = unscheduled.length;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+        // バッジが消えたらドロップダウンも閉じる
+        const dropdown = document.getElementById('unscheduledDropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+}
+
+/**
+ * 未スケジュール一覧ドロップダウンの表示/非表示を切替
+ */
+export function toggleUnscheduledDropdown() {
+    const dropdown = document.getElementById('unscheduledDropdown');
+    if (!dropdown) return;
+
+    if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    const unscheduled = getUnscheduledEstimates();
+    if (unscheduled.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    const currentMonth = scheduleSettings.currentMonth;
+    const [y, m] = currentMonth.split('-');
+    const monthLabel = `${y}年${parseInt(m)}月`;
+
+    // 版数＋対応名でグループ化
+    const groups = new Map();
+    unscheduled.forEach(est => {
+        const key = `${est.version}/${est.task}`;
+        if (!groups.has(key)) {
+            groups.set(key, []);
+        }
+        groups.get(key).push(est);
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+
+    let html = `<div class="unscheduled-dropdown-header">
+        <label class="unscheduled-select-all">
+            <input type="checkbox" id="unscheduledSelectAll" checked onchange="toggleUnscheduledSelectAll(this.checked)">
+            <span>${monthLabel} 未スケジュール（${unscheduled.length}件）</span>
+        </label>
+    </div>`;
+
+    html += '<ul class="unscheduled-dropdown-list">';
+
+    let groupIndex = 0;
+    groups.forEach((items, key) => {
+        const [version, task] = key.split('/');
+        const details = items.map(e => `${e.process}(${e.member})`).join(', ');
+        const groupId = `unscheduled-group-${groupIndex}`;
+        html += `<li class="unscheduled-dropdown-item">
+            <label class="unscheduled-item-label">
+                <input type="checkbox" class="unscheduled-group-check" id="${groupId}"
+                       data-version="${version}" data-task="${task}" checked
+                       onchange="updateUnscheduledCount()">
+                <div class="unscheduled-item-text">
+                    <span class="unscheduled-task-name" title="${version} / ${task}">${task}</span>
+                    <span class="unscheduled-task-detail">${details}</span>
+                </div>
+            </label>
+        </li>`;
+        groupIndex++;
+    });
+
+    html += '</ul>';
+
+    html += `<div class="unscheduled-dropdown-footer">
+        <div class="unscheduled-date-row">
+            <label for="unscheduledStartDate">開始日</label>
+            <input type="date" id="unscheduledStartDate" value="${today}" class="unscheduled-date-input">
+        </div>
+        <button class="btn btn-primary unscheduled-dropdown-action"
+                id="unscheduledRegisterBtn"
+                onclick="registerCheckedSchedules()">
+            選択した <span id="unscheduledCheckedCount">${groups.size}</span>件を登録
+        </button>
+    </div>`;
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+
+    // 左はみ出し防止
+    fixDropdownOverflow(dropdown);
+
+    // 外側クリックで閉じる
+    const closeHandler = (e) => {
+        if (!dropdown.contains(e.target) && !document.getElementById('unscheduledBadge').contains(e.target)) {
+            dropdown.style.display = 'none';
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 0);
+}
+
+/**
+ * ドロップダウン内の全チェックボックスの選択/解除を切り替え
+ */
+export function toggleUnscheduledSelectAll(checked) {
+    const checkboxes = document.querySelectorAll('.unscheduled-group-check');
+    checkboxes.forEach(cb => { cb.checked = checked; });
+    updateUnscheduledCount();
+}
+
+/**
+ * チェック済み件数を更新して「登録」ボタンのラベルに反映
+ */
+export function updateUnscheduledCount() {
+    const checkboxes = document.querySelectorAll('.unscheduled-group-check');
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const countSpan = document.getElementById('unscheduledCheckedCount');
+    if (countSpan) countSpan.textContent = checkedCount;
+
+    const registerBtn = document.getElementById('unscheduledRegisterBtn');
+    if (registerBtn) registerBtn.disabled = checkedCount === 0;
+
+    // 全選択チェックボックスの状態を更新
+    const selectAll = document.getElementById('unscheduledSelectAll');
+    if (selectAll) {
+        selectAll.checked = checkedCount === checkboxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+}
+
+/**
+ * ドロップダウンでチェックされた見積に対してスケジュールを一括作成
+ */
+export function registerCheckedSchedules() {
+    const startDate = document.getElementById('unscheduledStartDate')?.value;
+    if (!startDate) {
+        showToast('開始日を入力してください', 'warning');
+        return;
+    }
+
+    // チェック済みの版数/対応ペアを収集
+    const checkboxes = document.querySelectorAll('.unscheduled-group-check:checked');
+    if (checkboxes.length === 0) {
+        showToast('登録する項目を選択してください', 'warning');
+        return;
+    }
+
+    const checkedPairs = new Set();
+    checkboxes.forEach(cb => {
+        checkedPairs.add(`${cb.dataset.version}/${cb.dataset.task}`);
+    });
+
+    // マッチする未スケジュール見積を取得
+    const unscheduled = getUnscheduledEstimates();
+    const targetEstimates = unscheduled.filter(est =>
+        checkedPairs.has(`${est.version}/${est.task}`)
+    );
+
+    if (targetEstimates.length === 0) {
+        showToast('対象の見積がありません', 'info');
+        return;
+    }
+
+    // 担当者ごとにグループ化して工程順で直列配置
+    const memberEstimates = new Map();
+    targetEstimates.forEach(est => {
+        if (!memberEstimates.has(est.member)) {
+            memberEstimates.set(est.member, []);
+        }
+        memberEstimates.get(est.member).push(est);
+    });
+
+    const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    const generatedSchedules = [];
+
+    memberEstimates.forEach((estList, memberName) => {
+        estList.sort((a, b) => {
+            const orderA = processOrder.indexOf(a.process);
+            const orderB = processOrder.indexOf(b.process);
+            if (orderA !== orderB) return orderA - orderB;
+            return a.task.localeCompare(b.task);
+        });
+
+        let currentDate = startDate;
+
+        estList.forEach(est => {
+            // 既存スケジュールがないか再確認
+            const existing = schedules.find(s =>
+                s.version === est.version &&
+                s.task === est.task &&
+                s.process === est.process &&
+                s.member === est.member
+            );
+            if (existing) return;
+
+            const endDate = calculateEndDate(currentDate, est.hours, memberName);
+
+            const schedule = addScheduleSilent({
+                version: est.version,
+                task: est.task,
+                process: est.process,
+                member: memberName,
+                estimatedHours: est.hours,
+                startDate: currentDate,
+                endDate: endDate,
+                note: `見積ID: ${est.id} から一括作成`
+            });
+
+            generatedSchedules.push(schedule);
+
+            // 次のスケジュールの開始日を更新
+            const nextDate = new Date(endDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            while (!isBusinessDay(nextDate, memberName)) {
+                nextDate.setDate(nextDate.getDate() + 1);
+            }
+            currentDate = formatDateForCheck(nextDate);
+        });
+    });
+
+    if (generatedSchedules.length > 0) {
+        if (typeof window.saveData === 'function') window.saveData();
+        renderScheduleView();
+
+        pushUndoAction({
+            type: 'batch_create',
+            schedules: generatedSchedules.map(s => ({ ...s }))
+        });
+
+        highlightNewSchedules(generatedSchedules.map(s => s.id));
+
+        showToast(`${generatedSchedules.length}件のスケジュールを作成しました（Ctrl+Zで元に戻す）`, 'success');
+    } else {
+        showToast('作成対象のスケジュールがありませんでした', 'info');
+    }
+
+    // ドロップダウンを閉じる
+    const dropdown = document.getElementById('unscheduledDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+/**
+ * ドロップダウンの左側はみ出しを修正
+ */
+function fixDropdownOverflow(dropdown) {
+    requestAnimationFrame(() => {
+        const rect = dropdown.getBoundingClientRect();
+        if (rect.left < 0) {
+            dropdown.style.right = 'auto';
+            dropdown.style.left = '0';
+        } else {
+            dropdown.style.right = '0';
+            dropdown.style.left = '';
+        }
+    });
+}
+
+/**
+ * 新しく作成されたスケジュールを一時的にハイライトする
+ * @param {Array<string>} scheduleIds - ハイライトするスケジュールID配列
+ * @param {number} duration - ハイライト時間（ms）、デフォルト5000
+ */
+function highlightNewSchedules(scheduleIds, duration = 5000) {
+    const renderer = getRenderer();
+    if (!renderer) return;
+
+    // 前回のタイマーをクリア
+    if (renderer.newlyCreatedTimer) {
+        clearTimeout(renderer.newlyCreatedTimer);
+    }
+
+    renderer.newlyCreatedIds = new Set(scheduleIds);
+
+    // 再描画してハイライト表示
+    if (renderer.currentYear && renderer.currentMonth) {
+        renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+    }
+
+    // 一定時間後にクリア
+    renderer.newlyCreatedTimer = setTimeout(() => {
+        renderer.newlyCreatedIds.clear();
+        renderer.newlyCreatedTimer = null;
+        if (renderer.currentYear && renderer.currentMonth) {
+            renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+        }
+    }, duration);
 }

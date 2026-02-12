@@ -90,6 +90,8 @@ export class GanttChartRenderer {
         this.filteredSchedulesCache = null;
         this.dpr = window.devicePixelRatio || 1;
         this.highlightedScheduleId = null;
+        this.newlyCreatedIds = new Set();
+        this.newlyCreatedTimer = null;
     }
 
     /**
@@ -700,6 +702,19 @@ export class GanttChartRenderer {
             ctx.restore();
         }
 
+        // 新規作成ハイライト（アンバー色の破線グロー）
+        if (this.newlyCreatedIds.has(schedule.id)) {
+            ctx.save();
+            ctx.shadowColor = '#ffc107';
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = '#ffc107';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([4, 2]);
+            ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2);
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+
         // 進捗情報
         const progressInfo = this.getScheduleProgress(schedule);
 
@@ -1190,6 +1205,8 @@ export function setupCanvasClickHandler(onScheduleClick) {
 // ドラッグ&ドロップ
 // ============================================
 
+const LONG_PRESS_MS = 300; // この時間以上押していたらクリック扱いにしない
+
 const dragState = {
     isDragging: false,
     wasDragging: false,
@@ -1200,7 +1217,8 @@ const dragState = {
     maxMovedY: 0,
     originalStartDate: null,
     previewDate: null,
-    autoScrollId: null
+    autoScrollId: null,
+    pressStartTime: 0
 };
 
 export function setupDragAndDrop(onScheduleUpdate) {
@@ -1227,6 +1245,7 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.maxMovedY = 0;
                 dragState.originalStartDate = schedule.startDate;
                 dragState.previewDate = null;
+                dragState.pressStartTime = Date.now();
                 canvas.style.cursor = 'grabbing';
             }
         });
@@ -1306,13 +1325,14 @@ export function setupDragAndDrop(onScheduleUpdate) {
 
             const movedX = Math.abs(x - dragState.startX);
             const didMove = dragState.maxMovedX > 3 || dragState.maxMovedY > 3;
+            const pressDuration = Date.now() - dragState.pressStartTime;
 
             if (movedX > DAY_WIDTH / 2 && dragState.previewDate && onScheduleUpdate) {
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
             }
 
-            // 少しでも動いていたらクリック（モーダル表示）を抑止
-            if (didMove) {
+            // 移動距離または押下時間が閾値を超えていたらクリック（モーダル表示）を抑止
+            if (didMove || pressDuration > LONG_PRESS_MS) {
                 dragState.wasDragging = true;
             }
 
