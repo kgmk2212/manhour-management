@@ -14,6 +14,58 @@ import { PROCESS } from './constants.js';
 export function openAddEstimateModal() {
     initAddEstimateForm();
     document.getElementById('addEstimateModal').style.display = 'flex';
+    constrainProcessTableOnMobile();
+}
+
+/**
+ * モバイル表示時に工程テーブルの幅を画面内に収める
+ * CSSキャッシュに依存せず、インラインスタイルで確実に適用
+ */
+function constrainProcessTableOnMobile() {
+    if (window.innerWidth > 768) return;
+
+    const table = document.getElementById('addEstimateTable');
+    if (!table) return;
+
+    // テーブル自体を固定レイアウトに
+    table.style.tableLayout = 'fixed';
+    table.style.width = '100%';
+
+    // ラッパーのオーバーフローを制御
+    const wrapper = table.closest('.estimate-table-wrapper');
+    if (wrapper) {
+        wrapper.style.overflowX = 'hidden';
+        wrapper.style.width = '100%';
+    }
+
+    // th の幅を設定（table-layout: fixed で最初の行が列幅を決定）
+    const ths = table.querySelectorAll('thead th');
+    if (ths.length >= 3) {
+        ths[0].style.width = '44px';  // 工程
+        ths[1].style.width = '';       // 担当（残りスペース）
+        ths[2].style.width = '64px';   // 時間
+    }
+
+    // セル内容のオーバーフローを隠す
+    table.querySelectorAll('td').forEach(td => {
+        td.style.overflow = 'hidden';
+    });
+
+    // select要素を列幅に収める
+    table.querySelectorAll('select').forEach(sel => {
+        sel.style.width = '100%';
+        sel.style.maxWidth = '100%';
+        sel.style.minWidth = '0';
+        sel.style.boxSizing = 'border-box';
+    });
+
+    // input要素も同様に
+    table.querySelectorAll('input[type="number"]').forEach(inp => {
+        inp.style.width = '100%';
+        inp.style.maxWidth = '100%';
+        inp.style.minWidth = '0';
+        inp.style.boxSizing = 'border-box';
+    });
 }
 
 export function closeAddEstimateModal() {
@@ -280,25 +332,37 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
     if (!headerRow) return;
 
     if (showWorkMonthColumn) {
+        const isMobile = window.innerWidth <= 768;
         // 作業月列を追加
         if (headerRow.children.length === 3) {
             const th = document.createElement('th');
-            th.style.width = '150px';
+            th.style.width = isMobile ? '100px' : '150px';
             th.style.padding = '8px';
             th.textContent = '作業月';
             headerRow.appendChild(th);
+
+            // モバイル時、既存列幅を再調整（4列構成）
+            if (isMobile) {
+                const ths = headerRow.children;
+                ths[0].style.width = '40px';   // 工程
+                ths[2].style.width = '50px';   // 時間
+            }
         }
 
         bodyRows.forEach((row, index) => {
             if (row.children.length === 3) {
                 const td = document.createElement('td');
+                td.style.overflow = 'hidden';
                 const processes = PROCESS.TYPES;
                 const processName = processes[index];
+                const selStyle = isMobile
+                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 13px;'
+                    : 'margin: 0; flex: 1;';
                 td.innerHTML = `
-                    <div style="display: flex; gap: 5px; align-items: center;">
-                        <select id="addEst${processName}_startMonth" style="margin: 0; flex: 1;"></select>
-                        <span>〜</span>
-                        <select id="addEst${processName}_endMonth" style="margin: 0; flex: 1;"></select>
+                    <div style="display: flex; gap: ${isMobile ? '2px' : '5px'}; align-items: center;">
+                        <select id="addEst${processName}_startMonth" style="${selStyle}"></select>
+                        <span style="font-size: ${isMobile ? '11px' : '14px'};">〜</span>
+                        <select id="addEst${processName}_endMonth" style="${selStyle}"></select>
                     </div>
                 `;
                 row.appendChild(td);

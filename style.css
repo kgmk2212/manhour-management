@@ -4828,6 +4828,14 @@
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+.fm-process-table .col-process {
+    width: 50px;
+}
+
+.fm-process-table .col-hours {
+    width: 80px;
+}
+
 .fm-process-table th {
     background: rgba(0, 0, 0, 0.025);
     font-size: 10px;
@@ -4961,28 +4969,43 @@
         margin-top: 2px;
     }
 
-    .fm-process-table th {
-        padding: 6px 6px;
+    .fm-process-table {
+        table-layout: fixed !important;
+        width: 100% !important;
     }
 
+    .fm-process-table col.col-process {
+        width: 44px;
+    }
+
+    .fm-process-table col.col-hours {
+        width: 64px;
+    }
+
+    .fm-process-table th,
     .fm-process-table td {
         padding: 6px 4px;
+        overflow: hidden;
     }
 
-    .fm-process-table select {
+    .fm-process-table select,
+    .fm-process-table input[type="number"] {
         width: 100% !important;
-        max-width: 0;
-        min-width: 100%;
+        min-width: 0 !important;
+        max-width: 100% !important;
         box-sizing: border-box;
-        text-overflow: ellipsis;
-    }
-
-    .fm-process-table input {
-        width: 100% !important;
-        box-sizing: border-box;
+        padding: 6px 4px !important;
+        font-size: 13px;
     }
 
     .estimate-table-wrapper {
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* モーダル内のコンテンツが横にはみ出さないよう制御 */
+    .modal .modal-content {
         overflow-x: hidden;
     }
 

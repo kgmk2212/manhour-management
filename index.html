@@ -40,7 +40,7 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260212">
     <style>
         /* 早期テーマ適用用のCSS変数 */
         :root {
@@ -2160,6 +2160,11 @@
                         <div class="fm-section-label">各工程の見積</div>
                         <div class="estimate-table-wrapper">
                             <table class="fm-process-table" id="addEstimateTable">
+                                <colgroup>
+                                    <col class="col-process">
+                                    <col class="col-member">
+                                    <col class="col-hours">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th style="width: 50px; text-align: center;">工程</th>
