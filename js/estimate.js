@@ -1505,51 +1505,9 @@ export function showTaskDetail(version, task) {
  */
 export function addProcessFromTaskModal(version, task, process) {
     closeEstimateDetailModal();
-    if (typeof window.openAddEstimateModal === 'function') {
-        window.openAddEstimateModal();
+    if (typeof window.openAddEstimateSingleProcess === 'function') {
+        window.openAddEstimateSingleProcess(version, task, process);
     }
-    // pre-fill（initAddEstimateFormの後にsetTimeoutで設定）
-    setTimeout(() => {
-        const versionSelect = document.getElementById('addEstVersion');
-        if (versionSelect) versionSelect.value = version;
-
-        // 帳票名と対応名を分割
-        const formNameSelect = document.getElementById('addEstFormNameSelect');
-        const formNameInput = document.getElementById('addEstFormName');
-        const taskInput = document.getElementById('addEstTask');
-
-        if (task.includes('：')) {
-            const parts = task.split('：');
-            if (formNameSelect) {
-                // セレクトに存在するか確認
-                let found = false;
-                for (let i = 0; i < formNameSelect.options.length; i++) {
-                    if (formNameSelect.options[i].value === parts[0]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) {
-                    formNameSelect.value = parts[0];
-                    formNameSelect.style.display = 'block';
-                    if (formNameInput) formNameInput.style.display = 'none';
-                } else {
-                    formNameSelect.style.display = 'none';
-                    if (formNameInput) {
-                        formNameInput.style.display = 'block';
-                        formNameInput.value = parts[0];
-                    }
-                }
-            }
-            if (taskInput) taskInput.value = parts.slice(1).join('：');
-        } else {
-            if (taskInput) taskInput.value = task;
-        }
-
-        // 対象工程のフィールドにフォーカス
-        const hoursField = document.getElementById(`addEst${process}`);
-        if (hoursField) hoursField.focus();
-    }, 100);
 }
 
 /**

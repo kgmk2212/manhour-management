@@ -14,6 +14,9 @@ import { PROCESS } from './constants.js';
 // フォームに入力中のデータがあるか（モーダルを開いた後、閉じて再度開く時に保持する）
 let hasFormData = false;
 
+// 単一工程モードの状態
+let singleProcessMode = null; // null: 通常, { version, task, process } のオブジェクト
+
 export function openAddEstimateModal() {
     // セレクトの選択肢は常に最新化（データ変更に追従）
     if (typeof window.updateVersionOptions === 'function') window.updateVersionOptions();
@@ -25,8 +28,141 @@ export function openAddEstimateModal() {
     }
     // 保持中: そのまま表示（選択肢の更新のみ済み）
 
+    // 単一工程モードでなければ通常表示に戻す
+    if (!singleProcessMode) {
+        exitSingleProcessMode();
+    }
+
     document.getElementById('addEstimateModal').style.display = 'flex';
     constrainProcessTableOnMobile();
+}
+
+/**
+ * 単一工程モードでモーダルを開く（対応詳細モーダルからの工程追加用）
+ */
+export function openAddEstimateSingleProcess(version, task, process) {
+    singleProcessMode = { version, task, process };
+    hasFormData = false;
+
+    // セレクトの選択肢を最新化
+    if (typeof window.updateVersionOptions === 'function') window.updateVersionOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    initAddEstimateForm();
+
+    const modal = document.getElementById('addEstimateModal');
+    modal.style.display = 'flex';
+
+    // --- UI制限 ---
+    // セグメントコントロール非表示
+    const modeSelector = document.getElementById('addEstModeSelector');
+    if (modeSelector) modeSelector.style.display = 'none';
+
+    // 版数をpre-fill＋読み取り専用
+    const versionSelect = document.getElementById('addEstVersion');
+    if (versionSelect) {
+        versionSelect.value = version;
+        versionSelect.disabled = true;
+    }
+
+    // 帳票名・対応名をpre-fill＋読み取り専用
+    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    const formNameInput = document.getElementById('addEstFormName');
+    const taskInput = document.getElementById('addEstTask');
+
+    if (task.includes('：')) {
+        const parts = task.split('：');
+        if (formNameSelect) {
+            let found = false;
+            for (let i = 0; i < formNameSelect.options.length; i++) {
+                if (formNameSelect.options[i].value === parts[0]) { found = true; break; }
+            }
+            if (found) {
+                formNameSelect.value = parts[0];
+                formNameSelect.style.display = 'block';
+                formNameSelect.disabled = true;
+                if (formNameInput) formNameInput.style.display = 'none';
+            } else {
+                formNameSelect.style.display = 'none';
+                if (formNameInput) {
+                    formNameInput.style.display = 'block';
+                    formNameInput.value = parts[0];
+                    formNameInput.readOnly = true;
+                }
+            }
+        }
+        if (taskInput) { taskInput.value = parts.slice(1).join('：'); taskInput.readOnly = true; }
+    } else {
+        if (formNameSelect) { formNameSelect.value = ''; formNameSelect.disabled = true; }
+        if (taskInput) { taskInput.value = task; taskInput.readOnly = true; }
+    }
+
+    // 対象工程以外のtbody行を非表示
+    const table = document.getElementById('addEstimateTable');
+    if (table) {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row, i) => {
+            const proc = PROCESS.TYPES[i];
+            row.style.display = (proc === process) ? '' : 'none';
+        });
+    }
+
+    // 合計行を非表示（1工程のみ）
+    const totals = document.getElementById('addEstimateTotals');
+    if (totals) totals.style.display = 'none';
+
+    // モーダルタイトルを変更
+    const titleEl = modal.querySelector('.modal-header h3');
+    if (titleEl) titleEl.textContent = `📝 ${process} 工程を追加`;
+
+    // 対象工程の時間フィールドにフォーカス
+    setTimeout(() => {
+        const hoursField = document.getElementById(`addEst${process}`);
+        if (hoursField) hoursField.focus();
+    }, 100);
+
+    constrainProcessTableOnMobile();
+}
+
+/**
+ * 単一工程モードを解除して通常表示に戻す
+ */
+function exitSingleProcessMode() {
+    if (!singleProcessMode) return;
+    singleProcessMode = null;
+
+    // セグメントコントロール再表示
+    const modeSelector = document.getElementById('addEstModeSelector');
+    if (modeSelector) modeSelector.style.display = '';
+
+    // フィールドのdisabled/readOnlyを解除
+    const versionSelect = document.getElementById('addEstVersion');
+    if (versionSelect) versionSelect.disabled = false;
+
+    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    if (formNameSelect) formNameSelect.disabled = false;
+
+    const formNameInput = document.getElementById('addEstFormName');
+    if (formNameInput) formNameInput.readOnly = false;
+
+    const taskInput = document.getElementById('addEstTask');
+    if (taskInput) taskInput.readOnly = false;
+
+    // 全tbody行を再表示
+    const table = document.getElementById('addEstimateTable');
+    if (table) {
+        table.querySelectorAll('tbody tr').forEach(row => {
+            row.style.display = '';
+        });
+    }
+
+    // 合計行を再表示
+    const totals = document.getElementById('addEstimateTotals');
+    if (totals) totals.style.display = '';
+
+    // タイトルを元に戻す
+    const modal = document.getElementById('addEstimateModal');
+    const titleEl = modal?.querySelector('.modal-header h3');
+    if (titleEl) titleEl.textContent = '📝 見積登録';
 }
 
 /**
@@ -75,8 +211,15 @@ function constrainProcessTableOnMobile() {
  */
 export function closeAddEstimateModal() {
     document.getElementById('addEstimateModal').style.display = 'none';
-    // 何か入力されていればフラグを立てる
-    hasFormData = checkHasFormData();
+
+    if (singleProcessMode) {
+        // 単一工程モードの場合はリセットして通常に戻す
+        exitSingleProcessMode();
+        resetAddEstimateForm();
+    } else {
+        // 通常モード: 何か入力されていればフラグを立てる
+        hasFormData = checkHasFormData();
+    }
 }
 
 /**
@@ -665,9 +808,24 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
+
+    // 単一工程モードの場合、対応詳細モーダルに戻る
+    const returnTo = singleProcessMode ? { version: singleProcessMode.version, task: singleProcessMode.task, process: singleProcessMode.process } : null;
+
+    exitSingleProcessMode();
     resetAddEstimateForm();
     document.getElementById('addEstimateModal').style.display = 'none';
-    Utils.showAlert('見積を登録しました', true);
+
+    if (returnTo) {
+        Utils.showAlert(`${returnTo.process} 工程を登録しました`, true);
+        setTimeout(() => {
+            if (typeof window.showTaskDetail === 'function') {
+                window.showTaskDetail(returnTo.version, returnTo.task);
+            }
+        }, 200);
+    } else {
+        Utils.showAlert('見積を登録しました', true);
+    }
 }
 
 console.log('✅ モジュール estimate-add.js loaded');

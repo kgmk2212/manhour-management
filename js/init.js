@@ -298,6 +298,7 @@ window.initQuickTaskDropdownHandler = Quick.initQuickTaskDropdownHandler;
 window.openAddEstimateModal = EstimateAdd.openAddEstimateModal;
 window.closeAddEstimateModal = EstimateAdd.closeAddEstimateModal;
 window.resetAddEstimateForm = EstimateAdd.resetAddEstimateForm;
+window.openAddEstimateSingleProcess = EstimateAdd.openAddEstimateSingleProcess;
 window.autoFillMember = EstimateAdd.autoFillMember;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
