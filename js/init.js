@@ -449,6 +449,8 @@ document.addEventListener('DOMContentLoaded', function () {
     UI.updateMonthOptions();
     UI.updateEstimateMonthOptions();
     UI.updateEstimateVersionOptions();
+    // 見積フィルタのクロスフィルタリングを適用（レポートタブと同じ仕様）
+    UI.restoreEstimateFilterState();
     UI.updateActualMonthOptions();
     UI.updateMemberOptions();
     UI.updateVersionOptions();
