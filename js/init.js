@@ -406,6 +406,7 @@ window.getFilteredSchedules = Schedule.getFilteredSchedules;
 window.applyScheduleFilters = Schedule.applyScheduleFilters;
 window.clearScheduleFilters = Schedule.clearScheduleFilters;
 window.updateScheduleFilterOptions = Schedule.updateScheduleFilterOptions;
+window.toggleVersionFilterDropdown = Schedule.toggleVersionFilterDropdown;
 window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
 window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
 window.showToast = Schedule.showToast;

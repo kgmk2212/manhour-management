@@ -182,6 +182,58 @@ export class GanttChartRenderer {
     }
 
     /**
+     * フィルタされたスケジュールの日付範囲からmonthBoundariesを計算
+     */
+    calculateMonthRangeFromData(filteredSchedules) {
+        if (!filteredSchedules || filteredSchedules.length === 0) {
+            // データがない場合はデフォルトの3ヶ月表示
+            const now = new Date();
+            this.calculateMonthRange(now.getFullYear(), now.getMonth() + 1);
+            return;
+        }
+
+        // 最小開始日と最大終了日を取得
+        let minDate = new Date(filteredSchedules[0].startDate);
+        let maxDate = new Date(filteredSchedules[0].endDate);
+        filteredSchedules.forEach(s => {
+            const start = new Date(s.startDate);
+            const end = new Date(s.endDate);
+            if (start < minDate) minDate = start;
+            if (end > maxDate) maxDate = end;
+        });
+
+        // 月の範囲を計算（開始月〜終了月）
+        const startYear = minDate.getFullYear();
+        const startMonth = minDate.getMonth() + 1;
+        const endYear = maxDate.getFullYear();
+        const endMonth = maxDate.getMonth() + 1;
+
+        this.monthBoundaries = [];
+        let totalDays = 0;
+        let y = startYear;
+        let m = startMonth;
+
+        while (y < endYear || (y === endYear && m <= endMonth)) {
+            const days = getDaysInMonth(y, m);
+            this.monthBoundaries.push({
+                year: y,
+                month: m,
+                startDayOffset: totalDays,
+                daysInMonth: days
+            });
+            totalDays += days;
+            m++;
+            if (m > 12) { m = 1; y++; }
+        }
+
+        this.totalDays = totalDays;
+        const first = this.monthBoundaries[0];
+        const last = this.monthBoundaries[this.monthBoundaries.length - 1];
+        this.rangeStart = new Date(first.year, first.month - 1, 1);
+        this.rangeEnd = new Date(last.year, last.month - 1, last.daysInMonth);
+    }
+
+    /**
      * 日付→X座標（timelineCanvas上）
      */
     dateToX(date) {
@@ -217,7 +269,13 @@ export class GanttChartRenderer {
         this.initDualCanvas();
 
         // 複数月の範囲を計算
-        this.calculateMonthRange(year, month);
+        const hasVersionFilter = scheduleSettings.filterVersion && scheduleSettings.filterVersion.length > 0;
+        if (hasVersionFilter && filteredSchedules && filteredSchedules.length > 0) {
+            // 版数フィルタ適用時: データの日付範囲に基づいて表示範囲を決定
+            this.calculateMonthRangeFromData(filteredSchedules);
+        } else {
+            this.calculateMonthRange(year, month);
+        }
 
         this.scheduleRects = [];
 

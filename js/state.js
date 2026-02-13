@@ -476,7 +476,7 @@ export let scheduleSettings = {
     hoursPerDay: 8,          // 1日の作業時間
     currentMonth: null,      // 表示中の月（YYYY-MM）
     displayMonths: 3,        // 表示月数（複数月連続表示）
-    filterVersion: '',       // フィルタ: 版数
+    filterVersion: [],       // フィルタ: 版数（複数選択対応、空配列=すべて）
     filterMember: '',        // フィルタ: 担当者
     filterStatus: ''         // フィルタ: ステータス
 };
@@ -495,6 +495,10 @@ export function setNextScheduleId(value) {
 
 export function setScheduleSettings(value) {
     scheduleSettings = { ...scheduleSettings, ...value };
+    // filterVersionが旧形式（文字列）の場合、配列に変換
+    if (typeof scheduleSettings.filterVersion === 'string') {
+        scheduleSettings.filterVersion = scheduleSettings.filterVersion ? [scheduleSettings.filterVersion] : [];
+    }
 }
 
 export function setTaskColorMap(value) {

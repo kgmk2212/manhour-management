@@ -1064,9 +1064,14 @@
                 <div class="schedule-filter-bar">
                     <div class="schedule-filter-item">
                         <label>版数</label>
-                        <select id="scheduleFilterVersion" onchange="applyScheduleFilters()">
-                            <option value="">すべて</option>
-                        </select>
+                        <div class="version-filter-multi" id="versionFilterMulti">
+                            <button type="button" class="version-filter-toggle" id="versionFilterToggle" onclick="toggleVersionFilterDropdown()">
+                                すべて <span class="version-filter-arrow">▼</span>
+                            </button>
+                            <div class="version-filter-dropdown" id="versionFilterDropdown" style="display:none;">
+                                <!-- JSで動的生成 -->
+                            </div>
+                        </div>
                     </div>
                     <div class="schedule-filter-item">
                         <label>担当者</label>

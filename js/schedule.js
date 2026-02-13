@@ -140,7 +140,7 @@ export function renderScheduleView() {
         if (emptyMessage) {
             emptyMessage.style.display = 'block';
             // フィルタ適用中とそうでない場合でメッセージを変える
-            const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
+            const hasFilters = (scheduleSettings.filterVersion && scheduleSettings.filterVersion.length > 0) || scheduleSettings.filterMember || scheduleSettings.filterStatus;
             emptyMessage.innerHTML = hasFilters
                 ? '<p>該当するスケジュールがありません</p><p style="font-size: 14px; color: #888;">フィルタ条件を変更してください</p>'
                 : '<p>スケジュールがありません</p><p style="font-size: 14px; color: #888;">「+ 予定作成」ボタンから予定を追加してください</p>';
@@ -1627,23 +1627,23 @@ export function executeAutoGenerate() {
  */
 export function getFilteredSchedules() {
     const { filterVersion, filterMember, filterStatus } = scheduleSettings;
-    
+
     return schedules.filter(schedule => {
-        // 版数フィルタ
-        if (filterVersion && schedule.version !== filterVersion) {
+        // 版数フィルタ（配列: 空=すべて、要素あり=含まれるもののみ）
+        if (filterVersion && filterVersion.length > 0 && !filterVersion.includes(schedule.version)) {
             return false;
         }
-        
+
         // 担当者フィルタ
         if (filterMember && schedule.member !== filterMember) {
             return false;
         }
-        
+
         // ステータスフィルタ
         if (filterStatus && schedule.status !== filterStatus) {
             return false;
         }
-        
+
         return true;
     });
 }
@@ -1652,16 +1652,22 @@ export function getFilteredSchedules() {
  * フィルタを適用
  */
 export function applyScheduleFilters() {
-    const version = document.getElementById('scheduleFilterVersion')?.value || '';
+    // 版数: チェックボックスから選択された版数を配列で取得
+    const versionCheckboxes = document.querySelectorAll('#versionFilterDropdown input[type="checkbox"]:checked');
+    const selectedVersions = [...versionCheckboxes].map(cb => cb.value);
+
     const member = document.getElementById('scheduleFilterMember')?.value || '';
     const status = document.getElementById('scheduleFilterStatus')?.value || '';
-    
+
     setScheduleSettings({
-        filterVersion: version,
+        filterVersion: selectedVersions,
         filterMember: member,
         filterStatus: status
     });
-    
+
+    // トグルボタンのラベルを更新
+    updateVersionFilterToggleLabel();
+
     renderScheduleView();
     updateFilterResultCount();
 }
@@ -1672,12 +1678,12 @@ export function applyScheduleFilters() {
 export function updateFilterResultCount() {
     const countElement = document.getElementById('scheduleFilterCount');
     if (!countElement) return;
-    
+
     const filtered = getFilteredSchedules();
     const total = schedules.length;
-    
-    const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
-    
+
+    const hasFilters = (scheduleSettings.filterVersion && scheduleSettings.filterVersion.length > 0) || scheduleSettings.filterMember || scheduleSettings.filterStatus;
+
     if (hasFilters) {
         countElement.innerHTML = `<strong>${filtered.length}</strong> / ${total}件`;
     } else {
@@ -1690,20 +1696,22 @@ export function updateFilterResultCount() {
  */
 export function clearScheduleFilters() {
     setScheduleSettings({
-        filterVersion: '',
+        filterVersion: [],
         filterMember: '',
         filterStatus: ''
     });
-    
-    // UI更新
-    const versionSelect = document.getElementById('scheduleFilterVersion');
+
+    // UI更新: 版数チェックボックスをすべて解除
+    const versionCheckboxes = document.querySelectorAll('#versionFilterDropdown input[type="checkbox"]');
+    versionCheckboxes.forEach(cb => { cb.checked = false; });
+    updateVersionFilterToggleLabel();
+
     const memberSelect = document.getElementById('scheduleFilterMember');
     const statusSelect = document.getElementById('scheduleFilterStatus');
-    
-    if (versionSelect) versionSelect.value = '';
+
     if (memberSelect) memberSelect.value = '';
     if (statusSelect) statusSelect.value = '';
-    
+
     renderScheduleView();
 }
 
@@ -1718,7 +1726,7 @@ export function deleteFilteredSchedules() {
         return;
     }
     
-    const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
+    const hasFilters = (scheduleSettings.filterVersion && scheduleSettings.filterVersion.length > 0) || scheduleSettings.filterMember || scheduleSettings.filterStatus;
     const message = hasFilters
         ? `フィルタに一致する${filteredSchedules.length}件のスケジュールを削除しますか？`
         : `すべてのスケジュール（${filteredSchedules.length}件）を削除しますか？`;
@@ -2022,28 +2030,73 @@ function setupKeyboardShortcuts() {
  * フィルタオプションを更新
  */
 export function updateScheduleFilterOptions() {
-    // 版数オプション
-    const versionSelect = document.getElementById('scheduleFilterVersion');
-    if (versionSelect) {
+    // 版数オプション（チェックボックスリスト）
+    const dropdown = document.getElementById('versionFilterDropdown');
+    if (dropdown) {
         const versions = [...new Set(schedules.map(s => s.version))].sort();
-        const currentValue = versionSelect.value;
-        
-        versionSelect.innerHTML = '<option value="">すべて</option>';
+        const currentSelected = scheduleSettings.filterVersion || [];
+
+        dropdown.innerHTML = '';
         versions.forEach(v => {
-            versionSelect.innerHTML += `<option value="${v}"${v === currentValue ? ' selected' : ''}>${v}</option>`;
+            const checked = currentSelected.includes(v) ? ' checked' : '';
+            const label = document.createElement('label');
+            label.className = 'version-filter-option';
+            label.innerHTML = `<input type="checkbox" value="${v}"${checked} onchange="applyScheduleFilters()"> <span>${v}</span>`;
+            dropdown.appendChild(label);
         });
     }
-    
+
     // 担当者オプション
     const memberSelect = document.getElementById('scheduleFilterMember');
     if (memberSelect) {
         const members = [...new Set(schedules.map(s => s.member))].sort();
         const currentValue = memberSelect.value;
-        
+
         memberSelect.innerHTML = '<option value="">すべて</option>';
         members.forEach(m => {
             memberSelect.innerHTML += `<option value="${m}"${m === currentValue ? ' selected' : ''}>${m}</option>`;
         });
+    }
+}
+
+/**
+ * 版数フィルタのドロップダウンを開閉
+ */
+export function toggleVersionFilterDropdown() {
+    const dropdown = document.getElementById('versionFilterDropdown');
+    if (!dropdown) return;
+
+    const isVisible = dropdown.style.display !== 'none';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+
+    // 外部クリックで閉じる
+    if (!isVisible) {
+        const closeHandler = (e) => {
+            const multi = document.getElementById('versionFilterMulti');
+            if (multi && !multi.contains(e.target)) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        // 次のイベントループで登録（現在のクリックイベントが先に処理されるように）
+        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    }
+}
+
+/**
+ * 版数フィルタのトグルボタンラベルを更新
+ */
+function updateVersionFilterToggleLabel() {
+    const toggle = document.getElementById('versionFilterToggle');
+    if (!toggle) return;
+
+    const selected = scheduleSettings.filterVersion || [];
+    if (selected.length === 0) {
+        toggle.innerHTML = 'すべて <span class="version-filter-arrow">▼</span>';
+    } else if (selected.length === 1) {
+        toggle.innerHTML = `${selected[0]} <span class="version-filter-arrow">▼</span>`;
+    } else {
+        toggle.innerHTML = `${selected.length}件選択 <span class="version-filter-arrow">▼</span>`;
     }
 }
 
