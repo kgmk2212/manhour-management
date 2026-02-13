@@ -38,14 +38,17 @@
             } catch (e) { }
         })();
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=20260212b">
+    <link rel="stylesheet" href="style.css?v=20260213-graphite">
     <style>
         /* 早期テーマ適用用のCSS変数 */
         :root {
-            --early-theme-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            --early-bg-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --early-theme-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
+            --early-bg-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
         }
         /* タブを初期非表示（JS初期化完了後に表示） */
         @media (max-width: 768px) {
@@ -64,17 +67,17 @@
             var themeColor = window.__earlyThemeColor || 'deep-blue';
             var backgroundColor = window.__earlyBackgroundColor || 'same';
             var gradients = {
-                'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-                'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-                'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-                'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-                'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-                'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-                'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-                'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-                'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-                'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+                'purple': 'linear-gradient(135deg, #5b4e96 0%, #7c6bb8 50%, #8e7ec8 100%)',
+                'deep-blue': 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%)',
+                'teal': 'linear-gradient(135deg, #0d6b62 0%, #0f8a7e 50%, #14a89a 100%)',
+                'cyan': 'linear-gradient(135deg, #0c7792 0%, #0e96b5 50%, #12aad0 100%)',
+                'ocean': 'linear-gradient(135deg, #0a4265 0%, #0c5a85 50%, #1070a0 100%)',
+                'sky': 'linear-gradient(135deg, #0560a0 0%, #0780c5 50%, #0a96e0 100%)',
+                'indigo': 'linear-gradient(135deg, #3d32b0 0%, #5548d4 50%, #6660e8 100%)',
+                'navy': 'linear-gradient(135deg, #1a3890 0%, #2850c0 50%, #3668e0 100%)',
+                'slate': 'linear-gradient(135deg, #2d3748 0%, #3d4b5e 50%, #4a5d72 100%)',
+                'green': 'linear-gradient(135deg, #046b50 0%, #058c68 50%, #08a57e 100%)',
+                'emerald': 'linear-gradient(135deg, #048060 0%, #06a87e 50%, #0ac096 100%)'
             };
             var gradient = gradients[themeColor] || gradients['deep-blue'];
 
@@ -118,7 +121,7 @@
 
         /* ページ読込中の背景安定化 */
         body {
-            background: var(--early-bg-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)));
+            background: var(--early-bg-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%)));
         }
 
         /* 早期テーマ適用：ヘッダーにテーマカラーを反映 */

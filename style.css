@@ -5,7 +5,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', 'Yu Gothic', 'Meiryo', sans-serif;
+            font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             min-height: 100vh;
             padding: 10px;
             /* セーフエリア対応：全方向 */
@@ -13,30 +13,34 @@
             padding-right: max(10px, env(safe-area-inset-right, 10px));
             padding-left: max(10px, env(safe-area-inset-left, 10px));
             position: relative;
+            background: #f7f6f3;
+            color: #1c1917;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* 背景テクスチャ: フィルムグレイン風ノイズ（大画面での単調さを解消） */
+        /* 背景テクスチャ: サブトルメッシュグラデーション */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
-            background-size: 512px 512px;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 30%, rgba(30, 58, 95, 0.025) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 80% 70%, rgba(91, 78, 150, 0.015) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
-            mix-blend-mode: soft-light;
         }
 
-        /* 背景ビネット: 画面端を暗く、中央のコンテナへ視線誘導 */
+        /* 背景ビネット: 温かみのある視線誘導 */
         body::after {
             content: '';
             position: fixed;
             inset: 0;
             background: radial-gradient(
                 ellipse 80% 70% at 50% 40%,
-                rgba(255, 255, 255, 0.06) 0%,
+                rgba(247, 246, 243, 0.4) 0%,
                 transparent 50%,
-                rgba(0, 0, 0, 0.15) 100%
+                rgba(28, 25, 23, 0.03) 100%
             );
             pointer-events: none;
             z-index: 0;
@@ -45,20 +49,20 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid rgba(28, 25, 23, 0.06);
             box-shadow:
-                0 0 0 1px rgba(255, 255, 255, 0.08),
-                0 1px 2px rgba(0, 0, 0, 0.06),
-                0 4px 16px rgba(0, 0, 0, 0.06),
-                0 12px 40px rgba(0, 0, 0, 0.1);
+                0 2px 4px rgba(28, 25, 23, 0.03),
+                0 8px 16px rgba(28, 25, 23, 0.05),
+                0 16px 40px rgba(28, 25, 23, 0.04);
             /* overflow: hidden;  Stickyが効かなくなるため解除 */
             position: relative;
             z-index: 1;
         }
 
         header {
-            background: var(--theme-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)));
+            background: var(--theme-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%)));
             color: white;
             padding: 15px;
             position: relative;
@@ -86,7 +90,7 @@
             font-size: 22px;
             margin-bottom: 8px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.025em;
         }
 
         .header-buttons {
@@ -123,11 +127,12 @@
         .tabs {
             display: flex;
             flex-direction: column;
-            background: #f0f2f5;
+            background: #fafaf8;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(28, 25, 23, 0.06);
+            border-bottom: 1px solid #e8e5df;
             transition: transform 0.3s ease, opacity 0.3s ease;
             transform: translateY(-100%);
             opacity: 0;
@@ -176,22 +181,32 @@
 
         .tab {
             padding: 10px 16px;
-            background: white;
+            background: transparent;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
+            font-weight: 500;
             white-space: nowrap;
             flex-shrink: 0;
+            color: #78716c;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(28, 25, 23, 0.04);
+            color: #44403c;
         }
 
         .tab.active {
             color: white;
+            font-weight: 600;
         }
 
         /* テーマが適用されていないアクティブタブのフォールバック */
         .tab.active:not([class*="tab-theme-"]) {
-            background: #3498db;
+            background: #2d5a8e;
         }
 
         .content {
@@ -212,25 +227,47 @@
         .btn {
             padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
+            letter-spacing: -0.01em;
+            transition: all 0.15s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
         }
 
         .btn-primary {
-            background: #3498db;
+            background: #2d5a8e;
             color: white;
+            box-shadow: 0 1px 3px rgba(45, 90, 142, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: #1e3a5f;
+            box-shadow: 0 2px 6px rgba(45, 90, 142, 0.35);
         }
 
         .btn-success {
-            background: #27ae60;
+            background: #059669;
             color: white;
+            box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+        }
+
+        .btn-success:hover {
+            background: #047857;
         }
 
         .btn-danger {
-            background: #e74c3c;
+            background: #dc2626;
             color: white;
+            box-shadow: 0 1px 3px rgba(220, 38, 38, 0.25);
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
         }
 
         .btn-small {
@@ -247,15 +284,28 @@
             margin-bottom: 4px;
             font-weight: 500;
             font-size: 13px;
+            color: #44403c;
+            letter-spacing: -0.01em;
         }
 
         input:not([type="radio"]):not([type="checkbox"]),
         select {
             width: 100%;
             padding: 8px 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
+            border: 1.5px solid #e0ddd8;
+            border-radius: 8px;
             font-size: 14px;
+            background: #fafaf8;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            color: #1c1917;
+        }
+
+        input:not([type="radio"]):not([type="checkbox"]):focus,
+        select:focus {
+            outline: none;
+            border-color: #2d5a8e;
+            box-shadow: 0 0 0 3px rgba(45, 90, 142, 0.08);
+            background: #fff;
         }
 
         /* モバイルでのズーム防止 (フォントサイズ16px以上にする) */
@@ -323,17 +373,18 @@
         }
 
         .estimate-table th {
-            background: #e8f5e9;
-            color: #2c3e50;
+            background: #f5f4f1;
+            color: #44403c;
             font-size: 12px;
             font-weight: 600;
             padding: 8px;
-            border-bottom: 2px solid #4caf50;
+            border-bottom: 2px solid #d6d3cd;
+            letter-spacing: -0.01em;
         }
 
         .estimate-table td {
             padding: 6px 8px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0ede8;
         }
 
         .estimate-table select,
@@ -356,16 +407,18 @@
         }
 
         th {
-            background: #34495e;
-            color: white;
+            background: #292524;
+            color: #fafaf9;
             padding: 12px;
             text-align: left;
             white-space: nowrap;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
 
         td {
             padding: 8px 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0ede8;
             white-space: nowrap;
         }
 
@@ -675,7 +728,9 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(12, 10, 9, 0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             animation: fadeIn 0.2s;
             align-items: flex-start;
             justify-content: center;
@@ -689,11 +744,11 @@
             left: 0;
             right: 0;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid #e8e5df;
+            border-radius: 10px;
             max-height: 300px;
             overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 6px rgba(28, 25, 23, 0.04), 0 10px 24px rgba(28, 25, 23, 0.1);
             z-index: 100;
             margin-top: 4px;
             /* モバイルで一番下の要素を選択しやすくするためにパディングを追加 */
@@ -714,10 +769,10 @@
         .custom-dropdown-item {
             padding: 12px 16px;
             cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
+            border-bottom: 1px solid #f5f3f0;
+            transition: background-color 0.15s ease;
             font-size: 14px;
-            color: #333;
+            color: #1c1917;
         }
 
         .custom-dropdown-item:last-child {
@@ -725,19 +780,19 @@
         }
 
         .custom-dropdown-item:hover {
-            background-color: #e3f2fd;
-            color: #000;
+            background-color: #f5f4f1;
+            color: #1c1917;
         }
 
         .custom-dropdown-item.selected {
-            background-color: #e3f2fd;
-            color: #000;
+            background-color: #eff6ff;
+            color: #1e3a5f;
         }
 
         .custom-dropdown-empty {
             padding: 20px;
             text-align: center;
-            color: #999;
+            color: #a8a29e;
             font-size: 14px;
         }
 
@@ -795,17 +850,17 @@
         }
 
         .custom-alert-content {
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 0;
-            border-radius: 16px;
+            border-radius: 14px;
             width: 88%;
             max-width: 340px;
             box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.12),
-                0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+                0 4px 8px rgba(28, 25, 23, 0.06),
+                0 12px 32px rgba(28, 25, 23, 0.12);
+            border: 1px solid rgba(28, 25, 23, 0.06);
             overflow: hidden;
             animation: alertEnter 0.4s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
         }
@@ -951,52 +1006,52 @@
 
         /* モーダルヘッダーのデフォルト色（テーマ適用前） */
         .modal-header:not([class*="modal-theme-"]) {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
         }
 
-        /* モーダル用テーマ色 */
+        /* モーダル用テーマ色 — Graphite Studio */
         .modal-theme-purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #5b4e96 0%, #7c6bb8 50%, #8e7ec8 100%);
         }
 
         .modal-theme-deep-blue {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
         }
 
         .modal-theme-teal {
-            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            background: linear-gradient(135deg, #0d6b62 0%, #0f8a7e 50%, #14a89a 100%);
         }
 
         .modal-theme-cyan {
-            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+            background: linear-gradient(135deg, #0c7792 0%, #0e96b5 50%, #12aad0 100%);
         }
 
         .modal-theme-ocean {
-            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+            background: linear-gradient(135deg, #0a4265 0%, #0c5a85 50%, #1070a0 100%);
         }
 
         .modal-theme-sky {
-            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+            background: linear-gradient(135deg, #0560a0 0%, #0780c5 50%, #0a96e0 100%);
         }
 
         .modal-theme-indigo {
-            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+            background: linear-gradient(135deg, #3d32b0 0%, #5548d4 50%, #6660e8 100%);
         }
 
         .modal-theme-navy {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #1a3890 0%, #2850c0 50%, #3668e0 100%);
         }
 
         .modal-theme-slate {
-            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            background: linear-gradient(135deg, #2d3748 0%, #3d4b5e 50%, #4a5d72 100%);
         }
 
         .modal-theme-green {
-            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+            background: linear-gradient(135deg, #046b50 0%, #058c68 50%, #08a57e 100%);
         }
 
         .modal-theme-emerald {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            background: linear-gradient(135deg, #048060 0%, #06a87e 50%, #0ac096 100%);
         }
 
         .modal-header h3 {
@@ -1029,11 +1084,13 @@
         }
 
         .work-item {
-            background: #f8f9fa;
+            background: #fafaf8;
             padding: 15px;
             margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
+            border-radius: 10px;
+            border-left: 3px solid #2d5a8e;
+            border: 1px solid #f0ede8;
+            border-left: 3px solid #2d5a8e;
         }
 
         .work-item:last-child {
@@ -1050,18 +1107,20 @@
         .work-item-title {
             font-weight: 600;
             font-size: 15px;
-            color: #2c3e50;
+            color: #1c1917;
+            letter-spacing: -0.01em;
         }
 
         .work-item-hours {
             font-size: 18px;
-            font-weight: 700;
-            color: #3498db;
+            font-weight: 800;
+            color: #2d5a8e;
+            letter-spacing: -0.02em;
         }
 
         .work-item-details {
             font-size: 13px;
-            color: #666;
+            color: #78716c;
             line-height: 1.6;
         }
 
@@ -1094,34 +1153,35 @@
 
         .badge {
             padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
         }
 
         .badge-ui {
-            background: #e3f2fd;
-            color: #1976d2;
+            background: #dbeafe;
+            color: #1d4ed8;
         }
 
         .badge-pg {
-            background: #f3e5f5;
-            color: #7b1fa2;
+            background: #ede9fe;
+            color: #6d28d9;
         }
 
         .badge-pt {
-            background: #fff3e0;
-            color: #f57c00;
+            background: #fef3c7;
+            color: #d97706;
         }
 
         .badge-it {
-            background: #e8f5e9;
-            color: #388e3c;
+            background: #d1fae5;
+            color: #047857;
         }
 
         .badge-st {
-            background: #fce4ec;
-            color: #c2185b;
+            background: #fce7f3;
+            color: #be185d;
         }
 
         .stats-grid {
@@ -1133,18 +1193,24 @@
 
         .stat-card {
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
         }
 
         .stat-card h3 {
-            font-size: 15px;
+            font-size: 13px;
             margin-bottom: 10px;
+            font-weight: 500;
+            opacity: 0.85;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
 
         .stat-card .value {
             font-size: 32px;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: -0.03em;
         }
 
         /* モバイル用レポート集計カードの最適化 */
@@ -1228,13 +1294,12 @@
 
             .container {
                 border-radius: 18px;
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(28, 25, 23, 0.05);
                 box-shadow:
-                    0 0 0 1px rgba(0, 0, 0, 0.03),
-                    0 1px 2px rgba(0, 0, 0, 0.04),
-                    0 6px 20px rgba(0, 0, 0, 0.06),
-                    0 20px 56px rgba(0, 0, 0, 0.12),
-                    0 0 120px -20px rgba(0, 0, 0, 0.08);
+                    0 0 0 1px rgba(28, 25, 23, 0.02),
+                    0 2px 4px rgba(28, 25, 23, 0.03),
+                    0 8px 24px rgba(28, 25, 23, 0.06),
+                    0 24px 56px rgba(28, 25, 23, 0.08);
             }
 
             header {
@@ -1507,94 +1572,94 @@
             overflow: hidden;
         }
 
-        /* 色の定義 */
+        /* 色の定義 — Graphite Studio */
         .theme-purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #5b4e96 0%, #7c6bb8 50%, #8e7ec8 100%);
         }
 
         .theme-deep-blue {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
         }
 
         .theme-teal {
-            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            background: linear-gradient(135deg, #0d6b62 0%, #0f8a7e 50%, #14a89a 100%);
         }
 
         .theme-cyan {
-            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+            background: linear-gradient(135deg, #0c7792 0%, #0e96b5 50%, #12aad0 100%);
         }
 
         .theme-ocean {
-            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+            background: linear-gradient(135deg, #0a4265 0%, #0c5a85 50%, #1070a0 100%);
         }
 
         .theme-sky {
-            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+            background: linear-gradient(135deg, #0560a0 0%, #0780c5 50%, #0a96e0 100%);
         }
 
         .theme-indigo {
-            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+            background: linear-gradient(135deg, #3d32b0 0%, #5548d4 50%, #6660e8 100%);
         }
 
         .theme-navy {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #1a3890 0%, #2850c0 50%, #3668e0 100%);
         }
 
         .theme-slate {
-            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            background: linear-gradient(135deg, #2d3748 0%, #3d4b5e 50%, #4a5d72 100%);
         }
 
         .theme-green {
-            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+            background: linear-gradient(135deg, #046b50 0%, #058c68 50%, #08a57e 100%);
         }
 
         .theme-emerald {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            background: linear-gradient(135deg, #048060 0%, #06a87e 50%, #0ac096 100%);
         }
 
         /* タブ用の色クラス（模様なし、position/overflowなし） */
         .tab-theme-purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #5b4e96 0%, #7c6bb8 50%, #8e7ec8 100%);
         }
 
         .tab-theme-deep-blue {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%);
         }
 
         .tab-theme-teal {
-            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            background: linear-gradient(135deg, #0d6b62 0%, #0f8a7e 50%, #14a89a 100%);
         }
 
         .tab-theme-cyan {
-            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+            background: linear-gradient(135deg, #0c7792 0%, #0e96b5 50%, #12aad0 100%);
         }
 
         .tab-theme-ocean {
-            background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%);
+            background: linear-gradient(135deg, #0a4265 0%, #0c5a85 50%, #1070a0 100%);
         }
 
         .tab-theme-sky {
-            background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+            background: linear-gradient(135deg, #0560a0 0%, #0780c5 50%, #0a96e0 100%);
         }
 
         .tab-theme-indigo {
-            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+            background: linear-gradient(135deg, #3d32b0 0%, #5548d4 50%, #6660e8 100%);
         }
 
         .tab-theme-navy {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #1a3890 0%, #2850c0 50%, #3668e0 100%);
         }
 
         .tab-theme-slate {
-            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            background: linear-gradient(135deg, #2d3748 0%, #3d4b5e 50%, #4a5d72 100%);
         }
 
         .tab-theme-green {
-            background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+            background: linear-gradient(135deg, #046b50 0%, #058c68 50%, #08a57e 100%);
         }
 
         .tab-theme-emerald {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            background: linear-gradient(135deg, #048060 0%, #06a87e 50%, #0ac096 100%);
         }
 
         /* グロー効果 */
@@ -1936,23 +2001,25 @@
             flex-shrink: 0;
             padding: 6px 12px;
             font-size: 11px;
-            border: 1px solid #ddd;
+            border: 1px solid #e0ddd8;
             border-radius: 6px;
             background: white;
-            color: #333;
+            color: #44403c;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+            font-weight: 500;
         }
 
         .segment-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%));
             color: white;
             border-color: transparent;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
         }
 
         .segment-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #1e3c72);
-            background: #f8f9ff;
+            border-color: #a8a29e;
+            background: #fafaf8;
         }
 
         /* データなし月ボタン（セグメント版） */
@@ -2060,10 +2127,10 @@
                 margin: 0;
                 padding: 8px;
                 border-radius: 40px;
-                background: rgba(255, 255, 255, 0.88);
-                backdrop-filter: blur(30px) saturate(180%);
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-                border: 1px solid rgba(255, 255, 255, 0.5);
+                background: rgba(255, 255, 255, 0.92);
+                backdrop-filter: blur(24px) saturate(180%);
+                box-shadow: 0 4px 12px rgba(28, 25, 23, 0.08), 0 12px 32px rgba(28, 25, 23, 0.12);
+                border: 1px solid rgba(28, 25, 23, 0.06);
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 gap: 5px;
@@ -2251,7 +2318,8 @@
             background: white;
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(28, 25, 23, 0.04);
+            border: 1px solid #f0ede8;
         }
 
         /* version-headerとtable-wrapperをmatrix-containerのpaddingと揃える */
@@ -2319,9 +2387,10 @@
             justify-content: space-between;
             gap: 15px;
             padding: 15px 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: #fafaf8;
+            border-radius: 10px;
             margin-bottom: 15px;
+            border: 1px solid #f0ede8;
         }
 
         .schedule-nav {
@@ -2332,34 +2401,36 @@
 
         .schedule-nav-btn {
             padding: 8px 16px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid #e0ddd8;
+            border-radius: 8px;
             background: white;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
         }
 
         .schedule-nav-btn:hover {
-            background: #e9ecef;
+            background: #f5f4f1;
+            border-color: #a8a29e;
         }
 
         .schedule-today-btn {
-            background: #4A90D9;
+            background: #2d5a8e;
             color: white;
-            border-color: #4A90D9;
+            border-color: #2d5a8e;
         }
 
         .schedule-today-btn:hover {
-            background: #3A80C9;
+            background: #1e3a5f;
         }
 
         .schedule-current-month {
             font-size: 18px;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: #1c1917;
             min-width: 120px;
             text-align: center;
+            letter-spacing: -0.02em;
         }
 
         .schedule-view-toggle {
@@ -2393,8 +2464,8 @@
             gap: 20px;
             padding: 15px 20px;
             background: white;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            border: 1px solid #f0ede8;
             margin-bottom: 15px;
         }
 
@@ -2430,8 +2501,8 @@
         /* ガントチャートコンテナ */
         .gantt-container {
             background: white;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            border: 1px solid #f0ede8;
             overflow: hidden;
             min-height: 400px;
         }
@@ -2969,9 +3040,9 @@
             position: fixed;
             z-index: 10000;
             background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e8e5df;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(28, 25, 23, 0.06), 0 12px 24px rgba(28, 25, 23, 0.12);
             padding: 0;
             min-width: 220px;
             max-width: 300px;
@@ -3071,11 +3142,12 @@
             gap: 10px;
             padding: 12px 16px;
             background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(28, 25, 23, 0.06), 0 12px 24px rgba(28, 25, 23, 0.12);
             min-width: 250px;
             max-width: 400px;
             animation: toast-slide-in 0.3s ease;
+            border: 1px solid rgba(28, 25, 23, 0.06);
         }
 
         .toast.toast-success {
@@ -3257,9 +3329,9 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease, padding 0.3s ease;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(248, 249, 252, 0.98));
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(250, 250, 248, 0.98));
             border-bottom: 1px solid transparent;
-            box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.03);
+            box-shadow: inset 0 -1px 2px rgba(28, 25, 23, 0.02);
         }
 
         .tab-filter-drawer.is-expanded {
@@ -3310,25 +3382,28 @@
 
         .tab-filter-buttons button {
             padding: 6px 12px;
-            border: 1px solid #ddd;
+            border: 1px solid #e0ddd8;
             background: white;
             border-radius: 16px;
             font-size: 12px;
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+            font-weight: 500;
+            color: #44403c;
         }
 
         .tab-filter-buttons button:hover:not(.active) {
-            border-color: var(--theme-color, #1e3c72);
-            background: #f8f9ff;
+            border-color: #a8a29e;
+            background: #fafaf8;
         }
 
         .tab-filter-buttons button.active {
-            background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+            background: var(--theme-gradient, linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%));
             color: white;
             border-color: transparent;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
         }
 
         /* セグメントスタイル（四角ボタン） */
@@ -5211,34 +5286,34 @@
     margin-left: 20px;
 }
 
-/* --- 行背景 --- */
+/* --- 行背景 --- Graphite Studio */
 .cm-row-normal {
     background: white;
 }
 
 .cm-row-weekend {
-    background: linear-gradient(135deg, #fff5f5, #ffebee);
+    background: linear-gradient(135deg, #fef7f7, #fef2f2);
 }
 
 .cm-row-company-holiday {
-    background: linear-gradient(135deg, #fffdf0, #fff9c4);
+    background: linear-gradient(135deg, #fefce8, #fef9c3);
 }
 
 .cm-row-subtotal {
-    background: linear-gradient(90deg, #fff8e1, #fff3cd);
+    background: linear-gradient(90deg, #fef9c3, #fef3c7);
     font-weight: 600;
-    border-top: 1px solid rgba(255, 193, 7, 0.2);
-    border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+    border-top: 1px solid rgba(217, 119, 6, 0.12);
+    border-bottom: 1px solid rgba(217, 119, 6, 0.12);
 }
 
 .cm-row-grand-total {
-    background: linear-gradient(135deg, #263545, #2c3e50);
+    background: linear-gradient(135deg, #1c1917, #292524);
     color: white;
     font-weight: 700;
 }
 
 .cm-row-month-header {
-    background: var(--theme-gradient, linear-gradient(135deg, #1565c0, #1976d2));
+    background: var(--theme-gradient, linear-gradient(135deg, #1e3a5f, #2d5a8e));
     color: white;
     font-weight: 700;
 }
@@ -5480,18 +5555,18 @@
     }
 
     ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.12);
+        background: rgba(28, 25, 23, 0.1);
         border-radius: 3px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.22);
+        background: rgba(28, 25, 23, 0.2);
     }
 
     /* Firefox */
     * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+        scrollbar-color: rgba(28, 25, 23, 0.1) transparent;
     }
 
     /* テーブルホバー行のハイライト */
