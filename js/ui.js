@@ -14,7 +14,7 @@ import {
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
-const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'settings'];
+const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
 
 // ============================================
 // スクロール比率ユーティリティ（表内相対位置）
@@ -109,6 +109,14 @@ export function showTab(tabName, options = {}) {
     if (currentActiveTab && currentActiveTab.id) {
         currentTabId = currentActiveTab.id;
         window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
+
+        // スケジュールタブの横スクロール位置を保存
+        if (currentActiveTab.id === 'schedule') {
+            const scrollEl = document.getElementById('ganttTimelineScroll');
+            if (scrollEl) {
+                window._ganttScrollLeft = scrollEl.scrollLeft;
+            }
+        }
     }
 
     // アニメーション方向の決定（skipAnimation時はスキップ）
@@ -216,6 +224,21 @@ export function showTab(tabName, options = {}) {
         if (typeof window.renderActualList === 'function') {
             window.renderActualList();
         }
+    } else if (tabName === 'schedule') {
+        // スケジュールタブの横スクロール位置を復元（または現在月へスクロール）
+        requestAnimationFrame(() => {
+            const scrollEl = document.getElementById('ganttTimelineScroll');
+            if (scrollEl && typeof window._ganttScrollLeft === 'number') {
+                scrollEl.scrollLeft = window._ganttScrollLeft;
+            } else if (scrollEl && typeof window.getScheduleRenderer === 'function') {
+                // 保存位置がない場合は現在月へスクロール
+                const renderer = window.getScheduleRenderer();
+                if (renderer && renderer.scrollToMonth) {
+                    const now = new Date();
+                    renderer.scrollToMonth(now.getFullYear(), now.getMonth() + 1, false);
+                }
+            }
+        });
     }
 
     // 現在のタブをlocalStorageに保存（リロード時に復元用）
@@ -780,6 +803,39 @@ export function initSmartSticky() {
             }
         }
     }, true);
+
+    // モバイル↔デスクトップ切り替え時のリセット
+    const mql = window.matchMedia('(max-width: 768px)');
+    let wasMobile = mql.matches;
+
+    const handleBreakpointChange = (e) => {
+        const isMobile = e.matches;
+        if (wasMobile === isMobile) return;
+        wasMobile = isMobile;
+
+        // transition: all がモバイルCSSにあるため、ブレイクポイント切り替え時に
+        // position/top/left/right/width等が意図せずアニメーションしてしまう。
+        // 一時的にtransitionを無効化して即座にレイアウトを切り替える。
+        tabs.style.transition = 'none';
+        tabs.offsetHeight; // 強制リフロー
+
+        tabs.classList.remove('is-hidden');
+        lastScrollY = window.scrollY;
+
+        if (isMobile) {
+            // デスクトップ → モバイル: インジケーターを再初期化
+            if (typeof window.initTabIndicator === 'function') {
+                setTimeout(() => window.initTabIndicator(), 100);
+            }
+        }
+
+        // 次フレームでtransitionを復元
+        requestAnimationFrame(() => {
+            tabs.style.transition = '';
+        });
+    };
+
+    mql.addEventListener('change', handleBreakpointChange);
 }
 
 export function initTabSwipe() {
@@ -833,7 +889,7 @@ export function initTabSwipe() {
      * 横スクロール可能なコンテナを取得
      */
     function getScrollableContainer(target) {
-        return target.closest('.table-wrapper, .estimate-table-wrapper');
+        return target.closest('.table-wrapper, .estimate-table-wrapper, .gantt-timeline-scroll, .gantt-label-scroll');
     }
 
     /**
@@ -1482,6 +1538,9 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
 
         if (item.value === currentValue) {
             button.classList.add('active');
+        }
+        if (item.noData) {
+            button.classList.add('no-data');
         }
 
         // クリックイベント：ドラッグ中は実行しない
@@ -2723,13 +2782,28 @@ export function updateActualMonthOptions() {
     if (select) select.value = validValue;
     if (select2) select2.value = validValue;
 
+    // データがある月のSetを構築
+    const monthsWithData = new Set();
+    actuals.forEach(a => {
+        if (a.date) monthsWithData.add(a.date.substring(0, 7));
+    });
+
+    const isExpanded = typeof window.getActualMonthExpanded === 'function' ? window.getActualMonthExpanded() : false;
+
+    // 絞込: データあり月 or 選択中の月のみ（展開時は全月）
+    const filteredMonths = allMonths.filter(month => {
+        if (isExpanded) return true;
+        return monthsWithData.has(month) || month === validValue;
+    });
+
     const items = [
         { value: 'all', label: '全期間' },
-        ...allMonths.map(month => {
+        ...filteredMonths.map(month => {
             const [year, monthNum] = month.split('-');
             return {
                 value: month,
-                label: `${year}/${parseInt(monthNum)}`
+                label: `${year}/${parseInt(monthNum)}`,
+                noData: !monthsWithData.has(month)
             };
         })
     ];
@@ -2741,6 +2815,34 @@ export function updateActualMonthOptions() {
         8,
         handleActualMonthChange
     );
+
+    // トグルボタンを追加（データなし月が存在する場合のみ）
+    const hasEmptyMonths = allMonths.some(m => !monthsWithData.has(m));
+    const segContainer = document.getElementById('actualMonthButtons2');
+    if (segContainer) {
+        // 既存のトグルボタンを削除
+        const oldToggle = segContainer.parentElement.querySelector('.month-toggle-btn');
+        if (oldToggle) oldToggle.remove();
+
+        if (hasEmptyMonths) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'month-toggle-btn';
+            toggleBtn.textContent = isExpanded ? '◂' : '▸';
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof window.setActualMonthExpanded === 'function') {
+                    window.setActualMonthExpanded(!isExpanded);
+                }
+                updateActualMonthOptions();
+                // タブフィルタも同期
+                if (typeof window.updateTabFilterContent === 'function') {
+                    window.updateTabFilterContent(false);
+                }
+            });
+            // スクロールエリアの親に追加（スクロール外に固定表示）
+            segContainer.parentElement.appendChild(toggleBtn);
+        }
+    }
 }
 
 // ============================================

@@ -260,6 +260,8 @@ export let isReportTabFirstView = true;
 export let quickInputMode = 'actual'; // クイック入力のモード
 export let rememberQuickInputMode = false; // クイック入力のモードを記憶するか
 export let mobileTabDesign = 'capsule'; // モバイルタブのデザイン: 'classic', 'dock', 'capsule'
+export let workDetailStyle = 'modern'; // 作業詳細モーダルのスタイル: 'modern', 'classic'
+export let modalDesignStyle = 'modern'; // モーダル全体のデザインスタイル: 'modern', 'classic'
 
 // フィルタ状態の保持（画面遷移・データ更新時に維持するため）
 export let estimateFilterState = {
@@ -443,6 +445,21 @@ export function setMobileTabDesign(value) {
     window.mobileTabDesign = value;
 }
 
+export function setWorkDetailStyle(value) {
+    workDetailStyle = value;
+    window.workDetailStyle = value;
+}
+
+export function setModalDesignStyle(value) {
+    modalDesignStyle = value;
+    window.modalDesignStyle = value;
+    // CSS側でスタイル切り替えに使用
+    if (value === 'classic') {
+        document.documentElement.dataset.modalDesign = 'classic';
+    } else {
+        delete document.documentElement.dataset.modalDesign;
+    }
+}
 
 // ============================================
 // [GANTT-CHART] スケジュール関連変数
@@ -458,6 +475,7 @@ export let scheduleSettings = {
     displayRange: 'month',   // 'month' | 'week'
     hoursPerDay: 8,          // 1日の作業時間
     currentMonth: null,      // 表示中の月（YYYY-MM）
+    displayMonths: 3,        // 表示月数（複数月連続表示）
     filterVersion: '',       // フィルタ: 版数
     filterMember: '',        // フィルタ: 担当者
     filterStatus: ''         // フィルタ: ステータス

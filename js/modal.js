@@ -447,9 +447,12 @@ export function setupModalHandlers() {
         { id: 'editEstimateModal', closeFunc: () => { if (typeof window.closeEditEstimateModal === 'function') window.closeEditEstimateModal(); } },
         { id: 'editTaskModal', closeFunc: () => { if (typeof window.closeEditTaskModal === 'function') window.closeEditTaskModal(); } },
         { id: 'processBreakdownModal', closeFunc: closeProcessBreakdownModal },
-        { id: 'addEstimateModal', closeFunc: () => { if (typeof window.closeAddEstimateModal === 'function') window.closeAddEstimateModal(); }, preventOutsideClick: true },
+        { id: 'addEstimateModal', closeFunc: () => { if (typeof window.closeAddEstimateModal === 'function') window.closeAddEstimateModal(); } },
         { id: 'splitEstimateModal', closeFunc: () => { if (typeof window.closeSplitEstimateModal === 'function') window.closeSplitEstimateModal(); } },
-        { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } }
+        { id: 'otherWorkModal', closeFunc: () => { if (typeof window.closeOtherWorkModal === 'function') window.closeOtherWorkModal(); } },
+        { id: 'createScheduleModal', closeFunc: () => { if (typeof window.closeCreateScheduleModal === 'function') window.closeCreateScheduleModal(); } },
+        { id: 'scheduleDetailModal', closeFunc: () => { if (typeof window.closeScheduleDetailModal === 'function') window.closeScheduleDetailModal(); } },
+        { id: 'autoGenerateModal', closeFunc: () => { if (typeof window.closeAutoGenerateModal === 'function') window.closeAutoGenerateModal(); } }
     ];
 
     modals.forEach(modal => {

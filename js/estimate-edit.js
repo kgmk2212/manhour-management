@@ -3,7 +3,7 @@
 // ============================================
 
 import {
-    estimates, actuals, remainingEstimates
+    estimates, actuals, remainingEstimates, schedules
 } from './state.js';
 
 import {
@@ -14,6 +14,7 @@ import {
 } from './utils.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
+import { updateSchedule, calculateEndDate, showToast } from './schedule.js';
 
 // ============================================
 // 見積編集
@@ -259,7 +260,38 @@ export function saveEstimateEdit() {
         saveRemainingEstimate(version, task, process, member, hours);
     }
 
-    if (typeof window.saveData === 'function') window.saveData();
+    // スケジュール連動: 旧キーで対応するスケジュールを検索し自動更新
+    const relatedSchedule = schedules.find(s =>
+        s.version === oldEstimate.version &&
+        s.task === oldEstimate.task &&
+        s.process === oldEstimate.process &&
+        s.member === oldEstimate.member
+    );
+
+    let scheduleToastMsg = '';
+    if (relatedSchedule) {
+        const newEndDate = calculateEndDate(relatedSchedule.startDate, hours, member);
+        const updates = { estimatedHours: hours, endDate: newEndDate };
+        if (keyChanged) {
+            updates.version = version;
+            updates.task = task;
+            updates.process = process;
+            updates.member = member;
+        }
+        updateSchedule(relatedSchedule.id, updates);
+        // saveDataはupdateSchedule内で呼ばれる
+
+        if (keyChanged) {
+            scheduleToastMsg = `スケジュールも更新しました（終了日: ${newEndDate}）`;
+        } else if (relatedSchedule.estimatedHours !== hours) {
+            scheduleToastMsg = `見積工数の変更に伴い、スケジュールの終了日を ${newEndDate} に更新しました`;
+        }
+    }
+
+    if (!relatedSchedule) {
+        if (typeof window.saveData === 'function') window.saveData();
+    }
+
     closeEditEstimateModal();
 
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
@@ -267,6 +299,9 @@ export function saveEstimateEdit() {
     renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
 
+    if (scheduleToastMsg) {
+        showToast(scheduleToastMsg, 'info', 5000);
+    }
     showAlert('見積データを更新しました', true);
 }
 

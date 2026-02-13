@@ -4,6 +4,11 @@
 
 import { enableDragScroll } from './utils.js';
 
+// 実績月フィルタの全月展開状態（ページ固定フィルタと共有）
+let _actualMonthExpanded = false;
+export function getActualMonthExpanded() { return _actualMonthExpanded; }
+export function setActualMonthExpanded(val) { _actualMonthExpanded = val; }
+
 // 設定の保存/読み込み
 export function saveTabBarAlwaysVisible() {
     const checkbox = document.getElementById('tabBarAlwaysVisible');
@@ -91,6 +96,42 @@ export function applyFilterLayout() {
     const layout = loadTabFilterLayout();
     drawer.classList.remove('layout-one-line', 'layout-two-lines');
     drawer.classList.add(`layout-${layout}`);
+}
+
+// ページ内フィルタ非表示設定
+export function saveHideInlineFilters() {
+    const checkbox = document.getElementById('hideInlineFilters');
+    if (!checkbox) return;
+    localStorage.setItem('hideInlineFilters', checkbox.checked);
+    applyInlineFilterVisibility();
+}
+
+export function loadHideInlineFilters() {
+    const saved = localStorage.getItem('hideInlineFilters');
+    const hidden = saved === 'true';
+    const checkbox = document.getElementById('hideInlineFilters');
+    if (checkbox) {
+        checkbox.checked = hidden;
+    }
+    return hidden;
+}
+
+export function applyInlineFilterVisibility() {
+    const hidden = loadHideInlineFilters();
+    if (hidden) {
+        document.documentElement.dataset.inlineFilter = 'hidden';
+    } else {
+        document.documentElement.dataset.inlineFilter = 'visible';
+    }
+    // 表示時はapplyLayoutSettings()で正しいcompact/segmentedを表示させる
+    if (!hidden && typeof window.applyLayoutSettings === 'function') {
+        window.applyLayoutSettings();
+    }
+    // タブフィルタの内容を更新（表示形式ボタンの追加/削除のため）
+    const drawer = document.getElementById('tabFilterDrawer');
+    if (drawer && (drawer.classList.contains('is-expanded') || drawer.classList.contains('is-always-expanded'))) {
+        updateTabFilterContent(false);
+    }
 }
 
 // タブバー常時表示の適用
@@ -370,25 +411,106 @@ function renderActualFilters(container, scrollToActive = true) {
     const oldMonthContainer = document.getElementById('tabFilterActualMonthButtons');
     const savedMonthScroll = oldMonthContainer ? oldMonthContainer.scrollLeft : 0;
 
-    // 月フィルタボタンを生成（昇順ソート）
-    const monthButtons = generateFilterButtons(actualMonth, (value) => {
-        actualMonth.value = value;
-        if (typeof window.handleActualMonthChange === 'function') {
-            window.handleActualMonthChange(value, 'actualMonthButtons2');
-        } else {
-            actualMonth.dispatchEvent(new Event('change'));
-        }
-        updateTabFilterContent(false);
-    }, 'month');
+    // データがある月のSetを構築
+    const monthsWithData = new Set();
+    if (window.actuals) {
+        window.actuals.forEach(a => {
+            if (a.date) monthsWithData.add(a.date.substring(0, 7));
+        });
+    }
+
+    const isExpanded = _actualMonthExpanded;
+    const currentValue = actualMonth.value;
+
+    // ボタン生成（データあり/なしで出し分け）
+    const allOption = Array.from(actualMonth.options).find(o => o.value === 'all');
+    const monthOptions = Array.from(actualMonth.options)
+        .filter(o => o.value !== 'all')
+        .sort((a, b) => a.value.localeCompare(b.value));
+
+    let monthButtons = '';
+    if (allOption) {
+        const isActive = currentValue === 'all' ? 'active' : '';
+        monthButtons += `<button data-value="all" class="${isActive}">${allOption.text}</button>`;
+    }
+    monthOptions.forEach(opt => {
+        const hasData = monthsWithData.has(opt.value);
+        const isSelected = String(opt.value) === String(currentValue);
+        // 非展開時: データあり月 or 現在選択中の月のみ表示
+        if (!isExpanded && !hasData && !isSelected) return;
+        const classes = [
+            isSelected ? 'active' : '',
+            !hasData ? 'no-data' : ''
+        ].filter(Boolean).join(' ');
+        monthButtons += `<button data-value="${opt.value}" class="${classes}">${opt.text}</button>`;
+    });
+
+    // 全月表示トグルボタン（データなし月が存在する場合のみ）
+    const hasEmptyMonths = monthOptions.some(o => !monthsWithData.has(o.value));
+    let toggleHtml = '';
+    if (hasEmptyMonths) {
+        const toggleLabel = isExpanded ? '◂' : '▸';
+        toggleHtml = `<button class="month-toggle-btn" id="actualMonthToggle">${toggleLabel}</button>`;
+    }
+
+    // ページ内フィルタ非表示時はカレンダー/リスト切替を表示
+    const hidden = loadHideInlineFilters();
+    let viewTypeRow = '';
+    if (hidden) {
+        const currentViewType = document.getElementById('actualViewType')?.value || 'matrix';
+        viewTypeRow = `
+            <div class="tab-filter-row">
+                <span class="tab-filter-label">表示:</span>
+                <div class="tab-filter-buttons" id="tabFilterActualViewType">
+                    <button data-value="matrix" class="${currentViewType === 'matrix' ? 'active' : ''}">カレンダー</button>
+                    <button data-value="list" class="${currentViewType === 'list' ? 'active' : ''}">リスト</button>
+                </div>
+            </div>
+        `;
+    }
 
     container.innerHTML = `
+        ${viewTypeRow}
         <div class="tab-filter-row">
             <span class="tab-filter-label">表示月:</span>
             <div class="tab-filter-buttons" id="tabFilterActualMonthButtons">${monthButtons}</div>
+            ${toggleHtml}
         </div>
     `;
 
-    // ボタンにイベントを設定
+    // 表示形式ボタンのイベント設定（ページ内フィルタ非表示時のみ）
+    if (hidden) {
+        const viewTypeBtns = document.getElementById('tabFilterActualViewType');
+        if (viewTypeBtns) {
+            viewTypeBtns.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.isTabInteracting = true;
+                    setTimeout(() => { window.isTabInteracting = false; }, 300);
+                    const value = btn.dataset.value;
+                    viewTypeBtns.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (typeof window.setActualViewType === 'function') {
+                        window.setActualViewType(value);
+                    }
+                });
+            });
+        }
+    }
+
+    // 全月表示トグルのイベント
+    const toggleBtn = document.getElementById('actualMonthToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.isTabInteracting = true;
+            setTimeout(() => { window.isTabInteracting = false; }, 300);
+            _actualMonthExpanded = !_actualMonthExpanded;
+            renderActualFilters(container, false);
+        });
+    }
+
+    // 月ボタンにイベントを設定
     setupFilterButtonEvents(container, 'tabFilterActualMonthButtons', actualMonth, (value) => {
         actualMonth.value = value;
         if (typeof window.handleActualMonthChange === 'function') {
@@ -447,7 +569,7 @@ function setupFilterButtonEvents(container, containerId, selectElement, onChange
     const buttonContainer = document.getElementById(containerId);
     if (!buttonContainer) return;
 
-    buttonContainer.querySelectorAll('button').forEach(btn => {
+    buttonContainer.querySelectorAll('button[data-value]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             // スクロール検出を一時停止（タブが隠れるのを防ぐ）
@@ -523,12 +645,14 @@ export function initTabFilter() {
     loadTabFilterAlwaysExpanded();
     loadTabFilterButtonStyle();
     loadTabFilterLayout();
+    loadHideInlineFilters();
 
     // 設定を適用
     applyTabBarVisibility();
     applyFilterExpansion();
     applyFilterButtonStyle();
     applyFilterLayout();
+    applyInlineFilterVisibility();
 
     // トグルボタンのイベント
     const toggle = document.getElementById('tabFilterToggle');
@@ -562,6 +686,12 @@ export function initTabFilter() {
         layoutSelect.addEventListener('change', saveTabFilterLayout);
     }
 
+    // ページ内フィルタ非表示チェックボックスのイベント
+    const hideInlineCheckbox = document.getElementById('hideInlineFilters');
+    if (hideInlineCheckbox) {
+        hideInlineCheckbox.addEventListener('change', saveHideInlineFilters);
+    }
+
     // 初期タブのフィルタ状態を設定
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab) {
@@ -575,5 +705,7 @@ export function initTabFilter() {
 window.toggleTabFilterDrawer = toggleTabFilterDrawer;
 window.updateTabFilterContent = updateTabFilterContent;
 window.onTabFilterChange = onTabChange;
+window.getActualMonthExpanded = getActualMonthExpanded;
+window.setActualMonthExpanded = setActualMonthExpanded;
 
 console.log('tab-filter.js loaded');

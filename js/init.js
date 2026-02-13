@@ -24,6 +24,16 @@ import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
 
 // ============================================
+// 祝日ライブラリを非同期で読み込み（init.jsをブロックしない）
+// ============================================
+import('https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm')
+    .then(mod => {
+        window.holiday_jp = mod.default;
+        console.log('[holiday_jp] loaded');
+    })
+    .catch(e => console.warn('[holiday_jp] load failed:', e));
+
+// ============================================
 // グローバルスコープに公開（HTML onclick用）
 // ============================================
 
@@ -48,6 +58,8 @@ window.showProgressPercentageSetting = State.showProgressPercentageSetting;
 window.progressBarStyle = State.progressBarStyle;
 window.matrixEstActFormat = State.matrixEstActFormat;
 window.mobileTabDesign = State.mobileTabDesign;
+window.workDetailStyle = State.workDetailStyle;
+window.modalDesignStyle = State.modalDesignStyle;
 
 window.debugModeEnabled = State.debugModeEnabled;
 window.memberOrder = State.memberOrder;
@@ -94,6 +106,7 @@ window.nextTab = UI.nextTab;
 window.prevTab = UI.prevTab;
 window.initTabSwipe = UI.initTabSwipe;
 window.initSmartSticky = UI.initSmartSticky;
+window.initTabIndicator = UI.initTabIndicator;
 window.createSegmentButtons = UI.createSegmentButtons;
 window.updateSegmentButtonSelection = UI.updateSegmentButtonSelection;
 window.setEstimateViewType = UI.setEstimateViewType;
@@ -181,10 +194,15 @@ window.deleteEstimate = Estimate.deleteEstimate;
 window.deleteTask = Estimate.deleteTask;
 window.updateWorkMonthOptions = Estimate.updateWorkMonthOptions;
 window.showEstimateDetail = Estimate.showEstimateDetail;
+window.showTaskDetail = Estimate.showTaskDetail;
 window.showOtherWorkTaskDetail = Estimate.showOtherWorkTaskDetail;
 window.closeEstimateDetailModal = Estimate.closeEstimateDetailModal;
 window.editEstimateFromModal = Estimate.editEstimateFromModal;
 window.deleteEstimateFromModal = Estimate.deleteEstimateFromModal;
+window.addProcessFromTaskModal = Estimate.addProcessFromTaskModal;
+window.deleteEstimateFromTaskModal = Estimate.deleteEstimateFromTaskModal;
+window.deleteTaskFromModal = Estimate.deleteTaskFromModal;
+window.editTaskFromTaskModal = Estimate.editTaskFromTaskModal;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
@@ -280,6 +298,8 @@ window.initQuickTaskDropdownHandler = Quick.initQuickTaskDropdownHandler;
 // estimate-add.js の関数
 window.openAddEstimateModal = EstimateAdd.openAddEstimateModal;
 window.closeAddEstimateModal = EstimateAdd.closeAddEstimateModal;
+window.resetAddEstimateForm = EstimateAdd.resetAddEstimateForm;
+window.openAddEstimateSingleProcess = EstimateAdd.openAddEstimateSingleProcess;
 window.autoFillMember = EstimateAdd.autoFillMember;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
@@ -359,6 +379,10 @@ window.closeScheduleDetailModal = Schedule.closeScheduleDetailModal;
 window.saveScheduleFromModal = Schedule.saveScheduleFromModal;
 window.saveScheduleDetailChanges = Schedule.saveScheduleDetailChanges;
 window.deleteScheduleFromModal = Schedule.deleteScheduleFromModal;
+window.openEstimateFromSchedule = Schedule.openEstimateFromSchedule;
+window.undoScheduleAction = Schedule.undoScheduleAction;
+window.redoScheduleAction = Schedule.redoScheduleAction;
+window.getScheduleRenderer = Schedule.getScheduleRenderer;
 window.updateScheduleVersionOptions = Schedule.updateScheduleVersionOptions;
 window.updateScheduleTaskOptions = Schedule.updateScheduleTaskOptions;
 window.updateScheduleProcessOptions = Schedule.updateScheduleProcessOptions;
@@ -386,6 +410,11 @@ window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
 window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
 window.showToast = Schedule.showToast;
 window.updateFilterResultCount = Schedule.updateFilterResultCount;
+window.updateUnscheduledBadge = Schedule.updateUnscheduledBadge;
+window.toggleUnscheduledDropdown = Schedule.toggleUnscheduledDropdown;
+window.toggleUnscheduledSelectAll = Schedule.toggleUnscheduledSelectAll;
+window.updateUnscheduledCount = Schedule.updateUnscheduledCount;
+window.registerCheckedSchedules = Schedule.registerCheckedSchedules;
 window.calculateEndDate = Schedule.calculateEndDate;
 window.getTaskColor = Schedule.getTaskColor;
 
@@ -552,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ※initTabIndicator後に呼ぶことで、showTab内のupdateTabIndicatorが正しく動作する
     try {
         const savedTab = localStorage.getItem('manhour_currentTab');
-        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(savedTab)) {
+        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].includes(savedTab)) {
             UI.showTab(savedTab);
         } else {
             // savedTabがない場合はデフォルトタブを表示（is-hidden解除のためshowTabを呼ぶ）

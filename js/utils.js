@@ -8,7 +8,33 @@ import { monthColors } from './state.js';
 export function showAlert(message, dismissible = false) {
     const modal = document.getElementById('customAlert');
     const messageEl = document.getElementById('customAlertMessage');
+    const iconEl = document.getElementById('customAlertIcon');
+    const content = modal.querySelector('.custom-alert-content');
+    const isClassic = window.modalDesignStyle === 'classic';
+
     messageEl.textContent = message;
+
+    // クラシック/モダン切り替え
+    content.classList.toggle('classic-alert', isClassic);
+
+    if (!isClassic) {
+        // モダン: 再入場アニメーションのためクラスをリセット
+        content.classList.remove('alert-closing');
+
+        // タイプに応じたスタイル・アイコン設定
+        const type = dismissible ? 'success' : 'error';
+        content.dataset.type = type;
+
+        if (type === 'success') {
+            iconEl.innerHTML = '<svg viewBox="0 0 24 24"><polyline class="alert-icon-check" points="4 12 10 18 20 6"/></svg>';
+        } else {
+            iconEl.innerHTML = '<svg viewBox="0 0 24 24"><g class="alert-icon-exclamation"><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="white" stroke="none"/></g></svg>';
+        }
+    } else {
+        // クラシック: アイコン非表示
+        iconEl.innerHTML = '';
+    }
+
     modal.style.display = 'flex';
 
     // dismissibleがtrueの場合、外クリックで閉じる
@@ -25,7 +51,19 @@ export function showAlert(message, dismissible = false) {
 
 // カスタムアラートを閉じる
 export function closeCustomAlert() {
-    document.getElementById('customAlert').style.display = 'none';
+    const modal = document.getElementById('customAlert');
+    const content = modal.querySelector('.custom-alert-content');
+    const isClassic = content.classList.contains('classic-alert');
+
+    if (!isClassic) {
+        content.classList.add('alert-closing');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            content.classList.remove('alert-closing');
+        }, 200);
+    } else {
+        modal.style.display = 'none';
+    }
 }
 
 // 見積データを正規化（旧形式から新形式への変換）

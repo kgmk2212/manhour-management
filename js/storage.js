@@ -24,11 +24,13 @@ import {
     // [GANTT-CHART] スケジュール関連
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
-    taskColorMap, setTaskColorMap
+    taskColorMap, setTaskColorMap,
+    setWorkDetailStyle, setModalDesignStyle
 } from './state.js';
 
 import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
+import { TASK_COLORS } from './constants.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -86,7 +88,9 @@ export function saveData(skipAutoBackup = false) {
 
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
-            chartColorScheme: selectedChartColorScheme
+            chartColorScheme: selectedChartColorScheme,
+            workDetailStyle: window.workDetailStyle,
+            modalDesignStyle: window.modalDesignStyle
         }
     };
 
@@ -151,7 +155,17 @@ export function loadData() {
         const savedTaskColorMap = localStorage.getItem('manhour_taskColorMap');
         if (savedSchedules) setSchedules(JSON.parse(savedSchedules));
         if (savedScheduleSettings) setScheduleSettings(JSON.parse(savedScheduleSettings));
-        if (savedTaskColorMap) setTaskColorMap(JSON.parse(savedTaskColorMap));
+        if (savedTaskColorMap) {
+            const parsed = JSON.parse(savedTaskColorMap);
+            // パレット変更時: 古いパレットにない色が含まれていたらリセット
+            const currentPalette = new Set(TASK_COLORS);
+            const hasOldColors = Object.values(parsed).some(c => !currentPalette.has(c));
+            if (hasOldColors) {
+                setTaskColorMap({});
+            } else {
+                setTaskColorMap(parsed);
+            }
+        }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
         alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
@@ -222,6 +236,18 @@ export function loadData() {
             if (settings.devFeaturesEnabled !== undefined) {
                 setDevFeaturesEnabled(settings.devFeaturesEnabled);
             }
+            // 作業詳細モーダルのスタイル設定を読み込み
+            if (settings.workDetailStyle) {
+                setWorkDetailStyle(settings.workDetailStyle);
+                const el = document.getElementById('workDetailStyle');
+                if (el) el.value = settings.workDetailStyle;
+            }
+            // モーダル全体のデザインスタイル設定を読み込み
+            if (settings.modalDesignStyle) {
+                setModalDesignStyle(settings.modalDesignStyle);
+                const el = document.getElementById('modalDesignStyle');
+                if (el) el.value = settings.modalDesignStyle;
+            }
 
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
@@ -268,7 +294,8 @@ export function autoBackup() {
         chartColorScheme: selectedChartColorScheme,
         memberOrder: memberOrderValue,
         debugModeEnabled: debugModeEnabled,
-        devFeaturesEnabled: devFeaturesEnabled
+        devFeaturesEnabled: devFeaturesEnabled,
+        workDetailStyle: window.workDetailStyle
     };
 
     const data = {
@@ -277,9 +304,12 @@ export function autoBackup() {
         companyHolidays: companyHolidays,
         vacations: vacations,
         remainingEstimates: remainingEstimates,
+        schedules: schedules,
+        scheduleSettings: { ...scheduleSettings },
+        taskColorMap: { ...taskColorMap },
         settings: settings,
         timestamp: new Date().toISOString(),
-        version: '1.0'
+        version: '1.1'
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -343,7 +373,8 @@ export function handleFileImport(event) {
                     actuals.length > 0 ||
                     companyHolidays.length > 0 ||
                     vacations.length > 0 ||
-                    remainingEstimates.length > 0;
+                    remainingEstimates.length > 0 ||
+                    schedules.length > 0;
 
                 // データがある場合のみ確認ダイアログを表示
                 if (!hasExistingData || confirm('現在のデータを復元したデータで上書きしますか？')) {
@@ -352,6 +383,23 @@ export function handleFileImport(event) {
                     setCompanyHolidays(data.companyHolidays || []);
                     setVacations(data.vacations || []);
                     setRemainingEstimates(data.remainingEstimates || []);
+
+                    // スケジュールデータの復元
+                    if (data.schedules) {
+                        setSchedules(data.schedules);
+                        // nextScheduleIdを設定
+                        const maxId = data.schedules.reduce((max, s) => {
+                            const match = s.id && s.id.match(/sch_(\d+)/);
+                            return match ? Math.max(max, parseInt(match[1], 10)) : max;
+                        }, 0);
+                        setNextScheduleId(maxId + 1);
+                    }
+                    if (data.scheduleSettings) {
+                        setScheduleSettings(data.scheduleSettings);
+                    }
+                    if (data.taskColorMap) {
+                        setTaskColorMap(data.taskColorMap);
+                    }
 
                     // 次のIDを設定
                     if (companyHolidays.length > 0) {
@@ -506,6 +554,7 @@ export function handleFileImport(event) {
                     if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
                     if (typeof window.updateReport === 'function') window.updateReport();
                     if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+                    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
 
                     showAlert('データを復元しました', true);
                 }
