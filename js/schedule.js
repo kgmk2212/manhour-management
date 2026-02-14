@@ -10,7 +10,7 @@ import {
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
-import { formatHours } from './utils.js';
+import { formatHours, closeModalWithAnimation } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
@@ -672,7 +672,7 @@ export function openCreateScheduleModal() {
  */
 export function closeCreateScheduleModal() {
     const modal = document.getElementById('createScheduleModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) closeModalWithAnimation(modal);
 }
 
 /**
@@ -784,8 +784,9 @@ function renderDetailActualList(schedule) {
  */
 export function closeScheduleDetailModal() {
     const modal = document.getElementById('scheduleDetailModal');
-    if (modal) modal.style.display = 'none';
-    currentEditingScheduleId = null;
+    if (modal) closeModalWithAnimation(modal, () => {
+        currentEditingScheduleId = null;
+    });
 }
 
 /**
@@ -1224,7 +1225,7 @@ export function openAutoGenerateModal() {
  */
 export function closeAutoGenerateModal() {
     const modal = document.getElementById('autoGenerateModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) closeModalWithAnimation(modal);
 }
 
 /**

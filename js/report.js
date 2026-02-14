@@ -41,7 +41,8 @@ import {
     getMonthColor,
     getDeviationColor,
     generateMonthColorLegend,
-    sortMembers
+    sortMembers,
+    closeModalWithAnimation
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 
@@ -688,7 +689,7 @@ export function openBulkRemainingModal() {
 
 // 一括編集モーダルを閉じる
 export function closeBulkRemainingModal() {
-    document.getElementById('bulkRemainingModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('bulkRemainingModal'));
 }
 
 // 一括編集テーブルをレンダリング

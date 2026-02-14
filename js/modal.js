@@ -4,7 +4,7 @@
 
 import * as State from './state.js';
 import * as Estimate from './estimate.js';
-import { formatHours } from './utils.js';
+import { formatHours, closeModalWithAnimation } from './utils.js';
 
 // ============================================
 // 工程内訳モーダル
@@ -246,7 +246,7 @@ export function openProcessBreakdown(version, task, process) {
 window.openProcessBreakdown = openProcessBreakdown;
 
 export function closeProcessBreakdownModal() {
-    document.getElementById('processBreakdownModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('processBreakdownModal'));
 }
 
 // ============================================
@@ -399,7 +399,7 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
 
 // 見込残存時間モーダルを閉じる
 export function closeRemainingHoursModal() {
-    document.getElementById('remainingHoursModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('remainingHoursModal'));
 }
 
 // 見込残存時間を保存

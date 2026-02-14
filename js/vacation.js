@@ -8,7 +8,7 @@ import {
     nextCompanyHolidayId, setNextCompanyHolidayId,
     nextVacationId, setNextVacationId
 } from './state.js';
-import { showAlert } from './utils.js';
+import { showAlert, closeModalWithAnimation } from './utils.js';
 
 // ============================================
 // 会社休日管理
@@ -177,7 +177,7 @@ export function addVacationFromCalendar(member, date) {
 }
 
 export function closeVacationModal() {
-    document.getElementById('vacationModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('vacationModal'));
 }
 
 export function handleVacationModalTypeChange() {

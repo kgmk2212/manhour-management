@@ -8,7 +8,8 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert
+    showAlert,
+    closeModalWithAnimation
 } from './utils.js';
 
 import { renderEstimateList } from './estimate.js';
@@ -65,7 +66,7 @@ export function openSplitEstimateModal(id) {
  * 月分割モーダルを閉じる
  */
 export function closeSplitEstimateModal() {
-    document.getElementById('splitEstimateModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('splitEstimateModal'));
 }
 
 /**

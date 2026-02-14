@@ -10,7 +10,8 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert
+    showAlert,
+    closeModalWithAnimation
 } from './utils.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
@@ -133,7 +134,7 @@ export function editEstimate(id) {
  * 見積編集モーダルを閉じる
  */
 export function closeEditEstimateModal() {
-    document.getElementById('editEstimateModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('editEstimateModal'));
 }
 
 /**
@@ -517,7 +518,7 @@ export function editTask(version, taskName) {
  * 対応名編集モーダルを閉じる
  */
 export function closeEditTaskModal() {
-    document.getElementById('editTaskModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('editTaskModal'));
 }
 
 /**

@@ -5662,3 +5662,45 @@
             0 24px 64px rgba(0, 0, 0, 0.16);
     }
 }
+
+/* ============================================
+   Phase 5: マイクロインタラクション
+   ============================================ */
+
+/* デスクトップ: タブコンテンツ切り替えフェードイン */
+@media (min-width: 769px) {
+    .tab-content.active {
+        animation: tabFadeIn 0.2s ease;
+    }
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ドロップダウン出現アニメーション */
+.custom-dropdown {
+    animation: dropdownEnter 0.15s ease;
+    transform-origin: top center;
+}
+
+@keyframes dropdownEnter {
+    from { opacity: 0; transform: scaleY(0.95) translateY(-4px); }
+    to { opacity: 1; transform: scaleY(1) translateY(0); }
+}
+
+/* モーダル閉じアニメーション */
+.modal.modal-closing {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.modal.modal-closing .modal-content {
+    animation: modalSlideOut 0.2s ease forwards;
+}
+
+@keyframes modalSlideOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}

@@ -7,7 +7,7 @@ import {
     setActuals
 } from './state.js';
 
-import { showAlert, sortMembers, formatHours, normalizeEstimate } from './utils.js';
+import { showAlert, sortMembers, formatHours, normalizeEstimate, closeModalWithAnimation } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 
 // ============================================
@@ -1027,7 +1027,7 @@ export function showWorkDetail(member, date) {
  * 作業詳細モーダルを閉じる
  */
 export function closeWorkModal() {
-    document.getElementById('workModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('workModal'));
 }
 
 // ============================================
@@ -1228,7 +1228,7 @@ export function editActual(id) {
  * 実績編集モーダルを閉じる
  */
 export function closeEditActualModal() {
-    document.getElementById('editActualModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('editActualModal'));
 }
 
 /**

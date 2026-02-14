@@ -658,6 +658,24 @@ export function getNextDateString(dateStr) {
     return `${year}-${month}-${day}`;
 }
 
+/**
+ * モーダルをアニメーション付きで閉じる
+ * @param {HTMLElement} modalElement - モーダル要素
+ * @param {Function} [afterClose] - 閉じた後に実行するコールバック
+ */
+export function closeModalWithAnimation(modalElement, afterClose) {
+    if (!modalElement || modalElement.style.display === 'none') {
+        if (afterClose) afterClose();
+        return;
+    }
+    modalElement.classList.add('modal-closing');
+    setTimeout(() => {
+        modalElement.style.display = 'none';
+        modalElement.classList.remove('modal-closing');
+        if (afterClose) afterClose();
+    }, 200);
+}
+
 // 月の稼働日数を取得（デフォルト20日）
 export function getWorkingDays(year, month) {
     const lastDay = new Date(year, month, 0).getDate();

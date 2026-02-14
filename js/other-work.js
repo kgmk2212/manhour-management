@@ -3,6 +3,7 @@
 // ============================================
 
 import * as State from './state.js';
+import { closeModalWithAnimation } from './utils.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -184,13 +185,12 @@ export function openOtherWorkModal() {
 // その他作業モーダルを閉じる
 export function closeOtherWorkModal() {
     const modal = document.getElementById('otherWorkModal');
-    modal.style.display = 'none';
-
-    // カレンダー日付データをクリア
-    delete modal.dataset.calendarDate;
-
-    // モーダルタイトルをリセット
-    document.querySelector('#otherWorkModal .modal-header h3').textContent = 'その他作業を登録';
+    closeModalWithAnimation(modal, () => {
+        // カレンダー日付データをクリア
+        delete modal.dataset.calendarDate;
+        // モーダルタイトルをリセット
+        document.querySelector('#otherWorkModal .modal-header h3').textContent = 'その他作業を登録';
+    });
 }
 
 // その他作業モーダルのタブを切り替え

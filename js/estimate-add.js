@@ -210,7 +210,7 @@ function constrainProcessTableOnMobile() {
  * モーダルを閉じる（入力中のデータは保持）
  */
 export function closeAddEstimateModal() {
-    document.getElementById('addEstimateModal').style.display = 'none';
+    Utils.closeModalWithAnimation(document.getElementById('addEstimateModal'));
 
     if (singleProcessMode) {
         // 単一工程モードの場合はリセットして通常に戻す
@@ -676,7 +676,7 @@ function addOtherWorkEstimate() {
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
     resetAddEstimateForm();
-    document.getElementById('addEstimateModal').style.display = 'none';
+    Utils.closeModalWithAnimation(document.getElementById('addEstimateModal'));
 
     const message = members.length > 1
         ? `その他工数を${members.length}名分登録しました`
@@ -814,7 +814,7 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
 
     exitSingleProcessMode();
     resetAddEstimateForm();
-    document.getElementById('addEstimateModal').style.display = 'none';
+    Utils.closeModalWithAnimation(document.getElementById('addEstimateModal'));
 
     if (returnTo) {
         Utils.showAlert(`${returnTo.process} 工程を登録しました`, true);

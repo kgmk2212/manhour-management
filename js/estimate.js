@@ -20,7 +20,8 @@ import {
     getMonthColor,
     generateMonthColorLegend,
     showAlert,
-    sortMembers
+    sortMembers,
+    closeModalWithAnimation
 } from './utils.js';
 
 // ============================================
@@ -1661,7 +1662,7 @@ export function showOtherWorkTaskDetail(version, task) {
  * 見積詳細モーダルを閉じる
  */
 export function closeEstimateDetailModal() {
-    document.getElementById('estimateDetailModal').style.display = 'none';
+    closeModalWithAnimation(document.getElementById('estimateDetailModal'));
 }
 
 /**
