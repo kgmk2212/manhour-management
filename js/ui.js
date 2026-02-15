@@ -4043,7 +4043,8 @@ export function initSidebar() {
 
 export function initSmartStickyFilters() {
     const mc = document.getElementById('mainContent');
-    if (!mc) return;
+    if (!mc) { console.warn('[SmartStickyFilter] mainContent not found'); return; }
+    console.log('[SmartStickyFilter] 初期化完了, scrollContainer=mainContent');
 
     const THRESHOLD = 30;
     let lastY = mc.scrollTop;
@@ -4119,19 +4120,31 @@ export function initSmartStickyFilters() {
         }
     }
 
+    let scrollCount = 0;
     mc.addEventListener('scroll', () => {
         const y = mc.scrollTop;
         const dy = y - lastY;
         lastY = y;
+
+        scrollCount++;
+        if (scrollCount <= 3) {
+            console.log(`[SmartStickyFilter] scroll#${scrollCount} scrollTop=${y} dy=${dy}`);
+        }
         if (dy === 0) return;
 
         const bar = findBar();
-        if (!bar) { hideFixedBar(); return; }
+        if (!bar) {
+            if (scrollCount <= 5) console.log('[SmartStickyFilter] bar not found');
+            hideFixedBar(); return;
+        }
 
         // フィルタバーがビューポート外か判定
         const barRect = bar.getBoundingClientRect();
         const mcRect = mc.getBoundingClientRect();
         const barAbove = barRect.bottom < mcRect.top;
+        if (scrollCount <= 5) {
+            console.log(`[SmartStickyFilter] barBottom=${barRect.bottom.toFixed(0)} mcTop=${mcRect.top.toFixed(0)} barAbove=${barAbove}`);
+        }
 
         if (!barAbove) {
             upPx = 0;
@@ -4145,6 +4158,7 @@ export function initSmartStickyFilters() {
         } else {
             upPx += Math.abs(dy);
             if (upPx >= THRESHOLD) {
+                console.log('[SmartStickyFilter] SHOW fixedBar');
                 showFixedBar(bar);
             }
         }
