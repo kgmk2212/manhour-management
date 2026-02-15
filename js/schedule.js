@@ -5,11 +5,11 @@
 import {
     schedules, setSchedules, nextScheduleId, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
-    taskColorMap, setTaskColorMap,
+    taskColorMap, setTaskColorMap, currentThemeColor,
     estimates, actuals, vacations, companyHolidays, remainingEstimates
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
-import { SCHEDULE, TASK_COLORS } from './constants.js';
+import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 
@@ -489,7 +489,15 @@ export function isDelayed(schedule) {
 // ============================================
 
 /**
- * タスクに色を割り当て
+ * 現在のテーマに対応するカラーパレットを取得
+ * @returns {string[]} - 色コード配列
+ */
+export function getCurrentTaskPalette() {
+    return THEME_TASK_COLORS[currentThemeColor] || TASK_COLORS;
+}
+
+/**
+ * タスクに色を割り当て（テーマ別パレット対応）
  * @param {string} version - 版数（オプション、タスクと組み合わせてキーを作成）
  * @param {string} task - タスク名
  * @returns {string} - 色コード
@@ -500,24 +508,28 @@ export function getTaskColor(version, task) {
         task = version;
         version = '';
     }
-    
+
     // 版数とタスク名を組み合わせたキーを使用
     const key = version ? `${version}/${task}` : task;
-    
-    if (taskColorMap[key]) {
+    const palette = getCurrentTaskPalette();
+
+    // 既存の割り当てが現在のパレットに含まれているか確認
+    if (taskColorMap[key] && palette.includes(taskColorMap[key])) {
         return taskColorMap[key];
     }
-    
-    // 未割当の場合、新しい色を割り当て
-    const usedColors = Object.values(taskColorMap);
-    const availableColors = TASK_COLORS.filter(c => !usedColors.includes(c));
-    const color = availableColors.length > 0 
-        ? availableColors[0] 
-        : TASK_COLORS[Object.keys(taskColorMap).length % TASK_COLORS.length];
-    
+
+    // 未割当またはパレット不一致の場合、現在のパレットから割り当て
+    const usedColors = new Set(
+        Object.values(taskColorMap).filter(c => palette.includes(c))
+    );
+    const availableColors = palette.filter(c => !usedColors.has(c));
+    const color = availableColors.length > 0
+        ? availableColors[0]
+        : palette[Object.keys(taskColorMap).length % palette.length];
+
     const newMap = { ...taskColorMap, [key]: color };
     setTaskColorMap(newMap);
-    
+
     return color;
 }
 

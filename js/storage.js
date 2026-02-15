@@ -31,7 +31,7 @@ import {
 
 import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
-import { TASK_COLORS } from './constants.js';
+import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -159,9 +159,10 @@ export function loadData() {
         if (savedScheduleSettings) setScheduleSettings(JSON.parse(savedScheduleSettings));
         if (savedTaskColorMap) {
             const parsed = JSON.parse(savedTaskColorMap);
-            // パレット変更時: 古いパレットにない色が含まれていたらリセット
-            const currentPalette = new Set(TASK_COLORS);
-            const hasOldColors = Object.values(parsed).some(c => !currentPalette.has(c));
+            // パレット変更時: どのテーマパレットにもない色が含まれていたらリセット
+            const allColors = new Set();
+            Object.values(THEME_TASK_COLORS).forEach(p => p.forEach(c => allColors.add(c)));
+            const hasOldColors = Object.values(parsed).some(c => !allColors.has(c));
             if (hasOldColors) {
                 setTaskColorMap({});
             } else {
@@ -405,7 +406,15 @@ export function handleFileImport(event) {
                         setScheduleSettings(data.scheduleSettings);
                     }
                     if (data.taskColorMap) {
-                        setTaskColorMap(data.taskColorMap);
+                        // パレット変更時: どのテーマパレットにもない色が含まれていたらリセット
+                        const allColors = new Set();
+                        Object.values(THEME_TASK_COLORS).forEach(p => p.forEach(c => allColors.add(c)));
+                        const hasOldColors = Object.values(data.taskColorMap).some(c => !allColors.has(c));
+                        if (hasOldColors) {
+                            setTaskColorMap({});
+                        } else {
+                            setTaskColorMap(data.taskColorMap);
+                        }
                     }
 
                     // 次のIDを設定

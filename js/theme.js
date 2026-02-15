@@ -14,6 +14,7 @@ import {
     setFilterBarMode,
 
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
+    currentThemeColor, setTaskColorMap,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
     isReportTabFirstView, setIsReportTabFirstView,
     mobileTabDesign, setMobileTabDesign
@@ -166,12 +167,25 @@ const THEME_COLORS = {
 
 export function applyTheme() {
     const colorEl = document.getElementById('themeColor');
+    const prevTheme = currentThemeColor;
 
     // DOM要素が存在する場合はその値を使用
     if (colorEl && colorEl.value) {
         setCurrentThemeColor(colorEl.value);
     } else if (!window.currentThemeColor) {
         setCurrentThemeColor('forest');
+    }
+
+    // テーマ変更時: タスクカラーマップをリセット（新パレットで再割り当て）
+    if (prevTheme && prevTheme !== currentThemeColor) {
+        setTaskColorMap({});
+        // スケジュールタブが表示中なら再描画
+        const scheduleTab = document.getElementById('schedule');
+        if (scheduleTab && scheduleTab.classList.contains('active')) {
+            if (typeof window.renderScheduleView === 'function') {
+                setTimeout(() => window.renderScheduleView(), 100);
+            }
+        }
     }
 
     // パターンとタブカラーは新デザインでは未使用だが互換性のため維持
