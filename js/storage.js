@@ -15,6 +15,7 @@ import {
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
+    filterBarMode, setFilterBarMode,
 
     debugModeEnabled, setDebugModeEnabled,
     devFeaturesEnabled, setDevFeaturesEnabled,
@@ -85,6 +86,7 @@ export function saveData(skipAutoBackup = false) {
             showProgressPercentage: showProgressPercentageSetting,
             progressBarStyle: progressBarStyle,
             matrixEstActFormat: matrixEstActFormat,
+            filterBarMode: filterBarMode,
 
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
@@ -231,6 +233,10 @@ export function loadData() {
             // 見積と実績の表示形式の設定を読み込み
             if (settings.matrixEstActFormat) {
                 setMatrixEstActFormat(settings.matrixEstActFormat);
+            }
+            // フィルタバー表示モードの設定を読み込み
+            if (settings.filterBarMode) {
+                setFilterBarMode(settings.filterBarMode);
             }
             // 開発中の機能表示設定を読み込み
             if (settings.devFeaturesEnabled !== undefined) {

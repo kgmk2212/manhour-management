@@ -1346,6 +1346,46 @@
                 <select id="tabFilterLayout" style="display:none;"><option value="two-lines">two-lines</option></select>
                 <select id="mobileTabDesign" style="display:none;"><option value="capsule">capsule</option></select>
 
+                <!-- フィルタバー設定 -->
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                        フィルタバー
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">
+                        スクロール時のフィルタバー表示方法を設定できます。
+                    </p>
+                    <div class="form-group">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">フィルタバーの表示モード</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="filterBarMode" value="smartSticky"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <span style="flex: 1;">
+                                    <strong>スマートスティッキー</strong><br>
+                                    <small style="color: var(--text-muted);">上スクロール時にフィルタバーを自動表示します</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="filterBarMode" value="hover"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>ホバー表示</strong><br>
+                                    <small style="color: var(--text-muted);">画面上部にマウスを移動するとフィルタバーを表示します</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="filterBarMode" value="off"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>オフ</strong><br>
+                                    <small style="color: var(--text-muted);">フィルタバーの自動表示を無効にします</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 開発・デバッグ設定 -->
                 <div class="setting-section">
                     <div class="setting-section-title">
@@ -2419,25 +2459,49 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-11"></script>
+    <script type="module" src="js/init.js?v=20260216-12"></script>
 
-    <!-- スマートスティッキーフィルタバー -->
+    <!-- フィルタバー（スマートスティッキー / ホバーモード） -->
     <script>
     window.addEventListener('load', function() {
         setTimeout(function() {
             try {
                 var mc = document.getElementById('mainContent');
-
                 var THRESHOLD = 30;
                 var lastY = mc ? mc.scrollTop : 0;
                 var upPx = 0;
+                var ignoreScrollUntil = 0; // フィルタ操作後のスクロール無視タイマー
+
+                // --- 共通: バー管理 ---
                 var fixedBar = null;
                 var sourceBar = null;
+                var hoverBar = null;
+                var hoverSourceBar = null;
 
+                // --- モード管理 ---
+                var currentMode = 'smartSticky';
+
+                function loadMode() {
+                    try {
+                        var s = localStorage.getItem('manhour_settings');
+                        if (s) { currentMode = JSON.parse(s).filterBarMode || 'smartSticky'; }
+                    } catch(e) {}
+                }
+
+                window.applyFilterBarMode = function() {
+                    loadMode();
+                    hideFixedBar();
+                    hideHoverBar();
+                    upPx = 0;
+                    lastY = mc ? mc.scrollTop : 0;
+                };
+
+                loadMode();
+
+                // --- 共通: フィルタバー検索 ---
                 function findBar() {
                     var tab = document.querySelector('.tab-content.active');
                     if (!tab) return null;
-                    // compact版、segmented版、スケジュールフィルタすべてを候補にする
                     var bars = tab.querySelectorAll(
                         '.filter-bar-sticky, .schedule-filter-bar, ' +
                         '#reportFiltersCompact, #reportFiltersSegmented, ' +
@@ -2450,23 +2514,20 @@
                     return null;
                 }
 
-                function syncFixedBar() {
-                    if (!fixedBar || !sourceBar) return;
-                    fixedBar.innerHTML = sourceBar.innerHTML;
-                    // select値を同期
-                    var os = sourceBar.querySelectorAll('select');
-                    var cs = fixedBar.querySelectorAll('select');
+                function syncBar(cloneBar, origBar) {
+                    if (!cloneBar || !origBar) return;
+                    cloneBar.innerHTML = origBar.innerHTML;
+                    var os = origBar.querySelectorAll('select');
+                    var cs = cloneBar.querySelectorAll('select');
                     for (var i = 0; i < os.length; i++) { if (cs[i]) cs[i].value = os[i].value; }
                 }
 
-                function showFixedBar(bar) {
-                    if (fixedBar && sourceBar === bar) return;
-                    hideFixedBar();
+                function createBarElement(bar) {
                     var left = mc ? mc.getBoundingClientRect().left : 0;
-                    fixedBar = document.createElement('div');
-                    fixedBar.className = 'smart-sticky-bar';
-                    fixedBar.innerHTML = bar.innerHTML;
-                    fixedBar.style.cssText =
+                    var el = document.createElement('div');
+                    el.className = 'smart-sticky-bar';
+                    el.innerHTML = bar.innerHTML;
+                    el.style.cssText =
                         'position:fixed;top:0;right:0;z-index:9999;' +
                         'background:var(--surface,#fff);padding:10px 40px;' +
                         'border-bottom:1px solid var(--border,#e7e5e0);' +
@@ -2474,36 +2535,47 @@
                         'display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
                         'animation:smartStickySlideIn 0.2s ease;' +
                         'left:' + left + 'px;';
-                    document.body.appendChild(fixedBar);
-                    sourceBar = bar;
-                    syncFixedBar();
+                    return el;
+                }
 
-                    // イベント委譲：select/buttonのクリックを元バーに転送し、再同期
-                    fixedBar.addEventListener('change', function(e) {
+                function attachBarEvents(cloneBar, origBar) {
+                    cloneBar.addEventListener('change', function(e) {
                         if (e.target.tagName === 'SELECT') {
-                            // 同じ位置の元selectを探して値を同期
-                            var cloneSelects = fixedBar.querySelectorAll('select');
-                            var origSelects = sourceBar.querySelectorAll('select');
+                            var cloneSelects = cloneBar.querySelectorAll('select');
+                            var origSelects = origBar.querySelectorAll('select');
                             var idx = Array.from(cloneSelects).indexOf(e.target);
                             if (idx >= 0 && origSelects[idx]) {
                                 origSelects[idx].value = e.target.value;
                                 origSelects[idx].dispatchEvent(new Event('change', { bubbles: true }));
-                                setTimeout(syncFixedBar, 150);
+                                ignoreScrollUntil = Date.now() + 300;
+                                setTimeout(function() { syncBar(cloneBar, origBar); }, 150);
                             }
                         }
                     });
-                    fixedBar.addEventListener('click', function(e) {
+                    cloneBar.addEventListener('click', function(e) {
                         var btn = e.target.closest('button');
                         if (btn) {
-                            var cloneBtns = Array.from(fixedBar.querySelectorAll('button'));
+                            var cloneBtns = Array.from(cloneBar.querySelectorAll('button'));
                             var idx = cloneBtns.indexOf(btn);
-                            var origBtns = sourceBar.querySelectorAll('button');
+                            var origBtns = origBar.querySelectorAll('button');
                             if (idx >= 0 && origBtns[idx]) {
                                 origBtns[idx].click();
-                                setTimeout(syncFixedBar, 150);
+                                ignoreScrollUntil = Date.now() + 300;
+                                setTimeout(function() { syncBar(cloneBar, origBar); }, 150);
                             }
                         }
                     });
+                }
+
+                // --- スマートスティッキーモード ---
+                function showFixedBar(bar) {
+                    if (fixedBar && sourceBar === bar) return;
+                    hideFixedBar();
+                    fixedBar = createBarElement(bar);
+                    document.body.appendChild(fixedBar);
+                    sourceBar = bar;
+                    syncBar(fixedBar, sourceBar);
+                    attachBarEvents(fixedBar, sourceBar);
                 }
 
                 function hideFixedBar() {
@@ -2511,8 +2583,14 @@
                 }
 
                 function onScroll() {
+                    if (currentMode !== 'smartSticky') return;
                     var y = mc ? mc.scrollTop : window.scrollY;
                     var dy = y - lastY;
+                    // フィルタ操作後のスクロールは無視（位置だけ追従）
+                    if (Date.now() < ignoreScrollUntil) {
+                        lastY = y;
+                        return;
+                    }
                     lastY = y;
                     if (dy === 0) return;
                     var bar = findBar();
@@ -2526,14 +2604,51 @@
                 if (mc) mc.addEventListener('scroll', onScroll, { passive: true });
                 window.addEventListener('scroll', onScroll, { passive: true });
 
+                // --- ホバーモード ---
+                var HOVER_ZONE = 40;
+
+                function showHoverBar(bar) {
+                    if (hoverBar && hoverSourceBar === bar) return;
+                    hideHoverBar();
+                    hoverBar = createBarElement(bar);
+                    document.body.appendChild(hoverBar);
+                    hoverSourceBar = bar;
+                    syncBar(hoverBar, hoverSourceBar);
+                    attachBarEvents(hoverBar, hoverSourceBar);
+                    hoverBar.addEventListener('mouseleave', function() {
+                        hideHoverBar();
+                    });
+                }
+
+                function hideHoverBar() {
+                    if (hoverBar) { hoverBar.remove(); hoverBar = null; hoverSourceBar = null; }
+                }
+
+                document.addEventListener('mousemove', function(e) {
+                    if (currentMode !== 'hover') return;
+                    if (hoverBar) return; // 既に表示中
+                    var mcRect = mc ? mc.getBoundingClientRect() : { top: 0, left: 0, right: window.innerWidth };
+                    var inMcX = e.clientX >= mcRect.left && e.clientX <= (mcRect.right || window.innerWidth);
+                    var nearTop = e.clientY <= HOVER_ZONE;
+                    if (nearTop && inMcX) {
+                        var bar = findBar();
+                        if (bar && bar.getBoundingClientRect().bottom < 0) {
+                            showHoverBar(bar);
+                        }
+                    }
+                }, { passive: true });
+
+                // --- タブ切替時にリセット ---
                 document.querySelectorAll('.nav-item').forEach(function(item) {
                     item.addEventListener('click', function() {
-                        hideFixedBar(); upPx = 0;
+                        hideFixedBar();
+                        hideHoverBar();
+                        upPx = 0;
                         lastY = mc ? mc.scrollTop : 0;
                     });
                 });
             } catch(e) {
-                console.error('[StickyFilter] error:', e);
+                console.error('[FilterBar] error:', e);
             }
         }, 500);
     });

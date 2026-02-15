@@ -11,6 +11,7 @@ import {
     showProgressPercentageSetting, setShowProgressPercentageSetting,
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
+    setFilterBarMode,
 
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
@@ -368,6 +369,19 @@ export function saveMatrixEstActFormat() {
 }
 
 
+
+export function changeFilterBarMode() {
+    const selected = document.querySelector('input[name="filterBarMode"]:checked');
+    if (selected) {
+        setFilterBarMode(selected.value);
+        if (typeof window.saveData === 'function') {
+            window.saveData(true);
+        }
+        if (typeof window.applyFilterBarMode === 'function') {
+            window.applyFilterBarMode();
+        }
+    }
+}
 
 export function saveDefaultViewTypeSetting() {
     if (typeof window.saveData === 'function') {

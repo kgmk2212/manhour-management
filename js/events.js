@@ -92,6 +92,7 @@ import {
     toggleProgressPercentageSetting,
     saveProgressBarStyle,
     saveMatrixEstActFormat,
+    changeFilterBarMode,
     loadMobileTabDesign,
     changeMobileTabDesign,
     saveDefaultViewTypeSetting,
@@ -562,7 +563,9 @@ export function initEventHandlers() {
         radio.addEventListener('change', saveMatrixEstActFormat);
     });
 
-
+    document.querySelectorAll('input[name="filterBarMode"]').forEach(radio => {
+        radio.addEventListener('change', changeFilterBarMode);
+    });
 
     ['defaultEstimateViewType', 'defaultReportViewType'].forEach(id => {
         const el = document.getElementById(id);

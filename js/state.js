@@ -233,6 +233,8 @@ export let showProgressPercentageSetting = true; // 進捗バーのパーセン�
 export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, bottom
 export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
 
+export let filterBarMode = 'smartSticky'; // フィルタバー表示モード: smartSticky, hover, off
+
 export let debugModeEnabled = false; // デバッグモード設定
 export let devFeaturesEnabled = false; // 開発中の機能を表示するか
 export let memberOrder = ''; // 担当者の表示順
@@ -364,6 +366,11 @@ export function setMatrixEstActFormat(value) {
 }
 
 
+
+export function setFilterBarMode(value) {
+    filterBarMode = value;
+    window.filterBarMode = value;
+}
 
 export function setDebugModeEnabled(value) {
     debugModeEnabled = value;
