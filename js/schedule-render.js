@@ -13,9 +13,10 @@ import { sortMembers } from './utils.js';
 // ============================================
 
 const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS } = SCHEDULE.CANVAS;
-const LABEL_WIDTH_MOBILE_MEMBER = 80;
-const LABEL_WIDTH_MOBILE_TASK = 120;
-const LABEL_PADDING = 15; // テキスト左右余白
+const LABEL_PADDING = 15; // テキスト右余白
+const LABEL_DOT_LEFT = 14; // 左端からドットまで
+const LABEL_DOT_SIZE = 8;  // ドットの直径
+const LABEL_TEXT_OFFSET = LABEL_DOT_LEFT + LABEL_DOT_SIZE + 8; // ドット後テキスト開始位置
 const { DELAYED, COMPLETED, TODAY_LINE, WEEKEND, HOLIDAY, GRID, MONTH_SEPARATOR,
     SURFACE, SURFACE_ELEVATED, BORDER, TEXT_PRIMARY, TEXT_MUTED, HEADER_BG, LABEL_BG } = SCHEDULE.COLORS;
 
@@ -302,8 +303,8 @@ export class GanttChartRenderer {
         // モバイル時のラベルスクロールコンテナ設定
         if (this.labelScrollContainer) {
             if (isMobile) {
-                const maxVisible = viewMode === SCHEDULE.VIEW_MODE.TASK
-                    ? LABEL_WIDTH_MOBILE_TASK : LABEL_WIDTH_MOBILE_MEMBER;
+                // ラベルは画面幅の40%まで、超えた分は横スクロール可能
+                const maxVisible = Math.min(this.labelWidth, Math.floor(window.innerWidth * 0.4));
                 this.labelScrollContainer.style.maxWidth = maxVisible + 'px';
             } else {
                 this.labelScrollContainer.style.maxWidth = '';
@@ -410,8 +411,10 @@ export class GanttChartRenderer {
             if (w > maxTextWidth) maxTextWidth = w;
         });
 
-        // テキスト幅 + 余白をキャンバス幅とする（最小40px）
-        const contentWidth = Math.max(40, Math.ceil(maxTextWidth + LABEL_PADDING));
+        // テキスト幅 + テキスト開始オフセット + 右余白をキャンバス幅とする
+        const hasDot = rows.some(r => r.color || r.type === 'member');
+        const textStart = hasDot ? LABEL_TEXT_OFFSET : LABEL_DOT_LEFT;
+        const contentWidth = Math.max(40, Math.ceil(textStart + maxTextWidth + LABEL_PADDING));
         return contentWidth;
     }
 
@@ -731,9 +734,9 @@ export class GanttChartRenderer {
      */
     drawLabelColumn(rows) {
         const ctx = this.labelCtx;
-        const dotSize = 8;     // メンバードットの直径
-        const dotLeftPad = 14; // 左端からドットまでの距離
-        const textLeftPad = dotLeftPad + dotSize + 8; // ドット後のテキスト開始位置
+        const dotSize = LABEL_DOT_SIZE;
+        const dotLeftPad = LABEL_DOT_LEFT;
+        const textLeftPad = LABEL_TEXT_OFFSET;
 
         rows.forEach((row, index) => {
             const y = HEADER_HEIGHT + index * ROW_HEIGHT;
