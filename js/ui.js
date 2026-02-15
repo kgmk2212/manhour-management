@@ -4039,29 +4039,18 @@ export function initSidebar() {
 // ============================================
 // スマートスティッキー フィルタバー
 // フィルタバーが画面外 ＋ 上スクロール → 画面上部にfixedバーを表示
-// デスクトップ: mainContentがスクロールコンテナ
-// モバイル(768px以下): windowがスクロールコンテナ
+// RAFポーリングでバー位置を監視（スクロールコンテナに依存しない）
 // ============================================
 
 export function initSmartStickyFilters() {
     const mc = document.getElementById('mainContent');
-    if (!mc) return;
 
     const THRESHOLD = 30;
     let lastY = 0;
     let upPx = 0;
     let fixedBar = null;
     let sourceBar = null;
-
-    /** モバイルか判定（CSSブレークポイントと同期） */
-    function isMobile() {
-        return window.innerWidth <= 768;
-    }
-
-    /** 現在のスクロール位置を取得 */
-    function getScrollY() {
-        return isMobile() ? window.scrollY : mc.scrollTop;
-    }
+    let running = true;
 
     function findBar() {
         const tab = document.querySelector('.tab-content.active');
@@ -4077,7 +4066,7 @@ export function initSmartStickyFilters() {
         if (fixedBar && sourceBar === bar) return;
         hideFixedBar();
 
-        const leftOffset = isMobile() ? 0 : mc.getBoundingClientRect().left;
+        const leftOffset = mc ? mc.getBoundingClientRect().left : 0;
         fixedBar = document.createElement('div');
         fixedBar.className = 'smart-sticky-bar';
         fixedBar.innerHTML = bar.innerHTML;
@@ -4130,49 +4119,56 @@ export function initSmartStickyFilters() {
         }
     }
 
-    function onScroll() {
-        const y = getScrollY();
-        const dy = y - lastY;
-        lastY = y;
-        if (dy === 0) return;
+    // RAFポーリングでフィルタバーの位置を常時監視
+    function tick() {
+        if (!running) return;
 
         const bar = findBar();
-        if (!bar) { hideFixedBar(); return; }
+        if (bar) {
+            const barRect = bar.getBoundingClientRect();
+            // バーが画面上端より上にあるか（clippingされているか）
+            const barAbove = barRect.bottom < 0;
 
-        // フィルタバーがビューポート上端より上にあるか
-        const barRect = bar.getBoundingClientRect();
-        const topEdge = isMobile() ? 0 : mc.getBoundingClientRect().top;
-        const barAbove = barRect.bottom < topEdge;
+            // mc内でスクロールされている場合のチェック
+            const mcTop = mc ? mc.getBoundingClientRect().top : 0;
+            const barHidden = barAbove || barRect.bottom < mcTop;
 
-        if (!barAbove) {
-            upPx = 0;
-            hideFixedBar();
-            return;
-        }
+            // スクロール位置の変化を検出
+            const y = mc ? mc.scrollTop : window.scrollY;
+            const dy = y - lastY;
+            lastY = y;
 
-        if (dy > 0) {
-            upPx = 0;
-            hideFixedBar();
-        } else {
-            upPx += Math.abs(dy);
-            if (upPx >= THRESHOLD) {
-                showFixedBar(bar);
+            if (!barHidden) {
+                upPx = 0;
+                hideFixedBar();
+            } else if (dy > 0) {
+                // 下スクロール
+                upPx = 0;
+                hideFixedBar();
+            } else if (dy < 0) {
+                // 上スクロール
+                upPx += Math.abs(dy);
+                if (upPx >= THRESHOLD) {
+                    showFixedBar(bar);
+                }
             }
+        } else {
+            hideFixedBar();
         }
+
+        requestAnimationFrame(tick);
     }
 
-    // 両方のスクロールコンテナにリスナーを設定
-    mc.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    lastY = getScrollY();
+    // 初期スクロール位置を記録してポーリング開始
+    lastY = mc ? mc.scrollTop : window.scrollY;
+    requestAnimationFrame(tick);
 
     // タブ切り替え時にリセット
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
             hideFixedBar();
             upPx = 0;
-            lastY = getScrollY();
+            lastY = mc ? mc.scrollTop : window.scrollY;
         });
     });
 }
