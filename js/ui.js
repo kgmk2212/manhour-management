@@ -142,19 +142,13 @@ export function showTab(tabName, options = {}) {
 
 
 
-    // アニメーションクラスの適用（退出側）
-    if (animationClassOut && currentActiveTab) {
-        currentActiveTab.classList.add('anim-leaving', animationClassOut);
-    }
-
     // 早期適用の属性を削除（一度動作したら不要）
     document.documentElement.removeAttribute('data-early-tab');
     document.documentElement.removeAttribute('data-early-theme');
 
-    // 全タブからactiveクラスとテーマクラスを削除
+    // 全タブボタンからactiveを削除
     document.querySelectorAll('.tab').forEach(t => {
         t.classList.remove('active');
-        // テーマクラスを削除
         const classes = Array.from(t.classList);
         classes.forEach(cls => {
             if (cls.startsWith('theme-') || cls.startsWith('pattern-') || cls.startsWith('tab-theme-')) {
@@ -162,19 +156,14 @@ export function showTab(tabName, options = {}) {
             }
         });
     });
-    // サイドバー: nav-itemのactiveも削除
     document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
-    // モバイルタブバー: activeも削除
     document.querySelectorAll('.mobile-tab-item[data-tab]').forEach(n => n.classList.remove('active'));
 
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    // 対象のタブボタンを見つけてactiveクラスを追加
+    // 対象のタブボタンをactive化
     const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"], .nav-item[data-tab="${tabName}"]`);
     if (targetTabBtn) {
         targetTabBtn.classList.add('active');
     }
-    // モバイルタブバーのアクティブも更新
     const mobileTabBtn = document.querySelector(`.mobile-tab-item[data-tab="${tabName}"]`);
     if (mobileTabBtn) {
         mobileTabBtn.classList.add('active');
@@ -185,7 +174,7 @@ export function showTab(tabName, options = {}) {
         updateTabIndicator(tabName, !skipAnimation);
     }
 
-    // タブボタンを画面内にスクロール（モバイルのみ、スタイル適用後に実行）
+    // タブボタンを画面内にスクロール（モバイルのみ）
     if (targetTabBtn && targetTabBtn.classList.contains('tab') && window.innerWidth <= 768) {
         requestAnimationFrame(() => {
             scrollTabButtonIntoView(targetTabBtn);
@@ -195,24 +184,42 @@ export function showTab(tabName, options = {}) {
     // モバイルヘッダーのタイトルを更新
     updateMobileHeaderTitle(tabName);
 
+    // スクロール位置を先に復元（タブ表示前に設定してちらつき防止）
+    const savedScrollY = (window.tabScrollPositions && window.tabScrollPositions[tabName]) || 0;
+    window.scrollTo(0, savedScrollY);
+
+    // 退出中のタブ以外のactiveを除去
+    document.querySelectorAll('.tab-content').forEach(c => {
+        if (c !== currentActiveTab || !animationClassOut) {
+            c.classList.remove('active');
+        }
+    });
+
+    // 退出側アニメーション（active維持のまま）
+    if (animationClassOut && currentActiveTab && currentActiveTab.id !== tabName) {
+        currentActiveTab.classList.add('anim-leaving', animationClassOut);
+    }
+
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
     if (tabContent) {
         tabContent.classList.add('active');
 
-        // アニメーションクラスの適用（進入側）
+        // 進入アニメーション
         if (animationClassIn) {
             tabContent.classList.add('anim-entering', animationClassIn);
+        }
 
-            // アニメーション終了後のクリーンアップ
+        // アニメーション完了後のクリーンアップ
+        if (animationClassOut || animationClassIn) {
             setTimeout(() => {
-                // 退出側のクラス削除
                 if (currentActiveTab) {
-                    currentActiveTab.classList.remove('anim-leaving', animationClassOut);
+                    currentActiveTab.classList.remove('active', 'anim-leaving', animationClassOut);
                 }
-                // 進入側のクラス削除
-                tabContent.classList.remove('anim-entering', animationClassIn);
-            }, 300); // CSSのアニメーション時間(0.3s)に合わせる
+                if (tabContent) {
+                    tabContent.classList.remove('anim-entering', animationClassIn);
+                }
+            }, 300);
         }
     }
 
@@ -262,15 +269,6 @@ export function showTab(tabName, options = {}) {
     } catch (e) {
         // localStorageエラーは無視
     }
-
-    // スクロール位置の復元（保存されていれば）
-    if (typeof window.tabScrollPositions === 'undefined') {
-        window.tabScrollPositions = {};
-    }
-
-    // スクロール位置を復元
-    const savedScrollY = window.tabScrollPositions[tabName] || 0;
-    window.scrollTo(0, savedScrollY);
 
     // タブバーを表示状態に戻す（隠れていたら）
     const tabs = document.querySelector('.tabs');

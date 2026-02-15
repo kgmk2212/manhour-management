@@ -420,7 +420,6 @@ img {
     padding: 32px 40px;
     max-width: 1400px;
     margin: 0 auto;
-    animation: pageIn 0.3s ease;
 }
 
 .tab-content.active {
@@ -4449,12 +4448,14 @@ html[data-inline-filter="hidden"] .inline-filter {
     .tab-content.active.swiping {
         position: absolute;
         z-index: 2;
+        animation: none !important;
     }
 
     .tab-content.swipe-preview {
         display: block !important;
         position: absolute;
         z-index: 1;
+        animation: none !important;
     }
 
     .tab-content.active.swipe-preview {
@@ -4464,25 +4465,43 @@ html[data-inline-filter="hidden"] .inline-filter {
 
     /* Tab slide animations */
     @keyframes slideInRight {
-        from { transform: translateX(30px); opacity: 0; }
+        from { transform: translateX(40%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
     @keyframes slideInLeft {
-        from { transform: translateX(-30px); opacity: 0; }
+        from { transform: translateX(-40%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
     @keyframes slideOutLeft {
         from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(-30px); opacity: 0; }
+        to { transform: translateX(-40%); opacity: 0; }
     }
     @keyframes slideOutRight {
         from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(30px); opacity: 0; }
+        to { transform: translateX(40%); opacity: 0; }
     }
-    .anim-slide-in-right { animation: slideInRight 0.3s ease forwards; }
-    .anim-slide-in-left { animation: slideInLeft 0.3s ease forwards; }
-    .anim-slide-out-left { animation: slideOutLeft 0.3s ease forwards; }
-    .anim-slide-out-right { animation: slideOutRight 0.3s ease forwards; }
+
+    /* 退出中のタブ: display維持 + 上に重ならないようにする */
+    .tab-content.anim-leaving {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* 進入中のタブ: 退出タブの上に表示 */
+    .tab-content.anim-entering {
+        position: relative;
+        z-index: 1;
+    }
+
+    .anim-slide-in-right { animation: slideInRight 0.25s ease-out forwards; }
+    .anim-slide-in-left { animation: slideInLeft 0.25s ease-out forwards; }
+    .anim-slide-out-left { animation: slideOutLeft 0.25s ease-out forwards; }
+    .anim-slide-out-right { animation: slideOutRight 0.25s ease-out forwards; }
 }
 
 /* ---- 45. Responsive: 480px and below ---- */
