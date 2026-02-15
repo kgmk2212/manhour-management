@@ -565,16 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
         UI.initSmartSticky();
     }
 
-    // スマートStickyフィルタバーを初期化（他の初期化エラーに影響されないよう非同期）
-    setTimeout(() => {
-        try {
-            if (typeof UI.initSmartStickyFilters === 'function') {
-                UI.initSmartStickyFilters();
-            }
-        } catch (e) {
-            console.error('[SmartStickyFilter] 初期化エラー:', e);
-        }
-    }, 0);
+    // スマートStickyフィルタバーはindex.htmlのインラインスクリプトで初期化
 
     // モーダルのクリックハンドラーをセットアップ
     Modal.setupModalHandlers();

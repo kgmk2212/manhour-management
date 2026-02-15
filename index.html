@@ -2419,7 +2419,105 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-5"></script>
+    <script type="module" src="js/init.js?v=20260216-6"></script>
+
+    <!-- スマートスティッキーフィルタバー（モジュールに依存しない独立スクリプト） -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var mc = document.getElementById('mainContent');
+        var THRESHOLD = 30;
+        var lastY = mc ? mc.scrollTop : window.scrollY;
+        var upPx = 0;
+        var fixedBar = null;
+        var sourceBar = null;
+
+        console.log('[StickyFilter] init, mc=' + !!mc + ', scrollTop=' + lastY);
+
+        function findBar() {
+            var tab = document.querySelector('.tab-content.active');
+            if (!tab) return null;
+            var bars = tab.querySelectorAll('.filter-bar-sticky, .schedule-filter-bar');
+            for (var i = 0; i < bars.length; i++) {
+                if (bars[i].offsetParent !== null && bars[i].offsetHeight > 0) return bars[i];
+            }
+            return null;
+        }
+
+        function showFixedBar(bar) {
+            if (fixedBar && sourceBar === bar) return;
+            hideFixedBar();
+            var left = mc ? mc.getBoundingClientRect().left : 0;
+            fixedBar = document.createElement('div');
+            fixedBar.className = 'smart-sticky-bar';
+            fixedBar.innerHTML = bar.innerHTML;
+            fixedBar.style.cssText =
+                'position:fixed;top:0;right:0;z-index:9999;' +
+                'background:var(--surface,#fff);padding:10px 40px;' +
+                'border-bottom:1px solid var(--border,#e7e5e0);' +
+                'box-shadow:0 2px 8px rgba(0,0,0,0.08);' +
+                'display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
+                'animation:smartStickySlideIn 0.2s ease;' +
+                'left:' + left + 'px;';
+            document.body.appendChild(fixedBar);
+            sourceBar = bar;
+            // select同期
+            var os = bar.querySelectorAll('select');
+            var cs = fixedBar.querySelectorAll('select');
+            os.forEach(function(s, i) { if (cs[i]) cs[i].value = s.value; });
+            // 操作転送
+            fixedBar.addEventListener('change', function(e) {
+                if (e.target.tagName === 'SELECT') {
+                    var idx = Array.from(cs).indexOf(e.target);
+                    if (idx >= 0 && os[idx]) {
+                        os[idx].value = e.target.value;
+                        os[idx].dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+            fixedBar.addEventListener('click', function(e) {
+                var btn = e.target.closest('button');
+                if (btn) {
+                    var all = Array.from(fixedBar.querySelectorAll('button'));
+                    var idx = all.indexOf(btn);
+                    var orig = bar.querySelectorAll('button');
+                    if (idx >= 0 && orig[idx]) orig[idx].click();
+                }
+            });
+        }
+
+        function hideFixedBar() {
+            if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
+        }
+
+        function onScroll() {
+            var y = mc ? mc.scrollTop : window.scrollY;
+            var dy = y - lastY;
+            lastY = y;
+            if (dy === 0) return;
+            var bar = findBar();
+            if (!bar) { hideFixedBar(); return; }
+            var barAbove = bar.getBoundingClientRect().bottom < 0;
+            if (!barAbove) { upPx = 0; hideFixedBar(); return; }
+            if (dy > 0) { upPx = 0; hideFixedBar(); }
+            else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
+        }
+
+        if (mc) {
+            mc.addEventListener('scroll', onScroll, { passive: true });
+            console.log('[StickyFilter] mc scroll listener attached');
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        console.log('[StickyFilter] window scroll listener attached');
+
+        // タブ切り替え時リセット
+        document.querySelectorAll('.nav-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                hideFixedBar(); upPx = 0;
+                lastY = mc ? mc.scrollTop : window.scrollY;
+            });
+        });
+    });
+    </script>
 </body>
 
 </html>
