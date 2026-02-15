@@ -2419,17 +2419,14 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-9"></script>
+    <script type="module" src="js/init.js?v=20260216-10"></script>
 
     <!-- スマートスティッキーフィルタバー -->
     <script>
-    console.log('[StickyFilter] script tag reached');
     window.addEventListener('load', function() {
-        console.log('[StickyFilter] window load fired');
         setTimeout(function() {
             try {
                 var mc = document.getElementById('mainContent');
-                console.log('[StickyFilter] init, mc=' + !!mc);
 
                 var THRESHOLD = 30;
                 var lastY = mc ? mc.scrollTop : 0;
@@ -2437,15 +2434,17 @@
                 var fixedBar = null;
                 var sourceBar = null;
 
-                var findDbg = 0;
                 function findBar() {
                     var tab = document.querySelector('.tab-content.active');
-                    findDbg++;
-                    if (!tab) { if (findDbg <= 3) console.log('[StickyFilter] no active tab'); return null; }
-                    var bars = tab.querySelectorAll('.filter-bar-sticky, .schedule-filter-bar');
-                    if (findDbg <= 3) console.log('[StickyFilter] activeTab=#' + tab.id + ' bars.length=' + bars.length);
+                    if (!tab) return null;
+                    // compact版、segmented版、スケジュールフィルタすべてを候補にする
+                    var bars = tab.querySelectorAll(
+                        '.filter-bar-sticky, .schedule-filter-bar, ' +
+                        '#reportFiltersCompact, #reportFiltersSegmented, ' +
+                        '#estimateFiltersCompact, #estimateFiltersSegmented, ' +
+                        '#actualFiltersCompact, #actualFiltersSegmented'
+                    );
                     for (var i = 0; i < bars.length; i++) {
-                        if (findDbg <= 3) console.log('[StickyFilter] bar[' + i + '] offsetParent=' + !!bars[i].offsetParent + ' offsetHeight=' + bars[i].offsetHeight + ' display=' + getComputedStyle(bars[i]).display);
                         if (bars[i].offsetParent !== null && bars[i].offsetHeight > 0) return bars[i];
                     }
                     return null;
@@ -2495,28 +2494,14 @@
                     if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
                 }
 
-                var scrollDbg = 0;
-                function onScroll(evt) {
+                function onScroll() {
                     var y = mc ? mc.scrollTop : window.scrollY;
-                    var wy = window.scrollY;
                     var dy = y - lastY;
-                    scrollDbg++;
-                    if (scrollDbg <= 5) {
-                        console.log('[StickyFilter] scroll#' + scrollDbg +
-                            ' src=' + (evt.target === mc ? 'mc' : evt.target === document ? 'window' : 'other') +
-                            ' mc.scrollTop=' + (mc ? mc.scrollTop : 'N/A') +
-                            ' window.scrollY=' + wy +
-                            ' dy=' + dy);
-                    }
                     lastY = y;
                     if (dy === 0) return;
                     var bar = findBar();
-                    if (!bar) {
-                        if (scrollDbg <= 5) console.log('[StickyFilter] bar not found');
-                        hideFixedBar(); return;
-                    }
+                    if (!bar) { hideFixedBar(); return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
-                    if (scrollDbg <= 5) console.log('[StickyFilter] barBottom=' + bar.getBoundingClientRect().bottom.toFixed(0) + ' barAbove=' + barAbove);
                     if (!barAbove) { upPx = 0; hideFixedBar(); return; }
                     if (dy > 0) { upPx = 0; hideFixedBar(); }
                     else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
@@ -2524,7 +2509,6 @@
 
                 if (mc) mc.addEventListener('scroll', onScroll, { passive: true });
                 window.addEventListener('scroll', onScroll, { passive: true });
-                console.log('[StickyFilter] listeners attached');
 
                 document.querySelectorAll('.nav-item').forEach(function(item) {
                     item.addEventListener('click', function() {
