@@ -192,7 +192,10 @@ export const STORAGE_KEYS = {
     DEBUG_MODE: 'manhour_debugMode',
 
     // キャパシティ表示
-    CAPACITY_DISPLAY_MODE: 'manhour_capacityDisplayMode'
+    CAPACITY_DISPLAY_MODE: 'manhour_capacityDisplayMode',
+
+    // 見積タブ月標準工数表示
+    ESTIMATE_STANDARD_DISPLAY: 'manhour_estimateStandardDisplay'
 };
 
 /**

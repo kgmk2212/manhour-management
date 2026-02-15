@@ -549,6 +549,15 @@ document.addEventListener('DOMContentLoaded', function () {
         Report.updateReport();
     });
 
+    // 月標準工数の表示形式変更時の再描画
+    const estimateStandardDisplayEl = document.getElementById('estimateStandardDisplay');
+    if (estimateStandardDisplayEl) {
+        estimateStandardDisplayEl.addEventListener('change', () => {
+            localStorage.setItem('manhour_estimateStandardDisplay', estimateStandardDisplayEl.value);
+            Estimate.renderEstimateList();
+        });
+    }
+
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
 

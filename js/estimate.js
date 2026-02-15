@@ -377,8 +377,10 @@ function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
  * @param {number} totalHours - 合計工数
  * @param {number} workingDaysPerMonth - 月間稼働日数
  * @param {string} workDaysLabel - 営業日数のラベル
+ * @param {number} headcount - 担当者数
+ * @param {string} monthFilter - 月フィルタ値
  */
-function displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel) {
+function displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel, headcount, monthFilter) {
     const totalManDays = (totalHours / 8).toFixed(1);
     const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
 
@@ -386,6 +388,9 @@ function displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel) {
     const totalManpowerElement = document.getElementById('estimateTotalManpower');
     if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
     if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
+
+    // 月標準工数を表示（特定月選択時のみ）
+    updateEstimateStandardDisplay(totalHours, workingDaysPerMonth, headcount, monthFilter);
 
     // 換算基準を表示
     const conversionParams = document.getElementById('estimateConversionParams');
@@ -396,6 +401,42 @@ function displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel) {
 
     // 合計カードにテーマカラーのグラデーションを適用
     applyTotalCardTheme();
+}
+
+/**
+ * 月標準工数の表示を更新
+ */
+function updateEstimateStandardDisplay(totalHours, workingDays, headcount, monthFilter) {
+    const elA = document.getElementById('estimateStandardA');
+    const elB = document.getElementById('estimateStandardB');
+    if (!elA || !elB) return;
+
+    const mode = localStorage.getItem('manhour_estimateStandardDisplay') || 'subtext';
+    const isMonthSelected = monthFilter && monthFilter !== 'all';
+
+    // 両方非表示にリセット
+    elA.style.display = 'none';
+    elB.style.display = 'none';
+
+    if (!isMonthSelected || mode === 'none') return;
+
+    const standardHours = workingDays * 8 * headcount;
+    const diff = standardHours - totalHours;
+    const absDiff = Math.abs(diff).toFixed(1);
+
+    if (mode === 'subtext') {
+        elA.style.display = '';
+        elA.textContent = `月標準: ${standardHours}h（${workingDays}日×8h×${headcount}人）`;
+    } else if (mode === 'bar') {
+        elB.style.display = '';
+        const diffLabel = diff >= 0
+            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">余裕 ${absDiff}h</span>`
+            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">超過 ${absDiff}h</span>`;
+        elB.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: 15px;">${standardHours}h</strong> <span style="opacity: 0.7; font-size: 12px;">（${workingDays}日×8h×${headcount}人）</span></span>
+            ${diffLabel}
+        </div>`;
+    }
 }
 
 /**
@@ -518,6 +559,10 @@ function showEstimateEmptyState(container, message) {
     const totalManpowerElement = document.getElementById('estimateTotalManpower');
     if (totalHoursElement) totalHoursElement.textContent = '0h';
     if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
+    const elA = document.getElementById('estimateStandardA');
+    const elB = document.getElementById('estimateStandardB');
+    if (elA) elA.style.display = 'none';
+    if (elB) elB.style.display = 'none';
     const memberSummaryContainer = document.getElementById('estimateMemberSummary');
     if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
 }
@@ -562,12 +607,15 @@ export function renderEstimateList() {
     // 月間稼働日数を取得（レポートタブと同じ仕様: 月選択値をそのまま使用）
     const { workingDaysPerMonth, workDaysLabel } = calculateConversionBasis(monthFilter, filtered);
 
+    // 担当者別集計
+    const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
+    const headcount = Math.max(1, Object.keys(memberSummary).length);
+
     // 合計工数を計算・表示
     const totalHours = calculateEstimateTotalHours(filtered, filterType, monthFilter);
-    displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel);
+    displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel, headcount, monthFilter);
 
-    // 担当者別集計・表示
-    const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
+    // 担当者別表示
     renderEstimateMemberSummary(memberSummary, workingDaysPerMonth);
 
     // ビュータイプに応じて描画
