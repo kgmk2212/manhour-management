@@ -140,6 +140,9 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
             <span class="mobile-page-title" id="mobileHeaderTitle">工数管理</span>
+            <button class="mobile-filter-btn" id="mobileFilterBtn" aria-label="フィルタ" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            </button>
         </div>
 
         <!-- Mobile Bottom Tab Bar -->
@@ -2484,7 +2487,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-15"></script>
+    <script type="module" src="js/init.js?v=20260216-16"></script>
 
     <!-- フィルタバー（スマートスティッキー / ホバーモード） -->
     <script>
@@ -2518,7 +2521,7 @@
                     hideFixedBar();
                     hideHoverBar();
                     upPx = 0;
-                    lastY = mc ? mc.scrollTop : 0;
+                    lastY = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
                 };
 
                 loadMode();
@@ -2547,13 +2550,21 @@
                     for (var i = 0; i < os.length; i++) { if (cs[i]) cs[i].value = os[i].value; }
                 }
 
+                var isMobile = function() { return window.innerWidth <= 768; };
+
                 function createBarElement(bar) {
                     var left = mc ? mc.getBoundingClientRect().left : 0;
+                    var topPx = 0;
+                    if (isMobile()) {
+                        left = 0;
+                        var mh = document.getElementById('mobileHeader');
+                        topPx = mh ? mh.offsetHeight : 48;
+                    }
                     var el = document.createElement('div');
                     el.className = 'smart-sticky-bar';
                     el.innerHTML = bar.innerHTML;
                     el.style.cssText =
-                        'position:fixed;top:0;right:0;z-index:9999;' +
+                        'position:fixed;top:' + topPx + 'px;right:0;z-index:9999;' +
                         'background:var(--surface,#fff);padding:10px 40px;' +
                         'border-bottom:1px solid var(--border,#e7e5e0);' +
                         'box-shadow:0 2px 8px rgba(0,0,0,0.08);' +
@@ -2592,6 +2603,31 @@
                     });
                 }
 
+                // --- モバイルフィルタボタン管理 ---
+                var mobileFilterBtn = document.getElementById('mobileFilterBtn');
+
+                function updateMobileFilterBtn(isOpen) {
+                    if (!mobileFilterBtn) return;
+                    if (isOpen) {
+                        mobileFilterBtn.classList.add('is-open');
+                    } else {
+                        mobileFilterBtn.classList.remove('is-open');
+                    }
+                }
+
+                // フィルタバーが画面外かチェックしてボタン表示/非表示
+                function updateFilterBtnVisibility() {
+                    if (!mobileFilterBtn || !isMobile()) {
+                        if (mobileFilterBtn) mobileFilterBtn.style.display = 'none';
+                        return;
+                    }
+                    var bar = findBar();
+                    if (!bar) { mobileFilterBtn.style.display = 'none'; return; }
+                    var barAbove = bar.getBoundingClientRect().bottom < 0;
+                    mobileFilterBtn.style.display = barAbove ? '' : 'none';
+                    if (!barAbove) updateMobileFilterBtn(false);
+                }
+
                 // --- スマートスティッキーモード ---
                 function showFixedBar(bar) {
                     if (fixedBar && sourceBar === bar) return;
@@ -2601,15 +2637,18 @@
                     sourceBar = bar;
                     syncBar(fixedBar, sourceBar);
                     attachBarEvents(fixedBar, sourceBar);
+                    updateMobileFilterBtn(true);
                 }
 
                 function hideFixedBar() {
                     if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
+                    updateMobileFilterBtn(false);
                 }
 
                 function onScroll() {
                     if (currentMode !== 'smartSticky') return;
-                    var y = mc ? mc.scrollTop : window.scrollY;
+                    // モバイルではmainContentはoverflow:visibleなのでwindow.scrollYを使う
+                    var y = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
                     var dy = y - lastY;
                     // フィルタ操作後のスクロールは無視（位置だけ追従）
                     if (Date.now() < ignoreScrollUntil) {
@@ -2643,10 +2682,12 @@
                     hoverBar.addEventListener('mouseleave', function() {
                         hideHoverBar();
                     });
+                    updateMobileFilterBtn(true);
                 }
 
                 function hideHoverBar() {
                     if (hoverBar) { hoverBar.remove(); hoverBar = null; hoverSourceBar = null; }
+                    updateMobileFilterBtn(false);
                 }
 
                 document.addEventListener('mousemove', function(e) {
@@ -2663,13 +2704,42 @@
                     }
                 }, { passive: true });
 
+                // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
+                if (mobileFilterBtn) {
+                    mobileFilterBtn.addEventListener('click', function() {
+                        // すでに表示されていたら閉じる
+                        if (fixedBar || hoverBar) {
+                            hideFixedBar();
+                            hideHoverBar();
+                            return;
+                        }
+                        // 表示する
+                        var bar = findBar();
+                        if (bar && bar.getBoundingClientRect().bottom < 0) {
+                            showFixedBar(bar);
+                        }
+                    });
+                }
+
+                // スクロール時にフィルタボタン表示状態を更新
+                function onScrollUpdateBtn() {
+                    if (!isMobile()) return;
+                    updateFilterBtnVisibility();
+                }
+                if (mc) mc.addEventListener('scroll', onScrollUpdateBtn, { passive: true });
+                window.addEventListener('scroll', onScrollUpdateBtn, { passive: true });
+
                 // --- タブ切替時にリセット ---
-                document.querySelectorAll('.nav-item').forEach(function(item) {
+                document.querySelectorAll('.nav-item, .mobile-tab-item').forEach(function(item) {
                     item.addEventListener('click', function() {
                         hideFixedBar();
                         hideHoverBar();
                         upPx = 0;
-                        lastY = mc ? mc.scrollTop : 0;
+                        lastY = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
+                        if (mobileFilterBtn) {
+                            mobileFilterBtn.style.display = 'none';
+                            mobileFilterBtn.classList.remove('is-open');
+                        }
                     });
                 });
             } catch(e) {

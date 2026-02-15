@@ -347,6 +347,35 @@ img {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -0.02em;
+    flex: 1;
+}
+
+.mobile-filter-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--sidebar-text);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.mobile-filter-btn.has-filter {
+    opacity: 1;
+    color: var(--sidebar-text-active);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mobile-filter-btn.is-open {
+    background: rgba(255, 255, 255, 0.12);
+    opacity: 1;
+    color: var(--sidebar-text-active);
 }
 
 /* ---- 6b. Mobile Bottom Tab Bar ---- */
@@ -4782,4 +4811,37 @@ html[data-inline-filter="hidden"] .inline-filter {
 .smart-sticky-bar select,
 .smart-sticky-bar button {
     font-size: 13px;
+}
+
+/* Mobile smart sticky filter bar */
+@media (max-width: 768px) {
+    .smart-sticky-bar {
+        left: 0 !important;
+        right: 0 !important;
+        top: 48px !important;
+        padding: 10px 16px !important;
+        gap: 8px !important;
+        max-height: 60vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .smart-sticky-bar select {
+        font-size: 14px !important;
+        min-height: 36px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .smart-sticky-bar .segment-buttons {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+
+    .smart-sticky-bar .segment-buttons button {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        flex-shrink: 0;
+    }
 }
