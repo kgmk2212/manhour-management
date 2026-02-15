@@ -1199,6 +1199,10 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
 
     document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
     document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
+
+    const diffManDays = (diff / 8).toFixed(1);
+    const diffManMonths = (diff / 8 / workingDaysPerMonth).toFixed(2);
+    document.getElementById('totalDiffManpower').textContent = `${diff >= 0 ? '+' : ''}${diffManDays}人日 / ${diff >= 0 ? '+' : ''}${diffManMonths}人月`;
 }
 
 /**

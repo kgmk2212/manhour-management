@@ -2517,7 +2517,7 @@ export function updateMonthOptions(selectedVersion = 'all') {
     );
 }
 
-export function updateEstimateMonthOptions() {
+export function updateEstimateMonthOptions(selectedVersion = 'all') {
     const select = document.getElementById('estimateMonthFilter');
     const select2 = document.getElementById('estimateMonthFilter2');
     if (!select) return;
@@ -2525,6 +2525,11 @@ export function updateEstimateMonthOptions() {
     const months = new Set();
 
     estimates.forEach(e => {
+        // 版数フィルタが適用されている場合、該当する見積のみを確認
+        if (selectedVersion !== 'all') {
+            if (e.version !== selectedVersion) return;
+        }
+
         const est = normalizeEstimate(e);
         est.workMonths.forEach(month => {
             if (month && month !== 'unassigned') {
@@ -2614,7 +2619,7 @@ export function updateEstimateMonthOptions() {
     );
 }
 
-export function updateEstimateVersionOptions() {
+export function updateEstimateVersionOptions(selectedMonth = 'all') {
     const select = document.getElementById('estimateVersionFilter');
     const select2 = document.getElementById('estimateVersionFilter2');
     if (!select) return;
@@ -2623,6 +2628,11 @@ export function updateEstimateVersionOptions() {
 
     estimates.forEach(e => {
         if (e.version && e.version.trim() !== '') {
+            // 月フィルタが適用されている場合、該当する見積のみを確認
+            if (selectedMonth !== 'all') {
+                const est = normalizeEstimate(e);
+                if (!est.workMonths || !est.workMonths.includes(selectedMonth)) return;
+            }
             versions.add(e.version);
         }
     });
@@ -3223,6 +3233,10 @@ export function handleEstimateMonthChange(value, containerId) {
     if (filterTypeEl) filterTypeEl.value = 'month';
 
     updateSegmentButtonSelection(containerId, value);
+
+    // 版数フィルタの選択肢を連動して更新（レポートタブと同じ仕様）
+    updateEstimateVersionOptions(value);
+
     syncMonthToReport(value);
     syncMonthToActual(value);
     if (typeof window.renderEstimateList === 'function') {
@@ -3271,6 +3285,10 @@ export function handleEstimateVersionChange(value, containerId) {
 
     // UI toggling logic removed as per instruction.
     updateSegmentButtonSelection(containerId, value);
+
+    // 月フィルタの選択肢を連動して更新（レポートタブと同じ仕様）
+    updateEstimateMonthOptions(value);
+
     syncVersionToReport(value);
     if (typeof window.renderEstimateList === 'function') {
         window.renderEstimateList();
@@ -3728,9 +3746,16 @@ export function restoreEstimateFilterState() {
                 if (optionExists) {
                     estimateMonth.value = state.month;
                     updateSegmentButtonSelection('estimateMonthButtons', state.month);
+                    // 版数オプションを月でフィルタリング（レポートタブと同じ仕様）
+                    updateEstimateVersionOptions(state.month);
                     restored = true;
                 }
             }
+        }
+
+        // 版数フィルタで月オプションをフィルタリング（レポートタブと同じ仕様）
+        if (state.version && state.version !== 'all') {
+            updateEstimateMonthOptions(state.version);
         }
 
         // 状態をstateモジュールにも反映（localStorageへの再保存をスキップするため直接設定）

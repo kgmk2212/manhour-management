@@ -246,6 +246,8 @@ export let currentThemeColor = 'deep-blue';
 export let currentThemePattern = 'gradient';
 export let currentTabColor = 'deep-blue';
 export let currentBackgroundColor = 'default';
+export let designTheme = 'default'; // デザインテーマ: 'default', 'obsidian', 'paper', 'mosaic', 'graphite'
+export let sidebarLayout = false; // サイドバーレイアウト: true/false
 
 // レイアウト設定（セグメント表示に固定）
 export let estimateLayout = 'segmented';
@@ -403,6 +405,16 @@ export function setCurrentTabColor(value) {
 export function setCurrentBackgroundColor(value) {
     currentBackgroundColor = value;
     window.currentBackgroundColor = value;
+}
+
+export function setDesignTheme(value) {
+    designTheme = value;
+    window.designTheme = value;
+}
+
+export function setSidebarLayout(value) {
+    sidebarLayout = value;
+    window.sidebarLayout = value;
 }
 
 export function setEstimateLayout(value) {

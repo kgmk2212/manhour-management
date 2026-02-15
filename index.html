@@ -802,6 +802,10 @@
                             </div>
                         </div>
                     </div>
+                    <!-- パターンA: サブテキスト -->
+                    <div id="estimateStandardA" style="display: none; font-size: 12px; opacity: 0.7; margin-top: 8px;"></div>
+                    <!-- パターンB: 下部バー -->
+                    <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: 13px;"></div>
                 </div>
 
                 <!-- 担当者別合計表示 -->
@@ -1382,6 +1386,18 @@
                             <option value="grouped">グループ</option>
                             <option value="matrix" selected>マトリクス</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>月標準工数の表示（見積タブ）</label>
+                        <select id="estimateStandardDisplay">
+                            <option value="subtext" selected>サブテキスト</option>
+                            <option value="bar">下部バー（余裕/超過付き）</option>
+                            <option value="none">非表示</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            月フィルタ選択時に、営業日数×8h×人数の標準工数を表示します
+                        </small>
                     </div>
                 </div>
 
@@ -2571,7 +2587,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260210-4"></script>
+    <script type="module" src="js/init.js?v=20260215-1"></script>
 </body>
 
 </html>

@@ -479,6 +479,8 @@ document.addEventListener('DOMContentLoaded', function () {
     UI.updateMonthOptions();
     UI.updateEstimateMonthOptions();
     UI.updateEstimateVersionOptions();
+    // 見積フィルタのクロスフィルタリングを適用（レポートタブと同じ仕様）
+    UI.restoreEstimateFilterState();
     UI.updateActualMonthOptions();
     UI.updateMemberOptions();
     UI.updateVersionOptions();
@@ -547,6 +549,15 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('capacityDisplayModeChanged', () => {
         Report.updateReport();
     });
+
+    // 月標準工数の表示形式変更時の再描画
+    const estimateStandardDisplayEl = document.getElementById('estimateStandardDisplay');
+    if (estimateStandardDisplayEl) {
+        estimateStandardDisplayEl.addEventListener('change', () => {
+            localStorage.setItem('manhour_estimateStandardDisplay', estimateStandardDisplayEl.value);
+            Estimate.renderEstimateList();
+        });
+    }
 
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();

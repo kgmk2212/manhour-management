@@ -25,7 +25,12 @@ import {
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap,
-    setWorkDetailStyle, setModalDesignStyle
+    setWorkDetailStyle, setModalDesignStyle,
+    setDesignTheme,
+    setSidebarLayout,
+    setMobileTabDesign,
+    setRememberQuickInputMode,
+    setSelectedChartColorScheme
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -90,7 +95,21 @@ export function saveData(skipAutoBackup = false) {
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
             chartColorScheme: selectedChartColorScheme,
             workDetailStyle: window.workDetailStyle,
-            modalDesignStyle: window.modalDesignStyle
+            modalDesignStyle: window.modalDesignStyle,
+            designTheme: window.designTheme,
+            sidebarLayout: window.sidebarLayout,
+            themeBackgroundColor: window.currentBackgroundColor,
+            debugModeEnabled: debugModeEnabled,
+            devFeaturesEnabled: devFeaturesEnabled,
+            mobileTabDesign: window.mobileTabDesign,
+            // UI/UX設定（個別localStorage→統合）
+            tabBarAlwaysVisible: localStorage.getItem('tabBarAlwaysVisible') === 'true',
+            tabFilterAlwaysExpanded: localStorage.getItem('tabFilterAlwaysExpanded') === 'true',
+            hideInlineFilters: localStorage.getItem('hideInlineFilters') === 'true',
+            tabFilterButtonStyle: localStorage.getItem('tabFilterButtonStyle') || 'pill',
+            tabFilterLayout: localStorage.getItem('tabFilterLayout') || 'two-lines',
+            rememberQuickInputMode: window.rememberQuickInputMode,
+            estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
         }
     };
 
@@ -104,6 +123,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_scheduleSettings', JSON.stringify(scheduleSettings));
     localStorage.setItem('manhour_taskColorMap', JSON.stringify(taskColorMap));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
+    localStorage.setItem('manhour_estimateStandardDisplay', data.settings.estimateStandardDisplay);
 
     // 進捗計算キャッシュをクリア
     clearProgressCache();
@@ -248,6 +268,20 @@ export function loadData() {
                 const el = document.getElementById('modalDesignStyle');
                 if (el) el.value = settings.modalDesignStyle;
             }
+            // デザインテーマ設定を読み込み
+            if (settings.designTheme) {
+                setDesignTheme(settings.designTheme);
+            }
+            // サイドバーレイアウト設定を読み込み
+            if (settings.sidebarLayout !== undefined) {
+                setSidebarLayout(settings.sidebarLayout);
+            }
+            // 月標準工数表示設定を読み込み
+            if (settings.estimateStandardDisplay) {
+                const el = document.getElementById('estimateStandardDisplay');
+                if (el) el.value = settings.estimateStandardDisplay;
+                localStorage.setItem('manhour_estimateStandardDisplay', settings.estimateStandardDisplay);
+            }
 
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
@@ -295,7 +329,20 @@ export function autoBackup() {
         memberOrder: memberOrderValue,
         debugModeEnabled: debugModeEnabled,
         devFeaturesEnabled: devFeaturesEnabled,
-        workDetailStyle: window.workDetailStyle
+        workDetailStyle: window.workDetailStyle,
+        modalDesignStyle: window.modalDesignStyle,
+        autoBackup: window.autoBackupEnabled,
+        designTheme: window.designTheme,
+        sidebarLayout: window.sidebarLayout,
+        mobileTabDesign: window.mobileTabDesign,
+        // UI/UX設定
+        tabBarAlwaysVisible: localStorage.getItem('tabBarAlwaysVisible') === 'true',
+        tabFilterAlwaysExpanded: localStorage.getItem('tabFilterAlwaysExpanded') === 'true',
+        hideInlineFilters: localStorage.getItem('hideInlineFilters') === 'true',
+        tabFilterButtonStyle: localStorage.getItem('tabFilterButtonStyle') || 'pill',
+        tabFilterLayout: localStorage.getItem('tabFilterLayout') || 'two-lines',
+        rememberQuickInputMode: window.rememberQuickInputMode,
+        estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
     };
 
     const data = {
@@ -519,6 +566,93 @@ export function handleFileImport(event) {
                             if (typeof window.loadDevFeaturesSetting === 'function') {
                                 window.loadDevFeaturesSetting();
                             }
+                        }
+                        // デザインテーマ設定を復元
+                        if (data.settings.designTheme) {
+                            setDesignTheme(data.settings.designTheme);
+                            const el = document.getElementById('designTheme');
+                            if (el) el.value = data.settings.designTheme;
+                        }
+                        // サイドバーレイアウト設定を復元
+                        if (data.settings.sidebarLayout !== undefined) {
+                            setSidebarLayout(data.settings.sidebarLayout);
+                            const el = document.getElementById('sidebarLayout');
+                            if (el) el.checked = data.settings.sidebarLayout;
+                        }
+                        // モーダルデザインスタイルを復元
+                        if (data.settings.modalDesignStyle) {
+                            setModalDesignStyle(data.settings.modalDesignStyle);
+                            const el = document.getElementById('modalDesignStyle');
+                            if (el) el.value = data.settings.modalDesignStyle;
+                        }
+                        // 作業詳細スタイルを復元
+                        if (data.settings.workDetailStyle) {
+                            setWorkDetailStyle(data.settings.workDetailStyle);
+                            const el = document.getElementById('workDetailStyle');
+                            if (el) el.value = data.settings.workDetailStyle;
+                        }
+                        // 見積実績表示形式を復元
+                        if (data.settings.matrixEstActFormat) {
+                            setMatrixEstActFormat(data.settings.matrixEstActFormat);
+                            const radio = document.querySelector(`input[name="matrixEstActFormat"][value="${data.settings.matrixEstActFormat}"]`);
+                            if (radio) radio.checked = true;
+                        }
+                        // グラフカラーパターンを復元
+                        if (data.settings.chartColorScheme) {
+                            setSelectedChartColorScheme(data.settings.chartColorScheme);
+                            const el = document.getElementById('chartColorScheme');
+                            if (el) el.value = data.settings.chartColorScheme;
+                        }
+                        // 自動バックアップ設定を復元
+                        if (data.settings.autoBackup !== undefined) {
+                            window.autoBackupEnabled = data.settings.autoBackup;
+                            const el = document.getElementById('autoBackupEnabled');
+                            if (el) el.checked = data.settings.autoBackup;
+                        }
+                        // モバイルタブデザインを復元
+                        if (data.settings.mobileTabDesign) {
+                            setMobileTabDesign(data.settings.mobileTabDesign);
+                            const el = document.getElementById('mobileTabDesign');
+                            if (el) el.value = data.settings.mobileTabDesign;
+                        }
+                        // クイック入力モード記憶設定を復元
+                        if (data.settings.rememberQuickInputMode !== undefined) {
+                            setRememberQuickInputMode(data.settings.rememberQuickInputMode);
+                            localStorage.setItem('rememberQuickInputMode', data.settings.rememberQuickInputMode);
+                            const el = document.getElementById('rememberQuickInputMode');
+                            if (el) el.checked = data.settings.rememberQuickInputMode;
+                        }
+                        // UI/UX設定を復元
+                        if (data.settings.tabBarAlwaysVisible !== undefined) {
+                            localStorage.setItem('tabBarAlwaysVisible', data.settings.tabBarAlwaysVisible);
+                            const el = document.getElementById('tabBarAlwaysVisible');
+                            if (el) el.checked = data.settings.tabBarAlwaysVisible;
+                        }
+                        if (data.settings.tabFilterAlwaysExpanded !== undefined) {
+                            localStorage.setItem('tabFilterAlwaysExpanded', data.settings.tabFilterAlwaysExpanded);
+                            const el = document.getElementById('tabFilterAlwaysExpanded');
+                            if (el) el.checked = data.settings.tabFilterAlwaysExpanded;
+                        }
+                        if (data.settings.hideInlineFilters !== undefined) {
+                            localStorage.setItem('hideInlineFilters', data.settings.hideInlineFilters);
+                            const el = document.getElementById('hideInlineFilters');
+                            if (el) el.checked = data.settings.hideInlineFilters;
+                        }
+                        if (data.settings.tabFilterButtonStyle) {
+                            localStorage.setItem('tabFilterButtonStyle', data.settings.tabFilterButtonStyle);
+                            const el = document.getElementById('tabFilterButtonStyle');
+                            if (el) el.value = data.settings.tabFilterButtonStyle;
+                        }
+                        if (data.settings.tabFilterLayout) {
+                            localStorage.setItem('tabFilterLayout', data.settings.tabFilterLayout);
+                            const el = document.getElementById('tabFilterLayout');
+                            if (el) el.value = data.settings.tabFilterLayout;
+                        }
+                        // 月標準工数表示設定を復元
+                        if (data.settings.estimateStandardDisplay) {
+                            localStorage.setItem('manhour_estimateStandardDisplay', data.settings.estimateStandardDisplay);
+                            const el = document.getElementById('estimateStandardDisplay');
+                            if (el) el.value = data.settings.estimateStandardDisplay;
                         }
                     } else if (data.memberOrder) {
                         // 旧形式（settingsがない場合）の後方互換性

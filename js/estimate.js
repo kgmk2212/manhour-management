@@ -54,6 +54,57 @@ export function getWorkingDays(year, month) {
 }
 
 /**
+ * フィルタ済みデータから換算用の稼働日数とラベルを計算
+ * レポートタブの renderReportMatrix と同じロジック：
+ * - 特定月選択時はその月の営業日数を使用
+ * - それ以外はデータに含まれる作業月の平均営業日数を計算
+ * @param {string} selectedMonth - 選択された月（'all' または 'YYYY-MM'）
+ * @param {Array} estimateData - 見積データ配列
+ * @returns {{ workingDaysPerMonth: number, workDaysLabel: string }}
+ */
+function calculateConversionBasis(selectedMonth, estimateData) {
+    let workingDaysPerMonth = 20;
+    let workDaysLabel = 'デフォルト20日';
+
+    if (selectedMonth && selectedMonth !== 'all') {
+        // 特定の月が選択されている場合
+        const [year, month] = selectedMonth.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        if (calculatedDays > 0) {
+            workingDaysPerMonth = calculatedDays;
+            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        }
+    } else {
+        // 全期間/版数別の場合: 見積もりに含まれる作業月の平均営業日数を計算
+        const workMonthsSet = new Set();
+        estimateData.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths && est.workMonths.length > 0) {
+                est.workMonths.forEach(m => workMonthsSet.add(m));
+            }
+        });
+
+        if (workMonthsSet.size > 0) {
+            let totalDays = 0;
+            workMonthsSet.forEach(m => {
+                const [y, mo] = m.split('-');
+                totalDays += getWorkingDays(parseInt(y), parseInt(mo));
+            });
+            workingDaysPerMonth = Math.round(totalDays / workMonthsSet.size);
+            if (workMonthsSet.size === 1) {
+                const singleMonth = [...workMonthsSet][0];
+                const [y, mo] = singleMonth.split('-');
+                workDaysLabel = `${y}年${parseInt(mo)}月の営業日数（${workingDaysPerMonth}日）`;
+            } else {
+                workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
+            }
+        }
+    }
+
+    return { workingDaysPerMonth, workDaysLabel };
+}
+
+/**
  * 現在の年月の実働日数を取得（デフォルト値として使用）
  */
 export function getCurrentMonthWorkingDays() {
@@ -326,10 +377,11 @@ function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
  * 合計工数・人日・人月をDOM要素に表示
  * @param {number} totalHours - 合計工数
  * @param {number} workingDaysPerMonth - 月間稼働日数
- * @param {string} filterType - フィルタタイプ
+ * @param {string} workDaysLabel - 営業日数のラベル
+ * @param {number} headcount - 担当者数
  * @param {string} monthFilter - 月フィルタ値
  */
-function displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, monthFilter) {
+function displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel, headcount, monthFilter) {
     const totalManDays = (totalHours / 8).toFixed(1);
     const totalManMonths = (totalHours / 8 / workingDaysPerMonth).toFixed(2);
 
@@ -338,20 +390,54 @@ function displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, mont
     if (totalHoursElement) totalHoursElement.textContent = totalHours.toFixed(1) + 'h';
     if (totalManpowerElement) totalManpowerElement.textContent = `${totalManDays}人日 / ${totalManMonths}人月`;
 
+    // 月標準工数を表示（特定月選択時のみ）
+    updateEstimateStandardDisplay(totalHours, workingDaysPerMonth, headcount, monthFilter);
+
     // 換算基準を表示
     const conversionParams = document.getElementById('estimateConversionParams');
     if (conversionParams) {
-        let workDaysLabel = 'デフォルト20日';
-        if (filterType === 'month' && monthFilter !== 'all') {
-            const [year, month] = monthFilter.split('-');
-            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-        }
         conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）`;
         conversionParams.style.display = 'block';
     }
 
     // 合計カードにテーマカラーのグラデーションを適用
     applyTotalCardTheme();
+}
+
+/**
+ * 月標準工数の表示を更新
+ */
+function updateEstimateStandardDisplay(totalHours, workingDays, headcount, monthFilter) {
+    const elA = document.getElementById('estimateStandardA');
+    const elB = document.getElementById('estimateStandardB');
+    if (!elA || !elB) return;
+
+    const mode = localStorage.getItem('manhour_estimateStandardDisplay') || 'subtext';
+    const isMonthSelected = monthFilter && monthFilter !== 'all';
+
+    // 両方非表示にリセット
+    elA.style.display = 'none';
+    elB.style.display = 'none';
+
+    if (!isMonthSelected || mode === 'none') return;
+
+    const standardHours = workingDays * 8 * headcount;
+    const diff = standardHours - totalHours;
+    const absDiff = Math.abs(diff).toFixed(1);
+
+    if (mode === 'subtext') {
+        elA.style.display = '';
+        elA.textContent = `月標準: ${standardHours}h（${workingDays}日×8h×${headcount}人）`;
+    } else if (mode === 'bar') {
+        elB.style.display = '';
+        const diffLabel = diff >= 0
+            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">余裕 ${absDiff}h</span>`
+            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">超過 ${absDiff}h</span>`;
+        elB.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: 15px;">${standardHours}h</strong> <span style="opacity: 0.7; font-size: 12px;">（${workingDays}日×8h×${headcount}人）</span></span>
+            ${diffLabel}
+        </div>`;
+    }
 }
 
 /**
@@ -474,6 +560,10 @@ function showEstimateEmptyState(container, message) {
     const totalManpowerElement = document.getElementById('estimateTotalManpower');
     if (totalHoursElement) totalHoursElement.textContent = '0h';
     if (totalManpowerElement) totalManpowerElement.textContent = '0人日 / 0人月';
+    const elA = document.getElementById('estimateStandardA');
+    const elB = document.getElementById('estimateStandardB');
+    if (elA) elA.style.display = 'none';
+    if (elB) elB.style.display = 'none';
     const memberSummaryContainer = document.getElementById('estimateMemberSummary');
     if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
 }
@@ -515,20 +605,18 @@ export function renderEstimateList() {
         return;
     }
 
-    // 月間稼働日数を取得
-    let workingDaysPerMonth = 20;
-    if (monthFilter !== 'all') {
-        const [year, month] = monthFilter.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
-    }
+    // 月間稼働日数を取得（レポートタブと同じ仕様: 月選択値をそのまま使用）
+    const { workingDaysPerMonth, workDaysLabel } = calculateConversionBasis(monthFilter, filtered);
+
+    // 担当者別集計
+    const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
+    const headcount = Math.max(1, Object.keys(memberSummary).length);
 
     // 合計工数を計算・表示
     const totalHours = calculateEstimateTotalHours(filtered, filterType, monthFilter);
-    displayEstimateTotals(totalHours, workingDaysPerMonth, filterType, monthFilter);
+    displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel, headcount, monthFilter);
 
-    // 担当者別集計・表示
-    const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
+    // 担当者別表示
     renderEstimateMemberSummary(memberSummary, workingDaysPerMonth);
 
     // ビュータイプに応じて描画
@@ -569,12 +657,7 @@ export function renderEstimateGrouped() {
     const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
     const filterType = filterTypeElement ? filterTypeElement.value : 'month';
 
-    let workingDaysPerMonth = 20;
-    if (filterType === 'month' && workMonthFilter !== 'all') {
-        const [year, month] = workMonthFilter.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        workingDaysPerMonth = calculatedDays > 0 ? calculatedDays : 20;
-    }
+    const { workingDaysPerMonth } = calculateConversionBasis(workMonthFilter, filteredEstimates);
 
     if (filteredEstimates.length === 0) {
         container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">該当する見積データがありません</p>';
@@ -834,6 +917,8 @@ export function renderEstimateMatrix() {
     const workMonthFilter = monthFilterElement ? monthFilterElement.value : 'all';
     const filterType = filterTypeElement ? filterTypeElement.value : 'month';
 
+    const { workingDaysPerMonth } = calculateConversionBasis(workMonthFilter, filteredEstimates);
+
     const usedMonths = new Set();
     let hasMultipleMonths = false;
     let hasUnassigned = false;
@@ -914,7 +999,7 @@ export function renderEstimateMatrix() {
                 });
 
                 const totalDays = total / 8;
-                const totalMonths = totalDays / 20;
+                const totalMonths = totalDays / workingDaysPerMonth;
 
                 const escapedTask = (group.task || '').replace(/'/g, "\\'");
                 html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${version}', '${escapedTask}')">`;
@@ -982,7 +1067,7 @@ export function renderEstimateMatrix() {
             });
 
             const totalDays = total / 8;
-            const totalMonths = totalDays / 20;
+            const totalMonths = totalDays / workingDaysPerMonth;
 
             html += `<td style="text-align: center;">
                 <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>

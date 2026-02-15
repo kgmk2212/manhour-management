@@ -934,7 +934,7 @@ export function showWorkDetail(member, date) {
 
         html += `
             <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-                <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}時間</strong>
+                <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}h</strong>
                 <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
             </div>
             <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">

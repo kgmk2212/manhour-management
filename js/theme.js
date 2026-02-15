@@ -15,7 +15,9 @@ import {
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
     isReportTabFirstView, setIsReportTabFirstView,
-    mobileTabDesign, setMobileTabDesign
+    mobileTabDesign, setMobileTabDesign,
+    setDesignTheme,
+    setSidebarLayout
 } from './state.js';
 
 
@@ -122,6 +124,16 @@ export function loadThemeSettings() {
                 const el = document.getElementById('themeBackgroundColor');
                 if (el) el.value = settings.themeBackgroundColor;
             }
+            if (settings.designTheme) {
+                setDesignTheme(settings.designTheme);
+                const el = document.getElementById('designTheme');
+                if (el) el.value = settings.designTheme;
+            }
+            if (settings.sidebarLayout !== undefined) {
+                setSidebarLayout(settings.sidebarLayout);
+                const el = document.getElementById('sidebarLayout');
+                if (el) el.checked = settings.sidebarLayout;
+            }
         } catch (error) {
             console.error('テーマ設定の読み込みに失敗しました:', error);
             // デフォルトテーマを使用
@@ -155,6 +167,50 @@ export function loadThemeSettings() {
     applyTheme();
 }
 
+/**
+ * デザインテーマを適用
+ * body と html にdata-design-theme属性を設定し、テーマ固有のフォントを動的読み込み
+ */
+export function applyDesignTheme() {
+    const designThemeEl = document.getElementById('designTheme');
+    const theme = (designThemeEl && designThemeEl.value) || window.designTheme || 'default';
+    setDesignTheme(theme);
+
+    if (theme === 'default') {
+        delete document.body.dataset.designTheme;
+        delete document.documentElement.dataset.designTheme;
+    } else {
+        document.body.dataset.designTheme = theme;
+        document.documentElement.dataset.designTheme = theme;
+    }
+
+    // Graphite用フォントを動的ロード
+    if (theme === 'graphite' && !document.getElementById('graphite-fonts')) {
+        const link = document.createElement('link');
+        link.id = 'graphite-fonts';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
+        document.head.appendChild(link);
+    }
+}
+
+/**
+ * サイドバーレイアウトを適用
+ */
+export function applySidebarLayout() {
+    const sidebarEl = document.getElementById('sidebarLayout');
+    const enabled = sidebarEl ? sidebarEl.checked : (window.sidebarLayout || false);
+    setSidebarLayout(enabled);
+
+    if (enabled) {
+        document.body.dataset.layout = 'sidebar';
+        document.documentElement.dataset.layout = 'sidebar';
+    } else {
+        delete document.body.dataset.layout;
+        delete document.documentElement.dataset.layout;
+    }
+}
+
 export function applyTheme() {
     const colorEl = document.getElementById('themeColor');
     const patternEl = document.getElementById('themePattern');
@@ -184,6 +240,8 @@ export function applyTheme() {
         setCurrentBackgroundColor(backgroundColorEl.value);
     }
 
+    applyDesignTheme();
+    applySidebarLayout();
     updateThemePreview();
     updateThemeElements();
 
@@ -251,6 +309,58 @@ export function updateThemeElements() {
         'green': '#047857',
         'emerald': '#059669'
     };
+
+    // デザインテーマがアクティブな場合、カラーテーマのインラインスタイルをスキップ
+    // （CSSオーバーライドが全て処理するため）
+    const isDesignThemeActive = window.designTheme && window.designTheme !== 'default';
+
+    if (isDesignThemeActive) {
+        // デザインテーマ時はインラインスタイルをクリアしてCSS側に制御を委ねる
+        document.documentElement.style.removeProperty('--theme-gradient');
+        document.documentElement.style.removeProperty('--theme-color');
+        document.documentElement.style.removeProperty('--early-theme-gradient');
+        document.documentElement.style.removeProperty('--early-bg-gradient');
+        delete document.documentElement.dataset.earlyTheme;
+
+        const headerEl = document.querySelector('header');
+        if (headerEl) headerEl.style.background = '';
+        document.body.style.background = '';
+
+        const quickInput = document.querySelector('.quick-input');
+        if (quickInput) {
+            quickInput.style.background = '';
+            quickInput.className = quickInput.className.replace(/theme-\w+/g, '').trim();
+            if (!quickInput.classList.contains('quick-input')) quickInput.classList.add('quick-input');
+        }
+
+        const summaryCards = document.querySelectorAll('.stats-grid .stat-card');
+        summaryCards.forEach(card => {
+            card.style.background = '';
+            card.className = card.className.replace(/theme-\w+/g, '').trim();
+            if (!card.classList.contains('stat-card')) card.classList.add('stat-card');
+        });
+
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            activeTab.style.background = '';
+            activeTab.className = activeTab.className.replace(/tab-theme-\w+/g, '').trim();
+        }
+
+        const estimateTotalCard = document.getElementById('estimateTotalCard');
+        if (estimateTotalCard) estimateTotalCard.style.background = '';
+
+        // 設定UIのカラーテーマセクションを視覚的に無効化
+        const themeColorSection = document.getElementById('themeColor');
+        if (themeColorSection) {
+            themeColorSection.closest('.form-group')?.closest('div[style]')?.classList.add('design-theme-disabled');
+        }
+
+        return;
+    }
+
+    // デザインテーマが無効の場合、カラーテーマセクションを再有効化
+    const disabledSection = document.querySelector('.design-theme-disabled');
+    if (disabledSection) disabledSection.classList.remove('design-theme-disabled');
 
     document.documentElement.style.setProperty('--theme-gradient', gradients[window.currentThemeColor] || gradients['deep-blue']);
     document.documentElement.style.setProperty('--theme-color', solidColors[window.currentThemeColor] || solidColors['deep-blue']);
