@@ -2419,7 +2419,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-8"></script>
+    <script type="module" src="js/init.js?v=20260216-9"></script>
 
     <!-- スマートスティッキーフィルタバー -->
     <script>
@@ -2437,11 +2437,15 @@
                 var fixedBar = null;
                 var sourceBar = null;
 
+                var findDbg = 0;
                 function findBar() {
                     var tab = document.querySelector('.tab-content.active');
-                    if (!tab) return null;
+                    findDbg++;
+                    if (!tab) { if (findDbg <= 3) console.log('[StickyFilter] no active tab'); return null; }
                     var bars = tab.querySelectorAll('.filter-bar-sticky, .schedule-filter-bar');
+                    if (findDbg <= 3) console.log('[StickyFilter] activeTab=#' + tab.id + ' bars.length=' + bars.length);
                     for (var i = 0; i < bars.length; i++) {
+                        if (findDbg <= 3) console.log('[StickyFilter] bar[' + i + '] offsetParent=' + !!bars[i].offsetParent + ' offsetHeight=' + bars[i].offsetHeight + ' display=' + getComputedStyle(bars[i]).display);
                         if (bars[i].offsetParent !== null && bars[i].offsetHeight > 0) return bars[i];
                     }
                     return null;
