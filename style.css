@@ -7433,6 +7433,28 @@ body[data-design-theme="obsidian"]::after {
     color: #a5b4fc !important;
 }
 
+/* --- Obsidian: Estimate Standard Display --- */
+[data-design-theme="obsidian"] #estimateStandardA {
+    color: #818cf8 !important;
+    opacity: 0.8 !important;
+    font-size: 12px !important;
+}
+
+[data-design-theme="obsidian"] #estimateStandardB {
+    border-top-color: rgba(165, 180, 252, 0.2) !important;
+    color: #c7d2fe !important;
+}
+
+[data-design-theme="obsidian"] #estimateStandardB span[style*="background: rgba(255,255,255"] {
+    background: rgba(129, 140, 248, 0.25) !important;
+    color: #a5b4fc !important;
+}
+
+[data-design-theme="obsidian"] #estimateStandardB span[style*="background: rgba(239,68,68"] {
+    background: rgba(239, 68, 68, 0.35) !important;
+    color: #fca5a5 !important;
+}
+
 /* --- Obsidian: Info bar overrides --- */
 [data-design-theme="obsidian"] #estimateConversionParams,
 [data-design-theme="obsidian"] #reportConversionParams,
@@ -8958,6 +8980,31 @@ body[data-design-theme="paper"]::after {
     font-size: 12px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;
+}
+
+/* --- Paper: Estimate Standard Display --- */
+[data-design-theme="paper"] #estimateStandardA {
+    color: #a3a3a3 !important;
+    opacity: 1 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.02em !important;
+}
+
+[data-design-theme="paper"] #estimateStandardB {
+    border-top: 1px solid #e5e5e5 !important;
+    color: #525252 !important;
+}
+
+[data-design-theme="paper"] #estimateStandardB span[style*="background: rgba(255,255,255"] {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+[data-design-theme="paper"] #estimateStandardB span[style*="background: rgba(239,68,68"] {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
 }
 
 /* --- Paper: Info bar overrides --- */
@@ -10512,6 +10559,28 @@ body[data-design-theme="mosaic"]::after {
 [data-design-theme="mosaic"] #estimateTotalCard div[style*="opacity"] {
     opacity: 0.85 !important;
     color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* --- Mosaic: Estimate Standard Display --- */
+[data-design-theme="mosaic"] #estimateStandardA {
+    color: rgba(255, 255, 255, 0.75) !important;
+    opacity: 1 !important;
+    font-size: 12px !important;
+}
+
+[data-design-theme="mosaic"] #estimateStandardB {
+    border-top-color: rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-design-theme="mosaic"] #estimateStandardB span[style*="background: rgba(255,255,255"] {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+[data-design-theme="mosaic"] #estimateStandardB span[style*="background: rgba(239,68,68"] {
+    background: rgba(255, 59, 48, 0.35) !important;
+    color: #ffffff !important;
 }
 
 /* --- Mosaic: Info bar overrides --- */
@@ -12372,6 +12441,37 @@ body[data-layout="sidebar"][data-design-theme=""] .tab.active {
     font-size: 12px !important;
     font-weight: 500 !important;
     letter-spacing: 0.02em !important;
+}
+
+/* --- Graphite: Estimate Standard Display --- */
+[data-design-theme="graphite"] #estimateStandardA {
+    color: #a8a29e !important;
+    opacity: 1 !important;
+    font-size: 12px !important;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+}
+
+[data-design-theme="graphite"] #estimateStandardB {
+    border-top: 1px solid #e7e5e4 !important;
+    color: #57534e !important;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+}
+
+[data-design-theme="graphite"] #estimateStandardB strong {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+    color: #1c1917 !important;
+}
+
+[data-design-theme="graphite"] #estimateStandardB span[style*="background: rgba(255,255,255"] {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+[data-design-theme="graphite"] #estimateStandardB span[style*="background: rgba(239,68,68"] {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
 }
 
 /* --- Graphite: Info bar overrides --- */

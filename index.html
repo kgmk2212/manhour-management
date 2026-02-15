@@ -30,6 +30,14 @@
                 if (parsed && parsed.modalDesignStyle === 'classic') {
                     document.documentElement.dataset.modalDesign = 'classic';
                 }
+                // デザインテーマを早期適用
+                if (parsed && parsed.designTheme && parsed.designTheme !== 'default') {
+                    document.documentElement.dataset.designTheme = parsed.designTheme;
+                }
+                // サイドバーレイアウトを早期適用
+                if (parsed && parsed.sidebarLayout) {
+                    document.documentElement.dataset.layout = 'sidebar';
+                }
                 // モバイルタブデザインを読み込み・即座に適用（CSS読み込み前）
                 var mobileTabDesign = localStorage.getItem('mobileTabDesign') || 'capsule';
                 if (['classic', 'dock', 'capsule'].indexOf(mobileTabDesign) !== -1) {
@@ -43,7 +51,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=20260213-graphite">
+    <link rel="stylesheet" href="style.css?v=20260215-themes">
     <style>
         /* 早期テーマ適用用のCSS変数 */
         :root {
@@ -98,34 +106,44 @@
             if (window.__earlySavedTab && window.__earlySavedTab !== 'quick') {
                 document.documentElement.dataset.earlyTab = window.__earlySavedTab;
             }
+
+            // デザインテーマをbody要素にも適用（FOUC防止）
+            var dt = document.documentElement.dataset.designTheme;
+            if (dt) {
+                document.body.dataset.designTheme = dt;
+            }
+            // サイドバーレイアウトをbody要素にも適用
+            if (document.documentElement.dataset.layout === 'sidebar') {
+                document.body.dataset.layout = 'sidebar';
+            }
         })();
     </script>
     <style>
-        /* 早期テーマ適用 */
-        [data-early-theme] .tab.active,
-        [data-early-theme] .quick-input.theme-bg,
-        [data-early-theme] .stat-card.theme-bg {
+        /* 早期テーマ適用（デザインテーマが未設定の場合のみ） */
+        [data-early-theme]:not([data-design-theme]) .tab.active,
+        [data-early-theme]:not([data-design-theme]) .quick-input.theme-bg,
+        [data-early-theme]:not([data-design-theme]) .stat-card.theme-bg {
             background: var(--early-theme-gradient) !important;
         }
 
-        /* セグメントボタンのちらつき防止 */
-        [data-early-theme] .segment-buttons button.active {
+        /* セグメントボタンのちらつき防止（デザインテーマが未設定の場合のみ） */
+        [data-early-theme]:not([data-design-theme]) .segment-buttons button.active {
             background: var(--early-theme-gradient) !important;
             color: white !important;
         }
 
-        [data-early-theme] .segment-buttons button:not(.active) {
+        [data-early-theme]:not([data-design-theme]) .segment-buttons button:not(.active) {
             background: white !important;
             color: #333 !important;
         }
 
-        /* ページ読込中の背景安定化 */
-        body {
+        /* ページ読込中の背景安定化（デザインテーマが未設定の場合のみ） */
+        body:not([data-design-theme]) {
             background: var(--early-bg-gradient, var(--early-theme-gradient, linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 50%, #3a6fa0 100%)));
         }
 
-        /* 早期テーマ適用：ヘッダーにテーマカラーを反映 */
-        [data-early-theme] header {
+        /* 早期テーマ適用：ヘッダーにテーマカラーを反映（デザインテーマが未設定の場合のみ） */
+        [data-early-theme]:not([data-design-theme]) header {
             background: var(--early-theme-gradient) !important;
         }
 
@@ -1137,6 +1155,29 @@
 
             <div id="settings" class="tab-content">
                 <h2>⚙️ 設定</h2>
+
+                <!-- デザインテーマ設定 -->
+                <div class="settings-section-design" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>🎨 デザインテーマ</h3>
+                    <p style="color: #666; margin-bottom: 15px;">アプリ全体の外観を変更します。</p>
+                    <div class="form-group">
+                        <label>テーマ</label>
+                        <select id="designTheme" onchange="applyTheme()">
+                            <option value="default">Quiet Depth（デフォルト）</option>
+                            <option value="obsidian">Obsidian Studio</option>
+                            <option value="paper">Paper</option>
+                            <option value="mosaic">Mosaic</option>
+                            <option value="graphite">Graphite Studio</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="sidebarLayout" onchange="applyTheme()" style="width: auto;">
+                            サイドバーレイアウト
+                        </label>
+                        <p style="color: #888; font-size: 12px; margin-top: 4px;">タブナビゲーションを左サイドバーに配置します（デスクトップのみ）</p>
+                    </div>
+                </div>
 
                 <!-- テーマカラー設定 -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
