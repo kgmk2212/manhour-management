@@ -164,6 +164,8 @@ export function showTab(tabName, options = {}) {
     });
     // サイドバー: nav-itemのactiveも削除
     document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+    // モバイルタブバー: activeも削除
+    document.querySelectorAll('.mobile-tab-item[data-tab]').forEach(n => n.classList.remove('active'));
 
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -171,6 +173,11 @@ export function showTab(tabName, options = {}) {
     const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"], .nav-item[data-tab="${tabName}"]`);
     if (targetTabBtn) {
         targetTabBtn.classList.add('active');
+    }
+    // モバイルタブバーのアクティブも更新
+    const mobileTabBtn = document.querySelector(`.mobile-tab-item[data-tab="${tabName}"]`);
+    if (mobileTabBtn) {
+        mobileTabBtn.classList.add('active');
     }
 
     // タブインジケーターを更新（サイドバーモードではスキップ）
@@ -265,9 +272,11 @@ export function showTab(tabName, options = {}) {
     const savedScrollY = window.tabScrollPositions[tabName] || 0;
     window.scrollTo(0, savedScrollY);
 
-    // タブバーを表示状態に戻す（隠れていたら）- サイドバーモードでは不要
+    // タブバーを表示状態に戻す（隠れていたら）
     const tabs = document.querySelector('.tabs');
     if (tabs) tabs.classList.remove('is-hidden');
+    const mobileTabBar = document.getElementById('mobileTabBar');
+    if (mobileTabBar) mobileTabBar.classList.remove('is-hidden');
 
     // モバイルでサイドバーが開いていたら閉じる
     closeMobileSidebar();
@@ -728,11 +737,8 @@ export function finalizeTabIndicator(animate = true) {
 
 // スマートStickyタブの初期化
 export function initSmartSticky() {
-    const tabs = document.querySelector('.tabs');
-    if (!tabs) return;
-
-    // デフォルトで隠す状態にする
-    tabs.classList.add('is-hidden');
+    const mobileTabBar = document.getElementById('mobileTabBar');
+    if (!mobileTabBar) return;
 
     let lastScrollY = window.scrollY;
     let ticking = false;
@@ -740,7 +746,7 @@ export function initSmartSticky() {
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
-                // タブ切り替え中またはタブエリア操作中はスクロール検出をスキップ
+                // タブ切り替え中はスクロール検出をスキップ
                 if (isTabSwitching || window.isTabInteracting) {
                     lastScrollY = window.scrollY;
                     ticking = false;
@@ -753,13 +759,20 @@ export function initSmartSticky() {
                     return;
                 }
 
-                // 一定以上スクロールしたら強制的に隠す
-                if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                    tabs.classList.add('is-hidden');
-                }
-                // 上にスクロールした時は表示
-                else if (currentScrollY < lastScrollY) {
-                    tabs.classList.remove('is-hidden');
+                // モバイルのみ（デスクトップではサイドバーがあるので不要）
+                if (window.innerWidth <= 768) {
+                    // 下にスクロール → タブバーを隠す
+                    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                        mobileTabBar.classList.add('is-hidden');
+                    }
+                    // 上にスクロール → タブバーを表示
+                    else if (currentScrollY < lastScrollY) {
+                        mobileTabBar.classList.remove('is-hidden');
+                    }
+                    // ページ上部では常に表示
+                    if (currentScrollY < 20) {
+                        mobileTabBar.classList.remove('is-hidden');
+                    }
                 }
 
                 lastScrollY = currentScrollY;
@@ -769,88 +782,29 @@ export function initSmartSticky() {
         }
     }, { passive: true });
 
-    // マウスオーバーでの表示
-    const isMobileLayout = () => window.innerWidth <= 768;
-    const triggerZone = 80;
+    // 画面下部タップで表示復帰
+    const triggerZone = 60;
+    window.addEventListener('click', (e) => {
+        if (window.innerWidth > 768) return;
+        if (!mobileTabBar.classList.contains('is-hidden')) return;
 
-    document.addEventListener('mousemove', (e) => {
-        // 通常レイアウト（上部タブ）: 上端マウスオーバーで表示
-        if (!isMobileLayout()) {
-            if (e.clientY < triggerZone) {
-                tabs.classList.remove('is-hidden');
-            }
+        // 画面下部をタップしたらタブバーを表示
+        if (e.clientY > window.innerHeight - triggerZone) {
+            mobileTabBar.classList.remove('is-hidden');
         }
-        // モバイルレイアウト（下部タブ）: 下端マウスオーバーで表示
-        else {
-            if (e.clientY > window.innerHeight - triggerZone) {
-                tabs.classList.remove('is-hidden');
-            }
-        }
-    }, { passive: true });
+    }, true);
 
-    // タブエリアにマウスが乗っている間は隠さない
-    tabs.addEventListener('mouseenter', () => {
-        tabs.classList.remove('is-hidden');
-    });
-
-    // タブエリア内クリック時はスクロール検出を一時停止（フィルタボタンクリック時の誤検出防止）
-    tabs.addEventListener('click', () => {
+    // タブバー内クリック時はスクロール検出を一時停止
+    mobileTabBar.addEventListener('click', () => {
         window.isTabInteracting = true;
         setTimeout(() => {
             window.isTabInteracting = false;
         }, 300);
     });
-
-    // タブエリアクリックでの表示復帰（Mobile:下部クリック）
-    window.addEventListener('click', (e) => {
-        if (!tabs.classList.contains('is-hidden')) return;
-        if (!isMobileLayout()) return;
-
-        if (e.clientY > window.innerHeight - triggerZone || window.scrollY < 20) {
-            tabs.classList.remove('is-hidden');
-            if (e.clientY > window.innerHeight - triggerZone) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        }
-    }, true);
-
-    // モバイル↔デスクトップ切り替え時のリセット
-    const mql = window.matchMedia('(max-width: 768px)');
-    let wasMobile = mql.matches;
-
-    const handleBreakpointChange = (e) => {
-        const isMobile = e.matches;
-        if (wasMobile === isMobile) return;
-        wasMobile = isMobile;
-
-        // transition: all がモバイルCSSにあるため、ブレイクポイント切り替え時に
-        // position/top/left/right/width等が意図せずアニメーションしてしまう。
-        // 一時的にtransitionを無効化して即座にレイアウトを切り替える。
-        tabs.style.transition = 'none';
-        tabs.offsetHeight; // 強制リフロー
-
-        tabs.classList.remove('is-hidden');
-        lastScrollY = window.scrollY;
-
-        if (isMobile) {
-            // デスクトップ → モバイル: インジケーターを再初期化
-            if (typeof window.initTabIndicator === 'function') {
-                setTimeout(() => window.initTabIndicator(), 100);
-            }
-        }
-
-        // 次フレームでtransitionを復元
-        requestAnimationFrame(() => {
-            tabs.style.transition = '';
-        });
-    };
-
-    mql.addEventListener('change', handleBreakpointChange);
 }
 
 export function initTabSwipe() {
-    const content = document.querySelector('.content');
+    const content = document.getElementById('mainContent') || document.querySelector('.content');
     if (!content) return;
 
     // スワイプ状態管理
@@ -4033,11 +3987,13 @@ export function initSidebar() {
 
     // スケジュールナビアイテムの表示制御
     const scheduleNavItem = document.getElementById('scheduleNavItem');
+    const mobileScheduleTab = document.getElementById('mobileScheduleTab');
     if (scheduleNavItem) {
         // devFeaturesEnabled の状態に応じて表示/非表示
         const devEnabled = document.getElementById('devFeaturesEnabled');
         if (devEnabled && devEnabled.checked) {
             scheduleNavItem.style.display = '';
+            if (mobileScheduleTab) mobileScheduleTab.style.display = '';
         }
     }
 }

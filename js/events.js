@@ -119,7 +119,7 @@ export function initEventHandlers() {
     // タブ切り替え
     // タブ切り替え（イベント委譲）
     function handleTabClick(e) {
-        const tab = e.target.closest('.tab[data-tab], .nav-item[data-tab]');
+        const tab = e.target.closest('.tab[data-tab], .nav-item[data-tab], .mobile-tab-item[data-tab]');
         if (tab) {
             if (debugModeEnabled) console.log('✅ Tab ' + e.type + ' Detected:', tab.dataset.tab);
 

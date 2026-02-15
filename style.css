@@ -349,6 +349,57 @@ img {
     letter-spacing: -0.02em;
 }
 
+/* ---- 6b. Mobile Bottom Tab Bar ---- */
+.mobile-tab-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 150;
+    background: var(--sidebar-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px 0;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-tab-bar.is-hidden {
+    transform: translateY(100%);
+}
+
+.mobile-tab-bar .mobile-tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    background: none;
+    border: none;
+    color: var(--sidebar-text);
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tab-bar .mobile-tab-item.active {
+    color: var(--sidebar-text-active);
+    opacity: 1;
+}
+
+.mobile-tab-bar .mobile-tab-item svg {
+    width: 20px;
+    height: 20px;
+}
+
+.mobile-tab-bar .mobile-tab-item span {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
 /* ---- 7. Main Content ---- */
 .main-content {
     flex: 1;
@@ -3947,9 +3998,15 @@ html[data-inline-filter="hidden"] .inline-filter {
         display: flex;
     }
 
+    /* Show mobile bottom tab bar */
+    .mobile-tab-bar {
+        display: flex;
+    }
+
     /* Main content takes full width */
     .main-content {
         margin-left: 0 !important;
+        position: relative;
     }
 
     body {
@@ -3967,9 +4024,10 @@ html[data-inline-filter="hidden"] .inline-filter {
         overflow: visible;
     }
 
-    /* Tighter padding */
+    /* Tighter padding + space for bottom tab bar */
     .tab-content {
         padding: 16px;
+        padding-bottom: 80px;
     }
 
     /* Settings: make setting-row wrap on mobile */
@@ -4386,12 +4444,56 @@ html[data-inline-filter="hidden"] .inline-filter {
         font-size: 12px;
         bottom: -30px;
     }
+
+    /* Swipe tab switching */
+    .main-content.swiping {
+        overflow: hidden;
+    }
+
+    .tab-content.active.swiping {
+        position: absolute;
+        z-index: 2;
+    }
+
+    .tab-content.swipe-preview {
+        display: block !important;
+        position: absolute;
+        z-index: 1;
+    }
+
+    .tab-content.active.swipe-preview {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Tab slide animations */
+    @keyframes slideInRight {
+        from { transform: translateX(30px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideInLeft {
+        from { transform: translateX(-30px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutLeft {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(-30px); opacity: 0; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(30px); opacity: 0; }
+    }
+    .anim-slide-in-right { animation: slideInRight 0.3s ease forwards; }
+    .anim-slide-in-left { animation: slideInLeft 0.3s ease forwards; }
+    .anim-slide-out-left { animation: slideOutLeft 0.3s ease forwards; }
+    .anim-slide-out-right { animation: slideOutRight 0.3s ease forwards; }
 }
 
 /* ---- 45. Responsive: 480px and below ---- */
 @media (max-width: 480px) {
     .tab-content {
         padding: 10px;
+        padding-bottom: 80px;
     }
 
     table th,
