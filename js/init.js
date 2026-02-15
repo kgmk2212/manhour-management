@@ -532,6 +532,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // 全ての設定をUI要素に同期（描画前に実行して担当者順等を反映）
     UI.syncSettingsToUI();
 
+    // グローバルイベントハンドラの初期化（描画前に登録してタブ切り替えを確実に動作させる）
+    initEventHandlers();
+
     // 表示の更新
     Estimate.renderEstimateList();
     Actual.renderActualList();
@@ -579,9 +582,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // タブ内フィルタドロワーの初期化
     TabFilter.initTabFilter();
-
-    // グローバルイベントハンドラの初期化（index.htmlから移行）
-    initEventHandlers();
 
     // タブインジケーター（スライドアニメーション）を初期化
     // ※showTabの前に初期化して、showTab内でupdateTabIndicatorが呼ばれるようにする

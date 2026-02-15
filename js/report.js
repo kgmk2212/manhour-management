@@ -1202,7 +1202,10 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
 
     const diffManDays = (diff / 8).toFixed(1);
     const diffManMonths = (diff / 8 / workingDaysPerMonth).toFixed(2);
-    document.getElementById('totalDiffManpower').textContent = `${diff >= 0 ? '+' : ''}${diffManDays}人日 / ${diff >= 0 ? '+' : ''}${diffManMonths}人月`;
+    const totalDiffManpowerEl = document.getElementById('totalDiffManpower');
+    if (totalDiffManpowerEl) {
+        totalDiffManpowerEl.textContent = `${diff >= 0 ? '+' : ''}${diffManDays}人日 / ${diff >= 0 ? '+' : ''}${diffManMonths}人月`;
+    }
 }
 
 /**
