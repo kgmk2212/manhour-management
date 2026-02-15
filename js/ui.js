@@ -4039,31 +4039,33 @@ export function initSidebar() {
 // ============================================
 // スマートスティッキー フィルタバー
 // フィルタバーが画面外 ＋ 上スクロール → 画面上部にfixedバーを表示
-// RAFポーリングでバー位置を監視（スクロールコンテナに依存しない）
 // ============================================
 
 export function initSmartStickyFilters() {
+    console.log('[SmartStickyFilter] 初期化開始');
     const mc = document.getElementById('mainContent');
 
     const THRESHOLD = 30;
-    let lastY = 0;
+    let lastY = mc ? mc.scrollTop : window.scrollY;
     let upPx = 0;
     let fixedBar = null;
     let sourceBar = null;
-    let running = true;
 
     function findBar() {
         const tab = document.querySelector('.tab-content.active');
         if (!tab) return null;
         const bars = tab.querySelectorAll('.filter-bar-sticky, .schedule-filter-bar');
         for (const b of bars) {
-            if (b.offsetParent !== null || b.offsetHeight > 0) return b;
+            if (b.offsetParent !== null && b.offsetHeight > 0) return b;
         }
-        return bars[0] || null;
+        return null;
     }
 
     function showFixedBar(bar) {
-        if (fixedBar && sourceBar === bar) return;
+        if (fixedBar && sourceBar === bar) {
+            fixedBar.style.display = '';
+            return;
+        }
         hideFixedBar();
 
         const leftOffset = mc ? mc.getBoundingClientRect().left : 0;
@@ -4119,49 +4121,40 @@ export function initSmartStickyFilters() {
         }
     }
 
-    // RAFポーリングでフィルタバーの位置を常時監視
-    function tick() {
-        if (!running) return;
+    function onScroll() {
+        const y = mc ? mc.scrollTop : window.scrollY;
+        const dy = y - lastY;
+        lastY = y;
+        if (dy === 0) return;
 
         const bar = findBar();
-        if (bar) {
-            const barRect = bar.getBoundingClientRect();
-            // バーが画面上端より上にあるか（clippingされているか）
-            const barAbove = barRect.bottom < 0;
+        if (!bar) { hideFixedBar(); return; }
 
-            // mc内でスクロールされている場合のチェック
-            const mcTop = mc ? mc.getBoundingClientRect().top : 0;
-            const barHidden = barAbove || barRect.bottom < mcTop;
+        // フィルタバーがビューポート上端より上にあるか
+        const barRect = bar.getBoundingClientRect();
+        const barAbove = barRect.bottom < 0;
 
-            // スクロール位置の変化を検出
-            const y = mc ? mc.scrollTop : window.scrollY;
-            const dy = y - lastY;
-            lastY = y;
-
-            if (!barHidden) {
-                upPx = 0;
-                hideFixedBar();
-            } else if (dy > 0) {
-                // 下スクロール
-                upPx = 0;
-                hideFixedBar();
-            } else if (dy < 0) {
-                // 上スクロール
-                upPx += Math.abs(dy);
-                if (upPx >= THRESHOLD) {
-                    showFixedBar(bar);
-                }
-            }
-        } else {
+        if (!barAbove) {
+            upPx = 0;
             hideFixedBar();
+            return;
         }
 
-        requestAnimationFrame(tick);
+        if (dy > 0) {
+            upPx = 0;
+            hideFixedBar();
+        } else {
+            upPx += Math.abs(dy);
+            if (upPx >= THRESHOLD) {
+                showFixedBar(bar);
+            }
+        }
     }
 
-    // 初期スクロール位置を記録してポーリング開始
-    lastY = mc ? mc.scrollTop : window.scrollY;
-    requestAnimationFrame(tick);
+    // mainContentとwindow両方にリスナー（どちらがスクロールコンテナでも対応）
+    if (mc) mc.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    console.log('[SmartStickyFilter] リスナー登録完了 mc=' + !!mc);
 
     // タブ切り替え時にリセット
     document.querySelectorAll('.nav-item').forEach(item => {

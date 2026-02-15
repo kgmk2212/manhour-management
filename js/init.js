@@ -565,10 +565,16 @@ document.addEventListener('DOMContentLoaded', function () {
         UI.initSmartSticky();
     }
 
-    // スマートStickyフィルタバーを初期化
-    if (typeof UI.initSmartStickyFilters === 'function') {
-        UI.initSmartStickyFilters();
-    }
+    // スマートStickyフィルタバーを初期化（他の初期化エラーに影響されないよう非同期）
+    setTimeout(() => {
+        try {
+            if (typeof UI.initSmartStickyFilters === 'function') {
+                UI.initSmartStickyFilters();
+            }
+        } catch (e) {
+            console.error('[SmartStickyFilter] 初期化エラー:', e);
+        }
+    }, 0);
 
     // モーダルのクリックハンドラーをセットアップ
     Modal.setupModalHandlers();
