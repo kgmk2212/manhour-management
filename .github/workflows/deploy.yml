@@ -40,6 +40,13 @@ jobs:
           path: experiment-sandbox
         continue-on-error: true
 
+      - name: Checkout experiment/redesign branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/redesign
+          path: experiment-redesign
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -53,6 +60,15 @@ jobs:
             echo "✅ experiment/sandbox をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/sandbox ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/redesignブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-redesign" ]; then
+            mkdir -p deploy/preview/redesign
+            cp -r experiment-redesign/* deploy/preview/redesign/
+            echo "✅ experiment/redesign をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/redesign ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
