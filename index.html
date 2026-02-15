@@ -2419,7 +2419,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-7"></script>
+    <script type="module" src="js/init.js?v=20260216-8"></script>
 
     <!-- スマートスティッキーフィルタバー -->
     <script>
@@ -2491,14 +2491,28 @@
                     if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
                 }
 
-                function onScroll() {
+                var scrollDbg = 0;
+                function onScroll(evt) {
                     var y = mc ? mc.scrollTop : window.scrollY;
+                    var wy = window.scrollY;
                     var dy = y - lastY;
+                    scrollDbg++;
+                    if (scrollDbg <= 5) {
+                        console.log('[StickyFilter] scroll#' + scrollDbg +
+                            ' src=' + (evt.target === mc ? 'mc' : evt.target === document ? 'window' : 'other') +
+                            ' mc.scrollTop=' + (mc ? mc.scrollTop : 'N/A') +
+                            ' window.scrollY=' + wy +
+                            ' dy=' + dy);
+                    }
                     lastY = y;
                     if (dy === 0) return;
                     var bar = findBar();
-                    if (!bar) { hideFixedBar(); return; }
+                    if (!bar) {
+                        if (scrollDbg <= 5) console.log('[StickyFilter] bar not found');
+                        hideFixedBar(); return;
+                    }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
+                    if (scrollDbg <= 5) console.log('[StickyFilter] barBottom=' + bar.getBoundingClientRect().bottom.toFixed(0) + ' barAbove=' + barAbove);
                     if (!barAbove) { upPx = 0; hideFixedBar(); return; }
                     if (dy > 0) { upPx = 0; hideFixedBar(); }
                     else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
