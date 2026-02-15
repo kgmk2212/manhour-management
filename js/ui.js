@@ -4037,20 +4037,31 @@ export function initSidebar() {
 }
 
 // ============================================
-// スマートスティッキー フィルタバー（position: fixed 方式）
+// スマートスティッキー フィルタバー
 // フィルタバーが画面外 ＋ 上スクロール → 画面上部にfixedバーを表示
+// デスクトップ: mainContentがスクロールコンテナ
+// モバイル(768px以下): windowがスクロールコンテナ
 // ============================================
 
 export function initSmartStickyFilters() {
     const mc = document.getElementById('mainContent');
-    if (!mc) { console.warn('[SmartStickyFilter] mainContent not found'); return; }
-    console.log('[SmartStickyFilter] 初期化完了, scrollContainer=mainContent');
+    if (!mc) return;
 
     const THRESHOLD = 30;
-    let lastY = mc.scrollTop;
+    let lastY = 0;
     let upPx = 0;
     let fixedBar = null;
     let sourceBar = null;
+
+    /** モバイルか判定（CSSブレークポイントと同期） */
+    function isMobile() {
+        return window.innerWidth <= 768;
+    }
+
+    /** 現在のスクロール位置を取得 */
+    function getScrollY() {
+        return isMobile() ? window.scrollY : mc.scrollTop;
+    }
 
     function findBar() {
         const tab = document.querySelector('.tab-content.active');
@@ -4063,14 +4074,12 @@ export function initSmartStickyFilters() {
     }
 
     function showFixedBar(bar) {
-        if (fixedBar && sourceBar === bar) {
-            fixedBar.style.display = '';
-            return;
-        }
+        if (fixedBar && sourceBar === bar) return;
         hideFixedBar();
 
-        const mcRect = mc.getBoundingClientRect();
+        const leftOffset = isMobile() ? 0 : mc.getBoundingClientRect().left;
         fixedBar = document.createElement('div');
+        fixedBar.className = 'smart-sticky-bar';
         fixedBar.innerHTML = bar.innerHTML;
         fixedBar.style.cssText =
             'position:fixed;top:0;right:0;z-index:9999;' +
@@ -4079,7 +4088,8 @@ export function initSmartStickyFilters() {
             'border-bottom:1px solid var(--border,#e7e5e0);' +
             'box-shadow:0 2px 8px rgba(0,0,0,0.08);' +
             'display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
-            'left:' + mcRect.left + 'px;';
+            'animation:smartStickySlideIn 0.2s ease;' +
+            'left:' + leftOffset + 'px;';
         document.body.appendChild(fixedBar);
         sourceBar = bar;
 
@@ -4090,7 +4100,7 @@ export function initSmartStickyFilters() {
             if (cloneSelects[i]) cloneSelects[i].value = s.value;
         });
 
-        // クローン操作を元バーに転送
+        // 操作を元バーに転送
         fixedBar.addEventListener('change', (e) => {
             const sel = e.target;
             if (sel.tagName === 'SELECT') {
@@ -4120,31 +4130,19 @@ export function initSmartStickyFilters() {
         }
     }
 
-    let scrollCount = 0;
-    mc.addEventListener('scroll', () => {
-        const y = mc.scrollTop;
+    function onScroll() {
+        const y = getScrollY();
         const dy = y - lastY;
         lastY = y;
-
-        scrollCount++;
-        if (scrollCount <= 3) {
-            console.log(`[SmartStickyFilter] scroll#${scrollCount} scrollTop=${y} dy=${dy}`);
-        }
         if (dy === 0) return;
 
         const bar = findBar();
-        if (!bar) {
-            if (scrollCount <= 5) console.log('[SmartStickyFilter] bar not found');
-            hideFixedBar(); return;
-        }
+        if (!bar) { hideFixedBar(); return; }
 
-        // フィルタバーがビューポート外か判定
+        // フィルタバーがビューポート上端より上にあるか
         const barRect = bar.getBoundingClientRect();
-        const mcRect = mc.getBoundingClientRect();
-        const barAbove = barRect.bottom < mcRect.top;
-        if (scrollCount <= 5) {
-            console.log(`[SmartStickyFilter] barBottom=${barRect.bottom.toFixed(0)} mcTop=${mcRect.top.toFixed(0)} barAbove=${barAbove}`);
-        }
+        const topEdge = isMobile() ? 0 : mc.getBoundingClientRect().top;
+        const barAbove = barRect.bottom < topEdge;
 
         if (!barAbove) {
             upPx = 0;
@@ -4158,18 +4156,23 @@ export function initSmartStickyFilters() {
         } else {
             upPx += Math.abs(dy);
             if (upPx >= THRESHOLD) {
-                console.log('[SmartStickyFilter] SHOW fixedBar');
                 showFixedBar(bar);
             }
         }
-    }, { passive: true });
+    }
+
+    // 両方のスクロールコンテナにリスナーを設定
+    mc.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    lastY = getScrollY();
 
     // タブ切り替え時にリセット
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
             hideFixedBar();
             upPx = 0;
-            lastY = mc.scrollTop;
+            lastY = getScrollY();
         });
     });
 }

@@ -4596,3 +4596,13 @@ html[data-inline-filter="hidden"] .inline-filter {
     .calendar-hours { font-size: 11px; }
     .calendar-entry { display: none; }
 }
+
+/* ---- Smart Sticky Filter Bar ---- */
+@keyframes smartStickySlideIn {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.smart-sticky-bar select,
+.smart-sticky-bar button {
+    font-size: 13px;
+}
