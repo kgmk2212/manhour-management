@@ -2419,7 +2419,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-10"></script>
+    <script type="module" src="js/init.js?v=20260216-11"></script>
 
     <!-- スマートスティッキーフィルタバー -->
     <script>
@@ -2450,6 +2450,15 @@
                     return null;
                 }
 
+                function syncFixedBar() {
+                    if (!fixedBar || !sourceBar) return;
+                    fixedBar.innerHTML = sourceBar.innerHTML;
+                    // select値を同期
+                    var os = sourceBar.querySelectorAll('select');
+                    var cs = fixedBar.querySelectorAll('select');
+                    for (var i = 0; i < os.length; i++) { if (cs[i]) cs[i].value = os[i].value; }
+                }
+
                 function showFixedBar(bar) {
                     if (fixedBar && sourceBar === bar) return;
                     hideFixedBar();
@@ -2467,25 +2476,32 @@
                         'left:' + left + 'px;';
                     document.body.appendChild(fixedBar);
                     sourceBar = bar;
-                    var os = bar.querySelectorAll('select');
-                    var cs = fixedBar.querySelectorAll('select');
-                    for (var i = 0; i < os.length; i++) { if (cs[i]) cs[i].value = os[i].value; }
+                    syncFixedBar();
+
+                    // イベント委譲：select/buttonのクリックを元バーに転送し、再同期
                     fixedBar.addEventListener('change', function(e) {
                         if (e.target.tagName === 'SELECT') {
-                            var idx = Array.from(cs).indexOf(e.target);
-                            if (idx >= 0 && os[idx]) {
-                                os[idx].value = e.target.value;
-                                os[idx].dispatchEvent(new Event('change', { bubbles: true }));
+                            // 同じ位置の元selectを探して値を同期
+                            var cloneSelects = fixedBar.querySelectorAll('select');
+                            var origSelects = sourceBar.querySelectorAll('select');
+                            var idx = Array.from(cloneSelects).indexOf(e.target);
+                            if (idx >= 0 && origSelects[idx]) {
+                                origSelects[idx].value = e.target.value;
+                                origSelects[idx].dispatchEvent(new Event('change', { bubbles: true }));
+                                setTimeout(syncFixedBar, 150);
                             }
                         }
                     });
                     fixedBar.addEventListener('click', function(e) {
                         var btn = e.target.closest('button');
                         if (btn) {
-                            var all = Array.from(fixedBar.querySelectorAll('button'));
-                            var idx = all.indexOf(btn);
-                            var orig = bar.querySelectorAll('button');
-                            if (idx >= 0 && orig[idx]) orig[idx].click();
+                            var cloneBtns = Array.from(fixedBar.querySelectorAll('button'));
+                            var idx = cloneBtns.indexOf(btn);
+                            var origBtns = sourceBar.querySelectorAll('button');
+                            if (idx >= 0 && origBtns[idx]) {
+                                origBtns[idx].click();
+                                setTimeout(syncFixedBar, 150);
+                            }
                         }
                     });
                 }
