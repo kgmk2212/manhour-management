@@ -294,6 +294,7 @@ export function autoBackup() {
         showProgressPercentage: showProgressPercentageSetting,
         progressBarStyle: progressBarStyle,
         matrixEstActFormat: matrixEstActFormat,
+        filterBarMode: filterBarMode,
 
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
@@ -507,6 +508,14 @@ export function handleFileImport(event) {
                             if (memberOrderEl) memberOrderEl.value = data.settings.memberOrder;
                         }
 
+
+                        // フィルタバー表示モードを復元
+                        if (data.settings.filterBarMode) {
+                            setFilterBarMode(data.settings.filterBarMode);
+                            const radioButton = document.querySelector(`input[name="filterBarMode"][value="${data.settings.filterBarMode}"]`);
+                            if (radioButton) radioButton.checked = true;
+                            if (typeof window.applyFilterBarMode === 'function') window.applyFilterBarMode();
+                        }
 
                         // デバッグモード設定を復元
                         if (data.settings.debugModeEnabled !== undefined) {
