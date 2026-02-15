@@ -261,7 +261,7 @@ export function calculateProgress(version, task, process = null, member = null) 
         if (eac <= estimatedHours) {
             status = 'ontrack';
             statusLabel = '順調';
-            statusColor = '#3498db';
+            statusColor = '#1D6FA5';
         } else if (eac <= estimatedHours * 1.2) {
             status = 'warning';
             statusLabel = '注意';
@@ -358,7 +358,7 @@ export function createProgressBar(progressRate, status, options = {}) {
 
     const statusColors = {
         completed: '#27ae60',
-        ontrack: '#3498db',
+        ontrack: '#1D6FA5',
         warning: '#f39c12',
         exceeded: '#e74c3c',
         unknown: '#bdc3c7'
@@ -633,7 +633,7 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
             rowCount++;
             const borderColor = {
                 completed: '#27ae60',
-                ontrack: '#3498db',
+                ontrack: '#1D6FA5',
                 warning: '#f39c12',
                 exceeded: '#e74c3c',
                 unknown: '#ccc'
@@ -1005,64 +1005,13 @@ export function generateProgressBar(version, task, process) {
 // ============================================
 
 export function getAnalysisGradients() {
-    const gradients = {
-        'purple': {
-            phase1: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            phase2: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            phase3: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
-        },
-        'deep-blue': {
-            phase1: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-            phase2: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
-        },
-        'teal': {
-            phase1: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
-            phase2: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-            phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
-        },
-        'cyan': {
-            phase1: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-            phase2: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)',
-            phase3: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-        },
-        'ocean': {
-            phase1: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
-            phase2: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
-            phase3: 'linear-gradient(135deg, #14b8a6 0%, #34d399 100%)'
-        },
-        'sky': {
-            phase1: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
-            phase2: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)',
-            phase3: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)'
-        },
-        'indigo': {
-            phase1: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-            phase2: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-            phase3: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)'
-        },
-        'navy': {
-            phase1: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-            phase2: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
-            phase3: 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%)'
-        },
-        'slate': {
-            phase1: 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-            phase2: 'linear-gradient(135deg, #64748b 0%, #94a3b8 100%)',
-            phase3: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)'
-        },
-        'green': {
-            phase1: 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
-            phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
-            phase3: 'linear-gradient(135deg, #0891b2 0%, #14b8a6 100%)'
-        },
-        'emerald': {
-            phase1: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-            phase2: 'linear-gradient(135deg, #34d399 0%, #6ee7b7 100%)',
-            phase3: 'linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)'
-        }
+    const accentColor = 'var(--accent)';
+    const gradientSet = {
+        phase1: accentColor,
+        phase2: accentColor,
+        phase3: accentColor
     };
-    return gradients[currentThemeColor] || gradients['deep-blue'];
+    return gradientSet;
 }
 
 /**

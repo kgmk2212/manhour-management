@@ -257,6 +257,8 @@ export function renderActualList() {
         } else {
             renderActualMatrix();
         }
+    } else if (viewType === 'grid') {
+        renderCalendarGrid();
     } else {
         renderActualListView();
     }
@@ -925,7 +927,7 @@ export function showWorkDetail(member, date) {
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${actual.process.toLowerCase()}">${actual.process}</span>` : '(なし)'}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
-                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: #3498db; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
+                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
                         <button onclick="deleteActualFromModal(${actual.id}, '${member}', '${date}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
@@ -1680,6 +1682,144 @@ export function handleActualProcessChange() {
             }
         }
     }
+}
+
+// ============================================
+// カレンダーグリッド表示
+// ============================================
+
+/**
+ * 7列カレンダーグリッドを描画
+ */
+export function renderCalendarGrid() {
+    const container = document.getElementById('actualList');
+    const selectedMonth = document.getElementById('actualMonthFilter').value;
+    const viewMode = document.getElementById('actualViewMode').value;
+
+    // 表示する月を決定
+    let year, month;
+    if (selectedMonth && selectedMonth !== 'all') {
+        // "2026-02" format
+        const parts = selectedMonth.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+    } else {
+        // デフォルトは当月
+        const now = new Date();
+        year = now.getFullYear();
+        month = now.getMonth() + 1;
+    }
+
+    // フィルタ: 担当者
+    let filteredActuals = actuals.filter(a => {
+        if (!a.date) return false;
+        const d = new Date(a.date);
+        return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+
+    if (viewMode === 'member') {
+        const selectedMember = document.getElementById('actualMemberSelect').value;
+        if (selectedMember) {
+            filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
+        }
+    }
+
+    // 日付別に集計
+    const dailyData = {};
+    filteredActuals.forEach(a => {
+        if (!dailyData[a.date]) {
+            dailyData[a.date] = { hours: 0, entries: [] };
+        }
+        dailyData[a.date].hours += a.hours;
+        dailyData[a.date].entries.push(a);
+    });
+
+    // 月の合計時間
+    const totalHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+
+    // カレンダーグリッド生成
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const startDow = firstDay.getDay(); // 0=日
+    const daysInMonth = lastDay.getDate();
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let html = '';
+    html += `<div class="actual-calendar-nav">`;
+    html += `<div class="month-label">${year}年${month}月</div>`;
+    html += `<div class="month-total">合計: <strong>${formatHours(totalHours)}h</strong></div>`;
+    html += `</div>`;
+
+    html += '<div class="calendar-grid">';
+
+    // ヘッダー行
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    dayNames.forEach((name, i) => {
+        let cls = 'calendar-header-cell';
+        if (i === 0) cls += ' sun';
+        if (i === 6) cls += ' sat';
+        html += `<div class="${cls}">${name}</div>`;
+    });
+
+    // 前月の空白セル
+    for (let i = 0; i < startDow; i++) {
+        html += '<div class="calendar-cell other-month"></div>';
+    }
+
+    // 各日のセル
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dow = new Date(year, month - 1, day).getDay();
+        const isWeekend = dow === 0 || dow === 6;
+        const isToday = dateStr === todayStr;
+        const holiday = getHoliday(dateStr);
+
+        let cellClass = 'calendar-cell';
+        if (isWeekend) cellClass += ' weekend';
+        if (isToday) cellClass += ' today';
+        if (dow === 0) cellClass += ' sun';
+        if (dow === 6) cellClass += ' sat';
+        if (holiday) cellClass += ' holiday';
+
+        const data = dailyData[dateStr];
+
+        html += `<div class="${cellClass}">`;
+        html += `<div class="calendar-date">${day}</div>`;
+
+        if (holiday) {
+            html += `<div class="calendar-entry" style="color:var(--danger);font-size:10px;">${holiday}</div>`;
+        }
+
+        if (data) {
+            html += `<div class="calendar-hours">${formatHours(data.hours)}h</div>`;
+            // 最大3件まで表示
+            const maxEntries = 3;
+            data.entries.slice(0, maxEntries).forEach(entry => {
+                const label = viewMode === 'member'
+                    ? `${entry.task}-${entry.process}`
+                    : `${entry.task}-${entry.process} (${entry.member})`;
+                html += `<div class="calendar-entry">${label}</div>`;
+            });
+            if (data.entries.length > maxEntries) {
+                html += `<div class="calendar-entry" style="color:var(--accent);">+${data.entries.length - maxEntries}件</div>`;
+            }
+        }
+
+        html += '</div>';
+    }
+
+    // 末尾の空白セル（7の倍数になるよう）
+    const totalCells = startDow + daysInMonth;
+    const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 0; i < remaining; i++) {
+        html += '<div class="calendar-cell other-month"></div>';
+    }
+
+    html += '</div>';
+
+    container.innerHTML = html;
 }
 
 console.log('✅ モジュール actual.js loaded');

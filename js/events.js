@@ -118,7 +118,7 @@ export function initEventHandlers() {
     // タブ切り替え
     // タブ切り替え（イベント委譲）
     function handleTabClick(e) {
-        const tab = e.target.closest('.tab[data-tab]');
+        const tab = e.target.closest('.tab[data-tab], .nav-item[data-tab]');
         if (tab) {
             if (debugModeEnabled) console.log('✅ Tab ' + e.type + ' Detected:', tab.dataset.tab);
 
@@ -375,6 +375,11 @@ export function initEventHandlers() {
     const btnActualList = document.getElementById('btnActualList');
     if (btnActualList) {
         btnActualList.addEventListener('click', () => setActualViewType('list'));
+    }
+
+    const btnActualGrid = document.getElementById('btnActualGrid');
+    if (btnActualGrid) {
+        btnActualGrid.addEventListener('click', () => setActualViewType('grid'));
     }
 
     // フィルタ (Compact)

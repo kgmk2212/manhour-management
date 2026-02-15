@@ -405,20 +405,7 @@ function applyTotalCardTheme() {
     const totalCard = document.getElementById('estimateTotalCard');
     if (!totalCard) return;
 
-    const gradients = {
-        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-        'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-        'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-        'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-    };
-    totalCard.style.background = gradients[currentThemeColor] || gradients['deep-blue'];
+    totalCard.style.background = 'var(--accent)';
 }
 
 /**
@@ -476,20 +463,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
 
     memberSummaryContainer.style.display = 'block';
 
-    const themeColors = {
-        'purple': '#667eea',
-        'deep-blue': '#1e3c72',
-        'teal': '#0f766e',
-        'cyan': '#0891b2',
-        'ocean': '#0c4a6e',
-        'sky': '#0369a1',
-        'indigo': '#4338ca',
-        'navy': '#1e40af',
-        'slate': '#334155',
-        'green': '#047857',
-        'emerald': '#059669'
-    };
-    const borderColor = themeColors[currentThemeColor] || '#1e3c72';
+    const borderColor = 'var(--accent)';
 
     let memberHtml = '';
     sortedMembers.forEach(member => {
@@ -1087,7 +1061,7 @@ export function renderEstimateDetailList() {
                 <td>${workMonthDisplay}</td>
                 <td>
                     <button class="btn btn-primary btn-small" onclick="editEstimate(${est.id})" style="margin-right: 5px;">編集</button>
-                    <button class="btn btn-small" onclick="openSplitEstimateModal(${est.id})" style="margin-right: 5px; background: #3498db; color: white;">分割</button>
+                    <button class="btn btn-small" onclick="openSplitEstimateModal(${est.id})" style="margin-right: 5px; background: var(--info); color: white;">分割</button>
                     <button class="btn btn-danger btn-small" onclick="deleteEstimate(${est.id})">削除</button>
                 </td>
             </tr>
@@ -1316,7 +1290,7 @@ export function showEstimateDetail(estimateId) {
             </div>
             <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button onclick="editEstimateFromModal(${est.id})"
-                        style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        style="padding: 10px 20px; background: var(--info); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
                     編集
                 </button>
                 <button onclick="deleteEstimateFromModal(${est.id})"
@@ -1431,7 +1405,7 @@ export function showTaskDetail(version, task) {
                         html += `<div style="font-size: 12px; color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
                     }
                     html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">編集</button>`;
+                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">編集</button>`;
                     html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">削除</button>`;
                     html += `</div></div>`;
                 });
@@ -1629,7 +1603,7 @@ export function showOtherWorkTaskDetail(version, task) {
             html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
             html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
             html += `<button onclick="editEstimateFromModal(${est.id})"
-                        style="padding: 6px 14px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                         編集</button>`;
             html += `<button onclick="deleteEstimateFromModal(${est.id})"
                         style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">

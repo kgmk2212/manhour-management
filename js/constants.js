@@ -62,7 +62,7 @@ export const PROGRESS = {
     // ステータス色
     STATUS_COLORS: {
         COMPLETED: '#27ae60',
-        ONTRACK: '#3498db',
+        ONTRACK: '#1D6FA5',
         WARNING: '#f39c12',
         EXCEEDED: '#e74c3c',
         UNKNOWN: '#999'
@@ -293,8 +293,8 @@ export const SCHEDULE = {
 
     // Canvas描画設定
     CANVAS: {
-        BAR_HEIGHT: 20,
-        ROW_HEIGHT: 32,
+        BAR_HEIGHT: 24,
+        ROW_HEIGHT: 36,
         HEADER_HEIGHT: 50,
         DAY_WIDTH: 28,
         LABEL_WIDTH: 200,  // 長い名前に対応するため拡大
@@ -302,17 +302,25 @@ export const SCHEDULE = {
         DEFAULT_DISPLAY_MONTHS: 3  // デフォルト表示月数
     },
 
-    // 色設定
+    // 色設定（Ink & Amber デザインシステム準拠）
     COLORS: {
         PLAN_BAR: '#B3D4FC',      // 計画バー（薄い青）
         ACTUAL_BAR: '#4A90D9',    // 実績バー（濃い青）
-        DELAYED: '#FF6B6B',       // 遅延（赤）
-        COMPLETED: '#50C878',     // 完了（緑）
-        TODAY_LINE: '#FF5722',    // 今日ライン（オレンジ）
-        WEEKEND: '#F5F5F5',       // 週末背景
-        HOLIDAY: '#FFF3E0',       // 祝日背景
-        GRID: '#E0E0E0',          // グリッド線
-        MONTH_SEPARATOR: '#B0BEC5' // 月境界線
+        DELAYED: '#B91C1C',       // 遅延（--danger）
+        COMPLETED: '#2D5A27',     // 完了（--accent）
+        TODAY_LINE: '#B91C1C',    // 今日ライン（--danger: ソリッド赤）
+        WEEKEND: '#FAF9F7',       // 週末背景（モックアップ準拠）
+        HOLIDAY: '#FFF8ED',       // 祝日背景（--accent-secondary-light）
+        GRID: '#F0EEEA',          // グリッド線（--border-light）
+        MONTH_SEPARATOR: '#E7E5E0', // 月境界線（--border）
+        // 追加: Ink & Amber デザイン色
+        SURFACE: '#FFFFFF',
+        SURFACE_ELEVATED: '#FAFAF9',
+        BORDER: '#E7E5E0',
+        TEXT_PRIMARY: '#1A1814',
+        TEXT_MUTED: '#9C9690',
+        HEADER_BG: '#FAFAF9',    // ヘッダー背景（--surface-elevated）
+        LABEL_BG: '#FAFAF9'      // ラベル列背景
     }
 };
 
@@ -326,31 +334,31 @@ export const CAPACITY_DISPLAY_MODE = {
     GAUGE: 'gauge'              // 案4: ゲージ表示
 };
 
-// タスク用カラーパレット（自動割当用・全色が明確に区別できる配色）
-// HSL色相を均等分散し、隣接割当で最大コントラストになる順序
+// タスク用カラーパレット（Ink & Amber デザインシステム準拠）
+// 全色が明確に識別可能な配色（類似色を排除）
 export const TASK_COLORS = [
-    '#2563EB', // 1  青 (hue 220)
-    '#DC2626', // 2  赤 (hue 0)
-    '#16A34A', // 3  緑 (hue 142)
-    '#EA580C', // 4  オレンジ (hue 21)
-    '#7C3AED', // 5  紫 (hue 263)
-    '#0891B2', // 6  シアン (hue 192)
-    '#CA8A04', // 7  ゴールド (hue 46)
-    '#DB2777', // 8  ピンク (hue 330)
-    '#4F46E5', // 9  インディゴ (hue 239)
-    '#059669', // 10 エメラルド (hue 160)
-    '#B91C1C', // 11 ダークレッド (hue 0, 暗)
-    '#0D9488', // 12 ティール (hue 175)
-    '#9333EA', // 13 バイオレット (hue 271)
-    '#D97706', // 14 アンバー (hue 38)
-    '#0369A1', // 15 ダークブルー (hue 201)
-    '#BE185D', // 16 ローズ (hue 339)
-    '#65A30D', // 17 ライム (hue 85)
-    '#6D28D9', // 18 ディープパープル (hue 258)
-    '#C2410C', // 19 バーントオレンジ (hue 17)
-    '#475569', // 20 スレートグレー (hue 215, 低彩度)
-    '#E11D48', // 21 クリムゾン (hue 347)
-    '#0E7490', // 22 ダークシアン (hue 189)
-    '#A16207', // 23 ダークゴールド (hue 42)
-    '#4338CA', // 24 ロイヤルブルー (hue 243)
+    '#1E54CC', // 1  Blue（青）
+    '#C42020', // 2  Red（赤）
+    '#128F40', // 3  Green（緑）
+    '#BF6804', // 4  Amber（琥珀）
+    '#6A30D0', // 5  Purple（紫）
+    '#0A8276', // 6  Teal（青緑）
+    '#CF4C08', // 7  Orange（橙）
+    '#C1206A', // 8  Pink（桃）
+    '#433BC8', // 9  Indigo（藍）
+    '#578E0A', // 10 Lime（黄緑）
+    '#067E9C', // 11 Cyan（水色）
+    '#7E2AD0', // 12 Violet（菫）
+    '#B07A03', // 13 Yellow（山吹）
+    '#A51350', // 14 Rose（ローズ）
+    '#025A8C', // 15 Sky Blue（空色）
+    '#9C4707', // 16 Copper（銅）
+    '#04855C', // 17 Emerald（翠）
+    '#AA380A', // 18 Vermillion（朱）
+    '#5C22BF', // 19 Deep Purple（深紫）
+    '#0B657D', // 20 Dark Cyan（深水色）
+    '#8B5505', // 21 Gold（金茶）
+    '#8A0F32', // 22 Crimson（深紅）
+    '#1842BE', // 23 Royal Blue（瑠璃）
+    '#116E34', // 24 Forest（深緑）
 ];

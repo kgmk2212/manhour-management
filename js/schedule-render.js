@@ -16,11 +16,52 @@ const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDI
 const LABEL_WIDTH_MOBILE_MEMBER = 80;
 const LABEL_WIDTH_MOBILE_TASK = 120;
 const LABEL_PADDING = 15; // テキスト左右余白
-const { DELAYED, COMPLETED, TODAY_LINE, WEEKEND, HOLIDAY, GRID, MONTH_SEPARATOR } = SCHEDULE.COLORS;
+const { DELAYED, COMPLETED, TODAY_LINE, WEEKEND, HOLIDAY, GRID, MONTH_SEPARATOR,
+    SURFACE, SURFACE_ELEVATED, BORDER, TEXT_PRIMARY, TEXT_MUTED, HEADER_BG, LABEL_BG } = SCHEDULE.COLORS;
 
 const ZEBRA_LIGHT = '#FFFFFF';
-const ZEBRA_DARK = '#F8FAFC';
-const HOVER_HIGHLIGHT = 'rgba(74, 144, 217, 0.08)';
+const ZEBRA_DARK = '#FAFAF9';  // --surface-elevated に合わせる
+const HOVER_HIGHLIGHT = 'rgba(45, 90, 39, 0.06)';  // --accent ベースの薄いハイライト
+const BAR_RADIUS = 3;
+
+function fillRoundRect(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function strokeRoundRect(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function clipRoundRect(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.clip();
+}
 
 // initDualCanvas後に実行されるセットアップコールバック
 const pendingSetupCallbacks = [];
@@ -362,7 +403,7 @@ export class GanttChartRenderer {
 
         // canvasでテキスト幅を計測
         const ctx = this.labelCtx;
-        ctx.font = '13px sans-serif';
+        ctx.font = '600 13px system-ui, -apple-system, sans-serif';
         let maxTextWidth = 0;
         rows.forEach(row => {
             const w = ctx.measureText(row.label).width;
@@ -379,37 +420,46 @@ export class GanttChartRenderer {
     // ============================================
 
     drawTimelineBackground() {
-        this.timelineCtx.fillStyle = '#FFFFFF';
+        this.timelineCtx.fillStyle = SURFACE;
         this.timelineCtx.fillRect(0, 0, this.timelineWidth, this.totalHeight);
     }
 
     drawLabelBackground() {
-        this.labelCtx.fillStyle = '#FFFFFF';
+        this.labelCtx.fillStyle = SURFACE;
         this.labelCtx.fillRect(0, 0, this.labelWidth, this.totalHeight);
     }
 
     /**
      * ヘッダー描画（timelineCanvas）- 2段構成: 月名 + 日付/曜日
+     * Ink & Amber デザインシステム準拠
      */
     drawHeader() {
         const ctx = this.timelineCtx;
         const monthRowH = 20; // 月名行の高さ
         const dayZoneY = monthRowH; // 日付ゾーンの開始Y
 
-        // ヘッダー全体の背景
-        ctx.fillStyle = '#F5F5F5';
+        // ヘッダー全体の背景（--surface-elevated）
+        ctx.fillStyle = HEADER_BG;
         ctx.fillRect(0, 0, this.timelineWidth, HEADER_HEIGHT);
 
         const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
-        // 1) 日付ゾーンの背景（週末・祝日）を先に描画
+        // 今日の日付
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 1) 日付ゾーンの背景（週末・祝日・今日）を先に描画
         for (const mb of this.monthBoundaries) {
             const monthX = mb.startDayOffset * DAY_WIDTH;
             for (let day = 1; day <= mb.daysInMonth; day++) {
                 const x = monthX + (day - 1) * DAY_WIDTH;
                 const date = new Date(mb.year, mb.month - 1, day);
 
-                if (isWeekend(date)) {
+                if (date.getTime() === today.getTime()) {
+                    // 今日: アクセントライト背景
+                    ctx.fillStyle = '#EBF5EA';  // --accent-light
+                    ctx.fillRect(x, dayZoneY, DAY_WIDTH, HEADER_HEIGHT - dayZoneY);
+                } else if (isWeekend(date)) {
                     ctx.fillStyle = WEEKEND;
                     ctx.fillRect(x, dayZoneY, DAY_WIDTH, HEADER_HEIGHT - dayZoneY);
                 } else if (isHoliday(date)) {
@@ -425,20 +475,20 @@ export class GanttChartRenderer {
             const monthX = mb.startDayOffset * DAY_WIDTH;
             const monthWidth = mb.daysInMonth * DAY_WIDTH;
 
-            // 月名行の交互背景で区別しやすく
-            ctx.fillStyle = i % 2 === 0 ? '#E8EEF4' : '#F0F4F8';
+            // 月名行: surface-elevated ベースに交互で微妙な差
+            ctx.fillStyle = i % 2 === 0 ? '#F5F4F2' : HEADER_BG;
             ctx.fillRect(monthX, 0, monthWidth, monthRowH);
 
-            // 月名テキスト
-            ctx.fillStyle = '#1a1a1a';
-            ctx.font = 'bold 13px sans-serif';
+            // 月名テキスト（--text-primary, 600 weight）
+            ctx.fillStyle = TEXT_PRIMARY;
+            ctx.font = '600 12px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(`${mb.year}年${mb.month}月`, monthX + monthWidth / 2, monthRowH / 2);
         }
 
-        // 月名行と日付行の区切り線
-        ctx.strokeStyle = '#CCCCCC';
+        // 月名行と日付行の区切り線（--border-light）
+        ctx.strokeStyle = GRID;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, monthRowH);
@@ -455,41 +505,43 @@ export class GanttChartRenderer {
                 const x = monthX + (day - 1) * DAY_WIDTH;
                 const date = new Date(mb.year, mb.month - 1, day);
                 const dayOfWeek = date.getDay();
+                const isToday = date.getTime() === today.getTime();
 
-                if (dayOfWeek === 0) {
-                    ctx.fillStyle = '#E53935';
+                if (isToday) {
+                    // 今日: アクセントカラー
+                    ctx.fillStyle = '#2D5A27';  // --accent
+                } else if (dayOfWeek === 0 || isHoliday(date)) {
+                    ctx.fillStyle = '#B91C1C';  // --danger
                 } else if (dayOfWeek === 6) {
-                    ctx.fillStyle = '#1E88E5';
-                } else if (isHoliday(date)) {
-                    ctx.fillStyle = '#E53935';
+                    ctx.fillStyle = '#1D6FA5';  // --info
                 } else {
-                    ctx.fillStyle = '#333333';
+                    ctx.fillStyle = TEXT_MUTED;
                 }
 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = '12px sans-serif';
+                ctx.font = '600 11px system-ui, -apple-system, sans-serif';
                 ctx.fillText(String(day), x + DAY_WIDTH / 2, dayNumY);
 
-                ctx.font = '10px sans-serif';
+                ctx.font = '10px system-ui, -apple-system, sans-serif';
                 ctx.fillText(dayNames[dayOfWeek], x + DAY_WIDTH / 2, dayNameY);
             }
         }
 
-        // 4) 月境界の区切り線（ヘッダー内）
+        // 4) 月境界の区切り線（ヘッダー内、--border）
         for (const mb of this.monthBoundaries) {
             if (mb.startDayOffset === 0) continue;
             const x = mb.startDayOffset * DAY_WIDTH;
-            ctx.strokeStyle = '#90A4AE';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = BORDER;
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, HEADER_HEIGHT);
             ctx.stroke();
         }
 
-        // ヘッダー下部の線
-        ctx.strokeStyle = GRID;
+        // ヘッダー下部の線（--border）
+        ctx.strokeStyle = BORDER;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, HEADER_HEIGHT);
@@ -499,22 +551,30 @@ export class GanttChartRenderer {
 
     /**
      * ラベルヘッダー描画（labelCanvas）
+     * Ink & Amber デザインシステム準拠
      */
     drawLabelHeader() {
         const ctx = this.labelCtx;
-        ctx.fillStyle = '#F5F5F5';
+        ctx.fillStyle = HEADER_BG;
         ctx.fillRect(0, 0, this.labelWidth, HEADER_HEIGHT);
 
-        // ヘッダー下部の線
-        ctx.strokeStyle = GRID;
+        // ヘッダーラベル「担当者 / タスク」
+        ctx.fillStyle = TEXT_MUTED;
+        ctx.font = '600 12px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('担当者 / タスク', 14, HEADER_HEIGHT / 2);
+
+        // ヘッダー下部の線（--border）
+        ctx.strokeStyle = BORDER;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, HEADER_HEIGHT);
         ctx.lineTo(this.labelWidth, HEADER_HEIGHT);
         ctx.stroke();
 
-        // 右端の区切り線
-        ctx.strokeStyle = '#CCCCCC';
+        // 右端の区切り線（--border）
+        ctx.strokeStyle = BORDER;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(this.labelWidth - 0.5, 0);
@@ -524,13 +584,14 @@ export class GanttChartRenderer {
 
     /**
      * グリッド描画（timelineCanvas）
+     * Ink & Amber: --border-light で繊細なグリッド
      */
     drawGrid(rowCount) {
         const ctx = this.timelineCtx;
+
+        // 縦線（--border-light: 繊細な区切り）
         ctx.strokeStyle = GRID;
         ctx.lineWidth = 0.5;
-
-        // 縦線
         for (let day = 0; day <= this.totalDays; day++) {
             const x = day * DAY_WIDTH;
             ctx.beginPath();
@@ -539,7 +600,7 @@ export class GanttChartRenderer {
             ctx.stroke();
         }
 
-        // 横線
+        // 横線（--border-light: 行区切り）
         for (let row = 0; row <= rowCount; row++) {
             const y = HEADER_HEIGHT + row * ROW_HEIGHT;
             ctx.beginPath();
@@ -551,6 +612,7 @@ export class GanttChartRenderer {
 
     /**
      * 月境界線を描画（ボディ部分）
+     * Ink & Amber: --border で控えめな区切り
      */
     drawMonthSeparators() {
         const ctx = this.timelineCtx;
@@ -558,13 +620,9 @@ export class GanttChartRenderer {
             if (mb.startDayOffset === 0) continue;
             const x = mb.startDayOffset * DAY_WIDTH;
 
-            // 半透明の帯で境界を強調
-            ctx.fillStyle = 'rgba(144, 164, 174, 0.12)';
-            ctx.fillRect(x - 2, HEADER_HEIGHT, 4, this.totalHeight - HEADER_HEIGHT);
-
-            // 太めの実線
-            ctx.strokeStyle = '#78909C';
-            ctx.lineWidth = 2;
+            // 控えめな実線（--border）
+            ctx.strokeStyle = BORDER;
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(x, HEADER_HEIGHT);
             ctx.lineTo(x, this.totalHeight);
@@ -574,6 +632,7 @@ export class GanttChartRenderer {
 
     /**
      * 今日の線を描画
+     * Ink & Amber: ソリッド2px赤ライン + 上部に丸インジケータ
      */
     drawTodayLine() {
         const today = new Date();
@@ -584,18 +643,25 @@ export class GanttChartRenderer {
         const ctx = this.timelineCtx;
         const x = this.dateToX(today) + DAY_WIDTH / 2;
 
+        // ソリッドライン（--danger）— ボディ部分のみ
         ctx.strokeStyle = TODAY_LINE;
         ctx.lineWidth = 2;
-        ctx.setLineDash([5, 3]);
         ctx.beginPath();
         ctx.moveTo(x, HEADER_HEIGHT);
         ctx.lineTo(x, this.totalHeight);
         ctx.stroke();
-        ctx.setLineDash([]);
+
+        // 月名行と日付行の境界に小さな丸インジケータ
+        const monthRowH = 20;
+        ctx.fillStyle = TODAY_LINE;
+        ctx.beginPath();
+        ctx.arc(x, monthRowH, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     /**
      * 行を描画（timelineCanvas - バーのみ）
+     * Ink & Amber デザインシステム準拠
      */
     drawRows(rows) {
         const ctx = this.timelineCtx;
@@ -624,10 +690,12 @@ export class GanttChartRenderer {
                 const x = dayOffset * DAY_WIDTH;
 
                 if (isWeekend(date)) {
-                    ctx.fillStyle = index % 2 === 0 ? '#F5F5F5' : '#EFEFEF';
+                    // 週末: #FAF9F7 ベース（ゼブラで微差）
+                    ctx.fillStyle = index % 2 === 0 ? '#FAF9F7' : '#F5F4F2';
                     ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
                 } else if (isHoliday(date)) {
-                    ctx.fillStyle = index % 2 === 0 ? '#FFF0E0' : '#FFE8D0';
+                    // 祝日: --accent-secondary-light ベース
+                    ctx.fillStyle = index % 2 === 0 ? '#FFF8ED' : '#FFF3E0';
                     ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
                 } else if (memberName) {
                     // 担当者休暇チェック（担当者別ビューのみ）
@@ -635,12 +703,12 @@ export class GanttChartRenderer {
                     const vacation = getMemberVacation(memberName, dateStr);
                     if (vacation) {
                         if (vacation.hours >= 8 || vacation.vacationType !== '時間休') {
-                            // 全日休暇（有休・特休・代休・振休 等）
-                            ctx.fillStyle = index % 2 === 0 ? '#F3E5F5' : '#EDE0F0';
+                            // 全日休暇: 薄い紫系
+                            ctx.fillStyle = index % 2 === 0 ? '#F5F0F7' : '#EFE9F2';
                             ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
                         } else {
                             // 時間休（部分休暇）
-                            ctx.fillStyle = index % 2 === 0 ? '#F9F0FB' : '#F4EBF6';
+                            ctx.fillStyle = index % 2 === 0 ? '#F9F4FB' : '#F4EFF6';
                             ctx.fillRect(x, y + ROW_HEIGHT / 2, DAY_WIDTH, ROW_HEIGHT / 2);
                         }
                     }
@@ -659,15 +727,19 @@ export class GanttChartRenderer {
 
     /**
      * ラベル列を描画（labelCanvas）
+     * Ink & Amber: メンバードット + 600 weight フォント
      */
     drawLabelColumn(rows) {
         const ctx = this.labelCtx;
+        const dotSize = 8;     // メンバードットの直径
+        const dotLeftPad = 14; // 左端からドットまでの距離
+        const textLeftPad = dotLeftPad + dotSize + 8; // ドット後のテキスト開始位置
 
         rows.forEach((row, index) => {
             const y = HEADER_HEIGHT + index * ROW_HEIGHT;
 
             // ゼブラ背景
-            ctx.fillStyle = index % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+            ctx.fillStyle = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;
             ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
 
             // ホバーハイライト
@@ -676,7 +748,7 @@ export class GanttChartRenderer {
                 ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
             }
 
-            // 横線
+            // 横線（--border-light）
             ctx.strokeStyle = GRID;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
@@ -684,13 +756,25 @@ export class GanttChartRenderer {
             ctx.lineTo(this.labelWidth, y + ROW_HEIGHT);
             ctx.stroke();
 
-            // ラベルテキスト
-            ctx.fillStyle = '#333333';
-            ctx.font = '13px sans-serif';
+            const centerY = y + ROW_HEIGHT / 2;
+
+            // メンバードット（色付き丸）
+            if (row.color || row.type === 'member') {
+                const dotColor = row.color || this.getMemberDotColor(row.label, index);
+                ctx.fillStyle = dotColor;
+                ctx.beginPath();
+                ctx.arc(dotLeftPad + dotSize / 2, centerY, dotSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // ラベルテキスト（--text-primary, 600 weight）
+            ctx.fillStyle = TEXT_PRIMARY;
+            ctx.font = '600 13px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
 
-            const maxLabelWidth = this.labelWidth - 10;
+            const labelStartX = (row.color || row.type === 'member') ? textLeftPad : dotLeftPad;
+            const maxLabelWidth = this.labelWidth - labelStartX - 8;
             let labelText = row.label;
             while (ctx.measureText(labelText).width > maxLabelWidth && labelText.length > 0) {
                 labelText = labelText.slice(0, -1);
@@ -699,8 +783,20 @@ export class GanttChartRenderer {
                 labelText += '…';
             }
 
-            ctx.fillText(labelText, 5, y + ROW_HEIGHT / 2);
+            ctx.fillText(labelText, labelStartX, centerY);
         });
+    }
+
+    /**
+     * メンバードットの色を取得
+     */
+    getMemberDotColor(label, index) {
+        const dotColors = [
+            '#2D5A27', '#1D6FA5', '#C4841D', '#B91C1C',
+            '#7C3AED', '#0D9488', '#EA580C', '#DB2777',
+            '#4F46E5', '#65A30D', '#0891B2', '#9333EA'
+        ];
+        return dotColors[index % dotColors.length];
     }
 
     /**
@@ -727,24 +823,63 @@ export class GanttChartRenderer {
         const taskColor = getTaskColor(schedule.version, schedule.task);
         const lightColor = this.lightenColor(taskColor, 0.6);
 
-        // 休日の日を事前計算
-        const holidayXs = [];
+        // 行インデックス（ゼブラストライプ・背景色判定用）
+        const rowIndex = Math.round((rowY - HEADER_HEIGHT) / ROW_HEIGHT);
+        const isEvenRow = rowIndex % 2 === 0;
+
+        // 休日の日を事前計算（座標と背景色を記録）
+        const holidayDays = [];
         const current = new Date(visibleStart);
         while (current <= visibleEnd) {
             if (!isBusinessDay(current, schedule.member)) {
-                holidayXs.push(this.dateToX(current));
+                const hx = this.dateToX(current);
+                // セルの背景色を判定（Ink & Amber 準拠）
+                let bgColor;
+                if (isWeekend(current)) {
+                    bgColor = isEvenRow ? '#FAF9F7' : '#F5F4F2';
+                } else if (isHoliday(current)) {
+                    bgColor = isEvenRow ? '#FFF8ED' : '#FFF3E0';
+                } else {
+                    // 担当者休暇
+                    bgColor = isEvenRow ? '#F5F0F7' : '#EFE9F2';
+                }
+                holidayDays.push({ x: hx, bgColor });
             }
             current.setDate(current.getDate() + 1);
         }
 
-        // 計画バー
-        ctx.fillStyle = lightColor;
+        // 進捗情報
+        const progressInfo = this.getScheduleProgress(schedule);
+
+        // === バー描画（単一の角丸クリップ内で全て描画） ===
+        ctx.save();
+        clipRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+
+        // ベースバー（ソリッドカラー）
+        ctx.fillStyle = taskColor;
         ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
 
-        // 枠線
-        ctx.strokeStyle = taskColor;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barWidth, BAR_HEIGHT);
+        // 未進捗部分を薄い色で上塗り
+        if (progressInfo.progressRate < 100) {
+            if (progressInfo.progressRate > 0) {
+                const actualBarWidth = barWidth * (progressInfo.progressRate / 100);
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(barX + actualBarWidth, barY, barWidth - actualBarWidth, BAR_HEIGHT);
+            } else {
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
+            }
+        }
+
+        // 休日セル: バーの該当部分を背景色で塗りつぶし
+        holidayDays.forEach(({ x, bgColor }) => {
+            ctx.globalAlpha = 0.82;
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(x, barY, DAY_WIDTH, BAR_HEIGHT);
+        });
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
 
         // 長押しハイライト（モバイルドラッグ開始時）
         if (this.highlightedScheduleId === schedule.id) {
@@ -753,42 +888,21 @@ export class GanttChartRenderer {
             ctx.shadowBlur = 8;
             ctx.strokeStyle = taskColor;
             ctx.lineWidth = 2;
-            ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2);
+            strokeRoundRect(ctx, barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2, BAR_RADIUS);
             ctx.restore();
         }
 
-        // 新規作成ハイライト（アンバー色の破線グロー）
+        // 新規作成ハイライト（--accent-secondary の破線グロー）
         if (this.newlyCreatedIds.has(schedule.id)) {
             ctx.save();
-            ctx.shadowColor = '#ffc107';
+            ctx.shadowColor = SCHEDULE.COLORS.HOLIDAY;
             ctx.shadowBlur = 10;
-            ctx.strokeStyle = '#ffc107';
+            ctx.strokeStyle = '#C4841D';  // --accent-secondary
             ctx.lineWidth = 2.5;
             ctx.setLineDash([4, 2]);
-            ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2);
+            strokeRoundRect(ctx, barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2, BAR_RADIUS);
             ctx.setLineDash([]);
             ctx.restore();
-        }
-
-        // 進捗情報
-        const progressInfo = this.getScheduleProgress(schedule);
-
-        // 実績バー
-        if (progressInfo.progressRate > 0) {
-            const actualBarWidth = barWidth * (progressInfo.progressRate / 100);
-            ctx.fillStyle = taskColor;
-            ctx.fillRect(barX, barY, actualBarWidth, BAR_HEIGHT);
-        }
-
-        // 休日セル: 背景色で塗りつぶし、バーの色をかすかに残す
-        holidayXs.forEach(hx => {
-            this.drawHolidayOverlay(ctx, hx, barY, DAY_WIDTH, BAR_HEIGHT);
-        });
-
-        // 見込み残存インジケータ
-        if (progressInfo.hasUserRemaining) {
-            ctx.fillStyle = '#ffc107';
-            ctx.fillRect(barX, barY - 3, barWidth, 2);
         }
 
         // テキスト表示（工程 | ステータスアイコン | %を重ならないよう配置）
@@ -798,29 +912,32 @@ export class GanttChartRenderer {
             ctx.textBaseline = 'middle';
 
             const percentText = `${progressRate}%`;
-            const rightPad = 4;
-            const processLeftPad = 4;
+            const rightPad = 6;
+            const processLeftPad = 6;
             const gap = 4;
 
             // ステータスアイコン判定
             let statusIcon = '';
-            let statusColor = '';
             if (schedule.status === SCHEDULE.STATUS.COMPLETED) {
                 statusIcon = '✓';
-                statusColor = COMPLETED;
             } else if (this.isDelayed(schedule)) {
                 statusIcon = '!';
-                statusColor = DELAYED;
             }
 
+            const sysFont = 'system-ui, -apple-system, sans-serif';
+
             // 各要素の幅を測定
-            ctx.font = 'bold 10px sans-serif';
+            ctx.font = `bold 10px ${sysFont}`;
             const percentWidth = ctx.measureText(percentText).width;
-            ctx.font = 'bold 11px sans-serif';
+            ctx.font = `bold 11px ${sysFont}`;
             const iconWidth = statusIcon ? ctx.measureText(statusIcon).width + 2 : 0;
-            ctx.font = '11px sans-serif';
+            ctx.font = `600 11px ${sysFont}`;
             const processText = schedule.process || '';
             const processWidth = ctx.measureText(processText).width;
+
+            // テキスト色（白ベース、半透明で階調をつける）
+            const textColor = '#ffffff';
+            const textColorMuted = 'rgba(255,255,255,0.75)';
 
             // バー内に全要素が収まるか判定
             const rightOccupied = percentWidth + iconWidth + rightPad;
@@ -829,44 +946,41 @@ export class GanttChartRenderer {
 
             if (fitsInside) {
                 // バー内に全て収まる: [工程 ... アイコン %]
-                ctx.font = '11px sans-serif';
-                ctx.fillStyle = '#333333';
+                ctx.font = `600 11px ${sysFont}`;
+                ctx.fillStyle = textColor;
                 ctx.textAlign = 'left';
                 ctx.fillText(processText, barX + processLeftPad, barCenterY);
 
                 if (statusIcon) {
-                    ctx.fillStyle = statusColor;
-                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillStyle = textColor;
+                    ctx.font = `bold 11px ${sysFont}`;
                     ctx.textAlign = 'right';
                     ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
                 }
 
                 ctx.textAlign = 'right';
-                ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
-                ctx.font = 'bold 10px sans-serif';
+                ctx.fillStyle = textColorMuted;
+                ctx.font = `bold 10px ${sysFont}`;
                 ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
             } else {
                 // バー内に収まらない: 工程を優先、%は余裕があれば表示
                 const availableWidth = barWidth - processLeftPad - rightPad;
 
-                // 工程+%が入るか（アイコン無しで）
                 const bothFitCompact = processWidth + gap + percentWidth <= availableWidth;
 
                 if (bothFitCompact) {
-                    // 工程と%だけ表示（アイコン省略）
-                    ctx.font = '11px sans-serif';
-                    ctx.fillStyle = '#333333';
+                    ctx.font = `600 11px ${sysFont}`;
+                    ctx.fillStyle = textColor;
                     ctx.textAlign = 'left';
                     ctx.fillText(processText, barX + processLeftPad, barCenterY);
 
                     ctx.textAlign = 'right';
-                    ctx.fillStyle = progressRate >= 100 ? '#198754' : (progressRate > 0 ? '#0d6efd' : '#6c757d');
-                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillStyle = textColorMuted;
+                    ctx.font = `bold 10px ${sysFont}`;
                     ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
                 } else if (processWidth <= availableWidth) {
-                    // 工程のみ表示（%省略）
-                    ctx.font = '11px sans-serif';
-                    ctx.fillStyle = '#333333';
+                    ctx.font = `600 11px ${sysFont}`;
+                    ctx.fillStyle = textColor;
                     ctx.textAlign = 'left';
                     ctx.fillText(processText, barX + processLeftPad, barCenterY);
                 }
@@ -1488,17 +1602,17 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     const barY = originalRect.y;
 
     ctx.globalAlpha = 0.6;
-    ctx.fillStyle = '#4A90D9';
-    ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
-    ctx.strokeStyle = '#2171C9';
+    ctx.fillStyle = '#1D6FA5';  // --info
+    fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+    ctx.strokeStyle = '#2D5A27';  // --accent
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
-    ctx.strokeRect(barX, barY, barWidth, BAR_HEIGHT);
+    strokeRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
     ctx.setLineDash([]);
     ctx.globalAlpha = 1.0;
 
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 11px sans-serif';
+    ctx.fillStyle = TEXT_PRIMARY;
+    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
 }

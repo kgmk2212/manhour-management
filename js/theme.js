@@ -28,9 +28,9 @@ export function getActiveChartColorScheme() {
         if (chartColorSchemes[window.currentThemeColor]) {
             return chartColorSchemes[window.currentThemeColor];
         }
-        return chartColorSchemes['deep-blue'];
+        return chartColorSchemes['forest'];
     } else {
-        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['deep-blue'];
+        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['forest'];
     }
 }
 
@@ -97,15 +97,29 @@ export function updateChartColorPreview() {
 // テーマ設定
 // ============================================
 
+// 旧テーマ名 → 新テーマ名のマッピング
+const THEME_MIGRATION = {
+    'deep-blue': 'deep-blue', 'navy': 'ocean', 'ocean': 'ocean', 'sky': 'ocean', 'cyan': 'ocean',
+    'teal': 'forest', 'green': 'forest', 'emerald': 'forest',
+    'indigo': 'violet', 'purple': 'violet',
+    'slate': 'ink',
+    'forest': 'forest', 'violet': 'violet', 'amber': 'amber', 'ink': 'ink'
+};
+
+function migrateThemeColor(color) {
+    return THEME_MIGRATION[color] || 'forest';
+}
+
 export function loadThemeSettings() {
     const savedSettings = localStorage.getItem('manhour_settings');
     if (savedSettings) {
         try {
             const settings = JSON.parse(savedSettings);
             if (settings.themeColor) {
-                setCurrentThemeColor(settings.themeColor);
+                const migrated = migrateThemeColor(settings.themeColor);
+                setCurrentThemeColor(migrated);
                 const el = document.getElementById('themeColor');
-                if (el) el.value = settings.themeColor;
+                if (el) el.value = migrated;
             }
             if (settings.themePattern) {
                 setCurrentThemePattern(settings.themePattern);
@@ -114,40 +128,21 @@ export function loadThemeSettings() {
             }
             if (settings.themeTabColor) {
                 setCurrentTabColor(settings.themeTabColor);
-                const el = document.getElementById('themeTabColor');
-                if (el) el.value = settings.themeTabColor;
             }
             if (settings.themeBackgroundColor) {
                 setCurrentBackgroundColor(settings.themeBackgroundColor);
-                const el = document.getElementById('themeBackgroundColor');
-                if (el) el.value = settings.themeBackgroundColor;
             }
         } catch (error) {
             console.error('テーマ設定の読み込みに失敗しました:', error);
-            // デフォルトテーマを使用
         }
     } else {
         // 旧形式から読み込み（後方互換性）
         const savedColor = localStorage.getItem('manhour_themeColor');
-        const savedPattern = localStorage.getItem('manhour_themePattern');
-        const savedTabColor = localStorage.getItem('manhour_themeTabColor');
-
         if (savedColor) {
-            setCurrentThemeColor(savedColor);
+            const migrated = migrateThemeColor(savedColor);
+            setCurrentThemeColor(migrated);
             const el = document.getElementById('themeColor');
-            if (el) el.value = savedColor;
-        }
-
-        if (savedPattern) {
-            setCurrentThemePattern(savedPattern);
-            const el = document.getElementById('themePattern');
-            if (el) el.value = savedPattern;
-        }
-
-        if (savedTabColor) {
-            setCurrentTabColor(savedTabColor);
-            const el = document.getElementById('themeTabColor');
-            if (el) el.value = savedTabColor;
+            if (el) el.value = migrated;
         }
     }
 
@@ -155,36 +150,43 @@ export function loadThemeSettings() {
     applyTheme();
 }
 
+// Ink & Amber テーマカラー定義
+const THEME_COLORS = {
+    'forest': { accent: '#2D5A27', accentHover: '#3A7232', accentLight: '#EBF5EA', sidebarActiveBg: 'rgba(45,90,39,0.2)' },
+    'ocean':  { accent: '#1D6FA5', accentHover: '#2580B8', accentLight: '#EFF6FF', sidebarActiveBg: 'rgba(29,111,165,0.2)' },
+    'violet': { accent: '#7C3AED', accentHover: '#8B5CF6', accentLight: '#F5F3FF', sidebarActiveBg: 'rgba(124,58,237,0.2)' },
+    'amber':  { accent: '#C4841D', accentHover: '#D4941F', accentLight: '#FFF8ED', sidebarActiveBg: 'rgba(196,132,29,0.2)' },
+    'ink':    { accent: '#1A1814', accentHover: '#2D2A25', accentLight: '#F0EEEA', sidebarActiveBg: 'rgba(255,255,255,0.08)' },
+    'deep-blue': { accent: '#1E3A5F', accentHover: '#264D7A', accentLight: '#EFF4FA', sidebarActiveBg: 'rgba(30,58,95,0.2)' },
+    'rose':      { accent: '#BE185D', accentHover: '#DB2777', accentLight: '#FDF2F8', sidebarActiveBg: 'rgba(190,24,93,0.2)' },
+    'teal':      { accent: '#0F766E', accentHover: '#14937A', accentLight: '#F0FDFA', sidebarActiveBg: 'rgba(15,118,110,0.2)' },
+    'slate':     { accent: '#475569', accentHover: '#64748B', accentLight: '#F1F5F9', sidebarActiveBg: 'rgba(71,85,105,0.2)' }
+};
+
 export function applyTheme() {
     const colorEl = document.getElementById('themeColor');
-    const patternEl = document.getElementById('themePattern');
-    const tabColorEl = document.getElementById('themeTabColor');
-    const backgroundColorEl = document.getElementById('themeBackgroundColor');
-    const tabs = document.querySelector('.tabs');
 
-    // DOM要素が存在する場合はその値を使用、なければstate変数（window経由）を使用
-    // DOM要素の値を更新しつつ、state変数も同期
+    // DOM要素が存在する場合はその値を使用
     if (colorEl && colorEl.value) {
         setCurrentThemeColor(colorEl.value);
     } else if (!window.currentThemeColor) {
-        setCurrentThemeColor('deep-blue');
+        setCurrentThemeColor('forest');
     }
 
+    // パターンとタブカラーは新デザインでは未使用だが互換性のため維持
+    const patternEl = document.getElementById('themePattern');
     if (patternEl && patternEl.value) {
         setCurrentThemePattern(patternEl.value);
-    } else if (!window.currentThemePattern) {
-        setCurrentThemePattern('gradient');
     }
-
+    const tabColorEl = document.getElementById('themeTabColor');
     if (tabColorEl && tabColorEl.value) {
         setCurrentTabColor(tabColorEl.value);
     }
-
+    const backgroundColorEl = document.getElementById('themeBackgroundColor');
     if (backgroundColorEl && backgroundColorEl.value) {
         setCurrentBackgroundColor(backgroundColorEl.value);
     }
 
-    updateThemePreview();
     updateThemeElements();
 
     if (selectedChartColorScheme === 'auto') {
@@ -197,12 +199,11 @@ export function applyTheme() {
         }
     }
 
-    if (tabs) {
-        tabs.classList.remove('is-classic', 'is-dock', 'is-capsule');
-        tabs.classList.add(`is-${window.mobileTabDesign || 'classic'}`);
-        // スタイル適用完了を示すクラスを追加（ちらつき防止）
-        tabs.classList.add('style-ready');
-    }
+    // カラースウォッチのactive状態を更新
+    const swatches = document.querySelectorAll('.color-swatch[data-theme]');
+    swatches.forEach(s => {
+        s.classList.toggle('active', s.dataset.theme === window.currentThemeColor);
+    });
 
     if (typeof window.saveData === 'function') {
         window.saveData(true);
@@ -210,104 +211,42 @@ export function applyTheme() {
 }
 
 export function updateThemePreview() {
-    const preview = document.getElementById('themePreview');
-    if (!preview) return;
-
-    const colorClass = `theme-${window.currentThemeColor}`;
-    const patternClass = window.currentThemePattern !== 'none' ? `pattern-${window.currentThemePattern}` : '';
-
-    preview.className = '';
-    preview.classList.add('theme-bg', colorClass);
-    if (patternClass) {
-        preview.classList.add(patternClass);
-    }
+    // Ink & Amber: テーマプレビューは不要（カラースウォッチで直接選択）
+    // 互換性のために関数は維持
 }
 
 export function updateThemeElements() {
-    const gradients = {
-        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-        'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-        'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-        'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-    };
+    const themeColor = window.currentThemeColor || 'forest';
+    const theme = THEME_COLORS[themeColor] || THEME_COLORS['forest'];
 
-    const solidColors = {
-        'purple': '#667eea',
-        'deep-blue': '#1e3c72',
-        'teal': '#0f766e',
-        'cyan': '#0891b2',
-        'ocean': '#0c4a6e',
-        'sky': '#0369a1',
-        'indigo': '#4338ca',
-        'navy': '#1e40af',
-        'slate': '#334155',
-        'green': '#047857',
-        'emerald': '#059669'
-    };
+    // CSS変数を更新（Ink & Amber デザインシステム）
+    const root = document.documentElement;
+    root.style.setProperty('--accent', theme.accent);
+    root.style.setProperty('--accent-hover', theme.accentHover);
+    root.style.setProperty('--accent-light', theme.accentLight);
+    root.style.setProperty('--sidebar-active-bg', theme.sidebarActiveBg);
+    root.style.setProperty('--success', theme.accent);
 
-    document.documentElement.style.setProperty('--theme-gradient', gradients[window.currentThemeColor] || gradients['deep-blue']);
-    document.documentElement.style.setProperty('--theme-color', solidColors[window.currentThemeColor] || solidColors['deep-blue']);
+    // 旧CSS変数も互換性のため設定
+    root.style.setProperty('--theme-color', theme.accent);
+    root.style.setProperty('--theme-gradient', theme.accent);
 
-    // 早期テーマ適用用のCSS変数とdata属性も更新（ちらつき防止スクリプトとの同期）
-    document.documentElement.style.setProperty('--early-theme-gradient', gradients[window.currentThemeColor] || gradients['deep-blue']);
-    document.documentElement.dataset.earlyTheme = window.currentThemeColor || 'deep-blue';
-
-    updateBodyBackground();
-
-    // ページヘッダー
-    const headerEl = document.querySelector('header');
-    if (headerEl) {
-        headerEl.style.background = gradients[window.currentThemeColor] || gradients['deep-blue'];
-    }
-
-    // クイック入力エリア
-    const quickInput = document.querySelector('.quick-input');
-    if (quickInput) {
-        updateElementTheme(quickInput);
-    }
-
-    // レポートサマリーカード
-    const summaryCards = document.querySelectorAll('.stats-grid .stat-card');
-    summaryCards.forEach(card => updateElementTheme(card));
-
-    // 版数ヘッダー
-    const versionHeaders = document.querySelectorAll('.version-header');
-    versionHeaders.forEach(header => updateElementTheme(header));
-
-    // アクティブタブ
-    const activeTab = document.querySelector('.tab.active');
-    if (activeTab) {
-        updateElementTheme(activeTab);
-    }
-
-    // モーダルヘッダー
+    // モーダルヘッダーのテーマカラーを更新
     const modalHeaders = document.querySelectorAll('.modal-header');
     modalHeaders.forEach(header => {
         header.className = header.className.replace(/modal-theme-\w+/g, '').trim();
-        header.classList.add('modal-header', `modal-theme-${window.currentThemeColor}`);
+        header.classList.add('modal-header', `modal-theme-${themeColor}`);
     });
-
-    // 設定タブのレイアウト切り替えボタン（window経由）
-    if (typeof window.updateLayoutToggleButtons === 'function') {
-        window.updateLayoutToggleButtons();
-    }
 
     // セグメントボタンの色を更新（window経由）
     if (typeof window.updateSegmentedButtons === 'function') {
         window.updateSegmentedButtons();
     }
 
-    // 見積合計カード
+    // 見積合計カード - 新デザインではアクセントカラーベースに
     const estimateTotalCard = document.getElementById('estimateTotalCard');
     if (estimateTotalCard) {
-        estimateTotalCard.style.background = gradients[window.currentThemeColor] || gradients['deep-blue'];
+        estimateTotalCard.style.background = theme.accent;
     }
 
     // 見積一覧の担当者別合計カード（見積タブがアクティブな場合のみ）
@@ -317,50 +256,18 @@ export function updateThemeElements() {
             window.renderEstimateList();
         }
     }
-
 }
 
 
 export function updateBodyBackground() {
-    const colorGradients = {
-        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'teal': 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
-        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)',
-        'sky': 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
-        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-        'green': 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
-        'emerald': 'linear-gradient(135deg, #059669 0%, #34d399 100%)'
-    };
-
-    const bgColorToUse = (window.currentBackgroundColor && window.currentBackgroundColor !== 'same')
-        ? window.currentBackgroundColor
-        : window.currentThemeColor;
-
-    const gradient = colorGradients[bgColorToUse] || colorGradients['deep-blue'];
-    document.body.style.background = gradient;
+    // Ink & Amber デザイン: 背景色はCSS変数 var(--bg) で制御
+    // body のインラインスタイルをクリア（旧デザインの残り）
+    document.body.style.background = '';
 }
 
 export function updateElementTheme(element) {
-    const isTab = element.classList.contains('tab');
-
-    let tabColorToUse = window.currentThemeColor;
-    if (isTab) {
-        if (window.currentTabColor === 'same') {
-            tabColorToUse = window.currentThemeColor;
-        } else if (window.currentTabColor === 'default') {
-            tabColorToUse = null;
-        } else {
-            tabColorToUse = window.currentTabColor;
-        }
-    }
-
-    const colorClass = isTab && tabColorToUse ? `tab-theme-${tabColorToUse}` : `theme-${window.currentThemeColor}`;
-    const patternClass = !isTab && window.currentThemePattern !== 'none' ? `pattern-${window.currentThemePattern}` : '';
-
+    // Ink & Amber デザイン: テーマはCSS変数で制御されるため、
+    // 要素への個別のテーマクラス適用は最小限
     const classes = Array.from(element.classList);
     classes.forEach(cls => {
         if (cls.startsWith('theme-') || cls.startsWith('pattern-') || cls.startsWith('tab-theme-')) {
@@ -368,15 +275,10 @@ export function updateElementTheme(element) {
         }
     });
 
-    if (isTab) {
-        if (tabColorToUse) {
-            element.classList.add(`tab-theme-${tabColorToUse}`);
-        }
-    } else {
-        element.classList.add('theme-bg', colorClass);
-        if (patternClass) {
-            element.classList.add(patternClass);
-        }
+    // Ink & Amber: テーマカラーはCSS変数で自動適用
+    // theme-bgクラスがある要素は残す（CSSで対応）
+    if (element.classList.contains('theme-bg') || !element.classList.contains('tab')) {
+        element.classList.add('theme-bg');
     }
 }
 

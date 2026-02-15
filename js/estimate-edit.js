@@ -374,8 +374,8 @@ export function updateEditMonthPreview() {
     const hasEditedValues = Object.keys(editedMonthlyHours).length > 0;
     const currentMonthlyHours = hasEditedValues ? editedMonthlyHours : savedMonthlyHours;
 
-    let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #3498db; max-height: 300px; overflow-y: auto;">';
-    html += '<strong style="color: #2c3e50;">📋 月別工数</strong><br>';
+    let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid var(--accent); max-height: 300px; overflow-y: auto;">';
+    html += '<strong style="color: var(--text-primary);">📋 月別工数</strong><br>';
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {
@@ -386,7 +386,7 @@ export function updateEditMonthPreview() {
             html += `${y}年${parseInt(m)}月: <strong>${hoursPerMonth}h</strong>`;
             html += `</div>`;
         });
-        html += `<div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
+        html += `<div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--accent); font-weight: 600;">`;
         html += `合計: ${totalHours}h (${months.length}ヶ月)`;
         html += `</div>`;
     } else {
@@ -402,7 +402,7 @@ export function updateEditMonthPreview() {
             html += `</div>`;
         });
 
-        html += `<div id="editManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db; font-weight: 600;">`;
+        html += `<div id="editManualTotal" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--accent); font-weight: 600;">`;
         const isMatch = Math.abs(calculatedTotal - totalHours) < 0.01;
         const color = isMatch ? '#27ae60' : '#e74c3c';
         html += `合計: <span style="color: ${color};">${calculatedTotal.toFixed(1)}h</span> / 目標: ${totalHours}h`;

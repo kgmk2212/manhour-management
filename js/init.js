@@ -107,6 +107,7 @@ window.prevTab = UI.prevTab;
 window.initTabSwipe = UI.initTabSwipe;
 window.initSmartSticky = UI.initSmartSticky;
 window.initTabIndicator = UI.initTabIndicator;
+window.initSidebar = UI.initSidebar;
 window.createSegmentButtons = UI.createSegmentButtons;
 window.updateSegmentButtonSelection = UI.updateSegmentButtonSelection;
 window.setEstimateViewType = UI.setEstimateViewType;
@@ -246,6 +247,7 @@ window.renderMemberCalendar = Actual.renderMemberCalendar;
 window.setupCalendarSwipe = Actual.setupCalendarSwipe;
 window.renderActualMatrix = Actual.renderActualMatrix;
 window.renderActualListView = Actual.renderActualListView;
+window.renderCalendarGrid = Actual.renderCalendarGrid;
 window.showWorkDetail = Actual.showWorkDetail;
 window.closeWorkModal = Actual.closeWorkModal;
 window.deleteActual = Actual.deleteActual;
@@ -563,6 +565,11 @@ document.addEventListener('DOMContentLoaded', function () {
         UI.initSmartSticky();
     }
 
+    // スマートStickyフィルタバーを初期化
+    if (typeof UI.initSmartStickyFilters === 'function') {
+        UI.initSmartStickyFilters();
+    }
+
     // モーダルのクリックハンドラーをセットアップ
     Modal.setupModalHandlers();
 
@@ -572,6 +579,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // グローバルイベントハンドラの初期化（index.htmlから移行）
     initEventHandlers();
+
+    // サイドバーを初期化（折りたたみ、モバイルメニュー）
+    UI.initSidebar();
+
+    // カラースウォッチのクリックイベントを設定
+    document.querySelectorAll('.color-swatch[data-theme]').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            const themeColor = swatch.dataset.theme;
+            const themeSelect = document.getElementById('themeColor');
+            if (themeSelect) {
+                themeSelect.value = themeColor;
+            }
+            Theme.applyTheme();
+        });
+    });
 
     // タブインジケーター（スライドアニメーション）を初期化
     // ※showTabの前に初期化して、showTab内でupdateTabIndicatorが呼ばれるようにする

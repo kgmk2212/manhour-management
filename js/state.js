@@ -242,10 +242,10 @@ export let workMonthSelectionMode = false; // 作業月選択モード
 export const selectedEstimateIds = new Set(); // 選択された見積ID
 
 // テーマカラー関連
-export let currentThemeColor = 'deep-blue';
-export let currentThemePattern = 'gradient';
-export let currentTabColor = 'deep-blue';
-export let currentBackgroundColor = 'default';
+export let currentThemeColor = 'forest';
+export let currentThemePattern = 'none';
+export let currentTabColor = 'same';
+export let currentBackgroundColor = 'same';
 
 // レイアウト設定（セグメント表示に固定）
 export let estimateLayout = 'segmented';

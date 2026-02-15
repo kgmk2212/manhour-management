@@ -450,7 +450,7 @@ export function determineProgressStatus(estimatedHours, actualHours, remainingHo
         if (eac <= estimatedHours) {
             status = 'ontrack';
             statusLabel = '順調';
-            statusColor = '#3498db';
+            statusColor = '#1D6FA5';
         } else if (eac <= estimatedHours * warningThreshold) {
             status = 'warning';
             statusLabel = '注意';

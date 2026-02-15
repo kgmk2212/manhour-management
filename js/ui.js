@@ -162,23 +162,31 @@ export function showTab(tabName, options = {}) {
             }
         });
     });
+    // サイドバー: nav-itemのactiveも削除
+    document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
     // 対象のタブボタンを見つけてactiveクラスを追加
-    const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    const targetTabBtn = document.querySelector(`.tab[data-tab="${tabName}"], .nav-item[data-tab="${tabName}"]`);
     if (targetTabBtn) {
         targetTabBtn.classList.add('active');
     }
 
-    // タブインジケーターを更新（スワイプ完了時はアニメーションなし）
-    updateTabIndicator(tabName, !skipAnimation);
+    // タブインジケーターを更新（サイドバーモードではスキップ）
+    if (tabIndicator) {
+        updateTabIndicator(tabName, !skipAnimation);
+    }
 
     // タブボタンを画面内にスクロール（モバイルのみ、スタイル適用後に実行）
-    if (targetTabBtn && window.innerWidth <= 768) {
+    if (targetTabBtn && targetTabBtn.classList.contains('tab') && window.innerWidth <= 768) {
         requestAnimationFrame(() => {
             scrollTabButtonIntoView(targetTabBtn);
         });
     }
+
+    // モバイルヘッダーのタイトルを更新
+    updateMobileHeaderTitle(tabName);
 
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
@@ -257,9 +265,12 @@ export function showTab(tabName, options = {}) {
     const savedScrollY = window.tabScrollPositions[tabName] || 0;
     window.scrollTo(0, savedScrollY);
 
-    // タブバーを表示状態に戻す（隠れていたら）
+    // タブバーを表示状態に戻す（隠れていたら）- サイドバーモードでは不要
     const tabs = document.querySelector('.tabs');
     if (tabs) tabs.classList.remove('is-hidden');
+
+    // モバイルでサイドバーが開いていたら閉じる
+    closeMobileSidebar();
 
     // タブ内フィルタドロワーを更新
     if (typeof window.onTabFilterChange === 'function') {
@@ -1646,13 +1657,17 @@ export function setActualViewType(type) {
     if (viewTypeEl) viewTypeEl.value = type;
 
     const btnMatrix = document.getElementById('btnActualMatrix');
+    const btnGrid = document.getElementById('btnActualGrid');
     const btnList = document.getElementById('btnActualList');
 
     if (btnMatrix) btnMatrix.classList.remove('active');
+    if (btnGrid) btnGrid.classList.remove('active');
     if (btnList) btnList.classList.remove('active');
 
     if (type === 'matrix' && btnMatrix) {
         btnMatrix.classList.add('active');
+    } else if (type === 'grid' && btnGrid) {
+        btnGrid.classList.add('active');
     } else if (type === 'list' && btnList) {
         btnList.classList.add('active');
     }
@@ -1676,20 +1691,7 @@ export function setReportViewType(type) {
 // ============================================
 
 export function getThemeColor() {
-    const themeColors = {
-        'purple': '#667eea',
-        'deep-blue': '#1e3c72',
-        'teal': '#0f766e',
-        'cyan': '#0891b2',
-        'ocean': '#0c4a6e',
-        'sky': '#0369a1',
-        'indigo': '#4338ca',
-        'navy': '#1e40af',
-        'slate': '#334155',
-        'green': '#047857',
-        'emerald': '#059669'
-    };
-    return themeColors[window.currentThemeColor] || '#1e3c72';
+    return 'var(--accent)';
 }
 
 // ============================================
@@ -2033,20 +2035,7 @@ export function updateSegmentedButtons() {
     }
 
     // 全てのセグメントボタンにテーマカラーを適用
-    const gradients = {
-        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'deep-blue': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'teal': 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-        'cyan': 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        'ocean': 'linear-gradient(135deg, #0c4a6e 0%, #075985 100%)',
-        'sky': 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
-        'indigo': 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-        'navy': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        'slate': 'linear-gradient(135deg, #334155 0%, #475569 100%)',
-        'green': 'linear-gradient(135deg, #047857 0%, #059669 100%)',
-        'emerald': 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-    };
-    const gradient = gradients[window.currentThemeColor] || gradients['deep-blue'];
+    const gradient = 'var(--accent)';
 
     // 全てのセグメントボタンにテーマカラーを適用
     // 通常のセグメントボタンと、フローティングフィルタボタンの両方を対象にする
@@ -3952,6 +3941,223 @@ export function showMemberOrderHelp() {
     } else {
         alert('担当者表示順の設定方法:\n\n1. 担当者の名前をカンマ(,)区切りで入力します\n2. 指定した順番で表示されます\n3. 指定しなかった人は後ろに名前順で表示されます');
     }
+}
+
+// ============================================
+// サイドバー制御
+// ============================================
+
+const TAB_TITLES = {
+    quick: 'クイック入力',
+    report: 'レポート',
+    estimate: '見積一覧',
+    actual: '実績一覧',
+    schedule: 'スケジュール',
+    settings: '設定'
+};
+
+/**
+ * モバイルヘッダーのタイトルを更新
+ */
+function updateMobileHeaderTitle(tabName) {
+    const titleEl = document.getElementById('mobileHeaderTitle');
+    if (titleEl && TAB_TITLES[tabName]) {
+        titleEl.textContent = TAB_TITLES[tabName];
+    }
+}
+
+/**
+ * モバイルサイドバーを閉じる
+ */
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+/**
+ * サイドバーを初期化（折りたたみ、モバイルメニュー）
+ */
+export function initSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const collapseBtn = document.getElementById('collapseBtn');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!sidebar) return;
+
+    // 折りたたみ状態を復元
+    try {
+        const collapsed = localStorage.getItem('manhour_sidebarCollapsed');
+        if (collapsed === 'true' && window.innerWidth > 768) {
+            sidebar.classList.add('collapsed');
+        }
+    } catch (e) { /* ignore */ }
+
+    // 折りたたみボタン
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            try {
+                localStorage.setItem('manhour_sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            } catch (e) { /* ignore */ }
+        });
+    }
+
+    // ハンバーガーメニュー（モバイル）
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            sidebar.classList.add('mobile-open');
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+
+    // オーバーレイクリックでサイドバーを閉じる
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    // 画面リサイズ時にモバイルサイドバーを閉じる
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileSidebar();
+        }
+    });
+
+    // スケジュールナビアイテムの表示制御
+    const scheduleNavItem = document.getElementById('scheduleNavItem');
+    if (scheduleNavItem) {
+        // devFeaturesEnabled の状態に応じて表示/非表示
+        const devEnabled = document.getElementById('devFeaturesEnabled');
+        if (devEnabled && devEnabled.checked) {
+            scheduleNavItem.style.display = '';
+        }
+    }
+}
+
+// ============================================
+// スマートスティッキー フィルタバー（position: fixed 方式）
+// フィルタバーが画面外 ＋ 上スクロール → 画面上部にfixedバーを表示
+// ============================================
+
+export function initSmartStickyFilters() {
+    const mc = document.getElementById('mainContent');
+    if (!mc) return;
+
+    const THRESHOLD = 30;
+    let lastY = mc.scrollTop;
+    let upPx = 0;
+    let fixedBar = null;
+    let sourceBar = null;
+
+    function findBar() {
+        const tab = document.querySelector('.tab-content.active');
+        if (!tab) return null;
+        const bars = tab.querySelectorAll('.filter-bar-sticky, .schedule-filter-bar');
+        for (const b of bars) {
+            if (b.offsetParent !== null || b.offsetHeight > 0) return b;
+        }
+        return bars[0] || null;
+    }
+
+    function showFixedBar(bar) {
+        if (fixedBar && sourceBar === bar) {
+            fixedBar.style.display = '';
+            return;
+        }
+        hideFixedBar();
+
+        const mcRect = mc.getBoundingClientRect();
+        fixedBar = document.createElement('div');
+        fixedBar.innerHTML = bar.innerHTML;
+        fixedBar.style.cssText =
+            'position:fixed;top:0;right:0;z-index:9999;' +
+            'background:var(--surface,#fff);' +
+            'padding:10px 40px;' +
+            'border-bottom:1px solid var(--border,#e7e5e0);' +
+            'box-shadow:0 2px 8px rgba(0,0,0,0.08);' +
+            'display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
+            'left:' + mcRect.left + 'px;';
+        document.body.appendChild(fixedBar);
+        sourceBar = bar;
+
+        // select値を同期
+        const origSelects = bar.querySelectorAll('select');
+        const cloneSelects = fixedBar.querySelectorAll('select');
+        origSelects.forEach((s, i) => {
+            if (cloneSelects[i]) cloneSelects[i].value = s.value;
+        });
+
+        // クローン操作を元バーに転送
+        fixedBar.addEventListener('change', (e) => {
+            const sel = e.target;
+            if (sel.tagName === 'SELECT') {
+                const idx = Array.from(cloneSelects).indexOf(sel);
+                if (idx >= 0 && origSelects[idx]) {
+                    origSelects[idx].value = sel.value;
+                    origSelects[idx].dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        });
+        fixedBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (btn) {
+                const allBtns = Array.from(fixedBar.querySelectorAll('button'));
+                const idx = allBtns.indexOf(btn);
+                const origBtns = bar.querySelectorAll('button');
+                if (idx >= 0 && origBtns[idx]) origBtns[idx].click();
+            }
+        });
+    }
+
+    function hideFixedBar() {
+        if (fixedBar) {
+            fixedBar.remove();
+            fixedBar = null;
+            sourceBar = null;
+        }
+    }
+
+    mc.addEventListener('scroll', () => {
+        const y = mc.scrollTop;
+        const dy = y - lastY;
+        lastY = y;
+        if (dy === 0) return;
+
+        const bar = findBar();
+        if (!bar) { hideFixedBar(); return; }
+
+        // フィルタバーがビューポート外か判定
+        const barRect = bar.getBoundingClientRect();
+        const mcRect = mc.getBoundingClientRect();
+        const barAbove = barRect.bottom < mcRect.top;
+
+        if (!barAbove) {
+            upPx = 0;
+            hideFixedBar();
+            return;
+        }
+
+        if (dy > 0) {
+            upPx = 0;
+            hideFixedBar();
+        } else {
+            upPx += Math.abs(dy);
+            if (upPx >= THRESHOLD) {
+                showFixedBar(bar);
+            }
+        }
+    }, { passive: true });
+
+    // タブ切り替え時にリセット
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            hideFixedBar();
+            upPx = 0;
+            lastY = mc.scrollTop;
+        });
+    });
 }
 
 console.log('✅ モジュール ui.js loaded');
