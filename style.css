@@ -278,6 +278,10 @@ img {
     display: none;
 }
 
+.sidebar.collapsed .sidebar-collapse-btn svg {
+    transform: scaleX(-1);
+}
+
 .sidebar.collapsed .sidebar-footer > div {
     flex-direction: column;
 }
@@ -2926,6 +2930,18 @@ table tr[style*="1565c0"] th:first-child {
     max-height: 75vh;
 }
 
+.modal-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.modal-footer .btn-danger {
+    margin-right: auto;
+}
+
 /* Modal theme colors - Ink & Amber palette */
 .modal-theme-forest {
     background: #2D5A27;
@@ -3399,6 +3415,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 16px 20px;
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .ed-delete-link {
@@ -3909,6 +3926,8 @@ html[data-inline-filter="hidden"] .inline-filter {
         transform: translateX(-100%);
         position: fixed;
         z-index: 200;
+        height: 100dvh;
+        max-height: -webkit-fill-available;
     }
 
     .sidebar.mobile-open {
@@ -3951,6 +3970,16 @@ html[data-inline-filter="hidden"] .inline-filter {
     /* Tighter padding */
     .tab-content {
         padding: 16px;
+    }
+
+    /* Settings: make setting-row wrap on mobile */
+    .setting-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .color-swatches {
+        flex-wrap: wrap;
     }
 
     /* Stats grid */
@@ -4237,6 +4266,26 @@ html[data-inline-filter="hidden"] .inline-filter {
         width: 100%;
     }
 
+    /* Schedule gantt: narrower fixed columns on mobile */
+    .gantt-label-col,
+    .gantt-row-label {
+        width: 80px;
+        min-width: 80px;
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .gantt-row-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gantt-day-header,
+    .gantt-day-cell {
+        min-width: 28px;
+    }
+
     /* Custom dropdown mobile */
     .custom-dropdown {
         max-height: 250px;
@@ -4348,11 +4397,6 @@ html[data-inline-filter="hidden"] .inline-filter {
     table th,
     table td {
         padding: 3px 4px;
-    }
-
-    .stat-grid,
-    .stats-grid {
-        grid-template-columns: 1fr;
     }
 
     table td[rowspan] {
@@ -4506,6 +4550,22 @@ html[data-inline-filter="hidden"] .inline-filter {
 
 .calendar-cell.today {
     background: var(--accent-light);
+}
+
+.calendar-cell.holiday {
+    background: #FFF5F5;
+}
+
+.calendar-cell.holiday .calendar-date {
+    color: var(--danger);
+}
+
+.calendar-cell.company-holiday {
+    background: linear-gradient(135deg, #fffdf0, #fff9c4);
+}
+
+.calendar-cell.company-holiday .calendar-date {
+    color: var(--warning);
 }
 
 .calendar-cell.other-month {

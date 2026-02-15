@@ -1775,6 +1775,7 @@ export function renderCalendarGrid() {
         const isWeekend = dow === 0 || dow === 6;
         const isToday = dateStr === todayStr;
         const holiday = getHoliday(dateStr);
+        const companyHolidayName = typeof window.getCompanyHolidayName === 'function' ? window.getCompanyHolidayName(dateStr) : null;
 
         let cellClass = 'calendar-cell';
         if (isWeekend) cellClass += ' weekend';
@@ -1782,6 +1783,7 @@ export function renderCalendarGrid() {
         if (dow === 0) cellClass += ' sun';
         if (dow === 6) cellClass += ' sat';
         if (holiday) cellClass += ' holiday';
+        if (companyHolidayName) cellClass += ' company-holiday';
 
         const data = dailyData[dateStr];
 
@@ -1790,6 +1792,9 @@ export function renderCalendarGrid() {
 
         if (holiday) {
             html += `<div class="calendar-entry" style="color:var(--danger);font-size:10px;">${holiday}</div>`;
+        }
+        if (companyHolidayName && !holiday) {
+            html += `<div class="calendar-entry" style="color:var(--warning);font-size:10px;">${companyHolidayName}</div>`;
         }
 
         if (data) {
