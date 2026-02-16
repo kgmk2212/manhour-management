@@ -5,7 +5,7 @@
 import {
     schedules, setSchedules, nextScheduleId, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
-    taskColorMap, setTaskColorMap, currentThemeColor,
+    taskColorMap, setTaskColorMap, currentThemeColor, scheduleBarColorMode,
     estimates, actuals, vacations, companyHolidays, remainingEstimates
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
@@ -489,11 +489,14 @@ export function isDelayed(schedule) {
 // ============================================
 
 /**
- * 現在のテーマに対応するカラーパレットを取得
+ * 現在の設定に対応するカラーパレットを取得
  * @returns {string[]} - 色コード配列
  */
 export function getCurrentTaskPalette() {
-    return THEME_TASK_COLORS[currentThemeColor] || TASK_COLORS;
+    if (scheduleBarColorMode === 'theme') {
+        return THEME_TASK_COLORS[currentThemeColor] || TASK_COLORS;
+    }
+    return TASK_COLORS;
 }
 
 /**

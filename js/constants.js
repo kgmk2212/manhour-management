@@ -334,39 +334,64 @@ export const CAPACITY_DISPLAY_MODE = {
     GAUGE: 'gauge'              // 案4: ゲージ表示
 };
 
-// タスク用カラーパレット（デフォルト = forest テーマ）
+// タスク用カラーパレット（オリジナル固定色）
 export const TASK_COLORS = [
-    '#2D5A27', // 1  Forest（深緑）
-    '#B44020', // 2  Terracotta（テラコッタ）
-    '#1A5E8B', // 3  Lake Blue（湖青）
-    '#C08418', // 4  Honey（蜂蜜色）
-    '#6A4B8C', // 5  Heather（ヘザー）
-    '#0A7E6C', // 6  Jade（翡翠）
-    '#C45B0C', // 7  Burnt Orange（焦橙）
-    '#A03060', // 8  Raspberry（木苺）
-    '#3A5E9E', // 9  Wedgwood（ウェッジウッド）
-    '#6B8E23', // 10 Olive（オリーブ）
-    '#0C7890', // 11 Deep Aqua（深碧）
-    '#7E2E6A', // 12 Plum（プラム）
-    '#8B6B15', // 13 Antique Gold（古金）
-    '#8A2040', // 14 Dark Cherry（暗桜）
-    '#2E6B50', // 15 Malachite（孔雀石）
+    '#1E54CC', // 1  Blue（青）
+    '#C42020', // 2  Red（赤）
+    '#128F40', // 3  Green（緑）
+    '#BF6804', // 4  Amber（琥珀）
+    '#6A30D0', // 5  Purple（紫）
+    '#0A8276', // 6  Teal（青緑）
+    '#CF4C08', // 7  Orange（橙）
+    '#C1206A', // 8  Pink（桃）
+    '#433BC8', // 9  Indigo（藍）
+    '#578E0A', // 10 Lime（黄緑）
+    '#067E9C', // 11 Cyan（水色）
+    '#7E2AD0', // 12 Violet（菫）
+    '#B07A03', // 13 Yellow（山吹）
+    '#A51350', // 14 Rose（ローズ）
+    '#025A8C', // 15 Sky Blue（空色）
     '#9C4707', // 16 Copper（銅）
-    '#0B657D', // 17 Spruce（針葉樹）
+    '#04855C', // 17 Emerald（翠）
     '#AA380A', // 18 Vermillion（朱）
-    '#5B4F8C', // 19 Wisteria（藤）
-    '#456B2F', // 20 Moss（苔）
-    '#C1206A', // 21 Peony（牡丹）
-    '#1842A0', // 22 Midnight（夜空）
-    '#8B5505', // 23 Bronze（青銅）
-    '#116E34', // 24 Emerald（翠）
+    '#5C22BF', // 19 Deep Purple（深紫）
+    '#0B657D', // 20 Dark Cyan（深水色）
+    '#8B5505', // 21 Gold（金茶）
+    '#8A0F32', // 22 Crimson（深紅）
+    '#1842BE', // 23 Royal Blue（瑠璃）
+    '#116E34', // 24 Forest（深緑）
 ];
 
 // テーマ別カラーパレット
 // 各テーマのアクセントカラーと調和する24色セット
 export const THEME_TASK_COLORS = {
     // Forest: 森林・大地の自然色、アーシーで落ち着いた配色
-    'forest': TASK_COLORS,
+    'forest': [
+        '#2D5A27', // 1  Forest（深緑）
+        '#B44020', // 2  Terracotta（テラコッタ）
+        '#1A5E8B', // 3  Lake Blue（湖青）
+        '#C08418', // 4  Honey（蜂蜜色）
+        '#6A4B8C', // 5  Heather（ヘザー）
+        '#0A7E6C', // 6  Jade（翡翠）
+        '#C45B0C', // 7  Burnt Orange（焦橙）
+        '#A03060', // 8  Raspberry（木苺）
+        '#3A5E9E', // 9  Wedgwood（ウェッジウッド）
+        '#6B8E23', // 10 Olive（オリーブ）
+        '#0C7890', // 11 Deep Aqua（深碧）
+        '#7E2E6A', // 12 Plum（プラム）
+        '#8B6B15', // 13 Antique Gold（古金）
+        '#8A2040', // 14 Dark Cherry（暗桜）
+        '#2E6B50', // 15 Malachite（孔雀石）
+        '#9C4707', // 16 Copper（銅）
+        '#0B657D', // 17 Spruce（針葉樹）
+        '#AA380A', // 18 Vermillion（朱）
+        '#5B4F8C', // 19 Wisteria（藤）
+        '#456B2F', // 20 Moss（苔）
+        '#C1206A', // 21 Peony（牡丹）
+        '#1842A0', // 22 Midnight（夜空）
+        '#8B5505', // 23 Bronze（青銅）
+        '#116E34', // 24 Emerald（翠）
+    ],
 
     // Ocean: 海と空の涼やかな配色、コーラルやサンドのアクセント
     'ocean': [

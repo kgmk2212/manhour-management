@@ -14,7 +14,7 @@ import {
     setFilterBarMode,
 
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
-    currentThemeColor, setTaskColorMap,
+    currentThemeColor, setTaskColorMap, scheduleBarColorMode, setScheduleBarColorMode,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
     isReportTabFirstView, setIsReportTabFirstView,
     mobileTabDesign, setMobileTabDesign
@@ -176,16 +176,10 @@ export function applyTheme() {
         setCurrentThemeColor('forest');
     }
 
-    // テーマ変更時: タスクカラーマップをリセット（新パレットで再割り当て）
-    if (prevTheme && prevTheme !== currentThemeColor) {
+    // テーマ変更時（テーマカラーモードの場合）: タスクカラーマップをリセット
+    if (prevTheme && prevTheme !== currentThemeColor && scheduleBarColorMode === 'theme') {
         setTaskColorMap({});
-        // スケジュールタブが表示中なら再描画
-        const scheduleTab = document.getElementById('schedule');
-        if (scheduleTab && scheduleTab.classList.contains('active')) {
-            if (typeof window.renderScheduleView === 'function') {
-                setTimeout(() => window.renderScheduleView(), 100);
-            }
-        }
+        rerenderScheduleIfVisible();
     }
 
     // パターンとタブカラーは新デザインでは未使用だが互換性のため維持
@@ -383,6 +377,27 @@ export function saveMatrixEstActFormat() {
 }
 
 
+
+function rerenderScheduleIfVisible() {
+    const scheduleTab = document.getElementById('schedule');
+    if (scheduleTab && scheduleTab.classList.contains('active')) {
+        if (typeof window.renderScheduleView === 'function') {
+            setTimeout(() => window.renderScheduleView(), 100);
+        }
+    }
+}
+
+export function changeScheduleBarColorMode() {
+    const selected = document.querySelector('input[name="scheduleBarColorMode"]:checked');
+    if (selected) {
+        setScheduleBarColorMode(selected.value);
+        setTaskColorMap({});
+        if (typeof window.saveData === 'function') {
+            window.saveData(true);
+        }
+        rerenderScheduleIfVisible();
+    }
+}
 
 export function changeFilterBarMode() {
     const selected = document.querySelector('input[name="filterBarMode"]:checked');

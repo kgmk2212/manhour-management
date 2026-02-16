@@ -16,6 +16,7 @@ import {
     progressBarStyle, setProgressBarStyle,
     matrixEstActFormat, setMatrixEstActFormat,
     filterBarMode, setFilterBarMode,
+    scheduleBarColorMode, setScheduleBarColorMode,
 
     debugModeEnabled, setDebugModeEnabled,
     devFeaturesEnabled, setDevFeaturesEnabled,
@@ -87,6 +88,7 @@ export function saveData(skipAutoBackup = false) {
             progressBarStyle: progressBarStyle,
             matrixEstActFormat: matrixEstActFormat,
             filterBarMode: filterBarMode,
+            scheduleBarColorMode: scheduleBarColorMode,
 
             defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'matrix',
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
@@ -239,6 +241,10 @@ export function loadData() {
             if (settings.filterBarMode) {
                 setFilterBarMode(settings.filterBarMode);
             }
+            // スケジュールバー色モードの設定を読み込み
+            if (settings.scheduleBarColorMode) {
+                setScheduleBarColorMode(settings.scheduleBarColorMode);
+            }
             // 開発中の機能表示設定を読み込み
             if (settings.devFeaturesEnabled !== undefined) {
                 setDevFeaturesEnabled(settings.devFeaturesEnabled);
@@ -296,6 +302,7 @@ export function autoBackup() {
         progressBarStyle: progressBarStyle,
         matrixEstActFormat: matrixEstActFormat,
         filterBarMode: filterBarMode,
+        scheduleBarColorMode: scheduleBarColorMode,
 
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
@@ -524,6 +531,13 @@ export function handleFileImport(event) {
                             const radioButton = document.querySelector(`input[name="filterBarMode"][value="${data.settings.filterBarMode}"]`);
                             if (radioButton) radioButton.checked = true;
                             if (typeof window.applyFilterBarMode === 'function') window.applyFilterBarMode();
+                        }
+
+                        // スケジュールバー色モードを復元
+                        if (data.settings.scheduleBarColorMode) {
+                            setScheduleBarColorMode(data.settings.scheduleBarColorMode);
+                            const radio = document.querySelector(`input[name="scheduleBarColorMode"][value="${data.settings.scheduleBarColorMode}"]`);
+                            if (radio) radio.checked = true;
                         }
 
                         // デバッグモード設定を復元

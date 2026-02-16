@@ -6,7 +6,7 @@ import {
     estimates, actuals,
     showMonthColorsSetting, reportMatrixBgColorMode,
     showProgressBarsSetting, showProgressPercentageSetting,
-    progressBarStyle, matrixEstActFormat, filterBarMode,
+    progressBarStyle, matrixEstActFormat, filterBarMode, scheduleBarColorMode,
     memberOrder, setMemberOrder, debugModeEnabled,
     estimateFilterState, reportFilterState,
     setEstimateFilterState, setReportFilterState
@@ -3842,6 +3842,12 @@ export function syncSettingsToUI() {
     if (filterBarMode) {
         const radioButton = document.querySelector(`input[name="filterBarMode"][value="${filterBarMode}"]`);
         if (radioButton) radioButton.checked = true;
+    }
+
+    // スケジュールバー色モード（ラジオボタン）
+    if (scheduleBarColorMode) {
+        const radio = document.querySelector(`input[name="scheduleBarColorMode"][value="${scheduleBarColorMode}"]`);
+        if (radio) radio.checked = true;
     }
 
     // 日付/月表示形式（ラジオボタン）

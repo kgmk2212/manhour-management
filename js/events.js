@@ -93,6 +93,7 @@ import {
     saveProgressBarStyle,
     saveMatrixEstActFormat,
     changeFilterBarMode,
+    changeScheduleBarColorMode,
     loadMobileTabDesign,
     changeMobileTabDesign,
     saveDefaultViewTypeSetting,
@@ -565,6 +566,10 @@ export function initEventHandlers() {
 
     document.querySelectorAll('input[name="filterBarMode"]').forEach(radio => {
         radio.addEventListener('change', changeFilterBarMode);
+    });
+
+    document.querySelectorAll('input[name="scheduleBarColorMode"]').forEach(radio => {
+        radio.addEventListener('change', changeScheduleBarColorMode);
     });
 
     ['defaultEstimateViewType', 'defaultReportViewType'].forEach(id => {

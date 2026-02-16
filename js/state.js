@@ -234,6 +234,7 @@ export let progressBarStyle = 'inline'; // 進捗バーのスタイル: inline, 
 export let matrixEstActFormat = 'twoRows'; // 見積と実績の表示形式: twoRows, slash
 
 export let filterBarMode = 'smartSticky'; // フィルタバー表示モード: smartSticky, hover, off
+export let scheduleBarColorMode = 'original'; // スケジュールバー色: original, theme
 
 export let debugModeEnabled = false; // デバッグモード設定
 export let devFeaturesEnabled = false; // 開発中の機能を表示するか
@@ -370,6 +371,11 @@ export function setMatrixEstActFormat(value) {
 export function setFilterBarMode(value) {
     filterBarMode = value;
     window.filterBarMode = value;
+}
+
+export function setScheduleBarColorMode(value) {
+    scheduleBarColorMode = value;
+    window.scheduleBarColorMode = value;
 }
 
 export function setDebugModeEnabled(value) {

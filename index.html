@@ -1373,6 +1373,37 @@
                 <select id="tabFilterLayout" style="display:none;"><option value="two-lines">two-lines</option></select>
                 <select id="mobileTabDesign" style="display:none;"><option value="capsule">capsule</option></select>
 
+                <!-- スケジュールバー色設定 -->
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        スケジュールバーの色
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">
+                        スケジュール（ガントチャート）のバーの配色を設定できます。
+                    </p>
+                    <div class="form-group">
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="scheduleBarColorMode" value="original"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;" checked>
+                                <span style="flex: 1;">
+                                    <strong>固定カラー</strong><br>
+                                    <small style="color: var(--text-muted);">テーマに関係なく共通のカラーパレットを使用します</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="radio" name="scheduleBarColorMode" value="theme"
+                                    style="margin-top: 3px; margin-right: 8px; flex-shrink: 0;">
+                                <span style="flex: 1;">
+                                    <strong>テーマカラー</strong><br>
+                                    <small style="color: var(--text-muted);">選択中のテーマに合わせた配色を使用します</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- フィルタバー設定 -->
                 <div class="setting-section">
                     <div class="setting-section-title">
@@ -2487,7 +2518,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260216-17"></script>
+    <script type="module" src="js/init.js?v=20260216-18"></script>
 
     <!-- フィルタバー（スマートスティッキー / ホバーモード） -->
     <script>
