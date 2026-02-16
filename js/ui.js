@@ -96,8 +96,43 @@ let isTabSwitching = false;
 // window オブジェクトで共有（tab-filter.js からも設定される）
 window.isTabInteracting = false;
 
+// アニメーションタイマーID（前回のアニメーションをキャンセルするため）
+let _tabAnimTimerId = null;
+let _tabSwitchTimerId = null;
+
+/**
+ * 前回のタブアニメーション状態を即座にクリーンアップ
+ */
+function cleanupTabAnimation() {
+    // 前回のタイマーをキャンセル
+    if (_tabAnimTimerId) {
+        clearTimeout(_tabAnimTimerId);
+        _tabAnimTimerId = null;
+    }
+    if (_tabSwitchTimerId) {
+        clearTimeout(_tabSwitchTimerId);
+        _tabSwitchTimerId = null;
+    }
+    // 退出中のタブからactiveを先に除去（複数active防止）
+    document.querySelectorAll('.tab-content.anim-leaving').forEach(c => {
+        c.classList.remove('active');
+    });
+    // 全タブからアニメーション関連クラスを除去
+    document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.remove(
+            'anim-leaving', 'anim-entering',
+            'anim-slide-out-left', 'anim-slide-out-right',
+            'anim-slide-in-left', 'anim-slide-in-right'
+        );
+    });
+}
+
 export function showTab(tabName, options = {}) {
     const { skipAnimation = false } = options;
+
+    // 前回のアニメーションが残っていたら即座にクリーンアップ
+    cleanupTabAnimation();
+
     isTabSwitching = true;
 
     // 現在アクティブなタブのスクロール位置を保存
@@ -119,6 +154,12 @@ export function showTab(tabName, options = {}) {
         }
     }
 
+    // 同じタブが再度選択された場合は早期リターン
+    if (currentTabId === tabName) {
+        isTabSwitching = false;
+        return;
+    }
+
     // アニメーション方向の決定（skipAnimation時はスキップ）
     let animationClassOut = '';
     let animationClassIn = '';
@@ -129,18 +170,14 @@ export function showTab(tabName, options = {}) {
 
         if (currentIndex !== -1 && nextIndex !== -1 && window.innerWidth <= 768) {
             if (nextIndex > currentIndex) {
-                // 次へ（右へ進む）：現在は左へ消え、次は右から来る
                 animationClassOut = 'anim-slide-out-left';
                 animationClassIn = 'anim-slide-in-right';
             } else {
-                // 前へ（左へ戻る）：現在は右へ消え、次は左から来る
                 animationClassOut = 'anim-slide-out-right';
                 animationClassIn = 'anim-slide-in-left';
             }
         }
     }
-
-
 
     // 早期適用の属性を削除（一度動作したら不要）
     document.documentElement.removeAttribute('data-early-tab');
@@ -188,38 +225,29 @@ export function showTab(tabName, options = {}) {
     const savedScrollY = (window.tabScrollPositions && window.tabScrollPositions[tabName]) || 0;
     window.scrollTo(0, savedScrollY);
 
-    // 退出中のタブ以外のactiveを除去
+    // 全タブからactiveを除去（アニメーション対象含む）
     document.querySelectorAll('.tab-content').forEach(c => {
-        if (c !== currentActiveTab || !animationClassOut) {
-            c.classList.remove('active');
-        }
+        c.classList.remove('active');
     });
-
-    // 退出側アニメーション（active維持のまま）
-    if (animationClassOut && currentActiveTab && currentActiveTab.id !== tabName) {
-        currentActiveTab.classList.add('anim-leaving', animationClassOut);
-    }
 
     // タブコンテンツを表示
     const tabContent = document.getElementById(tabName);
     if (tabContent) {
         tabContent.classList.add('active');
 
-        // 進入アニメーション
-        if (animationClassIn) {
+        // モバイルアニメーション
+        if (animationClassOut && animationClassIn && currentActiveTab && currentActiveTab.id !== tabName) {
+            // 退出タブ: active復元してアニメーション
+            currentActiveTab.classList.add('active', 'anim-leaving', animationClassOut);
+            // 進入タブ: アニメーション
             tabContent.classList.add('anim-entering', animationClassIn);
-        }
 
-        // アニメーション完了後のクリーンアップ
-        if (animationClassOut || animationClassIn) {
-            setTimeout(() => {
-                if (currentActiveTab) {
-                    currentActiveTab.classList.remove('active', 'anim-leaving', animationClassOut);
-                }
-                if (tabContent) {
-                    tabContent.classList.remove('anim-entering', animationClassIn);
-                }
-            }, 300);
+            // アニメーション完了後のクリーンアップ
+            _tabAnimTimerId = setTimeout(() => {
+                _tabAnimTimerId = null;
+                currentActiveTab.classList.remove('active', 'anim-leaving', animationClassOut);
+                tabContent.classList.remove('anim-entering', animationClassIn);
+            }, 260);
         }
     }
 
@@ -285,12 +313,9 @@ export function showTab(tabName, options = {}) {
     }
 
     // 少し待ってからフラグを解除（スクロールイベントの発生を待つ）
-    setTimeout(() => {
+    _tabSwitchTimerId = setTimeout(() => {
+        _tabSwitchTimerId = null;
         isTabSwitching = false;
-        // スクロール追跡用の変数もリセット（SmartSticky側で参照できないため、ここで何かする必要があるか？
-        // initSmartSticky内のlastScrollYはずれている可能性がある。
-        // しかし、initSmartStickyはクロージャなので外からアクセスできない。
-        // なので、initSmartSticky内で isTabSwitching を監視させる。
     }, 300);
 }
 

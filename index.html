@@ -2742,12 +2742,17 @@
                         if (fixedBar || hoverBar) {
                             hideFixedBar();
                             hideHoverBar();
+                            // スクロールによる即時再表示を防止
+                            upPx = 0;
+                            ignoreScrollUntil = Date.now() + 500;
                             return;
                         }
                         // 表示する
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
                             showFixedBar(bar);
+                            // タッチ操作による微小スクロールで即閉じされるのを防止
+                            ignoreScrollUntil = Date.now() + 500;
                         }
                     });
                 }

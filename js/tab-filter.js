@@ -201,16 +201,18 @@ export function toggleTabFilterDrawer() {
 }
 
 // 現在のタブに応じたフィルタ内容を更新
+// tabId: 対象タブのID（省略時はDOMから取得）
 // scrollToActive: 初期表示時にアクティブボタンをスクロールするかどうか（デフォルト: true）
-export function updateTabFilterContent(scrollToActive = true) {
+export function updateTabFilterContent(scrollToActive = true, tabId = null) {
     const content = document.getElementById('tabFilterContent');
     if (!content) return;
 
-    // 現在のアクティブタブを取得
-    const activeTab = document.querySelector('.tab-content.active');
-    if (!activeTab) return;
-
-    const tabId = activeTab.id;
+    // tabIdが指定されていない場合はDOMから取得（後方互換性）
+    if (!tabId) {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (!activeTab) return;
+        tabId = activeTab.id;
+    }
 
     // タブに応じてフィルタ内容を生成
     if (tabId === 'report') {
@@ -621,7 +623,6 @@ function hideFilterToggle() {
 // タブ切り替え時のフィルタ更新
 export function onTabChange(tabId) {
     const drawer = document.getElementById('tabFilterDrawer');
-    const toggle = document.getElementById('tabFilterToggle');
 
     // フィルタが必要なタブかどうか
     const filterTabs = ['report', 'estimate', 'actual'];
@@ -629,9 +630,9 @@ export function onTabChange(tabId) {
 
     if (needsFilter) {
         showFilterToggle();
-        // 常時展開または展開中の場合はフィルタ内容を更新
+        // 常時展開または展開中の場合はフィルタ内容を更新（tabIdを直接渡す）
         if (drawer && (drawer.classList.contains('is-expanded') || drawer.classList.contains('is-always-expanded'))) {
-            updateTabFilterContent();
+            updateTabFilterContent(true, tabId);
         }
     } else {
         hideFilterToggle();
