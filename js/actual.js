@@ -1159,14 +1159,31 @@ export function editActual(id) {
 
     document.getElementById('editActualId').value = id;
     document.getElementById('editActualDate').value = actual.date;
-    document.getElementById('editActualVersion').value = actual.version;
 
-    updateEditActualTaskList(actual.member, true, actual.version, actual.process);
-
+    const isOther = isOtherWork(actual);
+    const versionSelect = document.getElementById('editActualVersion');
     const taskSelect = document.getElementById('editActualTaskSelect');
-    taskSelect.style.display = 'block';
-    document.getElementById('editActualTaskSearch').style.display = 'none';
-    taskSelect.value = actual.task;
+    const taskInput = document.getElementById('editActualTaskSearch');
+    const processSelect = document.getElementById('editActualProcess');
+
+    if (isOther) {
+        // その他工数: 版数・工程は非表示/無効化し、対応名は自由入力
+        versionSelect.value = '';
+        versionSelect.disabled = true;
+        taskSelect.style.display = 'none';
+        taskInput.style.display = 'block';
+        taskInput.value = actual.task;
+        processSelect.value = actual.process;
+        processSelect.disabled = true;
+    } else {
+        versionSelect.value = actual.version;
+        versionSelect.disabled = false;
+        processSelect.disabled = false;
+        updateEditActualTaskList(actual.member, true, actual.version, actual.process);
+        taskSelect.style.display = 'block';
+        taskInput.style.display = 'none';
+        taskSelect.value = actual.task;
+    }
 
     document.getElementById('editActualProcess').value = actual.process;
     document.getElementById('editActualHours').value = actual.hours;
@@ -1231,6 +1248,11 @@ export function editActual(id) {
  */
 export function closeEditActualModal() {
     document.getElementById('editActualModal').style.display = 'none';
+    // その他工数編集で無効化したフィールドを復元
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+    if (versionSelect) versionSelect.disabled = false;
+    if (processSelect) processSelect.disabled = false;
 }
 
 /**
@@ -1258,7 +1280,7 @@ export function saveActualEdit() {
     const remainingHoursInput = document.getElementById('editActualRemainingHours');
     const remainingHours = remainingHoursInput.value !== '' ? parseFloat(remainingHoursInput.value) : null;
 
-    if (!date || !version || !task || !process || !member || !hours) {
+    if (!date || !task || !process || !member || !hours) {
         alert('すべての項目を入力してください');
         return;
     }
