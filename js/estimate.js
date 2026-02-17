@@ -352,21 +352,19 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
 function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
     let totalHours = 0;
 
-    if (filterType === 'version') {
+    if (monthFilter === 'all') {
+        // 月指定なし: 全工数を合算
         totalHours = filtered.reduce((sum, e) => sum + e.hours, 0);
     } else {
-        if (monthFilter === 'all') {
-            totalHours = filtered.reduce((sum, e) => sum + e.hours, 0);
-        } else {
-            filtered.forEach(e => {
-                const est = normalizeEstimate(e);
-                if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-                    totalHours += est.monthlyHours[monthFilter];
-                } else if (!est.workMonths || est.workMonths.length === 0) {
-                    totalHours += est.hours;
-                }
-            });
-        }
+        // 月指定あり: 月別工数があればそれを使用（filterType問わず）
+        filtered.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+                totalHours += est.monthlyHours[monthFilter];
+            } else if (!est.workMonths || est.workMonths.length === 0) {
+                totalHours += est.hours;
+            }
+        });
     }
 
     return totalHours;
@@ -426,16 +424,14 @@ function calculateMemberSummary(filtered, filterType, monthFilter) {
             memberSummary[member] = 0;
         }
 
-        if (filterType === 'version') {
+        if (monthFilter === 'all') {
+            // 月指定なし: 全工数を合算
             memberSummary[member] += est.hours;
-        } else {
-            if (monthFilter === 'all') {
-                memberSummary[member] += est.hours;
-            } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-                memberSummary[member] += est.monthlyHours[monthFilter];
-            } else if (!est.workMonths || est.workMonths.length === 0) {
-                memberSummary[member] += est.hours;
-            }
+        } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+            // 月指定あり: 月別工数を使用（filterType問わず）
+            memberSummary[member] += est.monthlyHours[monthFilter];
+        } else if (!est.workMonths || est.workMonths.length === 0) {
+            memberSummary[member] += est.hours;
         }
     });
 
@@ -607,7 +603,7 @@ export function renderEstimateGrouped() {
 
         const est = normalizeEstimate(e);
         let displayHours = e.hours;
-        if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
             displayHours = est.monthlyHours[workMonthFilter];
         }
 
@@ -863,7 +859,7 @@ export function renderEstimateMatrix() {
 
         const est = normalizeEstimate(e);
         let displayHours = e.hours;
-        if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
             displayHours = est.monthlyHours[workMonthFilter];
         }
 
