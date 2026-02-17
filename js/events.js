@@ -35,7 +35,6 @@ import {
     handleQuickFormNameChange,
     switchQuickEstMonthType, updateQuickEstWorkMonthUI,
     updateQuickEstimateTotals, autoFillMember,
-    toggleQuickMonthSplit, updateQuickMonthPreview,
     addQuickEstimate,
     saveQuickInputModeSetting
 } from './quick.js';
@@ -244,29 +243,7 @@ export function initEventHandlers() {
         btnAddQuickEstimate.addEventListener('click', addQuickEstimate);
     }
 
-    // ============================================
-    // クイック入力: 月分割
-    // ============================================
-
-    const quickEnableMonthSplit = document.getElementById('quickEnableMonthSplit');
-    if (quickEnableMonthSplit) {
-        quickEnableMonthSplit.addEventListener('change', toggleQuickMonthSplit);
-    }
-
-    const quickTotalHours = document.getElementById('quickTotalHours');
-    if (quickTotalHours) {
-        quickTotalHours.addEventListener('input', updateQuickMonthPreview);
-    }
-
-    ['quickStartMonth', 'quickEndMonth'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', updateQuickMonthPreview);
-    });
-
-    const splitMethodRadios = document.querySelectorAll('input[name="quickSplitMethod"]');
-    splitMethodRadios.forEach(radio => {
-        radio.addEventListener('change', updateQuickMonthPreview);
-    });
+    // (月分割アシスタントは削除済み - 作業月列は switchQuickEstMonthType で動的に追加)
 
     // ============================================
     // クイック入力: 休暇
