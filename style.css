@@ -3508,12 +3508,14 @@ table tr[style*="1565c0"] th:first-child {
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
+    text-align: center;
 }
 
 .ed-months {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .ed-month-tag {
