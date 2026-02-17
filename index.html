@@ -471,12 +471,16 @@
 
                 <!-- キャパシティ分析 -->
                 <div id="capacityAnalysis" class="capacity-analysis-section" style="margin: 20px 0; background: var(--surface-elevated); padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">キャパシティ分析</h4>
                             <span id="capacityWarningBadge" class="capacity-warning-badge" style="display: none;">⚠️ 超過中</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 14px; color: var(--text-secondary);">
+                                標準: <strong id="capacityStandard" style="color: var(--text-primary); font-size: 16px;">176h</strong>
+                                <span style="font-size: 12px; color: var(--text-muted);" id="capacityStandardDetail">(22日×8h×1人)</span>
+                            </div>
                             <!-- 設定ボタン -->
                             <div style="position: relative;">
                                 <button id="capacitySettingsBtn" class="capacity-settings-btn" title="表示設定">
@@ -493,10 +497,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-                        標準: <strong id="capacityStandard" style="color: var(--text-primary); font-size: 16px;">176h</strong>
-                        <span style="font-size: 12px; color: var(--text-muted);" id="capacityStandardDetail">(22日×8h×1人)</span>
                     </div>
 
                     <!-- バー表示（デフォルト） -->
@@ -2455,6 +2455,23 @@
                 var manuallyShown = false; // モバイルボタンで明示的に表示された場合true
                 var manuallyShownAt = 0;  // manuallyShown設定時のタイムスタンプ
                 var lastBtnClick = 0;     // ボタンクリックのデバウンス用
+                var lastModalCloseAt = 0; // モーダル閉じ時のタイムスタンプ（ゴーストクリック防止）
+
+                // モーダルの表示/非表示を監視してゴーストクリックを防止
+                var modalObserver = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(m) {
+                        if (m.type === 'attributes' && m.attributeName === 'style' &&
+                            m.target.classList.contains('modal')) {
+                            var d = m.target.style.display;
+                            if (d === 'none' || d === '') {
+                                lastModalCloseAt = Date.now();
+                            }
+                        }
+                    });
+                });
+                document.querySelectorAll('.modal').forEach(function(modal) {
+                    modalObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
+                });
 
                 // --- モード管理 ---
                 var currentMode = 'smartSticky';
@@ -2594,10 +2611,14 @@
                     syncBar(fixedBar, sourceBar);
                     attachBarEvents(fixedBar, sourceBar);
                     updateMobileFilterBtn(true);
+                    console.log('[FilterBar] showFixedBar called, manuallyShown=', manuallyShown);
                 }
 
                 function hideFixedBar() {
-                    if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
+                    if (fixedBar) {
+                        console.log('[FilterBar] hideFixedBar: removing bar, manuallyShown=', manuallyShown, new Error().stack.split('\n')[2]);
+                        fixedBar.remove(); fixedBar = null; sourceBar = null;
+                    }
                     if (!manuallyShown) updateMobileFilterBtn(false);
                 }
 
@@ -2606,10 +2627,12 @@
                     // モバイルボタンで明示的に表示中
                     if (manuallyShown) {
                         // 表示直後500msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
-                        if (Date.now() - manuallyShownAt < 500) return;
+                        var elapsed = Date.now() - manuallyShownAt;
+                        if (elapsed < 500) { return; }
                         // 元のバーが画面内に戻ったら自動的に閉じる
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
+                            console.log('[FilterBar] onScroll: bar back in view, closing. bottom=', bar.getBoundingClientRect().bottom, 'elapsed=', elapsed);
                             manuallyShown = false;
                             hideFixedBar();
                         }
@@ -2677,8 +2700,10 @@
                     mobileFilterBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        // ゴーストクリック防止（500ms以内の連続クリック無視）
                         var now = Date.now();
+                        // モーダル閉じ直後のゴーストクリック防止
+                        if (now - lastModalCloseAt < 500) return;
+                        // 連続タップ防止
                         if (now - lastBtnClick < 500) return;
                         lastBtnClick = now;
                         // すでに表示されていたら閉じる
