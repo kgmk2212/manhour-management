@@ -258,6 +258,9 @@ export function saveEstimateEdit() {
 
     if (!existingRemaining) {
         saveRemainingEstimate(version, task, process, member, hours);
+    } else if (existingRemaining.hours === oldEstimate.hours) {
+        // 見込み残存が見積時間と同じ（完全に未着手）なら、見積変更に追従
+        saveRemainingEstimate(version, task, process, member, hours);
     }
 
     // スケジュール連動: 旧キーで対応するスケジュールを検索し自動更新
