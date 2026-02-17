@@ -275,6 +275,10 @@ export function showTab(tabName, options = {}) {
             window.renderActualList();
         }
     } else if (tabName === 'schedule') {
+        // スケジュールタブを再描画（Canvas内容がクリアされている場合に備えて）
+        if (typeof window.renderScheduleView === 'function') {
+            window.renderScheduleView();
+        }
         // スケジュールタブの横スクロール位置を復元（または現在月へスクロール）
         requestAnimationFrame(() => {
             const scrollEl = document.getElementById('ganttTimelineScroll');

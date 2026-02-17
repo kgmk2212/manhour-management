@@ -616,3 +616,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     console.log('✅ init.js: 初期化処理完了');
 });
+
+// bfcache復元時にCanvasを再描画（ブラウザの戻るボタンで復帰した場合）
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        console.log('[pageshow] bfcache復元を検出、再描画を実行');
+        // スケジュールCanvasを再描画
+        if (typeof window.renderScheduleView === 'function') {
+            window.renderScheduleView();
+        }
+        // 見積一覧を再描画（フィルタ状態の整合性を確保）
+        if (typeof window.renderEstimateList === 'function') {
+            window.renderEstimateList();
+        }
+    }
+});
