@@ -248,12 +248,12 @@
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="radio" name="quickEstMonthType" value="single" checked
                                         style="width: auto; margin-right: 4px;">
-                                    <span style="color: rgba(255,255,255,0.75); font-size: 11px;">単一月</span>
+                                    <span style="color: var(--text-primary); font-size: 11px;">単一月</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="radio" name="quickEstMonthType" value="multi"
                                         style="width: auto; margin-right: 4px;">
-                                    <span style="color: rgba(255,255,255,0.75); font-size: 11px;">複数月</span>
+                                    <span style="color: var(--text-primary); font-size: 11px;">複数月</span>
                                 </label>
                             </div>
                             <div id="quickEstMonthInputs">
@@ -269,7 +269,7 @@
                                 </div>
                             </div>
                         </div>
-                        <h4 style="margin-bottom: 10px; color: rgba(255,255,255,0.9);">各工程の見積</h4>
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">各工程の見積</h4>
                         <div class="estimate-table-wrapper">
                             <table class="estimate-table" id="quickEstimateTable" style="width: 100%; margin: 0;">
                                 <thead>
@@ -324,13 +324,13 @@
                             style="background: rgba(25, 118, 210, 0.15); padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
                             <div
                                 style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                                <span style="font-weight: 600; color: rgba(255,255,255,0.9);">対応合計:</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">対応合計:</span>
                                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                                    <span style="color: rgba(255,255,255,0.95);"><strong
+                                    <span style="color: var(--text-primary);"><strong
                                             id="quickEstTotalHours">0.0</strong> h</span>
-                                    <span style="color: rgba(255,255,255,0.8);">(<span id="quickEstTotalDays">0.0</span>
+                                    <span style="color: var(--text-secondary);">(<span id="quickEstTotalDays">0.0</span>
                                         人日)</span>
-                                    <span style="color: rgba(255,255,255,0.8);">(<span
+                                    <span style="color: var(--text-secondary);">(<span
                                             id="quickEstTotalMonths">0.00</span>
                                         人月)</span>
                                 </div>
@@ -2737,22 +2737,23 @@
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 if (mobileFilterBtn) {
-                    mobileFilterBtn.addEventListener('click', function() {
+                    mobileFilterBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         // すでに表示されていたら閉じる
                         if (fixedBar || hoverBar) {
+                            // スクロールによる即時再表示を防止（DOM操作前に設定）
+                            upPx = 0;
+                            ignoreScrollUntil = Date.now() + 600;
                             hideFixedBar();
                             hideHoverBar();
-                            // スクロールによる即時再表示を防止
-                            upPx = 0;
-                            ignoreScrollUntil = Date.now() + 500;
                             return;
                         }
                         // 表示する
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
+                            // DOM操作による微小スクロールで即閉じされるのを防止（DOM操作前に設定）
+                            ignoreScrollUntil = Date.now() + 600;
                             showFixedBar(bar);
-                            // タッチ操作による微小スクロールで即閉じされるのを防止
-                            ignoreScrollUntil = Date.now() + 500;
                         }
                     });
                 }

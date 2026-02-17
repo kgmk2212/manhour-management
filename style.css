@@ -3143,7 +3143,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .custom-alert-accent {
     height: 3px;
-    background: var(--accent);
+    background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
 }
 
 .custom-alert-content[data-type="error"] .custom-alert-accent {
@@ -3163,8 +3163,8 @@ table tr[style*="1565c0"] th:first-child {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent);
-    box-shadow: 0 4px 14px rgba(45, 90, 39, 0.3);
+    background: var(--theme-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .custom-alert-content[data-type="error"] .custom-alert-icon {
@@ -4501,6 +4501,34 @@ html[data-inline-filter="hidden"] .inline-filter {
     .capacity-gauge-label {
         font-size: 12px;
         bottom: -30px;
+    }
+
+    /* Capacity analysis section mobile */
+    .capacity-analysis-section {
+        padding: 14px 12px !important;
+    }
+
+    .capacity-analysis-section > div:first-child {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .capacity-analysis-section > div:first-child > div:last-child {
+        width: 100%;
+    }
+
+    #capacityBarView > div {
+        gap: 8px !important;
+    }
+
+    #capacityBarView > div > div:first-child {
+        width: 35px !important;
+        min-width: 35px;
+    }
+
+    #capacityBarView > div > div:last-child {
+        min-width: 80px !important;
     }
 
     /* Swipe tab switching */

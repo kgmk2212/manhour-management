@@ -328,6 +328,65 @@ export class GanttChartRenderer {
     }
 
     /**
+     * スケジュールデータに合わせて表示範囲を拡張
+     * 登録されているスケジュールの月がすべて表示されるようにし、
+     * ドラッグ移動用に前後1ヶ月のバッファを追加する
+     */
+    expandRangeForSchedules(sourceSchedules) {
+        if (!sourceSchedules || sourceSchedules.length === 0) return;
+
+        let minDate = this.rangeStart;
+        let maxDate = this.rangeEnd;
+
+        for (const s of sourceSchedules) {
+            const startDate = new Date(s.startDate);
+            const endDate = new Date(s.endDate);
+            if (startDate < minDate) minDate = new Date(startDate);
+            if (endDate > maxDate) maxDate = new Date(endDate);
+        }
+
+        // スケジュールが現在の範囲内に収まっていれば拡張不要
+        if (minDate >= this.rangeStart && maxDate <= this.rangeEnd) return;
+
+        // バッファ: スケジュール範囲の前後1ヶ月を追加
+        const bufferStart = new Date(minDate.getFullYear(), minDate.getMonth() - 1, 1);
+        const bufferEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0); // 翌月末
+
+        // 元の範囲とバッファ範囲の広い方を採用
+        const newStart = bufferStart < this.rangeStart ? bufferStart : this.rangeStart;
+        const newEndMonth = new Date(bufferEnd.getFullYear(), bufferEnd.getMonth(), 1);
+        const origEndMonth = new Date(this.rangeEnd.getFullYear(), this.rangeEnd.getMonth(), 1);
+        const finalEndMonth = newEndMonth > origEndMonth ? newEndMonth : origEndMonth;
+
+        // monthBoundaries を再構築
+        this.monthBoundaries = [];
+        let totalDays = 0;
+        const cursor = new Date(newStart.getFullYear(), newStart.getMonth(), 1);
+
+        while (cursor <= finalEndMonth) {
+            const y = cursor.getFullYear();
+            const m = cursor.getMonth() + 1;
+            const days = getDaysInMonth(y, m);
+
+            this.monthBoundaries.push({
+                year: y,
+                month: m,
+                startDayOffset: totalDays,
+                daysInMonth: days
+            });
+            totalDays += days;
+
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+
+        this.totalDays = totalDays;
+        const first = this.monthBoundaries[0];
+        const last = this.monthBoundaries[this.monthBoundaries.length - 1];
+        this.rangeStart = new Date(first.year, first.month - 1, 1);
+        this.rangeEnd = new Date(last.year, last.month - 1, last.daysInMonth);
+    }
+
+    /**
      * 日付→X座標（timelineCanvas上）
      */
     dateToX(date) {
@@ -369,6 +428,10 @@ export class GanttChartRenderer {
 
         // 表示範囲内のスケジュールをフィルタ
         const sourceSchedules = filteredSchedules || schedules;
+
+        // スケジュールデータに合わせて表示範囲を拡張
+        this.expandRangeForSchedules(sourceSchedules);
+
         const visibleSchedules = this.getVisibleSchedulesForRange(sourceSchedules);
 
         // 行データを構築
@@ -1614,7 +1677,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const pressDuration = Date.now() - dragState.pressStartTime;
 
             let didUpdate = false;
-            if (movedX > DAY_WIDTH / 2 && dragState.previewDate && onScheduleUpdate) {
+            // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
+            if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
                 didUpdate = true;
             }
@@ -1632,7 +1696,10 @@ export function setupDragAndDrop(onScheduleUpdate) {
             // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
             // 再描画が済んでいるため、ここでの再描画は不要（二重描画でスクロール位置が飛ぶ原因）
             if (!didUpdate && renderer) {
+                const sc = renderer.scrollContainer;
+                const savedScroll = sc ? sc.scrollLeft : 0;
                 renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+                if (sc) sc.scrollLeft = savedScroll;
             }
         });
 
@@ -1694,7 +1761,11 @@ function formatDateForDrag(date) {
 }
 
 function drawDragPreview(renderer, schedule, newStartDate) {
+    // ドラッグ中のスクロール位置を保護
+    const scrollContainer = renderer.scrollContainer;
+    const savedScroll = scrollContainer ? scrollContainer.scrollLeft : 0;
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+    if (scrollContainer) scrollContainer.scrollLeft = savedScroll;
 
     const ctx = renderer.timelineCtx;
 

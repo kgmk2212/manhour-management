@@ -818,6 +818,8 @@ export function initSmartSticky() {
         // 画面下部をタップしたらタブバーを表示
         if (e.clientY > window.innerHeight - triggerZone) {
             mobileTabBar.classList.remove('is-hidden');
+            e.preventDefault();
+            e.stopPropagation();
         }
     }, true);
 
