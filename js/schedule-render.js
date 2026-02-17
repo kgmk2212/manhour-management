@@ -138,7 +138,7 @@ export class GanttChartRenderer {
         this.highlightedScheduleId = null;
         this.newlyCreatedIds = new Set();
         this.newlyCreatedTimer = null;
-        this.customLabelWidth = this.loadCustomLabelWidth();
+        this.customLabelWidths = this.loadCustomLabelWidths();
         this.resizeHandle = null;
     }
 
@@ -247,8 +247,9 @@ export class GanttChartRenderer {
 
             const delta = e.clientX - startX;
             const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
-            this.customLabelWidth = newWidth;
-            this.saveCustomLabelWidth(newWidth);
+            const viewMode = scheduleSettings.viewMode;
+            this.customLabelWidths[viewMode] = newWidth;
+            this.saveCustomLabelWidth(viewMode, newWidth);
             // 新しい幅で再描画
             this.render(this.currentYear, this.currentMonth, this.filteredSchedulesCache);
         };
@@ -261,23 +262,36 @@ export class GanttChartRenderer {
     /**
      * カスタムラベル幅をlocalStorageから読み込み
      */
-    loadCustomLabelWidth() {
+    loadCustomLabelWidths() {
+        const widths = { member: null, task: null };
         try {
-            const saved = localStorage.getItem('schedule_label_width');
-            if (saved) {
-                const width = parseInt(saved, 10);
-                if (width >= 80 && width <= 500) return width;
+            for (const mode of ['member', 'task']) {
+                const saved = localStorage.getItem(`schedule_label_width_${mode}`);
+                if (saved) {
+                    const width = parseInt(saved, 10);
+                    if (width >= 80 && width <= 500) widths[mode] = width;
+                }
+            }
+            // 旧キーからの移行
+            const legacy = localStorage.getItem('schedule_label_width');
+            if (legacy) {
+                const w = parseInt(legacy, 10);
+                if (w >= 80 && w <= 500) {
+                    if (!widths.member) widths.member = w;
+                    if (!widths.task) widths.task = w;
+                }
+                localStorage.removeItem('schedule_label_width');
             }
         } catch (e) { /* ignore */ }
-        return null;
+        return widths;
     }
 
     /**
      * カスタムラベル幅をlocalStorageに保存
      */
-    saveCustomLabelWidth(width) {
+    saveCustomLabelWidth(viewMode, width) {
         try {
-            localStorage.setItem('schedule_label_width', String(width));
+            localStorage.setItem(`schedule_label_width_${viewMode}`, String(width));
         } catch (e) { /* ignore */ }
     }
 
@@ -497,8 +511,8 @@ export class GanttChartRenderer {
      * ラベル列の最適幅を計算（コンテンツ幅ベース）
      */
     calculateLabelWidth(rows, isMobile, viewMode) {
-        // PC時はカスタム幅があればそれを使用
-        if (!isMobile && this.customLabelWidth) return this.customLabelWidth;
+        // PC時はカスタム幅があればそれを使用（ビューモード別）
+        if (!isMobile && this.customLabelWidths[viewMode]) return this.customLabelWidths[viewMode];
         if (!isMobile) return LABEL_WIDTH;
 
         // canvasでテキスト幅を計測
