@@ -1899,6 +1899,40 @@ table tr[style*="1565c0"] th:first-child {
     overflow-y: hidden;
 }
 
+.gantt-resize-handle {
+    width: 5px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    z-index: 2;
+    transition: background 0.15s;
+}
+
+.gantt-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 28px;
+    border-radius: 2px;
+    background: var(--border);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.gantt-resize-handle:hover,
+.gantt-resize-handle.dragging {
+    background: var(--border-light);
+}
+
+.gantt-resize-handle:hover::after,
+.gantt-resize-handle.dragging::after {
+    opacity: 1;
+}
+
 .gantt-timeline-scroll {
     flex: 1;
     overflow-x: auto;

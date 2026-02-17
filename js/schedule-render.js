@@ -138,6 +138,8 @@ export class GanttChartRenderer {
         this.highlightedScheduleId = null;
         this.newlyCreatedIds = new Set();
         this.newlyCreatedTimer = null;
+        this.customLabelWidth = this.loadCustomLabelWidth();
+        this.resizeHandle = null;
     }
 
     /**
@@ -181,6 +183,12 @@ export class GanttChartRenderer {
 
         this.scrollContainer.appendChild(this.timelineCanvas);
         outer.appendChild(this.labelScrollContainer);
+
+        // PC時のみリサイズハンドルを追加
+        this.resizeHandle = document.createElement('div');
+        this.resizeHandle.className = 'gantt-resize-handle';
+        outer.appendChild(this.resizeHandle);
+
         outer.appendChild(this.scrollContainer);
         container.appendChild(outer);
 
@@ -189,6 +197,88 @@ export class GanttChartRenderer {
         // 遅延セットアップのコールバックを実行
         pendingSetupCallbacks.forEach(fn => fn());
         pendingSetupCallbacks.length = 0;
+
+        // PC時のリサイズハンドルをセットアップ
+        this.setupResizeHandle();
+    }
+
+    /**
+     * PC時のラベル列リサイズハンドルをセットアップ
+     */
+    setupResizeHandle() {
+        if (!this.resizeHandle) return;
+
+        const handle = this.resizeHandle;
+        let isDragging = false;
+        let startX = 0;
+        let startWidth = 0;
+        const MIN_WIDTH = 80;
+        const MAX_WIDTH = 500;
+
+        const onMouseDown = (e) => {
+            // モバイル時は無効
+            if (window.innerWidth <= 768) return;
+            e.preventDefault();
+            isDragging = true;
+            startX = e.clientX;
+            startWidth = this.labelWidth;
+            handle.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        };
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const delta = e.clientX - startX;
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
+            // ドラッグ中はコンテナ幅のみ変更（軽量）
+            if (this.labelScrollContainer) {
+                this.labelScrollContainer.style.width = newWidth + 'px';
+            }
+        };
+
+        const onMouseUp = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            handle.classList.remove('dragging');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            const delta = e.clientX - startX;
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
+            this.customLabelWidth = newWidth;
+            this.saveCustomLabelWidth(newWidth);
+            // 新しい幅で再描画
+            this.render(this.currentYear, this.currentMonth, this.filteredSchedulesCache);
+        };
+
+        handle.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    /**
+     * カスタムラベル幅をlocalStorageから読み込み
+     */
+    loadCustomLabelWidth() {
+        try {
+            const saved = localStorage.getItem('schedule_label_width');
+            if (saved) {
+                const width = parseInt(saved, 10);
+                if (width >= 80 && width <= 500) return width;
+            }
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    /**
+     * カスタムラベル幅をlocalStorageに保存
+     */
+    saveCustomLabelWidth(width) {
+        try {
+            localStorage.setItem('schedule_label_width', String(width));
+        } catch (e) { /* ignore */ }
     }
 
     /**
@@ -306,9 +396,16 @@ export class GanttChartRenderer {
                 // ラベルは画面幅の40%まで、超えた分は横スクロール可能
                 const maxVisible = Math.min(this.labelWidth, Math.floor(window.innerWidth * 0.4));
                 this.labelScrollContainer.style.maxWidth = maxVisible + 'px';
+                this.labelScrollContainer.style.width = '';
             } else {
                 this.labelScrollContainer.style.maxWidth = '';
+                this.labelScrollContainer.style.width = '';
             }
+        }
+
+        // リサイズハンドルの表示制御（PC時のみ表示）
+        if (this.resizeHandle) {
+            this.resizeHandle.style.display = isMobile ? 'none' : '';
         }
 
         // 描画
@@ -400,6 +497,8 @@ export class GanttChartRenderer {
      * ラベル列の最適幅を計算（コンテンツ幅ベース）
      */
     calculateLabelWidth(rows, isMobile, viewMode) {
+        // PC時はカスタム幅があればそれを使用
+        if (!isMobile && this.customLabelWidth) return this.customLabelWidth;
         if (!isMobile) return LABEL_WIDTH;
 
         // canvasでテキスト幅を計測
@@ -561,12 +660,13 @@ export class GanttChartRenderer {
         ctx.fillStyle = HEADER_BG;
         ctx.fillRect(0, 0, this.labelWidth, HEADER_HEIGHT);
 
-        // ヘッダーラベル「担当者 / タスク」
+        // ヘッダーラベル（表示モードに応じて動的に変更）
+        const headerLabel = scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.TASK ? 'タスク' : '担当者';
         ctx.fillStyle = TEXT_MUTED;
         ctx.font = '600 12px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText('担当者 / タスク', 14, HEADER_HEIGHT / 2);
+        ctx.fillText(headerLabel, 14, HEADER_HEIGHT / 2);
 
         // ヘッダー下部の線（--border）
         ctx.strokeStyle = BORDER;
