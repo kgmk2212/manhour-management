@@ -415,8 +415,14 @@ export class GanttChartRenderer {
         this.currentMonth = month;
         this.daysInMonth = getDaysInMonth(year, month);
 
-        // スクロール位置を保存（キャンバスリサイズでリセットされる場合の安全策）
-        const savedScrollLeft = this.scrollContainer ? this.scrollContainer.scrollLeft : null;
+        // スクロール位置を日付ベースで保存（expandRangeForSchedulesでキャンバス幅が変わるため、
+        // ピクセル値ではなく日付に変換して保持する）
+        let savedScrollDate = null;
+        if (this.scrollContainer && this.scrollContainer.scrollLeft > 0 && this.rangeStart) {
+            const dayOffset = Math.floor(this.scrollContainer.scrollLeft / DAY_WIDTH);
+            savedScrollDate = new Date(this.rangeStart);
+            savedScrollDate.setDate(savedScrollDate.getDate() + dayOffset);
+        }
 
         // 2キャンバス構造を初期化
         this.initDualCanvas();
@@ -496,9 +502,9 @@ export class GanttChartRenderer {
         this.drawRows(rows);
         this.drawLabelColumn(rows);
 
-        // スクロール位置を復元（キャンバスリサイズでリセットされた場合）
-        if (this.scrollContainer && savedScrollLeft !== null && savedScrollLeft > 0) {
-            this.scrollContainer.scrollLeft = savedScrollLeft;
+        // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
+        if (this.scrollContainer && savedScrollDate !== null) {
+            this.scrollContainer.scrollLeft = this.dateToX(savedScrollDate);
         }
     }
 
@@ -1696,10 +1702,7 @@ export function setupDragAndDrop(onScheduleUpdate) {
             // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
             // 再描画が済んでいるため、ここでの再描画は不要（二重描画でスクロール位置が飛ぶ原因）
             if (!didUpdate && renderer) {
-                const sc = renderer.scrollContainer;
-                const savedScroll = sc ? sc.scrollLeft : 0;
                 renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
-                if (sc) sc.scrollLeft = savedScroll;
             }
         });
 
@@ -1761,11 +1764,8 @@ function formatDateForDrag(date) {
 }
 
 function drawDragPreview(renderer, schedule, newStartDate) {
-    // ドラッグ中のスクロール位置を保護
-    const scrollContainer = renderer.scrollContainer;
-    const savedScroll = scrollContainer ? scrollContainer.scrollLeft : 0;
+    // render()内部で日付ベースのスクロール位置保持が行われる
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
-    if (scrollContainer) scrollContainer.scrollLeft = savedScroll;
 
     const ctx = renderer.timelineCtx;
 

@@ -154,9 +154,15 @@ export function renderScheduleView() {
         if (scheduleSettings.currentMonth) {
             const [year, month] = scheduleSettings.currentMonth.split('-').map(Number);
 
-            // スクロール位置を描画前に取得（描画でキャンバスサイズが変わるとリセットされるため）
+            // スクロール位置を日付ベースで保存（expandRangeForSchedulesでキャンバス幅が変わるため）
             const scrollEl = document.getElementById('ganttTimelineScroll');
-            const prevScrollLeft = scrollEl ? scrollEl.scrollLeft : null;
+            let savedScrollDate = null;
+            const prevRenderer = getRenderer();
+            if (scrollEl && scrollEl.scrollLeft > 0 && prevRenderer && prevRenderer.rangeStart) {
+                const dayOffset = Math.floor(scrollEl.scrollLeft / SCHEDULE.CANVAS.DAY_WIDTH);
+                savedScrollDate = new Date(prevRenderer.rangeStart);
+                savedScrollDate.setDate(savedScrollDate.getDate() + dayOffset);
+            }
 
             renderGanttChart(year, month, filteredSchedules);
 
@@ -175,12 +181,12 @@ export function renderScheduleView() {
                         } else {
                             renderer.scrollToMonth(nav.year, nav.month, false);
                         }
-                    } else if (prevScrollLeft !== null && prevScrollLeft > 0) {
-                        // 再描画: 直前のスクロール位置を維持
-                        el.scrollLeft = prevScrollLeft;
-                    } else if (typeof window._ganttScrollLeft === 'number' && window._ganttScrollLeft > 0) {
-                        // タブ復帰: 保存済み位置を復元
-                        el.scrollLeft = window._ganttScrollLeft;
+                    } else if (savedScrollDate !== null) {
+                        // 再描画: 日付ベースでスクロール位置を維持
+                        el.scrollLeft = renderer.dateToX(savedScrollDate);
+                    } else if (window._ganttScrollDate instanceof Date) {
+                        // タブ復帰: 保存済み日付位置を復元
+                        el.scrollLeft = renderer.dateToX(window._ganttScrollDate);
                     } else {
                         // 初回: 現在月の位置へスクロール
                         renderer.scrollToMonth(year, month, false);

@@ -4509,13 +4509,7 @@ html[data-inline-filter="hidden"] .inline-filter {
     }
 
     .capacity-analysis-section > div:first-child {
-        flex-direction: column;
-        align-items: flex-start !important;
         gap: 6px !important;
-    }
-
-    .capacity-analysis-section > div:first-child > div:last-child {
-        width: 100%;
     }
 
     #capacityBarView > div {

@@ -2226,7 +2226,10 @@
     <!-- カスタムアラート -->
     <div id="customAlert" class="modal">
         <div class="custom-alert-content">
-            <div class="custom-alert-icon" id="customAlertIcon"></div>
+            <div class="custom-alert-accent"></div>
+            <div class="custom-alert-icon-wrap">
+                <div class="custom-alert-icon" id="customAlertIcon"></div>
+            </div>
             <div class="custom-alert-body" id="customAlertMessage">
             </div>
             <div class="custom-alert-footer">
@@ -2449,6 +2452,7 @@
                 var sourceBar = null;
                 var hoverBar = null;
                 var hoverSourceBar = null;
+                var manuallyShown = false; // モバイルボタンで明示的に表示された場合true
 
                 // --- モード管理 ---
                 var currentMode = 'smartSticky';
@@ -2462,6 +2466,7 @@
 
                 window.applyFilterBarMode = function() {
                     loadMode();
+                    manuallyShown = false;
                     hideFixedBar();
                     hideHoverBar();
                     upPx = 0;
@@ -2565,6 +2570,11 @@
                         if (mobileFilterBtn) mobileFilterBtn.style.display = 'none';
                         return;
                     }
+                    // 手動表示中はボタンを常に表示（閉じるために必要）
+                    if (manuallyShown && fixedBar) {
+                        mobileFilterBtn.style.display = '';
+                        return;
+                    }
                     var bar = findBar();
                     if (!bar) { mobileFilterBtn.style.display = 'none'; return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
@@ -2586,11 +2596,21 @@
 
                 function hideFixedBar() {
                     if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
-                    updateMobileFilterBtn(false);
+                    if (!manuallyShown) updateMobileFilterBtn(false);
                 }
 
                 function onScroll() {
                     if (currentMode !== 'smartSticky') return;
+                    // モバイルボタンで明示的に表示中
+                    if (manuallyShown) {
+                        // 元のバーが画面内に戻ったら自動的に閉じる
+                        var bar = findBar();
+                        if (bar && bar.getBoundingClientRect().bottom >= 0) {
+                            manuallyShown = false;
+                            hideFixedBar();
+                        }
+                        return;
+                    }
                     // モバイルではmainContentはoverflow:visibleなのでwindow.scrollYを使う
                     var y = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
                     var dy = y - lastY;
@@ -2651,10 +2671,11 @@
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 if (mobileFilterBtn) {
                     mobileFilterBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
                         // すでに表示されていたら閉じる
                         if (fixedBar || hoverBar) {
-                            // スクロールによる即時再表示を防止（DOM操作前に設定）
+                            manuallyShown = false;
                             upPx = 0;
                             ignoreScrollUntil = Date.now() + 600;
                             hideFixedBar();
@@ -2664,8 +2685,7 @@
                         // 表示する
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
-                            // DOM操作による微小スクロールで即閉じされるのを防止（DOM操作前に設定）
-                            ignoreScrollUntil = Date.now() + 600;
+                            manuallyShown = true;
                             showFixedBar(bar);
                         }
                     });
@@ -2682,9 +2702,11 @@
                 // --- タブ切替時にリセット ---
                 document.querySelectorAll('.nav-item, .mobile-tab-item').forEach(function(item) {
                     item.addEventListener('click', function() {
+                        manuallyShown = false;
                         hideFixedBar();
                         hideHoverBar();
                         upPx = 0;
+                        ignoreScrollUntil = Date.now() + 600;
                         lastY = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
                         if (mobileFilterBtn) {
                             mobileFilterBtn.style.display = 'none';

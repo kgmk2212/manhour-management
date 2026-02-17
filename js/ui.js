@@ -145,11 +145,15 @@ export function showTab(tabName, options = {}) {
         currentTabId = currentActiveTab.id;
         window.tabScrollPositions[currentActiveTab.id] = window.scrollY;
 
-        // スケジュールタブの横スクロール位置を保存
+        // スケジュールタブの横スクロール位置を日付ベースで保存
         if (currentActiveTab.id === 'schedule') {
             const scrollEl = document.getElementById('ganttTimelineScroll');
-            if (scrollEl) {
-                window._ganttScrollLeft = scrollEl.scrollLeft;
+            if (scrollEl && scrollEl.scrollLeft > 0 && typeof window.getScheduleRenderer === 'function') {
+                const renderer = window.getScheduleRenderer();
+                if (renderer && renderer.rangeStart) {
+                    const scrollDate = renderer.xToDate(scrollEl.scrollLeft);
+                    if (scrollDate) window._ganttScrollDate = scrollDate;
+                }
             }
         }
     }
@@ -279,11 +283,14 @@ export function showTab(tabName, options = {}) {
         if (typeof window.renderScheduleView === 'function') {
             window.renderScheduleView();
         }
-        // スケジュールタブの横スクロール位置を復元（または現在月へスクロール）
+        // スケジュールタブの横スクロール位置を日付ベースで復元（または現在月へスクロール）
         requestAnimationFrame(() => {
             const scrollEl = document.getElementById('ganttTimelineScroll');
-            if (scrollEl && typeof window._ganttScrollLeft === 'number') {
-                scrollEl.scrollLeft = window._ganttScrollLeft;
+            if (scrollEl && window._ganttScrollDate instanceof Date && typeof window.getScheduleRenderer === 'function') {
+                const r = window.getScheduleRenderer();
+                if (r && r.dateToX) {
+                    scrollEl.scrollLeft = r.dateToX(window._ganttScrollDate);
+                }
             } else if (scrollEl && typeof window.getScheduleRenderer === 'function') {
                 // 保存位置がない場合は現在月へスクロール
                 const renderer = window.getScheduleRenderer();
