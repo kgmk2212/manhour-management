@@ -2453,6 +2453,8 @@
                 var hoverBar = null;
                 var hoverSourceBar = null;
                 var manuallyShown = false; // モバイルボタンで明示的に表示された場合true
+                var manuallyShownAt = 0;  // manuallyShown設定時のタイムスタンプ
+                var lastBtnClick = 0;     // ボタンクリックのデバウンス用
 
                 // --- モード管理 ---
                 var currentMode = 'smartSticky';
@@ -2603,6 +2605,8 @@
                     if (currentMode !== 'smartSticky') return;
                     // モバイルボタンで明示的に表示中
                     if (manuallyShown) {
+                        // 表示直後500msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
+                        if (Date.now() - manuallyShownAt < 500) return;
                         // 元のバーが画面内に戻ったら自動的に閉じる
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
@@ -2673,11 +2677,15 @@
                     mobileFilterBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
+                        // ゴーストクリック防止（500ms以内の連続クリック無視）
+                        var now = Date.now();
+                        if (now - lastBtnClick < 500) return;
+                        lastBtnClick = now;
                         // すでに表示されていたら閉じる
                         if (fixedBar || hoverBar) {
                             manuallyShown = false;
                             upPx = 0;
-                            ignoreScrollUntil = Date.now() + 600;
+                            ignoreScrollUntil = now + 600;
                             hideFixedBar();
                             hideHoverBar();
                             return;
@@ -2686,6 +2694,8 @@
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
                             manuallyShown = true;
+                            manuallyShownAt = now;
+                            ignoreScrollUntil = now + 500;
                             showFixedBar(bar);
                         }
                     });
