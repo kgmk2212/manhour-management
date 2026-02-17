@@ -165,7 +165,17 @@ export function renderScheduleView() {
                 requestAnimationFrame(() => {
                     const el = document.getElementById('ganttTimelineScroll');
                     if (!el) return;
-                    if (prevScrollLeft !== null && prevScrollLeft > 0) {
+
+                    // 月ナビゲーション/今日ボタンからの呼び出し
+                    if (window._ganttNavigateTarget) {
+                        const nav = window._ganttNavigateTarget;
+                        window._ganttNavigateTarget = null;
+                        if (nav.scrollToToday) {
+                            renderer.scrollToToday(false);
+                        } else {
+                            renderer.scrollToMonth(nav.year, nav.month, false);
+                        }
+                    } else if (prevScrollLeft !== null && prevScrollLeft > 0) {
                         // 再描画: 直前のスクロール位置を維持
                         el.scrollLeft = prevScrollLeft;
                     } else if (typeof window._ganttScrollLeft === 'number' && window._ganttScrollLeft > 0) {
@@ -233,23 +243,14 @@ export function navigateScheduleMonth(delta) {
     const newMonthNum = date.getMonth() + 1;
     const newMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
 
-    const renderer = getRenderer();
+    // 常に再描画＋新月位置へスクロールで動作を統一
+    setScheduleSettings({ currentMonth: newMonth });
+    updateCurrentMonthDisplay();
+    updateUnscheduledBadge();
 
-    // 描画範囲内ならスムーズスクロールのみ
-    if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
-        setScheduleSettings({ currentMonth: newMonth });
-        updateCurrentMonthDisplay();
-        updateUnscheduledBadge();
-        renderer.scrollToMonth(newYear, newMonthNum, true);
-    } else {
-        // 範囲外なら再描画してからスクロール
-        setScheduleSettings({ currentMonth: newMonth });
-        updateCurrentMonthDisplay();
-        renderScheduleView();
-        if (renderer) {
-            renderer.scrollToMonth(newYear, newMonthNum, false);
-        }
-    }
+    // _navigateTarget を設定して renderScheduleView 内で正しい位置へスクロールさせる
+    window._ganttNavigateTarget = { year: newYear, month: newMonthNum };
+    renderScheduleView();
 }
 
 /**
@@ -261,23 +262,13 @@ export function goToScheduleToday() {
     const newMonthNum = now.getMonth() + 1;
     const currentMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
 
-    const renderer = getRenderer();
-
     setScheduleSettings({ currentMonth });
     updateCurrentMonthDisplay();
+    updateUnscheduledBadge();
 
-    // 範囲内なら今日の位置へスクロール
-    if (renderer && renderer.isMonthInRange(newYear, newMonthNum)) {
-        updateUnscheduledBadge();
-        renderer.scrollToToday(true);
-    } else {
-        // 範囲外なら再描画して今日へスクロール
-        renderScheduleView();
-        const newRenderer = getRenderer();
-        if (newRenderer) {
-            newRenderer.scrollToToday(false);
-        }
-    }
+    // 常に再描画＋今日位置へスクロール
+    window._ganttNavigateTarget = { year: newYear, month: newMonthNum, scrollToToday: true };
+    renderScheduleView();
 }
 
 // ============================================
