@@ -2611,12 +2611,10 @@
                     syncBar(fixedBar, sourceBar);
                     attachBarEvents(fixedBar, sourceBar);
                     updateMobileFilterBtn(true);
-                    console.log('[FilterBar] showFixedBar called, manuallyShown=', manuallyShown);
                 }
 
                 function hideFixedBar() {
                     if (fixedBar) {
-                        console.log('[FilterBar] hideFixedBar: removing bar, manuallyShown=', manuallyShown, new Error().stack.split('\n')[2]);
                         fixedBar.remove(); fixedBar = null; sourceBar = null;
                     }
                     if (!manuallyShown) updateMobileFilterBtn(false);
@@ -2627,12 +2625,10 @@
                     // モバイルボタンで明示的に表示中
                     if (manuallyShown) {
                         // 表示直後500msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
-                        var elapsed = Date.now() - manuallyShownAt;
-                        if (elapsed < 500) { return; }
+                        if (Date.now() - manuallyShownAt < 500) return;
                         // 元のバーが画面内に戻ったら自動的に閉じる
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
-                            console.log('[FilterBar] onScroll: bar back in view, closing. bottom=', bar.getBoundingClientRect().bottom, 'elapsed=', elapsed);
                             manuallyShown = false;
                             hideFixedBar();
                         }
@@ -2706,8 +2702,17 @@
                         // 連続タップ防止
                         if (now - lastBtnClick < 500) return;
                         lastBtnClick = now;
-                        // すでに表示されていたら閉じる
+                        // すでに表示されていたら
                         if (fixedBar || hoverBar) {
+                            if (!manuallyShown) {
+                                // スクロールで自動表示されたバーを手動表示に昇格
+                                manuallyShown = true;
+                                manuallyShownAt = now;
+                                ignoreScrollUntil = now + 500;
+                                updateMobileFilterBtn(true);
+                                return;
+                            }
+                            // 手動表示中のバーを閉じる
                             manuallyShown = false;
                             upPx = 0;
                             ignoreScrollUntil = now + 600;
