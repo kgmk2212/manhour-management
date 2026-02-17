@@ -3529,6 +3529,7 @@ table tr[style*="1565c0"] th:first-child {
     display: flex;
     gap: 8px;
     align-items: center;
+    justify-content: center;
 }
 
 .ed-delete-link {
