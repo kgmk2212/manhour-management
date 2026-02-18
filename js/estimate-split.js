@@ -8,7 +8,8 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert
+    showAlert,
+    escapeHtml
 } from './utils.js';
 
 import { renderEstimateList } from './estimate.js';
@@ -31,7 +32,7 @@ export function openSplitEstimateModal(id) {
 
     document.getElementById('splitEstimateId').value = id;
     document.getElementById('splitEstimateInfo').innerHTML = `
-        <strong>${est.version}</strong> - ${est.task} [${est.process}] (${est.member})<br>
+        <strong>${escapeHtml(est.version)}</strong> - ${escapeHtml(est.task)} [${escapeHtml(est.process)}] (${escapeHtml(est.member)})<br>
         現在の工数: ${est.hours.toFixed(1)}h
     `;
     document.getElementById('splitTotalHours').value = est.hours;

@@ -4,7 +4,7 @@
 
 import * as State from './state.js';
 import * as Estimate from './estimate.js';
-import { formatHours } from './utils.js';
+import { formatHours, escapeHtml } from './utils.js';
 
 // ============================================
 // 工程内訳モーダル
@@ -103,7 +103,7 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
         const diff = data.actual - data.estimate;
 
         html += '<tr>';
-        html += `<td><strong>${member}</strong></td>`;
+        html += `<td><strong>${escapeHtml(member)}</strong></td>`;
         html += `<td style="text-align: right;">${formatHours(data.estimate)}h</td>`;
         html += `<td style="text-align: right;">${formatHours(data.actual)}h</td>`;
         html += `<td style="text-align: right; color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${formatHours(diff)}h</td>`;
@@ -275,9 +275,9 @@ export function openRemainingHoursModal(version, task, process) {
 
     // 情報表示エリアを更新
     document.getElementById('remainingHoursInfo').innerHTML = `
-        <div><strong>版数:</strong> ${version}</div>
-        <div><strong>対応名:</strong> ${task}</div>
-        <div><strong>工程:</strong> ${process}</div>
+        <div><strong>版数:</strong> ${escapeHtml(version)}</div>
+        <div><strong>対応名:</strong> ${escapeHtml(task)}</div>
+        <div><strong>工程:</strong> ${escapeHtml(process)}</div>
     `;
 
     // 担当者設定
@@ -285,7 +285,7 @@ export function openRemainingHoursModal(version, task, process) {
     if (allMembers.length > 1) {
         // 担当者が複数いる場合は選択できるようにする
         document.getElementById('remainingHoursMemberSelect').style.display = 'block';
-        select.innerHTML = allMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+        select.innerHTML = allMembers.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
 
         // 最初の担当者の見込残存時間と実績リストを表示
         updateRemainingHoursInput(version, task, process, allMembers[0]);
@@ -299,7 +299,7 @@ export function openRemainingHoursModal(version, task, process) {
     } else if (allMembers.length === 1) {
         // 担当者が1人の場合は非表示だが、selectには値を設定
         document.getElementById('remainingHoursMemberSelect').style.display = 'none';
-        select.innerHTML = `<option value="${allMembers[0]}">${allMembers[0]}</option>`;
+        select.innerHTML = `<option value="${escapeHtml(allMembers[0])}">${escapeHtml(allMembers[0])}</option>`;
         select.value = allMembers[0];
         updateRemainingHoursInput(version, task, process, allMembers[0]);
         updateRemainingHoursActualsList(version, task, process, allMembers[0]);
@@ -381,7 +381,7 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
                 <div style="padding: 8px; background: ${bgColor}; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 500; color: #333;">${dateStr}</div>
-                        ${actual.memo ? `<div style="color: #666; font-size: 12px; margin-top: 2px;">${actual.memo}</div>` : ''}
+                        ${actual.memo ? `<div style="color: #666; font-size: 12px; margin-top: 2px;">${escapeHtml(actual.memo)}</div>` : ''}
                     </div>
                     <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${formatHours(actual.hours)}h</div>
                 </div>

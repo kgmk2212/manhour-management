@@ -94,7 +94,8 @@ export function saveData(skipAutoBackup = false) {
             defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'matrix',
             chartColorScheme: selectedChartColorScheme,
             workDetailStyle: window.workDetailStyle,
-            modalDesignStyle: window.modalDesignStyle
+            modalDesignStyle: window.modalDesignStyle,
+            estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
         }
     };
 
@@ -108,6 +109,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_scheduleSettings', JSON.stringify(scheduleSettings));
     localStorage.setItem('manhour_taskColorMap', JSON.stringify(taskColorMap));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
+    localStorage.setItem('manhour_estimateStandardDisplay', data.settings.estimateStandardDisplay);
 
     // 進捗計算キャッシュをクリア
     clearProgressCache();
@@ -262,6 +264,12 @@ export function loadData() {
                 if (el) el.value = settings.modalDesignStyle;
             }
 
+            if (settings.estimateStandardDisplay) {
+                const el = document.getElementById('estimateStandardDisplay');
+                if (el) el.value = settings.estimateStandardDisplay;
+                localStorage.setItem('manhour_estimateStandardDisplay', settings.estimateStandardDisplay);
+            }
+
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
             // デフォルト設定を使用（エラーは表示しない）
@@ -310,7 +318,8 @@ export function autoBackup() {
         memberOrder: memberOrderValue,
         debugModeEnabled: debugModeEnabled,
         devFeaturesEnabled: devFeaturesEnabled,
-        workDetailStyle: window.workDetailStyle
+        workDetailStyle: window.workDetailStyle,
+        estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
     };
 
     const data = {

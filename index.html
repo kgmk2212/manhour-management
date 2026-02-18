@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'none'; object-src 'none';">
     <title>工数管理システム</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
@@ -51,8 +53,12 @@
             } catch (e) { }
         })();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"
+            integrity="sha384-P7KKlGD3Ng66Ds7oTliLzTnol6DbK+k7PafNYXIBDQ4b5eFWtmqctplDVOxslglR"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.2.3/release/holiday_jp.min.js"
+            integrity="sha384-QnKIEoeyx1N3viXh8Ntdz7vkzNWrdKiRprMASjlysFJR2KdJjjW8H05yKuDEV31O"
+            crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
@@ -672,6 +678,10 @@
                             </div>
                         </div>
                     </div>
+                    <!-- パターンA: サブテキスト -->
+                    <div id="estimateStandardA" style="display: none; font-size: 12px; opacity: 0.7; margin-top: 8px;"></div>
+                    <!-- パターンB: 下部バー -->
+                    <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: 13px;"></div>
                 </div>
 
                 <!-- 担当者別合計表示 -->
@@ -1212,6 +1222,18 @@
                             <option value="grouped">グループ</option>
                             <option value="matrix" selected>マトリクス</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>月標準工数の表示（見積タブ）</label>
+                        <select id="estimateStandardDisplay">
+                            <option value="subtext" selected>サブテキスト</option>
+                            <option value="bar">下部バー（余裕/超過付き）</option>
+                            <option value="none">非表示</option>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            月フィルタ選択時に、営業日数×8h×人数の標準工数を表示します
+                        </small>
                     </div>
                 </div>
 

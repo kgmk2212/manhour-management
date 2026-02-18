@@ -320,6 +320,45 @@ export function sortMembers(members, orderString) {
     return [...orderedMembers, ...unorderedMembers.sort()];
 }
 
+/**
+ * HTML特殊文字をエスケープする
+ * @param {string} str - エスケープ対象の文字列
+ * @returns {string} エスケープ済み文字列
+ */
+export function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * インラインイベントハンドラ内のJS文字列リテラル用エスケープ
+ * onclick="func('${escapeForHandler(value)}')" のように使用する。
+ * JS文字列コンテキスト + HTML属性コンテキストの二重エスケープを行う。
+ * @param {string} str - エスケープ対象の文字列
+ * @returns {string} エスケープ済み文字列
+ */
+export function escapeForHandler(str) {
+    if (str == null) return '';
+    // 1. JS文字列コンテキストのエスケープ
+    let result = String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
+    // 2. HTML属性コンテキストのエスケープ
+    result = result
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    return result;
+}
+
 // ============================================
 // UIユーティリティ
 // ============================================
