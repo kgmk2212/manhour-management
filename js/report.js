@@ -41,7 +41,9 @@ import {
     getMonthColor,
     getDeviationColor,
     generateMonthColorLegend,
-    sortMembers
+    sortMembers,
+    escapeHtml,
+    escapeForHandler
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 
@@ -641,8 +643,8 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
 
             html += `
                 <tr style="border-left: 4px solid ${borderColor};">
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${version}</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${task}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${escapeHtml(version)}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${escapeHtml(task)}</td>
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${progress.estimatedHours.toFixed(1)}h</td>
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${progress.actualHours.toFixed(1)}h</td>
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">
@@ -753,14 +755,14 @@ export function renderBulkRemainingTable() {
 
             html += `
                 <tr data-row-index="${rowIndex}"
-                    data-version="${data.version}"
-                    data-task="${data.task}"
-                    data-process="${data.process}"
-                    data-member="${data.member}">
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.version}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.task}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.process}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${data.member}</td>
+                    data-version="${escapeHtml(data.version)}"
+                    data-task="${escapeHtml(data.task)}"
+                    data-process="${escapeHtml(data.process)}"
+                    data-member="${escapeHtml(data.member)}">
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.version)}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.task)}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.process)}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.member)}</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.estimatedHours.toFixed(1)}h</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.actualHours.toFixed(1)}h</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">
@@ -1423,7 +1425,7 @@ function renderAnomalyDetection(filteredEstimates, filteredActuals) {
 
     anomalies.slice(0, 10).forEach(anomaly => {
         html += '<div style="background: #ffffff; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 13px; border: 1px solid #f5c6cb;">';
-        html += `<div style="font-weight: 600; color: #495057;">${anomaly.version} - ${anomaly.task} [${anomaly.process}]</div>`;
+        html += `<div style="font-weight: 600; color: #495057;">${escapeHtml(anomaly.version)} - ${escapeHtml(anomaly.task)} [${escapeHtml(anomaly.process)}]</div>`;
         html += `<div style="color: #495057;">見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
         html += '</div>';
     });
@@ -1480,7 +1482,7 @@ function renderWarningTasks(filteredEstimates, filteredActuals) {
 
     warnings.slice(0, 5).forEach((warning, idx) => {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e9ecef;">';
-        html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${warning.version} - ${warning.task}</div>`;
+        html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${escapeHtml(warning.version)} - ${escapeHtml(warning.task)}</div>`;
         html += `<div style="font-size: 13px; color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
         html += `<div style="font-size: 12px; color: #6c757d;">工程数: ${warning.processCount}</div>`;
         html += '</div>';
@@ -1787,7 +1789,7 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
         const taskCount = memberTasks[member] ? memberTasks[member].size : 0;
 
         html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
-        html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${member}</div>`;
+        html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${escapeHtml(member)}</div>`;
         html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
         html += `<div style="font-size: 12px; color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
         html += `<div style="font-size: 13px; color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
@@ -1807,7 +1809,7 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 
     members.forEach((member, index) => {
         html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center;">';
-        html += `<div style="font-weight: 600; margin-bottom: 10px; color: #495057;">${member}</div>`;
+        html += `<div style="font-weight: 600; margin-bottom: 10px; color: #495057;">${escapeHtml(member)}</div>`;
         html += `<canvas id="memberDonutChart_${index}" class="donut-chart-canvas"></canvas>`;
         html += '</div>';
     });
@@ -1999,7 +2001,7 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
 
         html += `
             <tr>
-                <td><strong>${member}</strong></td>
+                <td><strong>${escapeHtml(member)}</strong></td>
                 <td>${est.toFixed(1)}h</td>
                 <td>${act.toFixed(1)}h</td>
                 <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
@@ -2040,7 +2042,7 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
 
         html += `
             <tr>
-                <td><strong>${versionDisplay}</strong></td>
+                <td><strong>${escapeHtml(versionDisplay)}</strong></td>
                 <td>${est.toFixed(1)}h</td>
                 <td>${act.toFixed(1)}h</td>
                 <td>${progress}%</td>
@@ -2185,16 +2187,16 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
                 tableBody += '<tr>';
                 if (index === 0) {
-                    let taskDisplayHtml = taskGroup.task;
+                    let taskDisplayHtml = escapeHtml(taskGroup.task);
                     if (taskGroup.task.includes('：')) {
                         const parts = taskGroup.task.split('：');
                         const restPart = parts.slice(1).join('：');
-                        taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                        taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: 13px; font-weight: normal;">${escapeHtml(restPart)}</span>`;
                     }
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                 }
-                tableBody += `<td><span class="badge badge-${proc.toLowerCase()}">${proc}</span></td>`;
-                tableBody += `<td style="word-break: break-word;">${memberDisplay}</td>`;
+                tableBody += `<td><span class="badge badge-${escapeHtml(proc.toLowerCase())}">${escapeHtml(proc)}</span></td>`;
+                tableBody += `<td style="word-break: break-word;">${escapeHtml(memberDisplay)}</td>`;
                 tableBody += `<td style="text-align: right;">${est.hours > 0 ? est.hours.toFixed(1) + 'h' : '-'}</td>`;
                 tableBody += `<td style="text-align: right;">${act.hours > 0 ? act.hours.toFixed(1) + 'h' : '-'}</td>`;
                 tableBody += `<td style="text-align: right; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : '#666'}">${diff !== 0 ? (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h' : '-'}</td>`;
@@ -2217,7 +2219,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
             const versionTotalDiff = versionTotalAct - versionTotalEst;
 
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${escapeHtml(version)}</h3>`;
             html += '<div class="table-wrapper"><table class="estimate-grouped">';
             html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">進捗</th><th style="min-width: 100px;">対応合計</th></tr>';
             html += tableBody;
@@ -2405,11 +2407,11 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 versionTotalEst += totalEst;
                 versionTotalAct += totalAct;
 
-                let taskDisplayHtml = taskGroup.task;
+                let taskDisplayHtml = escapeHtml(taskGroup.task);
                 if (taskGroup.task.includes('：')) {
                     const parts = taskGroup.task.split('：');
                     const restPart = parts.slice(1).join('：');
-                    taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                    taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: 13px; font-weight: normal;">${escapeHtml(restPart)}</span>`;
                 }
 
                 // その他付随作業: 工程列なしの簡略表示
@@ -2425,7 +2427,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
                     contentHtml += '<tr>';
                     contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
-                    contentHtml += `<td style="text-align: center;">${[...allMembers].join(', ')}</td>`;
+                    contentHtml += `<td style="text-align: center;">${[...allMembers].map(m => escapeHtml(m)).join(', ')}</td>`;
                     contentHtml += `<td style="text-align: center;">
                         <div style="font-weight: 600;">${totalEst.toFixed(1)}h</div>
                         <div style="font-weight: 700; color: #1976d2;">${totalAct.toFixed(1)}h</div>
@@ -2519,7 +2521,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
         if (contentHtml) {
             const versionTotalDiff = versionTotalAct - versionTotalEst;
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${version}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${escapeHtml(version)}</h3>`;
 
             html += '<div class="table-wrapper"><table class="estimate-matrix report-matrix">';
             if (isOtherWorkVersion) {
@@ -2527,7 +2529,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             } else {
                 html += '<tr><th style="min-width: 200px;">対応名</th>';
                 displayProcesses.forEach(proc => {
-                    html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
+                    html += `<th style="min-width: 100px; text-align: center;">${escapeHtml(proc)}</th>`;
                 });
                 html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
             }
@@ -2700,9 +2702,9 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div style="font-weight: 600; white-space: nowrap;">${estText}</div>
             <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
-            ${memberDisplay ? (isMultiMember 
-                ? `<div style="font-size: 12px; color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${version.replace(/'/g, "\\'")}', '${task.replace(/'/g, "\\'")}', '${process.replace(/'/g, "\\'")}')" title="クリックで担当者別内訳を表示">(${memberDisplay})</div>`
-                : `<div style="font-size: 12px; color: #666; white-space: nowrap;">(${memberDisplay})</div>`) : ''}
+            ${memberDisplay ? (isMultiMember
+                ? `<div style="font-size: 12px; color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')" title="クリックで担当者別内訳を表示">(${escapeHtml(memberDisplay)})</div>`
+                : `<div style="font-size: 12px; color: #666; white-space: nowrap;">(${escapeHtml(memberDisplay)})</div>`) : ''}
             ${progressBarHtml}
         </div>
     `;
@@ -2710,9 +2712,9 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
 
 // セルクリック時のイベント取得
 function getCellOnclick(version, task, process, est, act) {
-    const v = version.replace(/'/g, "\\'");
-    const t = task.replace(/'/g, "\\'");
-    const p = process.replace(/'/g, "\\'");
+    const v = escapeForHandler(version);
+    const t = escapeForHandler(task);
+    const p = escapeForHandler(process);
     // 複数人でも詳細モーダルを開く（名前部分クリック時のみ内訳モーダル）
     return `onclick="openRemainingHoursModal('${v}', '${t}', '${p}')"`;
 }

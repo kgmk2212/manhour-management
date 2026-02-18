@@ -20,7 +20,9 @@ import {
     getMonthColor,
     generateMonthColorLegend,
     showAlert,
-    sortMembers
+    sortMembers,
+    escapeHtml,
+    escapeForHandler
 } from './utils.js';
 
 // ============================================
@@ -539,7 +541,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
         const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
         memberHtml += `
             <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
-                <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${member}</div>
+                <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${escapeHtml(member)}</div>
                 <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
                 <div style="font-size: 12px; color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
             </div>
@@ -703,7 +705,7 @@ export function renderEstimateGrouped() {
     });
 
     sortedVersionKeys.forEach(version => {
-        const versionDisplay = version || 'その他工数';
+        const versionDisplay = escapeHtml(version) || 'その他工数';
         const isOtherWorkVersion = !version;
 
         // その他工数の場合、合計のみの簡略表示
@@ -724,12 +726,12 @@ export function renderEstimateGrouped() {
                 const total = taskGroup.processes.reduce((sum, p) => sum + p.hours, 0);
                 const days = total / 8;
                 const months = total / 8 / workingDaysPerMonth;
-                const members = [...new Set(taskGroup.processes.map(p => p.member))].join(', ');
+                const members = escapeHtml([...new Set(taskGroup.processes.map(p => p.member))].join(', '));
 
-                let taskDisplayHtml = taskGroup.task || '(未設定)';
-                const escapedTask = (taskGroup.task || '').replace(/'/g, "\\'");
+                let taskDisplayHtml = escapeHtml(taskGroup.task) || '(未設定)';
+                const escapedTask = escapeForHandler(taskGroup.task || '');
 
-                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${version}', '${escapedTask}')">`;
+                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${escapeForHandler(version)}', '${escapedTask}')">`;
                 html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
                 html += `<td>${members}</td>`;
                 html += `<td style="text-align: right;">
@@ -792,7 +794,7 @@ export function renderEstimateGrouped() {
                 workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">〜${y2}年${parseInt(m2)}月</span></div>`;
             }
 
-            let taskDisplayHtml = taskGroup.task;
+            let taskDisplayHtml = escapeHtml(taskGroup.task);
             if (taskGroup.task.includes(':') || taskGroup.task.includes('：')) {
                 let separator = ':';
                 let parts;
@@ -802,8 +804,8 @@ export function renderEstimateGrouped() {
                     separator = '：';
                     parts = taskGroup.task.split('：');
                 }
-                const restPart = parts.slice(1).join(separator);
-                taskDisplayHtml = `${parts[0]}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
+                const restPart = escapeHtml(parts.slice(1).join(separator));
+                taskDisplayHtml = `${escapeHtml(parts[0])}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
             }
 
             taskDisplayHtml += `<span class="work-month-inline">${workMonthBadgeInline}</span><span class="work-month-block">${workMonthBadgeBlock}</span>`;
@@ -841,8 +843,8 @@ export function renderEstimateGrouped() {
 
                 if (workMonthSelectionMode) {
                     if (index === 0) {
-                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
-                            <input type="checkbox" ${allSelected ? 'checked' : ''} style="width: auto; cursor: pointer;" onclick="selectTaskEstimates('${version}', '${taskGroup.task.replace(/'/g, "\\'")}', event)">
+                        html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${escapeForHandler(version)}', '${escapeForHandler(taskGroup.task)}', event)">
+                            <input type="checkbox" ${allSelected ? 'checked' : ''} style="width: auto; cursor: pointer;" onclick="selectTaskEstimates('${escapeForHandler(version)}', '${escapeForHandler(taskGroup.task)}', event)">
                         </td>`;
                     }
                 }
@@ -856,16 +858,16 @@ export function renderEstimateGrouped() {
                     html += `<td style="cursor: pointer; ${grayStyle}" onclick="toggleEstimateSelection(${proc.id}, event)">
                         <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                         <div>
-                            <span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span>
+                            <span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span>
                             <span class="work-month-inline">${processWorkMonthInline}</span>
                         </div>
                         <div class="work-month-block">${processWorkMonthBlock}</div>
                     </td>`;
                 } else {
-                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${proc.process.toLowerCase()}">${proc.process}</span></td>`;
+                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span></td>`;
                 }
 
-                html += `<td style="${grayStyle}">${proc.member}</td>`;
+                html += `<td style="${grayStyle}">${escapeHtml(proc.member)}</td>`;
                 html += `<td style="text-align: right; ${grayStyle}">${proc.hours}h</td>`;
 
                 if (index === 0) {
@@ -977,7 +979,7 @@ export function renderEstimateMatrix() {
     });
 
     sortedMatrixVersionKeys.forEach(version => {
-        const versionDisplay = version || 'その他工数';
+        const versionDisplay = escapeHtml(version) || 'その他工数';
         const isOtherWorkVersion = !version;
 
         // その他工数の場合、対応名と合計のみの簡略表示
@@ -988,7 +990,7 @@ export function renderEstimateMatrix() {
             html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px; text-align: center;">担当</th><th style="min-width: 80px; text-align: center;">合計</th></tr>';
 
             Object.values(versionGroups[version]).forEach(group => {
-                let taskDisplayHtml = group.task || '(未設定)';
+                let taskDisplayHtml = escapeHtml(group.task) || '(未設定)';
 
                 let total = 0;
                 const members = new Set();
@@ -1000,10 +1002,10 @@ export function renderEstimateMatrix() {
                 const totalDays = total / 8;
                 const totalMonths = totalDays / workingDaysPerMonth;
 
-                const escapedTask = (group.task || '').replace(/'/g, "\\'");
-                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${version}', '${escapedTask}')">`;
+                const escapedTask = escapeForHandler(group.task || '');
+                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${escapeForHandler(version)}', '${escapedTask}')">`;
                 html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
-                html += `<td style="text-align: center;">${[...members].join(', ')}</td>`;
+                html += `<td style="text-align: center;">${escapeHtml([...members].join(', '))}</td>`;
                 html += `<td style="text-align: center;">
                     <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
                     <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
@@ -1027,15 +1029,15 @@ export function renderEstimateMatrix() {
         html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
 
         Object.values(versionGroups[version]).forEach(group => {
-            let taskDisplayHtml = group.task;
+            let taskDisplayHtml = escapeHtml(group.task);
             if (group.task.includes('：')) {
                 const parts = group.task.split('：');
-                const restPart = parts.slice(1).join('：');
-                taskDisplayHtml = `${parts[0]}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                const restPart = escapeHtml(parts.slice(1).join('：'));
+                taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
             }
 
-            const escapedVer = version.replace(/'/g, "\\'");
-            const escapedTsk = group.task.replace(/'/g, "\\'");
+            const escapedVer = escapeForHandler(version);
+            const escapedTsk = escapeForHandler(group.task);
 
             html += '<tr>';
             html += `<td class="clickable-cell" style="font-weight: 600; cursor: pointer;"
@@ -1058,7 +1060,7 @@ export function renderEstimateMatrix() {
                         onmouseover="this.style.background='#e3f2fd'"
                         onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
                         <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                        <div style="font-size: 12px; color: #666;">(${p.member})</div>
+                        <div style="font-size: 12px; color: #666;">(${escapeHtml(p.member)})</div>
                     </td>`;
                 } else {
                     html += `<td style="text-align: center; color: #ccc;">-</td>`;
@@ -1127,10 +1129,10 @@ export function renderEstimateDetailList() {
 
         html += `
             <tr>
-                <td>${est.version}</td>
-                <td>${est.task}</td>
-                <td><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></td>
-                <td>${est.member}</td>
+                <td>${escapeHtml(est.version)}</td>
+                <td>${escapeHtml(est.task)}</td>
+                <td><span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span></td>
+                <td>${escapeHtml(est.member)}</td>
                 <td>${displayHours.toFixed(1)}h</td>
                 <td>${workMonthDisplay}</td>
                 <td>
@@ -1339,19 +1341,19 @@ export function showEstimateDetail(estimateId) {
             <div class="estimate-detail-item">
                 ${isOther ? '' : `<div class="estimate-detail-row">
                     <span class="estimate-detail-label">版数:</span>
-                    <span class="estimate-detail-value">${est.version || '(なし)'}</span>
+                    <span class="estimate-detail-value">${escapeHtml(est.version) || '(なし)'}</span>
                 </div>`}
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">対応名:</span>
-                    <span class="estimate-detail-value">${est.task}</span>
+                    <span class="estimate-detail-value">${escapeHtml(est.task)}</span>
                 </div>
                 ${isOther ? '' : `<div class="estimate-detail-row">
                     <span class="estimate-detail-label">工程:</span>
-                    <span class="estimate-detail-value"><span class="badge badge-${est.process.toLowerCase()}">${est.process}</span></span>
+                    <span class="estimate-detail-value"><span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span></span>
                 </div>`}
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">担当:</span>
-                    <span class="estimate-detail-value">${est.member}</span>
+                    <span class="estimate-detail-value">${escapeHtml(est.member)}</span>
                 </div>
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">見積工数:</span>
@@ -1392,16 +1394,16 @@ export function showEstimateDetail(estimateId) {
 
         html = `
             <div class="ed-hero">
-                ${isOther ? '' : `<div class="ed-version">${est.version || '版数なし'}</div>`}
-                <div class="ed-task-name">${est.task}</div>
+                ${isOther ? '' : `<div class="ed-version">${escapeHtml(est.version) || '版数なし'}</div>`}
+                <div class="ed-task-name">${escapeHtml(est.task)}</div>
                 <div class="ed-hours-row">
-                    ${isOther ? '' : `<span class="badge badge-${est.process.toLowerCase()}">${est.process}</span>`}
+                    ${isOther ? '' : `<span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span>`}
                     <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
                 </div>
                 <div class="ed-hours-label">見積工数</div>
             </div>
             <div class="ed-meta">
-                <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${est.member}</span>
+                <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${escapeHtml(est.member)}</span>
             </div>
             ${workMonthCards ? `
             <div class="ed-section">
@@ -1441,8 +1443,8 @@ export function showTaskDetail(version, task) {
     const totalDays = totalHours / 8;
     const totalMonths = totalDays / 20;
 
-    const escapedVersion = version.replace(/'/g, "\\'");
-    const escapedTask = task.replace(/'/g, "\\'");
+    const escapedVersion = escapeForHandler(version);
+    const escapedTask = escapeForHandler(task);
 
     const isClassic = window.modalDesignStyle === 'classic';
     let html;
@@ -1450,7 +1452,7 @@ export function showTaskDetail(version, task) {
     if (isClassic) {
         document.getElementById('estimateDetailModalTitle').textContent = `対応詳細 - ${task}`;
 
-        html = `<div style="margin-bottom: 12px; font-size: 14px; color: #666;">版数: ${version} | 合計: <strong style="color: #1976d2;">${totalHours.toFixed(1)}h</strong> (${totalDays.toFixed(1)}人日)</div>`;
+        html = `<div style="margin-bottom: 12px; font-size: 14px; color: #666;">版数: ${escapeHtml(version)} | 合計: <strong style="color: #1976d2;">${totalHours.toFixed(1)}h</strong> (${totalDays.toFixed(1)}人日)</div>`;
         html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
         processOrder.forEach(proc => {
@@ -1472,7 +1474,7 @@ export function showTaskDetail(version, task) {
 
                     html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
                     html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">`;
-                    html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span>${est.member}</span>`;
+                    html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span>${escapeHtml(est.member)}</span>`;
                     html += `<span style="font-weight: 700; color: #1976d2;">${est.hours.toFixed(1)}h</span>`;
                     html += `</div>`;
                     if (workMonthDisplay) {
@@ -1503,8 +1505,8 @@ export function showTaskDetail(version, task) {
 
         html = `
             <div class="ed-hero">
-                <div class="ed-version">${version}</div>
-                <div class="ed-task-name">${task}</div>
+                <div class="ed-version">${escapeHtml(version)}</div>
+                <div class="ed-task-name">${escapeHtml(task)}</div>
                 <div class="ed-hours-row">
                     <span class="ed-hours">${totalHours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
                 </div>
@@ -1536,7 +1538,7 @@ export function showTaskDetail(version, task) {
                             <div class="wd-card-header">
                                 <div>
                                     <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                    <span class="wd-card-title">${est.member}</span>
+                                    <span class="wd-card-title">${escapeHtml(est.member)}</span>
                                     ${monthTag}
                                 </div>
                                 <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
@@ -1671,7 +1673,7 @@ export function showOtherWorkTaskDetail(version, task) {
 
             html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
             html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
-            html += `<span style="font-weight: 600;">${est.member}</span>`;
+            html += `<span style="font-weight: 600;">${escapeHtml(est.member)}</span>`;
             html += `<span style="font-weight: 700; color: #1976d2; font-size: 16px;">${est.hours.toFixed(1)}h</span>`;
             html += `</div>`;
             html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
@@ -1695,7 +1697,7 @@ export function showOtherWorkTaskDetail(version, task) {
 
         html = `
             <div class="ed-hero">
-                <div class="ed-task-name">${task || '(未設定)'}</div>
+                <div class="ed-task-name">${escapeHtml(task) || '(未設定)'}</div>
                 <div class="ed-hours-row">
                     <span class="ed-hours">${totalHours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
                 </div>
@@ -1723,7 +1725,7 @@ export function showOtherWorkTaskDetail(version, task) {
                 <div class="wd-card">
                     <div class="wd-card-header">
                         <div>
-                            <span class="wd-card-title">${est.member}</span>
+                            <span class="wd-card-title">${escapeHtml(est.member)}</span>
                             ${monthTag}
                         </div>
                         <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>

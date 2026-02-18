@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none';">
     <title>工数管理システム</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
@@ -34,8 +36,12 @@
             } catch (e) { }
         })();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"
+            integrity="sha384-P7KKlGD3Ng66Ds7oTliLzTnol6DbK+k7PafNYXIBDQ4b5eFWtmqctplDVOxslglR"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.5.1/lib/holiday_jp.js"
+            integrity="sha384-6BgtL0IDXPzZm5lde3ThUlM8pIy+dAuxJ56ZYUrGiNo/sJXwXYXIt/VOUCgm7Gqn"
+            crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css">
     <style>
         /* 早期テーマ適用用のCSS変数 */

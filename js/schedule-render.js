@@ -6,7 +6,7 @@
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay } from './schedule.js';
-import { sortMembers } from './utils.js';
+import { sortMembers, escapeHtml } from './utils.js';
 
 // ============================================
 // 定数
@@ -1106,13 +1106,13 @@ function showTooltip(schedule, x, y, renderer) {
 
     tooltip.innerHTML = `
         <div class="tooltip-header">
-            <strong>${schedule.task}</strong>
+            <strong>${escapeHtml(schedule.task)}</strong>
             <span class="tooltip-status ${schedule.status || 'pending'}">${statusLabel}</span>
         </div>
         <div class="tooltip-body">
-            <div class="tooltip-row"><span class="tooltip-label">工程:</span><span>${schedule.process}</span></div>
-            <div class="tooltip-row"><span class="tooltip-label">担当:</span><span>${schedule.member}</span></div>
-            <div class="tooltip-row"><span class="tooltip-label">期間:</span><span>${schedule.startDate} 〜 ${schedule.endDate}</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">工程:</span><span>${escapeHtml(schedule.process)}</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">担当:</span><span>${escapeHtml(schedule.member)}</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">期間:</span><span>${escapeHtml(schedule.startDate)} 〜 ${escapeHtml(schedule.endDate)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">進捗:</span><span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${progressInfo.actualHours.toFixed(1)}h / ${progressInfo.estimatedHours}h)</span></div>
             <div class="tooltip-row"><span class="tooltip-label">残:</span><span>${remainingDisplay}</span></div>
             ${isDelayedSchedule ? '<div class="tooltip-warning">⚠️ 遅延中</div>' : ''}

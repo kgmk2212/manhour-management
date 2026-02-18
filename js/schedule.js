@@ -10,7 +10,7 @@ import {
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS } from './constants.js';
-import { formatHours } from './utils.js';
+import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
@@ -537,13 +537,10 @@ export function isBusinessDay(date, member) {
     
     const dateStr = formatDateForCheck(date);
     
-    // 祝日チェック（holiday_jp）
-    try {
-        if (window.holiday_jp && window.holiday_jp.isHoliday(date)) {
-            return false;
-        }
-    } catch (e) {
-        // holiday_jpが利用できない場合は無視
+    // 祝日チェック（getHoliday経由：holiday_jp優先、フォールバックで内部定数）
+    const holiday = typeof window.getHoliday === 'function' ? window.getHoliday(dateStr) : null;
+    if (holiday) {
+        return false;
     }
     
     // 会社休日チェック
@@ -911,7 +908,7 @@ export function updateScheduleVersionOptions() {
     
     select.innerHTML = '<option value="">選択してください</option>';
     versions.forEach(v => {
-        select.innerHTML += `<option value="${v}">${v}</option>`;
+        select.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
     });
 }
 
@@ -930,7 +927,7 @@ export function updateScheduleTaskOptions() {
     
     taskSelect.innerHTML = '<option value="">選択してください</option>';
     tasks.forEach(t => {
-        taskSelect.innerHTML += `<option value="${t}">${t}</option>`;
+        taskSelect.innerHTML += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`;
     });
     
     // 下位のセレクトをリセット
@@ -954,7 +951,7 @@ export function updateScheduleProcessOptions() {
     
     processSelect.innerHTML = '<option value="">選択してください</option>';
     processes.forEach(p => {
-        processSelect.innerHTML += `<option value="${p}">${p}</option>`;
+        processSelect.innerHTML += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
     });
     
     // 下位のセレクトをリセット
@@ -980,9 +977,9 @@ export function updateScheduleMemberOptions() {
     
     memberSelect.innerHTML = '<option value="">選択してください</option>';
     members.forEach(m => {
-        memberSelect.innerHTML += `<option value="${m}">${m}</option>`;
+        memberSelect.innerHTML += `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`;
     });
-    
+
     document.getElementById('scheduleEstimatedHours').value = '';
 }
 
@@ -1238,7 +1235,7 @@ export function updateAutoGenerateVersionOptions() {
     
     select.innerHTML = '<option value="">選択してください</option>';
     versions.forEach(v => {
-        select.innerHTML += `<option value="${v}">${v}</option>`;
+        select.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
     });
 }
 
@@ -1275,7 +1272,7 @@ export function updateAutoGenerateTargetOptions() {
     
     targetSelect.innerHTML = '<option value="">選択してください</option>';
     options.forEach(opt => {
-        targetSelect.innerHTML += `<option value="${opt}">${opt}</option>`;
+        targetSelect.innerHTML += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`;
     });
 }
 
@@ -1327,9 +1324,9 @@ export function updateAutoGeneratePreview() {
         <div class="preview-list">
             ${newEstimates.slice(0, 10).map(e => `
                 <div class="preview-item">
-                    <span class="preview-task">${e.task}</span>
-                    <span class="preview-process">${e.process}</span>
-                    <span class="preview-member">${e.member}</span>
+                    <span class="preview-task">${escapeHtml(e.task)}</span>
+                    <span class="preview-process">${escapeHtml(e.process)}</span>
+                    <span class="preview-member">${escapeHtml(e.member)}</span>
                     <span class="preview-hours">${e.hours}h</span>
                 </div>
             `).join('')}
@@ -1878,7 +1875,7 @@ export function showToast(message, type = 'info', duration = 3000, options = {})
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
         <span class="toast-icon">${icons[type]}</span>
-        <span class="toast-message">${message}</span>
+        <span class="toast-message">${escapeHtml(message)}</span>
         ${undoHtml}
         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
     `;
@@ -2030,7 +2027,7 @@ export function updateScheduleFilterOptions() {
         
         versionSelect.innerHTML = '<option value="">すべて</option>';
         versions.forEach(v => {
-            versionSelect.innerHTML += `<option value="${v}"${v === currentValue ? ' selected' : ''}>${v}</option>`;
+            versionSelect.innerHTML += `<option value="${escapeHtml(v)}"${v === currentValue ? ' selected' : ''}>${escapeHtml(v)}</option>`;
         });
     }
     
@@ -2042,7 +2039,7 @@ export function updateScheduleFilterOptions() {
         
         memberSelect.innerHTML = '<option value="">すべて</option>';
         members.forEach(m => {
-            memberSelect.innerHTML += `<option value="${m}"${m === currentValue ? ' selected' : ''}>${m}</option>`;
+            memberSelect.innerHTML += `<option value="${escapeHtml(m)}"${m === currentValue ? ' selected' : ''}>${escapeHtml(m)}</option>`;
         });
     }
 }
@@ -2139,15 +2136,15 @@ export function toggleUnscheduledDropdown() {
     let groupIndex = 0;
     groups.forEach((items, key) => {
         const [version, task] = key.split('/');
-        const details = items.map(e => `${e.process}(${e.member})`).join(', ');
+        const details = items.map(e => `${escapeHtml(e.process)}(${escapeHtml(e.member)})`).join(', ');
         const groupId = `unscheduled-group-${groupIndex}`;
         html += `<li class="unscheduled-dropdown-item">
             <label class="unscheduled-item-label">
                 <input type="checkbox" class="unscheduled-group-check" id="${groupId}"
-                       data-version="${version}" data-task="${task}" checked
+                       data-version="${escapeHtml(version)}" data-task="${escapeHtml(task)}" checked
                        onchange="updateUnscheduledCount()">
                 <div class="unscheduled-item-text">
-                    <span class="unscheduled-task-name" title="${version} / ${task}">${task}</span>
+                    <span class="unscheduled-task-name" title="${escapeHtml(version)} / ${escapeHtml(task)}">${escapeHtml(task)}</span>
                     <span class="unscheduled-task-detail">${details}</span>
                 </div>
             </label>
