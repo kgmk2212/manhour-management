@@ -8,7 +8,7 @@ import {
     nextCompanyHolidayId, setNextCompanyHolidayId,
     nextVacationId, setNextVacationId
 } from './state.js';
-import { showAlert, closeModalWithAnimation } from './utils.js';
+import { showAlert, closeModalWithAnimation, escapeHtml } from './utils.js';
 
 // ============================================
 // 会社休日管理
@@ -70,8 +70,8 @@ export function renderCompanyHolidayList() {
     companyHolidays.forEach(h => {
         html += `
             <tr>
-                <td>${h.name}</td>
-                <td>${h.startDate} ～ ${h.endDate}</td>
+                <td>${escapeHtml(h.name)}</td>
+                <td>${escapeHtml(h.startDate)} ～ ${escapeHtml(h.endDate)}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteCompanyHoliday(${h.id})">削除</button>
                 </td>

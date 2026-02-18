@@ -338,7 +338,7 @@ export function initOtherWorkMemberSelect() {
     select.innerHTML = '<option value="">-- 担当者を選択 --</option>';
     select.innerHTML += '<option value="__all__">全員</option>';
     Array.from(members).sort().forEach(member => {
-        select.innerHTML += `<option value="${member}">${member}</option>`;
+        select.innerHTML += `<option value="${Utils.escapeHtml(member)}">${Utils.escapeHtml(member)}</option>`;
     });
 }
 

@@ -7,7 +7,7 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode
 } from './state.js';
-import { generateMonthOptions, generateMonthRange, showAlert, sortMembers } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler } from './utils.js';
 import * as Estimate from './estimate.js';
 
 // クイック入力用の状態変数
@@ -143,13 +143,13 @@ export function filterQuickTaskList() {
 
     if (filtered.length === 0) {
         const msg = selectedMemberFilter
-            ? `${selectedMemberFilter}さんの対応が見つかりません`
+            ? `${escapeHtml(selectedMemberFilter)}さんの対応が見つかりません`
             : '該当する対応が見つかりません';
         dropdown.innerHTML = `<div class="custom-dropdown-empty">${msg}</div>`;
     } else {
         dropdown.innerHTML = filtered.map(taskInfo => {
             const value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
-            return `<div class="custom-dropdown-item" onmousedown="selectQuickTask('${value.replace(/'/g, "\\'")}', '${taskInfo.display.replace(/'/g, "\\'")}')">${taskInfo.display}</div>`;
+            return `<div class="custom-dropdown-item" onmousedown="selectQuickTask('${escapeForHandler(value)}', '${escapeForHandler(taskInfo.display)}')">${escapeHtml(taskInfo.display)}</div>`;
         }).join('');
     }
 

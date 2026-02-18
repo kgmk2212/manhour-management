@@ -283,6 +283,12 @@ export function loadData() {
                 localStorage.setItem('manhour_estimateStandardDisplay', settings.estimateStandardDisplay);
             }
 
+            if (settings.estimateStandardDisplay) {
+                const el = document.getElementById('estimateStandardDisplay');
+                if (el) el.value = settings.estimateStandardDisplay;
+                localStorage.setItem('manhour_estimateStandardDisplay', settings.estimateStandardDisplay);
+            }
+
         } catch (error) {
             console.error('設定の読み込みに失敗しました:', error);
             // デフォルト設定を使用（エラーは表示しない）

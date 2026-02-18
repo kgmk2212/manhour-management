@@ -33,18 +33,18 @@ jobs:
           ref: main
           path: main
 
-      - name: Checkout feature/gantt-chart branch
-        uses: actions/checkout@v4
-        with:
-          ref: feature/gantt-chart
-          path: feature-gantt-chart
-        continue-on-error: true
-
       - name: Checkout experiment/sandbox branch
         uses: actions/checkout@v4
         with:
           ref: experiment/sandbox
           path: experiment-sandbox
+        continue-on-error: true
+
+      - name: Checkout experiment/redesign branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/redesign
+          path: experiment-redesign
         continue-on-error: true
 
       - name: Prepare deployment directory
@@ -53,15 +53,6 @@ jobs:
           mkdir -p deploy
           cp -r main/* deploy/
 
-          # feature/gantt-chartブランチが存在する場合、プレビューディレクトリにコピー
-          if [ -d "feature-gantt-chart" ]; then
-            mkdir -p deploy/preview/gantt-chart
-            cp -r feature-gantt-chart/* deploy/preview/gantt-chart/
-            echo "✅ feature/gantt-chart をプレビューディレクトリに追加しました"
-          else
-            echo "⚠️ feature/gantt-chart ブランチが見つかりません（スキップ）"
-          fi
-
           # experiment/sandboxブランチが存在する場合、プレビューディレクトリにコピー
           if [ -d "experiment-sandbox" ]; then
             mkdir -p deploy/preview/sandbox
@@ -69,6 +60,15 @@ jobs:
             echo "✅ experiment/sandbox をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/sandbox ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/redesignブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-redesign" ]; then
+            mkdir -p deploy/preview/redesign
+            cp -r experiment-redesign/* deploy/preview/redesign/
+            echo "✅ experiment/redesign をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/redesign ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages

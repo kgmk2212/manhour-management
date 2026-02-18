@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'none'; object-src 'none';">
     <title>工数管理システム</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
@@ -23,7 +25,7 @@
                 }
                 // 保存されたタブを読み込み
                 var savedTab = localStorage.getItem('manhour_currentTab');
-                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
+                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
                 // モーダルデザインスタイルを早期適用
@@ -49,8 +51,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp/holiday_jp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"
+            integrity="sha384-P7KKlGD3Ng66Ds7oTliLzTnol6DbK+k7PafNYXIBDQ4b5eFWtmqctplDVOxslglR"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.2.3/release/holiday_jp.min.js"
+            integrity="sha384-QnKIEoeyx1N3viXh8Ntdz7vkzNWrdKiRprMASjlysFJR2KdJjjW8H05yKuDEV31O"
+            crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css?v=20260215-themes">
     <style>
         /* 早期テーマ適用用のCSS変数 */
@@ -207,7 +213,7 @@
                     <button class="tab" data-tab="report">レポート</button>
                     <button class="tab" data-tab="estimate">見積一覧</button>
                     <button class="tab" data-tab="actual">実績一覧</button>
-                    <button class="tab" data-tab="schedule" id="scheduleTab">📅 スケジュール</button>
+                    <button class="tab dev-feature" data-tab="schedule" id="scheduleTab" style="display: none;">📅 スケジュール</button>
                     <button class="tab" data-tab="settings">⚙️ 設定</button>
                 </div>
                 <!-- フィルタトグルボタン（固定表示） -->
@@ -537,7 +543,7 @@
                 <h2>工数レポート</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="reportFiltersCompact" class="inline-filter"
+                <div id="reportFiltersCompact"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">フィルタ:</label>
@@ -563,7 +569,7 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="reportFiltersSegmented" class="inline-filter"
+                <div id="reportFiltersSegmented"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="reportVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
@@ -842,7 +848,7 @@
                 </button>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="estimateFiltersCompact" class="inline-filter" style="margin-bottom: 20px;">
+                <div id="estimateFiltersCompact" style="margin-bottom: 20px;">
                     <div
                         style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
@@ -878,7 +884,7 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="estimateFiltersSegmented" class="inline-filter"
+                <div id="estimateFiltersSegmented"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="estimateVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
@@ -972,7 +978,7 @@
                 <h2>実績データ一覧</h2>
 
                 <!-- バージョン1: 横並びコンパクトレイアウト -->
-                <div id="actualFiltersCompact" class="inline-filter"
+                <div id="actualFiltersCompact"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
                         <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示モード:</label>
@@ -1005,7 +1011,7 @@
                 </div>
 
                 <!-- バージョン2: セグメントボタンレイアウト（切り替え用） -->
-                <div id="actualFiltersSegmented" class="inline-filter"
+                <div id="actualFiltersSegmented"
                     style="display: none; margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -1054,7 +1060,7 @@
             <!-- /report -->
 
             <!-- [GANTT-CHART] スケジュールタブ -->
-            <div id="schedule" class="tab-content">
+            <div id="schedule" class="tab-content dev-feature" style="display: none;">
                 <!-- ツールバー -->
                 <div class="schedule-toolbar">
                     <div class="schedule-nav">
@@ -1070,11 +1076,9 @@
                             id="viewTaskBtn">タスク別</button>
                     </div>
                     <div class="schedule-actions">
-                        <button onclick="exportSchedulesToExcel()" class="btn btn-outline" title="Excel出力">📥 出力</button>
-                        <span class="unscheduled-wrapper">
-                            <button onclick="openAutoGenerateModal()" class="btn btn-secondary" style="position:relative;">⚡ 自動生成<span id="unscheduledBadge" class="unscheduled-badge" style="display:none;" onclick="event.stopPropagation(); toggleUnscheduledDropdown()"></span></button>
-                            <div id="unscheduledDropdown" class="unscheduled-dropdown" style="display:none;"></div>
-                        </span>
+                        <button onclick="exportSchedulesToExcel()" class="btn btn-outline" title="Excel出力">📥
+                            出力</button>
+                        <button onclick="openAutoGenerateModal()" class="btn btn-secondary">⚡ 自動生成</button>
                         <button onclick="openCreateScheduleModal()" class="btn btn-primary" title="キーボード: N">+
                             予定作成</button>
                         <span class="keyboard-hint"
@@ -1521,16 +1525,6 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="hideInlineFilters" style="width: auto; margin-right: 10px;">
-                            <span>ページ内フィルタを非表示にする</span>
-                        </label>
-                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
-                            各タブ内のフィルタエリアを非表示にします。実績一覧の表示形式切替はタブフィルタに統合されます。
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
                         <label>フィルタボタンのスタイル</label>
                         <select id="tabFilterButtonStyle">
                             <option value="pill">丸ボタン（Pill）</option>
@@ -1549,17 +1543,6 @@
                         </select>
                         <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
                             PC表示時のフィルタ表示レイアウトを選択できます。
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>UIデザイン</label>
-                        <select id="modalDesignStyle">
-                            <option value="modern">モダン（デフォルト）</option>
-                            <option value="classic">クラシック</option>
-                        </select>
-                        <small style="color: #666; display: block; margin-top: 5px; margin-left: 30px;">
-                            全モーダル・カレンダー・アラートのデザインを切り替えます。
                         </small>
                     </div>
 
@@ -1585,8 +1568,7 @@
                         </small>
                     </div>
 
-                    <!-- 開発中の機能設定（現在未使用・将来の機能追加時に再利用） -->
-                    <div class="form-group" style="margin-top: 15px; display: none;">
+                    <div class="form-group" style="margin-top: 15px;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="devFeaturesEnabled" style="width: auto; margin-right: 10px;">
                             <span>開発中の機能を表示する</span>
@@ -1815,61 +1797,59 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editActualId">
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>日付</label>
-                        <input type="date" id="editActualDate">
-                    </div>
-                    <div class="form-group">
-                        <label>版数</label>
-                        <select id="editActualVersion">
-                            <option value="">-- 版数を選択 --</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>日付</label>
+                    <input type="date" id="editActualDate" style="max-width: 200px;">
                 </div>
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>工程</label>
-                        <select id="editActualProcess">
-                            <option value="">全工程</option>
-                            <option value="UI">UI</option>
-                            <option value="PG">PG</option>
-                            <option value="PT">PT</option>
-                            <option value="IT">IT</option>
-                            <option value="ST">ST</option>
-                        </select>
-                        <div class="fm-hint">候補を絞り込めます</div>
-                    </div>
-                    <div class="form-group">
-                        <label>担当</label>
-                        <select id="editActualMember">
-                        </select>
-                        <span id="editActualMemberDisplay" class="fm-readonly-field"
-                            style="display: none;"></span>
-                    </div>
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="editActualVersion">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>工程</label>
+                    <select id="editActualProcess">
+                        <option value="">全工程</option>
+                        <option value="UI">UI</option>
+                        <option value="PG">PG</option>
+                        <option value="PT">PT</option>
+                        <option value="IT">IT</option>
+                        <option value="ST">ST</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        工程を選択して候補を絞り込むことができます。
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
-                    <select id="editActualTaskSelect">
+                    <select id="editActualTaskSelect" style="margin-bottom: 10px;">
                         <option value="">-- 対応を選択 --</option>
                     </select>
                     <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
+
                 </div>
-                <div class="fm-section">
-                    <div class="fm-section-label">工数</div>
-                    <div class="fm-row">
-                        <div class="form-group">
-                            <label>実績工数 (h)</label>
-                            <input type="number" id="editActualHours" step="0.25" min="0" placeholder="8">
-                        </div>
-                        <div class="form-group" id="remainingHoursGroup">
-                            <label>見込残存 (h)</label>
-                            <input type="number" id="editActualRemainingHours" step="0.25" min="0" placeholder="0">
-                            <div class="fm-hint">0=完了</div>
-                        </div>
+                <div class="form-group">
+                    <label>担当</label>
+                    <select id="editActualMember">
+                    </select>
+                    <span id="editActualMemberDisplay"
+                        style="display: none; padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></span>
+                </div>
+                <div class="form-group">
+                    <label>実績工数</label>
+                    <input type="number" id="editActualHours" step="0.25" min="0" placeholder="8">
+                </div>
+                <div class="form-group" id="remainingHoursGroup">
+                    <label>見込残存時間</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="editActualRemainingHours" step="0.25" min="0" placeholder="0"
+                            style="flex: 1; max-width: 120px;">
+                        <span style="color: #666; font-size: 13px;">時間</span>
                     </div>
+                    <small style="color: #666; display: block; margin-top: 5px;">この対応にあと何時間で完了予定か入力（0=完了）</small>
                 </div>
-                <div class="fm-actions">
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <button class="btn btn-primary" id="btnSaveActualEdit">保存</button>
                     <button class="btn" id="editActualOtherBtn"
                         style="background: #27ae60; color: white; display: none;">その他作業</button>
@@ -1890,25 +1870,28 @@
                 <button class="modal-close" onclick="closeBulkRemainingModal()">&times;</button>
             </div>
             <div class="modal-body" style="overflow-y: auto; max-height: calc(85vh - 120px);">
-                <div class="form-group">
-                    <label>版数フィルタ</label>
-                    <select id="bulkRemainingVersionFilter" onchange="renderBulkRemainingTable()" style="max-width: 200px;">
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <label>版数フィルタ:</label>
+                    <select id="bulkRemainingVersionFilter" onchange="renderBulkRemainingTable()"
+                        style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                         <option value="all">全版数</option>
                     </select>
                 </div>
                 <div class="table-wrapper" style="overflow-x: auto;">
-                    <table id="bulkRemainingTable" class="fm-bulk-table">
+                    <table id="bulkRemainingTable" style="width: 100%; border-collapse: collapse; min-width: 800px;">
                         <thead>
-                            <tr>
-                                <th>版数</th>
-                                <th>対応名</th>
-                                <th>工程</th>
-                                <th>担当</th>
-                                <th style="text-align: right;">見積</th>
-                                <th style="text-align: right;">実績</th>
-                                <th style="text-align: right;">残存</th>
-                                <th style="text-align: right;">予測総工数</th>
-                                <th style="text-align: center;">状態</th>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">版数</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">対応名</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">工程</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">担当</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">見積</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">実績</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">残存</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">予測総工数
+                                </th>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">状態
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="bulkRemainingTableBody">
@@ -1916,7 +1899,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="fm-actions fm-actions-end">
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
                     <button class="btn btn-primary" id="btnSaveBulkRemaining">保存</button>
                     <button class="btn" id="btnCloseBulkRemaining"
                         style="background: #95a5a6; color: white;">キャンセル</button>
@@ -1935,36 +1918,32 @@
             <div class="modal-body">
                 <input type="hidden" id="vacationModalMember">
                 <input type="hidden" id="vacationModalDate">
-                <div class="fm-info-card">
-                    <div class="fm-row">
-                        <div>
-                            <div class="fm-info-card-label">担当者</div>
-                            <div id="vacationModalMemberDisplay" class="fm-readonly-field"></div>
-                        </div>
-                        <div>
-                            <div class="fm-info-card-label">日付</div>
-                            <div id="vacationModalDateDisplay" class="fm-readonly-field"></div>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label>担当者</label>
+                    <div id="vacationModalMemberDisplay"
+                        style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
                 </div>
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>休暇タイプ</label>
-                        <select id="vacationModalType">
-                            <option value="有休">有給休暇（有休）</option>
-                            <option value="特休">特別休暇（特休）</option>
-                            <option value="代休">代休（代休）</option>
-                            <option value="振休">振替休日（振休）</option>
-                            <option value="時間休">時間休</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="vacationModalHoursGroup">
-                        <label>時間数 (h)</label>
-                        <input type="number" id="vacationModalHours" step="1" min="1" max="8" value="8">
-                        <div class="fm-hint">時間休は1h単位。全日休暇は8h</div>
-                    </div>
+                <div class="form-group">
+                    <label>日付</label>
+                    <div id="vacationModalDateDisplay"
+                        style="padding: 10px; background: #f5f5f5; border-radius: 6px; font-weight: 600;"></div>
                 </div>
-                <div class="fm-actions">
+                <div class="form-group">
+                    <label>休暇タイプ</label>
+                    <select id="vacationModalType">
+                        <option value="有休">有給休暇（有休）</option>
+                        <option value="特休">特別休暇（特休）</option>
+                        <option value="代休">代休（代休）</option>
+                        <option value="振休">振替休日（振休）</option>
+                        <option value="時間休">時間休</option>
+                    </select>
+                </div>
+                <div class="form-group" id="vacationModalHoursGroup">
+                    <label>時間数 (h)</label>
+                    <input type="number" id="vacationModalHours" step="1" min="1" max="8" value="8">
+                    <small style="color: #666; display: block; margin-top: 5px;">時間休は1h単位で入力。全日休暇は8h。</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="btnSaveVacationFromModal"
                         style="background: #f57c00;">登録</button>
                     <button class="btn" id="btnCloseVacationModalCancel"
@@ -1983,79 +1962,93 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editEstimateId">
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>版数</label>
-                        <select id="editEstimateVersion">
-                            <option value="">-- 版数を選択 --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>工程</label>
-                        <select id="editEstimateProcess">
-                            <option value="UI">UI</option>
-                            <option value="PG">PG</option>
-                            <option value="PT">PT</option>
-                            <option value="IT">IT</option>
-                            <option value="ST">ST</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="editEstimateVersion">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
                     <input type="text" id="editEstimateTaskSearch" placeholder="検索または新規入力" list="editEstimateTaskList">
-                    <datalist id="editEstimateTaskList"></datalist>
+                    <datalist id="editEstimateTaskList">
+                    </datalist>
                 </div>
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>担当</label>
-                        <select id="editEstimateMember"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>見積工数 (h)</label>
-                        <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
-                        <div class="fm-hint">分割時は総工数</div>
-                    </div>
+                <div class="form-group">
+                    <label>工程</label>
+                    <select id="editEstimateProcess">
+                        <option value="UI">UI</option>
+                        <option value="PG">PG</option>
+                        <option value="PT">PT</option>
+                        <option value="IT">IT</option>
+                        <option value="ST">ST</option>
+                    </select>
                 </div>
-                <div class="fm-section">
-                    <div class="fm-section-label">作業月</div>
-                    <div class="fm-pill-group">
-                        <label class="fm-pill-option">
-                            <input type="radio" name="editWorkMonthMode" value="single" checked>
+                <div class="form-group">
+                    <label>担当</label>
+                    <select id="editEstimateMember">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>見積工数</label>
+                    <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        複数月に分割している場合、総工数が表示されます
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>作業月設定</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="editWorkMonthMode" value="single" checked
+                                style="width: auto; margin-right: 5px;">
                             <span>単一月</span>
                         </label>
-                        <label class="fm-pill-option">
-                            <input type="radio" name="editWorkMonthMode" value="multi">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="editWorkMonthMode" value="multi"
+                                style="width: auto; margin-right: 5px;">
                             <span>複数月分割</span>
                         </label>
                     </div>
+
+                    <!-- 単一月モード -->
                     <div id="editSingleMonthSection">
                         <select id="editEstimateWorkMonth">
                             <option value="">-- 作業月を選択 --</option>
                         </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            この工程が実際に作業される月を指定します
+                        </small>
                     </div>
+
+                    <!-- 複数月分割モード -->
                     <div id="editMultiMonthSection" style="display: none;">
-                        <div class="fm-info-card">
-                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                                <select id="editStartMonth" style="flex: 1;"></select>
-                                <span style="color: #999;">〜</span>
-                                <select id="editEndMonth" style="flex: 1;"></select>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                                <label style="flex: 1;">作業期間:</label>
+                                <select id="editStartMonth"></select>
+                                <span>〜</span>
+                                <select id="editEndMonth"></select>
                             </div>
-                            <div class="fm-pill-group">
-                                <label class="fm-pill-option">
-                                    <input type="radio" name="editSplitMethod" value="equal" checked>
-                                    <span>均等</span>
+
+                            <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="editSplitMethod" value="equal" checked
+                                        style="width: auto; margin-right: 5px;">
+                                    <span>均等分割</span>
                                 </label>
-                                <label class="fm-pill-option">
-                                    <input type="radio" name="editSplitMethod" value="manual">
-                                    <span>手動</span>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="editSplitMethod" value="manual"
+                                        style="width: auto; margin-right: 5px;">
+                                    <span>手動設定</span>
                                 </label>
                             </div>
+
                             <div id="editMonthPreview"></div>
                         </div>
                     </div>
                 </div>
-                <div class="fm-actions">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="btnSaveEstimateEdit">保存</button>
                     <button class="btn" id="btnCloseEditEstimateModalCancel"
                         style="background: #95a5a6; color: white;">キャンセル</button>
@@ -2074,32 +2067,30 @@
             <div class="modal-body">
                 <input type="hidden" id="editTaskOldVersion">
                 <input type="hidden" id="editTaskOldName">
-                <div class="fm-row">
-                    <div class="form-group">
-                        <label>版数</label>
-                        <select id="editTaskVersion">
-                            <option value="">-- 版数を選択 --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>帳票名</label>
-                        <select id="editTaskFormNameSelect">
-                            <option value="">-- 帳票名を選択 --</option>
-                            <option value="__new__">新規入力</option>
-                        </select>
-                        <input type="text" id="editTaskFormName" placeholder="帳票A" style="display: none;">
-                    </div>
+                <div class="form-group">
+                    <label>版数</label>
+                    <select id="editTaskVersion">
+                        <option value="">-- 版数を選択 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>帳票名</label>
+                    <select id="editTaskFormNameSelect">
+                        <option value="">-- 帳票名を選択 --</option>
+                        <option value="__new__">新規入力</option>
+                    </select>
+                    <input type="text" id="editTaskFormName" placeholder="帳票A" style="display: none;">
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
                     <input type="text" id="editTaskName" placeholder="X対応">
                 </div>
-                <div class="fm-callout">
-                    <div class="fm-callout-title">変更内容</div>
-                    <div class="fm-callout-text">
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+                    <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
+                    <div style="font-size: 13px; color: #856404;">
                         この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
                 </div>
-                <div class="fm-actions">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="btnSaveTaskEdit">保存</button>
                     <button class="btn" id="btnCloseEditTaskModalCancel"
                         style="background: #95a5a6; color: white;">キャンセル</button>
@@ -2129,30 +2120,43 @@
                 <button class="modal-close" onclick="closeRemainingHoursModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="remainingHoursInfo" class="fm-info-card" style="font-size: 14px;">
+                <div id="remainingHoursInfo"
+                    style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
                     <!-- 版数、対応名、工程情報を表示 -->
                 </div>
-                <div id="remainingHoursMemberSelect" class="form-group" style="display: none;">
-                    <label>担当者</label>
-                    <select id="remainingHoursMember"></select>
+
+                <div id="remainingHoursMemberSelect" style="display: none; margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">担当者</label>
+                    <select id="remainingHoursMember"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </select>
                 </div>
+
                 <div class="form-group">
-                    <label>見込残存時間 (h)</label>
-                    <input type="number" id="remainingHoursInput" step="0.1" min="0">
-                    <div class="fm-hint">0=完了（100%）</div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">⏱️ 見込残存時間 (h)</label>
+                    <input type="number" id="remainingHoursInput" step="0.1" min="0"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        0を入力すると完了（100%）として扱われます
+                    </small>
                 </div>
-                <div id="remainingHoursActualsList" style="display: none;">
-                    <div class="fm-section">
-                        <div class="fm-section-label">実績一覧</div>
-                        <div id="remainingHoursActualsContent" class="fm-info-card"
-                            style="max-height: 200px; overflow-y: auto;">
-                        </div>
+
+                <!-- 登録実績リスト -->
+                <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
+                    <label
+                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📄
+                        実績一覧（表示期間内）</label>
+                    <div id="remainingHoursActualsContent"
+                        style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
+                        <!-- 実績リストをここに表示 -->
                     </div>
                 </div>
-                <div class="fm-actions fm-actions-end">
-                    <button class="btn" onclick="closeRemainingHoursModal()"
-                        style="background: #95a5a6; color: white;">キャンセル</button>
-                    <button class="btn btn-success" onclick="saveRemainingHoursFromModal()">保存</button>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="closeRemainingHoursModal()"
+                        style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
+                    <button onclick="saveRemainingHoursFromModal()"
+                        style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">保存</button>
                 </div>
             </div>
         </div>
@@ -2174,21 +2178,19 @@
 
                 <!-- ========== 通常モードのフォーム ========== -->
                 <div id="addEstNormalForm" class="estimate-form-compact">
-                    <div class="fm-row">
-                        <div class="form-group">
-                            <label>版数</label>
-                            <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
-                                <option value="">-- 版数を選択 --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>帳票名</label>
-                            <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
-                                <option value="">-- 帳票名を選択 --</option>
-                                <option value="__new__">新規入力</option>
-                            </select>
-                            <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
-                        </div>
+                    <div class="form-group">
+                        <label>版数</label>
+                        <select id="addEstVersion" onchange="handleVersionChange('addEstVersion')">
+                            <option value="">-- 版数を選択 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>帳票名</label>
+                        <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
+                            <option value="">-- 帳票名を選択 --</option>
+                            <option value="__new__">新規入力</option>
+                        </select>
+                        <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
                     </div>
                     <div class="form-group">
                         <label>対応名</label>
@@ -2196,15 +2198,16 @@
                     </div>
                     <div class="form-group">
                         <label>作業月</label>
-                        <div class="fm-pill-group">
-                            <label class="fm-pill-option">
+                        <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="single" checked
-                                    onchange="switchAddEstMonthType()">
-                                <span>単一月</span>
+                                    onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
+                                <span style="font-size: 13px;">単一月</span>
                             </label>
-                            <label class="fm-pill-option">
-                                <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()">
-                                <span>複数月</span>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()"
+                                    style="width: auto; margin-right: 4px;">
+                                <span style="font-size: 13px;">複数月</span>
                             </label>
                         </div>
                         <div id="addEstMonthInputs">
@@ -2212,68 +2215,63 @@
                                 <select id="addEstStartMonth"></select>
                             </div>
                             <div id="addEstMultiMonthInput" style="display: none;">
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <select id="addEstStartMonthMulti" style="flex: 1;"></select>
-                                    <span style="color: #999;">〜</span>
-                                    <select id="addEstEndMonth" style="flex: 1;"></select>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="addEstStartMonthMulti"></select>
+                                    <span>〜</span>
+                                    <select id="addEstEndMonth"></select>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <h4 style="margin-bottom: 10px; margin-top: 20px;">各工程の見積</h4>
+                    <div class="estimate-table-wrapper">
+                        <table class="estimate-table" id="addEstimateTable" style="width: 100%; margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
+                                    <th style="width: 120px; padding: 8px;">担当</th>
+                                    <th style="width: 100px; padding: 8px;">時間</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
+                                    <td><select id="addEstUI_member" style="margin: 0;"></select></td>
+                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
+                                    <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
+                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
+                                    <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
+                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
+                                    <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
+                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
+                                    <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
+                                    <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                    <div class="fm-section">
-                        <div class="fm-section-label">各工程の見積</div>
-                        <div class="estimate-table-wrapper">
-                            <table class="fm-process-table" id="addEstimateTable">
-                                <colgroup>
-                                    <col class="col-process">
-                                    <col class="col-member">
-                                    <col class="col-hours">
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th style="width: 50px; text-align: center;">工程</th>
-                                        <th>担当</th>
-                                        <th style="width: 80px;">時間</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
-                                        <td><select id="addEstUI_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
-                                        <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                        <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
-                                        <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                        <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
-                                        <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                        <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
-                                        <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
-                                        <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="addEstimateTotals" class="fm-summary-bar">
-                            <div class="fm-summary-row">
-                                <span class="fm-summary-label">合計</span>
-                                <div class="fm-summary-values">
-                                    <span><strong id="addEstTotalHours">0.0</strong> h</span>
-                                    <span><span id="addEstTotalDays">0.0</span> 人日</span>
-                                    <span><span id="addEstTotalMonths">0.00</span> 人月</span>
-                                </div>
+                    <!-- 合計表示エリア -->
+                    <div id="addEstimateTotals"
+                        style="background: #e3f2fd; padding: 12px 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #1976d2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <span style="font-weight: 600; color: #1565c0;">対応合計:</span>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <span style="color: #1565c0;"><strong id="addEstTotalHours">0.0</strong> h</span>
+                                <span style="color: #1976d2;">(<span id="addEstTotalDays">0.0</span> 人日)</span>
+                                <span style="color: #1976d2;">(<span id="addEstTotalMonths">0.00</span> 人月)</span>
                             </div>
                         </div>
                     </div>
@@ -2281,20 +2279,21 @@
 
                 <!-- ========== その他工数モードのフォーム ========== -->
                 <div id="addEstOtherForm" style="display: none;">
-                    <div class="fm-hint" style="margin-bottom: 12px;">版数・帳票名に紐付かない工数を登録します</div>
+                    <div class="other-work-description">
+                        <span class="other-work-icon">📋</span>
+                        <span>打ち合わせや付随作業など、版数・帳票名に紐付かない工数を登録します。</span>
+                    </div>
                     <div class="form-group">
                         <label>作業名</label>
                         <input type="text" id="addEstOtherTask" placeholder="打ち合わせ、レビュー等">
                     </div>
-                    <div class="fm-row">
-                        <div class="form-group">
-                            <label>担当者</label>
-                            <select id="addEstOtherMember"></select>
-                        </div>
-                        <div class="form-group">
-                            <label>作業月</label>
-                            <select id="addEstOtherMonth"></select>
-                        </div>
+                    <div class="form-group">
+                        <label>担当者</label>
+                        <select id="addEstOtherMember"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>作業月</label>
+                        <select id="addEstOtherMonth"></select>
                     </div>
                     <div class="form-group">
                         <label>見積工数 (h)</label>
@@ -2302,7 +2301,7 @@
                     </div>
                 </div>
 
-                <div class="fm-actions">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="addEstSubmitBtn" onclick="addEstimateFromModal()">登録</button>
                     <button class="btn" onclick="closeAddEstimateModal()"
                         style="background: #95a5a6; color: white;">キャンセル</button>
@@ -2315,50 +2314,51 @@
     <div id="splitEstimateModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>見積を複数月に分割</h3>
+                <h3>📅 見積を複数月に分割</h3>
                 <button class="modal-close" onclick="closeSplitEstimateModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="splitEstimateId">
-                <div class="fm-info-card">
-                    <div class="fm-row">
-                        <div>
-                            <div class="fm-info-card-label">対象見積</div>
-                            <div id="splitEstimateInfo" style="color: #555;"></div>
-                        </div>
-                        <div>
-                            <div class="fm-info-card-label">総工数</div>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="number" id="splitTotalHours" step="0.1" min="0" readonly class="fm-readonly-field" style="width: auto;">
-                                <span style="color: #999; font-size: 12px;">h</span>
-                            </div>
-                        </div>
-                    </div>
+
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <strong>対象見積:</strong><br>
+                    <div id="splitEstimateInfo" style="margin-top: 5px; color: #666;"></div>
                 </div>
+
+                <div class="form-group">
+                    <label>総工数</label>
+                    <input type="number" id="splitTotalHours" step="0.1" min="0" readonly style="background: #f0f0f0;">
+                    <span style="margin-left: 5px;">時間</span>
+                </div>
+
                 <div class="form-group">
                     <label>作業期間</label>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <select id="splitStartMonth" onchange="updateSplitPreview()" style="flex: 1;"></select>
-                        <span style="color: #999;">〜</span>
-                        <select id="splitEndMonth" onchange="updateSplitPreview()" style="flex: 1;"></select>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="splitStartMonth" onchange="updateSplitPreview()"></select>
+                        <span>〜</span>
+                        <select id="splitEndMonth" onchange="updateSplitPreview()"></select>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>分割方法</label>
-                    <div class="fm-pill-group">
-                        <label class="fm-pill-option">
+                    <div style="display: flex; gap: 20px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="radio" name="splitMethodModal" value="equal" checked
-                                onchange="updateSplitPreview()">
+                                onchange="updateSplitPreview()" style="width: auto; margin-right: 5px;">
                             <span>均等分割</span>
                         </label>
-                        <label class="fm-pill-option">
-                            <input type="radio" name="splitMethodModal" value="manual" onchange="updateSplitPreview()">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="splitMethodModal" value="manual" onchange="updateSplitPreview()"
+                                style="width: auto; margin-right: 5px;">
                             <span>手動設定</span>
                         </label>
                     </div>
                 </div>
-                <div id="splitPreview"></div>
-                <div class="fm-actions">
+
+                <div id="splitPreview" style="margin-top: 15px;"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="executeSplitEstimate()">分割を適用</button>
                     <button class="btn" onclick="closeSplitEstimateModal()"
                         style="background: #95a5a6; color: white;">キャンセル</button>
@@ -2376,15 +2376,15 @@
             </div>
             <div class="modal-body">
                 <!-- タブ切り替え -->
-                <div class="fm-tab-bar">
-                    <button id="meetingTab" class="fm-tab-btn active"
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <button id="meetingTab" class="other-work-tab active"
                         onclick="switchOtherWorkTab('meeting')">打ち合わせ</button>
-                    <button id="customTab" class="fm-tab-btn" onclick="switchOtherWorkTab('custom')">任意作業</button>
+                    <button id="customTab" class="other-work-tab" onclick="switchOtherWorkTab('custom')">任意作業</button>
                 </div>
 
                 <!-- 打ち合わせタブ -->
                 <div id="meetingForm" class="other-work-form">
-                    <div class="fm-hint" style="margin-bottom: 15px;">全担当者に同じ工数で登録されます。</div>
+                    <p style="color: #666; margin-bottom: 15px;">全担当者に同じ工数で登録されます。</p>
                     <div class="form-group">
                         <label>工数 (h)</label>
                         <input type="number" id="meetingHours" step="0.5" min="0" placeholder="例: 2">
@@ -2398,17 +2398,15 @@
                         <label>作業名</label>
                         <input type="text" id="otherWorkName" placeholder="例: 環境構築、ドキュメント作成">
                     </div>
-                    <div class="fm-row">
-                        <div class="form-group">
-                            <label>担当</label>
-                            <select id="otherWorkMember">
-                                <option value="">選択...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>工数 (h)</label>
-                            <input type="number" id="otherWorkHours" step="0.5" min="0" placeholder="例: 4">
-                        </div>
+                    <div class="form-group">
+                        <label>担当</label>
+                        <select id="otherWorkMember">
+                            <option value="">選択...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>工数 (h)</label>
+                        <input type="number" id="otherWorkHours" step="0.5" min="0" placeholder="例: 4">
                     </div>
                     <button class="btn btn-success" onclick="addOtherWork()">追加</button>
                 </div>
@@ -2419,14 +2417,10 @@
     <!-- カスタムアラート -->
     <div id="customAlert" class="modal">
         <div class="custom-alert-content">
-            <div class="custom-alert-accent"></div>
-            <div class="custom-alert-icon-wrap">
-                <div class="custom-alert-icon" id="customAlertIcon"></div>
-            </div>
             <div class="custom-alert-body" id="customAlertMessage">
             </div>
             <div class="custom-alert-footer">
-                <button class="btn" onclick="closeCustomAlert()">OK</button>
+                <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
             </div>
         </div>
     </div>
@@ -2564,8 +2558,6 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="openEstimateFromSchedule()" class="btn btn-outline" title="対応する見積データを編集">見積を編集</button>
-                <div style="flex: 1;"></div>
                 <button onclick="deleteScheduleFromModal()" class="btn btn-danger">削除</button>
                 <button onclick="closeScheduleDetailModal()" class="btn btn-secondary">閉じる</button>
                 <button onclick="saveScheduleDetailChanges()" class="btn btn-primary">保存</button>
@@ -2573,7 +2565,6 @@
         </div>
     </div>
 
-    <!-- スケジュール変更確認モーダル -->
     <!-- スケジュール自動生成モーダル -->
     <div id="autoGenerateModal" class="modal">
         <div class="modal-content">
@@ -2628,7 +2619,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260215-1"></script>
+    <script type="module" src="js/init.js?v=20260219-security"></script>
 </body>
 
 </html>

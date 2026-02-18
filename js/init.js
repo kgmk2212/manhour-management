@@ -24,16 +24,6 @@ import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
 
 // ============================================
-// 祝日ライブラリを非同期で読み込み（init.jsをブロックしない）
-// ============================================
-import('https://cdn.jsdelivr.net/npm/@holiday-jp/holiday_jp@2.4.0/+esm')
-    .then(mod => {
-        window.holiday_jp = mod.default;
-        console.log('[holiday_jp] loaded');
-    })
-    .catch(e => console.warn('[holiday_jp] load failed:', e));
-
-// ============================================
 // グローバルスコープに公開（HTML onclick用）
 // ============================================
 
