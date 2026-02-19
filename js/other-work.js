@@ -52,7 +52,8 @@ export function addMeeting() {
             task: '打ち合わせ',
             process: '',
             member: member,
-            hours: hours
+            hours: hours,
+            createdAt: new Date().toISOString()
         });
         count++;
     });
@@ -113,7 +114,8 @@ export function addOtherWork() {
         task: workName,
         process: '',
         member: member,
-        hours: hours
+        hours: hours,
+        createdAt: new Date().toISOString()
     });
 
     console.log('other work added');

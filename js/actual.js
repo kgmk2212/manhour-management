@@ -1320,7 +1320,8 @@ export function saveActualEdit() {
             task: task,
             process: process,
             member: member,
-            hours: hours
+            hours: hours,
+            createdAt: new Date().toISOString()
         };
 
         actuals.push(newActual);
@@ -1362,9 +1363,9 @@ export function getPreviousActual(member, beforeDate) {
         previousActuals.sort((a, b) => {
             const dateDiff = b.date.localeCompare(a.date);
             if (dateDiff !== 0) return dateDiff;
-            // 日付が同じ場合は作成日時で降順ソート
-            const createdA = a.createdAt || '';
-            const createdB = b.createdAt || '';
+            // 日付が同じ場合は登録日時で降順ソート（createdAtがなければidで近似）
+            const createdA = a.createdAt || new Date(Math.floor(a.id)).toISOString();
+            const createdB = b.createdAt || new Date(Math.floor(b.id)).toISOString();
             return createdB.localeCompare(createdA);
         });
         return previousActuals[0];
