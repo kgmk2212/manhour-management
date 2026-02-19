@@ -1118,83 +1118,118 @@ export function recalculateScheduleEndDateDetail() {
  */
 export function generateSchedulesFromEstimates(options) {
     const { version, startDate, mode = 'all', member, task } = options;
-    
+
     // 対象の見積をフィルタ
     let targetEstimates = estimates.filter(e => e.version === version);
-    
+
     if (mode === 'member' && member) {
         targetEstimates = targetEstimates.filter(e => e.member === member);
     } else if (mode === 'task' && task) {
         targetEstimates = targetEstimates.filter(e => e.task === task);
     }
-    
+
     if (targetEstimates.length === 0) {
         return [];
     }
-    
-    // 担当者ごとにグループ化して順次割り当て
-    const memberEstimates = new Map();
-    targetEstimates.forEach(est => {
-        if (!memberEstimates.has(est.member)) {
-            memberEstimates.set(est.member, []);
-        }
-        memberEstimates.get(est.member).push(est);
+
+    // 工程順定義
+    const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
+
+    // 全見積を工程順 → タスク名でソート（担当者をまたいで工程依存を処理するため）
+    targetEstimates.sort((a, b) => {
+        const orderA = processOrder.indexOf(a.process);
+        const orderB = processOrder.indexOf(b.process);
+        if (orderA !== orderB) return orderA - orderB;
+        const taskCmp = a.task.localeCompare(b.task);
+        if (taskCmp !== 0) return taskCmp;
+        return a.member.localeCompare(b.member);
     });
-    
+
     const generatedSchedules = [];
-    
-    memberEstimates.forEach((estList, memberName) => {
-        // 工程順でソート（UI → PG → PT → IT → ST）
-        const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
-        estList.sort((a, b) => {
-            const orderA = processOrder.indexOf(a.process);
-            const orderB = processOrder.indexOf(b.process);
-            if (orderA !== orderB) return orderA - orderB;
-            // 同じ工程ならタスク名でソート
-            return a.task.localeCompare(b.task);
-        });
-        
-        let currentDate = startDate;
-        
-        estList.forEach(est => {
-            // 既存スケジュールがあるかチェック
-            const existingSchedule = schedules.find(s =>
-                s.version === est.version &&
-                s.task === est.task &&
-                s.process === est.process &&
-                s.member === est.member
-            );
-            
-            if (existingSchedule) {
-                // 既存がある場合はスキップ（または更新オプションを追加可能）
-                return;
+
+    // 担当者ごとの次の空き日を管理
+    const memberNextDate = new Map();
+
+    // タスク×工程ごとの終了日を管理（同一タスクの前工程完了を追跡）
+    // key: "タスク名::工程名", value: 最も遅い終了日
+    const taskProcessEndDate = new Map();
+
+    targetEstimates.forEach(est => {
+        // 既存スケジュールがあるかチェック
+        const existingSchedule = schedules.find(s =>
+            s.version === est.version &&
+            s.task === est.task &&
+            s.process === est.process &&
+            s.member === est.member
+        );
+
+        if (existingSchedule) {
+            // 既存がある場合、その終了日をタスク×工程の終了日として記録
+            const key = `${est.task}::${est.process}`;
+            const existing = taskProcessEndDate.get(key);
+            if (!existing || existingSchedule.endDate > existing) {
+                taskProcessEndDate.set(key, existingSchedule.endDate);
             }
-            
-            // 終了日を計算
-            const endDate = calculateEndDate(currentDate, est.hours, memberName);
-            
-            // スケジュールを作成（バッチ用、レンダリングなし）
-            const schedule = addScheduleSilent({
-                version: est.version,
-                task: est.task,
-                process: est.process,
-                member: memberName,
-                estimatedHours: est.hours,
-                startDate: currentDate,
-                endDate: endDate,
-                note: `見積ID: ${est.id} から自動生成`
-            });
+            return;
+        }
 
-            generatedSchedules.push(schedule);
+        // 担当者の空き日（未設定なら開始日）
+        const memberAvailable = memberNextDate.get(est.member) || startDate;
 
-            // 次のスケジュールの開始日を更新（終了日の翌営業日）
-            const nextDate = new Date(endDate);
+        // 同一タスクの前工程の終了日を取得
+        const currentProcessIdx = processOrder.indexOf(est.process);
+        let prevProcessEnd = null;
+        for (let i = currentProcessIdx - 1; i >= 0; i--) {
+            const prevKey = `${est.task}::${processOrder[i]}`;
+            const endDate = taskProcessEndDate.get(prevKey);
+            if (endDate) {
+                prevProcessEnd = endDate;
+                break;
+            }
+        }
+
+        // 開始日 = max(担当者の空き日, 前工程終了日の翌営業日)
+        let estStartDate = memberAvailable;
+        if (prevProcessEnd && prevProcessEnd >= estStartDate) {
+            const nextDate = new Date(prevProcessEnd);
             nextDate.setDate(nextDate.getDate() + 1);
-            while (!isBusinessDay(nextDate, memberName)) {
+            while (!isBusinessDay(nextDate, est.member)) {
                 nextDate.setDate(nextDate.getDate() + 1);
             }
-            currentDate = formatDateForCheck(nextDate);
+            estStartDate = formatDateForCheck(nextDate);
+        }
+
+        // 終了日を計算
+        const endDate = calculateEndDate(estStartDate, est.hours, est.member);
+
+        // スケジュールを作成（バッチ用、レンダリングなし）
+        const schedule = addScheduleSilent({
+            version: est.version,
+            task: est.task,
+            process: est.process,
+            member: est.member,
+            estimatedHours: est.hours,
+            startDate: estStartDate,
+            endDate: endDate,
+            note: `見積ID: ${est.id} から自動生成`
         });
+
+        generatedSchedules.push(schedule);
+
+        // 担当者の次の空き日を更新（終了日の翌営業日）
+        const nextMemberDate = new Date(endDate);
+        nextMemberDate.setDate(nextMemberDate.getDate() + 1);
+        while (!isBusinessDay(nextMemberDate, est.member)) {
+            nextMemberDate.setDate(nextMemberDate.getDate() + 1);
+        }
+        memberNextDate.set(est.member, formatDateForCheck(nextMemberDate));
+
+        // タスク×工程の終了日を更新（同じ工程で複数担当者がいる場合は最も遅い日）
+        const key = `${est.task}::${est.process}`;
+        const existing = taskProcessEndDate.get(key);
+        if (!existing || endDate > existing) {
+            taskProcessEndDate.set(key, endDate);
+        }
     });
 
     // バッチ完了後に1回だけ保存＆描画
