@@ -2359,10 +2359,12 @@
                         <div class="schedule-remaining-input-group">
                             <input type="number" id="detailUserRemainingHours" step="0.25" min="0" placeholder="0.0">
                             <span class="input-suffix">h</span>
-                            <button onclick="saveScheduleRemainingHours()" class="btn btn-sm btn-outline">更新</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- ステータス/残存変更ヒント -->
+                <div class="schedule-change-hint" id="detailChangeHint"></div>
 
                 <!-- 実績一覧 -->
                 <div class="schedule-actual-list" id="detailActualList">

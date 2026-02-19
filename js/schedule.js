@@ -8,7 +8,7 @@ import {
     taskColorMap, setTaskColorMap, currentThemeColor, scheduleBarColorMode,
     estimates, actuals, vacations, companyHolidays, remainingEstimates
 } from './state.js';
-import { getRemainingEstimate, saveRemainingEstimate } from './estimate.js';
+import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate } from './estimate.js';
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
@@ -476,9 +476,104 @@ export function calculateProgress(schedule) {
  */
 export function isDelayed(schedule) {
     if (schedule.status === SCHEDULE.STATUS.COMPLETED) return false;
-    
+
     const today = new Date().toISOString().split('T')[0];
     return schedule.endDate < today;
+}
+
+/**
+ * 見込み残存時間からステータスを自動判定
+ */
+function determineStatusFromRemaining(remainingHours, estimatedHours) {
+    if (remainingHours === null || remainingHours === undefined) {
+        return SCHEDULE.STATUS.PENDING;
+    }
+    if (remainingHours === 0) {
+        return SCHEDULE.STATUS.COMPLETED;
+    }
+    if (remainingHours >= estimatedHours) {
+        return SCHEDULE.STATUS.PENDING;
+    }
+    return SCHEDULE.STATUS.IN_PROGRESS;
+}
+
+/**
+ * モーダル内のプログレスバーをプレビュー更新（保存なし）
+ */
+function updateProgressPreview(remainingHours, status, schedule) {
+    const estimatedHours = schedule.estimatedHours || 0;
+
+    let progressRate;
+    if (status === SCHEDULE.STATUS.COMPLETED) {
+        progressRate = 100;
+    } else if (remainingHours !== null && estimatedHours > 0) {
+        progressRate = ((estimatedHours - remainingHours) / estimatedHours) * 100;
+    } else {
+        const progress = calculateProgress(schedule);
+        progressRate = progress.progressRate;
+    }
+
+    progressRate = Math.min(Math.max(progressRate, 0), 100);
+
+    const progressBar = document.getElementById('detailProgressBar');
+    const progressRateEl = document.getElementById('detailProgressRate');
+    if (progressBar) progressBar.style.width = `${progressRate}%`;
+    if (progressRateEl) progressRateEl.textContent = `${progressRate.toFixed(0)}%`;
+}
+
+/**
+ * 変更ヒントを表示
+ */
+function updateChangeHint(newStatus, remainingHours) {
+    const hintEl = document.getElementById('detailChangeHint');
+    if (!hintEl || !modalOriginalState) return;
+
+    const hints = [];
+    const statusLabels = {
+        [SCHEDULE.STATUS.PENDING]: '未着手',
+        [SCHEDULE.STATUS.IN_PROGRESS]: '進行中',
+        [SCHEDULE.STATUS.COMPLETED]: '完了'
+    };
+
+    if (newStatus !== modalOriginalState.status) {
+        hints.push(`ステータスが「${statusLabels[newStatus]}」に変わります`);
+    }
+
+    const origRemaining = modalOriginalState.remainingHours;
+    if (remainingHours !== origRemaining) {
+        if (remainingHours === null && origRemaining !== null) {
+            hints.push('見込み残存時間がクリアされます');
+        } else if (remainingHours === 0 && origRemaining !== 0) {
+            hints.push('見込み残存時間が0hになります');
+        } else if (remainingHours !== null) {
+            hints.push(`見込み残存時間が${remainingHours}hになります`);
+        }
+    }
+
+    hintEl.textContent = hints.length > 0 ? `保存すると: ${hints.join('、')}` : '';
+}
+
+/**
+ * 見込み残存入力のリアルタイムハンドラ
+ */
+function onRemainingHoursInputChange() {
+    if (!currentEditingScheduleId) return;
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (!schedule) return;
+
+    const input = document.getElementById('detailUserRemainingHours');
+    const value = input?.value.trim();
+
+    let remainingHours = null;
+    if (value !== '') {
+        remainingHours = parseFloat(value);
+        if (isNaN(remainingHours) || remainingHours < 0) return;
+    }
+
+    const newStatus = determineStatusFromRemaining(remainingHours, schedule.estimatedHours);
+    updateStatusButtons(newStatus);
+    updateProgressPreview(remainingHours, newStatus, schedule);
+    updateChangeHint(newStatus, remainingHours);
 }
 
 // ============================================
@@ -644,6 +739,7 @@ export function countBusinessDays(startDate, endDate, member) {
 // ============================================
 
 let currentEditingScheduleId = null;
+let modalOriginalState = null;
 
 /**
  * 予定作成モーダルを開く
@@ -721,24 +817,41 @@ export function openScheduleDetailModal(scheduleId) {
     document.getElementById('detailRemainingHours').textContent = remainingText;
     
     // 見込み残存時間入力欄
+    const remainingEstimate = getRemainingEstimate(
+        schedule.version, schedule.task, schedule.process, schedule.member
+    );
     const userRemainingInput = document.getElementById('detailUserRemainingHours');
     if (userRemainingInput) {
-        const remainingEstimate = getRemainingEstimate(
-            schedule.version, schedule.task, schedule.process, schedule.member
-        );
         userRemainingInput.value = remainingEstimate ? remainingEstimate.remainingHours : '';
+        // リアルタイム連動のイベントリスナー（重複防止のためクローンで差し替え）
+        const newInput = userRemainingInput.cloneNode(true);
+        userRemainingInput.parentNode.replaceChild(newInput, userRemainingInput);
+        newInput.addEventListener('input', onRemainingHoursInputChange);
     }
-    
+
+    // 元状態を保存（キャンセル/Undo用）
+    modalOriginalState = {
+        status: schedule.status || SCHEDULE.STATUS.PENDING,
+        startDate: schedule.startDate,
+        endDate: schedule.endDate,
+        remainingHours: remainingEstimate ? remainingEstimate.remainingHours : null,
+        estimatedHours: schedule.estimatedHours
+    };
+
     // ステータスボタンを更新
     updateStatusButtons(schedule.status || SCHEDULE.STATUS.PENDING);
-    
+
     // 着手日
     const startDateInput = document.getElementById('detailStartDate');
     if (startDateInput) startDateInput.value = schedule.startDate;
-    
+
+    // ヒントを初期化
+    const hintEl = document.getElementById('detailChangeHint');
+    if (hintEl) hintEl.textContent = '';
+
     // 関連する実績一覧を表示
     renderDetailActualList(schedule);
-    
+
     // モーダルを表示
     const modal = document.getElementById('scheduleDetailModal');
     if (modal) modal.style.display = 'flex';
@@ -795,6 +908,7 @@ export function closeScheduleDetailModal() {
     const modal = document.getElementById('scheduleDetailModal');
     if (modal) modal.style.display = 'none';
     currentEditingScheduleId = null;
+    modalOriginalState = null;
 }
 
 /**
@@ -862,26 +976,70 @@ export function saveScheduleFromModal() {
  * 詳細モーダルから変更を保存
  */
 export function saveScheduleDetailChanges() {
-    if (!currentEditingScheduleId) return;
-
-    const startDate = document.getElementById('detailStartDate')?.value;
-    if (!startDate) return;
+    if (!currentEditingScheduleId || !modalOriginalState) return;
 
     const schedule = schedules.find(s => s.id === currentEditingScheduleId);
     if (!schedule) return;
 
+    const startDate = document.getElementById('detailStartDate')?.value;
+    if (!startDate) return;
+
+    // ステータス: アクティブなボタンから取得
+    const activeBtn = document.querySelector('#detailStatusButtons .status-btn.active');
+    const newStatus = activeBtn ? activeBtn.getAttribute('data-status') : modalOriginalState.status;
+
+    // 見込み残存: 入力欄から取得
+    const remainingInput = document.getElementById('detailUserRemainingHours');
+    const remainingValue = remainingInput?.value.trim();
+    const newRemainingHours = (remainingValue === '' || remainingValue === undefined) ? null : parseFloat(remainingValue);
+
+    if (newRemainingHours !== null && (isNaN(newRemainingHours) || newRemainingHours < 0)) {
+        showToast('見込み残存時間に有効な数値を入力してください', 'warning');
+        return;
+    }
+
     // 終了日を再計算
     const endDate = calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
 
+    // Undoスタックにステータス+残存+日付をセットで記録
     pushUndoAction({
-        type: 'update',
+        type: 'detail_update',
         scheduleId: currentEditingScheduleId,
-        oldValues: { startDate: schedule.startDate, endDate: schedule.endDate },
-        newValues: { startDate, endDate }
+        oldValues: {
+            status: modalOriginalState.status,
+            startDate: modalOriginalState.startDate,
+            endDate: modalOriginalState.endDate
+        },
+        newValues: { status: newStatus, startDate, endDate },
+        oldRemainingHours: modalOriginalState.remainingHours,
+        newRemainingHours: newRemainingHours,
+        scheduleKey: {
+            version: schedule.version,
+            task: schedule.task,
+            process: schedule.process,
+            member: schedule.member
+        }
     });
 
-    updateSchedule(currentEditingScheduleId, { startDate, endDate });
+    // ステータス・日付を保存
+    updateSchedule(currentEditingScheduleId, { status: newStatus, startDate, endDate });
+
+    // 見込み残存を保存
+    if (newRemainingHours !== null) {
+        saveRemainingEstimate(
+            schedule.version, schedule.task, schedule.process, schedule.member,
+            newRemainingHours
+        );
+    } else if (modalOriginalState.remainingHours !== null) {
+        deleteRemainingEstimate(
+            schedule.version, schedule.task, schedule.process, schedule.member
+        );
+    }
+
+    if (typeof window.saveData === 'function') window.saveData();
+
     closeScheduleDetailModal();
+    showToast('変更を保存しました', 'success');
 }
 
 /**
@@ -1388,30 +1546,28 @@ export function updateAutoGeneratePreview() {
  */
 export function setScheduleStatus(status) {
     if (!currentEditingScheduleId) return;
-
     const schedule = schedules.find(s => s.id === currentEditingScheduleId);
-    if (schedule) {
-        pushUndoAction({
-            type: 'status_change',
-            scheduleId: currentEditingScheduleId,
-            oldStatus: schedule.status || 'pending',
-            newStatus: status
-        });
-    }
+    if (!schedule) return;
 
-    updateSchedule(currentEditingScheduleId, { status });
-
-    // ステータスボタンのアクティブ状態を更新
+    // モーダル内UIのみ更新（保存しない）
     updateStatusButtons(status);
 
-    // 進捗表示を更新（上で取得した schedule を再利用）
-    if (schedule) {
-        const progress = calculateProgress(schedule);
-        const progressRate = document.getElementById('detailProgressRate');
-        if (progressRate) {
-            progressRate.textContent = status === 'completed' ? '100%' : `${progress.progressRate.toFixed(0)}%`;
-        }
+    // ステータス → 見込み残存の連動
+    const input = document.getElementById('detailUserRemainingHours');
+    if (status === SCHEDULE.STATUS.COMPLETED) {
+        if (input) input.value = '0';
+    } else if (status === SCHEDULE.STATUS.PENDING) {
+        if (input) input.value = '';
     }
+    // IN_PROGRESS → 残存変更なし
+
+    // 残存値を取得してプレビュー更新
+    const remainingHours = (status === SCHEDULE.STATUS.COMPLETED) ? 0
+        : (status === SCHEDULE.STATUS.PENDING) ? null
+        : (input?.value.trim() === '' ? null : parseFloat(input?.value));
+
+    updateProgressPreview(remainingHours, status, schedule);
+    updateChangeHint(status, remainingHours);
 }
 
 /**
@@ -1499,6 +1655,24 @@ export function undoScheduleAction() {
             showToast('ステータス変更を元に戻しました', 'info');
             break;
 
+        case 'detail_update':
+            updateSchedule(action.scheduleId, action.oldValues);
+            if (action.oldRemainingHours !== null) {
+                saveRemainingEstimate(
+                    action.scheduleKey.version, action.scheduleKey.task,
+                    action.scheduleKey.process, action.scheduleKey.member,
+                    action.oldRemainingHours
+                );
+            } else {
+                deleteRemainingEstimate(
+                    action.scheduleKey.version, action.scheduleKey.task,
+                    action.scheduleKey.process, action.scheduleKey.member
+                );
+            }
+            if (typeof window.saveData === 'function') window.saveData();
+            showToast('変更を元に戻しました', 'info');
+            break;
+
         case 'update':
             updateSchedule(action.scheduleId, action.oldValues);
             showToast('変更を元に戻しました', 'info');
@@ -1569,6 +1743,24 @@ export function redoScheduleAction() {
         case 'status_change':
             updateSchedule(action.scheduleId, { status: action.newStatus });
             showToast('ステータス変更をやり直しました', 'info');
+            break;
+
+        case 'detail_update':
+            updateSchedule(action.scheduleId, action.newValues);
+            if (action.newRemainingHours !== null) {
+                saveRemainingEstimate(
+                    action.scheduleKey.version, action.scheduleKey.task,
+                    action.scheduleKey.process, action.scheduleKey.member,
+                    action.newRemainingHours
+                );
+            } else {
+                deleteRemainingEstimate(
+                    action.scheduleKey.version, action.scheduleKey.task,
+                    action.scheduleKey.process, action.scheduleKey.member
+                );
+            }
+            if (typeof window.saveData === 'function') window.saveData();
+            showToast('変更をやり直しました', 'info');
             break;
 
         case 'update':
