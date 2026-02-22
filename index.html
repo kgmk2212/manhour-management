@@ -2739,6 +2739,11 @@
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 if (mobileFilterBtn) {
+                    // タップ中の微小スクロールによる自動表示を防止
+                    mobileFilterBtn.addEventListener('touchstart', function() {
+                        btnInteractingUntil = Date.now() + 600;
+                    }, { passive: true });
+
                     mobileFilterBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
