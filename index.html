@@ -2477,6 +2477,7 @@
                 var lastModalCloseAt = 0; // モーダル閉じ時のタイムスタンプ（ゴーストクリック防止）
                 var btnInteractingUntil = 0; // ボタン操作中は非表示を抑制するタイマー
                 var blockHideUntil = 0; // ボタン開閉後、hideFixedBarを完全ブロックする期間
+                var userDismissed = false; // ユーザーがボタンで閉じた場合、元バーが見えるまで自動表示を抑制
 
                 // モーダルが開いているかを同期的にチェック
                 function isAnyModalOpen() {
@@ -2567,7 +2568,7 @@
                     el.className = 'smart-sticky-bar';
                     el.innerHTML = bar.innerHTML;
                     el.style.cssText =
-                        'position:fixed;top:' + topPx + 'px;right:0;z-index:9999;' +
+                        'position:fixed;top:' + topPx + 'px;right:0;z-index:120;' +
                         'background:var(--surface-elevated,#FAFAF9);padding:10px 40px;' +
                         'border-bottom:1px solid var(--border-light,#F0EEEA);' +
                         'box-shadow:0 4px 12px rgba(26,24,20,0.08);' +
@@ -2727,7 +2728,18 @@
                     var bar = findBar();
                     if (!bar) { hideFixedBar('scroll-no-bar'); return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
-                    if (!barAbove) { upPx = 0; hideFixedBar('scroll-not-above'); return; }
+                    if (!barAbove) {
+                        upPx = 0;
+                        userDismissed = false; // 元バーが見えたらリセット
+                        hideFixedBar('scroll-not-above');
+                        return;
+                    }
+                    // モバイル: バーが画面外なら方向問わず自動表示（ボタンで閉じた直後は除く）
+                    if (isMobile()) {
+                        if (!fixedBar && !userDismissed) showFixedBar(bar);
+                        return;
+                    }
+                    // デスクトップ: 上スクロール時のみ表示
                     if (dy > 0) { upPx = 0; hideFixedBar('scroll-down'); }
                     else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
                 }
@@ -2797,6 +2809,7 @@
                             lastToggleAt = now;
                             blockHideUntil = 0; // ブロック解除してから閉じる
                             manuallyShown = false;
+                            userDismissed = true; // 元バーが見えるまで自動表示を抑制
                             btnInteractingUntil = 0;
                             upPx = 0;
                             ignoreScrollUntil = now + 800;
@@ -2809,6 +2822,7 @@
                         // 表示する
                         console.log('[FB] click: OPENING bar');
                         lastToggleAt = now;
+                        userDismissed = false;
                         btnInteractingUntil = now + 1000;
                         blockHideUntil = now + 1000; // 1秒間は何があってもhideを完全ブロック
                         var bar = findBar();

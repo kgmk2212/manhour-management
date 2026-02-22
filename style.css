@@ -4951,6 +4951,14 @@ html[data-inline-filter="hidden"] .inline-filter {
         pointer-events: none;
     }
 
+    /* 内部コンテンツが全幅に伸び、背景・角丸の競合を解消 */
+    .smart-sticky-bar > div {
+        width: 100%;
+        background: transparent !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+
     .smart-sticky-bar select {
         font-size: 14px !important;
         min-height: 36px;
