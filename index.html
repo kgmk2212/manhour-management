@@ -2738,6 +2738,7 @@
                 }, { passive: true });
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
+                var lastToggleAt = 0; // 開く/閉じる操作のタイムスタンプ（重複イベント防止）
                 if (mobileFilterBtn) {
                     // タップ中の微小スクロールによる自動表示を防止
                     mobileFilterBtn.addEventListener('touchstart', function() {
@@ -2752,9 +2753,12 @@
                         if (isAnyModalOpen()) return;
                         // モーダル閉じ直後のゴーストクリック防止
                         if (now - lastModalCloseAt < 500) return;
+                        // 直前の開閉操作から間隔が短い場合は無視（重複イベント防止）
+                        if (now - lastToggleAt < 400) return;
 
                         // バーが表示されていたら閉じる（manuallyShown問わず1タップで閉じる）
                         if (fixedBar || hoverBar) {
+                            lastToggleAt = now;
                             manuallyShown = false;
                             btnInteractingUntil = 0;
                             upPx = 0;
@@ -2764,11 +2768,8 @@
                             return;
                         }
 
-                        // 連続タップ防止（表示操作のみ）
-                        if (now - lastBtnClick < 300) return;
-                        lastBtnClick = now;
-
                         // 表示する
+                        lastToggleAt = now;
                         btnInteractingUntil = now + 800;
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
