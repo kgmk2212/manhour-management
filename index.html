@@ -2480,7 +2480,7 @@
                 var lastModalCloseAt = 0; // モーダル閉じ時のタイムスタンプ（ゴーストクリック防止）
                 var btnInteractingUntil = 0; // ボタン操作中は非表示を抑制するタイマー
                 var blockHideUntil = 0; // ボタン開閉後、hideFixedBarを完全ブロックする期間
-                var userDismissed = false; // ユーザーがボタンで閉じた場合、元バーが見えるまで自動表示を抑制
+                var userDismissed = true; // ボタンで開くまで自動表示を抑制（開いた後は再表示OK）
 
                 // モーダルが開いているかを同期的にチェック
                 function isAnyModalOpen() {
@@ -2733,7 +2733,6 @@
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
                     if (!barAbove) {
                         upPx = 0;
-                        userDismissed = false; // 元バーが見えたらリセット
                         hideFixedBar('scroll-not-above');
                         return;
                     }
