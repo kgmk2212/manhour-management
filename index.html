@@ -2477,6 +2477,7 @@
                 var lastBtnClick = 0;     // ボタンクリックのデバウンス用
                 var lastModalCloseAt = 0; // モーダル閉じ時のタイムスタンプ（ゴーストクリック防止）
                 var btnInteractingUntil = 0; // ボタン操作中は非表示を抑制するタイマー
+                var blockHideUntil = 0; // ボタン開閉後、hideFixedBarを完全ブロックする期間
 
                 // モーダルが開いているかを同期的にチェック
                 function isAnyModalOpen() {
@@ -2521,7 +2522,7 @@
                 window.applyFilterBarMode = function() {
                     loadMode();
                     manuallyShown = false;
-                    hideFixedBar();
+                    hideFixedBar('applyFilterBarMode');
                     hideHoverBar();
                     upPx = 0;
                     lastY = (isMobile() || !mc) ? window.scrollY : mc.scrollTop;
@@ -2649,18 +2650,39 @@
                 function showFixedBar(bar) {
                     if (fixedBar && sourceBar === bar) return;
                     console.log('[FB] showFixedBar called');
-                    hideFixedBar();
+                    // 直接クリーンアップ（blockHideUntilガードをバイパス）
+                    if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
                     fixedBar = createBarElement(bar);
                     document.body.appendChild(fixedBar);
                     sourceBar = bar;
                     syncBar(fixedBar, sourceBar);
                     attachBarEvents(fixedBar, sourceBar);
                     updateMobileFilterBtn(true);
+                    // 表示後の状態監視（デバッグ）
+                    var monitorBar = fixedBar;
+                    [100, 300, 600, 1000].forEach(function(ms) {
+                        setTimeout(function() {
+                            if (!monitorBar) return;
+                            var inDOM = document.body.contains(monitorBar);
+                            var style = window.getComputedStyle(monitorBar);
+                            console.log('[FB] check@' + ms + 'ms: inDOM=' + inDOM +
+                                ' display=' + style.display +
+                                ' opacity=' + style.opacity +
+                                ' visibility=' + style.visibility +
+                                ' fixedBar=' + !!fixedBar +
+                                ' manuallyShown=' + manuallyShown);
+                        }, ms);
+                    });
                 }
 
-                function hideFixedBar() {
+                function hideFixedBar(caller) {
+                    // ボタン操作後のハードブロック: 何があっても非表示にしない
+                    if (Date.now() < blockHideUntil) {
+                        console.log('[FB] hideFixedBar BLOCKED (caller=' + (caller || 'unknown') + ')');
+                        return;
+                    }
                     if (fixedBar) {
-                        console.log('[FB] hideFixedBar: removing bar', new Error().stack.split('\n')[2]);
+                        console.log('[FB] hideFixedBar FROM: ' + (caller || 'unknown'));
                         fixedBar.remove(); fixedBar = null; sourceBar = null;
                     }
                     if (!manuallyShown) updateMobileFilterBtn(false);
@@ -2679,7 +2701,7 @@
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
                             console.log('[FB] onScroll: bar back in view, hiding');
                             manuallyShown = false;
-                            hideFixedBar();
+                            hideFixedBar('scroll-bar-in-view');
                         }
                         return;
                     }
@@ -2694,10 +2716,10 @@
                     lastY = y;
                     if (dy === 0) return;
                     var bar = findBar();
-                    if (!bar) { console.log('[FB] onScroll: no bar found'); hideFixedBar(); return; }
+                    if (!bar) { hideFixedBar('scroll-no-bar'); return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
-                    if (!barAbove) { console.log('[FB] onScroll: bar not above'); upPx = 0; hideFixedBar(); return; }
-                    if (dy > 0) { console.log('[FB] onScroll: scroll down, hiding'); upPx = 0; hideFixedBar(); }
+                    if (!barAbove) { upPx = 0; hideFixedBar('scroll-not-above'); return; }
+                    if (dy > 0) { upPx = 0; hideFixedBar('scroll-down'); }
                     else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
                 }
 
@@ -2764,24 +2786,27 @@
                         if (fixedBar || hoverBar) {
                             console.log('[FB] click: CLOSING bar');
                             lastToggleAt = now;
+                            blockHideUntil = 0; // ブロック解除してから閉じる
                             manuallyShown = false;
                             btnInteractingUntil = 0;
                             upPx = 0;
                             ignoreScrollUntil = now + 800;
-                            hideFixedBar();
+                            hideFixedBar('btn-close');
                             hideHoverBar();
+                            blockHideUntil = now + 800; // 閉じた後も再表示を防止
                             return;
                         }
 
                         // 表示する
                         console.log('[FB] click: OPENING bar');
                         lastToggleAt = now;
-                        btnInteractingUntil = now + 800;
+                        btnInteractingUntil = now + 1000;
+                        blockHideUntil = now + 1000; // 1秒間は何があってもhideを完全ブロック
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
                             manuallyShown = true;
                             manuallyShownAt = now;
-                            ignoreScrollUntil = now + 800;
+                            ignoreScrollUntil = now + 1000;
                             showFixedBar(bar);
                         } else {
                             console.log('[FB] click: bar not found or not above', bar, bar && bar.getBoundingClientRect().bottom);
@@ -2801,7 +2826,8 @@
                 document.querySelectorAll('.nav-item, .mobile-tab-item').forEach(function(item) {
                     item.addEventListener('click', function() {
                         manuallyShown = false;
-                        hideFixedBar();
+                        blockHideUntil = 0; // タブ切替はブロック解除
+                        hideFixedBar('tab-switch');
                         hideHoverBar();
                         upPx = 0;
                         ignoreScrollUntil = Date.now() + 600;
