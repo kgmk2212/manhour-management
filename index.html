@@ -2568,9 +2568,9 @@
                     el.innerHTML = bar.innerHTML;
                     el.style.cssText =
                         'position:fixed;top:' + topPx + 'px;right:0;z-index:9999;' +
-                        'background:var(--surface,#fff);padding:10px 40px;' +
-                        'border-bottom:1px solid var(--border,#e7e5e0);' +
-                        'box-shadow:0 2px 8px rgba(0,0,0,0.08);' +
+                        'background:var(--surface-elevated,#FAFAF9);padding:10px 40px;' +
+                        'border-bottom:1px solid var(--border-light,#F0EEEA);' +
+                        'box-shadow:0 4px 12px rgba(26,24,20,0.08);' +
                         'display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
                         'animation:smartStickySlideIn 0.2s ease;' +
                         'left:' + left + 'px;';
@@ -2651,6 +2651,8 @@
                     console.log('[FB] showFixedBar called');
                     // 直接クリーンアップ（blockHideUntilガードをバイパス）
                     if (fixedBar) { fixedBar.remove(); fixedBar = null; sourceBar = null; }
+                    // 閉じアニメーション中のバーも即削除
+                    document.querySelectorAll('.smart-sticky-bar.is-closing').forEach(function(el) { el.remove(); });
                     fixedBar = createBarElement(bar);
                     document.body.appendChild(fixedBar);
                     sourceBar = bar;
@@ -2682,7 +2684,15 @@
                     }
                     if (fixedBar) {
                         console.log('[FB] hideFixedBar FROM: ' + (caller || 'unknown'));
-                        fixedBar.remove(); fixedBar = null; sourceBar = null;
+                        var bar = fixedBar;
+                        fixedBar = null; sourceBar = null;
+                        // モバイルではフェードアウトアニメーション後に削除
+                        if (isMobile()) {
+                            bar.classList.add('is-closing');
+                            setTimeout(function() { if (bar.parentNode) bar.remove(); }, 160);
+                        } else {
+                            bar.remove();
+                        }
                     }
                     if (!manuallyShown) updateMobileFilterBtn(false);
                 }

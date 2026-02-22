@@ -357,27 +357,34 @@ img {
     align-items: center;
     justify-content: center;
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--sidebar-text);
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: all var(--transition);
+    transition: opacity 0.25s ease, background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
     flex-shrink: 0;
-    opacity: 0.6;
+    opacity: 0.5;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     position: relative;
     z-index: 1;
+    animation: filterBtnFadeIn 0.25s ease both;
+}
+
+.mobile-filter-btn:active {
+    transform: scale(0.9);
+    opacity: 0.8;
 }
 
 .mobile-filter-btn.has-filter {
     opacity: 1;
     color: var(--sidebar-text-active);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 .mobile-filter-btn.is-open {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
     opacity: 1;
     color: var(--sidebar-text-active);
 }
@@ -4882,14 +4889,42 @@ html[data-inline-filter="hidden"] .inline-filter {
 }
 
 /* ---- Smart Sticky Filter Bar ---- */
+/* Desktop: slide down from above */
 @keyframes smartStickySlideIn {
     from { transform: translateY(-100%); opacity: 0; }
     to   { transform: translateY(0); opacity: 1; }
 }
-@keyframes smartStickyFadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+
+/* Mobile: subtle emerge from behind header */
+@keyframes smartStickyEmerge {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
+
+/* Mobile: fade out + slide up on close */
+@keyframes smartStickyDismiss {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
+
+/* Filter button fade-in when appearing */
+@keyframes filterBtnFadeIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 0.5; transform: scale(1); }
+}
+
 .smart-sticky-bar select,
 .smart-sticky-bar button {
     font-size: 13px;
@@ -4900,13 +4935,20 @@ html[data-inline-filter="hidden"] .inline-filter {
     .smart-sticky-bar {
         left: 0 !important;
         right: 0 !important;
-        top: 48px !important;
         padding: 10px 16px !important;
         gap: 8px !important;
         max-height: 60vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        animation: smartStickyFadeIn 0.15s ease !important;
+        background: var(--surface-elevated, #FAFAF9) !important;
+        border-bottom: 1px solid var(--border-light, #F0EEEA) !important;
+        box-shadow: 0 4px 12px rgba(26, 24, 20, 0.08), inset 0 1px 0 rgba(26, 24, 20, 0.04) !important;
+        animation: smartStickyEmerge 0.22s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    }
+
+    .smart-sticky-bar.is-closing {
+        animation: smartStickyDismiss 0.15s ease forwards !important;
+        pointer-events: none;
     }
 
     .smart-sticky-bar select {
