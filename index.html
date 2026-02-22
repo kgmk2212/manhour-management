@@ -2648,6 +2648,7 @@
                 // --- スマートスティッキーモード ---
                 function showFixedBar(bar) {
                     if (fixedBar && sourceBar === bar) return;
+                    console.log('[FB] showFixedBar called');
                     hideFixedBar();
                     fixedBar = createBarElement(bar);
                     document.body.appendChild(fixedBar);
@@ -2659,6 +2660,7 @@
 
                 function hideFixedBar() {
                     if (fixedBar) {
+                        console.log('[FB] hideFixedBar: removing bar', new Error().stack.split('\n')[2]);
                         fixedBar.remove(); fixedBar = null; sourceBar = null;
                     }
                     if (!manuallyShown) updateMobileFilterBtn(false);
@@ -2675,6 +2677,7 @@
                         // 元のバーが画面内に戻ったら自動的に閉じる
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
+                            console.log('[FB] onScroll: bar back in view, hiding');
                             manuallyShown = false;
                             hideFixedBar();
                         }
@@ -2691,10 +2694,10 @@
                     lastY = y;
                     if (dy === 0) return;
                     var bar = findBar();
-                    if (!bar) { hideFixedBar(); return; }
+                    if (!bar) { console.log('[FB] onScroll: no bar found'); hideFixedBar(); return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
-                    if (!barAbove) { upPx = 0; hideFixedBar(); return; }
-                    if (dy > 0) { upPx = 0; hideFixedBar(); }
+                    if (!barAbove) { console.log('[FB] onScroll: bar not above'); upPx = 0; hideFixedBar(); return; }
+                    if (dy > 0) { console.log('[FB] onScroll: scroll down, hiding'); upPx = 0; hideFixedBar(); }
                     else { upPx += Math.abs(dy); if (upPx >= THRESHOLD) showFixedBar(bar); }
                 }
 
@@ -2749,15 +2752,17 @@
                         e.preventDefault();
                         e.stopPropagation();
                         var now = Date.now();
+                        console.log('[FB] click: fixedBar=' + !!fixedBar + ' manuallyShown=' + manuallyShown + ' dt=' + (now - lastToggleAt));
                         // モーダルが開いている場合は無視
                         if (isAnyModalOpen()) return;
                         // モーダル閉じ直後のゴーストクリック防止
                         if (now - lastModalCloseAt < 500) return;
                         // 直前の開閉操作から間隔が短い場合は無視（重複イベント防止）
-                        if (now - lastToggleAt < 400) return;
+                        if (now - lastToggleAt < 400) { console.log('[FB] click: debounced'); return; }
 
                         // バーが表示されていたら閉じる（manuallyShown問わず1タップで閉じる）
                         if (fixedBar || hoverBar) {
+                            console.log('[FB] click: CLOSING bar');
                             lastToggleAt = now;
                             manuallyShown = false;
                             btnInteractingUntil = 0;
@@ -2769,6 +2774,7 @@
                         }
 
                         // 表示する
+                        console.log('[FB] click: OPENING bar');
                         lastToggleAt = now;
                         btnInteractingUntil = now + 800;
                         var bar = findBar();
@@ -2777,6 +2783,8 @@
                             manuallyShownAt = now;
                             ignoreScrollUntil = now + 800;
                             showFixedBar(bar);
+                        } else {
+                            console.log('[FB] click: bar not found or not above', bar, bar && bar.getBoundingClientRect().bottom);
                         }
                     });
                 }
