@@ -2562,7 +2562,8 @@
                 function createBarElement(bar) {
                     var left = mc ? mc.getBoundingClientRect().left : 0;
                     var topPx = 0;
-                    if (isMobile()) {
+                    var mobile = isMobile();
+                    if (mobile) {
                         left = 0;
                         var mh = document.getElementById('mobileHeader');
                         topPx = mh ? mh.offsetHeight : 48;
@@ -2570,6 +2571,17 @@
                     var el = document.createElement('div');
                     el.className = 'smart-sticky-bar';
                     el.innerHTML = bar.innerHTML;
+                    // モバイル: コピーされた内容の背景・角丸・パディングを除去（白抜け防止）
+                    if (mobile) {
+                        for (var i = 0; i < el.children.length; i++) {
+                            var child = el.children[i];
+                            child.style.background = 'none';
+                            child.style.backgroundColor = 'transparent';
+                            child.style.borderRadius = '0';
+                            child.style.padding = '0';
+                            child.style.width = '100%';
+                        }
+                    }
                     el.style.cssText =
                         'position:fixed;top:' + topPx + 'px;right:0;z-index:120;' +
                         'background:var(--surface-elevated,#FAFAF9);padding:10px 40px;' +
