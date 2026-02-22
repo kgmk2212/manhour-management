@@ -4886,6 +4886,10 @@ html[data-inline-filter="hidden"] .inline-filter {
     from { transform: translateY(-100%); opacity: 0; }
     to   { transform: translateY(0); opacity: 1; }
 }
+@keyframes smartStickyFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
 .smart-sticky-bar select,
 .smart-sticky-bar button {
     font-size: 13px;
@@ -4902,6 +4906,7 @@ html[data-inline-filter="hidden"] .inline-filter {
         max-height: 60vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        animation: smartStickyFadeIn 0.15s ease !important;
     }
 
     .smart-sticky-bar select {

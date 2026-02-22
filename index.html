@@ -2739,11 +2739,6 @@
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 if (mobileFilterBtn) {
-                    // touchstart時点で操作保護を開始（微小スクロールによる誤非表示を防止）
-                    mobileFilterBtn.addEventListener('touchstart', function() {
-                        btnInteractingUntil = Date.now() + 1500;
-                    }, { passive: true });
-
                     mobileFilterBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -2753,37 +2748,28 @@
                         // モーダル閉じ直後のゴーストクリック防止
                         if (now - lastModalCloseAt < 500) return;
 
-                        // すでに表示されていたら → 閉じる（デバウンスなし）
-                        if (manuallyShown && (fixedBar || hoverBar)) {
+                        // バーが表示されていたら閉じる（manuallyShown問わず1タップで閉じる）
+                        if (fixedBar || hoverBar) {
                             manuallyShown = false;
-                            btnInteractingUntil = 0; // 操作保護を解除
+                            btnInteractingUntil = 0;
                             upPx = 0;
-                            ignoreScrollUntil = now + 600;
+                            ignoreScrollUntil = now + 800;
                             hideFixedBar();
                             hideHoverBar();
                             return;
                         }
 
                         // 連続タップ防止（表示操作のみ）
-                        if (now - lastBtnClick < 400) return;
+                        if (now - lastBtnClick < 300) return;
                         lastBtnClick = now;
-                        // ボタン操作保護を設定
-                        btnInteractingUntil = now + 1000;
 
-                        // スクロールで自動表示されたバーを手動表示に昇格
-                        if (fixedBar || hoverBar) {
-                            manuallyShown = true;
-                            manuallyShownAt = now;
-                            ignoreScrollUntil = now + 500;
-                            updateMobileFilterBtn(true);
-                            return;
-                        }
                         // 表示する
+                        btnInteractingUntil = now + 800;
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom < 0) {
                             manuallyShown = true;
                             manuallyShownAt = now;
-                            ignoreScrollUntil = now + 500;
+                            ignoreScrollUntil = now + 800;
                             showFixedBar(bar);
                         }
                     });
