@@ -631,78 +631,47 @@ export function handleFileImport(event) {
 console.log('✅ モジュール storage.js loaded');
 
 export async function exportToExcel() {
-    if (typeof ExcelJS === 'undefined') {
+    let XLSX;
+    try {
+        XLSX = await import('../lib/xlsx.mjs');
+    } catch {
         alert('Excel出力ライブラリが読み込まれていません。');
         return;
     }
 
     try {
-        const workbook = new ExcelJS.Workbook();
-        workbook.created = new Date();
-        workbook.modified = new Date();
+        const wb = XLSX.utils.book_new();
 
         // 1. 実績シート
-        const actualSheet = workbook.addWorksheet('実績');
-        actualSheet.columns = [
-            { header: '日付', key: 'date', width: 12 },
-            { header: '版数', key: 'version', width: 15 },
-            { header: '対応名', key: 'task', width: 30 },
-            { header: '工程', key: 'process', width: 8 },
-            { header: '担当', key: 'member', width: 12 },
-            { header: '工数(h)', key: 'hours', width: 10 }
-        ];
-
-        // 実績データを日付順、担当者順でソート
         const sortedActuals = [...actuals].sort((a, b) => {
             if (a.date !== b.date) return a.date.localeCompare(b.date);
             return a.member.localeCompare(b.member);
         });
 
-        sortedActuals.forEach(a => {
-            actualSheet.addRow({
-                date: a.date,
-                version: a.version || '',
-                task: a.task,
-                process: a.process,
-                member: a.member,
-                hours: a.hours
-            });
-        });
+        const actualData = [
+            ['日付', '版数', '対応名', '工程', '担当', '工数(h)'],
+            ...sortedActuals.map(a => [a.date, a.version || '', a.task, a.process, a.member, a.hours])
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(actualData);
+        ws1['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 12 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, ws1, '実績');
 
         // 2. 見積シート
-        const estimateSheet = workbook.addWorksheet('見積');
-        estimateSheet.columns = [
-            { header: '版数', key: 'version', width: 15 },
-            { header: '対応名', key: 'task', width: 30 },
-            { header: '工程', key: 'process', width: 8 },
-            { header: '担当', key: 'member', width: 12 },
-            { header: '見積工数(h)', key: 'hours', width: 12 },
-            { header: '作業月', key: 'workMonths', width: 20 }
+        const estimateData = [
+            ['版数', '対応名', '工程', '担当', '見積工数(h)', '作業月'],
+            ...estimates.map(e => [
+                e.version, e.task, e.process, e.member, e.hours,
+                Array.isArray(e.workMonths) ? e.workMonths.join(',') : (e.workMonth || '')
+            ])
         ];
-
-        estimates.forEach(e => {
-            estimateSheet.addRow({
-                version: e.version,
-                task: e.task,
-                process: e.process,
-                member: e.member,
-                hours: e.hours,
-                workMonths: Array.isArray(e.workMonths) ? e.workMonths.join(',') : (e.workMonth || '')
-            });
-        });
+        const ws2 = XLSX.utils.aoa_to_sheet(estimateData);
+        ws2['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, ws2, '見積');
 
         // ファイル生成とダウンロード
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
         const now = new Date();
         const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-
-        a.href = url;
-        a.download = `工数管理_エクスポート_${timestamp}.xlsx`;
-        a.click();
-        URL.revokeObjectURL(url);
+        XLSX.writeFile(wb, `工数管理_エクスポート_${timestamp}.xlsx`);
 
         if (typeof window.showAlert === 'function') {
             window.showAlert('Excelファイルを出力しました', true);
