@@ -351,8 +351,8 @@ img {
 }
 
 .mobile-filter-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -364,6 +364,10 @@ img {
     transition: all var(--transition);
     flex-shrink: 0;
     opacity: 0.6;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .mobile-filter-btn.has-filter {
@@ -2995,7 +2999,7 @@ table tr[style*="1565c0"] th:first-child {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 10000;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.2s ease;

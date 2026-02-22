@@ -2476,15 +2476,30 @@
                 var manuallyShownAt = 0;  // manuallyShown設定時のタイムスタンプ
                 var lastBtnClick = 0;     // ボタンクリックのデバウンス用
                 var lastModalCloseAt = 0; // モーダル閉じ時のタイムスタンプ（ゴーストクリック防止）
+                var btnInteractingUntil = 0; // ボタン操作中は非表示を抑制するタイマー
 
-                // モーダルの表示/非表示を監視してゴーストクリックを防止
+                // モーダルが開いているかを同期的にチェック
+                function isAnyModalOpen() {
+                    var modals = document.querySelectorAll('.modal');
+                    for (var i = 0; i < modals.length; i++) {
+                        if (modals[i].style.display === 'flex') return true;
+                    }
+                    return false;
+                }
+
+                // モーダルの表示/非表示を監視してゴーストクリックを防止 + フィルタボタン制御
                 var modalObserver = new MutationObserver(function(mutations) {
                     mutations.forEach(function(m) {
                         if (m.type === 'attributes' && m.attributeName === 'style' &&
                             m.target.classList.contains('modal')) {
                             var d = m.target.style.display;
-                            if (d === 'none' || d === '') {
+                            if (d === 'flex') {
+                                // モーダルが開いた: フィルタボタンを非表示にし、ゴーストクリックを防止
+                                if (mobileFilterBtn) mobileFilterBtn.style.display = 'none';
+                            } else if (d === 'none' || d === '') {
                                 lastModalCloseAt = Date.now();
+                                // モーダルが閉じた: フィルタボタンの表示状態を再評価（少し遅延）
+                                setTimeout(function() { updateFilterBtnVisibility(); }, 350);
                             }
                         }
                     });
@@ -2609,9 +2624,18 @@
                         if (mobileFilterBtn) mobileFilterBtn.style.display = 'none';
                         return;
                     }
+                    // モーダルが開いている間はボタンを非表示
+                    if (isAnyModalOpen()) {
+                        mobileFilterBtn.style.display = 'none';
+                        return;
+                    }
                     // 手動表示中はボタンを常に表示（閉じるために必要）
                     if (manuallyShown && fixedBar) {
                         mobileFilterBtn.style.display = '';
+                        return;
+                    }
+                    // ボタン操作中は非表示を抑制（タップ時の微小スクロールによる誤非表示を防止）
+                    if (Date.now() < btnInteractingUntil) {
                         return;
                     }
                     var bar = findBar();
@@ -2642,10 +2666,12 @@
 
                 function onScroll() {
                     if (currentMode !== 'smartSticky') return;
+                    // ボタン操作中はスクロールを無視
+                    if (Date.now() < btnInteractingUntil) return;
                     // モバイルボタンで明示的に表示中
                     if (manuallyShown) {
-                        // 表示直後500msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
-                        if (Date.now() - manuallyShownAt < 500) return;
+                        // 表示直後800msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
+                        if (Date.now() - manuallyShownAt < 800) return;
                         // 元のバーが画面内に戻ったら自動的に閉じる
                         var bar = findBar();
                         if (bar && bar.getBoundingClientRect().bottom >= 0) {
@@ -2713,10 +2739,19 @@
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 if (mobileFilterBtn) {
+                    // touchstart時点で操作保護を開始（微小スクロールによる誤非表示を防止）
+                    mobileFilterBtn.addEventListener('touchstart', function() {
+                        btnInteractingUntil = Date.now() + 1500;
+                    }, { passive: true });
+
                     mobileFilterBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         var now = Date.now();
+                        // ボタン操作保護を延長
+                        btnInteractingUntil = now + 1000;
+                        // モーダルが開いている場合は無視
+                        if (isAnyModalOpen()) return;
                         // モーダル閉じ直後のゴーストクリック防止
                         if (now - lastModalCloseAt < 500) return;
                         // 連続タップ防止
