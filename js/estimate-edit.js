@@ -256,11 +256,20 @@ export function saveEstimateEdit() {
         r.member === member
     );
 
+    let remainingAdjusted = false;
+    let oldRemainingHours = null;
+    let newRemainingHours = null;
+
     if (!existingRemaining) {
+        // 見込み残存が未設定 → 新しい見積時間で作成
         saveRemainingEstimate(version, task, process, member, hours);
-    } else if (existingRemaining.hours === oldEstimate.hours) {
-        // 見込み残存が見積時間と同じ（完全に未着手）なら、見積変更に追従
-        saveRemainingEstimate(version, task, process, member, hours);
+    } else if (oldEstimate.hours && oldEstimate.hours !== hours) {
+        // 見積時間が変更された → 比率を保持して調整
+        oldRemainingHours = existingRemaining.remainingHours;
+        const ratio = oldRemainingHours / oldEstimate.hours;
+        newRemainingHours = Math.round(hours * ratio * 10) / 10;
+        saveRemainingEstimate(version, task, process, member, newRemainingHours);
+        remainingAdjusted = true;
     }
 
     // スケジュール連動: 旧キーで対応するスケジュールを検索し自動更新
@@ -304,6 +313,9 @@ export function saveEstimateEdit() {
 
     if (scheduleToastMsg) {
         showToast(scheduleToastMsg, 'info', 5000);
+    }
+    if (remainingAdjusted) {
+        showToast(`見込み残存時間を ${oldRemainingHours}h → ${newRemainingHours}h に調整しました`, 'info', 5000);
     }
     showAlert('見積データを更新しました', true);
 }

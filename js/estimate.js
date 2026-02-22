@@ -293,6 +293,43 @@ export function cleanupOrphanedRemainingEstimates() {
     return orphanedIndices.length;
 }
 
+/**
+ * 見込残存時間が見積時間を超えているデータを修復する関数
+ * 見積変更時に残存が未調整だったケースを検出し、見積値にキャップする
+ *
+ * @returns {number} 修復したレコード数
+ */
+export function repairRemainingEstimateConsistency() {
+    if (!remainingEstimates || remainingEstimates.length === 0) {
+        return 0;
+    }
+
+    let repairedCount = 0;
+
+    remainingEstimates.forEach(remaining => {
+        const matchingEstimate = estimates.find(e =>
+            e.version === remaining.version &&
+            e.task === remaining.task &&
+            e.process === remaining.process &&
+            e.member === remaining.member
+        );
+
+        if (matchingEstimate && remaining.remainingHours > matchingEstimate.hours) {
+            console.log(`[Repair] 見込残存を修復: ${remaining.version}/${remaining.task}/${remaining.process}/${remaining.member} ${remaining.remainingHours}h → ${matchingEstimate.hours}h`);
+            remaining.remainingHours = matchingEstimate.hours;
+            remaining.updatedAt = new Date().toISOString();
+            repairedCount++;
+        }
+    });
+
+    if (repairedCount > 0) {
+        localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
+        console.log(`[Repair] ${repairedCount}件の見込残存データを修復しました`);
+    }
+
+    return repairedCount;
+}
+
 // ============================================
 // 見積一覧レンダリング
 // ============================================

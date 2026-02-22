@@ -177,6 +177,7 @@ window.saveRemainingEstimate = Estimate.saveRemainingEstimate;
 window.getRemainingEstimate = Estimate.getRemainingEstimate;
 window.deleteRemainingEstimate = Estimate.deleteRemainingEstimate;
 window.cleanupOrphanedRemainingEstimates = Estimate.cleanupOrphanedRemainingEstimates;
+window.repairRemainingEstimateConsistency = Estimate.repairRemainingEstimateConsistency;
 window.renderEstimateList = Estimate.renderEstimateList;
 window.renderEstimateGrouped = Estimate.renderEstimateGrouped;
 window.renderEstimateMatrix = Estimate.renderEstimateMatrix;
@@ -439,6 +440,12 @@ window.taskColorMap = State.taskColorMap;
 const cleanedCount = Estimate.cleanupOrphanedRemainingEstimates();
 if (cleanedCount > 0) {
     console.log(`✅ init.js: ${cleanedCount}件の孤立した見込残存データを削除しました`);
+}
+
+// 見込残存 > 見積 の不整合データを修復（見積変更時に残存が未調整だったケース）
+const repairedCount = Estimate.repairRemainingEstimateConsistency();
+if (repairedCount > 0) {
+    console.log(`✅ init.js: ${repairedCount}件の見込残存データの不整合を修復しました`);
 }
 
 console.log('✅ init.js: データロード完了', {
