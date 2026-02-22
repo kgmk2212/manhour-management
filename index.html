@@ -2748,31 +2748,34 @@
                         e.preventDefault();
                         e.stopPropagation();
                         var now = Date.now();
-                        // ボタン操作保護を延長
-                        btnInteractingUntil = now + 1000;
                         // モーダルが開いている場合は無視
                         if (isAnyModalOpen()) return;
                         // モーダル閉じ直後のゴーストクリック防止
                         if (now - lastModalCloseAt < 500) return;
-                        // 連続タップ防止
-                        if (now - lastBtnClick < 500) return;
-                        lastBtnClick = now;
-                        // すでに表示されていたら
-                        if (fixedBar || hoverBar) {
-                            if (!manuallyShown) {
-                                // スクロールで自動表示されたバーを手動表示に昇格
-                                manuallyShown = true;
-                                manuallyShownAt = now;
-                                ignoreScrollUntil = now + 500;
-                                updateMobileFilterBtn(true);
-                                return;
-                            }
-                            // 手動表示中のバーを閉じる
+
+                        // すでに表示されていたら → 閉じる（デバウンスなし）
+                        if (manuallyShown && (fixedBar || hoverBar)) {
                             manuallyShown = false;
+                            btnInteractingUntil = 0; // 操作保護を解除
                             upPx = 0;
                             ignoreScrollUntil = now + 600;
                             hideFixedBar();
                             hideHoverBar();
+                            return;
+                        }
+
+                        // 連続タップ防止（表示操作のみ）
+                        if (now - lastBtnClick < 400) return;
+                        lastBtnClick = now;
+                        // ボタン操作保護を設定
+                        btnInteractingUntil = now + 1000;
+
+                        // スクロールで自動表示されたバーを手動表示に昇格
+                        if (fixedBar || hoverBar) {
+                            manuallyShown = true;
+                            manuallyShownAt = now;
+                            ignoreScrollUntil = now + 500;
+                            updateMobileFilterBtn(true);
                             return;
                         }
                         // 表示する
