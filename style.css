@@ -4938,6 +4938,7 @@ html[data-inline-filter="hidden"] .inline-filter {
         padding: 10px 16px !important;
         gap: 8px !important;
         max-height: 60vh;
+        overflow-x: hidden;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         background: var(--surface-elevated, #FAFAF9) !important;
@@ -4954,6 +4955,8 @@ html[data-inline-filter="hidden"] .inline-filter {
     /* 内部コンテンツが全幅に伸び、背景・角丸の競合を解消 */
     .smart-sticky-bar > div {
         width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
         background: transparent !important;
         border-radius: 0 !important;
         padding: 0 !important;
@@ -4969,7 +4972,7 @@ html[data-inline-filter="hidden"] .inline-filter {
     .smart-sticky-bar .segment-buttons {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        max-width: 100% !important;
+        max-width: 100%;
     }
 
     .smart-sticky-bar .segment-buttons button {
