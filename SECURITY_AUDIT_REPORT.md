@@ -14,7 +14,7 @@
 | フレームワーク | なし |
 | データ保存 | localStorage |
 | 外部通信 | なし（fetch/XHR/API呼び出し未使用） |
-| 外部ライブラリ | ExcelJS (CDN), holiday_jp (CDN) |
+| 外部ライブラリ | SheetJS (ローカル), japanese-holidays (ローカル) |
 | 認証・認可 | なし |
 | デプロイ | GitHub Pages（静的ホスティング） |
 
@@ -87,7 +87,7 @@ html += `
 
 **修正済みファイル**: `estimate.js`, `actual.js`, `report.js`, `schedule.js`, `schedule-render.js`, `modal.js`, `quick.js`, `vacation.js`, `estimate-split.js`, `estimate-add.js`
 
-> **追加修正（2026-02-19）**: `actual.js` の祝日名表示（`holiday_jp.between()` の返り値、会社休日名）にも `escapeHtml()` を適用。外部ライブラリの返り値が改ざんされた場合のXSS経路を遮断。
+> **追加修正（2026-02-19）**: `actual.js` の祝日名表示（japanese-holidaysの返り値、会社休日名）にも `escapeHtml()` を適用。外部ライブラリの返り値が改ざんされた場合のXSS経路を遮断。
 
 ---
 
@@ -151,8 +151,8 @@ container.addEventListener('click', (e) => {
 **概要**: 2つの外部CDNスクリプトが `integrity` 属性なしで読み込まれている。CDNが侵害された場合、任意のコードが実行される。
 
 **該当箇所**:
-- `index.html:37` - ExcelJS (`cdnjs.cloudflare.com`)
-- `index.html:38` - holiday_jp (`cdn.jsdelivr.net`)
+- `index.html:37` - ExcelJS (`cdnjs.cloudflare.com`) → SheetJS (`lib/xlsx.mjs`) に移行済み
+- `index.html:38` - holiday_jp (`cdn.jsdelivr.net`) → japanese-holidays (`lib/japanese-holidays.js`) に移行済み
 
 **確信度**: High
 **深刻度**: **High**
@@ -327,9 +327,9 @@ if (savedEstimates) {
 
 ---
 
-### 7. holiday_jp CDNバージョン未固定
+### 7. holiday_jp CDNバージョン未固定（解消済み：japanese-holidaysにローカル移行）
 
-**概要**: holiday_jpのCDN URLでバージョンが固定されておらず、常に最新版が読み込まれる。意図しないバージョン変更による動作の変化やサプライチェーン攻撃のリスクがある。
+**概要**: 旧holiday_jpのCDN URLでバージョンが固定されておらず、常に最新版が読み込まれていた。japanese-holidaysへのローカル移行により完全に解消。
 
 **該当箇所**: `index.html:38`
 
@@ -387,4 +387,4 @@ if (savedEstimates) {
 | 4 | CSP 未設定 | Medium | ✅ 修正済み |
 | 5 | escapeHtml ユーティリティ欠如 | Medium | ✅ 修正済み |
 | 6 | localStorage バリデーション不足 | Low | ⏭️ 見送り |
-| 7 | holiday_jp バージョン未固定 | Medium | ✅ 修正済み |
+| 7 | holiday_jp バージョン未固定 | Medium | ✅ 修正済み（ローカル移行で解消） |

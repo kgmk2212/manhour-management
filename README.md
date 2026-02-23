@@ -16,7 +16,8 @@
 
 - 純粋なHTML/CSS/JavaScript（フレームワークなし）
 - ES Modules による23個のモジュール構成
-- ExcelJS（Excelファイル出力）
+- SheetJS（Excelファイル出力）
+- japanese-holidays（日本の祝日判定）
 - ローカルストレージによるデータ保存（JSONエクスポート/インポート対応）
 
 ## ファイル構成

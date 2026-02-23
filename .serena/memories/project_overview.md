@@ -12,7 +12,7 @@ A web application for managing project estimates and recording actual man-hours.
 - HTML5 (Semantic)
 - CSS3 (Vanilla, CSS Variables)
 - JavaScript (ES Modules, No Framework)
-- Libraries: ExcelJS (Excel export), holiday_jp (JP holidays)
+- Libraries: SheetJS/xlsx.mjs (Excel export), japanese-holidays (JP holidays, algorithm-based)
 - Environment: Browser (Chrome/Edge recommended)
 - Hosting: GitHub Pages (static files)
 

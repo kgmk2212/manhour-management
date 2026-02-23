@@ -56,8 +56,8 @@
 ```html
 <head>
   - メタ情報・文字コード
-  - ExcelJS（Excelファイル出力）
-  - holiday_jp（日本の祝日API）
+  - SheetJS（Excelファイル出力、ESMビルド）
+  - japanese-holidays（日本の祝日判定、アルゴリズム計算ベース）
   - style.css
   - 早期テーマ適用スクリプト（ちらつき防止）
 </head>
