@@ -4969,7 +4969,7 @@ html[data-inline-filter="hidden"] .inline-filter {
     .smart-sticky-bar .segment-buttons {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        max-width: 100%;
+        max-width: 100% !important;
     }
 
     .smart-sticky-bar .segment-buttons button {
