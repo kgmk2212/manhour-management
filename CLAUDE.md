@@ -118,3 +118,50 @@ git branch -D experiment/sandbox
 - `docs/GANTT_CHART_DESIGN.md` - 詳細設計書
 - `ARCHITECTURE.md` - アーキテクチャ構成
 - `CODEBASE_STRUCTURE.md` - コードベース構造
+
+---
+
+## Spec-Driven Development (cc-sdd)
+
+AI-DLC（AI Development Life Cycle）に基づくKiroスタイルの仕様駆動開発。
+
+### パス
+
+- ステアリング: `.kiro/steering/`
+- 仕様: `.kiro/specs/`
+
+### ステアリング vs 仕様
+
+- **ステアリング** (`.kiro/steering/`) - プロジェクト全体のルールとコンテキストでAIをガイド
+- **仕様** (`.kiro/specs/`) - 個別機能の開発プロセスを定式化
+
+### アクティブな仕様
+
+- `.kiro/specs/` でアクティブな仕様を確認
+- `/kiro:spec-status [feature-name]` で進捗確認
+
+### ワークフロー
+
+- Phase 0（任意）: `/kiro:steering`, `/kiro:steering-custom`
+- Phase 1（仕様策定）:
+  - `/kiro:spec-init "description"` - 仕様の初期化
+  - `/kiro:spec-requirements {feature}` - 要件定義
+  - `/kiro:validate-gap {feature}` （任意: 既存コードベース向け）
+  - `/kiro:spec-design {feature} [-y]` - 設計
+  - `/kiro:validate-design {feature}` （任意: 設計レビュー）
+  - `/kiro:spec-tasks {feature} [-y]` - タスク分解
+- Phase 2（実装）: `/kiro:spec-impl {feature} [tasks]`
+  - `/kiro:validate-impl {feature}` （任意: 実装後の検証）
+- 進捗確認: `/kiro:spec-status {feature}` （いつでも使用可能）
+
+### 開発ルール
+
+- 3フェーズ承認ワークフロー: 要件 → 設計 → タスク → 実装
+- 各フェーズでレビューが必要。`-y` は意図的なファストトラック時のみ使用
+- ステアリングを最新に保ち、`/kiro:spec-status` で整合性を確認
+
+### ステアリング設定
+
+- `.kiro/steering/` をプロジェクトメモリとしてロード
+- デフォルトファイル: `product.md`, `tech.md`, `structure.md`
+- カスタムファイルは `/kiro:steering-custom` で管理

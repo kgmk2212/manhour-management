@@ -1,8 +1,24 @@
 {
   "mcpServers": {
+    "github": {
+      "command": "/bin/sh",
+      "args": [
+        "-c",
+        "GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) exec npx -y @modelcontextprotocol/server-github"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
     "serena": {
-      "command": "serena",
-      "args": ["start-mcp-server"]
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/oraios/serena",
+        "serena", "start-mcp-server",
+        "--context", "claude-code",
+        "--project", "/Users/kmori/Documents/work/manhour-experiment"
+      ]
     }
   }
 }
