@@ -44,7 +44,7 @@
 
 **内容**:
 - DOCTYPE宣言
-- `<head>`: メタ情報、外部ライブラリ（ExcelJS、holiday_jp）の読み込み
+- `<head>`: メタ情報、外部ライブラリ（SheetJS、japanese-holidays）の読み込み
 - `<body>`: アプリケーションのDOM構造
 - `<link rel="stylesheet" href="style.css">`
 - `<script type="module" src="js/init.js"></script>`

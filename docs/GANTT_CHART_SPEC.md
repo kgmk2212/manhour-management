@@ -162,7 +162,7 @@
 
 #### 2.5.2 スキップ対象
 - 土曜・日曜
-- 祝日（holiday_jp）
+- 祝日（japanese-holidays）
 - 会社休日（companyHolidays）
 - 担当者の個人休暇（vacations）
 

@@ -16,8 +16,8 @@
 
 ## Key Libraries
 
-- **ExcelJS** (`lib/exceljs.min.js`) — Excel出力機能
-- **holiday_jp** (`lib/holiday_jp.min.js`) — 日本の祝日判定
+- **SheetJS** (`lib/xlsx.mjs`) — Excel出力機能（ESMビルド、CSP unsafe-eval不要）
+- **japanese-holidays** (`lib/japanese-holidays.js`) — 日本の祝日判定（アルゴリズム計算ベース）
 
 ライブラリはCDNではなく `lib/` ディレクトリにローカル配置（セキュリティ・CSP対応）。
 

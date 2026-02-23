@@ -99,7 +99,7 @@ git branch -D experiment/sandbox
 - **フレームワーク**: なし（純粋なHTML/CSS/JavaScript）
 - **モジュール**: ES Modules
 - **データ保存**: localStorage
-- **外部ライブラリ**: ExcelJS, holiday_jp
+- **外部ライブラリ**: SheetJS (xlsx.mjs), japanese-holidays
 
 ---
 

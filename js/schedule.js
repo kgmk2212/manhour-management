@@ -537,7 +537,7 @@ export function isBusinessDay(date, member) {
     
     const dateStr = formatDateForCheck(date);
     
-    // 祝日チェック（getHoliday経由：holiday_jp優先、フォールバックで内部定数）
+    // 祝日チェック（getHoliday経由：japanese-holidays使用）
     const holiday = typeof window.getHoliday === 'function' ? window.getHoliday(dateStr) : null;
     if (holiday) {
         return false;
