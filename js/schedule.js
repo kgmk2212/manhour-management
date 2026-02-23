@@ -1748,80 +1748,54 @@ export function deleteFilteredSchedules() {
  * スケジュールをExcelに出力
  */
 export async function exportSchedulesToExcel() {
-    if (typeof ExcelJS === 'undefined') {
-        showToast('ExcelJSライブラリが読み込まれていません', 'error');
+    let XLSX;
+    try {
+        XLSX = await import('../lib/xlsx.mjs');
+    } catch {
+        showToast('Excel出力ライブラリが読み込まれていません', 'error');
         return;
     }
-    
+
     const filteredSchedules = getFilteredSchedules();
-    
+
     if (filteredSchedules.length === 0) {
         showToast('出力するスケジュールがありません', 'info');
         return;
     }
-    
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('スケジュール');
-    
-    // ヘッダー
-    worksheet.columns = [
-        { header: '版数', key: 'version', width: 10 },
-        { header: 'タスク', key: 'task', width: 20 },
-        { header: '工程', key: 'process', width: 10 },
-        { header: '担当者', key: 'member', width: 12 },
-        { header: '着手日', key: 'startDate', width: 12 },
-        { header: '終了日', key: 'endDate', width: 12 },
-        { header: '見積(h)', key: 'estimatedHours', width: 10 },
-        { header: '実績(h)', key: 'actualHours', width: 10 },
-        { header: '残(h)', key: 'remainingHours', width: 10 },
-        { header: '進捗率', key: 'progressRate', width: 10 },
-        { header: 'ステータス', key: 'status', width: 12 }
-    ];
-    
-    // ヘッダースタイル
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE0E0E0' }
+
+    const wb = XLSX.utils.book_new();
+
+    const statusLabels = {
+        'pending': '未着手',
+        'in_progress': '進行中',
+        'completed': '完了'
     };
-    
-    // データ行
-    filteredSchedules.forEach(schedule => {
-        const progress = calculateProgress(schedule);
-        const statusLabels = {
-            'pending': '未着手',
-            'in_progress': '進行中',
-            'completed': '完了'
-        };
-        
-        worksheet.addRow({
-            version: schedule.version,
-            task: schedule.task,
-            process: schedule.process,
-            member: schedule.member,
-            startDate: schedule.startDate,
-            endDate: schedule.endDate,
-            estimatedHours: schedule.estimatedHours,
-            actualHours: progress.actualHours,
-            remainingHours: progress.remainingHours,
-            progressRate: `${progress.progressRate.toFixed(0)}%`,
-            status: statusLabels[schedule.status] || '未着手'
-        });
-    });
-    
+
+    const data = [
+        ['版数', 'タスク', '工程', '担当者', '着手日', '終了日', '見積(h)', '実績(h)', '残(h)', '進捗率', 'ステータス'],
+        ...filteredSchedules.map(schedule => {
+            const progress = calculateProgress(schedule);
+            return [
+                schedule.version, schedule.task, schedule.process, schedule.member,
+                schedule.startDate, schedule.endDate,
+                schedule.estimatedHours, progress.actualHours, progress.remainingHours,
+                `${progress.progressRate.toFixed(0)}%`,
+                statusLabels[schedule.status] || '未着手'
+            ];
+        })
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [
+        { wch: 10 }, { wch: 20 }, { wch: 10 }, { wch: 12 },
+        { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+        { wch: 10 }, { wch: 10 }, { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'スケジュール');
+
     // ファイル保存
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    
     const today = new Date().toISOString().split('T')[0];
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `スケジュール_${today}.xlsx`;
-    a.click();
-    
-    URL.revokeObjectURL(url);
+    XLSX.writeFile(wb, `スケジュール_${today}.xlsx`);
 }
 
 
