@@ -2,7 +2,7 @@
 // タブ内フィルタドロワー
 // ============================================
 
-import { enableDragScroll } from './utils.js';
+import { enableDragScroll, escapeHtml } from './utils.js';
 
 // 実績月フィルタの全月展開状態（ページ固定フィルタと共有）
 let _actualMonthExpanded = false;
@@ -433,7 +433,7 @@ function renderActualFilters(container, scrollToActive = true) {
     let monthButtons = '';
     if (allOption) {
         const isActive = currentValue === 'all' ? 'active' : '';
-        monthButtons += `<button data-value="all" class="${isActive}">${allOption.text}</button>`;
+        monthButtons += `<button data-value="all" class="${isActive}">${escapeHtml(allOption.text)}</button>`;
     }
     monthOptions.forEach(opt => {
         const hasData = monthsWithData.has(opt.value);
@@ -444,7 +444,7 @@ function renderActualFilters(container, scrollToActive = true) {
             isSelected ? 'active' : '',
             !hasData ? 'no-data' : ''
         ].filter(Boolean).join(' ');
-        monthButtons += `<button data-value="${opt.value}" class="${classes}">${opt.text}</button>`;
+        monthButtons += `<button data-value="${escapeHtml(opt.value)}" class="${classes}">${escapeHtml(opt.text)}</button>`;
     });
 
     // 全月表示トグルボタン（データなし月が存在する場合のみ）
@@ -562,7 +562,7 @@ function generateFilterButtons(selectElement, onChange, sortType = 'none') {
 
     return options.map(option => {
         const isActive = String(option.value) === String(currentValue);
-        return `<button data-value="${option.value}" class="${isActive ? 'active' : ''}">${option.text}</button>`;
+        return `<button data-value="${escapeHtml(option.value)}" class="${isActive ? 'active' : ''}">${escapeHtml(option.text)}</button>`;
     }).join('');
 }
 

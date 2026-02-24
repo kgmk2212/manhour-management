@@ -889,8 +889,8 @@ function renderDetailActualList(schedule) {
             <tbody>
                 ${relatedActuals.slice(0, 5).map(a => `
                     <tr>
-                        <td>${a.date}</td>
-                        <td>${a.hours}h</td>
+                        <td>${escapeHtml(a.date)}</td>
+                        <td>${escapeHtml(String(a.hours))}h</td>
                     </tr>
                 `).join('')}
             </tbody>
