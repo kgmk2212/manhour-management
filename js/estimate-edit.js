@@ -474,6 +474,12 @@ export function editTask(version, taskName) {
         versionSelect.appendChild(option);
     });
     versionSelect.value = version;
+    versionSelect.style.display = 'block';
+    const versionInput = document.getElementById('editTaskVersionInput');
+    if (versionInput) {
+        versionInput.style.display = 'none';
+        versionInput.value = '';
+    }
 
     let formName = '';
     let task = '';
@@ -530,7 +536,9 @@ export function closeEditTaskModal() {
 export function saveTaskEdit() {
     const oldVersion = document.getElementById('editTaskOldVersion').value;
     const oldTaskName = document.getElementById('editTaskOldName').value;
-    const newVersion = document.getElementById('editTaskVersion').value;
+    const versionSelect = document.getElementById('editTaskVersion');
+    const versionInput = document.getElementById('editTaskVersionInput');
+    const newVersion = (versionInput && versionInput.style.display !== 'none' ? versionInput.value : versionSelect.value).trim();
 
     const formNameSelect = document.getElementById('editTaskFormNameSelect');
     const formNameInput = document.getElementById('editTaskFormName');
