@@ -764,8 +764,8 @@ function renderDetailActualList(schedule) {
             <tbody>
                 ${relatedActuals.slice(0, 5).map(a => `
                     <tr>
-                        <td>${a.date}</td>
-                        <td>${a.hours}h</td>
+                        <td>${escapeHtml(a.date)}</td>
+                        <td>${escapeHtml(String(a.hours))}h</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -2066,7 +2066,7 @@ function updateVersionFilterToggleLabel() {
     if (selected.length === 0) {
         toggle.innerHTML = 'すべて <span class="version-filter-arrow">▼</span>';
     } else if (selected.length === 1) {
-        toggle.innerHTML = `${selected[0]} <span class="version-filter-arrow">▼</span>`;
+        toggle.innerHTML = `${escapeHtml(selected[0])} <span class="version-filter-arrow">▼</span>`;
     } else {
         toggle.innerHTML = `${selected.length}件選択 <span class="version-filter-arrow">▼</span>`;
     }

@@ -76,7 +76,7 @@ export function renderTodayActuals() {
                 <td>${escapeHtml(a.task)}</td>
                 <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
                 <td>${escapeHtml(a.member)}</td>
-                <td>${a.hours}h</td>
+                <td>${escapeHtml(String(a.hours))}h</td>
                 <td>
                     <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
                     <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
@@ -721,12 +721,12 @@ export function renderActualListView() {
     sortedActuals.forEach(a => {
         html += `
             <tr>
-                <td>${a.date}</td>
+                <td>${escapeHtml(a.date)}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
                 <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
                 <td>${escapeHtml(a.member)}</td>
-                <td>${a.hours}h</td>
+                <td>${escapeHtml(String(a.hours))}h</td>
                 <td>
                     <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
                     <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>

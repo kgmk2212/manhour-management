@@ -887,7 +887,7 @@ export function renderEstimateGrouped() {
         const versionDays = versionTotal / 8;
         const versionMonths = versionTotal / 8 / workingDaysPerMonth;
 
-        const versionLabel = version || 'その他工数';
+        const versionLabel = escapeHtml(version) || 'その他工数';
         html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
         if (workMonthSelectionMode) {
             html += `<td></td>`;

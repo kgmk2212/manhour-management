@@ -497,7 +497,7 @@ export function updateQuickMonthPreview() {
     }
 
     // Basic implementation
-    preview.innerHTML = `<div style="padding:10px; background:#f0f0f0;">${startMonth}〜${endMonth}: Total ${totalHours}h</div>`;
+    preview.innerHTML = `<div style="padding:10px; background:#f0f0f0;">${escapeHtml(startMonth)}〜${escapeHtml(endMonth)}: Total ${escapeHtml(String(totalHours))}h</div>`;
 }
 
 export function addQuickEstimate() {
