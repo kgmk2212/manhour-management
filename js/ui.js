@@ -3756,6 +3756,17 @@ export function restoreEstimateFilterState() {
 export function handleVersionChange(selectId) {
     const select = document.getElementById(selectId);
     if (select.value === '__new__') {
+        // editTaskVersionの場合はインライン入力に切り替え
+        if (selectId === 'editTaskVersion') {
+            const input = document.getElementById('editTaskVersionInput');
+            if (input) {
+                select.style.display = 'none';
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+            return;
+        }
         const newVersion = prompt('新しい版数を入力してください（例: 第2025.12版）');
         if (newVersion && newVersion.trim()) {
             const option = document.createElement('option');
