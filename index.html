@@ -2571,7 +2571,7 @@
                     var el = document.createElement('div');
                     el.className = 'smart-sticky-bar';
                     el.innerHTML = bar.innerHTML;
-                    // モバイル: コピーされた内容の背景・角丸・パディングを除去（白抜け防止）
+                    // モバイル: コピーされた内容のスタイルを調整
                     if (mobile) {
                         for (var i = 0; i < el.children.length; i++) {
                             var child = el.children[i];
@@ -2580,6 +2580,14 @@
                             child.style.borderRadius = '0';
                             child.style.padding = '0';
                             child.style.width = '100%';
+                            child.style.flexWrap = 'wrap';
+                            child.style.overflow = 'hidden';
+                        }
+                        // segment-buttonsのインラインmax-widthを除去し全幅使用可能に
+                        var segs = el.querySelectorAll('.segment-buttons');
+                        for (var j = 0; j < segs.length; j++) {
+                            segs[j].style.maxWidth = 'calc(100vw - 32px)';
+                            segs[j].style.flex = '1 0 calc(100% - 60px)';
                         }
                     }
                     el.style.cssText =
