@@ -4956,7 +4956,7 @@ html[data-inline-filter="hidden"] .inline-filter {
     .smart-sticky-bar > div {
         width: 100%;
         max-width: 100%;
-        overflow-x: auto;
+        overflow: hidden !important;
         flex-wrap: wrap !important;
         background: transparent !important;
         border-radius: 0 !important;
@@ -4971,9 +4971,10 @@ html[data-inline-filter="hidden"] .inline-filter {
     }
 
     .smart-sticky-bar .segment-buttons {
+        flex: 1 0 calc(100% - 60px);
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        max-width: 100% !important;
+        max-width: none !important;
     }
 
     .smart-sticky-bar .segment-buttons button {
