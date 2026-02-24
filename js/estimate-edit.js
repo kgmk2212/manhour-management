@@ -463,6 +463,10 @@ export function editTask(version, taskName) {
     const versionSelect = document.getElementById('editTaskVersion');
     const versions = [...new Set(estimates.map(e => e.version))].sort();
     versionSelect.innerHTML = '<option value="">-- 版数を選択 --</option>';
+    const newOption = document.createElement('option');
+    newOption.value = '__new__';
+    newOption.textContent = '+ 新しい版数を追加...';
+    versionSelect.appendChild(newOption);
     versions.forEach(v => {
         const option = document.createElement('option');
         option.value = v;
