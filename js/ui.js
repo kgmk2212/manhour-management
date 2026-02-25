@@ -2226,12 +2226,17 @@ export function updateFormNameOptions() {
                     select.appendChild(option);
                 });
 
+                const editOption = document.createElement('option');
+                editOption.value = '__edit__';
+                editOption.textContent = '帳票名を編集...';
+                select.appendChild(editOption);
+
                 const newOption = document.createElement('option');
                 newOption.value = '__new__';
                 newOption.textContent = '新規入力';
                 select.appendChild(newOption);
 
-                if (currentValue && (currentValue === '__new__' || sortedFormNames.includes(currentValue))) {
+                if (currentValue && (currentValue === '__new__' || currentValue === '__edit__' || sortedFormNames.includes(currentValue))) {
                     select.value = currentValue;
                 }
             }
@@ -3800,7 +3805,14 @@ export function handleQuickFormNameChange() {
     const select = document.getElementById('quickEstFormNameSelect');
     const input = document.getElementById('quickEstFormName');
 
-    if (select.value === '__new__') {
+    if (select.value === '__edit__') {
+        const currentFormName = input.value || '';
+        select.style.display = 'none';
+        input.style.display = 'block';
+        input.value = currentFormName;
+        input.focus();
+        input.select();
+    } else if (select.value === '__new__') {
         select.style.display = 'none';
         input.style.display = 'block';
         input.value = '';
@@ -3814,7 +3826,14 @@ export function handleAddFormNameChange() {
     const select = document.getElementById('addEstFormNameSelect');
     const input = document.getElementById('addEstFormName');
 
-    if (select.value === '__new__') {
+    if (select.value === '__edit__') {
+        const currentFormName = input.value || '';
+        select.style.display = 'none';
+        input.style.display = 'block';
+        input.value = currentFormName;
+        input.focus();
+        input.select();
+    } else if (select.value === '__new__') {
         select.style.display = 'none';
         input.style.display = 'block';
         input.value = '';
@@ -3828,7 +3847,14 @@ export function handleEditFormNameChange() {
     const select = document.getElementById('editTaskFormNameSelect');
     const input = document.getElementById('editTaskFormName');
 
-    if (select.value === '__new__') {
+    if (select.value === '__edit__') {
+        const currentFormName = input.value || '';
+        select.style.display = 'none';
+        input.style.display = 'block';
+        input.value = currentFormName;
+        input.focus();
+        input.select();
+    } else if (select.value === '__new__') {
         select.style.display = 'none';
         input.style.display = 'block';
         input.value = '';
