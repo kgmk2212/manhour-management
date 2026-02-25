@@ -275,6 +275,7 @@ function saveEditAllProcesses() {
     // 既存の見積データを取得
     const taskEstimates = State.estimates.filter(e => e.version === oldVersion && e.task === oldTask);
     let updatedSchedulesCount = 0;
+    const updatedScheduleIds = new Set();
 
     // 各工程を処理
     PROCESS.TYPES.forEach(proc => {
@@ -323,21 +324,24 @@ function saveEditAllProcesses() {
                 // 見込残存時間の調整
                 Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
 
-                // スケジュール連動: 旧キーでスケジュールを検索し更新
-                const relatedSchedule = State.schedules.find(s =>
-                    s.version === oldVersion &&
-                    s.task === oldTask &&
-                    s.process === proc &&
-                    s.member === existingEst.member
-                );
-                if (relatedSchedule) {
-                    const schedUpdates = { estimatedHours: hours };
-                    if (existingEst.member !== member) {
-                        schedUpdates.member = member;
+                // スケジュール連動: 担当者またはhoursが変わった場合のみ更新
+                if (existingEst.member !== member || existingEst.hours !== hours) {
+                    const relatedSchedule = State.schedules.find(s =>
+                        s.version === oldVersion &&
+                        s.task === oldTask &&
+                        s.process === proc &&
+                        s.member === existingEst.member
+                    );
+                    if (relatedSchedule) {
+                        const schedUpdates = { estimatedHours: hours };
+                        if (existingEst.member !== member) {
+                            schedUpdates.member = member;
+                        }
+                        schedUpdates.endDate = calculateEndDate(relatedSchedule.startDate, hours, member);
+                        updateSchedule(relatedSchedule.id, schedUpdates);
+                        updatedScheduleIds.add(relatedSchedule.id);
+                        updatedSchedulesCount++;
                     }
-                    schedUpdates.endDate = calculateEndDate(relatedSchedule.startDate, hours, member);
-                    updateSchedule(relatedSchedule.id, schedUpdates);
-                    updatedSchedulesCount++;
                 }
             }
         } else if (!existingEst && hours > 0 && member) {
@@ -396,11 +400,13 @@ function saveEditAllProcesses() {
                 updatedActualsCount++;
             }
         });
-        // スケジュール連動
+        // スケジュール連動（工程別更新で既に更新済みのものはカウントしない）
         State.schedules.forEach(s => {
             if (s.version === oldVersion && s.task === oldTask) {
                 updateSchedule(s.id, { version: version, task: newTask });
-                updatedSchedulesCount++;
+                if (!updatedScheduleIds.has(s.id)) {
+                    updatedSchedulesCount++;
+                }
             }
         });
     }
