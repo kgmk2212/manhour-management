@@ -2219,13 +2219,6 @@ export function updateFormNameOptions() {
                 const currentValue = select.value;
                 select.innerHTML = '<option value="">-- 帳票名を選択 --</option>';
 
-                sortedFormNames.forEach(formName => {
-                    const option = document.createElement('option');
-                    option.value = formName;
-                    option.textContent = formName;
-                    select.appendChild(option);
-                });
-
                 const editOption = document.createElement('option');
                 editOption.value = '__edit__';
                 editOption.textContent = '帳票名を編集...';
@@ -2235,6 +2228,13 @@ export function updateFormNameOptions() {
                 newOption.value = '__new__';
                 newOption.textContent = '新規入力';
                 select.appendChild(newOption);
+
+                sortedFormNames.forEach(formName => {
+                    const option = document.createElement('option');
+                    option.value = formName;
+                    option.textContent = formName;
+                    select.appendChild(option);
+                });
 
                 if (currentValue && (currentValue === '__new__' || currentValue === '__edit__' || sortedFormNames.includes(currentValue))) {
                     select.value = currentValue;
