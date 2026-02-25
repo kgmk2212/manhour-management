@@ -7,7 +7,7 @@ import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
 import { renderEstimateList } from './estimate.js';
-import { updateSchedule } from './schedule.js';
+import { updateSchedule, calculateEndDate } from './schedule.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -274,6 +274,7 @@ function saveEditAllProcesses() {
 
     // 既存の見積データを取得
     const taskEstimates = State.estimates.filter(e => e.version === oldVersion && e.task === oldTask);
+    let updatedSchedulesCount = 0;
 
     // 各工程を処理
     PROCESS.TYPES.forEach(proc => {
@@ -321,6 +322,23 @@ function saveEditAllProcesses() {
 
                 // 見込残存時間の調整
                 Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+
+                // スケジュール連動: 旧キーでスケジュールを検索し更新
+                const relatedSchedule = State.schedules.find(s =>
+                    s.version === oldVersion &&
+                    s.task === oldTask &&
+                    s.process === proc &&
+                    s.member === existingEst.member
+                );
+                if (relatedSchedule) {
+                    const schedUpdates = { estimatedHours: hours };
+                    if (existingEst.member !== member) {
+                        schedUpdates.member = member;
+                    }
+                    schedUpdates.endDate = calculateEndDate(relatedSchedule.startDate, hours, member);
+                    updateSchedule(relatedSchedule.id, schedUpdates);
+                    updatedSchedulesCount++;
+                }
             }
         } else if (!existingEst && hours > 0 && member) {
             // 既存なし + 入力あり → 新規作成
@@ -366,7 +384,6 @@ function saveEditAllProcesses() {
 
     // 版数・対応名が変更されていれば一括更新
     let updatedActualsCount = 0;
-    let updatedSchedulesCount = 0;
     if (oldVersion !== version || oldTask !== newTask) {
         State.estimates.forEach((est, index) => {
             if (est.version === oldVersion && est.task === oldTask) {
