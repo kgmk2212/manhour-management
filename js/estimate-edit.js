@@ -582,8 +582,18 @@ export function saveTaskEdit() {
         }
     });
 
+    // スケジュール連動: 同じ版数・対応名のスケジュールも更新
+    let scheduleUpdateCount = 0;
+    schedules.forEach(s => {
+        if (s.version === oldVersion && s.task === oldTaskName) {
+            updateSchedule(s.id, { version: newVersion, task: newTaskName });
+            scheduleUpdateCount++;
+        }
+    });
+
     if (updatedCount > 0) {
-        if (typeof window.saveData === 'function') window.saveData();
+        // updateSchedule内でsaveDataが呼ばれるが、スケジュールがない場合も保存
+        if (scheduleUpdateCount === 0 && typeof window.saveData === 'function') window.saveData();
         closeEditTaskModal();
 
         if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
@@ -594,6 +604,9 @@ export function saveTaskEdit() {
         let message = `${updatedCount}件の見積データを変更しました`;
         if (actualUpdateCount > 0) {
             message += `\n${actualUpdateCount}件の実績データも変更しました`;
+        }
+        if (scheduleUpdateCount > 0) {
+            message += `\n${scheduleUpdateCount}件のスケジュールデータも変更しました`;
         }
         alert(message);
     } else {

@@ -6,6 +6,8 @@ import * as State from './state.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
+import { renderEstimateList } from './estimate.js';
+import { updateSchedule } from './schedule.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -124,6 +126,303 @@ export function openAddEstimateSingleProcess(version, task, process) {
 }
 
 /**
+ * 全工程一括編集モードでモーダルを開く（対応詳細モーダルから）
+ */
+export function openEditAllProcesses(version, task) {
+    // まず通常の登録モーダル初期化を再利用
+    hasFormData = false;
+    openAddEstimateModal();
+
+    const modal = document.getElementById('addEstimateModal');
+
+    // 編集モードフラグをセット
+    modal.dataset.editMode = 'true';
+    modal.dataset.editVersion = version;
+    modal.dataset.editTask = task;
+
+    // タイトル変更
+    const titleEl = modal.querySelector('.modal-header h3');
+    if (titleEl) titleEl.textContent = '全工程を編集';
+
+    // 「その他工数」タブを非表示
+    const modeSelector = document.getElementById('addEstModeSelector');
+    if (modeSelector) modeSelector.style.display = 'none';
+
+    // 版数をプリフィル
+    const versionSelect = document.getElementById('addEstVersion');
+    if (versionSelect) versionSelect.value = version;
+
+    // 帳票名・対応名を分解してプリフィル（editTask()と同じロジック）
+    let formName = '';
+    let taskName = '';
+    if (task.includes('：')) {
+        const parts = task.split('：');
+        formName = parts[0];
+        taskName = parts.slice(1).join('：');
+    } else if (task.includes('_')) {
+        const parts = task.split('_');
+        formName = parts[0];
+        taskName = parts.slice(1).join('_');
+    } else {
+        taskName = task;
+    }
+
+    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    const formNameInput = document.getElementById('addEstFormName');
+
+    if (formNameSelect) {
+        let formNameExists = false;
+        for (let i = 0; i < formNameSelect.options.length; i++) {
+            if (formNameSelect.options[i].value === formName) {
+                formNameExists = true;
+                break;
+            }
+        }
+        if (formNameExists) {
+            formNameSelect.value = formName;
+            formNameSelect.style.display = 'block';
+            if (formNameInput) {
+                formNameInput.style.display = 'none';
+                formNameInput.value = formName;
+            }
+        } else if (formName) {
+            formNameSelect.value = '__new__';
+            formNameSelect.style.display = 'none';
+            if (formNameInput) {
+                formNameInput.style.display = 'block';
+                formNameInput.value = formName;
+            }
+        }
+    }
+
+    const taskInput = document.getElementById('addEstTask');
+    if (taskInput) taskInput.value = taskName;
+
+    // 既存データで工程テーブルをプリフィル
+    const taskEstimates = State.estimates.filter(e => e.version === version && e.task === task);
+
+    // 作業月のプリフィル: 最も多い作業月を初期値にする
+    const monthCounts = {};
+    taskEstimates.forEach(e => {
+        const est = Utils.normalizeEstimate(e);
+        if (est.workMonths && est.workMonths.length > 0) {
+            est.workMonths.forEach(m => {
+                monthCounts[m] = (monthCounts[m] || 0) + 1;
+            });
+        }
+    });
+    const sortedMonths = Object.entries(monthCounts).sort((a, b) => b[1] - a[1]);
+    if (sortedMonths.length > 0) {
+        const mostCommonMonth = sortedMonths[0][0];
+        const startMonthSelect = document.getElementById('addEstStartMonth');
+        if (startMonthSelect) startMonthSelect.value = mostCommonMonth;
+    }
+
+    // 各工程の担当・工数をプリフィル
+    PROCESS.TYPES.forEach(proc => {
+        const est = taskEstimates.find(e => e.process === proc);
+        const memberSelect = document.getElementById(`addEst${proc}_member`);
+        const hoursInput = document.getElementById(`addEst${proc}`);
+        if (est) {
+            if (memberSelect) memberSelect.value = est.member;
+            if (hoursInput) hoursInput.value = est.hours;
+        } else {
+            if (memberSelect) memberSelect.value = '';
+            if (hoursInput) hoursInput.value = '';
+        }
+    });
+
+    // ボタンテキスト変更
+    const submitBtn = document.getElementById('addEstSubmitBtn');
+    if (submitBtn) submitBtn.textContent = '保存';
+
+    updateAddEstimateTotals();
+}
+
+/**
+ * 全工程一括編集の保存処理
+ */
+function saveEditAllProcesses() {
+    const modal = document.getElementById('addEstimateModal');
+    const oldVersion = modal.dataset.editVersion;
+    const oldTask = modal.dataset.editTask;
+
+    // フォームから値を取得
+    const version = document.getElementById('addEstVersion').value;
+    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    const formNameInput = document.getElementById('addEstFormName');
+    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const taskName = document.getElementById('addEstTask').value.trim();
+
+    if (!version) { alert('版数を選択してください'); return; }
+    if (!formName) { alert('帳票名を入力してください'); return; }
+    if (!taskName) { alert('対応名を入力してください'); return; }
+
+    const newTask = `${formName}：${taskName}`;
+
+    // 作業月の取得
+    const monthType = document.querySelector('input[name="addEstMonthType"]:checked')?.value || 'single';
+    let startMonth, endMonth;
+    if (monthType === 'single') {
+        startMonth = document.getElementById('addEstStartMonth').value;
+        endMonth = null;
+    } else {
+        startMonth = document.getElementById('addEstStartMonthMulti').value;
+        endMonth = document.getElementById('addEstEndMonth').value;
+    }
+
+    const isSingleMonth = !endMonth || startMonth === endMonth;
+
+    // 既存の見積データを取得
+    const taskEstimates = State.estimates.filter(e => e.version === oldVersion && e.task === oldTask);
+
+    // 各工程を処理
+    PROCESS.TYPES.forEach(proc => {
+        const memberSelect = document.getElementById(`addEst${proc}_member`);
+        const hoursInput = document.getElementById(`addEst${proc}`);
+        const member = memberSelect ? memberSelect.value : '';
+        const hours = parseFloat(hoursInput ? hoursInput.value : '') || 0;
+
+        const existingEst = taskEstimates.find(e => e.process === proc);
+
+        if (existingEst && hours > 0) {
+            // 既存あり + 入力あり → 更新
+            const idx = State.estimates.findIndex(e => e.id === existingEst.id);
+            if (idx !== -1) {
+                let workMonth, workMonths, monthlyHours;
+                if (isSingleMonth) {
+                    workMonth = startMonth;
+                    workMonths = startMonth ? [startMonth] : existingEst.workMonths || [];
+                    monthlyHours = startMonth ? { [startMonth]: hours } : existingEst.monthlyHours || {};
+                } else {
+                    // 複数月: 工程別作業月があればそれを使う
+                    const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
+                    const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
+                    if (procStartMonth && procEndMonth && procStartMonth !== procEndMonth) {
+                        const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
+                        workMonth = procStartMonth;
+                        workMonths = months;
+                        monthlyHours = {};
+                        months.forEach(m => { monthlyHours[m] = hours / months.length; });
+                    } else {
+                        workMonth = procStartMonth || startMonth;
+                        workMonths = workMonth ? [workMonth] : existingEst.workMonths || [];
+                        monthlyHours = workMonth ? { [workMonth]: hours } : existingEst.monthlyHours || {};
+                    }
+                }
+
+                State.estimates[idx] = {
+                    ...State.estimates[idx],
+                    member: member,
+                    hours: hours,
+                    workMonth: workMonth || State.estimates[idx].workMonth,
+                    workMonths: workMonths.length > 0 ? workMonths : State.estimates[idx].workMonths,
+                    monthlyHours: Object.keys(monthlyHours).length > 0 ? monthlyHours : State.estimates[idx].monthlyHours
+                };
+
+                // 見込残存時間の調整
+                Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+            }
+        } else if (!existingEst && hours > 0 && member) {
+            // 既存なし + 入力あり → 新規作成
+            let workMonth, workMonths, monthlyHours;
+            if (isSingleMonth) {
+                workMonth = startMonth || '';
+                workMonths = startMonth ? [startMonth] : [];
+                monthlyHours = startMonth ? { [startMonth]: hours } : {};
+            } else {
+                const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
+                const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
+                if (procStartMonth && procEndMonth && procStartMonth !== procEndMonth) {
+                    const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
+                    workMonth = procStartMonth;
+                    workMonths = months;
+                    monthlyHours = {};
+                    months.forEach(m => { monthlyHours[m] = hours / months.length; });
+                } else {
+                    workMonth = procStartMonth || startMonth || '';
+                    workMonths = workMonth ? [workMonth] : [];
+                    monthlyHours = workMonth ? { [workMonth]: hours } : {};
+                }
+            }
+
+            const newEst = {
+                id: Date.now() + Math.random(),
+                version: oldVersion,
+                task: oldTask,
+                process: proc,
+                member: member,
+                hours: hours,
+                workMonth: workMonth,
+                workMonths: workMonths,
+                monthlyHours: monthlyHours,
+                createdAt: new Date().toISOString()
+            };
+            State.estimates.push(newEst);
+            Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+        }
+        // 既存あり + 入力なし → そのまま残す
+        // 既存なし + 入力なし → スキップ
+    });
+
+    // 版数・対応名が変更されていれば一括更新
+    if (oldVersion !== version || oldTask !== newTask) {
+        State.estimates.forEach((est, index) => {
+            if (est.version === oldVersion && est.task === oldTask) {
+                State.estimates[index] = { ...est, version: version, task: newTask };
+            }
+        });
+        State.actuals.forEach((act, index) => {
+            if (act.version === oldVersion && act.task === oldTask) {
+                State.actuals[index] = { ...act, version: version, task: newTask };
+            }
+        });
+        // スケジュール連動
+        State.schedules.forEach(s => {
+            if (s.version === oldVersion && s.task === oldTask) {
+                updateSchedule(s.id, { version: version, task: newTask });
+            }
+        });
+    }
+
+    // 保存・UI更新
+    if (typeof window.saveData === 'function') window.saveData();
+    if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+    renderEstimateList();
+    if (typeof window.updateReport === 'function') window.updateReport();
+
+    resetEditMode();
+    resetAddEstimateForm();
+    modal.style.display = 'none';
+
+    Utils.showAlert('全工程を更新しました', true);
+}
+
+/**
+ * 編集モードのUIをリセット
+ */
+function resetEditMode() {
+    const modal = document.getElementById('addEstimateModal');
+    if (modal.dataset.editMode === 'true') {
+        modal.dataset.editMode = '';
+        modal.dataset.editVersion = '';
+        modal.dataset.editTask = '';
+
+        const titleEl = modal.querySelector('.modal-header h3');
+        if (titleEl) titleEl.textContent = '📝 見積登録';
+
+        const modeSelector = document.getElementById('addEstModeSelector');
+        if (modeSelector) modeSelector.style.display = '';
+
+        const submitBtn = document.getElementById('addEstSubmitBtn');
+        if (submitBtn) submitBtn.textContent = '登録';
+    }
+}
+
+/**
  * 単一工程モードを解除して通常表示に戻す
  */
 function exitSingleProcessMode() {
@@ -210,7 +509,15 @@ function constrainProcessTableOnMobile() {
  * モーダルを閉じる（入力中のデータは保持）
  */
 export function closeAddEstimateModal() {
-    document.getElementById('addEstimateModal').style.display = 'none';
+    const modal = document.getElementById('addEstimateModal');
+    modal.style.display = 'none';
+
+    // 編集モードの場合はリセット
+    if (modal.dataset.editMode === 'true') {
+        resetEditMode();
+        resetAddEstimateForm();
+        return;
+    }
 
     if (singleProcessMode) {
         // 単一工程モードの場合はリセットして通常に戻す
@@ -608,6 +915,12 @@ export function updateAddEstimateTotals() {
 }
 
 export function addEstimateFromModal() {
+    // 編集モードの場合は編集用の保存処理へ
+    const modal = document.getElementById('addEstimateModal');
+    if (modal.dataset.editMode === 'true') {
+        return saveEditAllProcesses();
+    }
+
     // モードに応じて処理を分岐
     if (currentEstimateMode === 'other') {
         addOtherWorkEstimate();

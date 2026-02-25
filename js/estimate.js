@@ -1496,7 +1496,7 @@ export function showTaskDetail(version, task) {
 
         html += '</div>';
         html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">`;
-        html += `<button onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応名を編集</button>`;
+        html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">全工程を編集</button>`;
         html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応を全削除</button>`;
         html += `</div>`;
     } else {
@@ -1578,7 +1578,7 @@ export function showTaskDetail(version, task) {
 
         html += `
             <div class="ed-actions">
-                <button class="btn btn-secondary" onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')">対応名を編集</button>
+                <button class="btn btn-secondary" onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')">全工程を編集</button>
                 <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
             </div>`;
     }
@@ -1629,6 +1629,16 @@ export function editTaskFromTaskModal(version, task) {
     closeEstimateDetailModal();
     if (typeof window.editTask === 'function') {
         window.editTask(version, task);
+    }
+}
+
+/**
+ * 対応詳細モーダルから全工程を一括編集
+ */
+export function openEditAllProcessesFromTaskModal(version, task) {
+    closeEstimateDetailModal();
+    if (typeof window.openEditAllProcesses === 'function') {
+        window.openEditAllProcesses(version, task);
     }
 }
 
