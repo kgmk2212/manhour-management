@@ -365,6 +365,8 @@ function saveEditAllProcesses() {
     });
 
     // 版数・対応名が変更されていれば一括更新
+    let updatedActualsCount = 0;
+    let updatedSchedulesCount = 0;
     if (oldVersion !== version || oldTask !== newTask) {
         State.estimates.forEach((est, index) => {
             if (est.version === oldVersion && est.task === oldTask) {
@@ -374,12 +376,14 @@ function saveEditAllProcesses() {
         State.actuals.forEach((act, index) => {
             if (act.version === oldVersion && act.task === oldTask) {
                 State.actuals[index] = { ...act, version: version, task: newTask };
+                updatedActualsCount++;
             }
         });
         // スケジュール連動
         State.schedules.forEach(s => {
             if (s.version === oldVersion && s.task === oldTask) {
                 updateSchedule(s.id, { version: version, task: newTask });
+                updatedSchedulesCount++;
             }
         });
     }
@@ -391,13 +395,21 @@ function saveEditAllProcesses() {
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
     renderEstimateList();
+    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     if (typeof window.updateReport === 'function') window.updateReport();
 
     resetEditMode();
     resetAddEstimateForm();
     modal.style.display = 'none';
 
-    Utils.showAlert('全工程を更新しました', true);
+    let msg = '全工程を更新しました';
+    if (updatedActualsCount > 0 || updatedSchedulesCount > 0) {
+        const parts = [];
+        if (updatedActualsCount > 0) parts.push(`実績${updatedActualsCount}件`);
+        if (updatedSchedulesCount > 0) parts.push(`スケジュール${updatedSchedulesCount}件`);
+        msg += `（${parts.join('・')}も更新）`;
+    }
+    Utils.showAlert(msg, true);
 }
 
 /**
