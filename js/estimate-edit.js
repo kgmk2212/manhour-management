@@ -507,15 +507,16 @@ export function editTask(version, taskName) {
         }
     }
 
+    const editTaskFormNameWrap = document.getElementById('editTaskFormNameInputWrap');
     if (formNameExists) {
         formNameSelect.value = formName;
         formNameSelect.style.display = 'block';
-        formNameInput.style.display = 'none';
+        if (editTaskFormNameWrap) editTaskFormNameWrap.style.display = 'none';
         formNameInput.value = formName;
     } else {
         formNameSelect.value = '__new__';
         formNameSelect.style.display = 'none';
-        formNameInput.style.display = 'block';
+        if (editTaskFormNameWrap) editTaskFormNameWrap.style.display = 'flex';
         formNameInput.value = formName;
     }
 
@@ -543,7 +544,7 @@ export function saveTaskEdit() {
 
     const formNameSelect = document.getElementById('editTaskFormNameSelect');
     const formNameInput = document.getElementById('editTaskFormName');
-    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
 
     const taskName = document.getElementById('editTaskName').value.trim();
 

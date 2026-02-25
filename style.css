@@ -12586,3 +12586,20 @@ body[data-layout="sidebar"][data-design-theme=""] .tab.active {
     z-index: 10 \!important;
 }
 
+
+/* 帳票名 セレクトに戻すボタン */
+.form-name-revert-btn {
+    background: var(--surface-alt, var(--surface));
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.form-name-revert-btn:hover {
+    background: var(--hover-bg, var(--border));
+    color: var(--text-primary);
+}
