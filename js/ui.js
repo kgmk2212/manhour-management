@@ -2219,15 +2219,15 @@ export function updateFormNameOptions() {
                 const currentValue = select.value;
                 select.innerHTML = '<option value="">-- 帳票名を選択 --</option>';
 
-                const editOption = document.createElement('option');
-                editOption.value = '__edit__';
-                editOption.textContent = '帳票名を編集...';
-                select.appendChild(editOption);
-
                 const newOption = document.createElement('option');
                 newOption.value = '__new__';
                 newOption.textContent = '新規入力';
                 select.appendChild(newOption);
+
+                const editOption = document.createElement('option');
+                editOption.value = '__edit__';
+                editOption.textContent = '帳票名を編集...';
+                select.appendChild(editOption);
 
                 sortedFormNames.forEach(formName => {
                     const option = document.createElement('option');
