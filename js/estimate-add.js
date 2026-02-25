@@ -82,11 +82,13 @@ export function openAddEstimateSingleProcess(version, task, process) {
                 formNameSelect.value = parts[0];
                 formNameSelect.style.display = 'block';
                 formNameSelect.disabled = true;
-                if (formNameInput) formNameInput.style.display = 'none';
+                const fnWrap = document.getElementById('addEstFormNameInputWrap');
+                if (fnWrap) fnWrap.style.display = 'none';
             } else {
                 formNameSelect.style.display = 'none';
-                if (formNameInput) {
-                    formNameInput.style.display = 'block';
+                const fnWrap2 = document.getElementById('addEstFormNameInputWrap');
+                if (fnWrap2) {
+                    fnWrap2.style.display = 'flex';
                     formNameInput.value = parts[0];
                     formNameInput.readOnly = true;
                 }
@@ -178,20 +180,17 @@ export function openEditAllProcesses(version, task) {
                 break;
             }
         }
+        const formNameWrap = document.getElementById('addEstFormNameInputWrap');
         if (formNameExists) {
             formNameSelect.value = formName;
             formNameSelect.style.display = 'block';
-            if (formNameInput) {
-                formNameInput.style.display = 'none';
-                formNameInput.value = formName;
-            }
+            if (formNameWrap) formNameWrap.style.display = 'none';
+            if (formNameInput) formNameInput.value = formName;
         } else if (formName) {
             formNameSelect.value = '__new__';
             formNameSelect.style.display = 'none';
-            if (formNameInput) {
-                formNameInput.style.display = 'block';
-                formNameInput.value = formName;
-            }
+            if (formNameWrap) formNameWrap.style.display = 'flex';
+            if (formNameInput) formNameInput.value = formName;
         }
     }
 
@@ -251,7 +250,7 @@ function saveEditAllProcesses() {
     const version = document.getElementById('addEstVersion').value;
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
-    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
     const taskName = document.getElementById('addEstTask').value.trim();
 
     if (!version) { alert('版数を選択してください'); return; }
@@ -563,7 +562,8 @@ export function resetAddEstimateForm() {
     formNameSelect.value = '';
     formNameSelect.style.display = 'block';
     formNameInput.value = '';
-    formNameInput.style.display = 'none';
+    const formNameWrap = document.getElementById('addEstFormNameInputWrap');
+    if (formNameWrap) formNameWrap.style.display = 'none';
 
     const addEstTask = document.getElementById('addEstTask');
     if (addEstTask) addEstTask.value = '';
@@ -1021,7 +1021,7 @@ function addNormalEstimate() {
     // 帳票名を取得（selectまたはinputから）
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
-    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
 
     if (!version || version === '新規追加') {
         alert('版数を選択してください');
