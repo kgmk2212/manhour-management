@@ -3804,17 +3804,18 @@ export function handleVersionChange(selectId) {
 export function handleQuickFormNameChange() {
     const select = document.getElementById('quickEstFormNameSelect');
     const input = document.getElementById('quickEstFormName');
+    const wrap = document.getElementById('quickEstFormNameInputWrap');
 
     if (select.value === '__edit__') {
         const currentFormName = input.value || '';
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = currentFormName;
         input.focus();
         input.select();
     } else if (select.value === '__new__') {
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = '';
         input.focus();
     } else {
@@ -3825,17 +3826,18 @@ export function handleQuickFormNameChange() {
 export function handleAddFormNameChange() {
     const select = document.getElementById('addEstFormNameSelect');
     const input = document.getElementById('addEstFormName');
+    const wrap = document.getElementById('addEstFormNameInputWrap');
 
     if (select.value === '__edit__') {
         const currentFormName = input.value || '';
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = currentFormName;
         input.focus();
         input.select();
     } else if (select.value === '__new__') {
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = '';
         input.focus();
     } else {
@@ -3846,22 +3848,49 @@ export function handleAddFormNameChange() {
 export function handleEditFormNameChange() {
     const select = document.getElementById('editTaskFormNameSelect');
     const input = document.getElementById('editTaskFormName');
+    const wrap = document.getElementById('editTaskFormNameInputWrap');
 
     if (select.value === '__edit__') {
         const currentFormName = input.value || '';
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = currentFormName;
         input.focus();
         input.select();
     } else if (select.value === '__new__') {
         select.style.display = 'none';
-        input.style.display = 'block';
+        wrap.style.display = 'flex';
         input.value = '';
         input.focus();
     } else {
         input.value = select.value;
     }
+}
+
+/**
+ * 帳票名テキスト入力からセレクトに戻す
+ */
+export function revertFormNameToSelect(type) {
+    const ids = {
+        quick: { select: 'quickEstFormNameSelect', input: 'quickEstFormName', wrap: 'quickEstFormNameInputWrap' },
+        add: { select: 'addEstFormNameSelect', input: 'addEstFormName', wrap: 'addEstFormNameInputWrap' },
+        editTask: { select: 'editTaskFormNameSelect', input: 'editTaskFormName', wrap: 'editTaskFormNameInputWrap' },
+    };
+    const cfg = ids[type];
+    if (!cfg) return;
+
+    const select = document.getElementById(cfg.select);
+    const input = document.getElementById(cfg.input);
+    const wrap = document.getElementById(cfg.wrap);
+
+    wrap.style.display = 'none';
+    select.style.display = 'block';
+
+    // 入力値がセレクトの選択肢にあればそれを選択、なければ空に戻す
+    const inputVal = input.value.trim();
+    const optionExists = [...select.options].some(o => o.value === inputVal);
+    select.value = optionExists ? inputVal : '';
+    input.value = optionExists ? inputVal : '';
 }
 
 export function handleEditActualMemberChange() {

@@ -236,8 +236,11 @@
                                 <option value="">-- 帳票名を選択 --</option>
                                 <option value="__new__">新規入力</option>
                             </select>
-                            <input type="text" id="quickEstFormName" placeholder="帳票A"
-                                style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); display: none;">
+                            <div style="display: none; align-items: center; gap: 4px;" id="quickEstFormNameInputWrap">
+                                <input type="text" id="quickEstFormName" placeholder="帳票A"
+                                    style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); flex: 1;">
+                                <button type="button" onclick="revertFormNameToSelect('quick')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
+                            </div>
                             <small
                                 style="color: var(--text-muted); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
                         </div>
@@ -1909,7 +1912,10 @@
                         <option value="">-- 帳票名を選択 --</option>
                         <option value="__new__">新規入力</option>
                     </select>
-                    <input type="text" id="editTaskFormName" placeholder="帳票A" style="display: none;">
+                    <div style="display: none; align-items: center; gap: 4px;" id="editTaskFormNameInputWrap">
+                        <input type="text" id="editTaskFormName" placeholder="帳票A" style="flex: 1;">
+                        <button type="button" onclick="revertFormNameToSelect('editTask')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>対応名</label>
@@ -2020,7 +2026,10 @@
                             <option value="">-- 帳票名を選択 --</option>
                             <option value="__new__">新規入力</option>
                         </select>
-                        <input type="text" id="addEstFormName" placeholder="帳票A" style="display: none;">
+                        <div style="display: none; align-items: center; gap: 4px;" id="addEstFormNameInputWrap">
+                            <input type="text" id="addEstFormName" placeholder="帳票A" style="flex: 1;">
+                            <button type="button" onclick="revertFormNameToSelect('add')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>対応名</label>

@@ -586,7 +586,7 @@ export function addQuickEstimate() {
     const version = document.getElementById('quickEstVersion').value;
     const formNameSelect = document.getElementById('quickEstFormNameSelect');
     const formNameInput = document.getElementById('quickEstFormName');
-    const formName = (formNameInput.style.display === 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
     const taskName = document.getElementById('quickEstTask').value.trim();
 
     if (!version || !formName || !taskName) {

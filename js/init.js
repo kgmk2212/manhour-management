@@ -141,6 +141,7 @@ window.handleVersionChange = UI.handleVersionChange;
 window.handleQuickFormNameChange = UI.handleQuickFormNameChange;
 window.handleAddFormNameChange = UI.handleAddFormNameChange;
 window.handleEditFormNameChange = UI.handleEditFormNameChange;
+window.revertFormNameToSelect = UI.revertFormNameToSelect;
 window.handleEditActualMemberChange = UI.handleEditActualMemberChange;
 window.updateAllDisplays = UI.updateAllDisplays;
 window.showMemberOrderHelp = UI.showMemberOrderHelp;
