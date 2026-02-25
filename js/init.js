@@ -195,6 +195,7 @@ window.addProcessFromTaskModal = Estimate.addProcessFromTaskModal;
 window.deleteEstimateFromTaskModal = Estimate.deleteEstimateFromTaskModal;
 window.deleteTaskFromModal = Estimate.deleteTaskFromModal;
 window.editTaskFromTaskModal = Estimate.editTaskFromTaskModal;
+window.openEditAllProcessesFromTaskModal = Estimate.openEditAllProcessesFromTaskModal;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
@@ -293,6 +294,7 @@ window.openAddEstimateModal = EstimateAdd.openAddEstimateModal;
 window.closeAddEstimateModal = EstimateAdd.closeAddEstimateModal;
 window.resetAddEstimateForm = EstimateAdd.resetAddEstimateForm;
 window.openAddEstimateSingleProcess = EstimateAdd.openAddEstimateSingleProcess;
+window.openEditAllProcesses = EstimateAdd.openEditAllProcesses;
 window.autoFillMember = EstimateAdd.autoFillMember;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
