@@ -479,6 +479,11 @@ export function handleFileImport(event) {
                         if (data.settings.estimateLayout) window.estimateLayout = data.settings.estimateLayout;
                         if (data.settings.actualLayout) window.actualLayout = data.settings.actualLayout;
                         if (data.settings.reportLayout) window.reportLayout = data.settings.reportLayout;
+                        // セグメントボタン表示チェックボックスを同期
+                        const isSegmented = window.estimateLayout === 'segmented' || window.actualLayout === 'segmented' || window.reportLayout === 'segmented';
+                        localStorage.setItem('showSegmentButtons', isSegmented);
+                        const segChk = document.getElementById('showSegmentButtons');
+                        if (segChk) segChk.checked = isSegmented;
 
                         // 月色分け設定を復元
                         if (data.settings.showMonthColors !== undefined) {

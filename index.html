@@ -1380,6 +1380,13 @@
                             </label>
                         </div>
                     </div>
+                    <div class="setting-row" style="margin-top: 15px;">
+                        <div>
+                            <div class="setting-label">ページ内セグメントボタン</div>
+                            <div class="setting-desc">各ページのフィルタをセグメントボタンで表示します。オフにするとページ内フィルタを非表示にし、フィルタバーを常時表示します</div>
+                        </div>
+                        <label style="cursor:pointer;"><input type="checkbox" id="showSegmentButtons" style="width:auto;" checked></label>
+                    </div>
                 </div>
 
                 <!-- 開発・デバッグ設定 -->
@@ -2695,7 +2702,7 @@
                     }
                     var bar = findBar();
                     if (!bar) { mobileFilterBtn.style.display = 'none'; return; }
-                    var barAbove = bar.getBoundingClientRect().bottom < 0;
+                    var barAbove = bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden();
                     mobileFilterBtn.style.display = barAbove ? '' : 'none';
                     if (!barAbove) updateMobileFilterBtn(false);
                 }
@@ -2759,6 +2766,11 @@
                     if (!manuallyShown) updateMobileFilterBtn(false);
                 }
 
+                // セグメントボタンが非表示か判定するヘルパー
+                function isSegmentButtonsHidden() {
+                    return document.documentElement.dataset.segmentButtons === 'hidden';
+                }
+
                 function onScroll() {
                     if (currentMode !== 'smartSticky') return;
                     // ボタン操作中はスクロールを無視
@@ -2767,12 +2779,14 @@
                     if (manuallyShown) {
                         // 表示直後800msはスクロールを完全無視（ゴースト・レイアウト起因を防止）
                         if (Date.now() - manuallyShownAt < 800) return;
-                        // 元のバーが画面内に戻ったら自動的に閉じる
-                        var bar = findBar();
-                        if (bar && bar.getBoundingClientRect().bottom >= 0) {
-                            console.log('[FB] onScroll: bar back in view, hiding');
-                            manuallyShown = false;
-                            hideFixedBar('scroll-bar-in-view');
+                        // 元のバーが画面内に戻ったら自動的に閉じる（セグメントボタン非表示時はスキップ）
+                        if (!isSegmentButtonsHidden()) {
+                            var bar = findBar();
+                            if (bar && bar.getBoundingClientRect().bottom >= 0) {
+                                console.log('[FB] onScroll: bar back in view, hiding');
+                                manuallyShown = false;
+                                hideFixedBar('scroll-bar-in-view');
+                            }
                         }
                         return;
                     }
@@ -2789,7 +2803,8 @@
                     var bar = findBar();
                     if (!bar) { hideFixedBar('scroll-no-bar'); return; }
                     var barAbove = bar.getBoundingClientRect().bottom < 0;
-                    if (!barAbove) {
+                    // セグメントボタン非表示時: ページ上部に戻ってもバーを消さない
+                    if (!barAbove && !isSegmentButtonsHidden()) {
                         upPx = 0;
                         hideFixedBar('scroll-not-above');
                         return;
@@ -2837,7 +2852,7 @@
                     var nearTop = e.clientY <= HOVER_ZONE;
                     if (nearTop && inMcX) {
                         var bar = findBar();
-                        if (bar && bar.getBoundingClientRect().bottom < 0) {
+                        if (bar && (bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden())) {
                             showHoverBar(bar);
                         }
                     }

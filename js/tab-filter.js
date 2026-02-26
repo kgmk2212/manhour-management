@@ -134,6 +134,44 @@ export function applyInlineFilterVisibility() {
     }
 }
 
+// セグメントボタン表示設定
+export function saveShowSegmentButtons() {
+    const checkbox = document.getElementById('showSegmentButtons');
+    if (!checkbox) return;
+    localStorage.setItem('showSegmentButtons', checkbox.checked);
+    applySegmentButtonsVisibility();
+}
+
+export function loadShowSegmentButtons() {
+    const saved = localStorage.getItem('showSegmentButtons');
+    // デフォルトはtrue（表示）
+    const show = saved === null ? true : saved === 'true';
+    const checkbox = document.getElementById('showSegmentButtons');
+    if (checkbox) {
+        checkbox.checked = show;
+    }
+    return show;
+}
+
+export function applySegmentButtonsVisibility() {
+    const show = loadShowSegmentButtons();
+    if (show) {
+        document.documentElement.dataset.segmentButtons = 'visible';
+    } else {
+        // コンパクト版をDOM上に残す（フィルタバーのクローン元として使用）
+        window.estimateLayout = 'compact';
+        window.actualLayout = 'compact';
+        window.reportLayout = 'compact';
+        document.documentElement.dataset.segmentButtons = 'hidden';
+    }
+    if (typeof window.applyLayoutSettings === 'function') {
+        window.applyLayoutSettings();
+    }
+    if (typeof window.saveData === 'function') {
+        window.saveData(true);
+    }
+}
+
 // タブバー常時表示の適用
 export function applyTabBarVisibility() {
     const tabs = document.querySelector('.tabs');
@@ -692,6 +730,15 @@ export function initTabFilter() {
     if (hideInlineCheckbox) {
         hideInlineCheckbox.addEventListener('change', saveHideInlineFilters);
     }
+
+    // セグメントボタン表示設定のイベント
+    const showSegmentCheckbox = document.getElementById('showSegmentButtons');
+    if (showSegmentCheckbox) {
+        showSegmentCheckbox.addEventListener('change', saveShowSegmentButtons);
+    }
+
+    // セグメントボタン表示設定の初期適用
+    applySegmentButtonsVisibility();
 
     // 初期タブのフィルタ状態を設定
     const activeTab = document.querySelector('.tab-content.active');
