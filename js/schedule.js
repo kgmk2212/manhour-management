@@ -1217,7 +1217,11 @@ export function saveScheduleRemainingHours() {
         showToast('有効な数値を入力してください', 'warning');
         return;
     }
-    
+
+    // 変更前の状態を記録
+    const oldRemaining = getRemainingEstimate(schedule.version, schedule.task, schedule.process, schedule.member);
+    const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
+
     // 見込み残存時間を保存
     saveRemainingEstimate(
         schedule.version,
@@ -1226,7 +1230,19 @@ export function saveScheduleRemainingHours() {
         schedule.member,
         value
     );
-    
+
+    // 変更後の状態を記録
+    const newRemaining = getRemainingEstimate(schedule.version, schedule.task, schedule.process, schedule.member);
+
+    pushAction({
+        type: 'remaining_edit',
+        description: `見込残存変更: ${schedule.task} (${schedule.process}) ${value}h`,
+        data: {
+            before: beforeCopy,
+            after: newRemaining ? { ...newRemaining } : null
+        }
+    });
+
     // データ保存
     if (typeof window.saveData === 'function') {
         window.saveData();

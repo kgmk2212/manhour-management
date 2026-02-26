@@ -63,6 +63,7 @@ export function undo() {
     saveHistory();
     refreshUI(action);
     showScheduleToast(action, 'undo');
+    refreshHistoryModalIfOpen();
 }
 
 // ============================================
@@ -82,6 +83,7 @@ export function redo() {
     saveHistory();
     refreshUI(action);
     showScheduleToast(action, 'redo');
+    refreshHistoryModalIfOpen();
 }
 
 // ============================================
@@ -98,15 +100,23 @@ export function revertToAction(targetId) {
     }
     if (!found) return;
 
+    // targetId のアクションより新しい操作を全て取り消す（targetIdの操作は残す）
+    let count = 0;
     while (undoStack.length > 0) {
         const top = undoStack[undoStack.length - 1];
+        if (top.id === targetId) break;
         const action = undoStack.pop();
         redoStack.push(action);
         applyUndo(action);
-        if (top.id === targetId) break;
+        count++;
     }
+
+    if (count === 0) return;
+
     saveHistory();
     fullRefreshUI();
+    renderHistoryList();
+    Utils.showAlert(`${count}件の変更を元に戻しました`, true);
 }
 
 // ============================================
@@ -165,6 +175,29 @@ function applyUndo(action) {
         State.setCompanyHolidays(State.companyHolidays.filter(h => h.id !== action.data.added.id));
     } else if (t === 'holiday_delete') {
         State.companyHolidays.push(action.data.deleted);
+
+    // --- 見込残存 ---
+    } else if (t === 'remaining_edit') {
+        const d = action.data;
+        if (d.before) {
+            const idx = State.remainingEstimates.findIndex(r => r.id === d.before.id);
+            if (idx !== -1) State.remainingEstimates[idx] = { ...d.before };
+            else State.remainingEstimates.push({ ...d.before });
+        } else {
+            // 新規作成だった → 削除
+            State.setRemainingEstimates(State.remainingEstimates.filter(r => r.id !== d.after.id));
+        }
+    } else if (t === 'remaining_bulk_edit') {
+        const d = action.data;
+        d.changes.forEach(ch => {
+            if (ch.before) {
+                const idx = State.remainingEstimates.findIndex(r => r.id === ch.before.id);
+                if (idx !== -1) State.remainingEstimates[idx] = { ...ch.before };
+                else State.remainingEstimates.push({ ...ch.before });
+            } else {
+                State.setRemainingEstimates(State.remainingEstimates.filter(r => r.id !== ch.after.id));
+            }
+        });
 
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
@@ -226,6 +259,20 @@ function applyRedo(action) {
         State.companyHolidays.push(action.data.added);
     } else if (t === 'holiday_delete') {
         State.setCompanyHolidays(State.companyHolidays.filter(h => h.id !== action.data.deleted.id));
+
+    // --- 見込残存 ---
+    } else if (t === 'remaining_edit') {
+        const d = action.data;
+        const idx = State.remainingEstimates.findIndex(r => r.id === d.after.id);
+        if (idx !== -1) State.remainingEstimates[idx] = { ...d.after };
+        else State.remainingEstimates.push({ ...d.after });
+    } else if (t === 'remaining_bulk_edit') {
+        const d = action.data;
+        d.changes.forEach(ch => {
+            const idx = State.remainingEstimates.findIndex(r => r.id === ch.after.id);
+            if (idx !== -1) State.remainingEstimates[idx] = { ...ch.after };
+            else State.remainingEstimates.push({ ...ch.after });
+        });
 
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
@@ -416,6 +463,10 @@ function refreshUI(action) {
         if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
         if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
     }
+    if (t === 'remaining_edit' || t === 'remaining_bulk_edit') {
+        if (typeof window.updateReport === 'function') window.updateReport();
+        if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+    }
 }
 
 function fullRefreshUI() {
@@ -514,6 +565,13 @@ export function setupGlobalKeyboardShortcuts() {
 // 変更履歴モーダル
 // ============================================
 
+function refreshHistoryModalIfOpen() {
+    const modal = document.getElementById('historyModal');
+    if (modal && modal.style.display === 'flex') {
+        renderHistoryList();
+    }
+}
+
 export function openHistoryModal() {
     const modal = document.getElementById('historyModal');
     if (!modal) return;
@@ -533,27 +591,40 @@ function renderHistoryList() {
     const { undo: undoItems, redo: redoItems } = getHistory();
 
     if (undoItems.length === 0 && redoItems.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px 20px;">変更履歴はありません</div>';
+        container.innerHTML = `<div class="history-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div>変更履歴はありません</div>
+        </div>`;
         return;
     }
 
-    const typeIcons = {
-        estimate_add: '📝', estimate_add_other: '📝',
-        estimate_edit: '✏️', estimate_bulk_edit: '✏️',
-        estimate_delete: '🗑️', task_delete: '🗑️', task_edit: '✏️',
-        actual_add: '📊', actual_edit: '✏️', actual_delete: '🗑️',
-        vacation_add: '🏖️', vacation_delete: '🗑️',
-        holiday_add: '📅', holiday_delete: '🗑️',
+    // SVG icons (Feather-style, matching app design)
+    const svgIcon = (path) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+    const icons = {
+        add: svgIcon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+        edit: svgIcon('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+        delete: svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
+        schedule: svgIcon('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'),
+        remaining: svgIcon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
     };
+
+    function getIconInfo(type) {
+        if (type.startsWith('schedule_')) return { svg: icons.schedule, cls: 'history-icon-schedule' };
+        if (type.includes('delete')) return { svg: icons.delete, cls: 'history-icon-delete' };
+        if (type.includes('edit') || type.includes('bulk_edit')) return { svg: icons.edit, cls: 'history-icon-edit' };
+        if (type.includes('add')) return { svg: icons.add, cls: 'history-icon-add' };
+        if (type.startsWith('remaining')) return { svg: icons.remaining, cls: 'history-icon-remaining' };
+        return { svg: icons.edit, cls: 'history-icon-edit' };
+    }
 
     let html = '';
 
     // Redo items (undone actions, shown at top, dimmed)
     redoItems.forEach(item => {
-        const icon = item.type.startsWith('schedule_') ? '📋' : (typeIcons[item.type] || '📋');
+        const { svg, cls } = getIconInfo(item.type);
         const time = formatTime(item.timestamp);
         html += `<div class="history-item history-item-undone">
-            <span class="history-icon">${icon}</span>
+            <span class="history-icon ${cls}">${svg}</span>
             <div class="history-info">
                 <div class="history-desc">${Utils.escapeHtml(item.description || item.type)}</div>
                 <div class="history-time">${time}（取り消し済み）</div>
@@ -563,21 +634,24 @@ function renderHistoryList() {
 
     // Current position marker
     if (redoItems.length > 0) {
-        html += '<div class="history-current-marker">▼ 現在の状態</div>';
+        html += '<div class="history-current-marker">現在の状態</div>';
     }
 
     // Undo items (active history, newest first)
     undoItems.forEach((item, index) => {
-        const icon = item.type.startsWith('schedule_') ? '📋' : (typeIcons[item.type] || '📋');
+        const { svg, cls } = getIconInfo(item.type);
         const time = formatTime(item.timestamp);
         const isLatest = index === 0;
         html += `<div class="history-item ${isLatest ? 'history-item-latest' : ''}">
-            <span class="history-icon">${icon}</span>
+            <span class="history-icon ${cls}">${svg}</span>
             <div class="history-info">
                 <div class="history-desc">${Utils.escapeHtml(item.description || item.type)}</div>
                 <div class="history-time">${time}</div>
             </div>
-            <button class="history-revert-btn" onclick="window.revertToAction(${JSON.stringify(item.id)})">ここまで戻す</button>
+            ${isLatest
+                ? `<button class="history-revert-btn" onclick="window.historyUndo()">取り消す</button>`
+                : `<button class="history-revert-btn" onclick="window.revertToAction(${JSON.stringify(item.id)})">ここまで戻す</button>`
+            }
         </div>`;
     });
 

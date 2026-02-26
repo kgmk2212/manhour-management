@@ -5,6 +5,7 @@
 import * as State from './state.js';
 import * as Estimate from './estimate.js';
 import { formatHours, escapeHtml } from './utils.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 工程内訳モーダル
@@ -421,8 +422,25 @@ export function saveRemainingHoursFromModal() {
         return;
     }
 
+    // 変更前の状態を記録
+    const oldRemaining = Estimate.getRemainingEstimate(version, task, process, member);
+    const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
+
     // 見込残存時間を保存
     Estimate.saveRemainingEstimate(version, task, process, member, hours);
+
+    // 変更後の状態を記録
+    const newRemaining = Estimate.getRemainingEstimate(version, task, process, member);
+
+    pushAction({
+        type: 'remaining_edit',
+        description: `見込残存変更: ${task} (${process}) ${hours}h`,
+        data: {
+            before: beforeCopy,
+            after: newRemaining ? { ...newRemaining } : null
+        }
+    });
+
     if (typeof window.saveData === 'function') window.saveData(true);
 
     // モーダルを閉じてから画面を更新

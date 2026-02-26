@@ -2472,7 +2472,7 @@
     <!-- 変更履歴モーダル -->
     <div id="historyModal" class="modal">
         <div class="modal-content" style="max-width: 520px;">
-            <div class="modal-header">
+            <div class="modal-header modal-theme-ink">
                 <h3>変更履歴</h3>
                 <span class="close" onclick="closeHistoryModal()">&times;</span>
             </div>
@@ -2480,8 +2480,8 @@
                 <!-- JS で動的生成 -->
             </div>
             <div class="modal-footer" style="justify-content: space-between;">
-                <span style="font-size: 12px; color: var(--text-muted);">Ctrl+Z: 元に戻す / Ctrl+Y: やり直す</span>
-                <button onclick="closeHistoryModal()" class="btn btn-secondary">閉じる</button>
+                <span class="history-shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Z</kbd> 元に戻す &nbsp; <kbd>Ctrl</kbd>+<kbd>Y</kbd> やり直す</span>
+                <button onclick="closeHistoryModal()" class="btn btn-secondary btn-sm">閉じる</button>
             </div>
         </div>
     </div>

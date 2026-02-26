@@ -46,6 +46,7 @@ import {
     escapeForHandler
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // レポート設定
@@ -847,6 +848,7 @@ export function updateBulkRowStatus(input) {
 export function saveBulkRemaining() {
     const rows = document.querySelectorAll('#bulkRemainingTableBody tr[data-row-index]');
     let savedCount = 0;
+    const changes = [];
 
     rows.forEach(row => {
         const version = row.dataset.version;
@@ -857,12 +859,36 @@ export function saveBulkRemaining() {
         const value = input?.value;
 
         if (value !== '' && !isNaN(parseFloat(value))) {
+            // 変更前の状態を記録
+            const oldRemaining = remainingEstimates.find(r =>
+                r.version === version && r.task === task && r.process === process && r.member === member
+            );
+            const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
+
             if (typeof window.saveRemainingEstimate === 'function') {
                 window.saveRemainingEstimate(version, task, process, member, parseFloat(value));
             }
+
+            // 変更後の状態を記録
+            const newRemaining = remainingEstimates.find(r =>
+                r.version === version && r.task === task && r.process === process && r.member === member
+            );
+
+            changes.push({
+                before: beforeCopy,
+                after: newRemaining ? { ...newRemaining } : null
+            });
             savedCount++;
         }
     });
+
+    if (savedCount > 0) {
+        pushAction({
+            type: 'remaining_bulk_edit',
+            description: `見込残存一括変更: ${savedCount}件`,
+            data: { changes }
+        });
+    }
 
     if (typeof window.saveData === 'function') window.saveData();
     closeBulkRemainingModal();
