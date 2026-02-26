@@ -671,14 +671,22 @@
                 <!-- 合計工数表示 -->
                 <div id="estimateTotalCard"
                     style="background: var(--accent); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px;">
-                        <div style="font-size: 28px; font-weight: bold;" id="estimateTotalHours">0h</div>
-                        <div style="font-size: 14px; font-weight: 500; opacity: 0.85;" id="estimateTotalManpower">0人日 / 0人月</div>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">合計工数</div>
+                            <div style="font-size: 28px; font-weight: bold;" id="estimateTotalHours">0h</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">人日 / 人月</div>
+                            <div style="font-size: 18px; font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月
+                            </div>
+                        </div>
                     </div>
                     <!-- パターンA: サブテキスト -->
-                    <div id="estimateStandardA" style="display: none; font-size: 12px; opacity: 0.7; margin-top: 6px;"></div>
-                    <!-- パターンB: 月標準工数（2行目） -->
-                    <div id="estimateStandardB" style="display: none; margin-top: 8px; font-size: 13px;"></div>
+                    <div id="estimateStandardA" style="display: none; font-size: 12px; opacity: 0.7; margin-top: 8px;"></div>
+                    <!-- パターンB: 下部バー -->
+                    <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: 13px;"></div>
                 </div>
 
                 <!-- 担当者別合計表示 -->
