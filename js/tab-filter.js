@@ -155,21 +155,7 @@ export function loadShowSegmentButtons() {
 
 export function applySegmentButtonsVisibility() {
     const show = loadShowSegmentButtons();
-    if (show) {
-        document.documentElement.dataset.segmentButtons = 'visible';
-    } else {
-        // コンパクト版をDOM上に残す（フィルタバーのクローン元として使用）
-        window.estimateLayout = 'compact';
-        window.actualLayout = 'compact';
-        window.reportLayout = 'compact';
-        document.documentElement.dataset.segmentButtons = 'hidden';
-    }
-    if (typeof window.applyLayoutSettings === 'function') {
-        window.applyLayoutSettings();
-    }
-    if (typeof window.saveData === 'function') {
-        window.saveData(true);
-    }
+    document.documentElement.dataset.segmentButtons = show ? 'visible' : 'hidden';
 }
 
 // タブバー常時表示の適用

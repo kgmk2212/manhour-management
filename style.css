@@ -3872,14 +3872,10 @@ html[data-inline-filter="hidden"] .inline-filter {
 }
 
 /* ---- 33b. Segment Buttons Hidden ---- */
+/* セグメント版をDOMに残すが視覚的に非表示（フィルタバーのクローン元として使用） */
 html[data-segment-buttons="hidden"] #reportFiltersSegmented,
 html[data-segment-buttons="hidden"] #estimateFiltersSegmented,
 html[data-segment-buttons="hidden"] #actualFiltersSegmented {
-    display: none !important;
-}
-html[data-segment-buttons="hidden"] #reportFiltersCompact,
-html[data-segment-buttons="hidden"] #estimateFiltersCompact,
-html[data-segment-buttons="hidden"] #actualFiltersCompact {
     visibility: hidden !important;
     max-height: 1px !important;
     margin: 0 !important;
