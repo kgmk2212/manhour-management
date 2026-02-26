@@ -3,6 +3,7 @@
 // ============================================
 
 import { estimates } from './state.js';
+import { pushAction } from './history.js';
 
 import {
     normalizeEstimate,
@@ -225,12 +226,19 @@ export function executeSplitEstimate() {
 
     const estimateIndex = estimates.findIndex(e => e.id === id);
     if (estimateIndex !== -1) {
+        const beforeEstimate = { ...estimates[estimateIndex] };
         estimates[estimateIndex] = {
             ...estimates[estimateIndex],
             workMonth: startMonth,
             workMonths: months,
             monthlyHours: monthlyHours
         };
+
+        pushAction({
+            type: 'estimate_edit',
+            description: `見積月分割: ${beforeEstimate.task} (${beforeEstimate.process})`,
+            data: { before: beforeEstimate, after: { ...estimates[estimateIndex] } }
+        });
 
         if (typeof window.saveData === 'function') window.saveData();
         closeSplitEstimateModal();

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C案: トースト常設化 + 右上バッジ</title>
+<style>
+:root {
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --border: #E7E5E0;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #A09A94;
+    --accent: #2D5A27;
+    --accent-hover: #3A7232;
+    --accent-light: #EBF5EA;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F4F0; color: var(--text-primary); }
+
+/* ヘッダー */
+.header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 16px; font-weight: 600; }
+
+/* 履歴バッジ（右上） */
+.history-badge-btn {
+    position: relative;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 14px;
+    display: flex; align-items: center; gap: 4px;
+}
+.history-badge-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.history-badge-count {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    min-width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 5px;
+}
+
+/* コンテンツ */
+.content { padding: 16px; max-width: 600px; margin: 0 auto; }
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.card-meta { font-size: 12px; color: var(--text-muted); }
+
+/* トースト（常設化） */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.toast {
+    background: var(--text-primary);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    animation: slideUp 0.3s ease;
+}
+.toast-icon { font-size: 16px; }
+.toast-undo {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.toast-undo:hover { background: rgba(255,255,255,0.35); }
+.toast-close {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    cursor: pointer; font-size: 16px; padding: 0 4px;
+}
+
+/* 常設 Undo/Redo ミニバー（トースト位置） */
+.undo-mini-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.undo-mini-btn {
+    background: none; border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.undo-mini-btn:hover { background: var(--accent-light); }
+.undo-mini-btn:disabled { color: var(--text-muted); cursor: default; }
+.undo-mini-btn:disabled:hover { background: none; }
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 説明 */
+.description {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px;
+    max-width: 600px;
+    margin: 16px auto;
+}
+.description h2 { font-size: 15px; color: var(--accent); margin-bottom: 8px; }
+.description p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.description ul { font-size: 13px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px; }
+
+@media (max-width: 768px) {
+    .undo-mini-bar { display: flex; }
+}
+@media (min-width: 769px) {
+    .undo-mini-bar { display: none; }
+    .description::after {
+        content: "PC表示: Ctrl+Z/Y でも操作可能";
+        display: block;
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>工数管理</h1>
+    <button class="history-badge-btn" title="変更履歴">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="history-badge-count">3</span>
+    </button>
+</div>
+
+<div class="description">
+    <h2>C案: トースト常設化 + 右上バッジ</h2>
+    <ul>
+        <li><strong>右上バッジ</strong>: ヘッダーに常駐。数字はUndo可能な操作数。クリックで変更履歴モーダルを開く</li>
+        <li><strong>トースト</strong>: 操作後に表示。モバイルでは「元に戻す」ボタン付き</li>
+        <li><strong>ミニバー</strong>（モバイルのみ）: 画面下部に常駐する ← → ボタン。PCではCtrl+Z/Yで代替</li>
+        <li>既存のスケジュールタブのトーストUIと自然に統合</li>
+    </ul>
+</div>
+
+<div class="content">
+    <div class="card">
+        <div class="card-title">帳票A：X対応 (UI)</div>
+        <div class="card-meta">v2.0 / 担当: 田中 / 8h / 2026-02</div>
+    </div>
+    <div class="card">
+        <div class="card-title">帳票A：X対応 (PG)</div>
+        <div class="card-meta">v2.0 / 担当: 佐藤 / 16h / 2026-02</div>
+    </div>
+    <div class="card">
+        <div class="card-title">帳票B：Y修正 (PT)</div>
+        <div class="card-meta">v1.0 / 担当: 鈴木 / 4h / 2026-03</div>
+    </div>
+</div>
+
+<!-- トースト通知（操作直後に表示） -->
+<div class="toast-container">
+    <div class="toast">
+        <span class="toast-icon">✓</span>
+        <span>見積を追加しました</span>
+        <button class="toast-undo">元に戻す</button>
+        <button class="toast-close">×</button>
+    </div>
+</div>
+
+<!-- 常設 Undo/Redo ミニバー（モバイルのみ表示） -->
+<div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:150;">
+    <div class="undo-mini-bar">
+        <button class="undo-mini-btn" title="元に戻す">↩</button>
+        <span>3件の変更</span>
+        <button class="undo-mini-btn" disabled title="やり直す">↪</button>
+    </div>
+</div>
+
+</body>
+</html>

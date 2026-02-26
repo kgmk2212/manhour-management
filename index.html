@@ -129,6 +129,10 @@
                         復元
                     </button>
                 </div>
+                <button class="btn btn-sm" onclick="openHistoryModal()" style="width:100%;font-size:11px;margin-top:4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    変更履歴
+                </button>
                 <button class="sidebar-collapse-btn" id="collapseBtn" title="サイドバーを折りたたむ">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
                 </button>
@@ -2461,6 +2465,23 @@
             <div class="modal-footer">
                 <button onclick="closeAutoGenerateModal()" class="btn btn-secondary">キャンセル</button>
                 <button onclick="executeAutoGenerate()" class="btn btn-primary">生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 変更履歴モーダル -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3>変更履歴</h3>
+                <span class="close" onclick="closeHistoryModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="historyList" style="max-height: 60vh; overflow-y: auto; padding: 0;">
+                <!-- JS で動的生成 -->
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <span style="font-size: 12px; color: var(--text-muted);">Ctrl+Z: 元に戻す / Ctrl+Y: やり直す</span>
+                <button onclick="closeHistoryModal()" class="btn btn-secondary">閉じる</button>
             </div>
         </div>
     </div>

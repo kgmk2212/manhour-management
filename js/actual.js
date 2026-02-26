@@ -9,6 +9,7 @@ import {
 
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -911,8 +912,16 @@ export function closeWorkModal() {
  */
 export function deleteActual(id) {
     if (!confirm('この実績を削除しますか?')) return;
+    const deleted = actuals.find(a => a.id === id);
     const newActuals = actuals.filter(a => a.id !== id);
     setActuals(newActuals);
+    if (deleted) {
+        pushAction({
+            type: 'actual_delete',
+            description: `実績削除: ${deleted.task} (${deleted.process}) ${deleted.hours}h`,
+            data: { deleted: { ...deleted } }
+        });
+    }
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     renderActualList();
@@ -934,8 +943,16 @@ export function editActualFromModal(id) {
  */
 export function deleteActualFromModal(id, member, date) {
     if (confirm('この実績を削除しますか？')) {
+        const deleted = actuals.find(a => a.id === id);
         const newActuals = actuals.filter(a => a.id !== id);
         setActuals(newActuals);
+        if (deleted) {
+            pushAction({
+                type: 'actual_delete',
+                description: `実績削除: ${deleted.task} (${deleted.process}) ${deleted.hours}h`,
+                data: { deleted: { ...deleted } }
+            });
+        }
         if (typeof window.saveData === 'function') window.saveData();
         renderActualList();
         renderTodayActuals();
@@ -1158,6 +1175,7 @@ export function saveActualEdit() {
     if (id && !isNaN(id)) {
         const actualIndex = actuals.findIndex(a => a.id === id);
         if (actualIndex !== -1) {
+            const beforeActual = { ...actuals[actualIndex] };
             actuals[actualIndex] = {
                 ...actuals[actualIndex],
                 date: date,
@@ -1167,6 +1185,12 @@ export function saveActualEdit() {
                 member: member,
                 hours: hours
             };
+
+            pushAction({
+                type: 'actual_edit',
+                description: `実績編集: ${task} (${process}) ${hours}h`,
+                data: { before: beforeActual, after: { ...actuals[actualIndex] }, isNew: false }
+            });
 
             if (remainingHours !== null && !isNaN(remainingHours)) {
                 saveRemainingEstimate(version, task, process, member, remainingHours);
@@ -1200,6 +1224,12 @@ export function saveActualEdit() {
         };
 
         actuals.push(newActual);
+
+        pushAction({
+            type: 'actual_add',
+            description: `実績追加: ${task} (${process}) ${hours}h`,
+            data: { added: { ...newActual } }
+        });
 
         if (remainingHours !== null && !isNaN(remainingHours)) {
             saveRemainingEstimate(version, task, process, member, remainingHours);

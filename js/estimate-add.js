@@ -8,6 +8,7 @@ import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
 import { renderEstimateList } from './estimate.js';
 import { updateSchedule, calculateEndDate } from './schedule.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -274,6 +275,9 @@ function saveEditAllProcesses() {
 
     // 既存の見積データを取得
     const taskEstimates = State.estimates.filter(e => e.version === oldVersion && e.task === oldTask);
+    // Undo用: 変更前のスナップショット
+    const beforeEstimates = taskEstimates.map(e => ({ ...e }));
+    const beforeActuals = State.actuals.filter(a => a.version === oldVersion && a.task === oldTask).map(a => ({ ...a }));
     let updatedSchedulesCount = 0;
     const updatedScheduleIds = new Set();
 
@@ -410,6 +414,15 @@ function saveEditAllProcesses() {
             }
         });
     }
+
+    // Undo用: 変更後のスナップショット
+    const afterEstimates = State.estimates.filter(e => e.version === version && e.task === newTask).map(e => ({ ...e }));
+    const afterActuals = State.actuals.filter(a => a.version === version && a.task === newTask).map(a => ({ ...a }));
+    pushAction({
+        type: 'estimate_bulk_edit',
+        description: `全工程一括編集: ${newTask}`,
+        data: { beforeEstimates, afterEstimates, beforeActuals, afterActuals }
+    });
 
     // 保存・UI更新
     if (typeof window.saveData === 'function') window.saveData();
@@ -1002,6 +1015,7 @@ function addOtherWorkEstimate() {
     }
 
     // 各担当者分の見積を登録
+    const addedEstimates = [];
     members.forEach((member, index) => {
         const est = {
             id: Date.now() + index + Math.random(),
@@ -1016,6 +1030,13 @@ function addOtherWorkEstimate() {
             createdAt: new Date().toISOString()
         };
         State.estimates.push(est);
+        addedEstimates.push({ ...est });
+    });
+
+    pushAction({
+        type: 'estimate_add_other',
+        description: `その他工数追加: ${taskName}（${members.length}件）`,
+        data: { added: addedEstimates }
     });
 
     if (typeof window.saveData === 'function') window.saveData();
@@ -1087,6 +1108,7 @@ function addNormalEstimate() {
 
 export function addEstimateFromModalNormal(version, task, processes, startMonth, endMonth) {
     const isSingleMonth = !endMonth || startMonth === endMonth;
+    const addedEstimates = [];
 
     processes.forEach(proc => {
         const member = document.getElementById(`addEst${proc}_member`).value;
@@ -1145,11 +1167,20 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
             };
 
             State.estimates.push(est);
+            addedEstimates.push({ ...est });
 
             // 見込残存時間も自動設定（見積時間と同じ）
             Estimate.saveRemainingEstimate(version, task, proc, member, hours);
         }
     });
+
+    if (addedEstimates.length > 0) {
+        pushAction({
+            type: 'estimate_add',
+            description: `見積追加: ${task}（${addedEstimates.length}工程）`,
+            data: { added: addedEstimates }
+        });
+    }
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();

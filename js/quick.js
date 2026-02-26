@@ -11,6 +11,7 @@ import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escap
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
+import { pushAction } from './history.js';
 
 // クイック入力用の状態変数
 let allQuickTasks = [];
@@ -213,7 +214,7 @@ export function quickAddActual() {
     // 作業日の決定: 入力があればそれを使用、なければ今日
     const finalDate = workDate || new Date().toISOString().split('T')[0];
 
-    actuals.push({
+    const newActual = {
         id: Date.now(),
         date: finalDate,
         version: version,
@@ -222,6 +223,13 @@ export function quickAddActual() {
         member: finalMember,
         hours: hours,
         createdAt: new Date().toISOString()
+    };
+    actuals.push(newActual);
+
+    pushAction({
+        type: 'actual_add',
+        description: `実績追加: ${task} (${process}) ${hours}h`,
+        data: { added: { ...newActual } }
     });
 
     if (typeof window.saveData === 'function') window.saveData();
@@ -614,6 +622,7 @@ export function addQuickEstimate() {
     }
 
     const isSingleMonth = !endMonth || startMonth === endMonth;
+    const addedEstimates = [];
 
     processes.forEach(proc => {
         const member = document.getElementById(`quickEst${proc}_member`).value;
@@ -672,9 +681,18 @@ export function addQuickEstimate() {
             };
 
             estimates.push(est);
+            addedEstimates.push({ ...est });
             Estimate.saveRemainingEstimate(version, task, proc, member, hours);
         }
     });
+
+    if (addedEstimates.length > 0) {
+        pushAction({
+            type: 'estimate_add',
+            description: `見積追加: ${task}（${addedEstimates.length}工程）`,
+            data: { added: addedEstimates }
+        });
+    }
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();

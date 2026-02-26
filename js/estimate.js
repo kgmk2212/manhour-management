@@ -24,6 +24,7 @@ import {
     escapeHtml,
     escapeForHandler
 } from './utils.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 月の実働日数計算
@@ -1169,7 +1170,7 @@ export function deleteEstimate(id) {
     const detail = `この見積を削除しますか？\n\n対応名: ${estimate.task}\n工程: ${estimate.process}\n工数: ${estimate.hours}h\n担当: ${estimate.member}`;
     if (!confirm(detail)) return;
 
-    const warning = '【警告】この操作は取り消せません。\n本当に削除してもよろしいですか？';
+    const warning = '【警告】本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
 
     // 関連するスケジュールを検索
@@ -1195,11 +1196,20 @@ export function deleteEstimate(id) {
         }
     }
 
+    // Undo用: 削除前のスナップショット
+    const deletedCopy = { ...estimate };
+
     // 関連する見込み残存データも削除
     deleteRemainingEstimate(estimate.version, estimate.task, estimate.process, estimate.member);
 
     const newEstimates = estimates.filter(e => e.id !== id);
     setEstimates(newEstimates);
+
+    pushAction({
+        type: 'estimate_delete',
+        description: `見積削除: ${estimate.task} (${estimate.process})`,
+        data: { deleted: [deletedCopy] }
+    });
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
@@ -1228,7 +1238,7 @@ export function deleteTask(version, task) {
     const detail = `この対応を削除しますか？\n\n版数: ${version}\n対応名: ${task}\n工程数: ${taskEstimates.length}件\n工程: ${processes}\n合計工数: ${totalHours}h`;
     if (!confirm(detail)) return;
 
-    const warning = '【警告】この操作は取り消せません。\nこの対応に含まれる全ての工程が削除されます。\n本当に削除してもよろしいですか？';
+    const warning = '【警告】この対応に含まれる全ての工程が削除されます。\n本当に削除してもよろしいですか？';
     if (!confirm(warning)) return;
 
     // 関連するスケジュールを削除
@@ -1245,6 +1255,9 @@ export function deleteTask(version, task) {
         }
     }
 
+    // Undo用: 削除前のスナップショット
+    const deletedCopies = taskEstimates.map(e => ({ ...e }));
+
     // 関連する見込み残存データも削除
     taskEstimates.forEach(est => {
         deleteRemainingEstimate(est.version, est.task, est.process, est.member);
@@ -1252,6 +1265,12 @@ export function deleteTask(version, task) {
 
     const newEstimates = estimates.filter(e => !(e.version === version && e.task === task));
     setEstimates(newEstimates);
+
+    pushAction({
+        type: 'task_delete',
+        description: `対応削除: ${task}（${deletedCopies.length}工程）`,
+        data: { deleted: deletedCopies }
+    });
 
     if (typeof window.saveData === 'function') window.saveData();
     renderEstimateList();

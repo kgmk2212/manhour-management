@@ -3,6 +3,7 @@
 // ============================================
 
 import * as State from './state.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -44,21 +45,28 @@ export function addMeeting() {
 
     // 全担当者分の実績を追加
     let count = 0;
+    const addedActuals = [];
     members.forEach(member => {
-        State.actuals.push({
+        const actual = {
             id: Date.now() + count,
             date: date,
-            version: '',  // 版数なし
+            version: '',
             task: '打ち合わせ',
             process: '',
             member: member,
             hours: hours,
             createdAt: new Date().toISOString()
-        });
+        };
+        State.actuals.push(actual);
+        addedActuals.push({ ...actual });
         count++;
     });
 
-    console.log('actuals added, count:', count);
+    pushAction({
+        type: 'actual_add',
+        description: `打ち合わせ追加: ${members.size}名分 ${hours}h`,
+        data: { added: addedActuals[0], addedAll: addedActuals }
+    });
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.renderActualList === 'function') window.renderActualList();
@@ -107,18 +115,23 @@ export function addOtherWork() {
     }
 
     // その他作業を追加
-    State.actuals.push({
+    const newActual = {
         id: Date.now(),
         date: date,
-        version: '',  // 版数なし
+        version: '',
         task: workName,
         process: '',
         member: member,
         hours: hours,
         createdAt: new Date().toISOString()
-    });
+    };
+    State.actuals.push(newActual);
 
-    console.log('other work added');
+    pushAction({
+        type: 'actual_add',
+        description: `その他作業追加: ${workName} ${hours}h`,
+        data: { added: { ...newActual } }
+    });
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.renderActualList === 'function') window.renderActualList();

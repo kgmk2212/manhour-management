@@ -33,6 +33,7 @@ import {
 import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
 import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
+import { loadHistory } from './history.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -280,6 +281,9 @@ export function loadData() {
     if (typeof window.applyLayoutSettings === 'function') {
         window.applyLayoutSettings();
     }
+
+    // Undo/Redo 履歴を復元
+    loadHistory();
 }
 
 // ============================================

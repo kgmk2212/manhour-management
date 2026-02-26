@@ -5,6 +5,7 @@
 import {
     estimates, actuals, remainingEstimates, schedules
 } from './state.js';
+import { pushAction } from './history.js';
 
 import {
     normalizeEstimate,
@@ -218,8 +219,8 @@ export function saveEstimateEdit() {
         }
     }
 
-    const oldEstimate = estimates[estimateIndex];
-    
+    const oldEstimate = { ...estimates[estimateIndex] };
+
     // キー項目（version/task/process/member）が変更されたかチェック
     const keyChanged = 
         oldEstimate.version !== version ||
@@ -299,6 +300,12 @@ export function saveEstimateEdit() {
             scheduleToastMsg = `見積工数の変更に伴い、スケジュールの終了日を ${newEndDate} に更新しました`;
         }
     }
+
+    pushAction({
+        type: 'estimate_edit',
+        description: `見積編集: ${task} (${process || 'その他'})`,
+        data: { before: oldEstimate, after: { ...estimates[estimateIndex] } }
+    });
 
     if (!relatedSchedule) {
         if (typeof window.saveData === 'function') window.saveData();
@@ -574,6 +581,10 @@ export function saveTaskEdit() {
         return;
     }
 
+    // Undo用: 変更前のスナップショット
+    const beforeEstimates = estimates.filter(e => e.version === oldVersion && e.task === oldTaskName).map(e => ({ ...e }));
+    const beforeActuals = actuals.filter(a => a.version === oldVersion && a.task === oldTaskName).map(a => ({ ...a }));
+
     let updatedCount = 0;
     estimates.forEach((est, index) => {
         if (est.version === oldVersion && est.task === oldTaskName) {
@@ -608,6 +619,14 @@ export function saveTaskEdit() {
     });
 
     if (updatedCount > 0) {
+        const afterEstimates = estimates.filter(e => e.version === newVersion && e.task === newTaskName).map(e => ({ ...e }));
+        const afterActuals = actuals.filter(a => a.version === newVersion && a.task === newTaskName).map(a => ({ ...a }));
+        pushAction({
+            type: 'task_edit',
+            description: `対応名変更: ${oldTaskName} → ${newTaskName}`,
+            data: { beforeEstimates, afterEstimates, beforeActuals, afterActuals }
+        });
+
         // updateSchedule内でsaveDataが呼ばれるが、スケジュールがない場合も保存
         if (scheduleUpdateCount === 0 && typeof window.saveData === 'function') window.saveData();
         closeEditTaskModal();

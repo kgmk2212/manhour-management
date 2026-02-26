@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D案: ボトムアクションバー + サイドバー下部</title>
+<style>
+:root {
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --border: #E7E5E0;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #A09A94;
+    --accent: #2D5A27;
+    --accent-hover: #3A7232;
+    --accent-light: #EBF5EA;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F4F0; color: var(--text-primary); }
+
+/* ヘッダー */
+.header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 16px; font-weight: 600; }
+
+/* コンテンツ */
+.content { padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.card-meta { font-size: 12px; color: var(--text-muted); }
+
+/* ===== モバイル: ボトムアクションバー ===== */
+.bottom-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.bottom-action-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.bottom-action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+}
+.bottom-action-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.bottom-action-btn:disabled { color: var(--text-muted); border-color: var(--border); cursor: default; }
+.bottom-action-btn:disabled:hover { background: none; border-color: var(--border); }
+.bottom-action-btn span.label {
+    font-size: 11px;
+    font-weight: 500;
+}
+.bottom-action-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+.bottom-action-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+}
+.bottom-history-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+}
+.bottom-history-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.bottom-history-count {
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 8px;
+    min-width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+}
+
+/* ===== PC: サイドバー下部 ===== */
+.sidebar-undo-panel {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    width: 240px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    z-index: 150;
+    display: none;
+}
+.sidebar-undo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.sidebar-undo-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.sidebar-undo-title svg { width: 14px; height: 14px; }
+.sidebar-history-link {
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: none;
+    padding: 0;
+}
+.sidebar-history-link:hover { text-decoration: underline; }
+.sidebar-undo-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.sidebar-undo-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+.sidebar-undo-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.sidebar-undo-btn:disabled { color: var(--text-muted); cursor: default; }
+.sidebar-undo-btn:disabled:hover { background: none; border-color: var(--border); }
+.sidebar-undo-btn .icon { font-size: 14px; }
+.sidebar-undo-btn .shortcut {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+.sidebar-undo-last {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 8px;
+    background: var(--surface-elevated);
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* トースト（操作直後の一時通知） */
+.toast-container {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+}
+.toast {
+    background: var(--text-primary);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    animation: slideUp 0.3s ease;
+    white-space: nowrap;
+}
+.toast-icon { font-size: 16px; }
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 説明 */
+.description {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    max-width: 600px;
+    margin: 16px auto;
+}
+.description h2 { font-size: 15px; color: var(--accent); margin-bottom: 8px; }
+.description p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.description ul { font-size: 13px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px; }
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+    .bottom-action-bar { display: flex; }
+    .sidebar-undo-panel { display: none !important; }
+    .toast-container { bottom: 70px; }
+}
+@media (min-width: 769px) {
+    .bottom-action-bar { display: none; }
+    .sidebar-undo-panel { display: block; }
+    .toast-container { bottom: 20px; }
+    .content { padding-bottom: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>工数管理</h1>
+</div>
+
+<div class="description">
+    <h2>D案: ボトムアクションバー（モバイル）+ サイドバー下部（PC）</h2>
+    <ul>
+        <li><strong>モバイル</strong>: 画面下部に固定バー。← → ボタン + 「履歴」ボタン</li>
+        <li><strong>PC</strong>: サイドバー下部に小パネル。Undo/Redoボタン + ショートカット表示 + 直前の操作表示 + 「全履歴」リンク</li>
+        <li><strong>トースト</strong>: 操作直後に一時表示（数秒で消える）。Undoボタンなし（下部バーで代替）</li>
+        <li>既存のサイドバー構造と自然に統合</li>
+    </ul>
+</div>
+
+<div class="content">
+    <div class="card">
+        <div class="card-title">帳票A：X対応 (UI)</div>
+        <div class="card-meta">v2.0 / 担当: 田中 / 8h / 2026-02</div>
+    </div>
+    <div class="card">
+        <div class="card-title">帳票A：X対応 (PG)</div>
+        <div class="card-meta">v2.0 / 担当: 佐藤 / 16h / 2026-02</div>
+    </div>
+    <div class="card">
+        <div class="card-title">帳票B：Y修正 (PT)</div>
+        <div class="card-meta">v1.0 / 担当: 鈴木 / 4h / 2026-03</div>
+    </div>
+</div>
+
+<!-- トースト（操作直後の一時通知、数秒で消える） -->
+<div class="toast-container">
+    <div class="toast">
+        <span class="toast-icon">✓</span>
+        <span>見積を追加しました</span>
+    </div>
+</div>
+
+<!-- モバイル: ボトムアクションバー -->
+<div class="bottom-action-bar">
+    <div class="bottom-action-left">
+        <button class="bottom-action-btn" title="元に戻す (Ctrl+Z)">
+            <span style="font-size:16px;">↩</span>
+            <span class="label">戻す</span>
+        </button>
+        <button class="bottom-action-btn" disabled title="やり直す (Ctrl+Y)">
+            <span style="font-size:16px;">↪</span>
+            <span class="label">進む</span>
+        </button>
+    </div>
+    <div class="bottom-action-divider"></div>
+    <button class="bottom-history-btn" title="変更履歴">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        履歴
+        <span class="bottom-history-count">3</span>
+    </button>
+</div>
+
+<!-- PC: サイドバー下部パネル -->
+<div class="sidebar-undo-panel">
+    <div class="sidebar-undo-header">
+        <span class="sidebar-undo-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            変更履歴 (3)
+        </span>
+        <button class="sidebar-history-link">全履歴を表示</button>
+    </div>
+    <div class="sidebar-undo-controls">
+        <button class="sidebar-undo-btn" title="元に戻す">
+            <span class="icon">↩</span> 戻す
+            <span class="shortcut">⌘Z</span>
+        </button>
+        <button class="sidebar-undo-btn" disabled title="やり直す">
+            <span class="icon">↪</span> 進む
+            <span class="shortcut">⌘Y</span>
+        </button>
+    </div>
+    <div class="sidebar-undo-last">
+        直前: 見積を追加しました
+    </div>
+</div>
+
+</body>
+</html>

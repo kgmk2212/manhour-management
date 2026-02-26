@@ -4995,3 +4995,72 @@ html[data-inline-filter="hidden"] .inline-filter {
     background: var(--hover-bg, var(--border));
     color: var(--text-primary);
 }
+
+/* ============================================ */
+/* 変更履歴モーダル                              */
+/* ============================================ */
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+.history-item:hover {
+    background: var(--hover-bg, rgba(0,0,0,0.03));
+}
+.history-item-undone {
+    opacity: 0.4;
+}
+.history-item-latest {
+    background: var(--surface-alt, rgba(0,0,0,0.02));
+}
+.history-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+.history-info {
+    flex: 1;
+    min-width: 0;
+}
+.history-desc {
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.history-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.history-revert-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.history-revert-btn:hover {
+    background: var(--accent, #4a90d9);
+    color: #fff;
+    border-color: var(--accent, #4a90d9);
+}
+.history-current-marker {
+    text-align: center;
+    font-size: 11px;
+    color: var(--accent, #4a90d9);
+    padding: 6px 16px;
+    background: var(--surface-alt, rgba(0,0,0,0.02));
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+}

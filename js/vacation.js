@@ -9,6 +9,7 @@ import {
     nextVacationId, setNextVacationId
 } from './state.js';
 import { showAlert, escapeHtml } from './utils.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 会社休日管理
@@ -39,7 +40,12 @@ export function addCompanyHoliday() {
     companyHolidays.push(holiday);
     setNextCompanyHolidayId(nextCompanyHolidayId + 1);
 
-    // saveDataとupdateAllDisplaysは後でimport
+    pushAction({
+        type: 'holiday_add',
+        description: `会社休日追加: ${name} (${startDate}～${endDate})`,
+        data: { added: { ...holiday } }
+    });
+
     window.saveData();
     renderCompanyHolidayList();
 
@@ -51,7 +57,15 @@ export function addCompanyHoliday() {
 
 export function deleteCompanyHoliday(id) {
     if (!confirm('この会社休日を削除しますか？')) return;
+    const deleted = companyHolidays.find(h => h.id === id);
     setCompanyHolidays(companyHolidays.filter(h => h.id !== id));
+    if (deleted) {
+        pushAction({
+            type: 'holiday_delete',
+            description: `会社休日削除: ${deleted.name}`,
+            data: { deleted: { ...deleted } }
+        });
+    }
     window.saveData();
     renderCompanyHolidayList();
     window.updateAllDisplays();
@@ -135,6 +149,11 @@ export function addQuickVacation() {
 
     vacations.push(vacation);
     setNextVacationId(nextVacationId + 1);
+    pushAction({
+        type: 'vacation_add',
+        description: `休暇追加: ${member} ${date} (${vacationType})`,
+        data: { added: { ...vacation } }
+    });
     window.saveData();
     window.renderActualList();
     showAlert('休暇を登録しました', true);
@@ -145,14 +164,30 @@ export function addQuickVacation() {
 
 export function deleteVacation(id) {
     if (!confirm('この休暇を削除しますか？')) return;
+    const deleted = vacations.find(v => v.id === id);
     setVacations(vacations.filter(v => v.id !== id));
+    if (deleted) {
+        pushAction({
+            type: 'vacation_delete',
+            description: `休暇削除: ${deleted.member} ${deleted.date}`,
+            data: { deleted: { ...deleted } }
+        });
+    }
     window.saveData();
     window.renderActualList();
 }
 
 export function deleteVacationFromModal(id, member, date) {
     if (!confirm('この休暇を削除しますか？')) return;
+    const deleted = vacations.find(v => v.id === id);
     setVacations(vacations.filter(v => v.id !== id));
+    if (deleted) {
+        pushAction({
+            type: 'vacation_delete',
+            description: `休暇削除: ${deleted.member} ${deleted.date}`,
+            data: { deleted: { ...deleted } }
+        });
+    }
     window.saveData();
     window.renderActualList();
     // モーダルを再表示
@@ -216,6 +251,11 @@ export function saveVacationFromModal() {
 
     vacations.push(vacation);
     setNextVacationId(nextVacationId + 1);
+    pushAction({
+        type: 'vacation_add',
+        description: `休暇追加: ${member} ${date} (${vacationType})`,
+        data: { added: { ...vacation } }
+    });
     window.saveData();
     closeVacationModal();
     window.renderActualList();

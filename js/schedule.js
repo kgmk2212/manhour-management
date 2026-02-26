@@ -12,6 +12,7 @@ import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate } 
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
+import { pushAction } from './history.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -53,9 +54,9 @@ export function initScheduleModule() {
         (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); }
     );
 
-    // キーボードショートカットをセットアップ
-    setupKeyboardShortcuts();
-    
+    // スケジュールタブ固有のキーボードショートカットをセットアップ
+    setupScheduleKeyboardShortcuts();
+
     // スクロール同期リスナーを設定
     setupScrollSyncListener();
 
@@ -961,9 +962,10 @@ export function saveScheduleFromModal() {
         version, task, process, member, estimatedHours, startDate, note
     });
 
-    pushUndoAction({
-        type: 'create',
-        schedule: { ...newSchedule }
+    pushAction({
+        type: 'schedule_create',
+        description: `スケジュール作成: ${newSchedule.task} (${newSchedule.process})`,
+        data: { schedule: { ...newSchedule } }
     });
 
     highlightNewSchedules([newSchedule.id]);
@@ -1002,22 +1004,25 @@ export function saveScheduleDetailChanges() {
     const endDate = calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
 
     // Undoスタックにステータス+残存+日付をセットで記録
-    pushUndoAction({
-        type: 'detail_update',
-        scheduleId: currentEditingScheduleId,
-        oldValues: {
-            status: modalOriginalState.status,
-            startDate: modalOriginalState.startDate,
-            endDate: modalOriginalState.endDate
-        },
-        newValues: { status: newStatus, startDate, endDate },
-        oldRemainingHours: modalOriginalState.remainingHours,
-        newRemainingHours: newRemainingHours,
-        scheduleKey: {
-            version: schedule.version,
-            task: schedule.task,
-            process: schedule.process,
-            member: schedule.member
+    pushAction({
+        type: 'schedule_detail_update',
+        description: `スケジュール詳細変更: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId: currentEditingScheduleId,
+            oldValues: {
+                status: modalOriginalState.status,
+                startDate: modalOriginalState.startDate,
+                endDate: modalOriginalState.endDate
+            },
+            newValues: { status: newStatus, startDate, endDate },
+            oldRemainingHours: modalOriginalState.remainingHours,
+            newRemainingHours: newRemainingHours,
+            scheduleKey: {
+                version: schedule.version,
+                task: schedule.task,
+                process: schedule.process,
+                member: schedule.member
+            }
         }
     });
 
@@ -1052,15 +1057,16 @@ export function deleteScheduleFromModal() {
 
     const schedule = schedules.find(s => s.id === currentEditingScheduleId);
     if (schedule) {
-        pushUndoAction({
-            type: 'delete',
-            schedule: { ...schedule }
+        pushAction({
+            type: 'schedule_delete',
+            description: `スケジュール削除: ${schedule.task} (${schedule.process})`,
+            data: { schedule: { ...schedule } }
         });
     }
 
     deleteSchedule(currentEditingScheduleId);
     closeScheduleDetailModal();
-    showToast('予定を削除しました', 'success', 3000, { onUndo: undoScheduleAction });
+    showToast('予定を削除しました', 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 // ============================================
@@ -1582,201 +1588,9 @@ function updateStatusButtons(activeStatus) {
 }
 
 // ============================================
-// Undo/Redo スタック
+// Undo/Redo（history.js に統合済み）
 // ============================================
-
-const undoStack = [];
-const redoStack = [];
-const MAX_UNDO_HISTORY = 50;
-
-/**
- * Undo/Redo用に操作を記録
- */
-function pushUndoAction(action) {
-    undoStack.push(action);
-    if (undoStack.length > MAX_UNDO_HISTORY) {
-        undoStack.shift();
-    }
-    // 新しい操作が入ったらRedoスタックをクリア
-    redoStack.length = 0;
-}
-
-/**
- * Undo: 直前の操作を元に戻す
- */
-export function undoScheduleAction() {
-    if (undoStack.length === 0) {
-        showToast('元に戻す操作がありません', 'info');
-        return;
-    }
-
-    const action = undoStack.pop();
-    redoStack.push(action);
-
-    switch (action.type) {
-        case 'move':
-            updateSchedule(action.scheduleId, {
-                startDate: action.oldStartDate,
-                endDate: action.oldEndDate
-            });
-            showToast('移動を元に戻しました', 'info');
-            break;
-
-        case 'create':
-            deleteSchedule(action.schedule.id);
-            showToast('作成を元に戻しました', 'info');
-            break;
-
-        case 'batch_create': {
-            const idsToRemove = new Set(action.schedules.map(s => s.id));
-            setSchedules(schedules.filter(s => !idsToRemove.has(s.id)));
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast(`${action.schedules.length}件の作成を元に戻しました`, 'info');
-            break;
-        }
-
-        case 'delete':
-            setSchedules([...schedules, action.schedule]);
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast('削除を元に戻しました', 'info');
-            break;
-
-        case 'batch_delete':
-            setSchedules([...schedules, ...action.schedules]);
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast(`${action.schedules.length}件の削除を元に戻しました`, 'info');
-            break;
-
-        case 'status_change':
-            updateSchedule(action.scheduleId, { status: action.oldStatus });
-            showToast('ステータス変更を元に戻しました', 'info');
-            break;
-
-        case 'detail_update':
-            updateSchedule(action.scheduleId, action.oldValues);
-            if (action.oldRemainingHours !== null) {
-                saveRemainingEstimate(
-                    action.scheduleKey.version, action.scheduleKey.task,
-                    action.scheduleKey.process, action.scheduleKey.member,
-                    action.oldRemainingHours
-                );
-            } else {
-                deleteRemainingEstimate(
-                    action.scheduleKey.version, action.scheduleKey.task,
-                    action.scheduleKey.process, action.scheduleKey.member
-                );
-            }
-            if (typeof window.saveData === 'function') window.saveData();
-            showToast('変更を元に戻しました', 'info');
-            break;
-
-        case 'update':
-            updateSchedule(action.scheduleId, action.oldValues);
-            showToast('変更を元に戻しました', 'info');
-            break;
-
-        default:
-            // 後方互換: type なしの旧エントリ（ドラッグ）
-            updateSchedule(action.scheduleId, {
-                startDate: action.oldStartDate,
-                endDate: action.oldEndDate
-            });
-            showToast('元に戻しました', 'info');
-            break;
-    }
-}
-
-/**
- * Redo: 元に戻した操作をやり直す
- */
-export function redoScheduleAction() {
-    if (redoStack.length === 0) {
-        showToast('やり直す操作がありません', 'info');
-        return;
-    }
-
-    const action = redoStack.pop();
-    undoStack.push(action);
-
-    switch (action.type) {
-        case 'move':
-            updateSchedule(action.scheduleId, {
-                startDate: action.newStartDate,
-                endDate: action.newEndDate
-            });
-            showToast('移動をやり直しました', 'info');
-            break;
-
-        case 'create':
-            setSchedules([...schedules, action.schedule]);
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast('作成をやり直しました', 'info');
-            break;
-
-        case 'batch_create':
-            setSchedules([...schedules, ...action.schedules]);
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast(`${action.schedules.length}件の作成をやり直しました`, 'info');
-            break;
-
-        case 'delete':
-            setSchedules(schedules.filter(s => s.id !== action.schedule.id));
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast('削除をやり直しました', 'info');
-            break;
-
-        case 'batch_delete': {
-            const idsToRemove = new Set(action.schedules.map(s => s.id));
-            setSchedules(schedules.filter(s => !idsToRemove.has(s.id)));
-            if (typeof window.saveData === 'function') window.saveData();
-            renderScheduleView();
-            showToast(`${action.schedules.length}件の削除をやり直しました`, 'info');
-            break;
-        }
-
-        case 'status_change':
-            updateSchedule(action.scheduleId, { status: action.newStatus });
-            showToast('ステータス変更をやり直しました', 'info');
-            break;
-
-        case 'detail_update':
-            updateSchedule(action.scheduleId, action.newValues);
-            if (action.newRemainingHours !== null) {
-                saveRemainingEstimate(
-                    action.scheduleKey.version, action.scheduleKey.task,
-                    action.scheduleKey.process, action.scheduleKey.member,
-                    action.newRemainingHours
-                );
-            } else {
-                deleteRemainingEstimate(
-                    action.scheduleKey.version, action.scheduleKey.task,
-                    action.scheduleKey.process, action.scheduleKey.member
-                );
-            }
-            if (typeof window.saveData === 'function') window.saveData();
-            showToast('変更をやり直しました', 'info');
-            break;
-
-        case 'update':
-            updateSchedule(action.scheduleId, action.newValues);
-            showToast('変更をやり直しました', 'info');
-            break;
-
-        default:
-            updateSchedule(action.scheduleId, {
-                startDate: action.newStartDate,
-                endDate: action.newEndDate
-            });
-            showToast('やり直しました', 'info');
-            break;
-    }
-}
+// pushAction, undo, redo は history.js から import
 
 /**
  * ドラッグによるスケジュール移動を処理
@@ -1795,13 +1609,10 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     const newEndDate = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
 
     // Undo用に記録
-    pushUndoAction({
-        type: 'move',
-        scheduleId,
-        oldStartDate,
-        oldEndDate,
-        newStartDate,
-        newEndDate
+    pushAction({
+        type: 'schedule_move',
+        description: `スケジュール移動: ${schedule.task} (${schedule.process})`,
+        data: { scheduleId, oldStartDate, oldEndDate, newStartDate, newEndDate }
     });
 
     // スケジュールを更新
@@ -1810,7 +1621,7 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
         endDate: newEndDate
     });
 
-    showToast('予定を移動しました', 'success', 3000, { onUndo: undoScheduleAction });
+    showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**
@@ -1840,14 +1651,15 @@ export function executeAutoGenerate() {
     closeAutoGenerateModal();
 
     if (generated.length > 0) {
-        pushUndoAction({
-            type: 'batch_create',
-            schedules: generated.map(s => ({ ...s }))
+        pushAction({
+            type: 'schedule_batch_create',
+            description: `スケジュール自動生成: ${generated.length}件`,
+            data: { schedules: generated.map(s => ({ ...s })) }
         });
 
         highlightNewSchedules(generated.map(s => s.id));
 
-        showToast(`${generated.length}件のスケジュールを生成しました`, 'success', 3000, { onUndo: undoScheduleAction });
+        showToast(`${generated.length}件のスケジュールを生成しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
     } else {
         showToast('生成対象のスケジュールがありませんでした', 'info');
     }
@@ -1964,9 +1776,10 @@ export function deleteFilteredSchedules() {
     }
     
     // Undo用にコピーを保存
-    pushUndoAction({
-        type: 'batch_delete',
-        schedules: filteredSchedules.map(s => ({ ...s }))
+    pushAction({
+        type: 'schedule_batch_delete',
+        description: `スケジュール一括削除: ${filteredSchedules.length}件`,
+        data: { schedules: filteredSchedules.map(s => ({ ...s })) }
     });
 
     // 削除するIDのセット
@@ -1980,7 +1793,7 @@ export function deleteFilteredSchedules() {
     }
 
     renderScheduleView();
-    showToast(`${filteredSchedules.length}件のスケジュールを削除しました`, 'success', 3000, { onUndo: undoScheduleAction });
+    showToast(`${filteredSchedules.length}件のスケジュールを削除しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**
@@ -2116,41 +1929,33 @@ export function showToast(message, type = 'info', duration = 3000, options = {})
 }
 
 // ============================================
-// キーボードショートカット
+// キーボードショートカット（スケジュールタブ固有）
 // ============================================
+// Ctrl+Z/Y は history.js のグローバルショートカットに統合済み
 
 /**
- * キーボードショートカットをセットアップ
+ * スケジュールタブ固有のキーボードショートカットをセットアップ
+ * （initScheduleModule から呼ばれる）
  */
-function setupKeyboardShortcuts() {
+function setupScheduleKeyboardShortcuts() {
     document.addEventListener('keydown', (event) => {
         // スケジュールタブがアクティブでない場合は無視
         const scheduleTab = document.getElementById('schedule');
         if (!scheduleTab || scheduleTab.style.display === 'none' || !scheduleTab.classList.contains('active')) {
-            // タブのアクティブ状態を別の方法でチェック
             const activeTab = document.querySelector('.tab-content.active, .tab-content[style*="block"]');
             if (!activeTab || activeTab.id !== 'schedule') {
                 return;
             }
         }
-        
+
         // 入力フィールドにフォーカスがある場合は無視
         const activeElement = document.activeElement;
         if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
             return;
         }
-        
-        // Ctrl+Z / Ctrl+Y: Undo/Redo（モーダル状態に関わらず動作）
-        if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-            event.preventDefault();
-            undoScheduleAction();
-            return;
-        }
-        if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
-            event.preventDefault();
-            redoScheduleAction();
-            return;
-        }
+
+        // Ctrl/Cmd キーが押されている場合は無視（history.jsで処理）
+        if (event.ctrlKey || event.metaKey) return;
 
         // モーダルが開いている場合はEsc以外を無視
         const openModal = document.querySelector('.modal[style*="flex"]');
@@ -2518,14 +2323,15 @@ export function registerCheckedSchedules() {
         if (typeof window.saveData === 'function') window.saveData();
         renderScheduleView();
 
-        pushUndoAction({
-            type: 'batch_create',
-            schedules: generatedSchedules.map(s => ({ ...s }))
+        pushAction({
+            type: 'schedule_batch_create',
+            description: `スケジュール一括作成: ${generatedSchedules.length}件`,
+            data: { schedules: generatedSchedules.map(s => ({ ...s })) }
         });
 
         highlightNewSchedules(generatedSchedules.map(s => s.id));
 
-        showToast(`${generatedSchedules.length}件のスケジュールを作成しました`, 'success', 3000, { onUndo: undoScheduleAction });
+        showToast(`${generatedSchedules.length}件のスケジュールを作成しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
     } else {
         showToast('作成対象のスケジュールがありませんでした', 'info');
     }

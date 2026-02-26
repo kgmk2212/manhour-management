@@ -22,6 +22,7 @@ import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
+import * as History from './history.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -376,8 +377,19 @@ window.saveScheduleFromModal = Schedule.saveScheduleFromModal;
 window.saveScheduleDetailChanges = Schedule.saveScheduleDetailChanges;
 window.deleteScheduleFromModal = Schedule.deleteScheduleFromModal;
 window.openEstimateFromSchedule = Schedule.openEstimateFromSchedule;
-window.undoScheduleAction = Schedule.undoScheduleAction;
-window.redoScheduleAction = Schedule.redoScheduleAction;
+// history.js のグローバル Undo/Redo
+window.historyUndo = History.undo;
+window.historyRedo = History.redo;
+window.openHistoryModal = History.openHistoryModal;
+window.closeHistoryModal = History.closeHistoryModal;
+window.revertToAction = History.revertToAction;
+
+// スケジュール用のヘルパー関数（history.js から参照）
+window.updateScheduleFn = Schedule.updateSchedule;
+window.deleteScheduleFn = Schedule.deleteSchedule;
+window.showScheduleToast = Schedule.showToast;
+window.saveRemainingEstimateFn = Estimate.saveRemainingEstimate;
+window.deleteRemainingEstimateFn = Estimate.deleteRemainingEstimate;
 window.getScheduleRenderer = Schedule.getScheduleRenderer;
 window.updateScheduleVersionOptions = Schedule.updateScheduleVersionOptions;
 window.updateScheduleTaskOptions = Schedule.updateScheduleTaskOptions;
@@ -622,6 +634,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // スケジュール（ガントチャート）モジュールの初期化
     Schedule.initScheduleModule();
+
+    // グローバル Undo/Redo キーボードショートカットを設定
+    History.setupGlobalKeyboardShortcuts();
 
     console.log('✅ init.js: 初期化処理完了');
 });
