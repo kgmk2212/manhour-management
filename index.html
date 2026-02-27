@@ -2691,6 +2691,11 @@
                         mobileFilterBtn.style.display = 'none';
                         return;
                     }
+                    // セグメントボタン非表示時: 常にフィルタボタンを表示
+                    if (isSegmentButtonsHidden()) {
+                        mobileFilterBtn.style.display = '';
+                        return;
+                    }
                     // 手動表示中はボタンを常に表示（閉じるために必要）
                     if (manuallyShown && fixedBar) {
                         mobileFilterBtn.style.display = '';
@@ -2702,7 +2707,7 @@
                     }
                     var bar = findBar();
                     if (!bar) { mobileFilterBtn.style.display = 'none'; return; }
-                    var barAbove = bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden();
+                    var barAbove = bar.getBoundingClientRect().bottom < 0;
                     mobileFilterBtn.style.display = barAbove ? '' : 'none';
                     if (!barAbove) updateMobileFilterBtn(false);
                 }
