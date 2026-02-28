@@ -12,6 +12,7 @@
 | ブランチ | 用途 | 作業内容 |
 |----------|------|----------|
 | `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
+| `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須） |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
 
 > **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
@@ -23,6 +24,7 @@
 | ディレクトリ | ブランチ | 用途 |
 |-------------|---------|------|
 | `manhour-management` | `main` | 安定版（メイン） |
+| `manhour-redesign` | `experiment/redesign` | リデザイン実験 |
 | `manhour-experiment` | `experiment/sandbox` | 実験用 |
 
 ### 作業前の確認事項
@@ -38,13 +40,28 @@ git branch
 |-------------------|--------------|
 | バグ修正、表示の微調整 | `main` |
 | 既存機能（見積・実績・レポート・スケジュール）の改善 | `main` |
+| UI/UXのリデザイン | `experiment/redesign` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
 
 **判断に迷う場合**: ユーザーに確認してください。
 
 ---
 
-## 実験ブランチでの開発
+## experiment/redesign ブランチでの開発
+
+`experiment/redesign` ブランチはUI/UXの全面的なリデザインを行うブランチです。
+
+### リデザインブランチのルール
+
+- **frontend-designスキル必須**: コード変更を伴うすべての作業で `frontend-design` スキルを使用する（バグ修正・機能追加・リファクタリング含む）
+- **制約なし**: どのファイルでも自由に編集可能
+- **破壊的変更OK**: 大胆なリファクタリングや設計変更を試せる
+- **自動デプロイ**: コミット・プッシュ完了時は、mainに空コミット＆プッシュしてGitHub Pagesデプロイを発火させる（`cd ../manhour-management && git commit --allow-empty -m "deploy: trigger Pages rebuild" && git push origin main`）
+- **mainへのマージ禁止**: ユーザーの明示的な指示がない限り、redesignの変更をmainにマージしない
+
+---
+
+## experiment/sandbox ブランチでの開発
 
 `experiment/sandbox` ブランチは自由な試行錯誤のための場所です。
 
@@ -99,7 +116,7 @@ git branch -D experiment/sandbox
 - **フレームワーク**: なし（純粋なHTML/CSS/JavaScript）
 - **モジュール**: ES Modules
 - **データ保存**: localStorage
-- **外部ライブラリ**: ExcelJS, holiday_jp
+- **外部ライブラリ**: SheetJS (xlsx.mjs), japanese-holidays.js ※すべてローカルバンドル（CDN不使用）
 
 ---
 
