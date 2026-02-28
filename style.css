@@ -466,6 +466,18 @@ img {
     display: block;
 }
 
+/* デスクトップ: タブコンテンツ切り替えフェードイン */
+@media (min-width: 769px) {
+    .tab-content.active {
+        animation: tabFadeIn 0.2s ease;
+    }
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .page-header {
     margin-bottom: 28px;
 }
