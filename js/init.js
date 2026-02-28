@@ -22,6 +22,7 @@ import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
+import * as Dashboard from './dashboard.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -411,6 +412,9 @@ window.updateUnscheduledCount = Schedule.updateUnscheduledCount;
 window.registerCheckedSchedules = Schedule.registerCheckedSchedules;
 window.calculateEndDate = Schedule.calculateEndDate;
 window.getTaskColor = Schedule.getTaskColor;
+
+// dashboard.js の関数
+window.renderDashboard = Dashboard.renderDashboard;
 
 // state.js のスケジュール関連エクスポート
 window.schedules = State.schedules;

@@ -199,6 +199,23 @@ export function saveRemainingEstimate(version, task, process, member, remainingH
     } else {
         remainingEstimates.push(record);
     }
+
+    // スケジュール連動: 見込み残存に応じてステータスを更新
+    const relatedSchedule = schedules.find(s =>
+        s.version === version &&
+        s.task === task &&
+        s.process === process &&
+        s.member === member
+    );
+    if (relatedSchedule) {
+        if (remainingHours === 0 && relatedSchedule.status !== 'completed') {
+            relatedSchedule.status = 'completed';
+            relatedSchedule.updatedAt = new Date().toISOString();
+        } else if (remainingHours > 0 && relatedSchedule.status === 'completed') {
+            relatedSchedule.status = 'in_progress';
+            relatedSchedule.updatedAt = new Date().toISOString();
+        }
+    }
 }
 
 /**

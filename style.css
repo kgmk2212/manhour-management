@@ -12603,3 +12603,823 @@ body[data-layout="sidebar"][data-design-theme=""] .tab.active {
     background: var(--hover-bg, var(--border));
     color: var(--text-primary);
 }
+
+/* ===== Dashboard START ===== */
+/* 削除時: この行から「Dashboard END」までを削除 */
+
+.dashboard-container {
+    padding: 20px;
+}
+
+.dashboard-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-section {
+    margin-bottom: 24px;
+}
+
+/* KPIサマリーカード グリッド */
+.dashboard-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.dashboard-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* KPIカード */
+.dashboard-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #e0e0e0);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #888);
+    margin: 0 0 8px 0;
+}
+
+.dashboard-card-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-primary, #333);
+    line-height: 1.2;
+}
+
+.dashboard-card-sub {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+    margin-top: 4px;
+}
+
+/* カード色バリエーション */
+.dashboard-card-estimate {
+    border-left: 4px solid #3498db;
+}
+
+.dashboard-card-actual {
+    border-left: 4px solid #2ecc71;
+}
+
+.dashboard-card-progress {
+    border-left: 4px solid #9b59b6;
+}
+
+.dashboard-card-negative {
+    border-left: 4px solid #e74c3c;
+}
+
+.dashboard-card-negative .dashboard-card-value {
+    color: #e74c3c;
+}
+
+.dashboard-card-positive {
+    border-left: 4px solid #2ecc71;
+}
+
+.dashboard-card-positive .dashboard-card-value {
+    color: #27ae60;
+}
+
+/* トレンドインジケーター */
+.dashboard-trend {
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.dashboard-trend-up {
+    color: #e74c3c;
+}
+
+.dashboard-trend-down {
+    color: #27ae60;
+}
+
+.dashboard-trend-none {
+    color: #999;
+}
+
+/* 空状態 */
+.dashboard-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-secondary, #888);
+}
+
+.dashboard-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.dashboard-empty-state h3 {
+    font-size: 18px;
+    color: var(--text-primary, #333);
+    margin: 0 0 8px 0;
+}
+
+.dashboard-empty-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.dashboard-empty-action {
+    display: inline-block;
+    padding: 8px 20px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dashboard-empty-action:hover {
+    background: #2980b9;
+}
+
+/* セクションタイトル */
+.dashboard-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    color: var(--text-primary, #333);
+}
+
+.dashboard-empty-message {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-secondary, #888);
+    font-size: 14px;
+}
+
+/* 版数別進捗 */
+.dashboard-version-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+
+.dashboard-version-item:last-child {
+    border-bottom: none;
+}
+
+.dashboard-version-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.dashboard-version-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary, #333);
+}
+
+.dashboard-version-status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dashboard-progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary, #f0f0f0);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.dashboard-progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+.dashboard-version-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+}
+
+/* クリック可能ヘッダー */
+.dashboard-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.dashboard-clickable:hover {
+    opacity: 0.8;
+}
+
+.dashboard-expand-icon {
+    display: inline-block;
+    font-size: 10px;
+    margin-right: 6px;
+    transition: transform 0.2s ease;
+}
+
+.dashboard-version-expanded {
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 4px 0;
+}
+
+/* タスク内訳テーブル */
+.dashboard-task-breakdown {
+    margin-top: 8px;
+}
+
+.dashboard-task-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.dashboard-task-table th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    color: var(--text-secondary, #888);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.dashboard-task-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    color: var(--text-primary, #333);
+}
+
+.dashboard-task-table tr:last-child td {
+    border-bottom: none;
+}
+
+.dashboard-task-hours {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.dashboard-task-status {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* アラートパネル */
+.dashboard-alert-ok {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--bg-secondary, #f0faf0);
+    border-radius: 6px;
+    color: #27ae60;
+    font-size: 14px;
+}
+
+.dashboard-alert-ok-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #27ae60;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dashboard-alert-count {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary, #888);
+    margin-left: 4px;
+}
+
+.dashboard-alert-item {
+    padding: 10px 12px;
+    border-left: 3px solid;
+    margin-bottom: 8px;
+    border-radius: 0 6px 6px 0;
+    background: var(--bg-secondary, #fafafa);
+}
+
+.dashboard-alert-item:last-child {
+    margin-bottom: 0;
+}
+
+.dashboard-alert-overrun {
+    border-left-color: #e74c3c;
+}
+
+.dashboard-alert-anomaly {
+    border-left-color: #f39c12;
+}
+
+.dashboard-alert-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dashboard-alert-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.dashboard-alert-overrun .dashboard-alert-badge {
+    background: #e74c3c;
+}
+
+.dashboard-alert-anomaly .dashboard-alert-badge {
+    background: #f39c12;
+}
+
+.dashboard-alert-version {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+}
+
+.dashboard-alert-task {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #333);
+}
+
+.dashboard-alert-percent {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e74c3c;
+}
+
+.dashboard-alert-anomaly .dashboard-alert-percent {
+    color: #f39c12;
+}
+
+.dashboard-alert-detail {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+}
+
+.dashboard-alert-expanded {
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 0 6px 6px 0;
+}
+
+.dashboard-alert-breakdown {
+    margin-top: 8px;
+}
+
+.dashboard-alert-diff-over {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+/* 担当者別ワークロード */
+.dashboard-member-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+
+.dashboard-member-item:last-child {
+    border-bottom: none;
+}
+
+.dashboard-member-over {
+    border-left: 3px solid #e74c3c;
+    padding-left: 10px;
+}
+
+.dashboard-member-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.dashboard-member-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary, #333);
+}
+
+.dashboard-member-warning {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: #e74c3c;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.dashboard-member-accuracy {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+}
+
+.dashboard-member-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dashboard-member-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dashboard-member-bar-label {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.dashboard-member-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-secondary, #f0f0f0);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.dashboard-member-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+.dashboard-member-bar-est {
+    background: #3498db;
+}
+
+.dashboard-member-bar-act {
+    background: #27ae60;
+}
+
+.dashboard-member-bar-act.dashboard-member-over {
+    background: #e74c3c;
+}
+
+.dashboard-member-bar-value {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    width: 48px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.dashboard-member-breakdown {
+    margin-top: 8px;
+}
+
+.dashboard-member-expanded {
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+/* 活動履歴フィード */
+.dashboard-activity-warning {
+    padding: 10px 14px;
+    background: #fff3cd;
+    border-left: 3px solid #f39c12;
+    border-radius: 0 6px 6px 0;
+    color: #856404;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.dashboard-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    font-size: 13px;
+}
+
+.dashboard-activity-item:last-child {
+    border-bottom: none;
+}
+
+.dashboard-activity-date {
+    color: var(--text-secondary, #888);
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dashboard-activity-member {
+    font-weight: 500;
+    color: var(--text-primary, #333);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dashboard-activity-task {
+    color: var(--text-primary, #555);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard-activity-hours {
+    font-weight: 500;
+    color: var(--text-primary, #333);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 2カラムパネルレイアウト（デスクトップ） */
+.dashboard-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* レスポンシブ: デスクトップ → モバイル */
+@media (max-width: 767px) {
+    .dashboard-container {
+        padding: 12px;
+    }
+
+    .dashboard-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .dashboard-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-card-value {
+        font-size: 22px;
+    }
+
+    .dashboard-card-sub {
+        font-size: 11px;
+    }
+
+    .dashboard-version-details {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .dashboard-alert-header {
+        font-size: 12px;
+    }
+
+    .dashboard-member-bar-row {
+        gap: 4px;
+    }
+
+    .dashboard-activity-item {
+        flex-wrap: wrap;
+        gap: 4px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Theme: Obsidian --- */
+[data-design-theme="obsidian"] .dashboard-container {
+    color: #ececef;
+}
+
+[data-design-theme="obsidian"] .dashboard-card {
+    background: #141416 !important;
+    border-color: #2a2a2e !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-card:hover {
+    border-color: #3a3a3e !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-card-label {
+    color: #8b8b92 !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-card-value {
+    color: #ececef !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-card-sub {
+    color: #6b6b72 !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-section-title {
+    color: #ececef !important;
+    border-bottom-color: #2a2a2e !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-version-name,
+[data-design-theme="obsidian"] .dashboard-alert-task,
+[data-design-theme="obsidian"] .dashboard-member-name,
+[data-design-theme="obsidian"] .dashboard-task-table td {
+    color: #d0d0d5 !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-version-details,
+[data-design-theme="obsidian"] .dashboard-alert-detail,
+[data-design-theme="obsidian"] .dashboard-alert-version,
+[data-design-theme="obsidian"] .dashboard-member-accuracy,
+[data-design-theme="obsidian"] .dashboard-activity-date,
+[data-design-theme="obsidian"] .dashboard-task-table th {
+    color: #6b6b72 !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-version-item,
+[data-design-theme="obsidian"] .dashboard-member-item,
+[data-design-theme="obsidian"] .dashboard-activity-item {
+    border-bottom-color: #2a2a2e !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-progress-bar-container,
+[data-design-theme="obsidian"] .dashboard-member-bar-track {
+    background: #2a2a2e !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-alert-item,
+[data-design-theme="obsidian"] .dashboard-version-expanded,
+[data-design-theme="obsidian"] .dashboard-alert-expanded,
+[data-design-theme="obsidian"] .dashboard-member-expanded {
+    background: #1a1a1e !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-alert-ok {
+    background: rgba(39, 174, 96, 0.1) !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-empty-state h3,
+[data-design-theme="obsidian"] .dashboard-activity-member,
+[data-design-theme="obsidian"] .dashboard-activity-hours {
+    color: #ececef !important;
+}
+
+[data-design-theme="obsidian"] .dashboard-activity-warning {
+    background: rgba(243, 156, 18, 0.15) !important;
+    color: #f5c842 !important;
+}
+
+/* --- Theme: Paper --- */
+[data-design-theme="paper"] .dashboard-card {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #e5e5e5 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 16px 0 !important;
+}
+
+[data-design-theme="paper"] .dashboard-card:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+[data-design-theme="paper"] .dashboard-card-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #a3a3a3 !important;
+}
+
+[data-design-theme="paper"] .dashboard-card-value {
+    font-size: 28px !important;
+    font-weight: 300 !important;
+    color: #0a0a0a !important;
+}
+
+[data-design-theme="paper"] .dashboard-section-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #a3a3a3 !important;
+}
+
+[data-design-theme="paper"] .dashboard-alert-item,
+[data-design-theme="paper"] .dashboard-version-expanded,
+[data-design-theme="paper"] .dashboard-member-expanded {
+    background: #f8f8f8 !important;
+}
+
+/* --- Theme: Mosaic --- */
+[data-design-theme="mosaic"] .dashboard-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-design-theme="mosaic"] .dashboard-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-1px) !important;
+}
+
+[data-design-theme="mosaic"] .dashboard-section-title {
+    color: #1c1c1e !important;
+}
+
+[data-design-theme="mosaic"] .dashboard-alert-item,
+[data-design-theme="mosaic"] .dashboard-version-expanded,
+[data-design-theme="mosaic"] .dashboard-member-expanded {
+    background: #f2f2f7 !important;
+    border-radius: 0 12px 12px 0 !important;
+}
+
+[data-design-theme="mosaic"] .dashboard-progress-bar-container,
+[data-design-theme="mosaic"] .dashboard-member-bar-track {
+    background: #e5e5ea !important;
+    border-radius: 6px !important;
+}
+
+[data-design-theme="mosaic"] .dashboard-progress-bar,
+[data-design-theme="mosaic"] .dashboard-member-bar {
+    border-radius: 6px !important;
+}
+
+/* --- Theme: Graphite --- */
+[data-design-theme="graphite"] .dashboard-card {
+    background: #ffffff !important;
+    border: 1px solid #e7e5e4 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+}
+
+[data-design-theme="graphite"] .dashboard-card:hover {
+    border-color: #d6d3d1 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-design-theme="graphite"] .dashboard-card-label {
+    color: #78716c !important;
+}
+
+[data-design-theme="graphite"] .dashboard-card-value {
+    color: #1c1917 !important;
+}
+
+[data-design-theme="graphite"] .dashboard-section-title {
+    color: #1c1917 !important;
+    border-bottom-color: #e7e5e4 !important;
+}
+
+[data-design-theme="graphite"] .dashboard-alert-item,
+[data-design-theme="graphite"] .dashboard-version-expanded,
+[data-design-theme="graphite"] .dashboard-member-expanded {
+    background: #f5f5f4 !important;
+}
+
+[data-design-theme="graphite"] .dashboard-progress-bar-container,
+[data-design-theme="graphite"] .dashboard-member-bar-track {
+    background: #e7e5e4 !important;
+}
+
+[data-design-theme="graphite"] .dashboard-version-item,
+[data-design-theme="graphite"] .dashboard-member-item,
+[data-design-theme="graphite"] .dashboard-activity-item {
+    border-bottom-color: #e7e5e4 !important;
+}
+
+/* ===== Dashboard END ===== */

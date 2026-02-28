@@ -14,7 +14,7 @@ import {
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
-const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
+const TAB_ORDER = ['dashboard', 'quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
 
 // ============================================
 // スクロール比率ユーティリティ（表内相対位置）
@@ -207,7 +207,11 @@ export function showTab(tabName, options = {}) {
     }
 
     // 見積一覧タブまたはレポートタブの場合、デフォルト表示形式を適用
-    if (tabName === 'estimate') {
+    if (tabName === 'dashboard') {
+        if (typeof window.renderDashboard === 'function') {
+            window.renderDashboard();
+        }
+    } else if (tabName === 'estimate') {
         if (typeof window.applyDefaultEstimateViewType === 'function') {
             window.applyDefaultEstimateViewType();
         }

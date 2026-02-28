@@ -25,7 +25,7 @@
                 }
                 // 保存されたタブを読み込み
                 var savedTab = localStorage.getItem('manhour_currentTab');
-                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
+                if (savedTab && ['dashboard', 'quick', 'estimate', 'actual', 'report', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
                 // モーダルデザインスタイルを早期適用
@@ -176,6 +176,7 @@
             box-shadow: none !important;
         }
 
+        [data-early-tab="dashboard"] .tab[data-tab="dashboard"],
         [data-early-tab="estimate"] .tab[data-tab="estimate"],
         [data-early-tab="actual"] .tab[data-tab="actual"],
         [data-early-tab="report"] .tab[data-tab="report"],
@@ -204,6 +205,7 @@
             <div class="tab-buttons-wrapper">
                 <div class="tab-buttons-area">
                     <div class="tab-indicator"></div>
+                    <button class="tab" data-tab="dashboard">📊 ダッシュボード</button>
                     <button class="tab active tab-theme-deep-blue" data-tab="quick">クイック入力</button>
                     <button class="tab" data-tab="report">レポート</button>
                     <button class="tab" data-tab="estimate">見積一覧</button>
@@ -219,6 +221,12 @@
         </div>
 
         <div class="content">
+            <div id="dashboard" class="tab-content">
+                <div class="dashboard-container">
+                    <!-- ダッシュボードの内容は dashboard.js の renderDashboard() が動的に描画 -->
+                </div>
+            </div>
+
             <div id="quick" class="tab-content active">
                 <div class="quick-input theme-bg theme-deep-blue">
                     <h2 id="quickModeTitle">今日の実績を入力</h2>
