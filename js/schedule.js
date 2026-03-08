@@ -2202,13 +2202,11 @@ export function toggleUnscheduledDropdown() {
                        data-version="${escapeHtml(version)}" data-task="${escapeHtml(task)}" checked
                        onchange="updateUnscheduledCount()">
                 <div class="unscheduled-item-text">
-                    <span class="unscheduled-task-name-row">
-                        <span class="unscheduled-task-name" title="${escapeHtml(version)} / ${escapeHtml(task)}">${escapeHtml(task)}</span>
-                        <span class="drag-handle unscheduled-drag-handle" title="ドラッグで着手順を変更">⠿</span>
-                    </span>
+                    <span class="unscheduled-task-name" title="${escapeHtml(version)} / ${escapeHtml(task)}">${escapeHtml(task)}</span>
                     <span class="unscheduled-task-detail">${details}</span>
                 </div>
             </label>
+            <span class="drag-handle unscheduled-drag-handle" title="ドラッグで着手順を変更">⠿</span>
         </li>`;
         groupIndex++;
     });
