@@ -18,6 +18,10 @@ import { pushAction } from './history.js';
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
 
+// 未登録ドロップダウンの状態管理
+let _unscheduledCloseHandler = null;
+let _unscheduledDragging = false;
+
 // ============================================
 // 初期化
 // ============================================
@@ -2234,14 +2238,19 @@ export function toggleUnscheduledDropdown() {
     // 左はみ出し防止
     fixDropdownOverflow(dropdown);
 
-    // 外側クリックで閉じる
-    const closeHandler = (e) => {
+    // 外側クリックで閉じる（古いハンドラを確実に除去してから登録）
+    if (_unscheduledCloseHandler) {
+        document.removeEventListener('click', _unscheduledCloseHandler);
+    }
+    _unscheduledCloseHandler = (e) => {
+        if (_unscheduledDragging) return; // ドラッグ中は閉じない
         if (!dropdown.contains(e.target) && !document.getElementById('unscheduledBadge').contains(e.target)) {
             dropdown.style.display = 'none';
-            document.removeEventListener('click', closeHandler);
+            document.removeEventListener('click', _unscheduledCloseHandler);
+            _unscheduledCloseHandler = null;
         }
     };
-    setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    setTimeout(() => document.addEventListener('click', _unscheduledCloseHandler), 0);
 }
 
 /**
@@ -2501,6 +2510,7 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
     const sourceIndex = items.indexOf(dragItem);
     if (sourceIndex < 0) return;
 
+    _unscheduledDragging = true;
     dragItem.classList.add('dragging');
     let lastHoverIndex = sourceIndex;
 
@@ -2567,6 +2577,9 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
             if (dd) dd.style.display = 'none';
             toggleUnscheduledDropdown();
         }
+
+        // ドラッグフラグを少し遅延して解除（mouseup直後のclick伝播を防ぐ）
+        setTimeout(() => { _unscheduledDragging = false; }, 100);
     };
 
     document.addEventListener('mousemove', onMove);
