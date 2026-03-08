@@ -21,6 +21,7 @@ export { getRenderer as getScheduleRenderer };
 // 未登録ドロップダウンの状態管理
 let _unscheduledCloseHandler = null;
 let _unscheduledDragging = false;
+let _unscheduledDragCleanup = null; // ドラッグ中のクリーンアップ関数
 
 // ============================================
 // 初期化
@@ -2151,6 +2152,16 @@ export function toggleUnscheduledDropdown() {
         return;
     }
 
+    renderUnscheduledDropdown();
+}
+
+/**
+ * 未スケジュール一覧ドロップダウンを描画（常に再構築）
+ */
+function renderUnscheduledDropdown() {
+    const dropdown = document.getElementById('unscheduledDropdown');
+    if (!dropdown) return;
+
     const unscheduled = getUnscheduledEstimates();
     if (unscheduled.length === 0) {
         dropdown.style.display = 'none';
@@ -2232,7 +2243,7 @@ export function toggleUnscheduledDropdown() {
     dropdown.innerHTML = html;
     dropdown.style.display = 'block';
 
-    // ドロップダウン内のドラッグ&ドロップ初期化
+    // ドロップダウン内のドラッグ&ドロップ初期化（イベント委譲方式）
     initUnscheduledDragAndDrop(dropdown);
 
     // 左はみ出し防止
@@ -2479,30 +2490,38 @@ function highlightNewSchedules(scheduleIds, duration = 5000) {
 // ============================================
 
 /**
- * 未スケジュールドロップダウンのドラッグ&ドロップ初期化
+ * 未スケジュールドロップダウンのドラッグ&ドロップ初期化（イベント委譲方式）
  * @param {HTMLElement} dropdown - ドロップダウン要素
  */
 function initUnscheduledDragAndDrop(dropdown) {
-    const listItems = dropdown.querySelectorAll('.unscheduled-dropdown-item');
+    const list = dropdown.querySelector('.unscheduled-dropdown-list');
+    if (!list) return;
+    const listItems = list.querySelectorAll('.unscheduled-dropdown-item');
     if (listItems.length <= 1) return;
 
-    listItems.forEach(item => {
-        const handle = item.querySelector('.unscheduled-drag-handle');
+    // イベント委譲: list要素にハンドラを1つだけ付ける
+    const onMouseDown = (e) => {
+        const handle = e.target.closest('.unscheduled-drag-handle');
         if (!handle) return;
+        const item = handle.closest('.unscheduled-dropdown-item');
+        if (!item) return;
 
-        const startHandler = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-            startUnscheduledDrag(item, dropdown, clientY);
-        };
+        e.preventDefault();
+        e.stopPropagation();
+        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+        startUnscheduledDrag(item, dropdown, clientY);
+    };
 
-        handle.addEventListener('mousedown', startHandler);
-        handle.addEventListener('touchstart', startHandler, { passive: false });
-    });
+    list.addEventListener('mousedown', onMouseDown);
+    list.addEventListener('touchstart', onMouseDown, { passive: false });
 }
 
 function startUnscheduledDrag(dragItem, dropdown, startY) {
+    // ドラッグ中ガード: 前回のドラッグが未完了なら強制クリーンアップ
+    if (_unscheduledDragging && _unscheduledDragCleanup) {
+        _unscheduledDragCleanup();
+    }
+
     const list = dropdown.querySelector('.unscheduled-dropdown-list');
     if (!list) return;
 
@@ -2542,15 +2561,23 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
         }
     };
 
-    const onEnd = () => {
+    const cleanup = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onEnd);
         document.removeEventListener('touchmove', onMove);
         document.removeEventListener('touchend', onEnd);
-
         items.forEach(it => it.classList.remove('dragging', 'drop-above', 'drop-below'));
+        _unscheduledDragCleanup = null;
+        // ドラッグフラグを少し遅延して解除（mouseup直後のclick伝播を防ぐ）
+        setTimeout(() => { _unscheduledDragging = false; }, 150);
+    };
 
-        if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
+    const onEnd = () => {
+        const didMove = lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex;
+
+        cleanup();
+
+        if (didMove) {
             // 並び替え実行：着手順を更新
             const sortKeys = items.map(it => it.dataset.sortKey);
             const movedKey = sortKeys.splice(sourceIndex, 1)[0];
@@ -2572,15 +2599,12 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
                 updateTaskSortOrder(version, tasks);
             });
 
-            // ドロップダウンを再描画（先に非表示にしてからtoggleで再構築）
-            const dd = document.getElementById('unscheduledDropdown');
-            if (dd) dd.style.display = 'none';
-            toggleUnscheduledDropdown();
+            // ドロップダウンを再描画（toggleではなく専用描画関数を使用）
+            renderUnscheduledDropdown();
         }
-
-        // ドラッグフラグを少し遅延して解除（mouseup直後のclick伝播を防ぐ）
-        setTimeout(() => { _unscheduledDragging = false; }, 100);
     };
+
+    _unscheduledDragCleanup = cleanup;
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onEnd);
