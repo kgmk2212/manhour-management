@@ -2725,7 +2725,7 @@ table tr[style*="1565c0"] th:first-child {
     list-style: none;
     margin: 0;
     padding: 6px 0;
-    max-height: 240px;
+    max-height: min(50vh, 400px);
     overflow-y: auto;
 }
 
