@@ -5272,18 +5272,19 @@ li.drop-below {
     box-shadow: inset 0 -2px 0 0 var(--theme-color, #1976d2);
 }
 
-/* 未登録ドロップダウンのドラッグハンドル */
-.unscheduled-drag-handle {
-    flex-shrink: 0;
-    margin-right: 4px;
-    font-size: 12px;
-    width: 16px;
-    height: 16px;
-}
-
-.unscheduled-dropdown-item {
+/* 未登録ドロップダウンのタスク名行（名前＋ドラッグハンドル） */
+.unscheduled-task-name-row {
     display: flex;
     align-items: center;
+    gap: 4px;
+}
+
+.unscheduled-drag-handle {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 14px;
+    width: 20px;
+    height: 20px;
 }
 
 /* モバイル対応 */

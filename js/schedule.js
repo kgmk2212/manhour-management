@@ -2197,13 +2197,15 @@ export function toggleUnscheduledDropdown() {
         const details = items.map(e => `${escapeHtml(e.process)}(${escapeHtml(e.member)})`).join(', ');
         const groupId = `unscheduled-group-${groupIndex}`;
         html += `<li class="unscheduled-dropdown-item" data-sort-key="${escapeHtml(key)}" draggable="false">
-            <span class="drag-handle unscheduled-drag-handle" title="ドラッグで着手順を変更">⠿</span>
             <label class="unscheduled-item-label">
                 <input type="checkbox" class="unscheduled-group-check" id="${groupId}"
                        data-version="${escapeHtml(version)}" data-task="${escapeHtml(task)}" checked
                        onchange="updateUnscheduledCount()">
                 <div class="unscheduled-item-text">
-                    <span class="unscheduled-task-name" title="${escapeHtml(version)} / ${escapeHtml(task)}">${escapeHtml(task)}</span>
+                    <span class="unscheduled-task-name-row">
+                        <span class="unscheduled-task-name" title="${escapeHtml(version)} / ${escapeHtml(task)}">${escapeHtml(task)}</span>
+                        <span class="drag-handle unscheduled-drag-handle" title="ドラッグで着手順を変更">⠿</span>
+                    </span>
                     <span class="unscheduled-task-detail">${details}</span>
                 </div>
             </label>
