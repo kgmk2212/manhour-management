@@ -2531,33 +2531,38 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
 
     _unscheduledDragging = true;
     dragItem.classList.add('dragging');
-    let lastHoverIndex = sourceIndex;
+    // insertBefore: 元の配列上で「この位置の前に挿入する」インデックス
+    // sourceIndex or sourceIndex+1 はno-op（移動なし）
+    let lastInsertBefore = sourceIndex;
 
     const onMove = (e) => {
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
         if (clientY == null) return;
 
-        let hoverIndex = -1;
+        // カーソルより下に中点がある最初のアイテムを探す
+        let insertBefore = items.length; // デフォルト：末尾に挿入
         for (let i = 0; i < items.length; i++) {
             const rect = items[i].getBoundingClientRect();
             const mid = (rect.top + rect.bottom) / 2;
             if (clientY < mid) {
-                hoverIndex = i;
+                insertBefore = i;
                 break;
             }
         }
-        if (hoverIndex < 0) hoverIndex = items.length - 1;
 
-        if (hoverIndex !== lastHoverIndex) {
+        if (insertBefore !== lastInsertBefore) {
             items.forEach(it => it.classList.remove('drop-above', 'drop-below'));
-            if (hoverIndex !== sourceIndex) {
-                if (hoverIndex < sourceIndex) {
-                    items[hoverIndex].classList.add('drop-above');
+            // no-opゾーン：同じ位置or直下は移動なし
+            const isNoOp = insertBefore === sourceIndex || insertBefore === sourceIndex + 1;
+            if (!isNoOp) {
+                if (insertBefore < sourceIndex) {
+                    items[insertBefore].classList.add('drop-above');
                 } else {
-                    items[hoverIndex].classList.add('drop-below');
+                    // insertBefore > sourceIndex + 1 → 挿入位置の直前アイテムにdrop-below
+                    items[insertBefore - 1].classList.add('drop-below');
                 }
             }
-            lastHoverIndex = hoverIndex;
+            lastInsertBefore = insertBefore;
         }
     };
 
@@ -2573,15 +2578,17 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
     };
 
     const onEnd = () => {
-        const didMove = lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex;
+        const isNoOp = lastInsertBefore === sourceIndex || lastInsertBefore === sourceIndex + 1;
 
         cleanup();
 
-        if (didMove) {
+        if (!isNoOp) {
             // 並び替え実行：着手順を更新
             const sortKeys = items.map(it => it.dataset.sortKey);
             const movedKey = sortKeys.splice(sourceIndex, 1)[0];
-            sortKeys.splice(lastHoverIndex, 0, movedKey);
+            // sourceより下に移動する場合、splice後のインデックスは1つ減る
+            const finalPos = lastInsertBefore > sourceIndex ? lastInsertBefore - 1 : lastInsertBefore;
+            sortKeys.splice(finalPos, 0, movedKey);
 
             // 版数ごとにgroupしてupdateTaskSortOrder
             const versionTasks = new Map();
