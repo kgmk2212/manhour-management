@@ -2562,11 +2562,10 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
                 updateTaskSortOrder(version, tasks);
             });
 
-            // ドロップダウンを再描画
-            toggleUnscheduledDropdown();
-            // バッジを再クリックしたことにして再表示
+            // ドロップダウンを再描画（先に非表示にしてからtoggleで再構築）
             const dd = document.getElementById('unscheduledDropdown');
-            if (dd) dd.style.display = 'block';
+            if (dd) dd.style.display = 'none';
+            toggleUnscheduledDropdown();
         }
     };
 
