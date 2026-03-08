@@ -21,7 +21,7 @@ import * as EstimateEdit from './estimate-edit.js';
 import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
-import * as Schedule from './schedule.js';
+import * as Schedule from './schedule.js?v=20260309-1';
 import * as History from './history.js';
 
 // ============================================
