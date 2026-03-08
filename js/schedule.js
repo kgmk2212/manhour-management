@@ -2254,8 +2254,14 @@ function renderUnscheduledDropdown() {
         document.removeEventListener('click', _unscheduledCloseHandler);
     }
     _unscheduledCloseHandler = (e) => {
-        if (_unscheduledDragging) return; // ドラッグ中は閉じない
-        if (!dropdown.contains(e.target) && !document.getElementById('unscheduledBadge').contains(e.target)) {
+        if (_unscheduledDragging) {
+            console.log('[DnD] closeHandler: dragging=true, ignoring click');
+            return;
+        }
+        const inside = dropdown.contains(e.target);
+        const onBadge = document.getElementById('unscheduledBadge')?.contains(e.target);
+        if (!inside && !onBadge) {
+            console.log('[DnD] closeHandler: click outside → closing dropdown');
             dropdown.style.display = 'none';
             document.removeEventListener('click', _unscheduledCloseHandler);
             _unscheduledCloseHandler = null;
@@ -2495,20 +2501,35 @@ function highlightNewSchedules(scheduleIds, duration = 5000) {
  */
 function initUnscheduledDragAndDrop(dropdown) {
     const list = dropdown.querySelector('.unscheduled-dropdown-list');
-    if (!list) return;
+    if (!list) {
+        console.warn('[DnD] initDnD: list not found');
+        return;
+    }
     const listItems = list.querySelectorAll('.unscheduled-dropdown-item');
-    if (listItems.length <= 1) return;
+    if (listItems.length <= 1) {
+        console.log('[DnD] initDnD: only', listItems.length, 'items, skip');
+        return;
+    }
+    console.log('[DnD] initDnD: attaching listeners to list,', listItems.length, 'items');
 
     // イベント委譲: list要素にハンドラを1つだけ付ける
     const onMouseDown = (e) => {
+        console.log('[DnD] mousedown/touchstart on:', e.target.className, 'type:', e.type);
         const handle = e.target.closest('.unscheduled-drag-handle');
-        if (!handle) return;
+        if (!handle) {
+            console.log('[DnD] → not a handle, ignoring');
+            return;
+        }
         const item = handle.closest('.unscheduled-dropdown-item');
-        if (!item) return;
+        if (!item) {
+            console.log('[DnD] → no parent item found');
+            return;
+        }
 
         e.preventDefault();
         e.stopPropagation();
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+        console.log('[DnD] → starting drag, clientY:', clientY, 'dragging flag:', _unscheduledDragging);
         startUnscheduledDrag(item, dropdown, clientY);
     };
 
@@ -2517,17 +2538,20 @@ function initUnscheduledDragAndDrop(dropdown) {
 }
 
 function startUnscheduledDrag(dragItem, dropdown, startY) {
+    console.log('[DnD] startDrag called, _unscheduledDragging:', _unscheduledDragging, '_unscheduledDragCleanup:', !!_unscheduledDragCleanup);
     // ドラッグ中ガード: 前回のドラッグが未完了なら強制クリーンアップ
     if (_unscheduledDragging && _unscheduledDragCleanup) {
+        console.log('[DnD] → force cleanup of previous drag');
         _unscheduledDragCleanup();
     }
 
     const list = dropdown.querySelector('.unscheduled-dropdown-list');
-    if (!list) return;
+    if (!list) { console.warn('[DnD] → list not found in dropdown'); return; }
 
     const items = Array.from(list.querySelectorAll('.unscheduled-dropdown-item'));
     const sourceIndex = items.indexOf(dragItem);
-    if (sourceIndex < 0) return;
+    console.log('[DnD] → sourceIndex:', sourceIndex, 'total items:', items.length);
+    if (sourceIndex < 0) { console.warn('[DnD] → dragItem not found in items'); return; }
 
     _unscheduledDragging = true;
     dragItem.classList.add('dragging');
@@ -2579,16 +2603,19 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
 
     const onEnd = () => {
         const isNoOp = lastInsertBefore === sourceIndex || lastInsertBefore === sourceIndex + 1;
+        console.log('[DnD] onEnd: sourceIndex:', sourceIndex, 'lastInsertBefore:', lastInsertBefore, 'isNoOp:', isNoOp);
 
         cleanup();
 
         if (!isNoOp) {
             // 並び替え実行：着手順を更新
             const sortKeys = items.map(it => it.dataset.sortKey);
+            console.log('[DnD] → before reorder:', sortKeys.map(k => k.split('/')[1]));
             const movedKey = sortKeys.splice(sourceIndex, 1)[0];
             // sourceより下に移動する場合、splice後のインデックスは1つ減る
             const finalPos = lastInsertBefore > sourceIndex ? lastInsertBefore - 1 : lastInsertBefore;
             sortKeys.splice(finalPos, 0, movedKey);
+            console.log('[DnD] → after reorder (finalPos=' + finalPos + '):', sortKeys.map(k => k.split('/')[1]));
 
             // 版数ごとにgroupしてupdateTaskSortOrder
             const versionTasks = new Map();
@@ -2607,7 +2634,11 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
             });
 
             // ドロップダウンを再描画（toggleではなく専用描画関数を使用）
+            console.log('[DnD] → calling renderUnscheduledDropdown');
             renderUnscheduledDropdown();
+            console.log('[DnD] → render complete');
+        } else {
+            console.log('[DnD] → no-op, skipping reorder');
         }
     };
 
