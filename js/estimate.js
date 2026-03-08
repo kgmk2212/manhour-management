@@ -10,7 +10,8 @@ import {
     selectedEstimateIds,
     currentThemeColor,
     showMonthColorsSetting,
-    monthColors
+    monthColors,
+    taskSortOrder, setTaskSortOrder
 } from './state.js';
 
 import {
@@ -785,12 +786,16 @@ export function renderEstimateGrouped() {
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
-            html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th class="drag-handle-th"></th><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         } else {
-            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th class="drag-handle-th"></th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         }
 
-        Object.values(versionGroups[version]).forEach(taskGroup => {
+        // タスクを着手順でソート
+        const taskKeysForVersion = sortTaskKeysByOrder(version, Object.keys(versionGroups[version]));
+        const sortedTaskGroups = taskKeysForVersion.map(key => versionGroups[version][key]);
+
+        sortedTaskGroups.forEach(taskGroup => {
             const total = taskGroup.processes.reduce((sum, p) => sum + p.hours, 0);
             const days = total / 8;
             const months = total / 8 / workingDaysPerMonth;
@@ -864,7 +869,11 @@ export function renderEstimateGrouped() {
                     processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
                 }
 
-                html += '<tr>';
+                html += `<tr${index === 0 ? ` data-drag-task="${escapeHtml(taskGroup.task)}" data-drag-version="${escapeHtml(version)}"` : ''}>`;
+
+                if (index === 0) {
+                    html += `<td rowspan="${sortedProcesses.length}" class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
+                }
 
                 if (workMonthSelectionMode) {
                     if (index === 0) {
@@ -913,6 +922,7 @@ export function renderEstimateGrouped() {
 
         const versionLabel = escapeHtml(version) || 'その他工数';
         html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
+        html += `<td></td>`; // ドラッグハンドル列
         if (workMonthSelectionMode) {
             html += `<td></td>`;
         }
@@ -930,6 +940,19 @@ export function renderEstimateGrouped() {
 
     html += '</div>';
     container.innerHTML = html;
+
+    // ドラッグ&ドロップ初期化
+    sortedVersionKeys.forEach(version => {
+        if (!version) return; // その他工数は対象外
+        const taskKeys = sortTaskKeysByOrder(version, Object.keys(versionGroups[version]));
+        const tables = container.querySelectorAll('table.estimate-grouped');
+        tables.forEach(table => {
+            const firstDragRow = table.querySelector(`[data-drag-version="${CSS.escape(version)}"]`);
+            if (firstDragRow) {
+                initEstimateDragAndDrop(table, version, taskKeys);
+            }
+        });
+    });
 }
 
 /**
@@ -1047,13 +1070,17 @@ export function renderEstimateMatrix() {
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
-        html += '<tr><th style="min-width: 200px;">対応名</th>';
+        html += '<tr><th class="drag-handle-th"></th><th style="min-width: 200px;">対応名</th>';
         processOrder.forEach(proc => {
             html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
         });
         html += '<th style="min-width: 80px; text-align: center;">合計</th></tr>';
 
-        Object.values(versionGroups[version]).forEach(group => {
+        // タスクを着手順でソート
+        const matrixTaskKeys = sortTaskKeysByOrder(version, Object.keys(versionGroups[version]));
+        const sortedMatrixTaskGroups = matrixTaskKeys.map(key => versionGroups[version][key]);
+
+        sortedMatrixTaskGroups.forEach(group => {
             let taskDisplayHtml = escapeHtml(group.task);
             if (group.task.includes('：')) {
                 const parts = group.task.split('：');
@@ -1064,7 +1091,8 @@ export function renderEstimateMatrix() {
             const escapedVer = escapeForHandler(version);
             const escapedTsk = escapeForHandler(group.task);
 
-            html += '<tr>';
+            html += `<tr data-drag-task="${escapeHtml(group.task)}" data-drag-version="${escapeHtml(version)}">`;
+            html += `<td class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
             html += `<td class="clickable-cell" style="font-weight: 600; cursor: pointer;"
                 onclick="showTaskDetail('${escapedVer}', '${escapedTsk}')"
                 onmouseover="this.style.color='var(--theme-color, #1976d2)'"
@@ -1109,6 +1137,19 @@ export function renderEstimateMatrix() {
 
     html += '</div>';
     container.innerHTML = html;
+
+    // ドラッグ&ドロップ初期化
+    sortedMatrixVersionKeys.forEach(version => {
+        if (!version) return;
+        const taskKeys = sortTaskKeysByOrder(version, Object.keys(versionGroups[version]));
+        const tables = container.querySelectorAll('table.estimate-matrix');
+        tables.forEach(table => {
+            const firstDragRow = table.querySelector(`[data-drag-version="${CSS.escape(version)}"]`);
+            if (firstDragRow) {
+                initEstimateDragAndDrop(table, version, taskKeys);
+            }
+        });
+    });
 }
 
 /**
@@ -1825,6 +1866,181 @@ export function deleteEstimateFromModal(id) {
     if (estimates.length < beforeCount) {
         closeEstimateDetailModal();
     }
+}
+
+// ============================================
+// タスク着手順（ドラッグ&ドロップ並び替え）
+// ============================================
+
+/**
+ * 版数内のタスクキー一覧を着手順でソートして返す
+ * @param {string} version - 版数
+ * @param {string[]} taskKeys - タスクキーの配列
+ * @returns {string[]} ソート済みタスクキー
+ */
+export function sortTaskKeysByOrder(version, taskKeys) {
+    return [...taskKeys].sort((a, b) => {
+        const keyA = `${version}/${a}`;
+        const keyB = `${version}/${b}`;
+        const orderA = taskSortOrder[keyA];
+        const orderB = taskSortOrder[keyB];
+        // 両方に着手順がある場合
+        if (orderA !== undefined && orderB !== undefined) return orderA - orderB;
+        // 片方だけ着手順がある場合、ある方を先に
+        if (orderA !== undefined) return -1;
+        if (orderB !== undefined) return 1;
+        // 両方ない場合は元の順序を維持
+        return 0;
+    });
+}
+
+/**
+ * タスクの着手順を更新して保存
+ * @param {string} version - 版数
+ * @param {string[]} orderedTasks - 並び替え後のタスク名配列
+ */
+export function updateTaskSortOrder(version, orderedTasks) {
+    orderedTasks.forEach((task, index) => {
+        taskSortOrder[`${version}/${task}`] = index;
+    });
+    setTaskSortOrder({ ...taskSortOrder });
+    if (typeof window.saveData === 'function') window.saveData();
+}
+
+// ドラッグ中の状態管理
+let dragState = {
+    dragging: false,
+    sourceVersion: null,
+    sourceTask: null,
+    sourceIndex: -1,
+    placeholder: null
+};
+
+/**
+ * 見積テーブル用ドラッグ&ドロップ初期化
+ * @param {HTMLElement} table - テーブル要素
+ * @param {string} version - 版数
+ * @param {string[]} taskKeys - タスクキーの配列（現在の表示順）
+ */
+export function initEstimateDragAndDrop(table, version, taskKeys) {
+    if (!table) return;
+    const rows = table.querySelectorAll('[data-drag-task]');
+    rows.forEach(row => {
+        const handle = row.querySelector('.drag-handle');
+        if (!handle) return;
+
+        handle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            startDrag(e, row, table, version, taskKeys);
+        });
+
+        handle.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrag(touch, row, table, version, taskKeys);
+        }, { passive: false });
+    });
+}
+
+function startDrag(startEvent, row, table, version, taskKeys) {
+    const taskName = row.dataset.dragTask;
+    const allDragRows = Array.from(table.querySelectorAll('[data-drag-task]'));
+    const uniqueTasks = [];
+    const taskRowMap = new Map();
+    allDragRows.forEach(r => {
+        const t = r.dataset.dragTask;
+        if (!taskRowMap.has(t)) {
+            uniqueTasks.push(t);
+            taskRowMap.set(t, []);
+        }
+        taskRowMap.get(t).push(r);
+    });
+
+    const sourceIndex = uniqueTasks.indexOf(taskName);
+    if (sourceIndex < 0) return;
+
+    dragState = {
+        dragging: true,
+        sourceVersion: version,
+        sourceTask: taskName,
+        sourceIndex: sourceIndex
+    };
+
+    // ドラッグ中のスタイル
+    const sourceRows = taskRowMap.get(taskName) || [];
+    sourceRows.forEach(r => r.classList.add('dragging'));
+
+    let lastHoverIndex = sourceIndex;
+
+    const onMove = (e) => {
+        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+        if (clientY == null) return;
+
+        // ホバー中のタスクを検出
+        let hoverIndex = -1;
+        for (let i = 0; i < uniqueTasks.length; i++) {
+            const taskRows = taskRowMap.get(uniqueTasks[i]);
+            if (!taskRows || taskRows.length === 0) continue;
+            const firstRow = taskRows[0];
+            const lastRow = taskRows[taskRows.length - 1];
+            const top = firstRow.getBoundingClientRect().top;
+            const bottom = lastRow.getBoundingClientRect().bottom;
+            const mid = (top + bottom) / 2;
+            if (clientY < mid) {
+                hoverIndex = i;
+                break;
+            }
+        }
+        if (hoverIndex < 0) hoverIndex = uniqueTasks.length - 1;
+
+        if (hoverIndex !== lastHoverIndex) {
+            // ドロップインジケータをリセット
+            allDragRows.forEach(r => {
+                r.classList.remove('drop-above', 'drop-below');
+            });
+
+            if (hoverIndex !== sourceIndex) {
+                const targetTask = uniqueTasks[hoverIndex];
+                const targetRows = taskRowMap.get(targetTask);
+                if (targetRows && targetRows.length > 0) {
+                    if (hoverIndex < sourceIndex) {
+                        targetRows[0].classList.add('drop-above');
+                    } else {
+                        targetRows[targetRows.length - 1].classList.add('drop-below');
+                    }
+                }
+            }
+            lastHoverIndex = hoverIndex;
+        }
+    };
+
+    const onEnd = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+
+        // スタイルをリセット
+        allDragRows.forEach(r => {
+            r.classList.remove('dragging', 'drop-above', 'drop-below');
+        });
+
+        if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
+            // 並び替え実行
+            const newOrder = [...uniqueTasks];
+            newOrder.splice(sourceIndex, 1);
+            newOrder.splice(lastHoverIndex, 0, taskName);
+            updateTaskSortOrder(version, newOrder);
+            renderEstimateList();
+        }
+
+        dragState = { dragging: false, sourceVersion: null, sourceTask: null, sourceIndex: -1 };
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
 }
 
 console.log('✅ モジュール estimate.js loaded');

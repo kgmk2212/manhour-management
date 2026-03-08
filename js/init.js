@@ -198,6 +198,8 @@ window.deleteEstimateFromTaskModal = Estimate.deleteEstimateFromTaskModal;
 window.deleteTaskFromModal = Estimate.deleteTaskFromModal;
 window.editTaskFromTaskModal = Estimate.editTaskFromTaskModal;
 window.openEditAllProcessesFromTaskModal = Estimate.openEditAllProcessesFromTaskModal;
+window.updateTaskSortOrder = Estimate.updateTaskSortOrder;
+window.sortTaskKeysByOrder = Estimate.sortTaskKeysByOrder;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;

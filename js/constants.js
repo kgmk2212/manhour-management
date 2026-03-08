@@ -195,7 +195,10 @@ export const STORAGE_KEYS = {
     CAPACITY_DISPLAY_MODE: 'manhour_capacityDisplayMode',
 
     // 見積タブ月標準工数表示
-    ESTIMATE_STANDARD_DISPLAY: 'manhour_estimateStandardDisplay'
+    ESTIMATE_STANDARD_DISPLAY: 'manhour_estimateStandardDisplay',
+
+    // タスク着手順
+    TASK_SORT_ORDER: 'manhour_taskSortOrder'
 };
 
 /**

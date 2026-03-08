@@ -6,9 +6,10 @@ import {
     schedules, setSchedules, nextScheduleId, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap, currentThemeColor, scheduleBarColorMode,
-    estimates, actuals, vacations, companyHolidays, remainingEstimates
+    estimates, actuals, vacations, companyHolidays, remainingEstimates,
+    taskSortOrder, setTaskSortOrder
 } from './state.js';
-import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate } from './estimate.js';
+import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, sortTaskKeysByOrder, updateTaskSortOrder } from './estimate.js';
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
@@ -1315,13 +1316,23 @@ export function generateSchedulesFromEstimates(options) {
     // 工程順定義
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
 
-    // 全見積を工程順 → タスク名でソート（担当者をまたいで工程依存を処理するため）
+    // 全見積を着手順 → 工程順でソート（担当者をまたいで工程依存を処理するため）
     targetEstimates.sort((a, b) => {
+        // まず着手順でタスクをソート
+        const sortKeyA = `${a.version}/${a.task}`;
+        const sortKeyB = `${b.version}/${b.task}`;
+        const sortA = taskSortOrder[sortKeyA];
+        const sortB = taskSortOrder[sortKeyB];
+        if (sortA !== undefined && sortB !== undefined && sortA !== sortB) return sortA - sortB;
+        if (sortA !== undefined && sortB === undefined) return -1;
+        if (sortA === undefined && sortB !== undefined) return 1;
+        // 着手順が同じかどちらもない場合はタスク名
+        const taskCmp = a.task.localeCompare(b.task);
+        if (taskCmp !== 0) return taskCmp;
+        // 同じタスク内は工程順
         const orderA = processOrder.indexOf(a.process);
         const orderB = processOrder.indexOf(b.process);
         if (orderA !== orderB) return orderA - orderB;
-        const taskCmp = a.task.localeCompare(b.task);
-        if (taskCmp !== 0) return taskCmp;
         return a.member.localeCompare(b.member);
     });
 
@@ -2156,6 +2167,16 @@ export function toggleUnscheduledDropdown() {
         groups.get(key).push(est);
     });
 
+    // 着手順でソート
+    const sortedGroupKeys = [...groups.keys()].sort((a, b) => {
+        const sortA = taskSortOrder[a];
+        const sortB = taskSortOrder[b];
+        if (sortA !== undefined && sortB !== undefined) return sortA - sortB;
+        if (sortA !== undefined) return -1;
+        if (sortB !== undefined) return 1;
+        return a.localeCompare(b);
+    });
+
     const today = new Date().toISOString().split('T')[0];
 
     let html = `<div class="unscheduled-dropdown-header">
@@ -2168,11 +2189,15 @@ export function toggleUnscheduledDropdown() {
     html += '<ul class="unscheduled-dropdown-list">';
 
     let groupIndex = 0;
-    groups.forEach((items, key) => {
-        const [version, task] = key.split('/');
+    sortedGroupKeys.forEach(key => {
+        const items = groups.get(key);
+        const slashIdx = key.indexOf('/');
+        const version = key.substring(0, slashIdx);
+        const task = key.substring(slashIdx + 1);
         const details = items.map(e => `${escapeHtml(e.process)}(${escapeHtml(e.member)})`).join(', ');
         const groupId = `unscheduled-group-${groupIndex}`;
-        html += `<li class="unscheduled-dropdown-item">
+        html += `<li class="unscheduled-dropdown-item" data-sort-key="${escapeHtml(key)}" draggable="false">
+            <span class="drag-handle unscheduled-drag-handle" title="ドラッグで着手順を変更">⠿</span>
             <label class="unscheduled-item-label">
                 <input type="checkbox" class="unscheduled-group-check" id="${groupId}"
                        data-version="${escapeHtml(version)}" data-task="${escapeHtml(task)}" checked
@@ -2202,6 +2227,9 @@ export function toggleUnscheduledDropdown() {
 
     dropdown.innerHTML = html;
     dropdown.style.display = 'block';
+
+    // ドロップダウン内のドラッグ&ドロップ初期化
+    initUnscheduledDragAndDrop(dropdown);
 
     // 左はみ出し防止
     fixDropdownOverflow(dropdown);
@@ -2292,10 +2320,20 @@ export function registerCheckedSchedules() {
 
     memberEstimates.forEach((estList, memberName) => {
         estList.sort((a, b) => {
+            // まず着手順でタスクをソート
+            const sortKeyA = `${a.version}/${a.task}`;
+            const sortKeyB = `${b.version}/${b.task}`;
+            const sortA = taskSortOrder[sortKeyA];
+            const sortB = taskSortOrder[sortKeyB];
+            if (sortA !== undefined && sortB !== undefined && sortA !== sortB) return sortA - sortB;
+            if (sortA !== undefined && sortB === undefined) return -1;
+            if (sortA === undefined && sortB !== undefined) return 1;
+            const taskCmp = a.task.localeCompare(b.task);
+            if (taskCmp !== 0) return taskCmp;
             const orderA = processOrder.indexOf(a.process);
             const orderB = processOrder.indexOf(b.process);
             if (orderA !== orderB) return orderA - orderB;
-            return a.task.localeCompare(b.task);
+            return a.member.localeCompare(b.member);
         });
 
         let currentDate = startDate;
@@ -2425,4 +2463,115 @@ function highlightNewSchedules(scheduleIds, duration = 5000) {
             renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
         }
     }, duration);
+}
+
+// ============================================
+// 未登録ドロップダウン ドラッグ&ドロップ
+// ============================================
+
+/**
+ * 未スケジュールドロップダウンのドラッグ&ドロップ初期化
+ * @param {HTMLElement} dropdown - ドロップダウン要素
+ */
+function initUnscheduledDragAndDrop(dropdown) {
+    const listItems = dropdown.querySelectorAll('.unscheduled-dropdown-item');
+    if (listItems.length <= 1) return;
+
+    listItems.forEach(item => {
+        const handle = item.querySelector('.unscheduled-drag-handle');
+        if (!handle) return;
+
+        const startHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+            startUnscheduledDrag(item, dropdown, clientY);
+        };
+
+        handle.addEventListener('mousedown', startHandler);
+        handle.addEventListener('touchstart', startHandler, { passive: false });
+    });
+}
+
+function startUnscheduledDrag(dragItem, dropdown, startY) {
+    const list = dropdown.querySelector('.unscheduled-dropdown-list');
+    if (!list) return;
+
+    const items = Array.from(list.querySelectorAll('.unscheduled-dropdown-item'));
+    const sourceIndex = items.indexOf(dragItem);
+    if (sourceIndex < 0) return;
+
+    dragItem.classList.add('dragging');
+    let lastHoverIndex = sourceIndex;
+
+    const onMove = (e) => {
+        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+        if (clientY == null) return;
+
+        let hoverIndex = -1;
+        for (let i = 0; i < items.length; i++) {
+            const rect = items[i].getBoundingClientRect();
+            const mid = (rect.top + rect.bottom) / 2;
+            if (clientY < mid) {
+                hoverIndex = i;
+                break;
+            }
+        }
+        if (hoverIndex < 0) hoverIndex = items.length - 1;
+
+        if (hoverIndex !== lastHoverIndex) {
+            items.forEach(it => it.classList.remove('drop-above', 'drop-below'));
+            if (hoverIndex !== sourceIndex) {
+                if (hoverIndex < sourceIndex) {
+                    items[hoverIndex].classList.add('drop-above');
+                } else {
+                    items[hoverIndex].classList.add('drop-below');
+                }
+            }
+            lastHoverIndex = hoverIndex;
+        }
+    };
+
+    const onEnd = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+
+        items.forEach(it => it.classList.remove('dragging', 'drop-above', 'drop-below'));
+
+        if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
+            // 並び替え実行：着手順を更新
+            const sortKeys = items.map(it => it.dataset.sortKey);
+            const movedKey = sortKeys.splice(sourceIndex, 1)[0];
+            sortKeys.splice(lastHoverIndex, 0, movedKey);
+
+            // 版数ごとにgroupしてupdateTaskSortOrder
+            const versionTasks = new Map();
+            sortKeys.forEach(key => {
+                const slashIdx = key.indexOf('/');
+                const version = key.substring(0, slashIdx);
+                const task = key.substring(slashIdx + 1);
+                if (!versionTasks.has(version)) {
+                    versionTasks.set(version, []);
+                }
+                versionTasks.get(version).push(task);
+            });
+
+            versionTasks.forEach((tasks, version) => {
+                updateTaskSortOrder(version, tasks);
+            });
+
+            // ドロップダウンを再描画
+            toggleUnscheduledDropdown();
+            // バッジを再クリックしたことにして再表示
+            const dd = document.getElementById('unscheduledDropdown');
+            if (dd) dd.style.display = 'block';
+        }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
 }

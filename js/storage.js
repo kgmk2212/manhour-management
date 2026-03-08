@@ -27,6 +27,7 @@ import {
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap,
+    taskSortOrder, setTaskSortOrder,
     setWorkDetailStyle, setModalDesignStyle
 } from './state.js';
 
@@ -109,6 +110,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_schedules', JSON.stringify(schedules));
     localStorage.setItem('manhour_scheduleSettings', JSON.stringify(scheduleSettings));
     localStorage.setItem('manhour_taskColorMap', JSON.stringify(taskColorMap));
+    localStorage.setItem('manhour_taskSortOrder', JSON.stringify(taskSortOrder));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
     localStorage.setItem('manhour_estimateStandardDisplay', data.settings.estimateStandardDisplay);
 
@@ -173,6 +175,11 @@ export function loadData() {
             } else {
                 setTaskColorMap(parsed);
             }
+        }
+        // タスク着手順の読み込み
+        const savedTaskSortOrder = localStorage.getItem('manhour_taskSortOrder');
+        if (savedTaskSortOrder) {
+            setTaskSortOrder(JSON.parse(savedTaskSortOrder));
         }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);

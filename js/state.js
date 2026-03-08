@@ -497,6 +497,9 @@ export let scheduleSettings = {
 // タスク色マッピング（タスク名 → 色）
 export let taskColorMap = {};
 
+// タスク着手順（"版数/対応名" → 数値）
+export let taskSortOrder = {};
+
 // スケジュール関連Setter
 export function setSchedules(value) {
     schedules = value;
@@ -512,6 +515,10 @@ export function setScheduleSettings(value) {
 
 export function setTaskColorMap(value) {
     taskColorMap = value;
+}
+
+export function setTaskSortOrder(value) {
+    taskSortOrder = value;
 }
 
 // フィルタ状態Setter
