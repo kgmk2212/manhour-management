@@ -2617,26 +2617,21 @@ function startUnscheduledDrag(dragItem, dropdown, startY) {
             sortKeys.splice(finalPos, 0, movedKey);
             console.log('[DnD] → after reorder (finalPos=' + finalPos + '):', sortKeys.map(k => k.split('/')[1]));
 
-            // 版数ごとにgroupしてupdateTaskSortOrder
-            const versionTasks = new Map();
-            sortKeys.forEach(key => {
-                const slashIdx = key.indexOf('/');
-                const version = key.substring(0, slashIdx);
-                const task = key.substring(slashIdx + 1);
-                if (!versionTasks.has(version)) {
-                    versionTasks.set(version, []);
-                }
-                versionTasks.get(version).push(task);
+            // 版数をまたいでも正しい順序を保持するため、グローバルにインデックスを設定
+            sortKeys.forEach((key, index) => {
+                taskSortOrder[key] = index;
             });
-
-            versionTasks.forEach((tasks, version) => {
-                updateTaskSortOrder(version, tasks);
-            });
+            setTaskSortOrder({ ...taskSortOrder });
+            if (typeof window.saveData === 'function') window.saveData();
 
             // ドロップダウンを再描画（toggleではなく専用描画関数を使用）
             console.log('[DnD] → calling renderUnscheduledDropdown');
             renderUnscheduledDropdown();
-            console.log('[DnD] → render complete');
+
+            // 描画結果の検証ログ
+            const renderedItems = dropdown.querySelectorAll('.unscheduled-dropdown-item');
+            const renderedOrder = Array.from(renderedItems).map(it => it.querySelector('.unscheduled-task-name')?.textContent);
+            console.log('[DnD] → rendered order:', renderedOrder);
         } else {
             console.log('[DnD] → no-op, skipping reorder');
         }
