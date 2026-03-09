@@ -120,6 +120,38 @@ export function revertToAction(targetId) {
 }
 
 // ============================================
+// 指定アクションまで連続Redo
+// ============================================
+
+export function redoToAction(targetId) {
+    let found = false;
+    for (let i = 0; i < redoStack.length; i++) {
+        if (redoStack[i].id === targetId) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) return;
+
+    // redoStack末尾（最近のundo）から targetId まで全てやり直す
+    let count = 0;
+    while (redoStack.length > 0) {
+        const action = redoStack.pop();
+        undoStack.push(action);
+        applyRedo(action);
+        count++;
+        if (action.id === targetId) break;
+    }
+
+    if (count === 0) return;
+
+    saveHistory();
+    fullRefreshUI();
+    renderHistoryList();
+    Utils.showAlert(`${count}件の変更をやり直しました`, true);
+}
+
+// ============================================
 // Undo/Redo の逆操作ロジック
 // ============================================
 
@@ -619,16 +651,21 @@ function renderHistoryList() {
 
     let html = '';
 
-    // Redo items (undone actions, shown at top, dimmed)
-    redoItems.forEach(item => {
+    // Redo items (undone actions, shown at top, dimmed, with redo buttons)
+    redoItems.forEach((item, index) => {
         const { svg, cls } = getIconInfo(item.type);
         const time = formatTime(item.timestamp);
+        const isLatestRedo = index === redoItems.length - 1;
         html += `<div class="history-item history-item-undone">
             <span class="history-icon ${cls}">${svg}</span>
             <div class="history-info">
                 <div class="history-desc">${Utils.escapeHtml(item.description || item.type)}</div>
                 <div class="history-time">${time}（取り消し済み）</div>
             </div>
+            ${isLatestRedo
+                ? `<button class="history-revert-btn history-redo-btn" onclick="window.historyRedo()">やり直す</button>`
+                : `<button class="history-revert-btn history-redo-btn" onclick="window.redoToAction(${JSON.stringify(item.id)})">ここまで進める</button>`
+            }
         </div>`;
     });
 

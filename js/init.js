@@ -385,6 +385,7 @@ window.historyRedo = History.redo;
 window.openHistoryModal = History.openHistoryModal;
 window.closeHistoryModal = History.closeHistoryModal;
 window.revertToAction = History.revertToAction;
+window.redoToAction = History.redoToAction;
 
 // スケジュール用のヘルパー関数（history.js から参照）
 window.updateScheduleFn = Schedule.updateSchedule;

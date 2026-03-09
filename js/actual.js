@@ -1167,7 +1167,9 @@ export function saveActualEdit() {
     const remainingHoursInput = document.getElementById('editActualRemainingHours');
     const remainingHours = remainingHoursInput.value !== '' ? parseFloat(remainingHoursInput.value) : null;
 
-    if (!date || !task || !process || !member || !hours) {
+    // その他作業（version空）の場合、processは必須としない
+    const isOtherWorkEdit = !version;
+    if (!date || !task || (!isOtherWorkEdit && !process) || !member || !hours) {
         alert('すべての項目を入力してください');
         return;
     }

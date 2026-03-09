@@ -5041,7 +5041,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     background: var(--surface-elevated);
 }
 .history-item-undone {
-    opacity: 0.35;
+    opacity: 0.5;
     background: repeating-linear-gradient(
         -45deg,
         transparent,
@@ -5051,7 +5051,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     );
 }
 .history-item-undone:hover {
-    opacity: 0.5;
+    opacity: 0.7;
 }
 .history-item-latest {
     background: var(--accent-light);
@@ -5132,6 +5132,16 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: #fff;
     border-color: var(--accent);
     box-shadow: var(--shadow-sm);
+}
+.history-redo-btn {
+    color: var(--info);
+    border-color: var(--info);
+    background: var(--info-light);
+}
+.history-redo-btn:hover {
+    background: var(--info);
+    color: #fff;
+    border-color: var(--info);
 }
 .history-latest-badge {
     flex-shrink: 0;
