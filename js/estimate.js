@@ -1974,9 +1974,11 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         sourceIndex: sourceIndex
     };
 
-    // ドラッグ中のスタイル
+    // ドラッグ中のスタイル: ソース行を薄くし、先頭行をリフト
     const sourceRows = taskRowMap.get(taskName) || [];
     sourceRows.forEach(r => r.classList.add('dragging'));
+    // 先頭行にリフト（浮遊）効果
+    row.classList.add('drag-lifted');
 
     let lastHoverIndex = sourceIndex;
 
@@ -2004,9 +2006,9 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         if (hoverIndex < 0) hoverIndex = uniqueTasks.length - 1;
 
         if (hoverIndex !== lastHoverIndex) {
-            // ドロップインジケータをリセット
+            // 全インジケータをリセット
             allDragRows.forEach(r => {
-                r.classList.remove('drop-above', 'drop-below');
+                r.classList.remove('drop-above', 'drop-below', 'drop-gap-above', 'drop-gap-below');
             });
 
             if (hoverIndex !== sourceIndex) {
@@ -2014,9 +2016,15 @@ function startDrag(startEvent, row, table, version, taskKeys) {
                 const targetRows = taskRowMap.get(targetTask);
                 if (targetRows && targetRows.length > 0) {
                     if (hoverIndex < sourceIndex) {
+                        // 上方向: ターゲットの先頭行の上にインジケータ
                         targetRows[0].classList.add('drop-above');
+                        // ターゲット行を少し下にスライド（隙間感）
+                        targetRows.forEach(r => r.classList.add('drop-gap-below'));
                     } else {
+                        // 下方向: ターゲットの末尾行の下にインジケータ
                         targetRows[targetRows.length - 1].classList.add('drop-below');
+                        // ターゲット行を少し上にスライド（隙間感）
+                        targetRows.forEach(r => r.classList.add('drop-gap-above'));
                     }
                 }
             }
@@ -2032,7 +2040,7 @@ function startDrag(startEvent, row, table, version, taskKeys) {
 
         // スタイルをリセット（リフト・ロングプレスのクラスも含む）
         allDragRows.forEach(r => {
-            r.classList.remove('dragging', 'drop-above', 'drop-below', 'drag-lifted', 'long-press-active', 'drop-slide-down', 'drop-slide-up');
+            r.classList.remove('dragging', 'drop-above', 'drop-below', 'drag-lifted', 'long-press-active', 'drop-gap-above', 'drop-gap-below');
         });
 
         if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {

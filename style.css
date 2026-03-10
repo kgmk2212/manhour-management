@@ -5260,27 +5260,103 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: var(--theme-color, #1976d2);
 }
 
-/* ドラッグ中の行 */
+/* ドラッグ中のソース行（つかんでいる行） */
 tr.dragging,
 li.dragging {
-    opacity: 0.4;
+    opacity: 0.25;
+    transition: opacity 0.15s ease;
 }
 
-/* ドロップインジケータ */
+/* ドラッグ中の浮遊行（PC・モバイル共通） */
+tr.drag-lifted,
+tr.drag-lifted > td {
+    position: relative;
+    z-index: 100;
+}
+tr.drag-lifted > td {
+    background: var(--surface) !important;
+    box-shadow: 0 8px 24px rgba(26, 24, 20, 0.14), 0 2px 6px rgba(26, 24, 20, 0.06);
+}
+tr.drag-lifted {
+    transform: scale(1.02);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+tr.drag-lifted.dragging,
+tr.drag-lifted.dragging > td {
+    opacity: 1 !important;
+}
+
+/* ドロップインジケータ — アクセントカラーの太線 + 三角形 */
 tr.drop-above {
-    box-shadow: inset 0 2px 0 0 var(--theme-color, #1976d2);
+    position: relative;
+}
+tr.drop-above::before {
+    content: '';
+    position: absolute;
+    top: -1.5px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent, #2D5A27);
+    border-radius: 2px;
+    z-index: 50;
+}
+tr.drop-above::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -1px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 7px solid var(--accent, #2D5A27);
+    z-index: 51;
 }
 
 tr.drop-below {
-    box-shadow: inset 0 -2px 0 0 var(--theme-color, #1976d2);
+    position: relative;
+}
+tr.drop-below::before {
+    content: '';
+    position: absolute;
+    bottom: -1.5px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent, #2D5A27);
+    border-radius: 2px;
+    z-index: 50;
+}
+tr.drop-below::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: -1px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 7px solid var(--accent, #2D5A27);
+    z-index: 51;
+}
+
+/* ドロップターゲット行のスライド（隙間が開く感じ） */
+tr.drop-gap-below {
+    transform: translateY(3px);
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+tr.drop-gap-above {
+    transform: translateY(-3px);
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
 }
 
 li.drop-above {
-    box-shadow: inset 0 2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 3px 0 0 var(--accent, #2D5A27);
 }
 
 li.drop-below {
-    box-shadow: inset 0 -2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 -3px 0 0 var(--accent, #2D5A27);
 }
 
 /* 未登録ドロップダウンのドラッグハンドル（対応名の右、label外） */
@@ -5301,41 +5377,20 @@ li.drop-below {
         display: none;
     }
 
-    /* ロングプレス中の視覚フィードバック */
+    /* ロングプレス中の視覚フィードバック: 背景変化 + 微振動 */
     tr[data-drag-task].long-press-active > td {
         background: var(--accent-light) !important;
         transition: background 0.3s ease;
+        animation: long-press-pulse 0.3s ease-in-out;
     }
 
-    /* ドラッグ中の浮遊スタイル */
-    tr[data-drag-task].drag-lifted > td {
-        background: var(--surface) !important;
-        box-shadow: 0 8px 24px rgba(26, 24, 20, 0.15), 0 2px 6px rgba(26, 24, 20, 0.08);
-    }
-    tr[data-drag-task].drag-lifted {
-        position: relative;
-        z-index: 100;
-        transform: scale(1.02);
-        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    /* ドラッグ中のソース行（rowspan対応: 関連行すべて） */
-    tr.dragging > td {
-        opacity: 0.35 !important;
-        transition: opacity 0.15s ease;
-    }
-    tr.drag-lifted.dragging > td {
-        opacity: 1 !important;
-    }
-
-    /* ドロップインジケータ: スライドアニメーション */
-    tr[data-drag-task].drop-slide-down > td {
-        transform: translateY(4px);
-        transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
-    }
-    tr[data-drag-task].drop-slide-up > td {
-        transform: translateY(-4px);
-        transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+    @keyframes long-press-pulse {
+        0% { transform: translateX(0); }
+        20% { transform: translateX(-1.5px); }
+        40% { transform: translateX(1.5px); }
+        60% { transform: translateX(-1px); }
+        80% { transform: translateX(1px); }
+        100% { transform: translateX(0); }
     }
 }
 
