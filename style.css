@@ -5301,32 +5301,6 @@ li.drop-below {
         display: none;
     }
 
-    /* 対応名セル左端のグリップヒント（モバイルのみ） */
-    td[rowspan].drag-grip-hint,
-    tr[data-drag-task] td.drag-grip-hint {
-        position: relative;
-    }
-    td[rowspan].drag-grip-hint::before,
-    tr[data-drag-task] td.drag-grip-hint::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 20px;
-        background: repeating-linear-gradient(
-            to bottom,
-            var(--text-muted) 0px,
-            var(--text-muted) 2px,
-            transparent 2px,
-            transparent 5px
-        );
-        opacity: 0.25;
-        border-radius: 1px;
-        transition: opacity 0.2s ease;
-    }
-
     /* ロングプレス中の視覚フィードバック */
     tr[data-drag-task].long-press-active > td {
         background: var(--accent-light) !important;

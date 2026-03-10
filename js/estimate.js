@@ -2062,27 +2062,9 @@ function startDrag(startEvent, row, table, version, taskKeys) {
 // ============================================
 
 const LONG_PRESS_DURATION = 400; // ms
-const LONG_PRESS_GUIDE_KEY = 'manhour_longPressGuideShown';
 
 function initMobileLongPressDrag(table, version, taskKeys) {
     const rows = table.querySelectorAll('[data-drag-task]');
-
-    // 対応名セルにグリップヒントのクラスを付与
-    rows.forEach(row => {
-        // grouped表示: rowspanの対応名セル（drag-handle-cellの次のtd[rowspan]）
-        // matrix表示: drag-handle-cellの次のtd
-        const cells = row.querySelectorAll('td');
-        cells.forEach(cell => {
-            if (cell.classList.contains('drag-handle-cell')) return;
-            // rowspanがある対応名セル、またはmatrix表示の最初の非ハンドルセル
-            if (cell.hasAttribute('rowspan') || (cell.classList.contains('clickable-cell') && cell.style.fontWeight)) {
-                cell.classList.add('drag-grip-hint');
-            }
-        });
-    });
-
-    // 初回ガイドトースト
-    showLongPressGuideOnce();
 
     // 各タスクの先頭行にロングプレスイベントを設定
     const taskFirstRows = new Map();
@@ -2169,22 +2151,6 @@ function initMobileLongPressDrag(table, version, taskKeys) {
         row.addEventListener('touchend', onTouchEnd);
         row.addEventListener('touchcancel', onTouchEnd);
     });
-}
-
-function showLongPressGuideOnce() {
-    try {
-        if (localStorage.getItem(LONG_PRESS_GUIDE_KEY)) return;
-        localStorage.setItem(LONG_PRESS_GUIDE_KEY, '1');
-    } catch (e) {
-        return;
-    }
-
-    // schedule.jsのshowToast相当の簡易トースト
-    setTimeout(() => {
-        if (typeof window.showScheduleToast === 'function') {
-            window.showScheduleToast('長押しで対応の着手順を入れ替えできます', 'info');
-        }
-    }, 1000);
 }
 
 console.log('✅ モジュール estimate.js loaded');
