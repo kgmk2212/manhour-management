@@ -1999,44 +1999,56 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         const ghostTop = clientY + ghostOffsetY;
         positionGhost(ghost, ghostTop);
 
-        // ゴーストの中心位置でドロップ先を判定（体感と一致させる）
+        // ゴーストの中心位置でドロップ先を判定
         const ghostCenterY = ghostTop + ghostHeight / 2;
 
-        // ホバー中のタスクを検出
-        let hoverIndex = -1;
+        // ゴーストが重なっている行を検出し、上半分/下半分で挿入位置を決定
+        let overIndex = -1;
+        let insertAfter = false;
         for (let i = 0; i < uniqueTasks.length; i++) {
             const taskRows = taskRowMap.get(uniqueTasks[i]);
             if (!taskRows || taskRows.length === 0) continue;
-            const firstRow = taskRows[0];
-            const lastRow = taskRows[taskRows.length - 1];
-            const top = firstRow.getBoundingClientRect().top;
-            const bottom = lastRow.getBoundingClientRect().bottom;
-            const mid = (top + bottom) / 2;
-            if (ghostCenterY < mid) {
-                hoverIndex = i;
+            const top = taskRows[0].getBoundingClientRect().top;
+            const bottom = taskRows[taskRows.length - 1].getBoundingClientRect().bottom;
+            if (ghostCenterY <= bottom) {
+                overIndex = i;
+                const mid = (top + bottom) / 2;
+                insertAfter = ghostCenterY >= mid;
                 break;
             }
         }
-        if (hoverIndex < 0) hoverIndex = uniqueTasks.length - 1;
+        if (overIndex < 0) {
+            overIndex = uniqueTasks.length - 1;
+            insertAfter = true;
+        }
 
-        if (hoverIndex !== lastHoverIndex) {
+        // 挿入先インデックスを計算
+        // 上半分 → その行の前に挿入、下半分 → その行の後に挿入
+        let newIndex = insertAfter ? overIndex + 1 : overIndex;
+        // ソース行の除去による位置ずれを補正
+        if (newIndex > sourceIndex) newIndex--;
+        // 自分自身の位置なら移動なし
+        if (newIndex === sourceIndex) newIndex = -1;
+
+        if (newIndex !== lastHoverIndex) {
             // ドロップインジケータをリセット
             allDragRows.forEach(r => {
                 r.classList.remove('drop-above', 'drop-below');
             });
 
-            if (hoverIndex !== sourceIndex) {
-                const targetTask = uniqueTasks[hoverIndex];
+            if (newIndex >= 0) {
+                // インジケータ表示: 挿入位置の視覚的な線
+                const targetTask = uniqueTasks[insertAfter ? overIndex : overIndex];
                 const targetRows = taskRowMap.get(targetTask);
                 if (targetRows && targetRows.length > 0) {
-                    if (hoverIndex < sourceIndex) {
-                        targetRows[0].classList.add('drop-above');
-                    } else {
+                    if (insertAfter) {
                         targetRows[targetRows.length - 1].classList.add('drop-below');
+                    } else {
+                        targetRows[0].classList.add('drop-above');
                     }
                 }
             }
-            lastHoverIndex = hoverIndex;
+            lastHoverIndex = newIndex;
         }
     };
 
@@ -2054,10 +2066,11 @@ function startDrag(startEvent, row, table, version, taskKeys) {
             r.classList.remove('dragging', 'drop-above', 'drop-below', 'long-press-active');
         });
 
-        if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
+        if (lastHoverIndex >= 0) {
             if (navigator.vibrate) {
                 navigator.vibrate(30);
             }
+            // lastHoverIndex はソース除去後の挿入位置（補正済み）
             const newOrder = [...uniqueTasks];
             newOrder.splice(sourceIndex, 1);
             newOrder.splice(lastHoverIndex, 0, taskName);
