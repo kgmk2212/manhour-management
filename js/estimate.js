@@ -2003,6 +2003,10 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         const ghostCenterY = ghostTop + ghostHeight / 2;
 
         // ゴーストが重なっている行を検出し、上半分/下半分で挿入位置を決定
+        // 隣接行への入れ替えは閾値を緩くする（30%で発動）
+        const ADJACENT_THRESHOLD = 0.3; // 隣接行: 30%で判定
+        const DEFAULT_THRESHOLD = 0.5;  // 離れた行: 50%（中央）で判定
+
         let overIndex = -1;
         let insertAfter = false;
         for (let i = 0; i < uniqueTasks.length; i++) {
@@ -2012,8 +2016,10 @@ function startDrag(startEvent, row, table, version, taskKeys) {
             const bottom = taskRows[taskRows.length - 1].getBoundingClientRect().bottom;
             if (ghostCenterY <= bottom) {
                 overIndex = i;
-                const mid = (top + bottom) / 2;
-                insertAfter = ghostCenterY >= mid;
+                const isAdjacent = Math.abs(i - sourceIndex) === 1;
+                const threshold = isAdjacent ? ADJACENT_THRESHOLD : DEFAULT_THRESHOLD;
+                const splitPoint = top + (bottom - top) * threshold;
+                insertAfter = ghostCenterY >= splitPoint;
                 break;
             }
         }
