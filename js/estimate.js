@@ -1982,6 +1982,8 @@ function startDrag(startEvent, row, table, version, taskKeys) {
     const ghost = createDragGhost(sourceRows, table);
     const startY = startEvent.clientY ?? startEvent.touches?.[0]?.clientY ?? 0;
     const ghostStartY = sourceRows[0].getBoundingClientRect().top;
+    const lastSourceRow = sourceRows[sourceRows.length - 1];
+    const ghostHeight = lastSourceRow.getBoundingClientRect().bottom - ghostStartY;
     let ghostOffsetY = ghostStartY - startY;
     positionGhost(ghost, startY + ghostOffsetY);
 
@@ -1994,7 +1996,11 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         if (clientY == null) return;
 
         // ゴーストを追従
-        positionGhost(ghost, clientY + ghostOffsetY);
+        const ghostTop = clientY + ghostOffsetY;
+        positionGhost(ghost, ghostTop);
+
+        // ゴーストの中心位置でドロップ先を判定（体感と一致させる）
+        const ghostCenterY = ghostTop + ghostHeight / 2;
 
         // ホバー中のタスクを検出
         let hoverIndex = -1;
@@ -2006,7 +2012,7 @@ function startDrag(startEvent, row, table, version, taskKeys) {
             const top = firstRow.getBoundingClientRect().top;
             const bottom = lastRow.getBoundingClientRect().bottom;
             const mid = (top + bottom) / 2;
-            if (clientY < mid) {
+            if (ghostCenterY < mid) {
                 hoverIndex = i;
                 break;
             }
