@@ -1924,22 +1924,30 @@ let dragState = {
  */
 export function initEstimateDragAndDrop(table, version, taskKeys) {
     if (!table) return;
+    const isMobile = window.innerWidth <= 768;
     const rows = table.querySelectorAll('[data-drag-task]');
-    rows.forEach(row => {
-        const handle = row.querySelector('.drag-handle');
-        if (!handle) return;
 
-        handle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            startDrag(e, row, table, version, taskKeys);
+    if (isMobile) {
+        // モバイル: ロングプレスでドラッグ開始
+        initMobileLongPressDrag(table, version, taskKeys);
+    } else {
+        // PC: 従来のハンドルドラッグ
+        rows.forEach(row => {
+            const handle = row.querySelector('.drag-handle');
+            if (!handle) return;
+
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDrag(e, row, table, version, taskKeys);
+            });
+
+            handle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                startDrag(touch, row, table, version, taskKeys);
+            }, { passive: false });
         });
-
-        handle.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            startDrag(touch, row, table, version, taskKeys);
-        }, { passive: false });
-    });
+    }
 }
 
 function startDrag(startEvent, row, table, version, taskKeys) {
@@ -1973,6 +1981,8 @@ function startDrag(startEvent, row, table, version, taskKeys) {
     let lastHoverIndex = sourceIndex;
 
     const onMove = (e) => {
+        // ドラッグ中はスクロールを抑制
+        if (e.cancelable) e.preventDefault();
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
         if (clientY == null) return;
 
@@ -2020,12 +2030,16 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         document.removeEventListener('touchmove', onMove);
         document.removeEventListener('touchend', onEnd);
 
-        // スタイルをリセット
+        // スタイルをリセット（リフト・ロングプレスのクラスも含む）
         allDragRows.forEach(r => {
-            r.classList.remove('dragging', 'drop-above', 'drop-below');
+            r.classList.remove('dragging', 'drop-above', 'drop-below', 'drag-lifted', 'long-press-active', 'drop-slide-down', 'drop-slide-up');
         });
 
         if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
+            // ドロップ時のハプティクフィードバック
+            if (navigator.vibrate) {
+                navigator.vibrate(30);
+            }
             // 並び替え実行
             const newOrder = [...uniqueTasks];
             newOrder.splice(sourceIndex, 1);
@@ -2041,6 +2055,136 @@ function startDrag(startEvent, row, table, version, taskKeys) {
     document.addEventListener('mouseup', onEnd);
     document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', onEnd);
+}
+
+// ============================================
+// モバイル ロングプレス ドラッグ&ドロップ
+// ============================================
+
+const LONG_PRESS_DURATION = 400; // ms
+const LONG_PRESS_GUIDE_KEY = 'manhour_longPressGuideShown';
+
+function initMobileLongPressDrag(table, version, taskKeys) {
+    const rows = table.querySelectorAll('[data-drag-task]');
+
+    // 対応名セルにグリップヒントのクラスを付与
+    rows.forEach(row => {
+        // grouped表示: rowspanの対応名セル（drag-handle-cellの次のtd[rowspan]）
+        // matrix表示: drag-handle-cellの次のtd
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            if (cell.classList.contains('drag-handle-cell')) return;
+            // rowspanがある対応名セル、またはmatrix表示の最初の非ハンドルセル
+            if (cell.hasAttribute('rowspan') || (cell.classList.contains('clickable-cell') && cell.style.fontWeight)) {
+                cell.classList.add('drag-grip-hint');
+            }
+        });
+    });
+
+    // 初回ガイドトースト
+    showLongPressGuideOnce();
+
+    // 各タスクの先頭行にロングプレスイベントを設定
+    const taskFirstRows = new Map();
+    rows.forEach(row => {
+        const task = row.dataset.dragTask;
+        if (!taskFirstRows.has(task)) {
+            taskFirstRows.set(task, row);
+        }
+    });
+
+    taskFirstRows.forEach((row) => {
+        let pressTimer = null;
+        let startX = 0;
+        let startY = 0;
+        let cancelled = false;
+
+        const onTouchStart = (e) => {
+            // 入力要素やボタンでは発動しない
+            const target = e.target;
+            if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.tagName === 'SELECT' || target.tagName === 'A') {
+                return;
+            }
+
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            cancelled = false;
+
+            // ロングプレスのプログレス表示
+            row.classList.add('long-press-active');
+
+            pressTimer = setTimeout(() => {
+                if (cancelled) return;
+                row.classList.remove('long-press-active');
+
+                // ハプティクフィードバック
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+                // リフトアニメーション
+                row.classList.add('drag-lifted');
+                // 関連行（rowspan同一タスクの行）も取得
+                const allTaskRows = table.querySelectorAll(`[data-drag-task="${CSS.escape(row.dataset.dragTask)}"][data-drag-version="${CSS.escape(row.dataset.dragVersion)}"]`);
+                // rowspanを持たない関連行もリフト
+                const taskName = row.dataset.dragTask;
+                let sibling = row.nextElementSibling;
+                const relatedRows = [row];
+                while (sibling && !sibling.dataset.dragTask) {
+                    relatedRows.push(sibling);
+                    sibling = sibling.nextElementSibling;
+                }
+                // grouped表示: 同じタスクのrowspan以降の行もリフト
+                allTaskRows.forEach(r => {
+                    if (!relatedRows.includes(r)) relatedRows.push(r);
+                });
+
+                // ドラッグ開始（スクロール抑制はstartDragのonMoveで行う）
+                startDrag(touch, row, table, version, taskKeys);
+            }, LONG_PRESS_DURATION);
+        };
+
+        const onTouchMove = (e) => {
+            if (cancelled) return;
+            const touch = e.touches[0];
+            const dx = Math.abs(touch.clientX - startX);
+            const dy = Math.abs(touch.clientY - startY);
+            // 10px以上動いたらロングプレスキャンセル（スクロール意図）
+            if (dx > 10 || dy > 10) {
+                cancelled = true;
+                clearTimeout(pressTimer);
+                row.classList.remove('long-press-active');
+            }
+        };
+
+        const onTouchEnd = () => {
+            cancelled = true;
+            clearTimeout(pressTimer);
+            row.classList.remove('long-press-active');
+        };
+
+        row.addEventListener('touchstart', onTouchStart, { passive: true });
+        row.addEventListener('touchmove', onTouchMove, { passive: true });
+        row.addEventListener('touchend', onTouchEnd);
+        row.addEventListener('touchcancel', onTouchEnd);
+    });
+}
+
+function showLongPressGuideOnce() {
+    try {
+        if (localStorage.getItem(LONG_PRESS_GUIDE_KEY)) return;
+        localStorage.setItem(LONG_PRESS_GUIDE_KEY, '1');
+    } catch (e) {
+        return;
+    }
+
+    // schedule.jsのshowToast相当の簡易トースト
+    setTimeout(() => {
+        if (typeof window.showScheduleToast === 'function') {
+            window.showScheduleToast('長押しで対応の着手順を入れ替えできます', 'info');
+        }
+    }, 1000);
 }
 
 console.log('✅ モジュール estimate.js loaded');
