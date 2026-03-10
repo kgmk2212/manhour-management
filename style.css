@@ -5260,10 +5260,29 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: var(--theme-color, #1976d2);
 }
 
-/* ドラッグ中の行 */
+/* ドラッグ中の行（元の位置） */
 tr.dragging,
 li.dragging {
-    opacity: 0.4;
+    opacity: 0.3;
+}
+
+/* ドラッグ中のゴースト（追従する半透明コピー） */
+.drag-ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0.7;
+    box-shadow: 0 4px 16px rgba(26, 24, 20, 0.12);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    will-change: top;
+}
+.drag-ghost table {
+    margin: 0;
+    border-collapse: collapse;
+}
+.drag-ghost td {
+    background: var(--surface) !important;
 }
 
 /* ドロップインジケータ */

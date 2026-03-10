@@ -1974,9 +1974,16 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         sourceIndex: sourceIndex
     };
 
-    // ドラッグ中のスタイル
+    // ドラッグ中のスタイル: 元の行を薄くする
     const sourceRows = taskRowMap.get(taskName) || [];
     sourceRows.forEach(r => r.classList.add('dragging'));
+
+    // ゴースト要素を生成（つかんだ行のクローン、半透明で追従）
+    const ghost = createDragGhost(sourceRows, table);
+    const startY = startEvent.clientY ?? startEvent.touches?.[0]?.clientY ?? 0;
+    const ghostStartY = sourceRows[0].getBoundingClientRect().top;
+    let ghostOffsetY = ghostStartY - startY;
+    positionGhost(ghost, startY + ghostOffsetY);
 
     let lastHoverIndex = sourceIndex;
 
@@ -1985,6 +1992,9 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         if (e.cancelable) e.preventDefault();
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
         if (clientY == null) return;
+
+        // ゴーストを追従
+        positionGhost(ghost, clientY + ghostOffsetY);
 
         // ホバー中のタスクを検出
         let hoverIndex = -1;
@@ -2030,17 +2040,18 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         document.removeEventListener('touchmove', onMove);
         document.removeEventListener('touchend', onEnd);
 
-        // スタイルをリセット（リフト・ロングプレスのクラスも含む）
+        // ゴーストを除去
+        removeDragGhost(ghost);
+
+        // スタイルをリセット
         allDragRows.forEach(r => {
             r.classList.remove('dragging', 'drop-above', 'drop-below', 'long-press-active');
         });
 
         if (lastHoverIndex >= 0 && lastHoverIndex !== sourceIndex) {
-            // ドロップ時のハプティクフィードバック
             if (navigator.vibrate) {
                 navigator.vibrate(30);
             }
-            // 並び替え実行
             const newOrder = [...uniqueTasks];
             newOrder.splice(sourceIndex, 1);
             newOrder.splice(lastHoverIndex, 0, taskName);
@@ -2055,6 +2066,62 @@ function startDrag(startEvent, row, table, version, taskKeys) {
     document.addEventListener('mouseup', onEnd);
     document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', onEnd);
+}
+
+/**
+ * ドラッグ中のゴースト要素を生成
+ * ソース行のクローンをテーブルに包んで半透明で表示
+ */
+function createDragGhost(sourceRows, table) {
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost';
+
+    // テーブル構造を再現してクローン行を挿入
+    const ghostTable = document.createElement('table');
+    ghostTable.className = table.className;
+    const tbody = document.createElement('tbody');
+
+    // 各列の幅を元テーブルから取得
+    const firstRow = sourceRows[0];
+    const colWidths = [];
+    firstRow.querySelectorAll('td').forEach(td => {
+        colWidths.push(td.getBoundingClientRect().width);
+    });
+
+    sourceRows.forEach(r => {
+        const clone = r.cloneNode(true);
+        clone.classList.remove('dragging');
+        // 各セルに元の幅を固定
+        clone.querySelectorAll('td').forEach((td, i) => {
+            if (colWidths[i]) {
+                td.style.width = colWidths[i] + 'px';
+                td.style.minWidth = colWidths[i] + 'px';
+                td.style.maxWidth = colWidths[i] + 'px';
+            }
+        });
+        tbody.appendChild(clone);
+    });
+
+    ghostTable.appendChild(tbody);
+    ghost.appendChild(ghostTable);
+
+    // テーブル幅を元と同じに
+    const tableRect = table.getBoundingClientRect();
+    ghost.style.width = tableRect.width + 'px';
+    ghost.style.left = tableRect.left + 'px';
+
+    document.body.appendChild(ghost);
+    return ghost;
+}
+
+function positionGhost(ghost, y) {
+    ghost.style.top = y + 'px';
+}
+
+function removeDragGhost(ghost) {
+    if (ghost && ghost.parentNode) {
+        ghost.parentNode.removeChild(ghost);
+    }
 }
 
 // ============================================
