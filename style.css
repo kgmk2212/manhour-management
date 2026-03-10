@@ -5214,40 +5214,24 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
    ドラッグ&ドロップ（着手順）
    ============================================ */
 
-/* ドラッグハンドル列ヘッダー */
-.drag-handle-th {
-    width: 28px;
-    min-width: 28px !important;
-    max-width: 28px;
-    padding: 0 !important;
-}
-
-/* ドラッグハンドルセル */
-.drag-handle-cell {
-    width: 28px;
-    min-width: 28px;
-    max-width: 28px;
-    padding: 0 4px !important;
-    vertical-align: top;
-    padding-top: 10px !important;
-    text-align: center;
-}
-
-/* ドラッグハンドルアイコン */
+/* ドラッグハンドルアイコン（対応名セル内インライン配置） */
 .drag-handle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     cursor: grab;
     color: var(--text-tertiary, #aaa);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1;
     border-radius: var(--radius-xs, 4px);
     transition: color 0.15s, background 0.15s;
     user-select: none;
     -webkit-user-select: none;
+    margin-right: 4px;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .drag-handle:hover {
@@ -5313,10 +5297,9 @@ li.drop-below {
     margin-top: 2px;
 }
 
-/* モバイル対応: ハンドル列を非表示にし、ロングプレスで並べ替え */
+/* モバイル対応: ハンドルを非表示にし、ロングプレスで並べ替え */
 @media (max-width: 768px) {
-    .drag-handle-th,
-    .drag-handle-cell {
+    .drag-handle {
         display: none;
     }
 
@@ -5324,15 +5307,5 @@ li.drop-below {
     tr[data-drag-task].long-press-active > td {
         background: var(--accent-light) !important;
         transition: background 0.3s ease;
-    }
-}
-
-/* PC用: ドラッグハンドルサイズ維持 */
-@media (min-width: 769px) {
-    .drag-handle-th,
-    .drag-handle-cell {
-        width: 28px;
-        min-width: 28px;
-        max-width: 28px;
     }
 }

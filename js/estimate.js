@@ -786,9 +786,9 @@ export function renderEstimateGrouped() {
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
-            html += '<tr><th class="drag-handle-th"></th><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         } else {
-            html += '<tr><th class="drag-handle-th"></th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         }
 
         // タスクを着手順でソート
@@ -871,10 +871,6 @@ export function renderEstimateGrouped() {
 
                 html += `<tr${index === 0 ? ` data-drag-task="${escapeHtml(taskGroup.task)}" data-drag-version="${escapeHtml(version)}"` : ''}>`;
 
-                if (index === 0) {
-                    html += `<td rowspan="${sortedProcesses.length}" class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
-                }
-
                 if (workMonthSelectionMode) {
                     if (index === 0) {
                         html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: center; cursor: pointer;" onclick="selectTaskEstimates('${escapeForHandler(version)}', '${escapeForHandler(taskGroup.task)}', event)">
@@ -884,7 +880,7 @@ export function renderEstimateGrouped() {
                 }
 
                 if (index === 0) {
-                    html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
+                    html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span>${taskDisplayHtml}</td>`;
                 }
 
                 if (workMonthSelectionMode) {
@@ -922,7 +918,6 @@ export function renderEstimateGrouped() {
 
         const versionLabel = escapeHtml(version) || 'その他工数';
         html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
-        html += `<td></td>`; // ドラッグハンドル列
         if (workMonthSelectionMode) {
             html += `<td></td>`;
         }
@@ -1070,7 +1065,7 @@ export function renderEstimateMatrix() {
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
-        html += '<tr><th class="drag-handle-th"></th><th style="min-width: 200px;">対応名</th>';
+        html += '<tr><th style="min-width: 200px;">対応名</th>';
         processOrder.forEach(proc => {
             html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
         });
@@ -1092,11 +1087,10 @@ export function renderEstimateMatrix() {
             const escapedTsk = escapeForHandler(group.task);
 
             html += `<tr data-drag-task="${escapeHtml(group.task)}" data-drag-version="${escapeHtml(version)}">`;
-            html += `<td class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
             html += `<td class="clickable-cell" style="font-weight: 600; cursor: pointer;"
                 onclick="showTaskDetail('${escapedVer}', '${escapedTsk}')"
                 onmouseover="this.style.color='var(--theme-color, #1976d2)'"
-                onmouseout="this.style.color=''">${taskDisplayHtml}</td>`;
+                onmouseout="this.style.color=''"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span>${taskDisplayHtml}</td>`;
 
             let total = 0;
             processOrder.forEach(proc => {
