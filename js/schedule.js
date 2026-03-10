@@ -14,6 +14,7 @@ import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
+import { calculateVersionProgress } from './report.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -169,6 +170,24 @@ export function renderScheduleView() {
                 const dayOffset = Math.floor(scrollEl.scrollLeft / SCHEDULE.CANVAS.DAY_WIDTH);
                 savedScrollDate = new Date(prevRenderer.rangeStart);
                 savedScrollDate.setDate(savedScrollDate.getDate() + dayOffset);
+            }
+
+            // 完了済み版数を計算（フィルタ未適用時のみグレーアウト）
+            const completedVersions = new Set();
+            if (!scheduleSettings.filterVersion) {
+                const allVersions = [...new Set(schedules.map(s => s.version))];
+                allVersions.forEach(version => {
+                    const progress = calculateVersionProgress(version);
+                    if (progress.totalTasks > 0 && progress.completedTasks === progress.totalTasks) {
+                        completedVersions.add(version);
+                    }
+                });
+            }
+
+            // 完了版数をレンダラーに設定してから描画
+            const preRenderer = getRenderer();
+            if (preRenderer) {
+                preRenderer.completedVersions = completedVersions;
             }
 
             renderGanttChart(year, month, filteredSchedules);

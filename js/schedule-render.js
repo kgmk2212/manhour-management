@@ -140,6 +140,7 @@ export class GanttChartRenderer {
         this.newlyCreatedTimer = null;
         this.customLabelWidths = this.loadCustomLabelWidths();
         this.resizeHandle = null;
+        this.completedVersions = new Set();  // 完了済み版数（グレーアウト対象）
     }
 
     /**
@@ -901,6 +902,17 @@ export class GanttChartRenderer {
                 }
             }
 
+            // 完了版数の行かどうかを判定（行全体のグレーアウト用）
+            const isCompletedRow = this.completedVersions.size > 0 &&
+                row.schedules.length > 0 &&
+                row.schedules.every(s => this.completedVersions.has(s.version));
+
+            // 完了済み版数の行は背景をさらに淡くする
+            if (isCompletedRow) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+                ctx.fillRect(0, y, this.timelineWidth, ROW_HEIGHT);
+            }
+
             // スケジュールバーを描画（開始日昇順＝後のバーが手前に重なる）
             const sorted = [...row.schedules].sort((a, b) =>
                 new Date(a.startDate) - new Date(b.startDate)
@@ -944,28 +956,43 @@ export class GanttChartRenderer {
 
             const centerY = y + ROW_HEIGHT / 2;
 
+            // 完了済み版数の行かどうか判定
+            const isCompletedRow = this.completedVersions.size > 0 &&
+                row.schedules.length > 0 &&
+                row.schedules.every(s => this.completedVersions.has(s.version));
+
             // メンバードット（色付き丸）
             if (row.color || row.type === 'member') {
                 const dotColor = row.color || this.getMemberDotColor(row.label, index);
-                ctx.fillStyle = dotColor;
+                ctx.fillStyle = isCompletedRow ? TEXT_MUTED : dotColor;
+                if (isCompletedRow) ctx.globalAlpha = 0.5;
                 ctx.beginPath();
                 ctx.arc(dotLeftPad + dotSize / 2, centerY, dotSize / 2, 0, Math.PI * 2);
                 ctx.fill();
+                if (isCompletedRow) ctx.globalAlpha = 1.0;
             }
 
-            // ラベルテキスト（--text-primary, 600 weight）
-            ctx.fillStyle = TEXT_PRIMARY;
-            ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+            // ラベルテキスト
+            ctx.fillStyle = isCompletedRow ? TEXT_MUTED : TEXT_PRIMARY;
+            ctx.font = isCompletedRow
+                ? '400 13px system-ui, -apple-system, sans-serif'
+                : '600 13px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
 
             const labelStartX = (row.color || row.type === 'member') ? textLeftPad : dotLeftPad;
             const maxLabelWidth = this.labelWidth - labelStartX - 8;
             let labelText = row.label;
+
+            // 完了版数の行は先頭に ✓ を付与
+            if (isCompletedRow) {
+                labelText = '✓ ' + labelText;
+            }
+
             while (ctx.measureText(labelText).width > maxLabelWidth && labelText.length > 0) {
                 labelText = labelText.slice(0, -1);
             }
-            if (labelText !== row.label) {
+            if (labelText !== row.label && labelText !== '✓ ' + row.label) {
                 labelText += '…';
             }
 
@@ -1005,9 +1032,20 @@ export class GanttChartRenderer {
         const barWidth = barEndX - barX;
         const barY = rowY + ROW_PADDING;
 
+        // 完了版数かどうか
+        const isCompletedVersion = this.completedVersions.has(schedule.version);
+
         // タスクの色を取得
-        const taskColor = getTaskColor(schedule.version, schedule.task);
+        const taskColor = isCompletedVersion
+            ? this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.7)
+            : getTaskColor(schedule.version, schedule.task);
         const lightColor = this.lightenColor(taskColor, 0.6);
+
+        // 完了版数はアルファを下げる
+        if (isCompletedVersion) {
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+        }
 
         // 行インデックス（ゼブラストライプ・背景色判定用）
         const rowIndex = Math.round((rowY - HEADER_HEIGHT) / ROW_HEIGHT);
@@ -1173,6 +1211,11 @@ export class GanttChartRenderer {
             }
         }
 
+        // 完了版数のアルファを復元
+        if (isCompletedVersion) {
+            ctx.restore();
+        }
+
         // クリック判定用矩形
         this.scheduleRects.push({
             schedule,
@@ -1286,6 +1329,22 @@ export class GanttChartRenderer {
         const newR = Math.round(r + (255 - r) * factor);
         const newG = Math.round(g + (255 - g) * factor);
         const newB = Math.round(b + (255 - b) * factor);
+        return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+    }
+
+    /**
+     * 色を彩度を下げてグレー寄りにする
+     * @param {string} hex - ヘックスカラー
+     * @param {number} amount - 彩度低下量（0=変化なし, 1=完全グレー）
+     */
+    desaturateColor(hex, amount) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const gray = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+        const newR = Math.round(r + (gray - r) * amount);
+        const newG = Math.round(g + (gray - g) * amount);
+        const newB = Math.round(b + (gray - b) * amount);
         return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
     }
 
