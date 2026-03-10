@@ -1378,6 +1378,14 @@ table td[rowspan] {
     color: #fff;
 }
 
+/* Theme-bg stat cards (progress summary) */
+.stat-card.theme-bg h3,
+.stat-card.theme-bg .value,
+.stat-card.theme-bg div,
+.stat-card.theme-bg span {
+    color: #fff !important;
+}
+
 .stat-card.warning .stat-value {
     color: var(--accent-secondary);
 }
