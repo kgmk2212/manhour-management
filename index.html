@@ -1828,14 +1828,23 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>担当</label>
-                    <select id="editEstimateMember">
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>見積工数</label>
-                    <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="8">
-                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+                    <label>担当・工数</label>
+                    <div class="edit-est-members-wrap">
+                        <div class="edit-est-member-row edit-est-member-primary" id="editEstPrimaryRow">
+                            <select id="editEstimateMember"></select>
+                            <div class="edit-est-hours-input">
+                                <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="h">
+                                <span class="edit-est-hours-unit">h</span>
+                            </div>
+                            <div class="edit-est-row-action"></div>
+                        </div>
+                        <div id="editEstExtraMembers"></div>
+                        <button type="button" class="edit-est-add-member-btn" id="btnAddEditEstMember">
+                            <span class="edit-est-add-icon">+</span>
+                            <span>担当者を追加</span>
+                        </button>
+                    </div>
+                    <small style="color: var(--text-muted); display: block; margin-top: 6px;">
                         複数月に分割している場合、総工数が表示されます
                     </small>
                 </div>

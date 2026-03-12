@@ -54,7 +54,8 @@ import {
     updateEditMonthPreview,
     toggleEditWorkMonthMode,
     closeEditTaskModal,
-    saveTaskEdit
+    saveTaskEdit,
+    addEditEstimateMemberRow
 } from './estimate-edit.js';
 import { openAddEstimateModal } from './estimate-add.js';
 import { toggleWorkMonthSelectionMode, executeWorkMonthAssignment, cancelWorkMonthSelection } from './estimate-selection.js';
@@ -646,6 +647,9 @@ export function initEventHandlers() {
 
     const btnSaveEstimateEdit = document.getElementById('btnSaveEstimateEdit');
     if (btnSaveEstimateEdit) btnSaveEstimateEdit.addEventListener('click', saveEstimateEdit);
+
+    const btnAddEditEstMember = document.getElementById('btnAddEditEstMember');
+    if (btnAddEditEstMember) btnAddEditEstMember.addEventListener('click', addEditEstimateMemberRow);
 
     const editEstimateVersion = document.getElementById('editEstimateVersion');
     if (editEstimateVersion) editEstimateVersion.addEventListener('change', () => handleVersionChange('editEstimateVersion'));

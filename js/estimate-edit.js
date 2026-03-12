@@ -93,6 +93,12 @@ export function editEstimate(id) {
 
     memberSelect.value = estimate.member;
 
+    // 追加担当者行をクリア
+    clearEditExtraMembers();
+
+    // memberOptionsのHTMLを保持（追加行で再利用）
+    window._editEstMemberOptionsHTML = memberSelect.innerHTML;
+
     const workMonthSelect = document.getElementById('editEstimateWorkMonth');
     workMonthSelect.innerHTML = '<option value="">-- 作業月を選択 --</option>';
 
@@ -310,6 +316,47 @@ export function saveEstimateEdit() {
         data: { before: oldEstimate, after: { ...estimates[estimateIndex] } }
     });
 
+    // 追加担当者行を新規見積レコードとして作成
+    const extraMembers = collectEditExtraMembers();
+    const newEstimates = [];
+    extraMembers.forEach((entry, i) => {
+        const newEst = {
+            id: Date.now() + i + Math.random(),
+            version: version,
+            task: task,
+            process: process,
+            member: entry.member,
+            hours: entry.hours,
+            workMonth: workMonth,
+            workMonths: workMonths.length > 0 ? [...workMonths] : [],
+            monthlyHours: { ...monthlyHours }
+        };
+        // 複数月分割の場合、追加担当者の工数比で按分
+        if (workMonths.length > 1 && Object.keys(monthlyHours).length > 0) {
+            const ratio = entry.hours / hours;
+            const adjustedMonthlyHours = {};
+            workMonths.forEach(m => {
+                adjustedMonthlyHours[m] = Math.round((monthlyHours[m] || 0) * ratio * 10) / 10;
+            });
+            newEst.monthlyHours = adjustedMonthlyHours;
+        } else if (workMonth) {
+            newEst.monthlyHours = { [workMonth]: entry.hours };
+        }
+        estimates.push(newEst);
+        newEstimates.push(newEst);
+
+        // 見込み残存を設定
+        saveRemainingEstimate(version, task, process, entry.member, entry.hours);
+    });
+
+    if (newEstimates.length > 0) {
+        pushAction({
+            type: 'estimate_add_batch',
+            description: `見積追加(編集時): ${task} (${process || 'その他'}) × ${newEstimates.length}件`,
+            data: { added: newEstimates.map(e => ({ ...e })) }
+        });
+    }
+
     if (!relatedSchedule) {
         if (typeof window.saveData === 'function') window.saveData();
     }
@@ -327,7 +374,11 @@ export function saveEstimateEdit() {
     if (remainingAdjusted) {
         showToast(`見込み残存時間を ${oldRemainingHours}h → ${newRemainingHours}h に調整しました`, 'info', 5000);
     }
-    showAlert('見積データを更新しました', true);
+
+    const mainMsg = newEstimates.length > 0
+        ? `見積データを更新しました（+ ${newEstimates.length}件の担当者を追加）`
+        : '見積データを更新しました';
+    showAlert(mainMsg, true);
 }
 
 /**
@@ -472,6 +523,72 @@ export function updateEditManualTotal() {
             totalDiv.innerHTML += ` <span style="color: #f39c12;">(${diff.toFixed(1)}h 不足)</span>`;
         }
     }
+}
+
+// ============================================
+// 編集モーダル 担当者追加
+// ============================================
+
+/**
+ * 編集モーダルに追加担当者行を追加
+ */
+export function addEditEstimateMemberRow() {
+    const container = document.getElementById('editEstExtraMembers');
+    if (!container) return;
+
+    const idx = container.children.length;
+    const row = document.createElement('div');
+    row.className = 'edit-est-member-row edit-est-member-extra';
+    row.dataset.extraIndex = idx;
+
+    const memberOptions = window._editEstMemberOptionsHTML || '';
+    row.innerHTML = `
+        <select class="edit-est-extra-member">${memberOptions}</select>
+        <div class="edit-est-hours-input">
+            <input type="number" class="edit-est-extra-hours" step="0.5" min="0" placeholder="h">
+            <span class="edit-est-hours-unit">h</span>
+        </div>
+        <div class="edit-est-row-action">
+            <button type="button" class="edit-est-remove-btn" onclick="removeEditEstimateMemberRow(this)" title="この行を削除">&times;</button>
+        </div>
+    `;
+
+    container.appendChild(row);
+}
+
+/**
+ * 追加担当者行を削除
+ */
+export function removeEditEstimateMemberRow(btn) {
+    const row = btn.closest('.edit-est-member-extra');
+    if (row) row.remove();
+}
+
+/**
+ * 追加担当者行をすべてクリア
+ */
+export function clearEditExtraMembers() {
+    const container = document.getElementById('editEstExtraMembers');
+    if (container) container.innerHTML = '';
+}
+
+/**
+ * 追加担当者行のデータを収集
+ * @returns {Array<{member: string, hours: number}>}
+ */
+function collectEditExtraMembers() {
+    const container = document.getElementById('editEstExtraMembers');
+    if (!container) return [];
+
+    const entries = [];
+    container.querySelectorAll('.edit-est-member-extra').forEach(row => {
+        const member = row.querySelector('.edit-est-extra-member')?.value;
+        const hours = parseFloat(row.querySelector('.edit-est-extra-hours')?.value) || 0;
+        if (member && hours > 0) {
+            entries.push({ member, hours });
+        }
+    });
+    return entries;
 }
 
 // ============================================

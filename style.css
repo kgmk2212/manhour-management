@@ -1171,6 +1171,123 @@ tr.est-extra-member-row td:first-child {
     background: var(--danger-light);
 }
 
+/* Edit modal - member rows */
+.edit-est-members-wrap {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.edit-est-member-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.edit-est-member-row select {
+    flex: 1;
+    margin: 0;
+    min-width: 0;
+}
+
+.edit-est-hours-input {
+    position: relative;
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.edit-est-hours-input input {
+    width: 100%;
+    margin: 0;
+    padding-right: 24px;
+}
+
+.edit-est-hours-unit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.edit-est-row-action {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-est-member-extra {
+    padding-left: 16px;
+    border-left: 2px solid var(--border-light);
+    margin-left: 4px;
+    animation: editEstFadeIn 0.2s ease;
+}
+
+@keyframes editEstFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.edit-est-remove-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    padding: 0;
+}
+
+.edit-est-remove-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-light);
+}
+
+.edit-est-add-member-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1.5px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all var(--transition);
+    align-self: flex-start;
+}
+
+.edit-est-add-member-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.edit-est-add-icon {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
 /* Report matrix */
 table.estimate-matrix.report-matrix {
     min-width: 0;
