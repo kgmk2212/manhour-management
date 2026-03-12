@@ -250,11 +250,11 @@ export function saveEstimateEdit() {
         );
     }
 
+    // タスク工程レベルで残存を取得
     const existingRemaining = remainingEstimates.find(r =>
         r.version === version &&
         r.task === task &&
-        r.process === process &&
-        r.member === member
+        r.process === process
     );
 
     let remainingAdjusted = false;
@@ -262,13 +262,16 @@ export function saveEstimateEdit() {
     let newRemainingHours = null;
 
     if (!existingRemaining) {
-        // 見込み残存が未設定 → 新しい見積時間で作成
-        saveRemainingEstimate(version, task, process, member, hours);
+        // 見込み残存が未設定 → タスク工程レベルの見積合計で作成
+        const totalEstHours = estimates
+            .filter(e => e.version === version && e.task === task && e.process === process)
+            .reduce((sum, e) => sum + e.hours, 0);
+        saveRemainingEstimate(version, task, process, member, totalEstHours);
     } else if (oldEstimate.hours && oldEstimate.hours !== hours) {
-        // 見積時間が変更された → 比率を保持して調整
+        // 見積時間が変更された → タスク工程レベルの残存を差分調整
         oldRemainingHours = existingRemaining.remainingHours;
-        const ratio = oldRemainingHours / oldEstimate.hours;
-        newRemainingHours = Math.round(hours * ratio * 10) / 10;
+        const hoursDiff = hours - oldEstimate.hours;
+        newRemainingHours = Math.max(0, Math.round((oldRemainingHours + hoursDiff) * 10) / 10);
         saveRemainingEstimate(version, task, process, member, newRemainingHours);
         remainingAdjusted = true;
     }

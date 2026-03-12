@@ -164,24 +164,22 @@ export function calculateDefaultWorkMonths(startMonth, endMonth) {
 // ============================================
 
 /**
- * 見込残存時間を保存/更新する関数
- */
-/**
- * 見込残存時間を保存/更新
- * 同一バージョン・対応・工程・担当者のレコードがあれば更新、なければ新規作成
+ * 見込残存時間を保存/更新（タスク工程レベル）
+ * 同一バージョン・対応・工程のレコードがあれば更新、なければ新規作成
+ * memberパラメータは後方互換性のために残すが、残存はタスク工程単位で1レコードで管理する
  * @param {string} version - 版数
  * @param {string} task - 対応名
  * @param {string} process - 工程（UI/PG/PT/IT/ST）
- * @param {string} member - 担当者名
+ * @param {string} member - 担当者名（更新者記録用。残存の検索キーには使用しない）
  * @param {number} remainingHours - 見込残存時間（h）
  * @returns {void}
  */
 export function saveRemainingEstimate(version, task, process, member, remainingHours) {
+    // タスク工程レベルで検索（memberは検索キーに含めない）
     const existingIndex = remainingEstimates.findIndex(r =>
         r.version === version &&
         r.task === task &&
-        r.process === process &&
-        r.member === member
+        r.process === process
     );
 
     const record = {
@@ -201,120 +199,111 @@ export function saveRemainingEstimate(version, task, process, member, remainingH
         remainingEstimates.push(record);
     }
 
-    // スケジュール連動: 見込み残存に応じてステータスを更新
-    const relatedSchedule = schedules.find(s =>
+    // スケジュール連動: 同一(version, task, process)の全担当者のスケジュールを更新
+    const relatedSchedules = schedules.filter(s =>
         s.version === version &&
         s.task === task &&
-        s.process === process &&
-        s.member === member
+        s.process === process
     );
-    if (relatedSchedule) {
-        if (remainingHours === 0 && relatedSchedule.status !== 'completed') {
-            relatedSchedule.status = 'completed';
-            relatedSchedule.updatedAt = new Date().toISOString();
-        } else if (remainingHours > 0 && relatedSchedule.status === 'completed') {
-            relatedSchedule.status = 'in_progress';
-            relatedSchedule.updatedAt = new Date().toISOString();
+    relatedSchedules.forEach(s => {
+        if (remainingHours === 0 && s.status !== 'completed') {
+            s.status = 'completed';
+            s.updatedAt = new Date().toISOString();
+        } else if (remainingHours > 0 && s.status === 'completed') {
+            s.status = 'in_progress';
+            s.updatedAt = new Date().toISOString();
         }
-    }
+    });
 }
 
 /**
- * 見込残存時間を取得する関数
+ * 見込残存時間を取得する関数（タスク工程レベル）
+ * memberパラメータは後方互換性のために残すが、検索には使用しない
  */
 export function getRemainingEstimate(version, task, process, member) {
     return remainingEstimates.find(r =>
         r.version === version &&
         r.task === task &&
-        r.process === process &&
-        r.member === member
+        r.process === process
     );
 }
 
 /**
- * 見込残存時間を削除する関数
+ * 見込残存時間を削除する関数（タスク工程レベル）
  * @param {string} version - 版数
  * @param {string} task - 対応名
  * @param {string} process - 工程
- * @param {string} member - 担当者名
+ * @param {string} member - 担当者名（後方互換性のために残すが未使用）
  * @returns {boolean} 削除に成功したかどうか
  */
 export function deleteRemainingEstimate(version, task, process, member) {
     const index = remainingEstimates.findIndex(r =>
         r.version === version &&
         r.task === task &&
-        r.process === process &&
-        r.member === member
+        r.process === process
     );
-    
+
     if (index >= 0) {
         const removed = remainingEstimates[index];
         remainingEstimates.splice(index, 1);
-        localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
-        console.log(`[RemainingEstimate] 削除: ${version}/${task}/${process}/${member} (${removed.remainingHours}h)`);
+        localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
+        console.log(`[RemainingEstimate] 削除: ${version}/${task}/${process} (${removed.remainingHours}h)`);
         return true;
     }
     return false;
 }
 
 /**
- * 孤立した見込残存データをクリーンアップする関数
+ * 孤立した見込残存データをクリーンアップする関数（タスク工程レベル）
  * 対応する見積データが存在しない見込残存データを削除する
- * 
+ *
  * 安全性の保証：
- * - 見積データ（version/task/process/member）に完全一致するレコードが存在する場合は絶対に削除しない
+ * - 見積データ（version/task/process）に一致するレコードが存在する場合は絶対に削除しない
  * - 見積データに対応するレコードが存在しない場合のみ削除対象とする
- * 
+ *
  * @returns {number} 削除したレコード数
  */
 export function cleanupOrphanedRemainingEstimates() {
     if (!remainingEstimates || remainingEstimates.length === 0) {
         return 0;
     }
-    
+
     const orphanedIndices = [];
-    
-    // 各見込残存データに対して、対応する見積データが存在するかチェック
+
+    // 各見込残存データに対して、対応する見積データが存在するかチェック（タスク工程レベル）
     remainingEstimates.forEach((remaining, index) => {
-        // 対応する見積データを検索
         const matchingEstimate = estimates.find(e =>
             e.version === remaining.version &&
             e.task === remaining.task &&
-            e.process === remaining.process &&
-            e.member === remaining.member
+            e.process === remaining.process
         );
-        
-        // 対応する見積データが存在しない場合、孤立データとしてマーク
+
         if (!matchingEstimate) {
             orphanedIndices.push(index);
         }
     });
-    
-    // 孤立データがない場合は終了
+
     if (orphanedIndices.length === 0) {
         return 0;
     }
-    
-    // インデックスを降順にソートして、後ろから削除（インデックスがずれないように）
+
     orphanedIndices.sort((a, b) => b - a);
-    
-    // 削除実行（ログ出力）
+
     orphanedIndices.forEach(index => {
         const removed = remainingEstimates[index];
-        console.log(`[Cleanup] 孤立した見込残存データを削除: ${removed.version}/${removed.task}/${removed.process}/${removed.member} (${removed.remainingHours}h)`);
+        console.log(`[Cleanup] 孤立した見込残存データを削除: ${removed.version}/${removed.task}/${removed.process} (${removed.remainingHours}h)`);
         remainingEstimates.splice(index, 1);
     });
-    
-    // localStorageに保存
-    localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
-    
+
+    localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
+
     console.log(`[Cleanup] ${orphanedIndices.length}件の孤立データを削除しました`);
     return orphanedIndices.length;
 }
 
 /**
- * 見込残存時間が見積時間を超えているデータを修復する関数
- * 見積変更時に残存が未調整だったケースを検出し、見積値にキャップする
+ * 見込残存時間が見積合計を超えているデータを修復する関数（タスク工程レベル）
+ * 見積変更時に残存が未調整だったケースを検出し、全担当者の見積合計値にキャップする
  *
  * @returns {number} 修復したレコード数
  */
@@ -326,27 +315,93 @@ export function repairRemainingEstimateConsistency() {
     let repairedCount = 0;
 
     remainingEstimates.forEach(remaining => {
-        const matchingEstimate = estimates.find(e =>
-            e.version === remaining.version &&
-            e.task === remaining.task &&
-            e.process === remaining.process &&
-            e.member === remaining.member
-        );
+        // タスク工程レベルの見積合計を算出（全担当者分）
+        const totalEstimateHours = estimates
+            .filter(e =>
+                e.version === remaining.version &&
+                e.task === remaining.task &&
+                e.process === remaining.process
+            )
+            .reduce((sum, e) => sum + e.hours, 0);
 
-        if (matchingEstimate && remaining.remainingHours > matchingEstimate.hours) {
-            console.log(`[Repair] 見込残存を修復: ${remaining.version}/${remaining.task}/${remaining.process}/${remaining.member} ${remaining.remainingHours}h → ${matchingEstimate.hours}h`);
-            remaining.remainingHours = matchingEstimate.hours;
+        if (totalEstimateHours > 0 && remaining.remainingHours > totalEstimateHours) {
+            console.log(`[Repair] 見込残存を修復: ${remaining.version}/${remaining.task}/${remaining.process} ${remaining.remainingHours}h → ${totalEstimateHours}h`);
+            remaining.remainingHours = totalEstimateHours;
             remaining.updatedAt = new Date().toISOString();
             repairedCount++;
         }
     });
 
     if (repairedCount > 0) {
-        localStorage.setItem('remainingEstimates', JSON.stringify(remainingEstimates));
+        localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
         console.log(`[Repair] ${repairedCount}件の見込残存データを修復しました`);
     }
 
     return repairedCount;
+}
+
+/**
+ * 旧形式（担当者別）の見込残存データをタスク工程レベルに移行する関数
+ * 同一(version, task, process)の複数レコードを1つに集約する
+ * @returns {number} 集約したレコード数
+ */
+export function migrateRemainingEstimatesToTaskLevel() {
+    if (!remainingEstimates || remainingEstimates.length === 0) {
+        return 0;
+    }
+
+    // (version, task, process)でグループ化
+    const groups = {};
+    remainingEstimates.forEach(r => {
+        const key = `${r.version}|${r.task}|${r.process}`;
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        groups[key].push(r);
+    });
+
+    // 集約が不要（全て1レコードずつ）ならスキップ
+    const needsMigration = Object.values(groups).some(g => g.length > 1);
+    if (!needsMigration) {
+        return 0;
+    }
+
+    // 集約して新しい配列を構築
+    const migrated = [];
+    let migratedCount = 0;
+
+    Object.values(groups).forEach(records => {
+        if (records.length === 1) {
+            migrated.push(records[0]);
+            return;
+        }
+
+        // 複数レコード → 1つに集約
+        // 全員が0なら0、それ以外は合計値
+        const allZero = records.every(r => r.remainingHours === 0);
+        const totalRemaining = allZero ? 0 :
+            records.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
+
+        // 最新の更新日時を持つレコードをベースに使用
+        const latest = records.reduce((a, b) =>
+            (a.updatedAt || '') > (b.updatedAt || '') ? a : b
+        );
+
+        migrated.push({
+            ...latest,
+            remainingHours: totalRemaining
+        });
+        migratedCount += records.length - 1;
+    });
+
+    // 配列を置き換え
+    remainingEstimates.length = 0;
+    migrated.forEach(r => remainingEstimates.push(r));
+
+    if (migratedCount > 0) {
+        console.log(`[Migration] ${migratedCount}件の残存データをタスク工程レベルに集約しました`);
+    }
+    return migratedCount;
 }
 
 // ============================================

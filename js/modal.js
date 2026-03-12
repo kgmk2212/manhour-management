@@ -273,44 +273,36 @@ export function openRemainingHoursModal(version, task, process) {
     });
 
     const allMembers = [...new Set([...estMembers, ...actMembers])].sort();
+    const memberDisplay = allMembers.length > 0 ? allMembers.join(', ') : '-';
 
-    // 情報表示エリアを更新
+    // タスク工程レベルの見積合計
+    const totalEstHours = State.estimates
+        .filter(e => e.version === version && e.task === task && e.process === process)
+        .reduce((sum, e) => sum + e.hours, 0);
+
+    // 情報表示エリアを更新（担当者一覧を表示）
     document.getElementById('remainingHoursInfo').innerHTML = `
         <div><strong>版数:</strong> ${escapeHtml(version)}</div>
         <div><strong>対応名:</strong> ${escapeHtml(task)}</div>
         <div><strong>工程:</strong> ${escapeHtml(process)}</div>
+        <div><strong>担当者:</strong> ${escapeHtml(memberDisplay)}</div>
+        <div><strong>見積合計:</strong> ${totalEstHours.toFixed(1)}h</div>
     `;
 
-    // 担当者設定
+    // 担当者セレクトは非表示（タスク工程レベルで管理するため）
+    document.getElementById('remainingHoursMemberSelect').style.display = 'none';
     const select = document.getElementById('remainingHoursMember');
-    if (allMembers.length > 1) {
-        // 担当者が複数いる場合は選択できるようにする
-        document.getElementById('remainingHoursMemberSelect').style.display = 'block';
-        select.innerHTML = allMembers.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-
-        // 最初の担当者の見込残存時間と実績リストを表示
-        updateRemainingHoursInput(version, task, process, allMembers[0]);
-        updateRemainingHoursActualsList(version, task, process, allMembers[0]);
-
-        // 担当者変更時に見込残存時間と実績リストを更新
-        select.onchange = function () {
-            updateRemainingHoursInput(version, task, process, this.value);
-            updateRemainingHoursActualsList(version, task, process, this.value);
-        };
-    } else if (allMembers.length === 1) {
-        // 担当者が1人の場合は非表示だが、selectには値を設定
-        document.getElementById('remainingHoursMemberSelect').style.display = 'none';
+    // 後方互換性のためにmember値を設定（保存時に使用）
+    if (allMembers.length > 0) {
         select.innerHTML = `<option value="${escapeHtml(allMembers[0])}">${escapeHtml(allMembers[0])}</option>`;
         select.value = allMembers[0];
-        updateRemainingHoursInput(version, task, process, allMembers[0]);
-        updateRemainingHoursActualsList(version, task, process, allMembers[0]);
-    } else {
-        // 担当者がいない場合
-        document.getElementById('remainingHoursMemberSelect').style.display = 'none';
-        select.innerHTML = '';
-        document.getElementById('remainingHoursInput').value = '';
-        document.getElementById('remainingHoursActualsList').style.display = 'none';
     }
+
+    // タスク工程レベルの残存時間を表示
+    updateRemainingHoursInput(version, task, process);
+
+    // 全担当者の実績リストを表示
+    updateRemainingHoursActualsList(version, task, process);
 
     // モーダルにデータを保存
     document.getElementById('remainingHoursModal').dataset.version = version;
@@ -321,31 +313,30 @@ export function openRemainingHoursModal(version, task, process) {
     document.getElementById('remainingHoursModal').style.display = 'flex';
 }
 
-// 見込残存時間の入力フィールドを更新
+// 見込残存時間の入力フィールドを更新（タスク工程レベル）
 export function updateRemainingHoursInput(version, task, process, member) {
+    // タスク工程レベルで検索（memberは無視）
     const existing = State.remainingEstimates.find(r =>
         r.version === version &&
         r.task === task &&
-        r.process === process &&
-        r.member === member
+        r.process === process
     );
 
     document.getElementById('remainingHoursInput').value = existing ? existing.remainingHours : '';
 }
 
-// 実績リストを更新（現在の表示条件でフィルタ）
+// 実績リストを更新（タスク工程レベル：全担当者の実績を表示）
 export function updateRemainingHoursActualsList(version, task, process, member) {
     // 現在のレポートのフィルタ条件を取得
-    const filterType = document.getElementById('reportFilterType').value;
-    const filterMonth = document.getElementById('reportMonth').value;
-    const filterVersion = document.getElementById('reportVersion').value;
+    const filterType = document.getElementById('reportFilterType')?.value;
+    const filterMonth = document.getElementById('reportMonth')?.value;
+    const filterVersion = document.getElementById('reportVersion')?.value;
 
-    // 該当する実績を取得
+    // 全担当者の実績を取得（タスク工程レベル）
     let filteredActuals = State.actuals.filter(a =>
         a.version === version &&
         a.task === task &&
-        a.process === process &&
-        a.member === member
+        a.process === process
     );
 
     // フィルタ条件に基づいてさらに絞り込み
@@ -370,10 +361,9 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
     } else {
         actualsListDiv.style.display = 'block';
 
-        // 実績リストのHTML生成
+        // 実績リストのHTML生成（担当者名も表示）
         let html = '<div style="font-size: 13px;">';
 
-        // 各実績を表示
         filteredActuals.forEach((actual, index) => {
             const dateStr = actual.date ? actual.date : '日付なし';
             const bgColor = index % 2 === 0 ? 'white' : '#f1f3f5';
@@ -381,7 +371,7 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
             html += `
                 <div style="padding: 8px; background: ${bgColor}; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div style="font-weight: 500; color: #333;">${dateStr}</div>
+                        <div style="font-weight: 500; color: #333;">${dateStr} <span style="color: #888; font-size: 12px;">${escapeHtml(actual.member)}</span></div>
                         ${actual.memo ? `<div style="color: #666; font-size: 12px; margin-top: 2px;">${escapeHtml(actual.memo)}</div>` : ''}
                     </div>
                     <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${formatHours(actual.hours)}h</div>
@@ -403,19 +393,14 @@ export function closeRemainingHoursModal() {
     document.getElementById('remainingHoursModal').style.display = 'none';
 }
 
-// 見込残存時間を保存
+// 見込残存時間を保存（タスク工程レベル）
 export function saveRemainingHoursFromModal() {
     const modal = document.getElementById('remainingHoursModal');
     const version = modal.dataset.version;
     const task = modal.dataset.task;
     const process = modal.dataset.process;
-    const member = document.getElementById('remainingHoursMember').value;
+    const member = document.getElementById('remainingHoursMember').value || '';
     const hours = parseFloat(document.getElementById('remainingHoursInput').value);
-
-    if (!member) {
-        alert('担当者が設定されていません');
-        return;
-    }
 
     if (isNaN(hours) || hours < 0) {
         alert('正しい時間を入力してください');
@@ -423,14 +408,14 @@ export function saveRemainingHoursFromModal() {
     }
 
     // 変更前の状態を記録
-    const oldRemaining = Estimate.getRemainingEstimate(version, task, process, member);
+    const oldRemaining = Estimate.getRemainingEstimate(version, task, process);
     const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
 
-    // 見込残存時間を保存
+    // 見込残存時間を保存（タスク工程レベル）
     Estimate.saveRemainingEstimate(version, task, process, member, hours);
 
     // 変更後の状態を記録
-    const newRemaining = Estimate.getRemainingEstimate(version, task, process, member);
+    const newRemaining = Estimate.getRemainingEstimate(version, task, process);
 
     pushAction({
         type: 'remaining_edit',

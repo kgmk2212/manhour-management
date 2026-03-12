@@ -300,6 +300,8 @@ window.resetAddEstimateForm = EstimateAdd.resetAddEstimateForm;
 window.openAddEstimateSingleProcess = EstimateAdd.openAddEstimateSingleProcess;
 window.openEditAllProcesses = EstimateAdd.openEditAllProcesses;
 window.autoFillMember = EstimateAdd.autoFillMember;
+window.addEstimateMemberRow = EstimateAdd.addEstimateMemberRow;
+window.removeEstimateMemberRow = EstimateAdd.removeEstimateMemberRow;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
 window.switchAddEstMonthType = EstimateAdd.switchAddEstMonthType;
@@ -453,6 +455,13 @@ window.memberOrder = State.memberOrder;
 window.schedules = State.schedules;
 window.scheduleSettings = State.scheduleSettings;
 window.taskColorMap = State.taskColorMap;
+
+// 旧形式（担当者別）の残存データをタスク工程レベルに移行
+const migratedCount = Estimate.migrateRemainingEstimatesToTaskLevel();
+if (migratedCount > 0) {
+    console.log(`✅ init.js: ${migratedCount}件の残存データをタスク工程レベルに集約しました`);
+    if (typeof window.saveData === 'function') window.saveData();
+}
 
 // 孤立した見込残存データをクリーンアップ（担当者変更などで残った不要データを削除）
 const cleanedCount = Estimate.cleanupOrphanedRemainingEstimates();

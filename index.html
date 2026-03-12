@@ -2079,35 +2079,41 @@
                             <thead>
                                 <tr>
                                     <th style="width: 60px; padding: 8px; text-align: center;">工程</th>
-                                    <th style="width: 120px; padding: 8px;">担当</th>
+                                    <th style="padding: 8px;">担当</th>
                                     <th style="width: 100px; padding: 8px;">時間</th>
+                                    <th style="width: 32px; padding: 4px;"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <tr data-process="UI" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
                                     <td><select id="addEstUI_member" style="margin: 0;"></select></td>
                                     <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('UI')" title="担当者を追加">+</button></td>
                                 </tr>
-                                <tr>
+                                <tr data-process="PG" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
                                     <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
                                     <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PG')" title="担当者を追加">+</button></td>
                                 </tr>
-                                <tr>
+                                <tr data-process="PT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
                                     <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
                                     <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PT')" title="担当者を追加">+</button></td>
                                 </tr>
-                                <tr>
+                                <tr data-process="IT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
                                     <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
                                     <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('IT')" title="担当者を追加">+</button></td>
                                 </tr>
-                                <tr>
+                                <tr data-process="ST" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
                                     <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
                                     <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('ST')" title="担当者を追加">+</button></td>
                                 </tr>
                             </tbody>
                         </table>

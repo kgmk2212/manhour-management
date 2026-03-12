@@ -325,8 +325,15 @@ function saveEditAllProcesses() {
                     monthlyHours: Object.keys(monthlyHours).length > 0 ? monthlyHours : State.estimates[idx].monthlyHours
                 };
 
-                // 見込残存時間の調整
-                Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+                // 見込残存時間の調整（タスク工程レベル：見積差分で残存を調整）
+                if (existingEst.hours !== hours) {
+                    const existingRemaining = Estimate.getRemainingEstimate(oldVersion, oldTask, proc);
+                    if (existingRemaining) {
+                        const hoursDiff = hours - existingEst.hours;
+                        const newRemaining = Math.max(0, existingRemaining.remainingHours + hoursDiff);
+                        Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, newRemaining);
+                    }
+                }
 
                 // スケジュール連動: 担当者またはhoursが変わった場合のみ更新
                 if (existingEst.member !== member || existingEst.hours !== hours) {
@@ -384,7 +391,13 @@ function saveEditAllProcesses() {
                 createdAt: new Date().toISOString()
             };
             State.estimates.push(newEst);
-            Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+            // 見込残存時間をタスク工程レベルで調整（既存残存に加算）
+            const existingRemaining = Estimate.getRemainingEstimate(oldVersion, oldTask, proc);
+            if (existingRemaining) {
+                Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, existingRemaining.remainingHours + hours);
+            } else {
+                Estimate.saveRemainingEstimate(oldVersion, oldTask, proc, member, hours);
+            }
         }
         // 既存あり + 入力なし → そのまま残す
         // 既存なし + 入力なし → スキップ
@@ -626,6 +639,9 @@ export function resetAddEstimateForm() {
         if (memberEl) memberEl.value = '';
         if (hoursEl) hoursEl.value = '';
     });
+
+    // 追加された担当者行をすべて削除
+    removeAllExtraMemberRows();
 
     updateAddEstimateTotals();
 
@@ -950,8 +966,16 @@ export function updateAddEstimateTotals() {
     let totalHours = 0;
 
     processes.forEach(proc => {
+        // プライマリ行の時間
         const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
         totalHours += hours;
+
+        // 追加担当者行の時間
+        const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
+        extraRows.forEach(row => {
+            const input = row.querySelector('.est-extra-hours');
+            totalHours += parseFloat(input?.value) || 0;
+        });
     });
 
     const totalDays = (totalHours / 8).toFixed(1);
@@ -960,6 +984,89 @@ export function updateAddEstimateTotals() {
     document.getElementById('addEstTotalHours').textContent = totalHours.toFixed(1);
     document.getElementById('addEstTotalDays').textContent = totalDays;
     document.getElementById('addEstTotalMonths').textContent = totalMonths;
+}
+
+/**
+ * 工程に担当者行を追加
+ * @param {string} proc - 工程名（UI/PG/PT/IT/ST）
+ */
+export function addEstimateMemberRow(proc) {
+    const table = document.getElementById('addEstimateTable');
+    if (!table) return;
+
+    // この工程の最後の行を見つける（プライマリ行 or 最後の追加行）
+    const allRows = table.querySelectorAll(`tr[data-process="${proc}"]`);
+    const lastRow = allRows[allRows.length - 1];
+
+    // 追加行の連番
+    const extraCount = table.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).length;
+    const idx = extraCount + 1;
+
+    // メンバーオプションをプライマリ行のselectからコピー
+    const primarySelect = document.getElementById(`addEst${proc}_member`);
+    const memberOptions = primarySelect ? primarySelect.innerHTML : '';
+
+    const newRow = document.createElement('tr');
+    newRow.className = 'est-extra-member-row';
+    newRow.dataset.process = proc;
+    newRow.dataset.extraIndex = idx;
+    newRow.innerHTML = `
+        <td style="text-align: center; color: var(--text-muted); font-size: 11px;">┗</td>
+        <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
+        <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+        <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>
+    `;
+
+    lastRow.after(newRow);
+}
+
+/**
+ * 追加された担当者行を削除
+ */
+export function removeEstimateMemberRow(btn) {
+    const row = btn.closest('tr');
+    if (row) {
+        row.remove();
+        updateAddEstimateTotals();
+    }
+}
+
+/**
+ * すべての追加担当者行を削除
+ */
+export function removeAllExtraMemberRows() {
+    const table = document.getElementById('addEstimateTable');
+    if (!table) return;
+    table.querySelectorAll('tr.est-extra-member-row').forEach(row => row.remove());
+}
+
+/**
+ * 全工程の全担当者行（プライマリ＋追加）からデータを収集
+ * @returns {Array<{process: string, member: string, hours: number}>}
+ */
+export function collectAllEstimateEntries() {
+    const entries = [];
+
+    PROCESS.TYPES.forEach(proc => {
+        // プライマリ行
+        const member = document.getElementById(`addEst${proc}_member`)?.value || '';
+        const hours = parseFloat(document.getElementById(`addEst${proc}`)?.value) || 0;
+        if (hours > 0 && member) {
+            entries.push({ process: proc, member, hours });
+        }
+
+        // 追加行
+        const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
+        extraRows.forEach(row => {
+            const extraMember = row.querySelector('.est-extra-member')?.value || '';
+            const extraHours = parseFloat(row.querySelector('.est-extra-hours')?.value) || 0;
+            if (extraHours > 0 && extraMember) {
+                entries.push({ process: proc, member: extraMember, hours: extraHours });
+            }
+        });
+    });
+
+    return entries;
 }
 
 export function addEstimateFromModal() {
@@ -1110,68 +1217,64 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
     const isSingleMonth = !endMonth || startMonth === endMonth;
     const addedEstimates = [];
 
-    processes.forEach(proc => {
-        const member = document.getElementById(`addEst${proc}_member`).value;
-        const hours = parseFloat(document.getElementById(`addEst${proc}`).value) || 0;
+    // collectAllEstimateEntries で全行（プライマリ＋追加担当者行）のデータを取得
+    const allEntries = collectAllEstimateEntries();
 
-        if (hours > 0) {
-            let workMonths, monthlyHours, workMonth;
+    allEntries.forEach(entry => {
+        const { process: proc, member, hours } = entry;
 
-            if (isSingleMonth) {
-                // 単一月モード
-                workMonth = startMonth;
-                workMonths = [startMonth];
-                monthlyHours = { [startMonth]: hours };
-            } else {
-                // 複数月モード: 各工程の作業月を取得
-                const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
-                const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
+        let workMonths, monthlyHours, workMonth;
 
-                if (procStartMonth && procEndMonth) {
-                    if (procStartMonth === procEndMonth) {
-                        workMonth = procStartMonth;
-                        workMonths = [procStartMonth];
-                        monthlyHours = { [procStartMonth]: hours };
-                    } else {
-                        const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
-                        workMonth = procStartMonth;
-                        workMonths = months;
-                        monthlyHours = {};
-                        months.forEach(m => {
-                            monthlyHours[m] = hours / months.length;
-                        });
-                    }
+        if (isSingleMonth) {
+            workMonth = startMonth;
+            workMonths = [startMonth];
+            monthlyHours = { [startMonth]: hours };
+        } else {
+            // 複数月モード: 各工程の作業月を取得
+            const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
+            const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
+
+            if (procStartMonth && procEndMonth) {
+                if (procStartMonth === procEndMonth) {
+                    workMonth = procStartMonth;
+                    workMonths = [procStartMonth];
+                    monthlyHours = { [procStartMonth]: hours };
                 } else {
-                    // 工程別作業月が設定されていない場合は全期間
-                    const months = Utils.generateMonthRange(startMonth, endMonth);
-                    workMonth = startMonth;
+                    const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
+                    workMonth = procStartMonth;
                     workMonths = months;
                     monthlyHours = {};
                     months.forEach(m => {
                         monthlyHours[m] = hours / months.length;
                     });
                 }
+            } else {
+                // 工程別作業月が設定されていない場合は全期間
+                const months = Utils.generateMonthRange(startMonth, endMonth);
+                workMonth = startMonth;
+                workMonths = months;
+                monthlyHours = {};
+                months.forEach(m => {
+                    monthlyHours[m] = hours / months.length;
+                });
             }
-
-            const est = {
-                id: Date.now() + Math.random(),
-                version: version,
-                task: task,
-                process: proc,
-                member: member,
-                hours: hours,
-                workMonth: workMonth,
-                workMonths: workMonths,
-                monthlyHours: monthlyHours,
-                createdAt: new Date().toISOString()
-            };
-
-            State.estimates.push(est);
-            addedEstimates.push({ ...est });
-
-            // 見込残存時間も自動設定（見積時間と同じ）
-            Estimate.saveRemainingEstimate(version, task, proc, member, hours);
         }
+
+        const est = {
+            id: Date.now() + Math.random(),
+            version: version,
+            task: task,
+            process: proc,
+            member: member,
+            hours: hours,
+            workMonth: workMonth,
+            workMonths: workMonths,
+            monthlyHours: monthlyHours,
+            createdAt: new Date().toISOString()
+        };
+
+        State.estimates.push(est);
+        addedEstimates.push({ ...est });
     });
 
     if (addedEstimates.length > 0) {
@@ -1179,6 +1282,21 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
             type: 'estimate_add',
             description: `見積追加: ${task}（${addedEstimates.length}工程）`,
             data: { added: addedEstimates }
+        });
+
+        // 見込残存時間をタスク工程レベルで自動設定（各工程の見積合計）
+        const processHours = {};
+        addedEstimates.forEach(est => {
+            processHours[est.process] = (processHours[est.process] || 0) + est.hours;
+        });
+        Object.entries(processHours).forEach(([proc, totalHours]) => {
+            // 既存の残存がある場合は加算、ない場合は新規作成
+            const existing = Estimate.getRemainingEstimate(version, task, proc);
+            if (existing) {
+                Estimate.saveRemainingEstimate(version, task, proc, addedEstimates[0].member, existing.remainingHours + totalHours);
+            } else {
+                Estimate.saveRemainingEstimate(version, task, proc, addedEstimates[0].member, totalHours);
+            }
         });
     }
 

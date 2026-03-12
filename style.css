@@ -1105,6 +1105,72 @@ table.simple-table tr th:first-child {
     font-size: 13px;
 }
 
+/* Multi-member add button */
+.est-add-member-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.est-add-member-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    padding: 0;
+}
+
+.est-add-member-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+/* Extra member rows (added dynamically) */
+tr.est-extra-member-row td {
+    border-bottom: 1px dashed var(--border-light);
+    background: var(--surface-elevated);
+}
+
+tr.est-extra-member-row td:first-child {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.est-remove-member-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    padding: 0;
+}
+
+.est-remove-member-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-light);
+}
+
 /* Report matrix */
 table.estimate-matrix.report-matrix {
     min-width: 0;
@@ -1789,12 +1855,14 @@ table td[rowspan] {
 .cm-row-subtotal td {
     background: linear-gradient(90deg, #fff8e1, #fff3cd);
     font-weight: 600;
+    text-align: center;
 }
 
 .cm-row-grand-total td {
     background: var(--accent);
     color: #FFFFFF;
     font-weight: 700;
+    text-align: center;
 }
 
 .cm-date-cell { }

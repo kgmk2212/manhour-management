@@ -233,13 +233,12 @@ export function calculateProgress(version, task, process = null, member = null) 
         )
         .reduce((sum, a) => sum + a.hours, 0);
 
-    // 見込残存時間を集計
+    // 見込残存時間を集計（タスク工程レベル：memberフィルタは適用しない）
     let remainingHours = remainingEstimates
         .filter(r =>
             r.version === version &&
             r.task === task &&
-            (process === null || r.process === process) &&
-            (member === null || r.member === member)
+            (process === null || r.process === process)
         )
         .reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
 
@@ -707,33 +706,37 @@ export function renderBulkRemainingTable() {
     let rowIndex = 0;
 
     targetVersions.forEach(version => {
-        // この版数のタスクと工程と担当者の組み合わせを取得
+        // タスク工程レベルで集約（担当者はカンマ区切りで表示）
         const combinations = new Map();
 
         estimates.filter(e => e.version === version).forEach(e => {
-            const key = `${e.task}|${e.process}|${e.member}`;
+            const key = `${e.task}|${e.process}`;
             if (!combinations.has(key)) {
-                combinations.set(key, { version, task: e.task, process: e.process, member: e.member, estimatedHours: 0, actualHours: 0 });
+                combinations.set(key, { version, task: e.task, process: e.process, members: new Set(), estimatedHours: 0, actualHours: 0 });
             }
-            combinations.get(key).estimatedHours += e.hours;
+            const combo = combinations.get(key);
+            combo.members.add(e.member);
+            combo.estimatedHours += e.hours;
         });
 
         actuals.filter(a => a.version === version).forEach(a => {
-            const key = `${a.task}|${a.process}|${a.member}`;
+            const key = `${a.task}|${a.process}`;
             if (!combinations.has(key)) {
-                combinations.set(key, { version, task: a.task, process: a.process, member: a.member, estimatedHours: 0, actualHours: 0 });
+                combinations.set(key, { version, task: a.task, process: a.process, members: new Set(), estimatedHours: 0, actualHours: 0 });
             }
-            combinations.get(key).actualHours += a.hours;
+            const combo = combinations.get(key);
+            combo.members.add(a.member);
+            combo.actualHours += a.hours;
         });
 
-        // 各組み合わせについて行を生成
+        // 各タスク工程について行を生成
         combinations.forEach((data, key) => {
-            // window経由でgetRemainingEstimateを呼び出し
             const existing = typeof window.getRemainingEstimate === 'function'
-                ? window.getRemainingEstimate(data.version, data.task, data.process, data.member)
+                ? window.getRemainingEstimate(data.version, data.task, data.process)
                 : null;
             const remainingHours = existing ? existing.remainingHours : '';
             const eac = data.actualHours + (parseFloat(remainingHours) || 0);
+            const memberDisplay = Array.from(data.members).join(', ');
 
             // 状態判定
             let status = 'unknown';
@@ -759,11 +762,11 @@ export function renderBulkRemainingTable() {
                     data-version="${escapeHtml(data.version)}"
                     data-task="${escapeHtml(data.task)}"
                     data-process="${escapeHtml(data.process)}"
-                    data-member="${escapeHtml(data.member)}">
+                    data-member="${escapeHtml(Array.from(data.members)[0] || '')}">
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.version)}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.task)}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.process)}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(data.member)}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(memberDisplay)}</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.estimatedHours.toFixed(1)}h</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${data.actualHours.toFixed(1)}h</td>
                     <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">
@@ -801,14 +804,13 @@ export function updateBulkRowStatus(input) {
     const version = row.dataset.version;
     const task = row.dataset.task;
     const process = row.dataset.process;
-    const member = row.dataset.member;
 
-    // 見積と実績を再計算
+    // タスク工程レベルで見積と実績を再計算（全担当者合計）
     const estimatedHours = estimates
-        .filter(e => e.version === version && e.task === task && e.process === process && e.member === member)
+        .filter(e => e.version === version && e.task === task && e.process === process)
         .reduce((sum, e) => sum + e.hours, 0);
     const actualHours = actuals
-        .filter(a => a.version === version && a.task === task && a.process === process && a.member === member)
+        .filter(a => a.version === version && a.task === task && a.process === process)
         .reduce((sum, a) => sum + a.hours, 0);
 
     const remainingHours = parseFloat(input.value);
@@ -844,7 +846,7 @@ export function updateBulkRowStatus(input) {
     }
 }
 
-// 一括編集を保存
+// 一括編集を保存（タスク工程レベル）
 export function saveBulkRemaining() {
     const rows = document.querySelectorAll('#bulkRemainingTableBody tr[data-row-index]');
     let savedCount = 0;
@@ -859,9 +861,9 @@ export function saveBulkRemaining() {
         const value = input?.value;
 
         if (value !== '' && !isNaN(parseFloat(value))) {
-            // 変更前の状態を記録
+            // 変更前の状態を記録（タスク工程レベル）
             const oldRemaining = remainingEstimates.find(r =>
-                r.version === version && r.task === task && r.process === process && r.member === member
+                r.version === version && r.task === task && r.process === process
             );
             const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
 
@@ -871,7 +873,7 @@ export function saveBulkRemaining() {
 
             // 変更後の状態を記録
             const newRemaining = remainingEstimates.find(r =>
-                r.version === version && r.task === task && r.process === process && r.member === member
+                r.version === version && r.task === task && r.process === process
             );
 
             changes.push({
@@ -958,15 +960,15 @@ export function generateProgressBar(version, task, process) {
     // 見込残存時間を集計（NaN/undefined対策）
     let remainingHours = remainingData.reduce((sum, r) => sum + (Number(r.remainingHours) || 0), 0);
 
-    // 見込残存時間のデータが存在しない場合は、見積時間から算出（フォールバック）
+    // 見込残存時間のデータが存在しない場合は、見積合計から算出（フォールバック）
     if (remainingData.length === 0) {
-        // 見積データを検索
-        const estData = estimates.find(e => e.version === version && e.task === task && e.process === process);
-        if (estData && estData.hours > 0) {
-            // 見積 - 実績 = 残（マイナスは0）
-            remainingHours = Math.max(0, estData.hours - actualHours);
+        // タスク工程レベルの見積合計（全担当者分）
+        const totalEstHours = estimates
+            .filter(e => e.version === version && e.task === task && e.process === process)
+            .reduce((sum, e) => sum + e.hours, 0);
+        if (totalEstHours > 0) {
+            remainingHours = Math.max(0, totalEstHours - actualHours);
         } else {
-            // 見積もなし → バーを表示しない
             return '';
         }
     }

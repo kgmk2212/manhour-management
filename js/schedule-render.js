@@ -1259,11 +1259,11 @@ export class GanttChartRenderer {
         const actualHours = this.getScheduleActualHours(schedule);
         const estimatedHours = schedule.estimatedHours || 0;
 
+        // タスク工程レベルで残存を取得（memberは検索キーに含めない）
         const remainingEstimate = remainingEstimates.find(r =>
             r.version === schedule.version &&
             r.task === schedule.task &&
-            r.process === schedule.process &&
-            r.member === schedule.member
+            r.process === schedule.process
         );
 
         let remainingHours;

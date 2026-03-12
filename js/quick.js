@@ -682,7 +682,6 @@ export function addQuickEstimate() {
 
             estimates.push(est);
             addedEstimates.push({ ...est });
-            Estimate.saveRemainingEstimate(version, task, proc, member, hours);
         }
     });
 
@@ -691,6 +690,20 @@ export function addQuickEstimate() {
             type: 'estimate_add',
             description: `見積追加: ${task}（${addedEstimates.length}工程）`,
             data: { added: addedEstimates }
+        });
+
+        // 見込残存時間をタスク工程レベルで自動設定
+        const processHours = {};
+        addedEstimates.forEach(est => {
+            processHours[est.process] = (processHours[est.process] || 0) + est.hours;
+        });
+        Object.entries(processHours).forEach(([proc, totalHours]) => {
+            const existing = Estimate.getRemainingEstimate(version, task, proc);
+            if (existing) {
+                Estimate.saveRemainingEstimate(version, task, proc, addedEstimates[0].member, existing.remainingHours + totalHours);
+            } else {
+                Estimate.saveRemainingEstimate(version, task, proc, addedEstimates[0].member, totalHours);
+            }
         });
     }
 
