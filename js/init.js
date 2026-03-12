@@ -9,8 +9,8 @@ import * as Vacation from './vacation.js';
 import * as Storage from './storage.js';
 import * as UI from './ui.js';
 import * as Theme from './theme.js';
-import * as Estimate from './estimate.js?v=20260310-8';
-import * as Actual from './actual.js?v=20260310-8';
+import * as Estimate from './estimate.js';
+import * as Actual from './actual.js';
 import * as Quick from './quick.js';
 import * as Report from './report.js';
 import * as EstimateAdd from './estimate-add.js';
@@ -21,8 +21,8 @@ import * as EstimateEdit from './estimate-edit.js';
 import * as EstimateSelection from './estimate-selection.js';
 import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
-import * as Schedule from './schedule.js?v=20260309-1';
-import * as History from './history.js?v=20260310-8';
+import * as Schedule from './schedule.js';
+import * as History from './history.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
