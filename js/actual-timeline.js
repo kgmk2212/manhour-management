@@ -63,6 +63,15 @@ const DAILY_ROW_HEIGHT = 72;
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 18;
 
+/** HEX色をRGBAに変換 */
+function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
 /** メンバーアバター色パレット */
 const AVATAR_COLORS = [
     '#2D5A27', '#1D6FA5', '#7C3AED', '#C4841D',
@@ -288,7 +297,7 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
             const barInfo = calcGanttBar(sch.startDate, sch.endDate, year, month, daysInMonth);
             if (!barInfo) return;
             const color = getTaskColor(sch.version, sch.task);
-            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};top:4px;height:${SCHEDULE_LANE_H - 4}px;"
+            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${hexToRgba(color, 0.35)};border-left:3px solid ${color};top:4px;height:${SCHEDULE_LANE_H - 4}px;"
                 data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
                 <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
             </div>`;

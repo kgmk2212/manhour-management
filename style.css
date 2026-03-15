@@ -5914,22 +5914,21 @@ li.drop-below {
     margin-left: 0;
 }
 
-/* 予定バー（上部レーン: 薄い帯） */
+/* 予定バー（上部レーン: 実績と同色系の薄い帯） */
 .actual-tl-bar.scheduled {
-    opacity: 0.35;
     cursor: pointer;
     border-radius: 2px;
     transform: none;
 }
 
 .actual-tl-bar.scheduled:hover {
-    opacity: 0.55;
+    filter: brightness(0.92);
 }
 
 .actual-tl-bar.scheduled .actual-tl-bar-text {
     font-weight: 600;
     font-size: 8px;
-    opacity: 0.8;
+    color: var(--text-secondary);
 }
 
 /* 予定/実績レーン区切り線 */
