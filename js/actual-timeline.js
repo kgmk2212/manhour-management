@@ -2175,6 +2175,25 @@ function setupTimelineSwipe() {
     if (!el) return;
 
     let startX = 0, startY = 0, swiping = false, confirmed = false, startTime = 0;
+    let startScrollLeft = 0;
+
+    /**
+     * スクロール端チェック — スクロール可能な方向がある場合はネイティブスクロールに任せる
+     * スワイプナビゲーションはスクロール端到達時のみ発動
+     */
+    function canNativeScroll(dx) {
+        const sc = dom.timelineScroll;
+        if (!sc) return false;
+        const maxScroll = sc.scrollWidth - sc.clientWidth;
+        if (maxScroll <= 0) return false; // スクロール不要 → スワイプナビ可
+        if (dx > 0) {
+            // 右スワイプ（前へ） → 左端にいなければネイティブスクロール
+            return startScrollLeft > 2;
+        } else {
+            // 左スワイプ（次へ） → 右端にいなければネイティブスクロール
+            return startScrollLeft < maxScroll - 2;
+        }
+    }
 
     el.addEventListener('touchstart', (e) => {
         // ドラッグ中やペイン内は除外
@@ -2182,6 +2201,7 @@ function setupTimelineSwipe() {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         startTime = Date.now();
+        startScrollLeft = dom.timelineScroll ? dom.timelineScroll.scrollLeft : 0;
         swiping = true;
         confirmed = false;
     }, { passive: true });
@@ -2198,23 +2218,25 @@ function setupTimelineSwipe() {
                     swiping = false;
                     return;
                 }
+                // スクロール余地がある方向ならネイティブスクロールに委ねる
+                if (canNativeScroll(dx)) {
+                    swiping = false;
+                    return;
+                }
                 confirmed = true;
-                // メイン領域にトランジションなしの追従を開始
+                // タイムライン本体のみ追従開始（ラベル列は固定）
                 dom.timelineScroll.style.transition = 'none';
-                dom.labelsBody.style.transition = 'none';
             }
             return;
         }
 
         if (e.cancelable) e.preventDefault();
 
-        // 指追従: コンテンツ全体を横にずらす
+        // 指追従: タイムライン本体のみ横にずらす（ラベル列は固定）
         const clamped = Math.max(-120, Math.min(120, dx));
         const opacity = 1 - Math.abs(clamped) / 300;
         dom.timelineScroll.style.transform = `translateX(${clamped}px)`;
         dom.timelineScroll.style.opacity = opacity;
-        dom.labelsBody.style.transform = `translateX(${clamped}px)`;
-        dom.labelsBody.style.opacity = opacity;
     }, { passive: false });
 
     el.addEventListener('touchend', (e) => {
@@ -2228,14 +2250,11 @@ function setupTimelineSwipe() {
 
         if (confirmed && Math.abs(dx) > threshold) {
             const direction = dx > 0 ? -1 : 1; // 右スワイプ → 前日/前月
-            // アニメーション: スライドアウト
+            // アニメーション: スライドアウト（タイムライン本体のみ）
             const slideOut = direction > 0 ? -200 : 200;
             dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
             dom.timelineScroll.style.transform = `translateX(${slideOut}px)`;
             dom.timelineScroll.style.opacity = '0';
-            dom.labelsBody.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            dom.labelsBody.style.transform = `translateX(${slideOut}px)`;
-            dom.labelsBody.style.opacity = '0';
 
             setTimeout(() => {
                 // ナビゲーション実行
@@ -2248,16 +2267,10 @@ function setupTimelineSwipe() {
                 dom.timelineScroll.style.transition = 'none';
                 dom.timelineScroll.style.transform = `translateX(${-slideOut}px)`;
                 dom.timelineScroll.style.opacity = '0';
-                dom.labelsBody.style.transition = 'none';
-                dom.labelsBody.style.transform = `translateX(${-slideOut}px)`;
-                dom.labelsBody.style.opacity = '0';
                 requestAnimationFrame(() => {
                     dom.timelineScroll.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
                     dom.timelineScroll.style.transform = 'translateX(0)';
                     dom.timelineScroll.style.opacity = '1';
-                    dom.labelsBody.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-                    dom.labelsBody.style.transform = 'translateX(0)';
-                    dom.labelsBody.style.opacity = '1';
                 });
             }, 200);
         } else {
@@ -2265,9 +2278,6 @@ function setupTimelineSwipe() {
             dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
             dom.timelineScroll.style.transform = 'translateX(0)';
             dom.timelineScroll.style.opacity = '1';
-            dom.labelsBody.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            dom.labelsBody.style.transform = 'translateX(0)';
-            dom.labelsBody.style.opacity = '1';
         }
     }, { passive: true });
 }
