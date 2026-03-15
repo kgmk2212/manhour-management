@@ -708,7 +708,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                     rightPx = pad;
                     labelTopOffset = 0;
                 } else {
-                    const staggerX = 12;
+                    const staggerX = 3;
                     const staggerY = 14;
                     leftPx = pad + si * staggerX;
                     rightPx = pad + (schCount - 1 - si) * staggerX;
