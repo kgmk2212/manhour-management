@@ -487,10 +487,14 @@ function renderDailyView() {
     const hasActuals = actuals.some(a => a.date === dateStr);
     const isHoliday = isCalendarHoliday && !hasActuals;
 
-    let headerText = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
-    if (holiday) headerText += ` ${holiday}`;
-    else if (isCalendarHoliday) headerText += ' 休日';
-    dom.currentMonth.textContent = headerText;
+    const dateLabel = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
+    if (holiday) {
+        dom.currentMonth.innerHTML = `${escapeHtml(dateLabel)}<span class="actual-tl-holiday-badge">${escapeHtml(holiday)}</span>`;
+    } else if (isCalendarHoliday) {
+        dom.currentMonth.innerHTML = `${escapeHtml(dateLabel)}<span class="actual-tl-holiday-badge">休日</span>`;
+    } else {
+        dom.currentMonth.textContent = dateLabel;
+    }
 
     const members = getTimelineMembers();
     const totalHeight = isHoliday
