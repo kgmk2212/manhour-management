@@ -5866,7 +5866,6 @@ li.drop-below {
     padding: 0 6px;
     overflow: hidden;
     transition: box-shadow 0.15s, filter 0.15s;
-    height: 24px;
 }
 
 .actual-tl-bar:hover {
@@ -6859,10 +6858,9 @@ li.drop-below {
         font-size: 11px;
     }
 
-    /* バー: タッチしやすいサイズ */
-    .actual-tl-bar {
-        height: 22px;
-        min-height: 22px;
+    /* バー: タッチしやすいサイズ（実績バーのみ、予定バーは小さいまま） */
+    .actual-tl-bar.actual {
+        min-height: 20px;
         border-radius: 4px;
         font-size: 9px;
     }

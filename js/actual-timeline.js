@@ -2023,7 +2023,10 @@ function getTimelineMembers() {
         if (sch.member) memberSet.add(sch.member);
     });
 
-    return sortMembers(Array.from(memberSet), memberOrder);
+    // 設定画面のDOM要素から表示順を取得（他のビューと同じ方式）
+    const memberOrderEl = document.getElementById('memberOrder');
+    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : (memberOrder || '');
+    return sortMembers(Array.from(memberSet), memberOrderInput);
 }
 
 /**
