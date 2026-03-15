@@ -882,6 +882,9 @@ export function initTabSwipe() {
 
         // table-wrapperとestimate-table-wrapperは除外（スクロール端で許可）
         // matrix-containerも除外（内部のtable-wrapperでスクロール端判定）
+        // タイムライン内では独自のスワイプ操作を使用するためタブスワイプを無効化
+        if (target.closest('#actualTimeline')) return true;
+
         const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode, #calendarTableWrapper');
         return element !== null;
     }

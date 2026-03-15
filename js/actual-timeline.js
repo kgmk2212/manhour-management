@@ -121,6 +121,9 @@ export function initActualTimeline() {
     // スクロール同期
     setupScrollSync();
 
+    // タイムライン内スワイプ（日別: 日付切替、ガント: 月切替）
+    setupTimelineSwipe();
+
     console.log('✅ actual-timeline.js: 初期化完了');
 }
 
@@ -292,17 +295,22 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
         }
         html += '</div>';
 
-        // 予定バー（上部レーン: 薄い帯）— 同一version+taskの工程違いを結合
+        // 予定バー（上部レーン）— 同一version+taskの工程違いを結合、休日をスキップ
         const memberSchedules = getSchedulesForMember(member, year, month);
         const mergedSchedules = mergeSchedulesByTask(memberSchedules);
         mergedSchedules.forEach(sch => {
-            const barInfo = calcGanttBar(sch.startDate, sch.endDate, year, month, daysInMonth);
-            if (!barInfo) return;
             const color = getTaskColor(sch.version, sch.task);
-            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${hexToRgba(color, 0.35)};border-left:3px solid ${color};top:4px;height:${SCHEDULE_LANE_H - 4}px;"
-                data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
-                <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
-            </div>`;
+            // 休日をスキップして営業日のみの連続区間に分割
+            const segments = splitScheduleByWorkdays(sch.startDate, sch.endDate, year, month, daysInMonth);
+            segments.forEach((seg, segIdx) => {
+                const barInfo = calcGanttBar(seg.start, seg.end, year, month, daysInMonth);
+                if (!barInfo) return;
+                const isFirst = segIdx === 0;
+                html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${hexToRgba(color, 0.35)};${isFirst ? `border-left:3px solid ${color};` : ''}top:4px;height:${SCHEDULE_LANE_H - 4}px;"
+                    data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
+                    ${isFirst ? `<span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>` : ''}
+                </div>`;
+            });
         });
 
         // 実績バー（solid）— 隣接日を結合して表示
@@ -362,6 +370,43 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
 /**
  * ガントバーの左位置と幅を計算
  */
+/**
+ * 予定の日付範囲を営業日のみの連続区間に分割（休日スキップ）
+ */
+function splitScheduleByWorkdays(startDate, endDate, year, month, daysInMonth) {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month - 1, daysInMonth);
+    const start = new Date(startDate) < monthStart ? monthStart : new Date(startDate);
+    const end = new Date(endDate) > monthEnd ? monthEnd : new Date(endDate);
+
+    const segments = [];
+    let segStart = null;
+    let segEnd = null;
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const ds = d.toISOString().slice(0, 10);
+        const dow = d.getDay();
+        const isHoliday = dow === 0 || dow === 6 || !!getHoliday(ds);
+
+        if (isHoliday) {
+            // 休日 → 現在のセグメントを閉じる
+            if (segStart) {
+                segments.push({ start: segStart, end: segEnd });
+                segStart = null;
+                segEnd = null;
+            }
+        } else {
+            // 営業日
+            if (!segStart) segStart = ds;
+            segEnd = ds;
+        }
+    }
+    if (segStart) {
+        segments.push({ start: segStart, end: segEnd });
+    }
+    return segments;
+}
+
 function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
     const monthStart = new Date(year, month - 1, 1);
     const monthEnd = new Date(year, month - 1, daysInMonth);
@@ -390,6 +435,30 @@ function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
 const DAILY_HOUR_HEIGHT = 72;
 /** 日別ビュー: 1メンバー列の幅(px) */
 const DAILY_COL_WIDTH = 140;
+/** 昼休み時間帯 */
+const LUNCH_START = 12;
+const LUNCH_END = 13;
+/** 表示する時間スロット（昼休みを除く） */
+const DAILY_WORK_HOURS = [];
+for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+    if (h >= LUNCH_START && h < LUNCH_END) continue;
+    DAILY_WORK_HOURS.push(h);
+}
+
+/** 時間をY座標に変換（昼休みスキップ） */
+function hoursToY(hour, minutes) {
+    const m = minutes || 0;
+    // 昼休み前
+    if (hour < LUNCH_START) {
+        return (hour - WORK_START_HOUR + m / 60) * DAILY_HOUR_HEIGHT;
+    }
+    // 昼休み中 → 昼前の末尾に
+    if (hour < LUNCH_END) {
+        return (LUNCH_START - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+    }
+    // 昼休み後 — 1時間分引く
+    return (hour - WORK_START_HOUR - (LUNCH_END - LUNCH_START) + m / 60) * DAILY_HOUR_HEIGHT;
+}
 
 /**
  * 日別ビュー描画 — 縦軸=時間(9:00-18:00)、横軸=担当者
@@ -403,8 +472,7 @@ function renderDailyView() {
     dom.currentMonth.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
 
     const members = getTimelineMembers();
-    const totalHours = WORK_END_HOUR - WORK_START_HOUR;
-    const totalHeight = totalHours * DAILY_HOUR_HEIGHT;
+    const totalHeight = DAILY_WORK_HOURS.length * DAILY_HOUR_HEIGHT;
     const totalWidth = members.length * DAILY_COL_WIDTH;
 
     // ラベル列 → 時間ラベル（9:00〜17:00）
@@ -421,7 +489,6 @@ function renderDailyView() {
  * 日別: 時間ラベル列（左サイドに9:00〜17:00を縦表示）
  */
 function renderDailyTimeLabels(totalHeight) {
-    // ヘッダー位置は「時間」ラベルにする
     dom.labelsHeader.textContent = '時間';
 
     let html = '';
@@ -429,16 +496,16 @@ function renderDailyTimeLabels(totalHeight) {
     const isToday = currentDate === now.toISOString().slice(0, 10);
     const currentHour = now.getHours();
 
-    for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
-        const isLunch = h === 12;
+    DAILY_WORK_HOURS.forEach((h, i) => {
         const isNow = isToday && h === currentHour;
         let cls = 'actual-tl-dv-time-label';
-        if (isLunch) cls += ' lunch';
         if (isNow) cls += ' now';
+        const lunchNote = (i === DAILY_WORK_HOURS.indexOf(LUNCH_END))
+            ? '<span class="actual-tl-dv-lunch-badge">昼休み↑</span>' : '';
         html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
-            <span class="actual-tl-dv-time-text">${h}:00</span>
+            <span class="actual-tl-dv-time-text">${h}:00</span>${lunchNote}
         </div>`;
-    }
+    });
 
     dom.labelsBody.innerHTML = `<div style="height:${totalHeight}px;">${html}</div>`;
 }
@@ -471,19 +538,19 @@ function renderDailyMemberHeader(members) {
 function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
     let html = '';
 
-    // 時間グリッド背景（全メンバー共通の横線）
+    // 時間グリッド背景（昼休みスキップ）
     html += '<div class="actual-tl-dv-grid" style="position:absolute;inset:0;pointer-events:none;">';
-    for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
-        const top = (h - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
-        const isLunch = h === 12;
-        html += `<div class="actual-tl-dv-grid-line${isLunch ? ' lunch' : ''}" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
-    }
+    DAILY_WORK_HOURS.forEach((_, i) => {
+        const top = i * DAILY_HOUR_HEIGHT;
+        html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+    });
     // 現在時刻ライン
     const now = new Date();
     if (dateStr === now.toISOString().slice(0, 10)) {
-        const nowHour = now.getHours() + now.getMinutes() / 60;
-        if (nowHour >= WORK_START_HOUR && nowHour <= WORK_END_HOUR) {
-            const nowTop = (nowHour - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+        const nowHour = now.getHours();
+        const nowMin = now.getMinutes();
+        if (nowHour >= WORK_START_HOUR && nowHour < WORK_END_HOUR && !(nowHour >= LUNCH_START && nowHour < LUNCH_END)) {
+            const nowTop = hoursToY(nowHour, nowMin);
             html += `<div class="actual-tl-dv-now-line" style="top:${nowTop}px;"></div>`;
         }
     }
@@ -494,12 +561,11 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
         const colLeft = i * DAILY_COL_WIDTH;
         html += `<div class="actual-tl-dv-column" data-member="${escapeHtml(member)}" style="left:${colLeft}px;width:${DAILY_COL_WIDTH}px;height:${totalHeight}px;">`;
 
-        // 予定ブロック（背景として薄く表示）
+        // 予定ブロック（背景として薄く表示 — 昼休み除く全時間帯）
         const memberSchedules = getSchedulesForDate(member, dateStr);
         const mergedDaySch = mergeSchedulesByTask(memberSchedules);
         mergedDaySch.forEach(sch => {
             const color = getTaskColor(sch.version, sch.task);
-            // 予定は終日表示（上から下まで薄い帯）
             html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${totalHeight}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
                 data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
                 <span class="actual-tl-dv-sch-label" style="color:${color};">${escapeHtml(sch.task)}</span>
@@ -2017,6 +2083,111 @@ function setupScrollSync() {
     dom.labelsBody.addEventListener('scroll', () => {
         dom.timelineScroll.scrollTop = dom.labelsBody.scrollTop;
     });
+}
+
+/**
+ * タイムライン内横スワイプ → 日別:日切替 / ガント:月切替（指追従アニメーション付き）
+ */
+function setupTimelineSwipe() {
+    const el = dom.container;
+    if (!el) return;
+
+    let startX = 0, startY = 0, swiping = false, confirmed = false, startTime = 0;
+
+    el.addEventListener('touchstart', (e) => {
+        // ドラッグ中やペイン内は除外
+        if (dragState || e.target.closest('.actual-tl-right-pane, .actual-tl-task-card')) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+        swiping = true;
+        confirmed = false;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        if (!swiping) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+
+        if (!confirmed) {
+            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                // 縦優勢ならキャンセル
+                if (Math.abs(dy) > Math.abs(dx) * 1.2) {
+                    swiping = false;
+                    return;
+                }
+                confirmed = true;
+                // メイン領域にトランジションなしの追従を開始
+                dom.timelineScroll.style.transition = 'none';
+                dom.labelsBody.style.transition = 'none';
+            }
+            return;
+        }
+
+        if (e.cancelable) e.preventDefault();
+
+        // 指追従: コンテンツ全体を横にずらす
+        const clamped = Math.max(-120, Math.min(120, dx));
+        const opacity = 1 - Math.abs(clamped) / 300;
+        dom.timelineScroll.style.transform = `translateX(${clamped}px)`;
+        dom.timelineScroll.style.opacity = opacity;
+        dom.labelsBody.style.transform = `translateX(${clamped}px)`;
+        dom.labelsBody.style.opacity = opacity;
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+        if (!swiping) return;
+        swiping = false;
+
+        const dx = e.changedTouches[0].clientX - startX;
+        const elapsed = Date.now() - startTime;
+        const velocity = Math.abs(dx) / elapsed;
+        const threshold = velocity > 0.4 ? 30 : 60;
+
+        if (confirmed && Math.abs(dx) > threshold) {
+            const direction = dx > 0 ? -1 : 1; // 右スワイプ → 前日/前月
+            // アニメーション: スライドアウト
+            const slideOut = direction > 0 ? -200 : 200;
+            dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            dom.timelineScroll.style.transform = `translateX(${slideOut}px)`;
+            dom.timelineScroll.style.opacity = '0';
+            dom.labelsBody.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            dom.labelsBody.style.transform = `translateX(${slideOut}px)`;
+            dom.labelsBody.style.opacity = '0';
+
+            setTimeout(() => {
+                // ナビゲーション実行
+                if (viewMode === 'daily') {
+                    navigateDay(direction);
+                } else {
+                    navigateMonth(direction);
+                }
+                // スライドイン（反対側から）
+                dom.timelineScroll.style.transition = 'none';
+                dom.timelineScroll.style.transform = `translateX(${-slideOut}px)`;
+                dom.timelineScroll.style.opacity = '0';
+                dom.labelsBody.style.transition = 'none';
+                dom.labelsBody.style.transform = `translateX(${-slideOut}px)`;
+                dom.labelsBody.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    dom.timelineScroll.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                    dom.timelineScroll.style.transform = 'translateX(0)';
+                    dom.timelineScroll.style.opacity = '1';
+                    dom.labelsBody.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                    dom.labelsBody.style.transform = 'translateX(0)';
+                    dom.labelsBody.style.opacity = '1';
+                });
+            }, 200);
+        } else {
+            // 戻す
+            dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            dom.timelineScroll.style.transform = 'translateX(0)';
+            dom.timelineScroll.style.opacity = '1';
+            dom.labelsBody.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            dom.labelsBody.style.transform = 'translateX(0)';
+            dom.labelsBody.style.opacity = '1';
+        }
+    }, { passive: true });
 }
 
 // ============================================

@@ -5711,7 +5711,7 @@ li.drop-below {
 .actual-tl-timeline-header {
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: 15;
     height: 50px;
     display: flex;
     background: var(--surface-elevated);
@@ -5884,6 +5884,15 @@ li.drop-below {
 
 .actual-tl-dv-time-label.now .actual-tl-dv-time-text {
     color: var(--accent);
+}
+
+.actual-tl-dv-lunch-badge {
+    display: block;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--accent-secondary);
+    margin-top: 2px;
+    opacity: 0.7;
 }
 
 /* メンバーヘッダー（上部横並び） */
@@ -6936,11 +6945,10 @@ li.drop-below {
 
     /* ツールバー: コンパクト、1行に収まるよう調整 */
     .actual-tl-toolbar {
-        padding: 6px 8px;
-        gap: 6px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        padding: 8px 10px;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: space-between;
     }
 
     /* flex spacerを消す */
@@ -6948,37 +6956,55 @@ li.drop-below {
         display: none;
     }
 
+    /* ナビゲーション: 左に配置、日付ラベルを中心に */
     .actual-tl-nav {
-        gap: 2px;
-        flex-shrink: 0;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
     }
 
     .actual-tl-nav-btn {
-        padding: 6px;
-        min-width: 32px;
-        min-height: 32px;
+        padding: 4px;
+        min-width: 28px;
+        min-height: 28px;
+    }
+
+    /* 「今日」ボタンを非表示（スワイプで代替） */
+    .actual-tl-nav #atlToday {
+        display: none;
     }
 
     .actual-tl-current-month {
         font-size: 13px;
-        min-width: 72px;
+        min-width: 0;
+        flex: 1;
     }
 
+    /* ビュー切替 + パネルボタンを右に */
     .actual-tl-view-toggle {
         flex-shrink: 0;
     }
 
     .actual-tl-view-btn {
-        padding: 5px 10px;
+        padding: 4px 10px;
         font-size: 11px;
-        min-height: 32px;
+        min-height: 28px;
     }
 
     #atlTogglePane {
-        min-height: 32px;
+        min-height: 28px;
         flex-shrink: 0;
-        padding: 5px 8px;
+        padding: 4px 8px;
         font-size: 11px;
+    }
+
+    /* パネルボタンのテキストを非表示、アイコンのみ */
+    #atlTogglePane {
+        font-size: 0;
+    }
+    #atlTogglePane svg {
+        width: 16px !important;
+        height: 16px !important;
     }
 
     /* メインエリア: 画面いっぱいに */
