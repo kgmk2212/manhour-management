@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムライン実績入力 — 行内チップ型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+  --border:#E7E5E0;--border-light:#F0EEEA;
+  --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+  --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+  --accent-secondary:#C4841D;
+  --danger:#B91C1C;
+  --sidebar-bg:#1A1814;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+  --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,24,20,0.12);
+  --transition:200ms ease;
+  --label-w:148px;
+  --day-w:48px;
+  --row-h:54px;
+  --header-h:48px;
+  --chip-area-w:160px;
+}
+html{font-size:14px}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* ===== Topbar ===== */
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+.topbar-sub{font-size:12px;color:#9C9690}
+.topbar-spacer{flex:1}
+.topbar-badge{font-size:11px;font-weight:600;background:rgba(196,132,29,0.25);color:#fcc419;padding:3px 10px;border-radius:20px}
+
+/* ===== Toolbar ===== */
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.btn:hover{background:var(--surface-elevated);border-color:#ccc}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;transition:all var(--transition)}
+.btn-icon:hover{background:var(--surface-elevated)}
+.month-label{font-size:14px;font-weight:700;min-width:110px;text-align:center}
+.toolbar-sep{width:1px;height:22px;background:var(--border);margin:0 6px}
+
+/* ===== Main gantt layout ===== */
+.gantt-wrap{flex:1;display:flex;overflow:hidden}
+
+/* Labels column */
+.gantt-labels{width:var(--label-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);z-index:10;display:flex;flex-direction:column}
+.gantt-labels-header{height:var(--header-h);display:flex;align-items:center;padding:0 12px;font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface-elevated)}
+.gantt-labels-body{flex:1;overflow-y:hidden;overflow-x:hidden}
+.label-row{height:var(--row-h);display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border-light);transition:background var(--transition)}
+.label-row:nth-child(even){background:var(--surface-elevated)}
+.label-row.highlight{background:var(--accent-light) !important}
+.label-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.label-name{font-size:12px;font-weight:600}
+.label-hours{font-size:10px;color:var(--text-muted)}
+
+/* Timeline scroll area */
+.gantt-timeline{flex:1;overflow-x:auto;overflow-y:auto;position:relative}
+
+/* Header */
+.gantt-header{position:sticky;top:0;z-index:5;height:var(--header-h);display:flex;background:var(--surface-elevated);border-bottom:1px solid var(--border)}
+.gantt-header-day{
+  width:var(--day-w);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:9px;font-weight:600;color:var(--text-secondary);border-right:1px solid var(--border-light);
+}
+.gantt-header-day .d-num{font-size:12px;font-weight:700;color:var(--text-primary)}
+.gantt-header-day.weekend{background:rgba(156,150,144,0.07)}
+.gantt-header-day.weekend .d-num{color:var(--text-muted)}
+.gantt-header-day.today{background:rgba(45,90,39,0.08)}
+.gantt-header-day.today .d-num{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+/* Chip area header spacer - sticky */
+.header-chip-spacer{
+  width:var(--chip-area-w);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.04em;
+  border-left:2px dashed var(--border);
+  position:sticky;right:0;background:var(--surface-elevated);z-index:2;
+}
+
+/* Body */
+.gantt-body{position:relative}
+
+/* Each row: timeline + sticky chip area */
+.gantt-row{
+  height:var(--row-h);display:flex;align-items:stretch;
+  border-bottom:1px solid var(--border-light);position:relative;
+}
+.gantt-row:nth-child(even){background:var(--surface-elevated)}
+.gantt-row.drop-active .row-timeline{background:rgba(45,90,39,0.04)}
+
+/* The scrollable timeline portion of the row */
+.row-timeline{position:relative;flex-shrink:0}
+
+/* Day column backgrounds */
+.row-bg{position:absolute;inset:0;display:flex;pointer-events:none}
+.day-col{width:var(--day-w);flex-shrink:0;border-right:1px solid var(--border-light)}
+.day-col.weekend{background:rgba(156,150,144,0.05)}
+
+/* Today line */
+.today-line{position:absolute;top:0;width:2px;background:var(--accent);z-index:8;pointer-events:none}
+.today-line::after{content:'';position:absolute;top:-3px;left:-3px;width:8px;height:8px;background:var(--accent);border-radius:50%}
+
+/* Bars */
+.bar{position:absolute;border-radius:3px;z-index:2;display:flex;align-items:center;padding:0 5px;overflow:hidden;transition:filter 0.15s,box-shadow 0.15s}
+.bar:hover{filter:brightness(1.08);box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+.bar.plan{height:8px;top:6px;opacity:0.3}
+.bar.actual{height:16px;top:30px}
+.bar .bar-text{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== Chip area: sticky inside the row ===== */
+.row-chips{
+  position:sticky;right:0;z-index:4;
+  width:var(--chip-area-w);flex-shrink:0;
+  display:flex;align-items:center;gap:5px;
+  padding:0 8px;
+  border-left:2px dashed var(--border);
+  overflow-x:auto;overflow-y:hidden;
+}
+.gantt-row:nth-child(even) .row-chips{background:var(--surface-elevated)}
+.gantt-row:nth-child(odd) .row-chips{background:var(--surface)}
+.row-chips::-webkit-scrollbar{height:0}
+
+/* Individual chip */
+.chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 8px;border-radius:4px;
+  cursor:grab;user-select:none;white-space:nowrap;flex-shrink:0;
+  font-size:10px;font-weight:700;color:#fff;
+  transition:all 0.15s;
+  border:1.5px solid transparent;
+}
+.chip:hover{
+  transform:translateX(-3px);
+  box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  border-color:rgba(255,255,255,0.4);
+}
+.chip:active{cursor:grabbing}
+.chip.dragging{opacity:0.25;transform:scale(0.85)}
+.chip .chip-h{font-size:8px;opacity:0.7}
+.chip::before{
+  content:'←';font-size:9px;opacity:0;margin-right:-2px;
+  transition:opacity 0.15s,margin 0.15s;color:rgba(255,255,255,0.8);
+}
+.chip:hover::before{opacity:1;margin-right:2px}
+
+/* ===== Drop preview ===== */
+.drop-preview{
+  position:absolute;height:16px;top:30px;border-radius:3px;z-index:6;
+  border:2px dashed var(--accent);background:rgba(45,90,39,0.1);
+  pointer-events:none;animation:prevPulse 1s ease infinite;
+}
+@keyframes prevPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* ===== Drag ghost ===== */
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:1000;
+  padding:3px 10px;border-radius:4px;
+  font-size:10px;font-weight:700;color:#fff;
+  box-shadow:0 6px 20px rgba(0,0,0,0.3);
+  white-space:nowrap;transform:translate(8px,-50%);
+}
+
+/* ===== Inline editor ===== */
+.inline-editor{
+  position:absolute;z-index:20;display:flex;align-items:center;gap:4px;
+  padding:4px 8px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);box-shadow:var(--shadow-lg);
+  animation:edIn 0.2s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;
+}
+@keyframes edIn{from{opacity:0;transform:translateY(6px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.inline-editor input{width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-xs);font:inherit;font-size:12px;font-weight:700;text-align:center}
+.inline-editor input:focus{outline:none;border-color:var(--accent)}
+.inline-editor .ie-unit{font-size:11px;color:var(--text-muted)}
+.inline-editor .ie-btn{width:24px;height:24px;border:none;border-radius:var(--radius-xs);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all var(--transition)}
+.inline-editor .ie-ok{background:var(--accent);color:#fff}
+.inline-editor .ie-ok:hover{background:var(--accent-hover)}
+.inline-editor .ie-no{background:var(--surface-elevated);color:var(--text-muted)}
+.inline-editor .ie-no:hover{background:var(--border)}
+.inline-editor .ie-name{font-size:11px;font-weight:600;color:var(--text-primary);margin-right:2px;max-width:72px;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== Chip tooltip ===== */
+.chip-tt{
+  position:fixed;z-index:60;padding:7px 11px;
+  background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:11px;line-height:1.5;
+  box-shadow:0 4px 16px rgba(0,0,0,0.25);pointer-events:none;
+  animation:ttFade 0.12s ease;white-space:nowrap;
+}
+@keyframes ttFade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== Legend ===== */
+.legend{display:flex;gap:14px;padding:7px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)}
+.legend-dot{width:18px;height:7px;border-radius:2px}
+.legend-hint{margin-left:auto;font-size:11px;color:var(--text-secondary);font-weight:600}
+
+/* ===== Toast ===== */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;border-radius:var(--radius-md);font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">工数管理</div>
+  <div class="topbar-sub">タイムライン実績入力</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-badge">案2 — 行内チップ型</div>
+</div>
+
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="btn-icon" onclick="showToast('前の2週間')">◀</button>
+    <span class="month-label">2026年3月</span>
+    <button class="btn-icon" onclick="showToast('次の2週間')">▶</button>
+    <button class="btn" onclick="scrollToToday()">今日</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <button class="btn active">予定+実績</button>
+  <button class="btn">実績のみ</button>
+  <div style="flex:1"></div>
+</div>
+
+<div class="gantt-wrap">
+  <div class="gantt-labels">
+    <div class="gantt-labels-header">担当者</div>
+    <div class="gantt-labels-body" id="labelBody"></div>
+  </div>
+  <div class="gantt-timeline" id="timeline">
+    <div class="gantt-header" id="headerRow"></div>
+    <div class="gantt-body" id="ganttBody"></div>
+    <div class="today-line" id="todayLine"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#93C5FD;opacity:0.4"></div>予定</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>実績</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>完了</div>
+  <div class="legend-hint">行の右端チップを ← 左にドラッグして実績登録</div>
+</div>
+
+<div class="chip-tt" id="chipTT" style="display:none"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// Data
+// ============================================
+const MEMBERS = [
+  { name:'田中 太郎', ini:'田', color:'#2563EB' },
+  { name:'佐藤 花子', ini:'佐', color:'#7C3AED' },
+  { name:'鈴木 一郎', ini:'鈴', color:'#C4841D' },
+  { name:'高橋 美咲', ini:'高', color:'#0F766E' },
+  { name:'渡辺 健太', ini:'渡', color:'#B91C1C' },
+];
+const TASKS = [
+  { id:0, name:'基本設計', abbr:'基本設計', ver:'v2.0', proc:'UI', color:'#4dabf7', est:24 },
+  { id:1, name:'API実装', abbr:'API', ver:'v2.0', proc:'PG', color:'#20c997', est:40 },
+  { id:2, name:'画面実装', abbr:'画面', ver:'v2.0', proc:'PG', color:'#51cf66', est:32 },
+  { id:3, name:'単体テスト', abbr:'単体PT', ver:'v2.0', proc:'PT', color:'#fcc419', est:16 },
+  { id:4, name:'結合テスト', abbr:'結合IT', ver:'v2.0', proc:'IT', color:'#ff6b6b', est:24 },
+  { id:5, name:'DB設計', abbr:'DB設計', ver:'v1.5', proc:'UI', color:'#845ef7', est:16 },
+  { id:6, name:'バッチ処理', abbr:'バッチ', ver:'v1.5', proc:'PG', color:'#339af0', est:20 },
+  { id:7, name:'性能改善', abbr:'性能', ver:'v2.0', proc:'PG', color:'#f06595', est:12 },
+];
+const MEMBER_TASKS = [
+  [0,3,7],    // 田中
+  [1,4],      // 佐藤
+  [2,6],      // 鈴木
+  [0,5,7],    // 高橋
+  [3,4,6],    // 渡辺
+];
+const PLAN_BARS = [
+  {m:0,t:0,s:2,e:7},{m:0,t:3,s:11,e:14},
+  {m:1,t:1,s:3,e:10},{m:1,t:4,s:13,e:18},
+  {m:2,t:2,s:1,e:8},{m:2,t:6,s:10,e:14},
+  {m:3,t:5,s:2,e:5},{m:3,t:7,s:8,e:12},
+  {m:4,t:4,s:5,e:11},{m:4,t:3,s:13,e:17},
+];
+let ACTUAL_BARS = [
+  {m:0,t:0,s:2,e:5,h:24},
+  {m:1,t:1,s:3,e:7,h:32},
+  {m:2,t:2,s:1,e:6,h:36},
+  {m:3,t:5,s:2,e:5,h:16},
+];
+const YEAR=2026,MONTH=3,S_DAY=1,E_DAY=21,TODAY=15;
+const DW=48,RH=54,CHIP_W=160;
+
+function isWE(d){return[0,6].includes(new Date(YEAR,MONTH-1,d).getDay())}
+function dn(d){return['日','月','火','水','木','金','土'][new Date(YEAR,MONTH-1,d).getDay()]}
+const totalDays=E_DAY-S_DAY+1;
+const timelineW=totalDays*DW;
+
+// ============================================
+// Render
+// ============================================
+function renderHeader(){
+  let h='';
+  for(let d=S_DAY;d<=E_DAY;d++){
+    const cls=d===TODAY?'today':isWE(d)?'weekend':'';
+    h+=`<div class="gantt-header-day ${cls}"><span style="font-size:9px">${dn(d)}</span><span class="d-num">${d}</span></div>`;
+  }
+  h+=`<div class="header-chip-spacer">未登録</div>`;
+  const el=document.getElementById('headerRow');
+  el.innerHTML=h;
+  el.style.width=(timelineW+CHIP_W)+'px';
+}
+
+function renderLabels(){
+  document.getElementById('labelBody').innerHTML=MEMBERS.map((m,i)=>{
+    const ah=ACTUAL_BARS.filter(b=>b.m===i).reduce((s,b)=>s+b.h,0);
+    return`<div class="label-row" id="lr${i}"><div class="label-avatar" style="background:${m.color}">${m.ini}</div><div><div class="label-name">${m.name}</div><div class="label-hours">${ah}h</div></div></div>`;
+  }).join('');
+}
+
+function renderBody(){
+  const body=document.getElementById('ganttBody');
+  let html='';
+
+  MEMBERS.forEach((m,mi)=>{
+    let bg='';
+    for(let d=S_DAY;d<=E_DAY;d++) bg+=`<div class="day-col ${isWE(d)?'weekend':''}"></div>`;
+
+    let bars='';
+    PLAN_BARS.filter(b=>b.m===mi).forEach(b=>{
+      const t=TASKS[b.t],l=(b.s-S_DAY)*DW+2,w=(b.e-b.s+1)*DW-4;
+      bars+=`<div class="bar plan" style="left:${l}px;width:${w}px;background:${t.color}"></div>`;
+    });
+    ACTUAL_BARS.filter(b=>b.m===mi).forEach(b=>{
+      const t=TASKS[b.t],l=(b.s-S_DAY)*DW+2,w=(b.e-b.s+1)*DW-4;
+      bars+=`<div class="bar actual" style="left:${l}px;width:${w}px;background:${t.color}"><span class="bar-text">${t.name} ${b.h}h</span></div>`;
+    });
+
+    const chipIds=MEMBER_TASKS[mi];
+    let chips='';
+    chipIds.forEach(tid=>{
+      const t=TASKS[tid];
+      chips+=`<div class="chip" style="background:${t.color}" data-task="${tid}" data-member="${mi}"
+        onmousedown="chipDown(event,${mi},${tid})"
+        onmouseenter="chipTTShow(event,${tid})" onmouseleave="chipTTHide()">
+        ${t.abbr}<span class="chip-h">${t.est}h</span>
+      </div>`;
+    });
+    if(!chipIds.length) chips='<span style="font-size:10px;color:var(--text-muted)">—</span>';
+
+    html+=`<div class="gantt-row" id="gr${mi}" data-member="${mi}">
+      <div class="row-timeline" id="rt${mi}" style="width:${timelineW}px">
+        <div class="row-bg">${bg}</div>
+        ${bars}
+      </div>
+      <div class="row-chips" id="rc${mi}">${chips}</div>
+    </div>`;
+  });
+
+  body.innerHTML=html;
+  body.style.width=(timelineW+CHIP_W)+'px';
+
+  const tl=document.getElementById('todayLine');
+  tl.style.left=((TODAY-S_DAY)*DW+DW/2)+'px';
+  tl.style.top='0';
+  tl.style.height=(MEMBERS.length*RH+48)+'px';
+}
+
+function syncScroll(){
+  const tl=document.getElementById('timeline');
+  const lb=document.getElementById('labelBody');
+  tl.addEventListener('scroll',()=>{lb.scrollTop=tl.scrollTop});
+}
+
+function scrollToToday(){
+  document.getElementById('timeline').scrollTo({left:Math.max(0,(TODAY-S_DAY-3)*DW),behavior:'smooth'});
+}
+
+function render(){renderHeader();renderLabels();renderBody();syncScroll();setTimeout(scrollToToday,200)}
+
+// ============================================
+// Mouse-based drag
+// ============================================
+let drag=null;
+let ghostEl=null;
+let previewEl=null;
+let activeEditor=null;
+
+function chipDown(e,mi,tid){
+  e.preventDefault();
+  e.stopPropagation();
+  chipTTHide();
+
+  const t=TASKS[tid];
+  const chipEl=e.currentTarget;
+  const startX=e.clientX,startY=e.clientY;
+  let started=false;
+
+  function onMove(ev){
+    const dx=ev.clientX-startX,dy=ev.clientY-startY;
+    if(!started && Math.abs(dx)+Math.abs(dy)<4) return;
+    if(!started){
+      started=true;
+      chipEl.classList.add('dragging');
+      document.getElementById('lr'+mi).classList.add('highlight');
+      ghostEl=document.createElement('div');
+      ghostEl.className='drag-ghost';
+      ghostEl.style.background=t.color;
+      ghostEl.textContent=t.abbr+' '+t.est+'h';
+      document.body.appendChild(ghostEl);
+      drag={mi,tid,task:t,chipEl};
+    }
+    ghostEl.style.left=ev.clientX+'px';
+    ghostEl.style.top=ev.clientY+'px';
+
+    // Show drop preview if over this member's timeline area
+    const rowTL=document.getElementById('rt'+mi);
+    const rect=rowTL.getBoundingClientRect();
+    const row=document.getElementById('gr'+mi);
+    const rowRect=row.getBoundingClientRect();
+    const scrollLeft=document.getElementById('timeline').scrollLeft;
+
+    if(ev.clientX>=rect.left && ev.clientX<=rect.right && ev.clientY>=rowRect.top && ev.clientY<=rowRect.bottom){
+      row.classList.add('drop-active');
+      const x=ev.clientX-rect.left+scrollLeft;
+      const dayIdx=Math.max(0,Math.min(totalDays-1,Math.floor(x/DW)));
+      const estDays=Math.ceil(t.est/8);
+      const pw=Math.min(estDays,totalDays-dayIdx)*DW-4;
+      if(!previewEl){
+        previewEl=document.createElement('div');
+        previewEl.className='drop-preview';
+        rowTL.appendChild(previewEl);
+      }
+      previewEl.style.left=(dayIdx*DW+2)+'px';
+      previewEl.style.width=Math.max(DW-4,pw)+'px';
+      previewEl.dataset.dayIdx=dayIdx;
+    } else {
+      row.classList.remove('drop-active');
+      if(previewEl){previewEl.remove();previewEl=null}
+    }
+  }
+
+  function onUp(ev){
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    if(!started) return;
+
+    chipEl.classList.remove('dragging');
+    document.getElementById('lr'+mi).classList.remove('highlight');
+    if(ghostEl){ghostEl.remove();ghostEl=null}
+
+    const row=document.getElementById('gr'+mi);
+    row.classList.remove('drop-active');
+
+    if(previewEl){
+      const dayIdx=parseInt(previewEl.dataset.dayIdx);
+      const startDay=S_DAY+dayIdx;
+      const estDays=Math.ceil(t.est/8);
+      const endDay=Math.min(startDay+estDays-1,E_DAY);
+      const barLeft=dayIdx*DW+2;
+      const barWidth=(endDay-startDay+1)*DW-4;
+
+      previewEl.remove();previewEl=null;
+
+      const rowTL=document.getElementById('rt'+mi);
+      const tempBar=document.createElement('div');
+      tempBar.className='bar actual';
+      tempBar.style.cssText=`left:${barLeft}px;width:${barWidth}px;background:${t.color};opacity:0.6;border:2px solid ${t.color};animation:edIn 0.2s ease`;
+      tempBar.innerHTML=`<span class="bar-text">${t.name}</span>`;
+      rowTL.appendChild(tempBar);
+
+      showEditor(rowTL,barLeft,t,mi,startDay,endDay,t.est,tempBar);
+    }
+    drag=null;
+  }
+
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+function showEditor(container,barLeft,task,mi,startDay,endDay,hours,tempBar){
+  removeEditor();
+  const ed=document.createElement('div');
+  ed.className='inline-editor';
+  ed.style.left=barLeft+'px';
+  ed.style.top='2px';
+  ed.innerHTML=`
+    <span class="ie-name">${task.name}</span>
+    <input type="number" value="${hours}" min="1" step="1" id="ieH">
+    <span class="ie-unit">h</span>
+    <button class="ie-btn ie-ok" onclick="confirmDrop(${mi},${task.id},${startDay},${endDay})" title="記録">✓</button>
+    <button class="ie-btn ie-no" onclick="cancelDrop()" title="取消">✕</button>
+  `;
+  container.appendChild(ed);
+  activeEditor={ed,tempBar,container};
+  setTimeout(()=>{const inp=document.getElementById('ieH');if(inp)inp.select()},50);
+  ed.querySelector('input').addEventListener('keydown',ev=>{
+    if(ev.key==='Enter') confirmDrop(mi,task.id,startDay,endDay);
+    if(ev.key==='Escape') cancelDrop();
+  });
+}
+
+function confirmDrop(mi,tid,sd,ed){
+  const hours=parseInt(document.getElementById('ieH').value)||8;
+  const t=TASKS[tid],m=MEMBERS[mi];
+  ACTUAL_BARS.push({m:mi,t:tid,s:sd,e:ed,h:hours});
+  const idx=MEMBER_TASKS[mi].indexOf(tid);
+  if(idx>-1) MEMBER_TASKS[mi].splice(idx,1);
+  removeEditor();
+  renderBody();renderLabels();
+  showToast(`✓「${t.name}」${hours}h を記録 — ${m.name}`);
+}
+function cancelDrop(){removeEditor()}
+function removeEditor(){
+  if(activeEditor){activeEditor.ed.remove();activeEditor.tempBar.remove();activeEditor=null}
+}
+
+// ============================================
+// Chip tooltip
+// ============================================
+function chipTTShow(e,tid){
+  const t=TASKS[tid];
+  const tt=document.getElementById('chipTT');
+  tt.innerHTML=`<strong>${t.name}</strong><br><span style="color:#9C9690">${t.ver} / ${t.proc} / 見積 ${t.est}h</span><br><span style="color:#93C5FD;font-size:10px">← 左にドラッグして登録</span>`;
+  tt.style.display='block';
+  tt.style.left=(e.clientX-80)+'px';
+  tt.style.top=(e.clientY-60)+'px';
+}
+function chipTTHide(){document.getElementById('chipTT').style.display='none'}
+
+// ============================================
+// Toast
+// ============================================
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('visible');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('visible'),2500);
+}
+
+render();
+</script>
+</body>
+</html>

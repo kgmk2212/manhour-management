@@ -106,6 +106,9 @@ git branch -D experiment/sandbox
 │   ├── GANTT_CHART_SPEC.md           # ガントチャート仕様書
 │   ├── GANTT_CHART_DESIGN.md         # 詳細設計書
 │   └── GANTT_CHART_IMPLEMENTATION_PLAN.md  # 実装計画
+├── mockups/            # デザインモックアップ（機能別サブフォルダ）
+│   ├── mobile-backup-access/  # モバイル版バックアップ復元アクセス改善
+│   └── timeline-actuals/      # タイムライン実績入力（D&D）
 └── CLAUDE.md           # このファイル
 ```
 
@@ -126,6 +129,28 @@ git branch -D experiment/sandbox
 - 新しい状態変数は `js/state.js` に追加
 - JSDocコメントを関数に付与
 - 既存のコードスタイルに合わせる
+
+---
+
+## モックアップ管理
+
+モックアップは設計判断の重要な記録資料としてGitに含める。
+
+### ルール
+
+- **機能別サブフォルダ**: `mockups/<機能名>/` に格納する（例: `mockups/timeline-actuals/`）
+- **Gitに含める**: モックアップは設計判断の材料であり、ADRと同様に後から振り返れるようにする
+- **ADRとの紐づけ**: モックアップに基づく設計判断を行った場合、ADRを作成し相互リンクする
+  - ADR内でモックアップファイルへのパスを記載する
+  - モックアップフォルダ内にREADME.mdを置き、関連ADRへのリンクと各案の概要を記載する
+- **ライフサイクル**: 採用/不採用が決定したモックアップも履歴として保持する。不要になった場合はGit履歴に残した上で削除可
+
+### 現在のモックアップ
+
+| フォルダ | 機能 | 状態 |
+|---------|------|------|
+| `mockups/mobile-backup-access/` | モバイル版バックアップ復元アクセス改善 | 検討中 |
+| `mockups/timeline-actuals/` | タイムライン実績入力（D&D） | 検討中 |
 
 ---
 

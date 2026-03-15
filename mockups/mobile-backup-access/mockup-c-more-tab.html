@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案C: その他タブ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+    --border:#E7E5E0;--border-light:#F0EEEA;
+    --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+    --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+    --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+    --sidebar-bg:#1A1814;--sidebar-text:#B8B4AE;--sidebar-text-active:#F7F6F3;
+    --danger:#B91C1C;
+    --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+    --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+    --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+    --transition:200ms ease;
+  }
+  html{font-size:14px}
+  body{
+    font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+    background:#E8E6E1;color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:20px 16px;
+  }
+  .proposal-label{font-size:13px;font-weight:700;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:8px}
+  .proposal-title{font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em;margin-bottom:6px}
+  .proposal-desc{font-size:13px;color:var(--text-secondary);margin-bottom:24px;max-width:400px;text-align:center;line-height:1.6}
+
+  .device{
+    width:375px;max-width:100%;background:var(--bg);
+    border-radius:24px;overflow:hidden;position:relative;
+    box-shadow:0 8px 40px rgba(26,24,20,0.15),0 2px 8px rgba(26,24,20,0.08);
+    border:6px solid #2D2A25;
+  }
+  .mobile-header{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;background:var(--sidebar-bg);
+    color:var(--sidebar-text-active);position:sticky;top:0;z-index:100;
+  }
+  .hamburger-btn{
+    width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+    background:none;border:none;color:var(--sidebar-text-active);
+    cursor:pointer;border-radius:var(--radius-xs);
+  }
+  .mobile-page-title{font-size:16px;font-weight:700;letter-spacing:-0.02em;flex:1}
+
+  .content-area{padding:20px 16px;min-height:460px}
+
+  /* "More" page grid */
+  .more-page-title{
+    font-size:18px;font-weight:700;color:var(--text-primary);
+    letter-spacing:-0.02em;margin-bottom:4px;
+  }
+  .more-page-sub{
+    font-size:12px;color:var(--text-muted);margin-bottom:20px;
+  }
+
+  .section-label{
+    font-size:11px;font-weight:700;letter-spacing:0.06em;
+    text-transform:uppercase;color:var(--text-muted);
+    margin-bottom:10px;padding-left:2px;
+  }
+
+  .action-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;
+  }
+  .action-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);padding:16px 14px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    cursor:pointer;transition:all 0.15s;text-align:center;
+    font-family:inherit;-webkit-tap-highlight-color:transparent;
+  }
+  .action-card:active{
+    transform:scale(0.97);background:var(--surface-elevated);
+  }
+  .action-card .icon-circle{
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.15s;
+  }
+  .action-card .icon-circle svg{width:20px;height:20px}
+  .action-card .card-label{font-size:13px;font-weight:600;color:var(--text-primary)}
+  .action-card .card-sub{font-size:11px;color:var(--text-muted);margin-top:-4px}
+
+  /* Color themes for icon circles */
+  .icon-green{background:var(--accent-light);color:var(--accent)}
+  .icon-amber{background:var(--accent-secondary-light);color:var(--accent-secondary)}
+  .icon-slate{background:#F1F5F9;color:#475569}
+  .icon-blue{background:#EFF6FF;color:#1D6FA5}
+  .icon-rose{background:#FDF2F8;color:#BE185D}
+
+  /* Nav list style */
+  .nav-list{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);overflow:hidden;margin-bottom:24px;
+  }
+  .nav-list-item{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;cursor:pointer;transition:background 0.15s;
+    font-family:inherit;border:none;background:none;width:100%;
+    text-align:left;-webkit-tap-highlight-color:transparent;
+  }
+  .nav-list-item:active{background:var(--surface-elevated)}
+  .nav-list-item+.nav-list-item{border-top:1px solid var(--border-light)}
+  .nav-list-item .nav-icon{
+    width:36px;height:36px;border-radius:var(--radius-sm);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .nav-list-item .nav-icon svg{width:18px;height:18px}
+  .nav-list-item .nav-text{flex:1}
+  .nav-list-item .nav-label{font-size:13px;font-weight:600;color:var(--text-primary)}
+  .nav-list-item .nav-sub{font-size:11px;color:var(--text-muted)}
+  .nav-list-item .nav-arrow{color:var(--text-muted)}
+  .nav-list-item .nav-arrow svg{width:16px;height:16px}
+
+  /* Bottom Tab Bar */
+  .mobile-tab-bar{
+    display:flex;position:sticky;bottom:0;left:0;right:0;z-index:150;
+    background:var(--sidebar-bg);border-top:1px solid rgba(255,255,255,0.08);
+    padding:4px 0;padding-bottom:max(4px, env(safe-area-inset-bottom));
+  }
+  .mobile-tab-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 0;background:none;border:none;color:var(--sidebar-text);
+    opacity:0.5;cursor:pointer;transition:opacity 0.15s,color 0.15s;
+    -webkit-tap-highlight-color:transparent;font-family:inherit;
+  }
+  .mobile-tab-item.active{color:var(--sidebar-text-active);opacity:1}
+  .mobile-tab-item svg{width:20px;height:20px}
+  .mobile-tab-item span{font-size:10px;font-weight:600;letter-spacing:-0.02em}
+
+  .annotation{
+    position:absolute;font-size:11px;font-weight:600;
+    color:#fff;background:var(--accent);
+    padding:4px 10px;border-radius:20px;white-space:nowrap;z-index:400;
+    box-shadow:0 2px 8px rgba(45,90,39,0.3);pointer-events:none;
+  }
+  .annotation::before{
+    content:'';position:absolute;width:0;height:0;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+  }
+  .annotation.arrow-down::before{
+    bottom:-5px;left:50%;transform:translateX(-50%);border-top:5px solid var(--accent);
+  }
+
+  .state-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+  .state-btn{
+    padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);background:var(--surface);
+    color:var(--text-secondary);cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .state-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toast{
+    position:absolute;bottom:76px;left:16px;right:16px;
+    background:var(--text-primary);color:#fff;
+    padding:12px 16px;border-radius:var(--radius-md);
+    font-size:13px;font-weight:500;
+    display:flex;align-items:center;gap:8px;z-index:300;
+    opacity:0;transform:translateY(8px);transition:all 0.3s ease;
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast svg{width:16px;height:16px;color:var(--accent);flex-shrink:0}
+
+  /* Content pages */
+  .page{display:none}
+  .page.active{display:block}
+
+  .placeholder-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);padding:16px;margin-bottom:12px;
+  }
+  .placeholder-card .p-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+  .placeholder-card .p-sub{font-size:12px;color:var(--text-muted)}
+  .placeholder-shimmer{height:12px;background:var(--border-light);border-radius:4px;margin-top:8px}
+  .placeholder-shimmer.w60{width:60%}.placeholder-shimmer.w80{width:80%}.placeholder-shimmer.w40{width:40%}
+</style>
+</head>
+<body>
+
+<div class="proposal-label">Proposal C</div>
+<div class="proposal-title">案C: その他タブ</div>
+<div class="proposal-desc">
+  タブバーの最後を「その他」に変更し、<br>
+  設定・バックアップ・復元・履歴・スケジュールをまとめたハブに。<br>
+  タブをクリックして操作を試してください。
+</div>
+
+<div class="state-bar">
+  <button class="state-btn" onclick="showPage('quick')">入力タブ</button>
+  <button class="state-btn active" onclick="showPage('more')">その他タブ</button>
+</div>
+
+<div class="device" id="device">
+  <div class="mobile-header">
+    <button class="hamburger-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="mobile-page-title" id="headerTitle">その他</span>
+  </div>
+
+  <div id="annMore" class="annotation arrow-down" style="position:absolute;bottom:52px;right:20px;z-index:400;">
+    「その他」に集約
+  </div>
+
+  <!-- Quick Input Page -->
+  <div class="page" id="page-quick">
+    <div class="content-area">
+      <div class="placeholder-card">
+        <div class="p-title">今日の工数入力</div>
+        <div class="p-sub">2026-03-10（火）</div>
+        <div class="placeholder-shimmer w80"></div>
+        <div class="placeholder-shimmer w60" style="margin-top:4px"></div>
+      </div>
+      <div class="placeholder-card">
+        <div class="p-title">直近の入力</div>
+        <div class="p-sub">3件</div>
+        <div class="placeholder-shimmer w80"></div>
+        <div class="placeholder-shimmer w40" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- More Page -->
+  <div class="page active" id="page-more">
+    <div class="content-area">
+      <div class="section-label">データ</div>
+      <div class="action-grid">
+        <div class="action-card" onclick="handleAction('バックアップを保存しました')">
+          <div class="icon-circle icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="card-label">バックアップ</div>
+          <div class="card-sub">データを保存</div>
+        </div>
+        <div class="action-card" onclick="handleAction('JSONまたはExcelファイルを選択してください…')">
+          <div class="icon-circle icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="card-label">復元</div>
+          <div class="card-sub">バックアップから復元</div>
+        </div>
+      </div>
+
+      <div class="section-label">機能</div>
+      <div class="nav-list">
+        <button class="nav-list-item" onclick="handleAction('スケジュール画面へ遷移します…')">
+          <div class="nav-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="nav-text">
+            <div class="nav-label">スケジュール</div>
+            <div class="nav-sub">ガントチャート・予定管理</div>
+          </div>
+          <div class="nav-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+        <button class="nav-list-item" onclick="handleAction('変更履歴を表示します…')">
+          <div class="nav-icon icon-slate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="nav-text">
+            <div class="nav-label">変更履歴</div>
+            <div class="nav-sub">データの変更ログ</div>
+          </div>
+          <div class="nav-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+        <button class="nav-list-item" onclick="handleAction('設定画面へ遷移します…')">
+          <div class="nav-icon icon-slate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09"/></svg>
+          </div>
+          <div class="nav-text">
+            <div class="nav-label">設定</div>
+            <div class="nav-sub">テーマ・表示・データ管理</div>
+          </div>
+          <div class="nav-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="mobile-tab-bar">
+    <button class="mobile-tab-item" onclick="showPage('quick')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>入力</span>
+    </button>
+    <button class="mobile-tab-item" onclick="showPage('quick')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>レポート</span>
+    </button>
+    <button class="mobile-tab-item" onclick="showPage('quick')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>見積</span>
+    </button>
+    <button class="mobile-tab-item" onclick="showPage('quick')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>実績</span>
+    </button>
+    <button class="mobile-tab-item active" onclick="showPage('more')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:20px;height:20px"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+      <span>その他</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const toast = document.getElementById('toast');
+const headerTitle = document.getElementById('headerTitle');
+const annMore = document.getElementById('annMore');
+const titles = { quick: 'クイック入力', more: 'その他' };
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  headerTitle.textContent = titles[page] || 'その他';
+
+  const tabs = document.querySelectorAll('.mobile-tab-item');
+  tabs.forEach(t => t.classList.remove('active'));
+  if (page === 'more') { tabs[4].classList.add('active'); }
+  else { tabs[0].classList.add('active'); }
+
+  document.querySelectorAll('.state-btn').forEach((b, i) => {
+    b.classList.toggle('active', (page === 'quick' && i === 0) || (page === 'more' && i === 1));
+  });
+
+  annMore.style.display = page === 'more' ? 'block' : 'none';
+  toast.classList.remove('show');
+}
+
+function handleAction(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

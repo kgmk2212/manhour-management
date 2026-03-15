@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モバイル復元UI - 提案一覧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#F7F6F3;--surface:#FFFFFF;--border:#E7E5E0;--border-light:#F0EEEA;
+    --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+    --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+    --radius-md:8px;--radius-lg:12px;
+  }
+  body{
+    font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+    background:var(--bg);color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+    padding:40px 20px;max-width:800px;margin:0 auto;
+  }
+  h1{
+    font-size:28px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px;
+  }
+  .subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:32px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:24px;
+    text-decoration:none;color:inherit;
+    transition:all 0.2s;display:block;
+  }
+  .card:hover{
+    border-color:var(--accent);box-shadow:0 4px 16px rgba(45,90,39,0.08);
+    transform:translateY(-2px);
+  }
+  .card-label{
+    font-size:11px;font-weight:700;letter-spacing:0.06em;
+    color:var(--accent);margin-bottom:6px;
+  }
+  .card-title{font-size:18px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px}
+  .card-desc{font-size:13px;color:var(--text-secondary);line-height:1.6}
+  .card-tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .tag{
+    font-size:11px;font-weight:600;padding:3px 8px;
+    border-radius:4px;background:var(--accent-light);color:var(--accent);
+  }
+  .tag.amber{background:#FFF8ED;color:#C4841D}
+  .tag.slate{background:#F1F5F9;color:#475569}
+</style>
+</head>
+<body>
+  <h1>モバイル復元UI 提案</h1>
+  <p class="subtitle">各案をクリックしてインタラクティブなモックアップを確認できます</p>
+  <div class="grid">
+    <a class="card" href="mockup-a-header-menu.html">
+      <div class="card-label">PROPOSAL A</div>
+      <div class="card-title">案A: ヘッダーメニュー</div>
+      <div class="card-desc">モバイルヘッダー右側に「⋯」ボタンを追加。ワンタップでバックアップ・復元・変更履歴にアクセス。</div>
+      <div class="card-tags">
+        <span class="tag">最小変更</span>
+        <span class="tag">即アクセス</span>
+      </div>
+    </a>
+    <a class="card" href="mockup-b-settings-tab.html">
+      <div class="card-label">PROPOSAL B</div>
+      <div class="card-title">案B: 設定タブ内</div>
+      <div class="card-desc">設定タブに「データ管理」セクションを追加。タブバーの5番目を設定タブに変更。</div>
+      <div class="card-tags">
+        <span class="tag amber">自然な配置</span>
+        <span class="tag amber">設定と統合</span>
+      </div>
+    </a>
+    <a class="card" href="mockup-c-more-tab.html">
+      <div class="card-label">PROPOSAL C</div>
+      <div class="card-title">案C: その他タブ</div>
+      <div class="card-desc">タブバー最後を「その他」に変更。設定・バックアップ・復元・履歴・スケジュールをグリッド表示。</div>
+      <div class="card-tags">
+        <span class="tag slate">iOS/Androidパターン</span>
+        <span class="tag slate">拡張性◎</span>
+      </div>
+    </a>
+    <a class="card" href="mockup-d-drag-drop.html">
+      <div class="card-label">PROPOSAL D</div>
+      <div class="card-title">案D: ドラッグ&ドロップ + FAB</div>
+      <div class="card-desc">ファイルドロップで即復元 + 右下のFABボタンから操作メニュー。PCとモバイル両対応。</div>
+      <div class="card-tags">
+        <span class="tag">直感的操作</span>
+        <span class="tag amber">PC向き</span>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

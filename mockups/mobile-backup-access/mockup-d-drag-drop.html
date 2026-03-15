@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案D: ドラッグ&ドロップ + FAB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+    --border:#E7E5E0;--border-light:#F0EEEA;
+    --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+    --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+    --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+    --sidebar-bg:#1A1814;--sidebar-text:#B8B4AE;--sidebar-text-active:#F7F6F3;
+    --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+    --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+    --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+    --transition:200ms ease;
+  }
+  html{font-size:14px}
+  body{
+    font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+    background:#E8E6E1;color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:20px 16px;
+  }
+  .proposal-label{font-size:13px;font-weight:700;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:8px}
+  .proposal-title{font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em;margin-bottom:6px}
+  .proposal-desc{font-size:13px;color:var(--text-secondary);margin-bottom:24px;max-width:420px;text-align:center;line-height:1.6}
+
+  .device{
+    width:375px;max-width:100%;background:var(--bg);
+    border-radius:24px;overflow:hidden;position:relative;
+    box-shadow:0 8px 40px rgba(26,24,20,0.15),0 2px 8px rgba(26,24,20,0.08);
+    border:6px solid #2D2A25;
+  }
+  .mobile-header{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;background:var(--sidebar-bg);
+    color:var(--sidebar-text-active);position:sticky;top:0;z-index:100;
+  }
+  .hamburger-btn{
+    width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+    background:none;border:none;color:var(--sidebar-text-active);
+    cursor:pointer;border-radius:var(--radius-xs);
+  }
+  .mobile-page-title{font-size:16px;font-weight:700;letter-spacing:-0.02em;flex:1}
+
+  .content-area{padding:16px;min-height:460px;position:relative}
+
+  .placeholder-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);padding:16px;margin-bottom:12px;
+  }
+  .placeholder-card .p-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+  .placeholder-card .p-sub{font-size:12px;color:var(--text-muted)}
+  .placeholder-shimmer{height:12px;background:var(--border-light);border-radius:4px;margin-top:8px}
+  .placeholder-shimmer.w60{width:60%}.placeholder-shimmer.w80{width:80%}.placeholder-shimmer.w40{width:40%}
+
+  /* Drop zone overlay */
+  .drop-overlay{
+    position:absolute;inset:0;z-index:200;
+    background:rgba(247,246,243,0.95);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity 0.25s ease;
+  }
+  .drop-overlay.active{opacity:1;pointer-events:auto}
+  .drop-zone-box{
+    width:280px;height:200px;
+    border:2px dashed var(--accent);border-radius:var(--radius-lg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    background:var(--accent-light);
+    transition:all 0.2s;
+  }
+  .drop-overlay.hovering .drop-zone-box{
+    border-color:var(--accent-hover);background:rgba(45,90,39,0.12);
+    transform:scale(1.02);
+    box-shadow:0 0 0 4px rgba(45,90,39,0.1);
+  }
+  .drop-zone-icon{
+    width:56px;height:56px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .drop-zone-icon svg{width:28px;height:28px}
+  .drop-zone-text{font-size:15px;font-weight:600;color:var(--accent);letter-spacing:-0.01em}
+  .drop-zone-sub{font-size:12px;color:var(--text-muted);margin-top:-4px}
+
+  /* FAB */
+  .fab{
+    position:absolute;bottom:72px;right:16px;z-index:180;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    box-shadow:0 4px 16px rgba(45,90,39,0.3),0 2px 4px rgba(45,90,39,0.15);
+    transition:all 0.2s;font-family:inherit;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fab:active{transform:scale(0.93)}
+  .fab:hover{background:var(--accent-hover);box-shadow:0 6px 20px rgba(45,90,39,0.35)}
+  .fab svg{width:22px;height:22px}
+
+  /* FAB expanded menu */
+  .fab-menu{
+    position:absolute;bottom:132px;right:16px;z-index:180;
+    display:flex;flex-direction:column;gap:8px;align-items:flex-end;
+    opacity:0;transform:translateY(8px);pointer-events:none;
+    transition:all 0.2s ease;
+  }
+  .fab-menu.open{opacity:1;transform:translateY(0);pointer-events:auto}
+  .fab-menu-item{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 14px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius-md);
+    box-shadow:0 4px 16px rgba(26,24,20,0.1);
+    cursor:pointer;transition:all 0.15s;
+    font-family:inherit;white-space:nowrap;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fab-menu-item:active{transform:scale(0.97)}
+  .fab-menu-item svg{width:16px;height:16px;color:var(--text-secondary)}
+  .fab-menu-item span{font-size:13px;font-weight:600;color:var(--text-primary)}
+  .fab-overlay{
+    position:absolute;inset:0;z-index:170;display:none;
+  }
+  .fab-overlay.open{display:block}
+
+  /* Bottom Tab Bar */
+  .mobile-tab-bar{
+    display:flex;position:sticky;bottom:0;left:0;right:0;z-index:150;
+    background:var(--sidebar-bg);border-top:1px solid rgba(255,255,255,0.08);
+    padding:4px 0;padding-bottom:max(4px, env(safe-area-inset-bottom));
+  }
+  .mobile-tab-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 0;background:none;border:none;color:var(--sidebar-text);
+    opacity:0.5;cursor:pointer;transition:opacity 0.15s,color 0.15s;
+    -webkit-tap-highlight-color:transparent;font-family:inherit;
+  }
+  .mobile-tab-item.active{color:var(--sidebar-text-active);opacity:1}
+  .mobile-tab-item svg{width:20px;height:20px}
+  .mobile-tab-item span{font-size:10px;font-weight:600;letter-spacing:-0.02em}
+
+  .annotation{
+    position:absolute;font-size:11px;font-weight:600;
+    color:#fff;background:var(--accent);
+    padding:4px 10px;border-radius:20px;white-space:nowrap;z-index:400;
+    box-shadow:0 2px 8px rgba(45,90,39,0.3);pointer-events:none;
+  }
+  .annotation::before{
+    content:'';position:absolute;width:0;height:0;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+  }
+  .annotation.arrow-right::before{
+    right:-5px;top:50%;transform:translateY(-50%);border-left:5px solid var(--accent);
+  }
+  .annotation.arrow-left::before{
+    left:-5px;top:50%;transform:translateY(-50%);border-right:5px solid var(--accent);
+  }
+
+  .state-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+  .state-btn{
+    padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);background:var(--surface);
+    color:var(--text-secondary);cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .state-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toast{
+    position:absolute;bottom:76px;left:16px;right:76px;
+    background:var(--text-primary);color:#fff;
+    padding:12px 16px;border-radius:var(--radius-md);
+    font-size:13px;font-weight:500;
+    display:flex;align-items:center;gap:8px;z-index:300;
+    opacity:0;transform:translateY(8px);transition:all 0.3s ease;
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast svg{width:16px;height:16px;color:var(--accent);flex-shrink:0}
+
+  /* Subtle drop hint banner */
+  .drop-hint{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 14px;margin-bottom:12px;
+    background:var(--accent-light);border:1px dashed rgba(45,90,39,0.2);
+    border-radius:var(--radius-md);
+    font-size:12px;color:var(--accent);font-weight:500;
+    opacity:0.7;transition:opacity 0.2s;
+  }
+  .drop-hint svg{width:16px;height:16px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="proposal-label">Proposal D</div>
+<div class="proposal-title">案D: ドラッグ&ドロップ + FAB</div>
+<div class="proposal-desc">
+  ファイルをドロップで復元 + 右下のFABボタンで操作メニュー表示。<br>
+  FABボタンをクリック、またはファイルをデバイスにドラッグして試してください。
+</div>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="setState(1)">1. 通常（FAB表示）</button>
+  <button class="state-btn" onclick="setState(2)">2. FABメニュー展開</button>
+  <button class="state-btn" onclick="setState(3)">3. ドロップ受付中</button>
+</div>
+
+<div class="device" id="device">
+  <div class="mobile-header">
+    <button class="hamburger-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="mobile-page-title">クイック入力</span>
+  </div>
+
+  <div class="content-area" id="contentArea">
+    <!-- Subtle drop hint -->
+    <div class="drop-hint" id="dropHint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      バックアップファイルをここにドロップして復元
+    </div>
+
+    <div class="placeholder-card">
+      <div class="p-title">今日の工数入力</div>
+      <div class="p-sub">2026-03-10（火）</div>
+      <div class="placeholder-shimmer w80"></div>
+      <div class="placeholder-shimmer w60" style="margin-top:4px"></div>
+    </div>
+    <div class="placeholder-card">
+      <div class="p-title">直近の入力</div>
+      <div class="p-sub">3件</div>
+      <div class="placeholder-shimmer w80"></div>
+      <div class="placeholder-shimmer w40" style="margin-top:4px"></div>
+      <div class="placeholder-shimmer w60" style="margin-top:4px"></div>
+    </div>
+    <div class="placeholder-card">
+      <div class="p-title">今月のサマリー</div>
+      <div class="p-sub">進捗 68%</div>
+      <div class="placeholder-shimmer w60"></div>
+    </div>
+  </div>
+
+  <!-- Drop overlay -->
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-zone-box">
+      <div class="drop-zone-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="drop-zone-text">ファイルをドロップ</div>
+      <div class="drop-zone-sub">JSON / Excel ファイル</div>
+    </div>
+  </div>
+
+  <!-- FAB Menu -->
+  <div class="fab-overlay" id="fabOverlay" onclick="closeFab()"></div>
+  <div class="fab-menu" id="fabMenu">
+    <button class="fab-menu-item" onclick="handleAction('バックアップを保存しました')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>バックアップ</span>
+    </button>
+    <button class="fab-menu-item" onclick="handleAction('JSONまたはExcelファイルを選択してください…')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>復元</span>
+    </button>
+    <button class="fab-menu-item" onclick="handleAction('変更履歴を表示します…')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>変更履歴</span>
+    </button>
+  </div>
+
+  <!-- FAB Button -->
+  <button class="fab" id="fabBtn" onclick="toggleFab()">
+    <svg id="fabIconPlus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg id="fabIconClose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+
+  <!-- Annotations -->
+  <div id="annFab" class="annotation arrow-right" style="position:absolute;bottom:85px;right:78px;">
+    FAB: ワンタップで操作
+  </div>
+  <div id="annDrop" class="annotation arrow-left" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin-top:-80px;">
+    ファイルドロップで即復元
+  </div>
+
+  <div class="toast" id="toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="mobile-tab-bar">
+    <button class="mobile-tab-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>入力</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>レポート</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>見積</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>実績</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>予定</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const fabBtn = document.getElementById('fabBtn');
+const fabMenu = document.getElementById('fabMenu');
+const fabOverlay = document.getElementById('fabOverlay');
+const fabIconPlus = document.getElementById('fabIconPlus');
+const fabIconClose = document.getElementById('fabIconClose');
+const dropOverlay = document.getElementById('dropOverlay');
+const toast = document.getElementById('toast');
+const annFab = document.getElementById('annFab');
+const annDrop = document.getElementById('annDrop');
+const device = document.getElementById('device');
+let fabOpen = false;
+
+function toggleFab() {
+  fabOpen = !fabOpen;
+  fabMenu.classList.toggle('open', fabOpen);
+  fabOverlay.classList.toggle('open', fabOpen);
+  fabIconPlus.style.display = fabOpen ? 'none' : 'block';
+  fabIconClose.style.display = fabOpen ? 'block' : 'none';
+  fabBtn.style.transform = fabOpen ? 'rotate(0deg)' : '';
+  annFab.style.display = 'none';
+}
+function closeFab() {
+  fabOpen = false;
+  fabMenu.classList.remove('open');
+  fabOverlay.classList.remove('open');
+  fabIconPlus.style.display = 'block';
+  fabIconClose.style.display = 'none';
+}
+function handleAction(msg) {
+  closeFab();
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Drag and drop on the device frame
+let dragCounter = 0;
+device.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragCounter++;
+  dropOverlay.classList.add('active');
+});
+device.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    dropOverlay.classList.remove('active');
+    dropOverlay.classList.remove('hovering');
+  }
+});
+device.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropOverlay.classList.add('hovering');
+});
+device.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  dropOverlay.classList.remove('active');
+  dropOverlay.classList.remove('hovering');
+  handleAction('バックアップファイルを読み込み中…');
+});
+
+function setState(n) {
+  document.querySelectorAll('.state-btn').forEach((b, i) => b.classList.toggle('active', i === n - 1));
+  closeFab();
+  toast.classList.remove('show');
+  dropOverlay.classList.remove('active');
+  dropOverlay.classList.remove('hovering');
+  annFab.style.display = 'none';
+  annDrop.style.display = 'none';
+
+  if (n === 1) {
+    annFab.style.display = 'block';
+  } else if (n === 2) {
+    toggleFab();
+  } else if (n === 3) {
+    dropOverlay.classList.add('active');
+    dropOverlay.classList.add('hovering');
+    annDrop.style.display = 'block';
+  }
+}
+setState(1);
+</script>
+</body>
+</html>

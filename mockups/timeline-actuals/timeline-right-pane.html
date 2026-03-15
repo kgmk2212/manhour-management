@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムライン実績入力 — 右ペイン型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+  --border:#E7E5E0;--border-light:#F0EEEA;
+  --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+  --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+  --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+  --danger:#B91C1C;--danger-light:#FEF2F2;
+  --info:#1D6FA5;--info-light:#EFF6FF;
+  --sidebar-bg:#1A1814;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+  --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,24,20,0.12);
+  --transition:200ms ease;
+  --label-w:148px;
+  --day-w:48px;
+  --row-h:52px;
+  --header-h:48px;
+  --pane-w:260px;
+}
+html{font-size:14px}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* ===== Topbar ===== */
+.topbar{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;flex-shrink:0;
+}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+.topbar-sub{font-size:12px;color:#9C9690}
+.topbar-spacer{flex:1}
+.topbar-badge{font-size:11px;font-weight:600;background:rgba(45,90,39,0.25);color:#86efac;padding:3px 10px;border-radius:20px}
+
+/* ===== Toolbar ===== */
+.toolbar{
+  display:flex;align-items:center;gap:8px;padding:8px 16px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 12px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text-primary);font:inherit;font-size:12px;
+  font-weight:600;cursor:pointer;transition:all var(--transition);white-space:nowrap;
+}
+.btn:hover{background:var(--surface-elevated);border-color:#ccc}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon{width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;transition:all var(--transition)}
+.btn-icon:hover{background:var(--surface-elevated)}
+.month-label{font-size:14px;font-weight:700;letter-spacing:-0.02em;min-width:110px;text-align:center}
+.toolbar-sep{width:1px;height:22px;background:var(--border);margin:0 6px}
+
+/* ===== Main layout ===== */
+.main-area{flex:1;display:flex;overflow:hidden}
+
+/* ===== Gantt section ===== */
+.gantt-section{flex:1;display:flex;overflow:hidden;position:relative}
+.gantt-labels{width:var(--label-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);z-index:10;display:flex;flex-direction:column}
+.gantt-labels-header{height:var(--header-h);display:flex;align-items:center;padding:0 12px;font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface-elevated)}
+.gantt-labels-body{flex:1;overflow-y:auto;overflow-x:hidden}
+.label-row{
+  height:var(--row-h);display:flex;align-items:center;gap:8px;padding:0 12px;
+  border-bottom:1px solid var(--border-light);transition:background var(--transition);
+}
+.label-row:nth-child(even){background:var(--surface-elevated)}
+.label-row:hover,.label-row.highlight{background:var(--accent-light)}
+.label-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.label-name{font-size:12px;font-weight:600}
+.label-hours{font-size:10px;color:var(--text-muted)}
+
+.gantt-timeline{flex:1;overflow:auto;position:relative}
+.gantt-header{position:sticky;top:0;z-index:5;height:var(--header-h);display:flex;background:var(--surface-elevated);border-bottom:1px solid var(--border)}
+.gantt-header-day{
+  width:var(--day-w);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  font-size:9px;font-weight:600;color:var(--text-secondary);border-right:1px solid var(--border-light);
+}
+.gantt-header-day .d-num{font-size:12px;font-weight:700;color:var(--text-primary)}
+.gantt-header-day.weekend{background:rgba(156,150,144,0.07)}
+.gantt-header-day.weekend .d-num{color:var(--text-muted)}
+.gantt-header-day.today{background:rgba(45,90,39,0.08)}
+.gantt-header-day.today .d-num{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+.gantt-body{position:relative}
+.gantt-row{height:var(--row-h);position:relative;border-bottom:1px solid var(--border-light)}
+.gantt-row:nth-child(even){background:var(--surface-elevated)}
+.gantt-row.drop-target{background:rgba(45,90,39,0.06) !important}
+.gantt-row .row-bg{position:absolute;inset:0;display:flex;pointer-events:none}
+.gantt-row .day-col{width:var(--day-w);flex-shrink:0;border-right:1px solid var(--border-light)}
+.gantt-row .day-col.weekend{background:rgba(156,150,144,0.05)}
+
+.today-line{position:absolute;top:0;width:2px;background:var(--accent);z-index:8;pointer-events:none}
+.today-line::after{content:'';position:absolute;top:-3px;left:-3px;width:8px;height:8px;background:var(--accent);border-radius:50%}
+
+/* Bars */
+.bar{position:absolute;border-radius:3px;z-index:2;display:flex;align-items:center;padding:0 5px;overflow:hidden;cursor:default;transition:filter 0.15s,box-shadow 0.15s}
+.bar:hover{filter:brightness(1.08);box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+.bar.plan{height:8px;top:6px;opacity:0.3}
+.bar.actual{height:16px;top:28px}
+.bar .bar-text{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Drop preview */
+.drop-preview{
+  position:absolute;height:16px;top:28px;border-radius:3px;z-index:6;
+  border:2px dashed var(--accent);background:rgba(45,90,39,0.1);
+  pointer-events:none;animation:previewPulse 1s ease infinite;
+}
+@keyframes previewPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Inline editor */
+.inline-editor{
+  position:absolute;z-index:20;display:flex;align-items:center;gap:4px;
+  padding:4px 8px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);box-shadow:var(--shadow-lg);
+  animation:editorIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap;
+}
+@keyframes editorIn{from{opacity:0;transform:translateY(6px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.inline-editor input{
+  width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-xs);
+  font:inherit;font-size:12px;font-weight:700;text-align:center;
+}
+.inline-editor input:focus{outline:none;border-color:var(--accent)}
+.inline-editor .ie-unit{font-size:11px;color:var(--text-muted);font-weight:500}
+.inline-editor .ie-btn{
+  width:24px;height:24px;border:none;border-radius:var(--radius-xs);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:13px;transition:all var(--transition);
+}
+.inline-editor .ie-confirm{background:var(--accent);color:#fff}
+.inline-editor .ie-confirm:hover{background:var(--accent-hover)}
+.inline-editor .ie-cancel{background:var(--surface-elevated);color:var(--text-muted)}
+.inline-editor .ie-cancel:hover{background:var(--border)}
+.inline-editor .ie-task{font-size:11px;font-weight:600;color:var(--text-primary);margin-right:4px;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== Right pane ===== */
+.right-pane{
+  width:var(--pane-w);flex-shrink:0;background:var(--surface);
+  border-left:1px solid var(--border);display:flex;flex-direction:column;
+  transition:width 0.3s ease,opacity 0.3s ease;overflow:hidden;
+}
+.right-pane.collapsed{width:0;opacity:0;border:none}
+.pane-header{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--border);background:var(--surface-elevated);flex-shrink:0;
+}
+.pane-header .ph-title{font-size:12px;font-weight:700;color:var(--text-primary);flex:1}
+.pane-header .ph-count{font-size:10px;font-weight:600;color:var(--text-muted);background:var(--bg);padding:2px 8px;border-radius:10px}
+.pane-toggle{
+  position:absolute;right:var(--pane-w);top:50%;transform:translateY(-50%);
+  width:20px;height:48px;background:var(--surface);border:1px solid var(--border);
+  border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text-muted);z-index:12;transition:all var(--transition);
+}
+.pane-toggle:hover{background:var(--surface-elevated);color:var(--text-primary)}
+.pane-toggle.shifted{right:0}
+
+.pane-body{flex:1;overflow-y:auto;padding:6px}
+.pane-body::-webkit-scrollbar{width:4px}
+.pane-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.member-section{margin-bottom:2px}
+.member-section-header{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-radius:var(--radius-sm);cursor:pointer;transition:background var(--transition);
+  user-select:none;
+}
+.member-section-header:hover{background:var(--accent-light)}
+.member-section-header.active{background:var(--accent-light)}
+.ms-arrow{font-size:9px;color:var(--text-muted);transition:transform 0.2s;width:12px}
+.ms-arrow.open{transform:rotate(90deg)}
+.ms-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.ms-name{font-size:12px;font-weight:600;flex:1}
+.ms-count{font-size:10px;color:var(--text-muted);font-weight:500}
+
+.task-list{padding:2px 0 4px 20px;display:none}
+.task-list.open{display:block}
+
+.task-card{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:3px;
+  background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);cursor:grab;transition:all var(--transition);
+  user-select:none;position:relative;
+}
+.task-card:hover{border-color:var(--accent);box-shadow:var(--shadow-sm);transform:translateX(-2px)}
+.task-card:active{cursor:grabbing;box-shadow:var(--shadow-md);transform:scale(0.97)}
+.task-card.dragging{opacity:0.4;transform:scale(0.95)}
+.tc-color{width:4px;height:28px;border-radius:2px;flex-shrink:0}
+.tc-info{flex:1;min-width:0}
+.tc-name{font-size:11px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-meta{font-size:9px;color:var(--text-muted);display:flex;gap:6px;align-items:center}
+.tc-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;color:#fff}
+.tc-hours{font-size:11px;font-weight:700;color:var(--accent-secondary);flex-shrink:0}
+.tc-drag-hint{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  font-size:10px;color:var(--border);transition:color var(--transition);
+}
+.task-card:hover .tc-drag-hint{color:var(--text-muted)}
+
+/* Drag ghost */
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:1000;
+  padding:6px 12px;background:var(--accent);color:#fff;
+  border-radius:var(--radius-sm);font-size:11px;font-weight:700;
+  box-shadow:0 8px 24px rgba(45,90,39,0.35);
+  transform:translate(-50%,-50%) rotate(-1deg);
+  white-space:nowrap;
+}
+
+/* ===== Legend / Footer ===== */
+.legend{display:flex;gap:14px;padding:7px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted)}
+.legend-dot{width:18px;height:7px;border-radius:2px}
+.legend-hint{margin-left:auto;font-size:11px;color:var(--text-secondary);font-weight:600}
+
+/* ===== Toast ===== */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:13px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;
+  opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Scrollbar ===== */
+.gantt-timeline::-webkit-scrollbar{height:6px;width:6px}
+.gantt-timeline::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.gantt-labels-body::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">工数管理</div>
+  <div class="topbar-sub">タイムライン実績入力</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-badge">案1 — 右ペイン型</div>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-group" style="display:flex;align-items:center;gap:4px">
+    <button class="btn-icon" onclick="showToast('前の2週間')">◀</button>
+    <span class="month-label">2026年3月</span>
+    <button class="btn-icon" onclick="showToast('次の2週間')">▶</button>
+    <button class="btn" onclick="scrollToToday()">今日</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <button class="btn active">予定+実績</button>
+  <button class="btn">実績のみ</button>
+  <div style="flex:1"></div>
+  <button class="btn" onclick="togglePane()" id="btnTogglePane">パネル ◀</button>
+</div>
+
+<div class="main-area">
+  <!-- Gantt -->
+  <div class="gantt-section">
+    <div class="gantt-labels">
+      <div class="gantt-labels-header">担当者</div>
+      <div class="gantt-labels-body" id="labelBody"></div>
+    </div>
+    <div class="gantt-timeline" id="timelineWrap">
+      <div class="gantt-header" id="headerRow"></div>
+      <div class="gantt-body" id="ganttBody"></div>
+      <div class="today-line" id="todayLine"></div>
+    </div>
+  </div>
+
+  <!-- Right pane -->
+  <div class="right-pane" id="rightPane">
+    <div class="pane-header">
+      <span class="ph-title">未登録タスク</span>
+      <span class="ph-count" id="taskCount">12件</span>
+    </div>
+    <div class="pane-body" id="paneBody"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#93C5FD;opacity:0.4"></div>予定</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>実績</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>完了</div>
+  <div class="legend-hint">右パネルからタスクをドラッグしてタイムラインにドロップ</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// Data
+// ============================================
+const MEMBERS = [
+  { name:'田中 太郎', initials:'田', color:'#2563EB' },
+  { name:'佐藤 花子', initials:'佐', color:'#7C3AED' },
+  { name:'鈴木 一郎', initials:'鈴', color:'#C4841D' },
+  { name:'高橋 美咲', initials:'高', color:'#0F766E' },
+  { name:'渡辺 健太', initials:'渡', color:'#B91C1C' },
+];
+
+const TASKS = [
+  { id:0, name:'基本設計', version:'v2.0', process:'UI', color:'#4dabf7', estHours:24 },
+  { id:1, name:'API実装', version:'v2.0', process:'PG', color:'#20c997', estHours:40 },
+  { id:2, name:'画面実装', version:'v2.0', process:'PG', color:'#51cf66', estHours:32 },
+  { id:3, name:'単体テスト', version:'v2.0', process:'PT', color:'#fcc419', estHours:16 },
+  { id:4, name:'結合テスト', version:'v2.0', process:'IT', color:'#ff6b6b', estHours:24 },
+  { id:5, name:'DB設計', version:'v1.5', process:'UI', color:'#845ef7', estHours:16 },
+  { id:6, name:'バッチ処理', version:'v1.5', process:'PG', color:'#339af0', estHours:20 },
+  { id:7, name:'性能改善', version:'v2.0', process:'PG', color:'#f06595', estHours:12 },
+];
+
+const PROCESS_COLORS = { UI:'#4dabf7', PG:'#20c997', PT:'#fcc419', IT:'#ff6b6b', ST:'#845ef7' };
+
+// Member → unregistered tasks
+const MEMBER_TASKS = [
+  [0,3,7],    // 田中: 基本設計, 単体テスト, 性能改善
+  [1,4],      // 佐藤: API実装, 結合テスト
+  [2,6],      // 鈴木: 画面実装, バッチ処理
+  [0,5,7],    // 高橋: 基本設計, DB設計, 性能改善
+  [3,4,6],    // 渡辺: 単体テスト, 結合テスト, バッチ処理
+];
+
+// Existing plan bars: { member, taskId, startDay, endDay }
+const PLAN_BARS = [
+  { member:0, taskId:0, startDay:2, endDay:7 },
+  { member:0, taskId:3, startDay:11, endDay:14 },
+  { member:1, taskId:1, startDay:3, endDay:10 },
+  { member:2, taskId:2, startDay:1, endDay:8 },
+  { member:2, taskId:6, startDay:10, endDay:14 },
+  { member:3, taskId:5, startDay:2, endDay:5 },
+  { member:3, taskId:7, startDay:8, endDay:12 },
+  { member:4, taskId:4, startDay:5, endDay:11 },
+];
+
+// Existing actual bars
+let ACTUAL_BARS = [
+  { member:0, taskId:0, startDay:2, endDay:5, hours:24 },
+  { member:1, taskId:1, startDay:3, endDay:7, hours:32 },
+  { member:2, taskId:2, startDay:1, endDay:6, hours:36 },
+  { member:3, taskId:5, startDay:2, endDay:5, hours:16 },
+];
+
+const YEAR = 2026, MONTH = 3;
+const START_DAY = 1, END_DAY = 21; // 3 weeks
+const TODAY = 15;
+const DAY_W = 48, ROW_H = 52;
+
+// ============================================
+// Render
+// ============================================
+function isWeekend(d){ const day = new Date(YEAR, MONTH-1, d).getDay(); return day===0||day===6; }
+function dayName(d){ return ['日','月','火','水','木','金','土'][new Date(YEAR, MONTH-1, d).getDay()]; }
+
+function renderHeader(){
+  const el = document.getElementById('headerRow');
+  let h = '';
+  for(let d=START_DAY;d<=END_DAY;d++){
+    const we = isWeekend(d);
+    const isToday = d===TODAY;
+    let cls = isToday?'today':we?'weekend':'';
+    h += `<div class="gantt-header-day ${cls}"><span style="font-size:9px">${dayName(d)}</span><span class="d-num">${d}</span></div>`;
+  }
+  el.innerHTML = h;
+  el.style.width = ((END_DAY-START_DAY+1)*DAY_W)+'px';
+}
+
+function renderLabels(){
+  document.getElementById('labelBody').innerHTML = MEMBERS.map((m,i) => {
+    const ah = ACTUAL_BARS.filter(b=>b.member===i).reduce((s,b)=>s+b.hours,0);
+    return `<div class="label-row" id="labelRow${i}" data-member="${i}">
+      <div class="label-avatar" style="background:${m.color}">${m.initials}</div>
+      <div><div class="label-name">${m.name}</div><div class="label-hours">${ah}h 実績</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderGantt(){
+  const body = document.getElementById('ganttBody');
+  const totalW = (END_DAY-START_DAY+1)*DAY_W;
+  body.style.width = totalW+'px';
+  let html = '';
+
+  MEMBERS.forEach((m,mi) => {
+    let bg = '';
+    for(let d=START_DAY;d<=END_DAY;d++){
+      bg += `<div class="day-col ${isWeekend(d)?'weekend':''}"></div>`;
+    }
+    let bars = '';
+    // Plan bars
+    PLAN_BARS.filter(b=>b.member===mi).forEach(b => {
+      const t = TASKS[b.taskId];
+      const left = (b.startDay-START_DAY)*DAY_W+2;
+      const width = (b.endDay-b.startDay+1)*DAY_W-4;
+      bars += `<div class="bar plan" style="left:${left}px;width:${width}px;background:${t.color}"></div>`;
+    });
+    // Actual bars
+    ACTUAL_BARS.filter(b=>b.member===mi).forEach(b => {
+      const t = TASKS[b.taskId];
+      const left = (b.startDay-START_DAY)*DAY_W+2;
+      const width = (b.endDay-b.startDay+1)*DAY_W-4;
+      bars += `<div class="bar actual" style="left:${left}px;width:${width}px;background:${t.color}"><span class="bar-text">${t.name} ${b.hours}h</span></div>`;
+    });
+
+    html += `<div class="gantt-row" id="ganttRow${mi}" data-member="${mi}"
+      ondragover="onRowDragOver(event,${mi})" ondragleave="onRowDragLeave(event,${mi})"
+      ondrop="onRowDrop(event,${mi})">
+      <div class="row-bg">${bg}</div>${bars}
+    </div>`;
+  });
+  body.innerHTML = html;
+
+  // Today line
+  const tl = document.getElementById('todayLine');
+  tl.style.left = ((TODAY-START_DAY)*DAY_W + DAY_W/2)+'px';
+  tl.style.top = '0';
+  tl.style.height = (MEMBERS.length*ROW_H + 48)+'px';
+}
+
+// ============================================
+// Right pane
+// ============================================
+function renderPane(){
+  let total = 0;
+  const html = MEMBERS.map((m,mi) => {
+    const taskIds = MEMBER_TASKS[mi];
+    total += taskIds.length;
+    const cards = taskIds.map(tid => {
+      const t = TASKS[tid];
+      return `<div class="task-card" draggable="true" data-task="${tid}" data-member="${mi}"
+        ondragstart="onCardDragStart(event,${mi},${tid})" ondragend="onCardDragEnd(event)">
+        <div class="tc-color" style="background:${t.color}"></div>
+        <div class="tc-info">
+          <div class="tc-name">${t.name}</div>
+          <div class="tc-meta">
+            <span>${t.version}</span>
+            <span class="tc-badge" style="background:${PROCESS_COLORS[t.process]}">${t.process}</span>
+          </div>
+        </div>
+        <div class="tc-hours">${t.estHours}h</div>
+        <div class="tc-drag-hint">⠿</div>
+      </div>`;
+    }).join('');
+    return `<div class="member-section">
+      <div class="member-section-header ${mi===0?'active':''}" onclick="toggleSection(this,${mi})">
+        <span class="ms-arrow ${mi===0?'open':''}">▶</span>
+        <div class="ms-avatar" style="background:${m.color}">${m.initials}</div>
+        <span class="ms-name">${m.name}</span>
+        <span class="ms-count">${taskIds.length}</span>
+      </div>
+      <div class="task-list ${mi===0?'open':''}">${cards}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('paneBody').innerHTML = html;
+  document.getElementById('taskCount').textContent = total+'件';
+}
+
+function toggleSection(el, mi){
+  const arrow = el.querySelector('.ms-arrow');
+  const list = el.nextElementSibling;
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open');
+  arrow.classList.toggle('open');
+  el.classList.toggle('active');
+  // Highlight label row
+  document.querySelectorAll('.label-row').forEach(r=>r.classList.remove('highlight'));
+  if(!isOpen) document.getElementById('labelRow'+mi).classList.add('highlight');
+}
+
+// ============================================
+// Drag & Drop
+// ============================================
+let dragData = null;
+let ghostEl = null;
+let previewEl = null;
+let activeEditor = null;
+
+function onCardDragStart(e, memberIdx, taskId){
+  const t = TASKS[taskId];
+  dragData = { memberIdx, taskId, task:t };
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', '');
+  // Custom ghost
+  ghostEl = document.createElement('div');
+  ghostEl.className = 'drag-ghost';
+  ghostEl.textContent = t.name + ' ' + t.estHours + 'h';
+  document.body.appendChild(ghostEl);
+  // Tiny transparent drag image
+  const img = new Image(); img.src='data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+  e.dataTransfer.setDragImage(img,0,0);
+  // Mark card
+  e.target.classList.add('dragging');
+  // Highlight matching row
+  document.getElementById('labelRow'+memberIdx).classList.add('highlight');
+  document.getElementById('ganttRow'+memberIdx).classList.add('drop-target');
+}
+
+function onCardDragEnd(e){
+  if(ghostEl){ghostEl.remove();ghostEl=null}
+  if(previewEl){previewEl.remove();previewEl=null}
+  document.querySelectorAll('.task-card.dragging').forEach(c=>c.classList.remove('dragging'));
+  document.querySelectorAll('.label-row.highlight').forEach(r=>r.classList.remove('highlight'));
+  document.querySelectorAll('.gantt-row.drop-target').forEach(r=>r.classList.remove('drop-target'));
+  dragData = null;
+}
+
+// Move ghost with cursor
+document.addEventListener('dragover', e=>{
+  e.preventDefault();
+  if(ghostEl){
+    ghostEl.style.left = (e.clientX+12)+'px';
+    ghostEl.style.top = (e.clientY-8)+'px';
+  }
+});
+
+function onRowDragOver(e, mi){
+  if(!dragData) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  const row = document.getElementById('ganttRow'+mi);
+  row.classList.add('drop-target');
+
+  // Show preview bar
+  const rect = row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('timelineWrap').scrollLeft;
+  const x = e.clientX - rect.left + scrollLeft;
+  const dayIdx = Math.max(0, Math.min(END_DAY-START_DAY, Math.floor(x/DAY_W)));
+  const estDays = Math.ceil(dragData.task.estHours / 8);
+  const barLeft = dayIdx * DAY_W + 2;
+  const barWidth = Math.min(estDays, END_DAY-START_DAY-dayIdx+1) * DAY_W - 4;
+
+  if(!previewEl){
+    previewEl = document.createElement('div');
+    previewEl.className = 'drop-preview';
+    row.appendChild(previewEl);
+  }
+  previewEl.style.left = barLeft+'px';
+  previewEl.style.width = barWidth+'px';
+  previewEl.dataset.startDay = START_DAY + dayIdx;
+  previewEl.dataset.endDay = START_DAY + dayIdx + Math.min(estDays, END_DAY-START_DAY-dayIdx+1) - 1;
+}
+
+function onRowDragLeave(e, mi){
+  const row = document.getElementById('ganttRow'+mi);
+  // Only remove if actually leaving the row
+  if(!row.contains(e.relatedTarget)){
+    row.classList.remove('drop-target');
+    if(previewEl && previewEl.parentNode === row){previewEl.remove();previewEl=null}
+  }
+}
+
+function onRowDrop(e, mi){
+  e.preventDefault();
+  if(!dragData) return;
+
+  const row = document.getElementById('ganttRow'+mi);
+  row.classList.remove('drop-target');
+
+  // Calculate drop position
+  const rect = row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('timelineWrap').scrollLeft;
+  const x = e.clientX - rect.left + scrollLeft;
+  const dayIdx = Math.max(0, Math.min(END_DAY-START_DAY, Math.floor(x/DAY_W)));
+  const startDay = START_DAY + dayIdx;
+  const estDays = Math.ceil(dragData.task.estHours / 8);
+  const endDay = Math.min(startDay + estDays - 1, END_DAY);
+  const defaultHours = dragData.task.estHours;
+
+  // Create temporary bar
+  const barLeft = dayIdx * DAY_W + 2;
+  const barWidth = (endDay - startDay + 1) * DAY_W - 4;
+  const t = dragData.task;
+
+  if(previewEl){previewEl.remove();previewEl=null}
+
+  const tempBar = document.createElement('div');
+  tempBar.className = 'bar actual';
+  tempBar.style.cssText = `left:${barLeft}px;width:${barWidth}px;background:${t.color};opacity:0.6;border:2px solid ${t.color};animation:editorIn 0.2s ease`;
+  tempBar.innerHTML = `<span class="bar-text">${t.name}</span>`;
+  row.appendChild(tempBar);
+
+  // Show inline editor
+  showInlineEditor(row, barLeft, barWidth, t, mi, startDay, endDay, defaultHours, tempBar);
+
+  // Cleanup drag state
+  if(ghostEl){ghostEl.remove();ghostEl=null}
+  document.querySelectorAll('.task-card.dragging').forEach(c=>c.classList.remove('dragging'));
+  document.querySelectorAll('.label-row.highlight').forEach(r=>r.classList.remove('highlight'));
+  dragData = null;
+}
+
+function showInlineEditor(row, barLeft, barWidth, task, memberIdx, startDay, endDay, defaultHours, tempBar){
+  removeActiveEditor();
+
+  const editor = document.createElement('div');
+  editor.className = 'inline-editor';
+  editor.style.left = barLeft + 'px';
+  editor.style.top = '2px';
+  editor.innerHTML = `
+    <span class="ie-task">${task.name}</span>
+    <input type="number" value="${defaultHours}" min="1" step="1" id="ieHoursInput">
+    <span class="ie-unit">h</span>
+    <button class="ie-btn ie-confirm" onclick="confirmDrop(${memberIdx},${task.id},${startDay},${endDay})" title="記録する">✓</button>
+    <button class="ie-btn ie-cancel" onclick="cancelDrop()" title="キャンセル">✕</button>
+  `;
+  row.appendChild(editor);
+  activeEditor = { editor, tempBar, row };
+
+  // Focus
+  setTimeout(()=>{ const inp = document.getElementById('ieHoursInput'); if(inp) inp.select(); }, 50);
+}
+
+function confirmDrop(memberIdx, taskId, startDay, endDay){
+  const hours = parseInt(document.getElementById('ieHoursInput').value) || 8;
+  const t = TASKS[taskId];
+  const m = MEMBERS[memberIdx];
+
+  // Add to actual bars
+  ACTUAL_BARS.push({ member:memberIdx, taskId, startDay, endDay, hours });
+
+  // Remove from unregistered
+  const idx = MEMBER_TASKS[memberIdx].indexOf(taskId);
+  if(idx > -1) MEMBER_TASKS[memberIdx].splice(idx, 1);
+
+  removeActiveEditor();
+  renderGantt();
+  renderLabels();
+  renderPane();
+  showToast(`✓「${t.name}」${hours}h を記録 — ${m.name}`);
+}
+
+function cancelDrop(){
+  removeActiveEditor();
+}
+
+function removeActiveEditor(){
+  if(activeEditor){
+    activeEditor.editor.remove();
+    activeEditor.tempBar.remove();
+    activeEditor = null;
+  }
+}
+
+// ============================================
+// Pane toggle
+// ============================================
+function togglePane(){
+  const pane = document.getElementById('rightPane');
+  pane.classList.toggle('collapsed');
+  const btn = document.getElementById('btnTogglePane');
+  btn.textContent = pane.classList.contains('collapsed') ? 'パネル ▶' : 'パネル ◀';
+}
+
+// ============================================
+// Scroll
+// ============================================
+function syncScroll(){
+  const wrap = document.getElementById('timelineWrap');
+  const lb = document.getElementById('labelBody');
+  wrap.addEventListener('scroll', ()=>{ lb.scrollTop = wrap.scrollTop; });
+}
+function scrollToToday(){
+  document.getElementById('timelineWrap').scrollTo({left:Math.max(0,(TODAY-START_DAY-3)*DAY_W),behavior:'smooth'});
+}
+
+// ============================================
+// Toast
+// ============================================
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('visible');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('visible'),2500);
+}
+
+// ============================================
+// Init
+// ============================================
+renderHeader(); renderLabels(); renderGantt(); renderPane(); syncScroll();
+setTimeout(scrollToToday, 200);
+</script>
+</body>
+</html>

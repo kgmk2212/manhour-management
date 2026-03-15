@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムライン実績入力 — デイリー型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+  --border:#E7E5E0;--border-light:#F0EEEA;
+  --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+  --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+  --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+  --danger:#B91C1C;--info:#1D6FA5;
+  --sidebar-bg:#1A1814;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+  --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,24,20,0.12);
+  --transition:200ms ease;
+  /* Timeline specific */
+  --label-w:160px;
+  --hour-w:100px;
+  --row-h:72px;
+  --header-h:44px;
+  --lunch-color:rgba(196,132,29,0.08);
+}
+html{font-size:14px;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* ========== Top bar ========== */
+.topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 20px;background:var(--sidebar-bg);color:#F7F6F3;flex-shrink:0;
+}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+.topbar-sub{font-size:12px;color:#9C9690;margin-left:4px}
+.topbar-spacer{flex:1}
+.topbar-badge{
+  font-size:11px;font-weight:600;background:rgba(196,132,29,0.3);
+  color:#fcc419;padding:3px 10px;border-radius:20px;letter-spacing:0.02em;
+}
+
+/* ========== Toolbar ========== */
+.toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
+}
+.toolbar-group{display:flex;align-items:center;gap:4px}
+.toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 8px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text-primary);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:all var(--transition);white-space:nowrap;
+}
+.btn:hover{background:var(--surface-elevated);border-color:var(--text-muted)}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon{
+  width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);cursor:pointer;transition:all var(--transition);font-size:14px;
+}
+.btn-icon:hover{background:var(--surface-elevated);border-color:var(--text-muted)}
+
+.date-label{
+  font-size:16px;font-weight:800;letter-spacing:-0.03em;min-width:200px;text-align:center;
+}
+.date-label .weekday{font-size:12px;font-weight:500;color:var(--text-muted);margin-left:6px}
+
+/* ========== Day summary ========== */
+.day-summary{
+  display:flex;gap:6px;padding:8px 20px;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;
+}
+.ds-card{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);white-space:nowrap;
+}
+.ds-card .ds-icon{font-size:16px}
+.ds-card .ds-label{font-size:11px;color:var(--text-muted);font-weight:500}
+.ds-card .ds-value{font-size:14px;font-weight:700;color:var(--text-primary)}
+
+/* ========== Timeline container ========== */
+.timeline-wrap{flex:1;display:flex;overflow:hidden;position:relative}
+
+/* Labels */
+.tl-labels{
+  width:var(--label-w);flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);z-index:10;overflow:hidden;
+}
+.tl-labels-header{
+  height:var(--header-h);display:flex;align-items:center;
+  padding:0 14px;font-size:11px;font-weight:700;color:var(--text-muted);
+  letter-spacing:0.04em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);background:var(--surface-elevated);
+}
+.tl-labels-body{overflow-y:auto;overflow-x:hidden}
+.tl-label-row{
+  height:var(--row-h);display:flex;align-items:center;gap:10px;
+  padding:0 14px;border-bottom:1px solid var(--border-light);
+  transition:background var(--transition);
+}
+.tl-label-row:nth-child(even){background:var(--surface-elevated)}
+.tl-label-row:hover{background:var(--accent-light)}
+.label-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.label-info{min-width:0}
+.label-name{font-size:13px;font-weight:600;color:var(--text-primary)}
+.label-meta{font-size:10px;color:var(--text-muted)}
+
+/* Timeline body */
+.tl-timeline{flex:1;overflow:auto;position:relative}
+.tl-header{
+  position:sticky;top:0;z-index:5;height:var(--header-h);
+  display:flex;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);
+}
+.tl-header-hour{
+  width:var(--hour-w);flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;color:var(--text-secondary);
+  border-right:1px solid var(--border-light);position:relative;
+}
+.tl-header-hour.lunch{background:var(--lunch-color);color:var(--accent-secondary)}
+.tl-header-hour.now{color:var(--accent)}
+.tl-header-hour.now::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent);
+}
+
+.tl-body{position:relative}
+.tl-row{
+  height:var(--row-h);position:relative;
+  border-bottom:1px solid var(--border-light);
+}
+.tl-row:nth-child(even){background:var(--surface-elevated)}
+.tl-row:hover{background:rgba(45,90,39,0.02)}
+
+/* Hour columns */
+.tl-row-bg{position:absolute;inset:0;display:flex;pointer-events:none}
+.tl-hour-col{width:var(--hour-w);flex-shrink:0;border-right:1px solid var(--border-light)}
+.tl-hour-col.lunch{background:var(--lunch-color)}
+
+/* Current time line */
+.now-line{
+  position:absolute;top:0;bottom:0;width:2px;background:var(--accent);z-index:8;
+  pointer-events:none;
+}
+.now-line::before{
+  content:'';position:absolute;top:-4px;left:-4px;
+  width:10px;height:10px;background:var(--accent);border-radius:50%;
+}
+
+/* ========== Time blocks ========== */
+.block{
+  position:absolute;border-radius:5px;cursor:pointer;z-index:2;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:4px 8px;overflow:hidden;
+  transition:box-shadow 0.15s,filter 0.15s,transform 0.15s;
+  border:1px solid transparent;
+}
+.block:hover{
+  z-index:5;transform:translateY(-1px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.15);filter:brightness(1.05);
+}
+.block .block-task{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block .block-meta{font-size:9px;color:rgba(255,255,255,0.8);white-space:nowrap;overflow:hidden}
+.block .block-hours{
+  position:absolute;top:4px;right:6px;
+  font-size:10px;font-weight:700;color:rgba(255,255,255,0.9);
+}
+
+/* Resize handles */
+.block .block-resize{
+  position:absolute;top:0;width:8px;height:100%;cursor:ew-resize;z-index:3;
+}
+.block .block-resize.left{left:0;border-radius:5px 0 0 5px}
+.block .block-resize.right{right:0;border-radius:0 5px 5px 0}
+.block .block-resize:hover{background:rgba(255,255,255,0.2)}
+
+/* Scheduled block (ghost) */
+.block.scheduled{
+  opacity:0.25;border:2px dashed;cursor:pointer;
+}
+.block.scheduled:hover{opacity:0.45}
+.block.scheduled .block-task{font-weight:600}
+
+/* Drag selection */
+.drag-select{
+  position:absolute;border:2px dashed var(--accent);
+  background:rgba(45,90,39,0.08);border-radius:var(--radius-xs);
+  z-index:6;pointer-events:none;
+  animation:pulse 1.2s ease infinite;
+}
+@keyframes pulse{
+  0%,100%{border-color:var(--accent)}
+  50%{border-color:rgba(45,90,39,0.3)}
+}
+
+/* ========== Quick add popup ========== */
+.quick-add{
+  position:absolute;z-index:50;width:300px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  animation:popIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  overflow:hidden;
+}
+@keyframes popIn{
+  from{opacity:0;transform:scale(0.95) translateY(6px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.quick-add-header{
+  padding:14px 16px 10px;
+  background:var(--surface-elevated);border-bottom:1px solid var(--border-light);
+}
+.quick-add-header .qa-title{font-size:14px;font-weight:700;color:var(--text-primary)}
+.quick-add-header .qa-time{font-size:12px;color:var(--accent);font-weight:600;margin-top:2px}
+
+.quick-add-body{padding:12px 16px}
+.qa-field{margin-bottom:10px}
+.qa-field label{display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px}
+.qa-field select, .qa-field input{
+  width:100%;padding:7px 10px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font:inherit;font-size:12px;
+  background:var(--surface);transition:border-color var(--transition);
+}
+.qa-field select:focus, .qa-field input:focus{outline:none;border-color:var(--accent)}
+
+.qa-color-row{display:flex;gap:6px;margin-bottom:10px}
+.qa-color-dot{
+  width:20px;height:20px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all var(--transition);
+}
+.qa-color-dot:hover{transform:scale(1.15)}
+.qa-color-dot.selected{border-color:var(--text-primary);transform:scale(1.15)}
+
+.quick-add-footer{
+  padding:10px 16px;border-top:1px solid var(--border-light);
+  display:flex;justify-content:flex-end;gap:8px;
+}
+.qa-btn{
+  padding:7px 18px;border-radius:var(--radius-sm);font:inherit;font-size:12px;
+  font-weight:600;cursor:pointer;transition:all var(--transition);border:none;
+}
+.qa-btn.cancel{background:var(--surface-elevated);color:var(--text-secondary);border:1px solid var(--border)}
+.qa-btn.cancel:hover{background:var(--border-light)}
+.qa-btn.confirm{background:var(--accent);color:#fff}
+.qa-btn.confirm:hover{background:var(--accent-hover)}
+
+/* ========== Detail panel (slide in) ========== */
+.detail-panel{
+  position:fixed;top:0;right:-380px;width:380px;height:100vh;
+  background:var(--surface);border-left:1px solid var(--border);
+  box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:100;
+  transition:right 0.3s cubic-bezier(0.16,1,0.3,1);
+  display:flex;flex-direction:column;
+}
+.detail-panel.open{right:0}
+.dp-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.dp-header .dp-title{font-size:16px;font-weight:700}
+.dp-close{
+  width:32px;height:32px;border:none;background:var(--surface-elevated);
+  border-radius:var(--radius-sm);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--transition);
+}
+.dp-close:hover{background:var(--border)}
+.dp-body{flex:1;padding:20px;overflow-y:auto}
+.dp-field{margin-bottom:16px}
+.dp-field label{display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.02em}
+.dp-field .dp-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.dp-field input,.dp-field select,.dp-field textarea{
+  width:100%;padding:8px 12px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font:inherit;font-size:13px;
+}
+.dp-field textarea{resize:vertical;min-height:60px}
+.dp-actions{
+  padding:16px 20px;border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+.dp-actions .btn{flex:1;justify-content:center}
+
+/* ========== Tooltip ========== */
+.tooltip{
+  position:fixed;z-index:60;padding:10px 14px;
+  background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:12px;line-height:1.6;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);pointer-events:none;
+  animation:ttIn 0.15s ease;max-width:240px;
+}
+@keyframes ttIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.tooltip .tt-title{font-weight:700;font-size:13px;margin-bottom:2px}
+.tooltip .tt-row{display:flex;justify-content:space-between;gap:16px}
+.tooltip .tt-label{color:#9C9690}
+.tooltip .tt-accent{color:#93C5FD;font-weight:600}
+
+/* ========== Legend ========== */
+.legend{
+  display:flex;gap:16px;padding:8px 20px;
+  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;
+  align-items:center;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.legend-swatch{width:20px;height:12px;border-radius:3px}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:13px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;
+  opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ========== Responsive ========== */
+@media(max-width:768px){
+  :root{--label-w:100px;--hour-w:72px;--row-h:64px}
+  .toolbar{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-title">工数管理</div>
+  <div class="topbar-sub">デイリータイムライン</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-badge">MOCKUP — 日別表示</div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-group">
+    <button class="btn-icon" onclick="navDay(-1)">◀</button>
+    <span class="date-label" id="dateLabel">2026年3月14日<span class="weekday">（土）</span></span>
+    <button class="btn-icon" onclick="navDay(1)">▶</button>
+    <button class="btn" onclick="goToday()" style="margin-left:4px">今日</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group">
+    <button class="btn active" id="btnDay">日表示</button>
+    <button class="btn" onclick="showToast('週表示に切替')">週表示</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group">
+    <button class="btn" onclick="toggleScheduled()">
+      <span id="schedIcon">◻</span> 予定を表示
+    </button>
+  </div>
+  <div style="flex:1"></div>
+  <button class="btn" onclick="openDetailPanel()">+ 手動追加</button>
+</div>
+
+<!-- Day summary -->
+<div class="day-summary">
+  <div class="ds-card">
+    <span class="ds-icon">📅</span>
+    <div><div class="ds-label">出勤者</div><div class="ds-value">5 / 5人</div></div>
+  </div>
+  <div class="ds-card">
+    <span class="ds-icon">⏱</span>
+    <div><div class="ds-label">合計実績</div><div class="ds-value">36h</div></div>
+  </div>
+  <div class="ds-card">
+    <span class="ds-icon">📊</span>
+    <div><div class="ds-label">予定消化</div><div class="ds-value">82%</div></div>
+  </div>
+  <div class="ds-card">
+    <span class="ds-icon">🏖</span>
+    <div><div class="ds-label">休暇</div><div class="ds-value">0人</div></div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline-wrap">
+  <!-- Labels -->
+  <div class="tl-labels">
+    <div class="tl-labels-header">担当者</div>
+    <div class="tl-labels-body" id="labelBody"></div>
+  </div>
+  <!-- Timeline area -->
+  <div class="tl-timeline" id="timelineWrap">
+    <div class="tl-header" id="headerRow"></div>
+    <div class="tl-body" id="tlBody"></div>
+    <div class="now-line" id="nowLine"></div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#4dabf7"></div>UI設計</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#20c997"></div>PG実装</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fcc419"></div>テスト</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#845ef7"></div>レビュー</div>
+  <div class="legend-item" style="margin-left:auto;color:var(--text-secondary);font-weight:600">
+    ドラッグで時間ブロックを作成
+  </div>
+</div>
+
+<!-- Quick add popup (hidden) -->
+<div class="quick-add" id="quickAdd" style="display:none">
+  <div class="quick-add-header">
+    <div class="qa-title">実績を登録</div>
+    <div class="qa-time" id="qaTime">10:00 - 12:00 (2.0h)</div>
+  </div>
+  <div class="quick-add-body">
+    <div class="qa-field">
+      <label>タスク</label>
+      <select id="qaTask">
+        <option>基本設計 (v2.0 / UI)</option>
+        <option>API実装 (v2.0 / PG)</option>
+        <option>画面実装 (v2.0 / PG)</option>
+        <option>単体テスト (v2.0 / PT)</option>
+        <option>DB設計 (v1.5 / UI)</option>
+        <option>バッチ処理 (v1.5 / PG)</option>
+        <option selected>パフォーマンス改善 (v2.0 / PG)</option>
+      </select>
+    </div>
+    <div class="qa-field">
+      <label>工数 (h)</label>
+      <input type="number" value="2.0" min="0.5" step="0.5" id="qaHours">
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">カラー</label>
+      <div class="qa-color-row" id="qaColors"></div>
+    </div>
+    <div class="qa-field">
+      <label>メモ</label>
+      <input type="text" placeholder="任意のメモ…" id="qaMemo">
+    </div>
+  </div>
+  <div class="quick-add-footer">
+    <button class="qa-btn cancel" onclick="closeQuickAdd()">キャンセル</button>
+    <button class="qa-btn confirm" onclick="confirmQuickAdd()">記録する</button>
+  </div>
+</div>
+
+<!-- Detail panel (side slide) -->
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-header">
+    <span class="dp-title">作業詳細</span>
+    <button class="dp-close" onclick="closeDetailPanel()">✕</button>
+  </div>
+  <div class="dp-body" id="dpBody">
+    <div class="dp-field">
+      <label>タスク名</label>
+      <div class="dp-value">API実装</div>
+    </div>
+    <div class="dp-field">
+      <label>版数 / 工程</label>
+      <div class="dp-value">v2.0 / PG</div>
+    </div>
+    <div class="dp-field">
+      <label>担当者</label>
+      <div class="dp-value">佐藤 花子</div>
+    </div>
+    <div class="dp-field">
+      <label>時間帯</label>
+      <input type="text" value="9:00 - 12:00">
+    </div>
+    <div class="dp-field">
+      <label>工数</label>
+      <input type="number" value="3" step="0.5">
+    </div>
+    <div class="dp-field">
+      <label>メモ</label>
+      <textarea placeholder="作業内容のメモ…">REST APIのエンドポイント実装。認証周りの修正含む。</textarea>
+    </div>
+  </div>
+  <div class="dp-actions">
+    <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="closeDetailPanel();showToast('削除しました')">削除</button>
+    <button class="btn active" onclick="closeDetailPanel();showToast('✓ 保存しました')">保存</button>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip" style="display:none"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// Data
+// ============================================
+const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+const LUNCH_HOUR = 12;
+
+const MEMBERS = [
+  { name: '田中 太郎', initials: 'T', color: '#2563EB', role: 'フロントエンド' },
+  { name: '佐藤 花子', initials: 'S', color: '#7C3AED', role: 'バックエンド' },
+  { name: '鈴木 一郎', initials: 'Z', color: '#C4841D', role: 'インフラ' },
+  { name: '高橋 美咲', initials: 'K', color: '#0F766E', role: 'デザイン' },
+  { name: '渡辺 健太', initials: 'W', color: '#B91C1C', role: 'QA' },
+];
+
+const TASK_COLORS = {
+  'UI': '#4dabf7', 'PG': '#20c997', 'PT': '#fcc419', 'IT': '#ff6b6b',
+  'ST': '#845ef7', 'review': '#f06595'
+};
+
+// Actual blocks: { member, startH(fraction of hours since 9), duration(hours), task, process, color }
+const BLOCKS = [
+  { member: 0, startH: 0, duration: 3, task: '基本設計', process: 'UI', color: '#4dabf7' },
+  { member: 0, startH: 4, duration: 2, task: '画面実装', process: 'PG', color: '#20c997' },
+  { member: 0, startH: 6.5, duration: 1.5, task: 'コードレビュー', process: 'PG', color: '#f06595' },
+  { member: 1, startH: 0, duration: 3, task: 'API実装', process: 'PG', color: '#20c997' },
+  { member: 1, startH: 4, duration: 4, task: 'API実装', process: 'PG', color: '#20c997' },
+  { member: 2, startH: 0, duration: 2, task: 'DB設計', process: 'UI', color: '#845ef7' },
+  { member: 2, startH: 2, duration: 1, task: 'バッチ処理', process: 'PG', color: '#339af0' },
+  { member: 2, startH: 4, duration: 3, task: 'バッチ処理', process: 'PG', color: '#339af0' },
+  { member: 3, startH: 0, duration: 2, task: '画面デザイン', process: 'UI', color: '#4dabf7' },
+  { member: 3, startH: 2.5, duration: 0.5, task: 'MTG', process: 'UI', color: '#9C9690' },
+  { member: 3, startH: 4, duration: 2, task: 'パフォーマンス改善', process: 'PG', color: '#f783ac' },
+  { member: 3, startH: 6.5, duration: 1.5, task: 'デザインレビュー', process: 'UI', color: '#f06595' },
+  { member: 4, startH: 0, duration: 3, task: '単体テスト', process: 'PT', color: '#fcc419' },
+  { member: 4, startH: 4, duration: 2.5, task: '結合テスト', process: 'IT', color: '#ff6b6b' },
+  { member: 4, startH: 7, duration: 1, task: 'バグ報告', process: 'PT', color: '#fcc419' },
+];
+
+// Scheduled (plan) blocks - shown as ghost
+const SCHED_BLOCKS = [
+  { member: 0, startH: 0, duration: 4, task: '基本設計', process: 'UI', color: '#4dabf7' },
+  { member: 0, startH: 4, duration: 4, task: '画面実装', process: 'PG', color: '#20c997' },
+  { member: 1, startH: 0, duration: 8, task: 'API実装', process: 'PG', color: '#20c997' },
+  { member: 2, startH: 0, duration: 4, task: 'DB設計', process: 'UI', color: '#845ef7' },
+  { member: 2, startH: 4, duration: 4, task: 'バッチ処理', process: 'PG', color: '#339af0' },
+  { member: 3, startH: 0, duration: 4, task: '画面デザイン', process: 'UI', color: '#4dabf7' },
+  { member: 3, startH: 4, duration: 4, task: 'パフォーマンス改善', process: 'PG', color: '#f783ac' },
+  { member: 4, startH: 0, duration: 4, task: '単体テスト', process: 'PT', color: '#fcc419' },
+  { member: 4, startH: 4, duration: 4, task: '結合テスト', process: 'IT', color: '#ff6b6b' },
+];
+
+const hourW = 100;
+const rowH = 72;
+let showScheduled = false;
+let dragState = null;
+
+// ============================================
+// Render
+// ============================================
+function renderHeader() {
+  const el = document.getElementById('headerRow');
+  el.innerHTML = HOURS.map(h => {
+    let cls = '';
+    if (h === LUNCH_HOUR) cls = 'lunch';
+    if (h === 14) cls = 'now'; // simulated "now"
+    return `<div class="tl-header-hour ${cls}">${h}:00</div>`;
+  }).join('');
+  el.style.width = (HOURS.length * hourW) + 'px';
+}
+
+function renderLabels() {
+  const el = document.getElementById('labelBody');
+  el.innerHTML = MEMBERS.map((m, i) => {
+    const totalH = BLOCKS.filter(b => b.member === i).reduce((s, b) => s + b.duration, 0);
+    return `<div class="tl-label-row" data-member="${i}">
+      <div class="label-avatar" style="background:${m.color}">${m.initials}</div>
+      <div class="label-info">
+        <div class="label-name">${m.name}</div>
+        <div class="label-meta">${m.role} ・ ${totalH}h</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBody() {
+  const body = document.getElementById('tlBody');
+  const totalW = HOURS.length * hourW;
+  body.style.width = totalW + 'px';
+
+  let html = '';
+  MEMBERS.forEach((m, mi) => {
+    // Background columns
+    let bgHtml = HOURS.map(h =>
+      `<div class="tl-hour-col ${h === LUNCH_HOUR ? 'lunch' : ''}"></div>`
+    ).join('');
+
+    // Scheduled blocks (ghost)
+    let schedHtml = '';
+    if (showScheduled) {
+      SCHED_BLOCKS.filter(b => b.member === mi).forEach(b => {
+        const left = b.startH * hourW;
+        const width = b.duration * hourW - 2;
+        schedHtml += `<div class="block scheduled" style="left:${left}px;width:${width}px;top:4px;height:${rowH - 8}px;border-color:${b.color};background:${b.color}"
+          onclick="createFromSchedule(${mi},'${b.task}','${b.process}',${b.startH},${b.duration},'${b.color}')"
+          onmouseenter="showTT(event,'${b.task}','予定: ${b.duration}h','${b.process}','クリックで実績を作成')"
+          onmouseleave="hideTT()">
+          <span class="block-task" style="color:${b.color}">${b.task}</span>
+          <span class="block-meta" style="color:${b.color};opacity:0.7">予定 ${b.duration}h</span>
+        </div>`;
+      });
+    }
+
+    // Actual blocks
+    let blockHtml = '';
+    BLOCKS.filter(b => b.member === mi).forEach((b, bi) => {
+      const left = b.startH * hourW + 1;
+      const width = b.duration * hourW - 2;
+      const startTime = formatTime(9 + b.startH);
+      const endTime = formatTime(9 + b.startH + b.duration);
+      blockHtml += `<div class="block" style="left:${left}px;width:${width}px;top:6px;height:${rowH - 12}px;background:${b.color}"
+        data-member="${mi}" data-idx="${bi}"
+        onclick="openBlockDetail(${mi},${bi})"
+        onmouseenter="showTT(event,'${b.task}','${startTime} - ${endTime} (${b.duration}h)','${b.process}','クリックで詳細を表示')"
+        onmouseleave="hideTT()">
+        <div class="block-resize left" onmousedown="event.stopPropagation();startResize(event,${mi},${bi},'left')"></div>
+        <span class="block-task">${b.task}</span>
+        <span class="block-meta">${startTime} - ${endTime}</span>
+        <span class="block-hours">${b.duration}h</span>
+        <div class="block-resize right" onmousedown="event.stopPropagation();startResize(event,${mi},${bi},'right')"></div>
+      </div>`;
+    });
+
+    html += `<div class="tl-row" data-member="${mi}" onmousedown="startDragCreate(event,${mi})">
+      <div class="tl-row-bg">${bgHtml}</div>
+      ${schedHtml}
+      ${blockHtml}
+    </div>`;
+  });
+
+  body.innerHTML = html;
+
+  // Now line at 14:30 (simulated)
+  const nowLine = document.getElementById('nowLine');
+  const nowOffset = (14 - 9 + 0.5) * hourW;
+  nowLine.style.left = nowOffset + 'px';
+  nowLine.style.top = '0';
+  nowLine.style.height = (MEMBERS.length * rowH + 44) + 'px';
+}
+
+function formatTime(h) {
+  const hours = Math.floor(h);
+  const mins = Math.round((h - hours) * 60);
+  return `${hours}:${String(mins).padStart(2, '0')}`;
+}
+
+function syncScroll() {
+  const wrap = document.getElementById('timelineWrap');
+  const labelBody = document.getElementById('labelBody');
+  wrap.addEventListener('scroll', () => {
+    labelBody.scrollTop = wrap.scrollTop;
+  });
+}
+
+function render() {
+  renderHeader();
+  renderLabels();
+  renderBody();
+  syncScroll();
+  renderColorDots();
+  // Scroll to now
+  setTimeout(() => {
+    document.getElementById('timelineWrap').scrollLeft = Math.max(0, 4 * hourW);
+  }, 100);
+}
+
+// ============================================
+// Interactions
+// ============================================
+
+// Drag to create
+function startDragCreate(e, memberIdx) {
+  if (e.target.closest('.block')) return;
+  e.preventDefault();
+  const row = e.currentTarget;
+  const rect = row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('timelineWrap').scrollLeft;
+  const startX = e.clientX - rect.left + scrollLeft;
+  const startHour = Math.floor(startX / hourW * 2) / 2; // snap to 30min
+
+  const sel = document.createElement('div');
+  sel.className = 'drag-select';
+  sel.style.top = '6px';
+  sel.style.height = (rowH - 12) + 'px';
+  sel.style.left = (startHour * hourW) + 'px';
+  sel.style.width = (0.5 * hourW) + 'px';
+  row.appendChild(sel);
+
+  dragState = { type: 'create', memberIdx, startHour, sel, row };
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  if (dragState.type === 'create') {
+    const rect = dragState.row.getBoundingClientRect();
+    const scrollLeft = document.getElementById('timelineWrap').scrollLeft;
+    const x = e.clientX - rect.left + scrollLeft;
+    const curHour = Math.max(0, Math.min(HOURS.length, Math.floor(x / hourW * 2) / 2));
+    const s = Math.min(dragState.startHour, curHour);
+    const end = Math.max(dragState.startHour, curHour) + 0.5;
+    dragState.sel.style.left = (s * hourW) + 'px';
+    dragState.sel.style.width = ((end - s) * hourW) + 'px';
+    dragState.currentStart = s;
+    dragState.currentEnd = end;
+  }
+  if (dragState.type === 'resize') {
+    const rect = dragState.row.getBoundingClientRect();
+    const scrollLeft = document.getElementById('timelineWrap').scrollLeft;
+    const x = e.clientX - rect.left + scrollLeft;
+    const curHour = Math.max(0, Math.min(HOURS.length, Math.round(x / hourW * 2) / 2));
+    const block = dragState.block;
+    const b = BLOCKS[dragState.blockData];
+    if (dragState.edge === 'left') {
+      const newStart = Math.min(curHour, b.startH + b.duration - 0.5);
+      const newDur = b.startH + b.duration - newStart;
+      block.style.left = (newStart * hourW + 1) + 'px';
+      block.style.width = (newDur * hourW - 2) + 'px';
+    } else {
+      const newEnd = Math.max(curHour, b.startH + 0.5);
+      const newDur = newEnd - b.startH;
+      block.style.width = (newDur * hourW - 2) + 'px';
+    }
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (!dragState) return;
+  if (dragState.type === 'create') {
+    const s = dragState.currentStart != null ? dragState.currentStart : dragState.startHour;
+    const end = dragState.currentEnd != null ? dragState.currentEnd : dragState.startHour + 0.5;
+    dragState.sel.remove();
+    if (end - s >= 0.5) {
+      showQuickAdd(e.clientX, e.clientY, dragState.memberIdx, s, end);
+    }
+  }
+  if (dragState.type === 'resize') {
+    showToast('✓ リサイズしました');
+  }
+  dragState = null;
+});
+
+// Resize
+function startResize(e, mi, bi, edge) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideTT();
+  const block = e.target.closest('.block');
+  const row = block.closest('.tl-row');
+  // Find the block data index across all blocks for this member
+  const memberBlocks = BLOCKS.filter(b => b.member === mi);
+  dragState = { type: 'resize', memberIdx: mi, blockData: BLOCKS.indexOf(memberBlocks[bi]), edge, block, row };
+}
+
+// Quick add popup
+function showQuickAdd(x, y, memberIdx, startH, endH) {
+  const popup = document.getElementById('quickAdd');
+  const duration = endH - startH;
+  document.getElementById('qaTime').textContent =
+    `${formatTime(9 + startH)} - ${formatTime(9 + endH)} (${duration}h)`;
+  document.getElementById('qaHours').value = duration;
+
+  popup.style.display = 'block';
+  let px = x + 10, py = y + 10;
+  if (px + 310 > window.innerWidth) px = x - 310;
+  if (py + 350 > window.innerHeight) py = y - 350;
+  popup.style.left = px + 'px';
+  popup.style.top = py + 'px';
+  popup.dataset.member = memberIdx;
+}
+
+function closeQuickAdd() {
+  document.getElementById('quickAdd').style.display = 'none';
+}
+
+function confirmQuickAdd() {
+  const popup = document.getElementById('quickAdd');
+  const m = MEMBERS[parseInt(popup.dataset.member)];
+  const task = document.getElementById('qaTask').value.split(' (')[0];
+  const hours = document.getElementById('qaHours').value;
+  closeQuickAdd();
+  showToast(`✓ 「${task}」${hours}h を記録 (${m.name})`);
+}
+
+// Close quick add on outside click
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('quickAdd');
+  if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.closest('.drag-select')) {
+    closeQuickAdd();
+  }
+});
+
+// Color dots
+const COLORS = ['#4dabf7', '#20c997', '#fcc419', '#ff6b6b', '#845ef7', '#f06595', '#339af0', '#9C9690'];
+function renderColorDots() {
+  const el = document.getElementById('qaColors');
+  el.innerHTML = COLORS.map((c, i) =>
+    `<div class="qa-color-dot ${i === 0 ? 'selected' : ''}" style="background:${c}" onclick="selectColor(this)"></div>`
+  ).join('');
+}
+function selectColor(el) {
+  document.querySelectorAll('.qa-color-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Toggle scheduled blocks
+function toggleScheduled() {
+  showScheduled = !showScheduled;
+  document.getElementById('schedIcon').textContent = showScheduled ? '◼' : '◻';
+  renderBody();
+  showToast(showScheduled ? '予定ブロックを表示' : '予定ブロックを非表示');
+}
+
+// Create from schedule
+function createFromSchedule(mi, task, process, startH, duration, color) {
+  const m = MEMBERS[mi];
+  showToast(`✓ 予定から実績を作成: 「${task}」${duration}h (${m.name})`);
+}
+
+// Detail panel
+function openBlockDetail(mi, bi) {
+  const memberBlocks = BLOCKS.filter(b => b.member === mi);
+  const b = memberBlocks[bi];
+  const m = MEMBERS[mi];
+  const startTime = formatTime(9 + b.startH);
+  const endTime = formatTime(9 + b.startH + b.duration);
+
+  document.getElementById('dpBody').innerHTML = `
+    <div class="dp-field">
+      <label>タスク名</label>
+      <div class="dp-value">${b.task}</div>
+    </div>
+    <div class="dp-field">
+      <label>工程</label>
+      <div class="dp-value">${b.process}</div>
+    </div>
+    <div class="dp-field">
+      <label>担当者</label>
+      <div class="dp-value" style="display:flex;align-items:center;gap:8px">
+        <div style="width:24px;height:24px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">${m.initials}</div>
+        ${m.name}
+      </div>
+    </div>
+    <div class="dp-field">
+      <label>時間帯</label>
+      <input type="text" value="${startTime} - ${endTime}">
+    </div>
+    <div class="dp-field">
+      <label>工数</label>
+      <input type="number" value="${b.duration}" step="0.5">
+    </div>
+    <div class="dp-field">
+      <label>メモ</label>
+      <textarea placeholder="作業内容のメモ…"></textarea>
+    </div>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+}
+function openDetailPanel() {
+  document.getElementById('detailPanel').classList.add('open');
+}
+function closeDetailPanel() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// Tooltip
+function showTT(e, title, time, process, hint) {
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = `
+    <div class="tt-title">${title}</div>
+    <div class="tt-row"><span class="tt-label">時間</span><span class="tt-accent">${time}</span></div>
+    <div class="tt-row"><span class="tt-label">工程</span><span>${process}</span></div>
+    <div style="margin-top:6px;font-size:10px;color:#93C5FD">${hint}</div>
+  `;
+  tt.style.display = 'block';
+  let x = e.clientX + 12, y = e.clientY - 10;
+  if (x + 250 > window.innerWidth) x = e.clientX - 250;
+  if (y + 100 > window.innerHeight) y = e.clientY - 100;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+function hideTT() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// Nav
+function navDay(dir) { showToast(dir > 0 ? '翌日へ移動' : '前日へ移動'); }
+function goToday() {
+  document.getElementById('timelineWrap').scrollTo({ left: 4 * hourW, behavior: 'smooth' });
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), 2200);
+}
+
+// Init
+render();
+</script>
+</body>
+</html>

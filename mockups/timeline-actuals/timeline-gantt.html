@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムライン実績入力 — ガントチャート型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+  --border:#E7E5E0;--border-light:#F0EEEA;
+  --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+  --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+  --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+  --danger:#B91C1C;--danger-light:#FEF2F2;
+  --info:#1D6FA5;--info-light:#EFF6FF;
+  --sidebar-bg:#1A1814;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+  --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,24,20,0.12);
+  --transition:200ms ease;
+  /* Gantt specific */
+  --label-w:180px;
+  --day-w:44px;
+  --row-h:64px;
+  --header-h:52px;
+  --plan-color:#93C5FD;
+  --plan-color-dim:rgba(147,197,253,0.35);
+  --actual-color:#2563EB;
+  --actual-color-dim:rgba(37,99,235,0.25);
+  --completed-bar:#2D5A27;
+  --delayed-bar:#B91C1C;
+}
+html{font-size:14px;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* ========== Top bar ========== */
+.topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 20px;background:var(--sidebar-bg);color:#F7F6F3;
+  flex-shrink:0;z-index:100;
+}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+.topbar-sub{font-size:12px;color:#9C9690;margin-left:4px}
+.topbar-spacer{flex:1}
+.topbar-badge{
+  font-size:11px;font-weight:600;background:rgba(45,90,39,0.3);
+  color:#93C5FD;padding:3px 10px;border-radius:20px;letter-spacing:0.02em;
+}
+
+/* ========== Toolbar ========== */
+.toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
+}
+.toolbar-group{display:flex;align-items:center;gap:4px}
+.toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 8px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text-primary);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:all var(--transition);white-space:nowrap;
+}
+.btn:hover{background:var(--surface-elevated);border-color:var(--text-muted)}
+.btn.active{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
+.btn.active:hover{background:var(--accent-hover)}
+.btn-icon{
+  width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);cursor:pointer;transition:all var(--transition);font-size:14px;
+}
+.btn-icon:hover{background:var(--surface-elevated);border-color:var(--text-muted)}
+
+.month-label{
+  font-size:15px;font-weight:700;letter-spacing:-0.02em;min-width:120px;text-align:center;
+}
+
+.filter-input{
+  padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font:inherit;font-size:12px;background:var(--surface);width:100px;
+  transition:border-color var(--transition);
+}
+.filter-input:focus{outline:none;border-color:var(--accent)}
+.filter-input::placeholder{color:var(--text-muted)}
+
+/* ========== Summary cards ========== */
+.summary-strip{
+  display:flex;gap:6px;padding:8px 20px;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;
+}
+.summary-card{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);white-space:nowrap;
+}
+.summary-card .sc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.summary-card .sc-label{font-size:11px;color:var(--text-muted);font-weight:500}
+.summary-card .sc-value{font-size:14px;font-weight:700;color:var(--text-primary)}
+
+/* ========== Gantt container ========== */
+.gantt-wrap{flex:1;display:flex;overflow:hidden;position:relative}
+.gantt-labels{
+  width:var(--label-w);flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);z-index:10;overflow:hidden;
+}
+.gantt-labels-header{
+  height:var(--header-h);display:flex;align-items:center;
+  padding:0 14px;font-size:11px;font-weight:700;color:var(--text-muted);
+  letter-spacing:0.04em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);background:var(--surface-elevated);
+}
+.gantt-labels-body{overflow-y:auto;overflow-x:hidden}
+.gantt-label-row{
+  height:var(--row-h);display:flex;align-items:center;gap:10px;
+  padding:0 14px;border-bottom:1px solid var(--border-light);
+  transition:background var(--transition);
+}
+.gantt-label-row:hover{background:var(--accent-light)}
+.gantt-label-row:nth-child(even){background:var(--surface-elevated)}
+.gantt-label-row:nth-child(even):hover{background:var(--accent-light)}
+.label-avatar{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.label-name{font-size:13px;font-weight:600;color:var(--text-primary)}
+.label-hours{font-size:11px;color:var(--text-muted);font-weight:500}
+
+.gantt-timeline{flex:1;overflow:auto;position:relative}
+.gantt-header{
+  position:sticky;top:0;z-index:5;height:var(--header-h);
+  display:flex;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);
+}
+.gantt-header-day{
+  width:var(--day-w);flex-shrink:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;
+  font-size:10px;font-weight:600;color:var(--text-secondary);
+  border-right:1px solid var(--border-light);position:relative;
+}
+.gantt-header-day .day-num{font-size:13px;font-weight:700;color:var(--text-primary)}
+.gantt-header-day.weekend{background:rgba(156,150,144,0.08)}
+.gantt-header-day.weekend .day-num{color:var(--text-muted)}
+.gantt-header-day.holiday{background:rgba(185,28,28,0.04)}
+.gantt-header-day.holiday .day-num{color:var(--danger)}
+.gantt-header-day.today{background:rgba(45,90,39,0.08)}
+.gantt-header-day.today .day-num{
+  background:var(--accent);color:#fff;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.gantt-body{position:relative}
+.gantt-row{
+  height:var(--row-h);position:relative;
+  border-bottom:1px solid var(--border-light);
+}
+.gantt-row:nth-child(even){background:var(--surface-elevated)}
+.gantt-row:hover{background:rgba(45,90,39,0.03)}
+
+/* Day columns */
+.gantt-row-bg{position:absolute;inset:0;display:flex;pointer-events:none}
+.gantt-day-col{width:var(--day-w);flex-shrink:0;border-right:1px solid var(--border-light)}
+.gantt-day-col.weekend{background:rgba(156,150,144,0.06)}
+.gantt-day-col.holiday{background:rgba(185,28,28,0.03)}
+
+/* Today line */
+.today-line{
+  position:absolute;top:0;bottom:0;width:2px;background:var(--accent);z-index:8;
+  pointer-events:none;
+}
+.today-line::after{
+  content:'';position:absolute;top:-3px;left:-3px;width:8px;height:8px;
+  background:var(--accent);border-radius:50%;
+}
+
+/* ========== Bars ========== */
+.bar{
+  position:absolute;border-radius:3px;cursor:pointer;
+  transition:box-shadow 0.15s,filter 0.15s;z-index:2;
+  display:flex;align-items:center;padding:0 6px;overflow:hidden;
+}
+.bar:hover{z-index:4;filter:brightness(1.08);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.bar.plan-bar{
+  height:10px;top:8px;
+}
+.bar.actual-bar{
+  height:14px;top:32px;
+}
+.bar .bar-label{
+  font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.bar .bar-resize{
+  position:absolute;top:0;width:6px;height:100%;cursor:ew-resize;z-index:3;
+}
+.bar .bar-resize.left{left:0}
+.bar .bar-resize.right{right:0}
+
+/* Plan bar styles */
+.bar.plan-bar{
+  background:var(--plan-color);opacity:0.7;
+}
+.bar.plan-bar .bar-label{display:none}
+
+/* Actual bar styles */
+.bar.actual-bar{
+  background:var(--actual-color);box-shadow:0 1px 3px rgba(37,99,235,0.3);
+}
+.bar.actual-bar.completed{background:var(--completed-bar)}
+.bar.actual-bar.delayed{background:var(--delayed-bar)}
+
+/* Progress indicator on plan bar */
+.bar.plan-bar .progress-fill{
+  position:absolute;left:0;top:0;height:100%;background:var(--actual-color);
+  border-radius:3px;opacity:0.4;
+}
+
+/* Drag ghost */
+.drag-ghost{
+  position:fixed;padding:4px 10px;background:var(--actual-color);color:#fff;
+  border-radius:var(--radius-sm);font-size:11px;font-weight:600;
+  pointer-events:none;z-index:1000;opacity:0.9;
+  box-shadow:0 4px 16px rgba(37,99,235,0.3);
+}
+
+/* Drag selection rectangle */
+.drag-select{
+  position:absolute;border:2px dashed var(--actual-color);
+  background:rgba(37,99,235,0.08);border-radius:var(--radius-xs);
+  z-index:6;pointer-events:none;
+  animation:selectPulse 1s ease infinite;
+}
+@keyframes selectPulse{
+  0%,100%{border-color:var(--actual-color)}
+  50%{border-color:rgba(37,99,235,0.4)}
+}
+
+/* ========== Floating task picker ========== */
+.task-picker{
+  position:absolute;z-index:50;width:280px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);
+  animation:pickerIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  overflow:hidden;
+}
+@keyframes pickerIn{
+  from{opacity:0;transform:translateY(8px) scale(0.96)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.task-picker-header{
+  padding:12px 14px 8px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border-light);
+}
+.task-picker-search{
+  flex:1;padding:6px 10px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font:inherit;font-size:12px;
+  background:var(--surface-elevated);
+}
+.task-picker-search:focus{outline:none;border-color:var(--accent)}
+.task-picker-list{max-height:200px;overflow-y:auto;padding:4px}
+.task-picker-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;
+  transition:background var(--transition);
+}
+.task-picker-item:hover{background:var(--accent-light)}
+.task-picker-item .tpi-color{width:6px;height:24px;border-radius:3px;flex-shrink:0}
+.task-picker-item .tpi-info{flex:1;min-width:0}
+.task-picker-item .tpi-name{font-size:12px;font-weight:600;color:var(--text-primary)}
+.task-picker-item .tpi-meta{font-size:10px;color:var(--text-muted)}
+.task-picker-footer{
+  padding:8px 14px;border-top:1px solid var(--border-light);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.task-picker-footer .hours-input{
+  width:60px;padding:4px 8px;border:1px solid var(--border);
+  border-radius:var(--radius-xs);font:inherit;font-size:12px;text-align:center;
+}
+.task-picker-footer .confirm-btn{
+  padding:6px 16px;background:var(--accent);color:#fff;border:none;
+  border-radius:var(--radius-sm);font:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;transition:background var(--transition);
+}
+.task-picker-footer .confirm-btn:hover{background:var(--accent-hover)}
+
+/* ========== Tooltip ========== */
+.tooltip{
+  position:fixed;z-index:60;padding:10px 14px;
+  background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:12px;line-height:1.6;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);pointer-events:none;
+  animation:ttIn 0.15s ease;max-width:260px;
+}
+@keyframes ttIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.tooltip .tt-title{font-weight:700;font-size:13px;margin-bottom:2px}
+.tooltip .tt-row{display:flex;justify-content:space-between;gap:16px}
+.tooltip .tt-label{color:#9C9690}
+.tooltip .tt-accent{color:#93C5FD;font-weight:600}
+
+/* ========== Legend ========== */
+.legend{
+  display:flex;gap:16px;padding:8px 20px;
+  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.legend-dot{width:24px;height:8px;border-radius:2px}
+
+/* ========== Notification toast ========== */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:13px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;
+  opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .toast-icon{margin-right:8px}
+
+/* ========== Mode indicators ========== */
+.mode-badge{
+  position:fixed;top:60px;right:20px;
+  padding:6px 12px;background:var(--actual-color);color:#fff;
+  border-radius:20px;font-size:11px;font-weight:700;
+  z-index:90;opacity:0;transition:all 0.3s ease;pointer-events:none;
+  letter-spacing:0.02em;
+}
+.mode-badge.visible{opacity:1}
+
+/* ========== Drag hint overlay ========== */
+.drag-hint{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(37,99,235,0.03);z-index:1;pointer-events:none;
+  opacity:0;transition:opacity 0.3s;
+}
+.drag-hint.visible{opacity:1}
+.drag-hint-text{
+  padding:8px 16px;background:var(--actual-color);color:#fff;
+  border-radius:20px;font-size:12px;font-weight:600;
+  box-shadow:0 4px 16px rgba(37,99,235,0.3);
+}
+
+/* ========== Responsive ========== */
+@media(max-width:768px){
+  :root{--label-w:120px;--day-w:36px;--row-h:56px}
+  .toolbar{padding:8px 12px}
+  .summary-strip{padding:6px 12px}
+  .legend{padding:6px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-title">工数管理</div>
+  <div class="topbar-sub">タイムライン実績入力</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-badge">MOCKUP — Gantt型</div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-group">
+    <button class="btn-icon" onclick="navMonth(-1)" title="前月">◀</button>
+    <span class="month-label" id="monthLabel">2026年3月</span>
+    <button class="btn-icon" onclick="navMonth(1)" title="翌月">▶</button>
+    <button class="btn" onclick="goToday()" style="margin-left:4px">今日</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group" id="viewToggles">
+    <button class="btn active" data-mode="both" onclick="setViewMode('both',this)">予定+実績</button>
+    <button class="btn" data-mode="plan" onclick="setViewMode('plan',this)">予定のみ</button>
+    <button class="btn" data-mode="actual" onclick="setViewMode('actual',this)">実績のみ</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <input class="filter-input" placeholder="版数" id="filterVersion">
+  <input class="filter-input" placeholder="担当者" id="filterMember">
+  <div style="flex:1"></div>
+  <button class="btn" onclick="showToast('⬇ エクスポート準備中…')" style="font-size:11px">⬇ CSV出力</button>
+</div>
+
+<!-- Summary strip -->
+<div class="summary-strip">
+  <div class="summary-card">
+    <div class="sc-dot" style="background:#2D5A27"></div>
+    <div><div class="sc-label">完了</div><div class="sc-value">4 / 12</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-dot" style="background:#2563EB"></div>
+    <div><div class="sc-label">進行中</div><div class="sc-value">5件</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-dot" style="background:#B91C1C"></div>
+    <div><div class="sc-label">遅延</div><div class="sc-value">1件</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-dot" style="background:#C4841D"></div>
+    <div><div class="sc-label">本日予定</div><div class="sc-value">3件</div></div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-dot" style="background:var(--text-muted)"></div>
+    <div><div class="sc-label">今月実績</div><div class="sc-value">142h</div></div>
+  </div>
+</div>
+
+<!-- Gantt chart -->
+<div class="gantt-wrap">
+  <!-- Labels column -->
+  <div class="gantt-labels">
+    <div class="gantt-labels-header">担当者</div>
+    <div class="gantt-labels-body" id="labelBody"></div>
+  </div>
+  <!-- Timeline area -->
+  <div class="gantt-timeline" id="timelineWrap">
+    <div class="gantt-header" id="headerRow"></div>
+    <div class="gantt-body" id="ganttBody"></div>
+    <div class="today-line" id="todayLine"></div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--plan-color)"></div>予定</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--actual-color)"></div>実績</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--completed-bar)"></div>完了</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--delayed-bar)"></div>遅延</div>
+  <div class="legend-item" style="margin-left:auto;color:var(--text-secondary);font-weight:600">
+    ドラッグで実績を作成 ・ バーをクリックで編集
+  </div>
+</div>
+
+<!-- Task picker (hidden) -->
+<div class="task-picker" id="taskPicker" style="display:none">
+  <div class="task-picker-header">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="task-picker-search" placeholder="タスクを検索…" id="taskSearch">
+  </div>
+  <div class="task-picker-list" id="taskList"></div>
+  <div class="task-picker-footer">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:var(--text-muted)">工数:</span>
+      <input type="number" class="hours-input" value="8" min="0.5" step="0.5" id="hoursInput">
+      <span style="font-size:11px;color:var(--text-muted)">h</span>
+    </div>
+    <button class="confirm-btn" onclick="confirmTaskPick()">記録する</button>
+  </div>
+</div>
+
+<!-- Tooltip (hidden) -->
+<div class="tooltip" id="tooltip" style="display:none"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Mode badge -->
+<div class="mode-badge" id="modeBadge"></div>
+
+<script>
+// ============================================
+// Data
+// ============================================
+const MEMBERS = [
+  { name: '田中 太郎', initials: 'T', color: '#2563EB' },
+  { name: '佐藤 花子', initials: 'S', color: '#7C3AED' },
+  { name: '鈴木 一郎', initials: 'Z', color: '#C4841D' },
+  { name: '高橋 美咲', initials: 'K', color: '#0F766E' },
+  { name: '渡辺 健太', initials: 'W', color: '#B91C1C' },
+];
+
+const TASKS = [
+  { name: '基本設計', version: 'v2.0', process: 'UI', color: '#4dabf7' },
+  { name: 'API実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { name: '画面実装', version: 'v2.0', process: 'PG', color: '#51cf66' },
+  { name: '単体テスト', version: 'v2.0', process: 'PT', color: '#fcc419' },
+  { name: '結合テスト', version: 'v2.0', process: 'IT', color: '#ff6b6b' },
+  { name: 'DB設計', version: 'v1.5', process: 'UI', color: '#845ef7' },
+  { name: 'バッチ処理', version: 'v1.5', process: 'PG', color: '#339af0' },
+  { name: 'パフォーマンス改善', version: 'v2.0', process: 'PG', color: '#f06595' },
+];
+
+// Generate schedule (plan) bars
+const PLAN_BARS = [
+  { member: 0, task: 0, start: 2, end: 8, progress: 80 },
+  { member: 0, task: 3, start: 10, end: 14, progress: 0 },
+  { member: 1, task: 2, start: 1, end: 7, progress: 60 },
+  { member: 1, task: 4, start: 9, end: 15, progress: 0 },
+  { member: 2, task: 1, start: 3, end: 12, progress: 45 },
+  { member: 2, task: 5, start: 14, end: 19, progress: 0 },
+  { member: 3, task: 6, start: 1, end: 6, progress: 100 },
+  { member: 3, task: 7, start: 7, end: 14, progress: 30 },
+  { member: 4, task: 2, start: 5, end: 11, progress: 50 },
+  { member: 4, task: 3, start: 12, end: 18, progress: 0 },
+];
+
+// Actual bars (some matching plans, some standalone)
+const ACTUAL_BARS = [
+  { member: 0, task: 0, start: 2, end: 7, hours: 32, status: '' },
+  { member: 1, task: 2, start: 1, end: 5, hours: 24, status: '' },
+  { member: 2, task: 1, start: 3, end: 9, hours: 40, status: '' },
+  { member: 3, task: 6, start: 1, end: 6, hours: 40, status: 'completed' },
+  { member: 3, task: 7, start: 7, end: 10, hours: 20, status: '' },
+  { member: 4, task: 2, start: 5, end: 9, hours: 28, status: 'delayed' },
+];
+
+const YEAR = 2026, MONTH = 3;
+const DAYS_IN_MONTH = new Date(YEAR, MONTH, 0).getDate();
+const TODAY = 14;
+let viewMode = 'both';
+let dragState = null;
+
+const HOLIDAYS = { 21: '春分の日' };
+const dayW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--day-w'));
+const rowH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h'));
+
+// ============================================
+// Render
+// ============================================
+function isWeekend(d) {
+  const date = new Date(YEAR, MONTH - 1, d);
+  return date.getDay() === 0 || date.getDay() === 6;
+}
+function getDayName(d) {
+  return ['日','月','火','水','木','金','土'][new Date(YEAR, MONTH - 1, d).getDay()];
+}
+
+function renderHeader() {
+  const el = document.getElementById('headerRow');
+  let html = '';
+  for (let d = 1; d <= DAYS_IN_MONTH; d++) {
+    const we = isWeekend(d);
+    const hol = HOLIDAYS[d];
+    const isToday = d === TODAY;
+    let cls = '';
+    if (isToday) cls = 'today';
+    else if (hol) cls = 'holiday';
+    else if (we) cls = 'weekend';
+    html += `<div class="gantt-header-day ${cls}" data-day="${d}">
+      <span style="font-size:9px">${getDayName(d)}</span>
+      <span class="day-num">${d}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+  el.style.width = (DAYS_IN_MONTH * 44) + 'px';
+}
+
+function renderLabels() {
+  const el = document.getElementById('labelBody');
+  el.innerHTML = MEMBERS.map((m, i) => {
+    const actualH = ACTUAL_BARS.filter(b => b.member === i).reduce((s, b) => s + b.hours, 0);
+    return `<div class="gantt-label-row" data-member="${i}">
+      <div class="label-avatar" style="background:${m.color}">${m.initials}</div>
+      <div>
+        <div class="label-name">${m.name}</div>
+        <div class="label-hours">実績 ${actualH}h</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBody() {
+  const body = document.getElementById('ganttBody');
+  const totalW = DAYS_IN_MONTH * 44;
+  body.style.width = totalW + 'px';
+
+  let html = '';
+  MEMBERS.forEach((m, mi) => {
+    // Row background
+    let bgHtml = '';
+    for (let d = 1; d <= DAYS_IN_MONTH; d++) {
+      let cls = '';
+      if (HOLIDAYS[d]) cls = 'holiday';
+      else if (isWeekend(d)) cls = 'weekend';
+      bgHtml += `<div class="gantt-day-col ${cls}"></div>`;
+    }
+
+    // Plan bars
+    let barsHtml = '';
+    if (viewMode === 'both' || viewMode === 'plan') {
+      PLAN_BARS.filter(b => b.member === mi).forEach(b => {
+        const left = (b.start - 1) * 44 + 2;
+        const width = (b.end - b.start + 1) * 44 - 4;
+        const t = TASKS[b.task];
+        const progW = Math.round(width * b.progress / 100);
+        barsHtml += `<div class="bar plan-bar" style="left:${left}px;width:${width}px;background:${t.color};opacity:0.35"
+          data-type="plan" data-member="${mi}" data-task="${b.task}"
+          onmouseenter="showTooltipPlan(event,${mi},${b.task},${b.start},${b.end},${b.progress})"
+          onmouseleave="hideTooltip()"
+          onclick="createActualFromPlan(${mi},${b.task},${b.start},${b.end})">
+          <div class="progress-fill" style="width:${progW}px;background:${t.color};opacity:0.6"></div>
+        </div>`;
+      });
+    }
+
+    // Actual bars
+    if (viewMode === 'both' || viewMode === 'actual') {
+      ACTUAL_BARS.filter(b => b.member === mi).forEach((b, bi) => {
+        const left = (b.start - 1) * 44 + 2;
+        const width = (b.end - b.start + 1) * 44 - 4;
+        const t = TASKS[b.task];
+        let barCls = 'bar actual-bar';
+        let bg = t.color;
+        if (b.status === 'completed') { barCls += ' completed'; bg = 'var(--completed-bar)'; }
+        if (b.status === 'delayed') { barCls += ' delayed'; bg = 'var(--delayed-bar)'; }
+        barsHtml += `<div class="${barCls}" style="left:${left}px;width:${width}px;background:${bg}"
+          data-type="actual" data-member="${mi}" data-task="${b.task}" data-idx="${bi}"
+          draggable="false"
+          onmouseenter="showTooltipActual(event,${mi},${b.task},${b.start},${b.end},${b.hours},'${b.status}')"
+          onmouseleave="hideTooltip()"
+          onmousedown="startBarDrag(event,${mi},${b.task},${b.start},${b.end})">
+          <div class="bar-resize left" onmousedown="event.stopPropagation();startResize(event,${mi},${b.task},${b.start},${b.end},'left')"></div>
+          <span class="bar-label">${t.name} ${b.hours}h</span>
+          <div class="bar-resize right" onmousedown="event.stopPropagation();startResize(event,${mi},${b.task},${b.start},${b.end},'right')"></div>
+        </div>`;
+      });
+    }
+
+    html += `<div class="gantt-row" data-member="${mi}"
+      onmousedown="startDragCreate(event,${mi})">
+      <div class="gantt-row-bg">${bgHtml}</div>
+      ${barsHtml}
+    </div>`;
+  });
+
+  body.innerHTML = html;
+
+  // Today line
+  const todayLine = document.getElementById('todayLine');
+  todayLine.style.left = ((TODAY - 1) * 44 + 22) + 'px';
+  todayLine.style.top = '0';
+  todayLine.style.height = (MEMBERS.length * rowH + 52) + 'px';
+}
+
+// Sync scroll
+function syncScroll() {
+  const wrap = document.getElementById('timelineWrap');
+  const labelBody = document.getElementById('labelBody');
+  wrap.addEventListener('scroll', () => {
+    labelBody.scrollTop = wrap.scrollTop;
+  });
+}
+
+function render() {
+  renderHeader();
+  renderLabels();
+  renderBody();
+  syncScroll();
+  // scroll to today
+  setTimeout(() => {
+    const wrap = document.getElementById('timelineWrap');
+    wrap.scrollLeft = Math.max(0, (TODAY - 4) * 44);
+  }, 100);
+}
+
+// ============================================
+// Interactions
+// ============================================
+
+// View mode toggle
+function setViewMode(mode, btn) {
+  viewMode = mode;
+  document.querySelectorAll('#viewToggles .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBody();
+  const badge = document.getElementById('modeBadge');
+  const labels = { both: '予定+実績', plan: '予定のみ', actual: '実績のみ' };
+  badge.textContent = labels[mode];
+  badge.classList.add('visible');
+  setTimeout(() => badge.classList.remove('visible'), 1200);
+}
+
+// Month nav (mock)
+function navMonth(dir) {
+  showToast(dir > 0 ? '翌月へ移動' : '前月へ移動');
+}
+function goToday() {
+  const wrap = document.getElementById('timelineWrap');
+  wrap.scrollTo({ left: Math.max(0, (TODAY - 4) * 44), behavior: 'smooth' });
+}
+
+// Tooltips
+function showTooltipPlan(e, mi, ti, s, end, prog) {
+  const t = TASKS[ti];
+  const m = MEMBERS[mi];
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = `
+    <div class="tt-title">${t.name}</div>
+    <div class="tt-row"><span class="tt-label">担当</span><span>${m.name}</span></div>
+    <div class="tt-row"><span class="tt-label">期間</span><span>3/${s} - 3/${end}</span></div>
+    <div class="tt-row"><span class="tt-label">進捗</span><span class="tt-accent">${prog}%</span></div>
+    <div style="margin-top:6px;font-size:10px;color:#93C5FD">クリックで実績を作成</div>
+  `;
+  tt.style.display = 'block';
+  positionTooltip(e);
+}
+
+function showTooltipActual(e, mi, ti, s, end, hours, status) {
+  const t = TASKS[ti];
+  const m = MEMBERS[mi];
+  const statusLabel = status === 'completed' ? '✓ 完了' : status === 'delayed' ? '⚠ 遅延' : '進行中';
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = `
+    <div class="tt-title">${t.name}</div>
+    <div class="tt-row"><span class="tt-label">担当</span><span>${m.name}</span></div>
+    <div class="tt-row"><span class="tt-label">期間</span><span>3/${s} - 3/${end}</span></div>
+    <div class="tt-row"><span class="tt-label">実績工数</span><span class="tt-accent">${hours}h</span></div>
+    <div class="tt-row"><span class="tt-label">状態</span><span>${statusLabel}</span></div>
+    <div style="margin-top:6px;font-size:10px;color:#93C5FD">ドラッグで移動 ・ 端をドラッグでリサイズ</div>
+  `;
+  tt.style.display = 'block';
+  positionTooltip(e);
+}
+
+function positionTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  let x = e.clientX + 12, y = e.clientY - 10;
+  if (x + 270 > window.innerWidth) x = e.clientX - 270;
+  if (y + 120 > window.innerHeight) y = e.clientY - 120;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// Drag to create actual
+function startDragCreate(e, memberIdx) {
+  if (e.target.closest('.bar')) return;
+  e.preventDefault();
+  const body = document.getElementById('ganttBody');
+  const row = e.currentTarget;
+  const rect = row.getBoundingClientRect();
+  const startX = e.clientX - rect.left + document.getElementById('timelineWrap').scrollLeft;
+  const startDay = Math.floor(startX / 44) + 1;
+
+  const sel = document.createElement('div');
+  sel.className = 'drag-select';
+  sel.style.top = '0';
+  sel.style.height = rowH + 'px';
+  sel.style.left = ((startDay - 1) * 44) + 'px';
+  sel.style.width = '44px';
+  row.appendChild(sel);
+
+  dragState = { type: 'create', memberIdx, startDay, sel, row };
+  hideTooltip();
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  if (dragState.type === 'create') {
+    const rect = dragState.row.getBoundingClientRect();
+    const x = e.clientX - rect.left + document.getElementById('timelineWrap').scrollLeft;
+    const curDay = Math.max(1, Math.min(DAYS_IN_MONTH, Math.floor(x / 44) + 1));
+    const s = Math.min(dragState.startDay, curDay);
+    const end = Math.max(dragState.startDay, curDay);
+    dragState.sel.style.left = ((s - 1) * 44) + 'px';
+    dragState.sel.style.width = ((end - s + 1) * 44) + 'px';
+    dragState.currentEnd = end;
+    dragState.currentStart = s;
+  }
+  if (dragState.type === 'move') {
+    const wrap = document.getElementById('timelineWrap');
+    const dx = e.clientX - dragState.originX;
+    const dayDelta = Math.round(dx / 44);
+    const ghost = dragState.ghost;
+    ghost.style.left = (e.clientX + 10) + 'px';
+    ghost.style.top = (e.clientY - 14) + 'px';
+    dragState.dayDelta = dayDelta;
+  }
+  if (dragState.type === 'resize') {
+    const wrap = document.getElementById('timelineWrap');
+    const rect = dragState.row.getBoundingClientRect();
+    const x = e.clientX - rect.left + wrap.scrollLeft;
+    const curDay = Math.max(1, Math.min(DAYS_IN_MONTH, Math.floor(x / 44) + 1));
+    if (dragState.edge === 'left') {
+      const newStart = Math.min(curDay, dragState.origEnd);
+      dragState.bar.style.left = ((newStart - 1) * 44 + 2) + 'px';
+      dragState.bar.style.width = ((dragState.origEnd - newStart + 1) * 44 - 4) + 'px';
+    } else {
+      const newEnd = Math.max(curDay, dragState.origStart);
+      dragState.bar.style.width = ((newEnd - dragState.origStart + 1) * 44 - 4) + 'px';
+    }
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (!dragState) return;
+  if (dragState.type === 'create') {
+    const s = dragState.currentStart || dragState.startDay;
+    const end = dragState.currentEnd || dragState.startDay;
+    dragState.sel.remove();
+    // Show task picker
+    showTaskPicker(e.clientX, e.clientY, dragState.memberIdx, s, end);
+  }
+  if (dragState.type === 'move') {
+    if (dragState.ghost) dragState.ghost.remove();
+    const delta = dragState.dayDelta || 0;
+    if (delta !== 0) {
+      showToast(`✓ ${TASKS[dragState.taskIdx].name} を ${delta > 0 ? delta + '日後' : Math.abs(delta) + '日前'}に移動`);
+      renderBody();
+    }
+  }
+  if (dragState.type === 'resize') {
+    showToast(`✓ バーをリサイズしました`);
+  }
+  dragState = null;
+});
+
+// Bar drag (move)
+function startBarDrag(e, mi, ti, s, end) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideTooltip();
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  ghost.textContent = TASKS[ti].name;
+  ghost.style.left = (e.clientX + 10) + 'px';
+  ghost.style.top = (e.clientY - 14) + 'px';
+  document.body.appendChild(ghost);
+
+  const row = e.target.closest('.gantt-row');
+  dragState = { type: 'move', memberIdx: mi, taskIdx: ti, originX: e.clientX, ghost, row };
+}
+
+// Bar resize
+function startResize(e, mi, ti, s, end, edge) {
+  e.preventDefault();
+  hideTooltip();
+  const bar = e.target.closest('.bar');
+  const row = bar.closest('.gantt-row');
+  dragState = { type: 'resize', memberIdx: mi, taskIdx: ti, origStart: s, origEnd: end, edge, bar, row };
+}
+
+// Create actual from plan bar click
+function createActualFromPlan(mi, ti, s, end) {
+  hideTooltip();
+  const t = TASKS[ti];
+  const m = MEMBERS[mi];
+  const days = end - s + 1;
+  showToast(`✓ 「${t.name}」の実績を作成 (${m.name}, ${days}日間)`);
+}
+
+// Task picker
+function showTaskPicker(x, y, memberIdx, startDay, endDay) {
+  const picker = document.getElementById('taskPicker');
+  const days = endDay - startDay + 1;
+  document.getElementById('hoursInput').value = days * 8;
+
+  // Populate list
+  const list = document.getElementById('taskList');
+  list.innerHTML = TASKS.map((t, i) => `
+    <div class="task-picker-item" onclick="selectTask(${i})" data-task="${i}">
+      <div class="tpi-color" style="background:${t.color}"></div>
+      <div class="tpi-info">
+        <div class="tpi-name">${t.name}</div>
+        <div class="tpi-meta">${t.version} ・ ${t.process}</div>
+      </div>
+    </div>
+  `).join('');
+
+  picker.style.display = 'block';
+  // Position near cursor
+  let px = x + 8, py = y + 8;
+  if (px + 290 > window.innerWidth) px = x - 290;
+  if (py + 320 > window.innerHeight) py = y - 320;
+  picker.style.left = px + 'px';
+  picker.style.top = py + 'px';
+  picker.dataset.member = memberIdx;
+  picker.dataset.start = startDay;
+  picker.dataset.end = endDay;
+
+  document.getElementById('taskSearch').focus();
+}
+
+let selectedTaskIdx = null;
+function selectTask(idx) {
+  selectedTaskIdx = idx;
+  document.querySelectorAll('.task-picker-item').forEach(el => {
+    el.style.background = el.dataset.task == idx ? 'var(--accent-light)' : '';
+  });
+}
+
+function confirmTaskPick() {
+  const picker = document.getElementById('taskPicker');
+  if (selectedTaskIdx === null) { showToast('タスクを選択してください'); return; }
+  const t = TASKS[selectedTaskIdx];
+  const m = MEMBERS[parseInt(picker.dataset.member)];
+  const hours = document.getElementById('hoursInput').value;
+  picker.style.display = 'none';
+  selectedTaskIdx = null;
+  showToast(`✓ 「${t.name}」${hours}h を記録しました (${m.name})`);
+}
+
+// Close picker on outside click
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('taskPicker');
+  if (picker.style.display === 'block' && !picker.contains(e.target) && !e.target.closest('.drag-select')) {
+    picker.style.display = 'none';
+    selectedTaskIdx = null;
+  }
+});
+
+// Filter search in task picker
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('taskSearch').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.task-picker-item').forEach(item => {
+      const name = item.querySelector('.tpi-name').textContent.toLowerCase();
+      item.style.display = name.includes(q) ? '' : 'none';
+    });
+  });
+});
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), 2200);
+}
+
+// Init
+render();
+</script>
+</body>
+</html>

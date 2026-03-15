@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日別タイムライン実績入力 — 右ペイン + 空エリアドラッグ統合</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+  --border:#E7E5E0;--border-light:#F0EEEA;
+  --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+  --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+  --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+  --danger:#B91C1C;--info:#1D6FA5;
+  --sidebar-bg:#1A1814;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+  --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+  --shadow-lg:0 8px 32px rgba(26,24,20,0.12);
+  --transition:200ms ease;
+  --label-w:156px;
+  --hour-w:100px;
+  --row-h:72px;
+  --header-h:44px;
+  --pane-w:248px;
+  --lunch-color:rgba(196,132,29,0.06);
+}
+html{font-size:14px;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+  user-select:none;
+}
+
+/* ===== Topbar ===== */
+.topbar{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;flex-shrink:0;
+}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+.topbar-sub{font-size:12px;color:#9C9690}
+.topbar-spacer{flex:1}
+.topbar-badge{
+  font-size:11px;font-weight:600;
+  background:rgba(29,111,165,0.25);color:#93c5fd;
+  padding:3px 10px;border-radius:20px;letter-spacing:0.01em;
+}
+
+/* ===== Toolbar ===== */
+.toolbar{
+  display:flex;align-items:center;gap:8px;padding:8px 16px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 12px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text-primary);font:inherit;font-size:12px;
+  font-weight:600;cursor:pointer;transition:all var(--transition);white-space:nowrap;
+}
+.btn:hover{background:var(--surface-elevated);border-color:#ccc}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon{
+  width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);cursor:pointer;font-size:13px;transition:all var(--transition);
+}
+.btn-icon:hover{background:var(--surface-elevated)}
+.date-label{font-size:15px;font-weight:800;letter-spacing:-0.03em;min-width:200px;text-align:center}
+.date-label .weekday{font-size:12px;font-weight:500;color:var(--text-muted);margin-left:4px}
+.toolbar-sep{width:1px;height:22px;background:var(--border);margin:0 6px}
+
+/* ===== Day summary ===== */
+.day-summary{
+  display:flex;gap:6px;padding:8px 16px;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;
+}
+.ds-card{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 12px;background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);white-space:nowrap;
+}
+.ds-label{font-size:10px;color:var(--text-muted);font-weight:500}
+.ds-value{font-size:14px;font-weight:700;color:var(--text-primary)}
+
+/* ===== Main layout ===== */
+.main-area{flex:1;display:flex;overflow:hidden}
+
+/* ===== Timeline section ===== */
+.tl-section{flex:1;display:flex;overflow:hidden;position:relative}
+
+/* Labels column */
+.tl-labels{
+  width:var(--label-w);flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);z-index:10;display:flex;flex-direction:column;
+}
+.tl-labels-header{
+  height:var(--header-h);display:flex;align-items:center;
+  padding:0 12px;font-size:10px;font-weight:700;color:var(--text-muted);
+  letter-spacing:0.04em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);background:var(--surface-elevated);
+}
+.tl-labels-body{flex:1;overflow-y:auto;overflow-x:hidden}
+.label-row{
+  height:var(--row-h);display:flex;align-items:center;gap:8px;padding:0 12px;
+  border-bottom:1px solid var(--border-light);transition:background var(--transition);
+}
+.label-row:nth-child(even){background:var(--surface-elevated)}
+.label-row:hover{background:var(--accent-light)}
+.label-row.drop-target{background:var(--accent-light) !important}
+.label-avatar{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.label-info{min-width:0}
+.label-name{font-size:12px;font-weight:600;color:var(--text-primary)}
+.label-meta{font-size:10px;color:var(--text-muted)}
+
+/* Timeline body */
+.tl-timeline{flex:1;overflow:auto;position:relative}
+.tl-header{
+  position:sticky;top:0;z-index:5;height:var(--header-h);
+  display:flex;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border);
+}
+.tl-header-hour{
+  width:var(--hour-w);flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;color:var(--text-secondary);
+  border-right:1px solid var(--border-light);position:relative;
+}
+.tl-header-hour.lunch{background:var(--lunch-color);color:var(--accent-secondary)}
+.tl-header-hour.now{color:var(--accent)}
+.tl-header-hour.now::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent);
+}
+
+.tl-body{position:relative}
+.tl-row{
+  height:var(--row-h);position:relative;
+  border-bottom:1px solid var(--border-light);
+  cursor:crosshair;
+}
+.tl-row:nth-child(even){background:var(--surface-elevated)}
+.tl-row:hover{background:rgba(45,90,39,0.015)}
+.tl-row.drop-target{background:var(--accent-light) !important}
+
+/* Hour column backgrounds */
+.row-bg{position:absolute;inset:0;display:flex;pointer-events:none}
+.hour-col{width:var(--hour-w);flex-shrink:0;border-right:1px solid var(--border-light)}
+.hour-col.lunch{background:var(--lunch-color)}
+
+/* Current time line */
+.now-line{
+  position:absolute;top:0;bottom:0;width:2px;background:var(--accent);z-index:8;
+  pointer-events:none;
+}
+.now-line::before{
+  content:'';position:absolute;top:-4px;left:-4px;
+  width:10px;height:10px;background:var(--accent);border-radius:50%;
+}
+
+/* ===== Time blocks ===== */
+.block{
+  position:absolute;border-radius:5px;cursor:pointer;z-index:2;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:4px 8px;overflow:hidden;
+  transition:box-shadow 0.15s,filter 0.15s;
+  border:1px solid transparent;
+}
+.block:hover{
+  z-index:5;
+  box-shadow:0 4px 16px rgba(0,0,0,0.15);filter:brightness(1.05);
+}
+.block .block-task{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block .block-meta{font-size:9px;color:rgba(255,255,255,0.8);white-space:nowrap;overflow:hidden}
+.block .block-hours{
+  position:absolute;top:4px;right:6px;
+  font-size:10px;font-weight:700;color:rgba(255,255,255,0.9);
+}
+
+/* Resize handles */
+.block .block-resize{
+  position:absolute;top:0;width:8px;height:100%;cursor:ew-resize;z-index:3;
+}
+.block .block-resize.left{left:0;border-radius:5px 0 0 5px}
+.block .block-resize.right{right:0;border-radius:0 5px 5px 0}
+.block .block-resize:hover{background:rgba(255,255,255,0.2)}
+
+/* Scheduled (plan) block */
+.block.scheduled{
+  opacity:0.2;border:2px dashed;cursor:pointer;
+}
+.block.scheduled:hover{opacity:0.4}
+.block.scheduled .block-task{font-weight:600}
+
+/* Drag selection rectangle */
+.drag-select{
+  position:absolute;border:2px dashed var(--accent);
+  background:rgba(45,90,39,0.08);border-radius:var(--radius-xs);
+  z-index:6;pointer-events:none;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:4px;
+}
+.drag-select .ds-label{
+  font-size:10px;font-weight:700;color:var(--accent);
+  background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:3px;
+  white-space:nowrap;
+}
+@keyframes selectPulse{
+  0%,100%{border-color:var(--accent)}
+  50%{border-color:rgba(45,90,39,0.3)}
+}
+
+/* ===== Right pane ===== */
+.right-pane{
+  width:0;flex-shrink:0;background:var(--surface);
+  border-left:1px solid var(--border);
+  transition:width 0.3s cubic-bezier(0.16,1,0.3,1);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+.right-pane.open{width:var(--pane-w)}
+.pane-header{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface-elevated);flex-shrink:0;
+}
+.pane-header h3{font-size:12px;font-weight:700;letter-spacing:0.02em}
+.pane-close{
+  width:24px;height:24px;border:none;background:none;
+  cursor:pointer;font-size:14px;color:var(--text-muted);
+  border-radius:var(--radius-xs);transition:all var(--transition);
+  display:flex;align-items:center;justify-content:center;
+}
+.pane-close:hover{background:var(--border-light);color:var(--text-primary)}
+.pane-body{flex:1;overflow-y:auto;padding:6px 0}
+.pane-section{border-bottom:1px solid var(--border-light)}
+.pane-section-header{
+  padding:8px 14px;display:flex;align-items:center;gap:8px;
+  cursor:pointer;transition:background var(--transition);
+  font-size:11px;font-weight:700;color:var(--text-secondary);
+}
+.pane-section-header:hover{background:var(--surface-elevated)}
+.pane-section-header .sec-avatar{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.pane-section-header .sec-name{flex:1}
+.pane-section-header .sec-arrow{
+  font-size:10px;color:var(--text-muted);transition:transform var(--transition);
+}
+.pane-section.collapsed .sec-arrow{transform:rotate(-90deg)}
+.pane-section.collapsed .pane-cards{display:none}
+.pane-cards{padding:4px 10px 8px}
+
+/* Task card in pane */
+.task-card{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;margin-bottom:4px;
+  background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);cursor:grab;
+  transition:all var(--transition);
+}
+.task-card:hover{
+  border-color:var(--accent);background:var(--accent-light);
+  box-shadow:var(--shadow-sm);
+}
+.task-card:active{cursor:grabbing}
+.task-card .tc-bar{width:4px;height:28px;border-radius:2px;flex-shrink:0}
+.task-card .tc-info{flex:1;min-width:0}
+.task-card .tc-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-card .tc-detail{font-size:9px;color:var(--text-muted);display:flex;gap:4px;align-items:center}
+.task-card .tc-badge{
+  font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;
+  background:var(--surface-elevated);color:var(--text-secondary);
+}
+.task-card .tc-hours{
+  font-size:10px;font-weight:700;color:var(--text-secondary);flex-shrink:0;
+}
+
+/* Drag ghost from pane */
+.drag-ghost{
+  position:fixed;z-index:100;pointer-events:none;
+  padding:6px 12px;background:var(--surface);border:2px solid var(--accent);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);
+  font-size:11px;font-weight:600;color:var(--accent);
+  display:flex;align-items:center;gap:6px;
+  opacity:0.92;transform:rotate(-1deg);
+}
+.drag-ghost .dg-bar{width:4px;height:20px;border-radius:2px}
+
+/* Inline editor (appears on bar after pane-drop) */
+.inline-editor{
+  position:absolute;z-index:20;
+  display:flex;align-items:center;gap:4px;
+  padding:3px 6px;background:var(--surface);
+  border:2px solid var(--accent);border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-lg);
+  animation:editorIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap;
+}
+@keyframes editorIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.inline-editor input{
+  width:48px;padding:2px 4px;border:1px solid var(--border);
+  border-radius:3px;font:inherit;font-size:11px;font-weight:700;text-align:center;
+}
+.inline-editor input:focus{outline:none;border-color:var(--accent)}
+.inline-editor .ie-unit{font-size:10px;color:var(--text-muted);font-weight:600}
+.inline-editor .ie-btn{
+  width:22px;height:22px;border:none;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:12px;transition:all var(--transition);
+}
+.inline-editor .ie-confirm{background:var(--accent);color:#fff}
+.inline-editor .ie-confirm:hover{background:var(--accent-hover)}
+.inline-editor .ie-cancel{background:var(--surface-elevated);color:var(--text-muted)}
+.inline-editor .ie-cancel:hover{background:var(--border)}
+
+/* ===== Task picker popup (for empty area drag) ===== */
+.task-picker{
+  position:fixed;z-index:50;width:300px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  animation:pickerIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  overflow:hidden;
+}
+@keyframes pickerIn{from{opacity:0;transform:scale(0.95) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.tp-header{
+  padding:12px 14px 8px;background:var(--surface-elevated);
+  border-bottom:1px solid var(--border-light);
+}
+.tp-title{font-size:13px;font-weight:700;color:var(--text-primary)}
+.tp-time{font-size:11px;color:var(--accent);font-weight:600;margin-top:2px}
+.tp-search{
+  margin-top:8px;width:100%;padding:6px 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font:inherit;font-size:11px;background:var(--surface);
+}
+.tp-search:focus{outline:none;border-color:var(--accent)}
+.tp-list{max-height:200px;overflow-y:auto;padding:6px 0}
+.tp-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 14px;cursor:pointer;transition:background var(--transition);
+}
+.tp-item:hover{background:var(--surface-elevated)}
+.tp-item.selected{background:var(--accent-light)}
+.tp-item .tpi-bar{width:4px;height:24px;border-radius:2px;flex-shrink:0}
+.tp-item .tpi-info{flex:1;min-width:0}
+.tp-item .tpi-name{font-size:11px;font-weight:600}
+.tp-item .tpi-detail{font-size:9px;color:var(--text-muted)}
+.tp-item .tpi-badge{
+  font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;
+  background:var(--surface-elevated);color:var(--text-secondary);
+}
+.tp-item .tpi-hours{font-size:10px;font-weight:700;color:var(--text-muted);flex-shrink:0}
+.tp-footer{
+  padding:10px 14px;border-top:1px solid var(--border-light);
+  display:flex;align-items:center;gap:8px;
+}
+.tp-footer label{font-size:10px;font-weight:600;color:var(--text-muted)}
+.tp-footer input{
+  width:52px;padding:4px 6px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font:inherit;font-size:11px;
+  font-weight:700;text-align:center;
+}
+.tp-footer input:focus{outline:none;border-color:var(--accent)}
+.tp-footer .tpf-unit{font-size:10px;color:var(--text-muted);margin-right:auto}
+.tp-btn{
+  padding:6px 14px;border-radius:var(--radius-sm);font:inherit;font-size:11px;
+  font-weight:600;cursor:pointer;transition:all var(--transition);border:none;
+}
+.tp-btn.cancel{background:var(--surface-elevated);color:var(--text-secondary);border:1px solid var(--border)}
+.tp-btn.cancel:hover{background:var(--border-light)}
+.tp-btn.confirm{background:var(--accent);color:#fff}
+.tp-btn.confirm:hover{background:var(--accent-hover)}
+
+/* ===== Detail panel ===== */
+.detail-panel{
+  position:fixed;top:0;right:-380px;width:380px;height:100vh;
+  background:var(--surface);border-left:1px solid var(--border);
+  box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:100;
+  transition:right 0.3s cubic-bezier(0.16,1,0.3,1);
+  display:flex;flex-direction:column;
+}
+.detail-panel.open{right:0}
+.dp-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.dp-header .dp-title{font-size:15px;font-weight:700}
+.dp-close{
+  width:28px;height:28px;border:none;background:var(--surface-elevated);
+  border-radius:var(--radius-sm);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--transition);
+}
+.dp-close:hover{background:var(--border)}
+.dp-body{flex:1;padding:18px;overflow-y:auto}
+.dp-field{margin-bottom:14px}
+.dp-field label{display:block;font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.02em;text-transform:uppercase}
+.dp-field .dp-value{font-size:13px;font-weight:600;color:var(--text-primary)}
+.dp-field input,.dp-field select,.dp-field textarea{
+  width:100%;padding:7px 10px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font:inherit;font-size:12px;
+}
+.dp-field textarea{resize:vertical;min-height:56px}
+.dp-actions{
+  padding:14px 18px;border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+.dp-actions .btn{flex:1;justify-content:center}
+
+/* ===== Toast ===== */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 20px;background:var(--sidebar-bg);color:#F7F6F3;
+  border-radius:var(--radius-md);font-size:13px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:200;
+  opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;white-space:nowrap;
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Legend ===== */
+.legend{
+  display:flex;gap:12px;padding:6px 16px;
+  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;
+  align-items:center;font-size:10px;color:var(--text-muted);
+}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-swatch{width:16px;height:10px;border-radius:2px}
+.legend-sep{width:1px;height:14px;background:var(--border);margin:0 4px}
+.legend-hint{font-weight:600;color:var(--text-secondary)}
+
+/* ===== Quick create popup (plan bar click) ===== */
+.quick-create{
+  position:fixed;z-index:50;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);box-shadow:var(--shadow-lg);
+  padding:12px 16px;animation:pickerIn 0.15s ease;
+  width:240px;
+}
+.qc-title{font-size:12px;font-weight:700;margin-bottom:6px}
+.qc-detail{font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.5}
+.qc-actions{display:flex;gap:6px;justify-content:flex-end}
+
+/* Scrollbar styling */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">工数管理</div>
+  <div class="topbar-sub">デイリータイムライン</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-badge">日別表示 — 右ペイン + 空エリアドラッグ</div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="btn-icon" onclick="navDay(-1)">◀</button>
+    <span class="date-label" id="dateLabel">2026年3月15日<span class="weekday">（日）</span></span>
+    <button class="btn-icon" onclick="navDay(1)">▶</button>
+    <button class="btn" onclick="goToday()" style="margin-left:4px">今日</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <button class="btn" id="btnSched" onclick="toggleScheduled()">
+    <span id="schedIcon">◻</span> 予定表示
+  </button>
+  <div style="flex:1"></div>
+  <button class="btn" id="btnPane" onclick="togglePane()">📋 タスクパネル</button>
+</div>
+
+<!-- Day summary -->
+<div class="day-summary">
+  <div class="ds-card">
+    <div><div class="ds-label">出勤者</div><div class="ds-value">5 / 5人</div></div>
+  </div>
+  <div class="ds-card">
+    <div><div class="ds-label">合計実績</div><div class="ds-value">36.5h</div></div>
+  </div>
+  <div class="ds-card">
+    <div><div class="ds-label">予定消化</div><div class="ds-value">82%</div></div>
+  </div>
+</div>
+
+<!-- Main area -->
+<div class="main-area">
+  <!-- Timeline section -->
+  <div class="tl-section">
+    <div class="tl-labels">
+      <div class="tl-labels-header">担当者</div>
+      <div class="tl-labels-body" id="labelBody"></div>
+    </div>
+    <div class="tl-timeline" id="tlWrap">
+      <div class="tl-header" id="headerRow"></div>
+      <div class="tl-body" id="tlBody"></div>
+      <div class="now-line" id="nowLine"></div>
+    </div>
+  </div>
+
+  <!-- Right pane -->
+  <div class="right-pane" id="rightPane">
+    <div class="pane-header">
+      <h3>タスク一覧</h3>
+      <button class="pane-close" onclick="togglePane()">✕</button>
+    </div>
+    <div class="pane-body" id="paneBody"></div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#4dabf7"></div>UI設計</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#20c997"></div>PG実装</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fcc419"></div>テスト</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#845ef7"></div>レビュー</div>
+  <div class="legend-sep"></div>
+  <div class="legend-hint">右パネルからドラッグ or 空エリアをドラッグで実績登録</div>
+</div>
+
+<!-- Task picker popup (hidden) -->
+<div class="task-picker" id="taskPicker" style="display:none"></div>
+
+<!-- Quick create popup (hidden) -->
+<div class="quick-create" id="quickCreate" style="display:none"></div>
+
+<!-- Detail panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-header">
+    <span class="dp-title">作業詳細</span>
+    <button class="dp-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="dp-body" id="dpBody"></div>
+  <div class="dp-actions">
+    <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="closeDetail();showToast('削除しました')">削除</button>
+    <button class="btn active" onclick="closeDetail();showToast('✓ 保存しました')">保存</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// DATA
+// =============================================
+const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+const LUNCH_HOUR = 12;
+const hourW = 100;
+const rowH = 72;
+
+const MEMBERS = [
+  { name: '田中 太郎', initials: 'T', color: '#2563EB', role: 'フロントエンド' },
+  { name: '佐藤 花子', initials: 'S', color: '#7C3AED', role: 'バックエンド' },
+  { name: '鈴木 一郎', initials: 'Z', color: '#C4841D', role: 'インフラ' },
+  { name: '高橋 美咲', initials: 'K', color: '#0F766E', role: 'デザイン' },
+  { name: '渡辺 健太', initials: 'W', color: '#B91C1C', role: 'QA' },
+];
+
+const PROCESS_COLORS = {
+  'UI': '#4dabf7', 'PG': '#20c997', 'PT': '#fcc419', 'IT': '#ff6b6b',
+  'ST': '#845ef7', 'review': '#f06595'
+};
+
+// Actual blocks: startH = hours offset from 9:00
+const BLOCKS = [
+  { member: 0, startH: 0, duration: 3, task: '基本設計', version: 'v2.0', process: 'UI', color: '#4dabf7' },
+  { member: 0, startH: 4, duration: 2, task: '画面実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { member: 0, startH: 6.5, duration: 1.5, task: 'コードレビュー', version: 'v2.0', process: 'PG', color: '#f06595' },
+  { member: 1, startH: 0, duration: 3, task: 'API実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { member: 1, startH: 4, duration: 4, task: 'API実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { member: 2, startH: 0, duration: 2, task: 'DB設計', version: 'v1.5', process: 'UI', color: '#845ef7' },
+  { member: 2, startH: 2, duration: 1, task: 'バッチ処理', version: 'v1.5', process: 'PG', color: '#339af0' },
+  { member: 2, startH: 4, duration: 3, task: 'バッチ処理', version: 'v1.5', process: 'PG', color: '#339af0' },
+  { member: 3, startH: 0, duration: 2, task: '画面デザイン', version: 'v2.0', process: 'UI', color: '#4dabf7' },
+  { member: 3, startH: 2.5, duration: 0.5, task: 'MTG', version: '', process: 'UI', color: '#9C9690' },
+  { member: 3, startH: 4, duration: 2, task: 'パフォーマンス改善', version: 'v2.0', process: 'PG', color: '#f783ac' },
+  { member: 3, startH: 6.5, duration: 1.5, task: 'デザインレビュー', version: 'v2.0', process: 'UI', color: '#f06595' },
+  { member: 4, startH: 0, duration: 3, task: '単体テスト', version: 'v2.0', process: 'PT', color: '#fcc419' },
+  { member: 4, startH: 4, duration: 2.5, task: '結合テスト', version: 'v2.0', process: 'IT', color: '#ff6b6b' },
+  { member: 4, startH: 7, duration: 1, task: 'バグ報告', version: 'v2.0', process: 'PT', color: '#fcc419' },
+];
+
+const SCHED_BLOCKS = [
+  { member: 0, startH: 0, duration: 4, task: '基本設計', version: 'v2.0', process: 'UI', color: '#4dabf7' },
+  { member: 0, startH: 4, duration: 4, task: '画面実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { member: 1, startH: 0, duration: 8, task: 'API実装', version: 'v2.0', process: 'PG', color: '#20c997' },
+  { member: 2, startH: 0, duration: 4, task: 'DB設計', version: 'v1.5', process: 'UI', color: '#845ef7' },
+  { member: 2, startH: 4, duration: 4, task: 'バッチ処理', version: 'v1.5', process: 'PG', color: '#339af0' },
+  { member: 3, startH: 0, duration: 4, task: '画面デザイン', version: 'v2.0', process: 'UI', color: '#4dabf7' },
+  { member: 3, startH: 4, duration: 4, task: 'パフォーマンス改善', version: 'v2.0', process: 'PG', color: '#f783ac' },
+  { member: 4, startH: 0, duration: 4, task: '単体テスト', version: 'v2.0', process: 'PT', color: '#fcc419' },
+  { member: 4, startH: 4, duration: 4, task: '結合テスト', version: 'v2.0', process: 'IT', color: '#ff6b6b' },
+];
+
+// Tasks available per member (for right pane & task picker)
+const TASKS = [
+  { member: 0, task: '基本設計', version: 'v2.0', process: 'UI', color: '#4dabf7', estHours: 8 },
+  { member: 0, task: '画面実装', version: 'v2.0', process: 'PG', color: '#20c997', estHours: 16 },
+  { member: 0, task: 'コードレビュー', version: 'v2.0', process: 'PG', color: '#f06595', estHours: 4 },
+  { member: 1, task: 'API実装', version: 'v2.0', process: 'PG', color: '#20c997', estHours: 24 },
+  { member: 1, task: 'DB設計', version: 'v1.5', process: 'UI', color: '#845ef7', estHours: 8 },
+  { member: 2, task: 'DB設計', version: 'v1.5', process: 'UI', color: '#845ef7', estHours: 8 },
+  { member: 2, task: 'バッチ処理', version: 'v1.5', process: 'PG', color: '#339af0', estHours: 16 },
+  { member: 2, task: 'インフラ構築', version: 'v2.0', process: 'PG', color: '#20c997', estHours: 12 },
+  { member: 3, task: '画面デザイン', version: 'v2.0', process: 'UI', color: '#4dabf7', estHours: 16 },
+  { member: 3, task: 'パフォーマンス改善', version: 'v2.0', process: 'PG', color: '#f783ac', estHours: 8 },
+  { member: 3, task: 'デザインレビュー', version: 'v2.0', process: 'UI', color: '#f06595', estHours: 4 },
+  { member: 4, task: '単体テスト', version: 'v2.0', process: 'PT', color: '#fcc419', estHours: 12 },
+  { member: 4, task: '結合テスト', version: 'v2.0', process: 'IT', color: '#ff6b6b', estHours: 16 },
+  { member: 4, task: 'バグ報告', version: 'v2.0', process: 'PT', color: '#fcc419', estHours: 4 },
+];
+
+let showScheduled = false;
+let paneOpen = false;
+let dragState = null;
+
+// =============================================
+// RENDER
+// =============================================
+function formatTime(h) {
+  const hours = Math.floor(h);
+  const mins = Math.round((h - hours) * 60);
+  return `${hours}:${String(mins).padStart(2, '0')}`;
+}
+
+function renderHeader() {
+  const el = document.getElementById('headerRow');
+  el.innerHTML = HOURS.map(h => {
+    let cls = '';
+    if (h === LUNCH_HOUR) cls = 'lunch';
+    if (h === 14) cls = 'now';
+    return `<div class="tl-header-hour ${cls}">${h}:00</div>`;
+  }).join('');
+  el.style.width = (HOURS.length * hourW) + 'px';
+}
+
+function renderLabels() {
+  const el = document.getElementById('labelBody');
+  el.innerHTML = MEMBERS.map((m, i) => {
+    const totalH = BLOCKS.filter(b => b.member === i).reduce((s, b) => s + b.duration, 0);
+    return `<div class="label-row" data-member="${i}" id="labelRow${i}">
+      <div class="label-avatar" style="background:${m.color}">${m.initials}</div>
+      <div class="label-info">
+        <div class="label-name">${m.name}</div>
+        <div class="label-meta">${m.role} · ${totalH}h</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBody() {
+  const body = document.getElementById('tlBody');
+  const totalW = HOURS.length * hourW;
+  body.style.width = totalW + 'px';
+
+  let html = '';
+  MEMBERS.forEach((m, mi) => {
+    const bgHtml = HOURS.map(h =>
+      `<div class="hour-col ${h === LUNCH_HOUR ? 'lunch' : ''}"></div>`
+    ).join('');
+
+    // Scheduled blocks
+    let schedHtml = '';
+    if (showScheduled) {
+      SCHED_BLOCKS.filter(b => b.member === mi).forEach(b => {
+        const left = b.startH * hourW;
+        const width = b.duration * hourW - 2;
+        schedHtml += `<div class="block scheduled" style="left:${left}px;width:${width}px;top:4px;height:${rowH - 8}px;border-color:${b.color};background:${b.color}"
+          onclick="event.stopPropagation();clickPlanBar(event,${mi},'${b.task}','${b.version}','${b.process}',${b.startH},${b.duration},'${b.color}')">
+          <span class="block-task" style="color:${b.color}">${b.task}</span>
+          <span class="block-meta" style="color:${b.color};opacity:0.7">予定 ${b.duration}h</span>
+        </div>`;
+      });
+    }
+
+    // Actual blocks
+    let blockHtml = '';
+    BLOCKS.filter(b => b.member === mi).forEach((b, bi) => {
+      const left = b.startH * hourW + 1;
+      const width = b.duration * hourW - 2;
+      const startTime = formatTime(9 + b.startH);
+      const endTime = formatTime(9 + b.startH + b.duration);
+      blockHtml += `<div class="block" style="left:${left}px;width:${width}px;top:6px;height:${rowH - 12}px;background:${b.color}"
+        data-member="${mi}" data-bidx="${bi}"
+        onclick="event.stopPropagation();openDetail(${mi},${bi})"
+        onmouseenter="showBlockTip(event,${mi},${bi})" onmouseleave="hideTip()">
+        <div class="block-resize left" onmousedown="event.stopPropagation();startResize(event,${mi},${bi},'left')"></div>
+        <span class="block-task">${b.task}</span>
+        <span class="block-meta">${startTime} - ${endTime}</span>
+        <span class="block-hours">${b.duration}h</span>
+        <div class="block-resize right" onmousedown="event.stopPropagation();startResize(event,${mi},${bi},'right')"></div>
+      </div>`;
+    });
+
+    html += `<div class="tl-row" data-member="${mi}" id="tlRow${mi}"
+      onmousedown="startAreaDrag(event,${mi})">
+      <div class="row-bg">${bgHtml}</div>
+      ${schedHtml}
+      ${blockHtml}
+    </div>`;
+  });
+
+  body.innerHTML = html;
+
+  // Now line at 14:30
+  const nowLine = document.getElementById('nowLine');
+  const nowOffset = (14 - 9 + 0.5) * hourW;
+  nowLine.style.left = nowOffset + 'px';
+  nowLine.style.top = '0';
+  nowLine.style.height = (MEMBERS.length * rowH + 44) + 'px';
+}
+
+function renderPane() {
+  const body = document.getElementById('paneBody');
+  let html = '';
+  MEMBERS.forEach((m, mi) => {
+    const memberTasks = TASKS.filter(t => t.member === mi);
+    html += `<div class="pane-section" id="paneSection${mi}">
+      <div class="pane-section-header" onclick="toggleSection(${mi})">
+        <div class="sec-avatar" style="background:${m.color}">${m.initials}</div>
+        <span class="sec-name">${m.name}</span>
+        <span class="sec-arrow">▼</span>
+      </div>
+      <div class="pane-cards">
+        ${memberTasks.map((t, ti) => `
+          <div class="task-card" data-member="${mi}" data-task-idx="${TASKS.indexOf(t)}"
+            onmousedown="startPaneDrag(event,${TASKS.indexOf(t)})">
+            <div class="tc-bar" style="background:${t.color}"></div>
+            <div class="tc-info">
+              <div class="tc-name">${t.task}</div>
+              <div class="tc-detail">
+                <span>${t.version}</span>
+                <span class="tc-badge">${t.process}</span>
+              </div>
+            </div>
+            <div class="tc-hours">${t.estHours}h</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  });
+  body.innerHTML = html;
+}
+
+function render() {
+  renderHeader();
+  renderLabels();
+  renderBody();
+  renderPane();
+  syncScroll();
+  setTimeout(() => {
+    document.getElementById('tlWrap').scrollLeft = Math.max(0, 4 * hourW);
+  }, 100);
+}
+
+function syncScroll() {
+  const wrap = document.getElementById('tlWrap');
+  const labelBody = document.getElementById('labelBody');
+  wrap.addEventListener('scroll', () => {
+    labelBody.scrollTop = wrap.scrollTop;
+  });
+}
+
+// =============================================
+// PATTERN A: RIGHT PANE DRAG
+// =============================================
+let ghostEl = null;
+
+function startPaneDrag(e, taskIdx) {
+  e.preventDefault();
+  const t = TASKS[taskIdx];
+  dragState = { type: 'pane', taskIdx, startX: e.clientX, startY: e.clientY, started: false };
+}
+
+function handlePaneMove(e) {
+  if (!dragState || dragState.type !== 'pane') return;
+  const dx = Math.abs(e.clientX - dragState.startX);
+  const dy = Math.abs(e.clientY - dragState.startY);
+  if (!dragState.started && (dx > 4 || dy > 4)) {
+    dragState.started = true;
+    const t = TASKS[dragState.taskIdx];
+    ghostEl = document.createElement('div');
+    ghostEl.className = 'drag-ghost';
+    ghostEl.innerHTML = `<div class="dg-bar" style="background:${t.color}"></div>${t.task} (${t.estHours}h)`;
+    document.body.appendChild(ghostEl);
+  }
+  if (dragState.started && ghostEl) {
+    ghostEl.style.left = (e.clientX + 12) + 'px';
+    ghostEl.style.top = (e.clientY - 16) + 'px';
+
+    // Highlight target row
+    clearRowHighlights();
+    const target = findRowUnderCursor(e);
+    if (target !== null) {
+      document.getElementById('tlRow' + target).classList.add('drop-target');
+      document.getElementById('labelRow' + target).classList.add('drop-target');
+    }
+  }
+}
+
+function handlePaneUp(e) {
+  if (!dragState || dragState.type !== 'pane') return;
+  if (ghostEl) {
+    ghostEl.remove();
+    ghostEl = null;
+  }
+  clearRowHighlights();
+
+  if (dragState.started) {
+    const target = findRowUnderCursor(e);
+    if (target !== null) {
+      const t = TASKS[dragState.taskIdx];
+      const tlWrap = document.getElementById('tlWrap');
+      const row = document.getElementById('tlRow' + target);
+      const rect = row.getBoundingClientRect();
+      const x = e.clientX - rect.left + tlWrap.scrollLeft;
+      const snapH = Math.max(0, Math.min(HOURS.length - 1, Math.floor(x / hourW * 2) / 2));
+
+      // Create a temporary bar
+      const bar = document.createElement('div');
+      bar.className = 'block';
+      bar.style.cssText = `left:${snapH * hourW + 1}px;width:${t.estHours > 4 ? 2 * hourW - 2 : t.estHours * hourW - 2}px;top:6px;height:${rowH - 12}px;background:${t.color};opacity:0.7;border:2px solid ${t.color}`;
+      bar.innerHTML = `<span class="block-task">${t.task}</span><span class="block-meta">配置中...</span>`;
+      row.appendChild(bar);
+
+      // Inline editor
+      const defH = Math.min(t.estHours, 2);
+      showInlineEditor(row, bar, snapH, defH, t, target);
+    }
+  }
+  dragState = null;
+}
+
+function showInlineEditor(row, bar, startH, defaultHours, task, memberIdx) {
+  removeInlineEditors();
+  const editor = document.createElement('div');
+  editor.className = 'inline-editor';
+  const barRect = bar.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  const tlWrap = document.getElementById('tlWrap');
+  editor.style.left = (startH * hourW + 1) + 'px';
+  editor.style.top = (rowH - 6) + 'px';
+  editor.innerHTML = `
+    <input type="number" value="${defaultHours}" min="0.5" step="0.5" id="ieHours">
+    <span class="ie-unit">h</span>
+    <button class="ie-btn ie-confirm" onclick="confirmInline(this,${memberIdx},${startH},'${task.task}','${task.version}','${task.process}','${task.color}')">✓</button>
+    <button class="ie-btn ie-cancel" onclick="cancelInline(this)">✕</button>
+  `;
+  row.appendChild(editor);
+  editor._bar = bar;
+  setTimeout(() => editor.querySelector('input').focus(), 50);
+}
+
+function confirmInline(btn, memberIdx, startH, taskName, version, process, color) {
+  const editor = btn.closest('.inline-editor');
+  const hours = parseFloat(editor.querySelector('input').value) || 1;
+  const bar = editor._bar;
+  const m = MEMBERS[memberIdx];
+
+  // Finalize bar
+  bar.style.width = (hours * hourW - 2) + 'px';
+  bar.style.opacity = '1';
+  bar.style.border = '1px solid transparent';
+  const startTime = formatTime(9 + startH);
+  const endTime = formatTime(9 + startH + hours);
+  bar.querySelector('.block-meta').textContent = `${startTime} - ${endTime}`;
+  bar.innerHTML += `<span class="block-hours">${hours}h</span>`;
+
+  editor.remove();
+  showToast(`✓ 「${taskName}」${hours}h を記録 (${m.name})`);
+}
+
+function cancelInline(btn) {
+  const editor = btn.closest('.inline-editor');
+  if (editor._bar) editor._bar.remove();
+  editor.remove();
+}
+
+function removeInlineEditors() {
+  document.querySelectorAll('.inline-editor').forEach(e => {
+    if (e._bar) e._bar.remove();
+    e.remove();
+  });
+}
+
+// =============================================
+// PATTERN B: EMPTY AREA DRAG
+// =============================================
+function startAreaDrag(e, memberIdx) {
+  if (e.target.closest('.block') || e.target.closest('.inline-editor')) return;
+  if (e.button !== 0) return;
+  e.preventDefault();
+
+  const row = document.getElementById('tlRow' + memberIdx);
+  const rect = row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('tlWrap').scrollLeft;
+  const x = e.clientX - rect.left + scrollLeft;
+  const startH = Math.floor(x / hourW * 2) / 2;
+
+  const sel = document.createElement('div');
+  sel.className = 'drag-select';
+  sel.style.cssText = `top:6px;height:${rowH - 12}px;left:${startH * hourW}px;width:${0.5 * hourW}px`;
+  sel.innerHTML = `<span class="ds-label">${formatTime(9 + startH)} - ${formatTime(9 + startH + 0.5)}</span>`;
+  sel.style.animation = 'selectPulse 1.2s ease infinite';
+  row.appendChild(sel);
+
+  dragState = { type: 'area', memberIdx, startH, sel, row, currentStart: startH, currentEnd: startH + 0.5 };
+}
+
+function handleAreaMove(e) {
+  if (!dragState || dragState.type !== 'area') return;
+  const rect = dragState.row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('tlWrap').scrollLeft;
+  const x = e.clientX - rect.left + scrollLeft;
+  const curH = Math.max(0, Math.min(HOURS.length, Math.floor(x / hourW * 2) / 2));
+  const s = Math.min(dragState.startH, curH);
+  const end = Math.max(dragState.startH, curH) + 0.5;
+  dragState.sel.style.left = (s * hourW) + 'px';
+  dragState.sel.style.width = ((end - s) * hourW) + 'px';
+  dragState.sel.querySelector('.ds-label').textContent = `${formatTime(9 + s)} - ${formatTime(9 + end)}`;
+  dragState.currentStart = s;
+  dragState.currentEnd = end;
+}
+
+function handleAreaUp(e) {
+  if (!dragState || dragState.type !== 'area') return;
+  const s = dragState.currentStart;
+  const end = dragState.currentEnd;
+  dragState.sel.remove();
+  if (end - s >= 0.5) {
+    showTaskPicker(e.clientX, e.clientY, dragState.memberIdx, s, end);
+  }
+  dragState = null;
+}
+
+// =============================================
+// TASK PICKER POPUP (Pattern B)
+// =============================================
+function showTaskPicker(x, y, memberIdx, startH, endH) {
+  closeTaskPicker();
+  closeQuickCreate();
+  const picker = document.getElementById('taskPicker');
+  const duration = endH - startH;
+  const m = MEMBERS[memberIdx];
+  const memberTasks = TASKS.filter(t => t.member === memberIdx);
+  // Also include all tasks for "全タスク" option
+  const allTasks = TASKS;
+
+  picker.innerHTML = `
+    <div class="tp-header">
+      <div class="tp-title">${m.name} の実績を登録</div>
+      <div class="tp-time">${formatTime(9 + startH)} - ${formatTime(9 + endH)} (${duration}h)</div>
+      <input class="tp-search" type="text" placeholder="タスクを検索..." oninput="filterTasks(this.value,${memberIdx})">
+    </div>
+    <div class="tp-list" id="tpList">
+      ${allTasks.map((t, i) => `
+        <div class="tp-item ${t.member === memberIdx ? '' : 'other-member'}" data-idx="${i}" onclick="selectTask(this,${i})">
+          <div class="tpi-bar" style="background:${t.color}"></div>
+          <div class="tpi-info">
+            <div class="tpi-name">${t.task}</div>
+            <div class="tpi-detail">${t.version} <span class="tpi-badge">${t.process}</span>${t.member !== memberIdx ? ' · ' + MEMBERS[t.member].name : ''}</div>
+          </div>
+          <div class="tpi-hours">${t.estHours}h</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="tp-footer">
+      <label>工数</label>
+      <input type="number" value="${duration}" min="0.5" step="0.5" id="tpHours">
+      <span class="tpf-unit">h</span>
+      <button class="tp-btn cancel" onclick="closeTaskPicker()">取消</button>
+      <button class="tp-btn confirm" id="tpConfirm" onclick="confirmTaskPicker(${memberIdx},${startH})">記録する</button>
+    </div>
+  `;
+
+  picker.style.display = 'block';
+  picker._selectedIdx = null;
+  // Position
+  let px = x + 10, py = y - 100;
+  if (px + 310 > window.innerWidth) px = x - 310;
+  if (py + 380 > window.innerHeight) py = Math.max(10, window.innerHeight - 390);
+  if (py < 10) py = 10;
+  picker.style.left = px + 'px';
+  picker.style.top = py + 'px';
+
+  // Pre-select first member task
+  if (memberTasks.length > 0) {
+    const firstIdx = TASKS.indexOf(memberTasks[0]);
+    const firstEl = picker.querySelector(`.tp-item[data-idx="${firstIdx}"]`);
+    if (firstEl) selectTask(firstEl, firstIdx);
+  }
+}
+
+function selectTask(el, idx) {
+  document.querySelectorAll('.tp-item').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('taskPicker')._selectedIdx = idx;
+}
+
+function filterTasks(query, memberIdx) {
+  const items = document.querySelectorAll('.tp-item');
+  const q = query.toLowerCase();
+  items.forEach(item => {
+    const name = item.querySelector('.tpi-name').textContent.toLowerCase();
+    const detail = item.querySelector('.tpi-detail').textContent.toLowerCase();
+    item.style.display = (name.includes(q) || detail.includes(q)) ? '' : 'none';
+  });
+}
+
+function confirmTaskPicker(memberIdx, startH) {
+  const picker = document.getElementById('taskPicker');
+  const idx = picker._selectedIdx;
+  if (idx === null) { showToast('タスクを選択してください'); return; }
+  const t = TASKS[idx];
+  const hours = parseFloat(document.getElementById('tpHours').value) || 1;
+  const m = MEMBERS[memberIdx];
+
+  // Create bar on timeline
+  const row = document.getElementById('tlRow' + memberIdx);
+  const bar = document.createElement('div');
+  const left = startH * hourW + 1;
+  const width = hours * hourW - 2;
+  const startTime = formatTime(9 + startH);
+  const endTime = formatTime(9 + startH + hours);
+  bar.className = 'block';
+  bar.style.cssText = `left:${left}px;width:${width}px;top:6px;height:${rowH - 12}px;background:${t.color}`;
+  bar.innerHTML = `<span class="block-task">${t.task}</span><span class="block-meta">${startTime} - ${endTime}</span><span class="block-hours">${hours}h</span>`;
+  row.appendChild(bar);
+
+  closeTaskPicker();
+  showToast(`✓ 「${t.task}」${hours}h を記録 (${m.name})`);
+}
+
+function closeTaskPicker() {
+  document.getElementById('taskPicker').style.display = 'none';
+}
+
+// =============================================
+// PLAN BAR CLICK → QUICK CREATE
+// =============================================
+function clickPlanBar(e, mi, task, version, process, startH, duration, color) {
+  closeQuickCreate();
+  closeTaskPicker();
+  const popup = document.getElementById('quickCreate');
+  const m = MEMBERS[mi];
+  popup.innerHTML = `
+    <div class="qc-title">予定から実績を作成</div>
+    <div class="qc-detail">
+      <strong>${task}</strong> (${version} / ${process})<br>
+      ${formatTime(9 + startH)} - ${formatTime(9 + startH + duration)} · ${duration}h<br>
+      ${m.name}
+    </div>
+    <div class="qc-actions">
+      <button class="tp-btn cancel" onclick="closeQuickCreate()">取消</button>
+      <button class="tp-btn confirm" onclick="doQuickCreate(${mi},'${task}',${startH},${duration},'${color}')">記録する</button>
+    </div>
+  `;
+  let px = e.clientX + 10, py = e.clientY - 60;
+  if (px + 250 > window.innerWidth) px = e.clientX - 250;
+  if (py + 150 > window.innerHeight) py = e.clientY - 150;
+  popup.style.display = 'block';
+  popup.style.left = px + 'px';
+  popup.style.top = py + 'px';
+}
+
+function doQuickCreate(mi, task, startH, duration, color) {
+  const row = document.getElementById('tlRow' + mi);
+  const bar = document.createElement('div');
+  bar.className = 'block';
+  bar.style.cssText = `left:${startH * hourW + 1}px;width:${duration * hourW - 2}px;top:6px;height:${rowH - 12}px;background:${color}`;
+  bar.innerHTML = `<span class="block-task">${task}</span><span class="block-meta">${formatTime(9 + startH)} - ${formatTime(9 + startH + duration)}</span><span class="block-hours">${duration}h</span>`;
+  row.appendChild(bar);
+  closeQuickCreate();
+  showToast(`✓ 予定から実績を作成: 「${task}」${duration}h`);
+}
+
+function closeQuickCreate() {
+  document.getElementById('quickCreate').style.display = 'none';
+}
+
+// =============================================
+// RESIZE
+// =============================================
+function startResize(e, mi, bi, edge) {
+  e.preventDefault();
+  e.stopPropagation();
+  const block = e.target.closest('.block');
+  const row = block.closest('.tl-row');
+  const memberBlocks = BLOCKS.filter(b => b.member === mi);
+  dragState = {
+    type: 'resize', memberIdx: mi,
+    blockData: BLOCKS.indexOf(memberBlocks[bi]),
+    edge, block, row
+  };
+}
+
+function handleResizeMove(e) {
+  if (!dragState || dragState.type !== 'resize') return;
+  const rect = dragState.row.getBoundingClientRect();
+  const scrollLeft = document.getElementById('tlWrap').scrollLeft;
+  const x = e.clientX - rect.left + scrollLeft;
+  const curH = Math.max(0, Math.min(HOURS.length, Math.round(x / hourW * 2) / 2));
+  const b = BLOCKS[dragState.blockData];
+  if (dragState.edge === 'left') {
+    const newStart = Math.min(curH, b.startH + b.duration - 0.5);
+    const newDur = b.startH + b.duration - newStart;
+    dragState.block.style.left = (newStart * hourW + 1) + 'px';
+    dragState.block.style.width = (newDur * hourW - 2) + 'px';
+  } else {
+    const newEnd = Math.max(curH, b.startH + 0.5);
+    const newDur = newEnd - b.startH;
+    dragState.block.style.width = (newDur * hourW - 2) + 'px';
+  }
+}
+
+function handleResizeUp(e) {
+  if (!dragState || dragState.type !== 'resize') return;
+  showToast('✓ リサイズしました');
+  dragState = null;
+}
+
+// =============================================
+// GLOBAL MOUSE HANDLERS
+// =============================================
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  switch (dragState.type) {
+    case 'pane': handlePaneMove(e); break;
+    case 'area': handleAreaMove(e); break;
+    case 'resize': handleResizeMove(e); break;
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (!dragState) return;
+  switch (dragState.type) {
+    case 'pane': handlePaneUp(e); break;
+    case 'area': handleAreaUp(e); break;
+    case 'resize': handleResizeUp(e); break;
+  }
+});
+
+// Close popups on outside click
+document.addEventListener('mousedown', (e) => {
+  const picker = document.getElementById('taskPicker');
+  const qc = document.getElementById('quickCreate');
+  if (picker.style.display === 'block' && !picker.contains(e.target) && !e.target.closest('.block.scheduled')) {
+    closeTaskPicker();
+  }
+  if (qc.style.display === 'block' && !qc.contains(e.target) && !e.target.closest('.block.scheduled')) {
+    closeQuickCreate();
+  }
+});
+
+// =============================================
+// HELPERS
+// =============================================
+function findRowUnderCursor(e) {
+  for (let i = 0; i < MEMBERS.length; i++) {
+    const row = document.getElementById('tlRow' + i);
+    if (!row) continue;
+    const rect = row.getBoundingClientRect();
+    if (e.clientY >= rect.top && e.clientY <= rect.bottom) return i;
+  }
+  return null;
+}
+
+function clearRowHighlights() {
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+}
+
+// Block tooltip
+function showBlockTip(e, mi, bi) {
+  const memberBlocks = BLOCKS.filter(b => b.member === mi);
+  const b = memberBlocks[bi];
+  const m = MEMBERS[mi];
+  showToast(`${b.task} · ${formatTime(9 + b.startH)}-${formatTime(9 + b.startH + b.duration)} (${b.duration}h)`);
+}
+function hideTip() {}
+
+// Detail panel
+function openDetail(mi, bi) {
+  const memberBlocks = BLOCKS.filter(b => b.member === mi);
+  const b = memberBlocks[bi];
+  const m = MEMBERS[mi];
+  const startTime = formatTime(9 + b.startH);
+  const endTime = formatTime(9 + b.startH + b.duration);
+  document.getElementById('dpBody').innerHTML = `
+    <div class="dp-field">
+      <label>タスク名</label>
+      <div class="dp-value">${b.task}</div>
+    </div>
+    <div class="dp-field">
+      <label>版数 / 工程</label>
+      <div class="dp-value">${b.version || '-'} / ${b.process}</div>
+    </div>
+    <div class="dp-field">
+      <label>担当者</label>
+      <div class="dp-value" style="display:flex;align-items:center;gap:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700">${m.initials}</div>
+        ${m.name}
+      </div>
+    </div>
+    <div class="dp-field">
+      <label>時間帯</label>
+      <input type="text" value="${startTime} - ${endTime}">
+    </div>
+    <div class="dp-field">
+      <label>工数</label>
+      <input type="number" value="${b.duration}" step="0.5">
+    </div>
+    <div class="dp-field">
+      <label>メモ</label>
+      <textarea placeholder="作業内容のメモ…"></textarea>
+    </div>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+}
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// Toggle pane
+function togglePane() {
+  paneOpen = !paneOpen;
+  document.getElementById('rightPane').classList.toggle('open', paneOpen);
+  document.getElementById('btnPane').classList.toggle('active', paneOpen);
+}
+
+// Toggle sections in pane
+function toggleSection(mi) {
+  document.getElementById('paneSection' + mi).classList.toggle('collapsed');
+}
+
+// Toggle scheduled blocks
+function toggleScheduled() {
+  showScheduled = !showScheduled;
+  document.getElementById('schedIcon').textContent = showScheduled ? '◼' : '◻';
+  renderBody();
+  showToast(showScheduled ? '予定ブロックを表示' : '予定ブロックを非表示');
+}
+
+// Navigation
+function navDay(dir) { showToast(dir > 0 ? '翌日へ移動' : '前日へ移動'); }
+function goToday() {
+  document.getElementById('tlWrap').scrollTo({ left: 4 * hourW, behavior: 'smooth' });
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), 2200);
+}
+
+// =============================================
+// INIT
+// =============================================
+render();
+// Auto-open pane for demo
+setTimeout(() => togglePane(), 600);
+</script>
+</body>
+</html>

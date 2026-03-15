@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案B: 設定タブ内</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#F7F6F3;--surface:#FFFFFF;--surface-elevated:#FAFAF9;
+    --border:#E7E5E0;--border-light:#F0EEEA;
+    --text-primary:#1A1814;--text-secondary:#6B6560;--text-muted:#9C9690;
+    --accent:#2D5A27;--accent-hover:#3A7232;--accent-light:#EBF5EA;
+    --accent-secondary:#C4841D;--accent-secondary-light:#FFF8ED;
+    --sidebar-bg:#1A1814;--sidebar-text:#B8B4AE;--sidebar-text-active:#F7F6F3;
+    --danger:#B91C1C;--danger-light:#FEF2F2;
+    --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+    --shadow-sm:0 1px 2px rgba(26,24,20,0.04);
+    --shadow-md:0 2px 8px rgba(26,24,20,0.06);
+    --transition:200ms ease;
+  }
+  html{font-size:14px}
+  body{
+    font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+    background:#E8E6E1;color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:20px 16px;
+  }
+  .proposal-label{font-size:13px;font-weight:700;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:8px}
+  .proposal-title{font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-0.03em;margin-bottom:6px}
+  .proposal-desc{font-size:13px;color:var(--text-secondary);margin-bottom:24px;max-width:400px;text-align:center;line-height:1.6}
+
+  .device{
+    width:375px;max-width:100%;background:var(--bg);
+    border-radius:24px;overflow:hidden;position:relative;
+    box-shadow:0 8px 40px rgba(26,24,20,0.15),0 2px 8px rgba(26,24,20,0.08);
+    border:6px solid #2D2A25;
+  }
+  .mobile-header{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;background:var(--sidebar-bg);
+    color:var(--sidebar-text-active);position:sticky;top:0;z-index:100;
+  }
+  .hamburger-btn{
+    width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+    background:none;border:none;color:var(--sidebar-text-active);
+    cursor:pointer;border-radius:var(--radius-xs);
+  }
+  .mobile-page-title{font-size:16px;font-weight:700;letter-spacing:-0.02em;flex:1}
+
+  .content-area{padding:16px;min-height:460px;overflow-y:auto}
+
+  /* Settings sections */
+  .section{margin-bottom:16px}
+  .section-title{
+    font-size:11px;font-weight:700;letter-spacing:0.06em;
+    text-transform:uppercase;color:var(--text-muted);
+    padding:0 4px 8px;
+  }
+  .section-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);overflow:hidden;
+  }
+  .setting-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;gap:12px;
+  }
+  .setting-row+.setting-row{border-top:1px solid var(--border-light)}
+  .setting-label{font-size:13px;font-weight:500;color:var(--text-primary)}
+  .setting-sublabel{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+  /* Toggle switch */
+  .toggle{
+    width:44px;height:24px;background:var(--border);border-radius:12px;
+    position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;
+  }
+  .toggle.on{background:var(--accent)}
+  .toggle::after{
+    content:'';position:absolute;width:20px;height:20px;
+    background:#fff;border-radius:50%;top:2px;left:2px;
+    transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);
+  }
+  .toggle.on::after{transform:translateX(20px)}
+
+  /* Data management buttons */
+  .data-actions{display:flex;gap:8px;padding:14px 16px}
+  .data-btn{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;
+    border:1px solid var(--border);background:var(--surface);
+    color:var(--text-primary);cursor:pointer;transition:all 0.15s;
+    font-family:inherit;-webkit-tap-highlight-color:transparent;
+  }
+  .data-btn:active{transform:scale(0.97);background:var(--surface-elevated)}
+  .data-btn svg{width:16px;height:16px;color:var(--text-secondary)}
+  .data-btn.primary{
+    background:var(--accent);color:#fff;border-color:var(--accent);
+  }
+  .data-btn.primary:active{background:var(--accent-hover)}
+  .data-btn.primary svg{color:#fff}
+
+  .history-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:10px 12px;border-radius:var(--radius-sm);
+    font-size:13px;font-weight:500;color:var(--text-secondary);
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    transition:background 0.15s;
+  }
+  .history-btn:active{background:var(--surface-elevated)}
+  .history-btn svg{width:14px;height:14px}
+
+  /* Color swatches row */
+  .color-row{display:flex;gap:8px;padding:14px 16px;flex-wrap:wrap}
+  .swatch{
+    width:28px;height:28px;border-radius:50%;cursor:pointer;
+    border:2px solid transparent;transition:all 0.15s;
+  }
+  .swatch.active{border-color:var(--text-primary);box-shadow:0 0 0 2px var(--bg)}
+
+  /* Highlight pulse */
+  .highlight-section{
+    animation:highlightPulse 2s ease;
+  }
+  @keyframes highlightPulse{
+    0%{box-shadow:0 0 0 0 rgba(45,90,39,0.3)}
+    50%{box-shadow:0 0 0 4px rgba(45,90,39,0.15)}
+    100%{box-shadow:0 0 0 0 rgba(45,90,39,0)}
+  }
+
+  /* Bottom Tab Bar */
+  .mobile-tab-bar{
+    display:flex;position:sticky;bottom:0;left:0;right:0;z-index:150;
+    background:var(--sidebar-bg);border-top:1px solid rgba(255,255,255,0.08);
+    padding:4px 0;padding-bottom:max(4px, env(safe-area-inset-bottom));
+  }
+  .mobile-tab-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 0;background:none;border:none;color:var(--sidebar-text);
+    opacity:0.5;cursor:pointer;transition:opacity 0.15s,color 0.15s;
+    -webkit-tap-highlight-color:transparent;font-family:inherit;
+  }
+  .mobile-tab-item.active{color:var(--sidebar-text-active);opacity:1}
+  .mobile-tab-item svg{width:20px;height:20px}
+  .mobile-tab-item span{font-size:10px;font-weight:600;letter-spacing:-0.02em}
+
+  /* Annotation */
+  .annotation{
+    position:absolute;font-size:11px;font-weight:600;
+    color:#fff;background:var(--accent);
+    padding:4px 10px;border-radius:20px;white-space:nowrap;z-index:400;
+    box-shadow:0 2px 8px rgba(45,90,39,0.3);pointer-events:none;
+  }
+  .annotation::before{
+    content:'';position:absolute;width:0;height:0;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+  }
+  .annotation.arrow-down::before{
+    bottom:-5px;left:50%;transform:translateX(-50%);border-top:5px solid var(--accent);
+  }
+  .annotation.arrow-left::before{
+    left:-5px;top:50%;transform:translateY(-50%);border-right:5px solid var(--accent);
+  }
+
+  .state-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+  .state-btn{
+    padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);background:var(--surface);
+    color:var(--text-secondary);cursor:pointer;transition:all 0.2s;font-family:inherit;
+  }
+  .state-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toast{
+    position:absolute;bottom:76px;left:16px;right:16px;
+    background:var(--text-primary);color:#fff;
+    padding:12px 16px;border-radius:var(--radius-md);
+    font-size:13px;font-weight:500;
+    display:flex;align-items:center;gap:8px;z-index:300;
+    opacity:0;transform:translateY(8px);transition:all 0.3s ease;
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast svg{width:16px;height:16px;color:var(--accent);flex-shrink:0}
+
+  .new-badge{
+    display:inline-block;font-size:9px;font-weight:700;
+    background:var(--accent);color:#fff;padding:1px 5px;
+    border-radius:3px;letter-spacing:0.04em;vertical-align:middle;
+  }
+</style>
+</head>
+<body>
+
+<div class="proposal-label">Proposal B</div>
+<div class="proposal-title">案B: 設定タブ内</div>
+<div class="proposal-desc">
+  設定タブに「データ管理」セクションを追加。<br>
+  モバイルタブバーの5番目を設定に変更してアクセス可能に。<br>
+  タブをクリックして操作を試してください。
+</div>
+
+<div class="state-bar">
+  <button class="state-btn active" onclick="setState(1)">1. 設定タブ表示</button>
+  <button class="state-btn" onclick="setState(2)">2. 復元タップ後</button>
+</div>
+
+<div class="device" id="device">
+  <div class="mobile-header">
+    <button class="hamburger-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="mobile-page-title">設定</span>
+  </div>
+
+  <div id="annTab" class="annotation arrow-down" style="position:absolute;bottom:52px;right:20px;z-index:400;">
+    設定タブを追加
+  </div>
+
+  <div class="content-area">
+    <!-- Data Management Section (NEW) -->
+    <div class="section" id="dataSection">
+      <div class="section-title">データ管理 <span class="new-badge">NEW</span></div>
+      <div class="section-card" id="dataCard">
+        <div class="data-actions">
+          <button class="data-btn" onclick="handleBackup()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            バックアップ
+          </button>
+          <button class="data-btn primary" onclick="handleRestore()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            復元
+          </button>
+        </div>
+        <div style="padding:0 16px 14px">
+          <button class="history-btn" onclick="handleHistory()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            変更履歴を見る
+          </button>
+        </div>
+        <div class="setting-row" style="border-top:1px solid var(--border-light)">
+          <div>
+            <div class="setting-label">自動バックアップ</div>
+            <div class="setting-sublabel">データ変更時に自動保存</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme Section -->
+    <div class="section">
+      <div class="section-title">テーマ</div>
+      <div class="section-card">
+        <div class="color-row">
+          <div class="swatch active" style="background:#2D5A27"></div>
+          <div class="swatch" style="background:#1D6FA5"></div>
+          <div class="swatch" style="background:#7C3AED"></div>
+          <div class="swatch" style="background:#C4841D"></div>
+          <div class="swatch" style="background:#1A1814"></div>
+          <div class="swatch" style="background:#1E3A5F"></div>
+          <div class="swatch" style="background:#BE185D"></div>
+          <div class="swatch" style="background:#0F766E"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Display Section -->
+    <div class="section">
+      <div class="section-title">表示</div>
+      <div class="section-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">コンパクトモード</div>
+            <div class="setting-sublabel">テーブルの行間を狭くする</div>
+          </div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">人日列を表示</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section">
+      <div class="section-title">危険な操作</div>
+      <div class="section-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label" style="color:var(--danger)">全データ削除</div>
+            <div class="setting-sublabel">すべてのデータを削除します</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:40px"></div>
+  </div>
+
+  <div class="toast" id="toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span id="toastMsg">JSONまたはExcelファイルを選択してください…</span>
+  </div>
+
+  <div class="mobile-tab-bar">
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>入力</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>レポート</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>見積</span>
+    </button>
+    <button class="mobile-tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>実績</span>
+    </button>
+    <button class="mobile-tab-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>設定</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const toast = document.getElementById('toast');
+const dataCard = document.getElementById('dataCard');
+const annTab = document.getElementById('annTab');
+
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+function handleBackup() { showToast('バックアップを保存しました'); }
+function handleRestore() { showToast('JSONまたはExcelファイルを選択してください…'); }
+function handleHistory() { showToast('変更履歴を表示します…'); }
+
+function setState(n) {
+  document.querySelectorAll('.state-btn').forEach((b, i) => b.classList.toggle('active', i === n - 1));
+  toast.classList.remove('show');
+  dataCard.classList.remove('highlight-section');
+  annTab.style.display = 'block';
+
+  if (n === 1) {
+    void dataCard.offsetWidth;
+    dataCard.classList.add('highlight-section');
+  } else if (n === 2) {
+    annTab.style.display = 'none';
+    showToast('JSONまたはExcelファイルを選択してください…');
+  }
+}
+setState(1);
+</script>
+</body>
+</html>
