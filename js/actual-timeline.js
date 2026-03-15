@@ -246,29 +246,85 @@ function renderGanttBody(members, year, month, daysInMonth, today) {
         const groupedActuals = groupActualsByDateTask(memberActuals);
         const mergedBars = mergeAdjacentActuals(groupedActuals);
 
-        // 同じ日に複数タスクがある場合のスタッキング計算
-        const barLayout = calculateBarLayout(mergedBars);
+        // 複数日バー（merged）と単日バーを分離
+        const multiDayBars = mergedBars.filter(b => b.days > 1);
+        const singleDayBars = mergedBars.filter(b => b.days === 1);
 
-        mergedBars.forEach((bar, idx) => {
+        // 単日バーを日付でグループ化
+        const singleByDate = {};
+        singleDayBars.forEach(b => {
+            if (!singleByDate[b.startDate]) singleByDate[b.startDate] = [];
+            singleByDate[b.startDate].push(b);
+        });
+
+        // 複数日バーの垂直スロット計算（複数日バー同士の重なりのみ）
+        const multiLayout = calculateBarLayout(multiDayBars);
+        // 単日バーが使える垂直位置: 複数日バーがある日はオフセット
+        const multiDayDates = new Set();
+        multiDayBars.forEach(b => {
+            const s = new Date(b.startDate);
+            const e = new Date(b.endDate);
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+                multiDayDates.add(d.toISOString().slice(0, 10));
+            }
+        });
+
+        // 複数日バーを描画
+        multiDayBars.forEach((bar, idx) => {
             const startDay = new Date(bar.startDate).getDate();
             const endDay = new Date(bar.endDate).getDate();
             const spanDays = endDay - startDay + 1;
-            const left = (startDay - 1) * GANTT_DAY_WIDTH + 2;
-            const width = spanDays * GANTT_DAY_WIDTH - 4;
+            const left = (startDay - 1) * GANTT_DAY_WIDTH + 1;
+            const width = spanDays * GANTT_DAY_WIDTH - 2;
             const color = getTaskColor(bar.version, bar.task);
-            const isMerged = spanDays > 1;
-            const layout = barLayout[idx];
-            const barHeight = layout.height;
-            const barTop = layout.top;
-            const mergedCls = isMerged ? ' merged' : '';
-            const label = isMerged
-                ? `<span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span><span class="actual-tl-bar-hours">${bar.totalHours}h</span>`
-                : `<span class="actual-tl-bar-hours">${bar.totalHours}h</span>`;
-            html += `<div class="actual-tl-bar actual${mergedCls}" style="left:${left}px;width:${width}px;height:${barHeight}px;top:${barTop}px;background:${color};"
+            const layout = multiLayout[idx];
+            html += `<div class="actual-tl-bar actual merged" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
                 data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
                 title="${escapeHtml(bar.task)} ${bar.totalHours}h (${bar.days}日間)">
-                ${label}
+                <span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span>
+                <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
             </div>`;
+        });
+
+        // 単日バーを描画 — 1タスクなら通常バー、複数タスクならセグメントバー
+        Object.entries(singleByDate).forEach(([dateStr, bars]) => {
+            const dayNum = new Date(dateStr).getDate();
+            const left = (dayNum - 1) * GANTT_DAY_WIDTH + 2;
+            const width = GANTT_DAY_WIDTH - 4;
+            // 複数日バーと重なる日はオフセット
+            const overlapMulti = multiDayDates.has(dateStr);
+            const barH = overlapMulti ? 18 : 24;
+            const barTop = overlapMulti
+                ? GANTT_ROW_HEIGHT - barH - 4
+                : (GANTT_ROW_HEIGHT - barH) / 2;
+            const allIds = bars.flatMap(b => b.ids);
+            const totalHours = bars.reduce((s, b) => s + b.totalHours, 0);
+
+            if (bars.length === 1) {
+                // 1タスク → 通常バー
+                const bar = bars[0];
+                const color = getTaskColor(bar.version, bar.task);
+                html += `<div class="actual-tl-bar actual" style="left:${left}px;width:${width}px;height:${barH}px;top:${barTop}px;background:${color};"
+                    data-actual-ids="${allIds.join(',')}" data-start-date="${dateStr}" data-end-date="${dateStr}" data-member="${escapeHtml(member)}"
+                    title="${escapeHtml(bar.task)} ${bar.totalHours}h">
+                    <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
+                </div>`;
+            } else {
+                // 複数タスク → セグメントバー
+                let segHtml = '';
+                bars.forEach(bar => {
+                    const pct = (bar.totalHours / totalHours) * 100;
+                    const color = getTaskColor(bar.version, bar.task);
+                    segHtml += `<div class="actual-tl-seg" style="width:${pct}%;background:${color};" title="${escapeHtml(bar.task)} ${bar.totalHours}h"></div>`;
+                });
+                const countBadge = bars.length > 1 ? `<span class="actual-tl-bar-count">${bars.length}</span>` : '';
+                html += `<div class="actual-tl-bar actual segmented" style="left:${left}px;width:${width}px;height:${barH}px;top:${barTop}px;"
+                    data-actual-ids="${allIds.join(',')}" data-start-date="${dateStr}" data-end-date="${dateStr}" data-member="${escapeHtml(member)}"
+                    title="${bars.map(b => b.task).join(', ')} 計${totalHours}h">
+                    <div class="actual-tl-seg-track">${segHtml}</div>
+                    ${countBadge}
+                </div>`;
+            }
         });
 
         // 今日ライン
@@ -1607,8 +1663,57 @@ function showBarDetailPanel(actualId) {
 function showGroupDetailPanel(ids) {
     const items = ids.map(id => actuals.find(a => String(a.id) === String(id))).filter(Boolean);
     if (items.length === 0) return;
-    // 最初のものを表示
-    showBarDetailPanel(ids[0]);
+
+    // 1件なら通常の詳細パネル
+    if (items.length === 1) {
+        showBarDetailPanel(ids[0]);
+        return;
+    }
+
+    // 複数件: タスクごとにグループ化して一覧表示
+    closeDetailPanel();
+    const totalHours = items.reduce((s, a) => s + (a.hours || 0), 0);
+    const dateLabel = items[0].date || '';
+
+    let listHtml = '';
+    items.forEach(a => {
+        const color = getTaskColor(a.version, a.task);
+        listHtml += `
+            <div class="actual-tl-dp-item" data-actual-id="${a.id}">
+                <div class="actual-tl-dp-item-color" style="background:${color};"></div>
+                <div class="actual-tl-dp-item-info">
+                    <div class="actual-tl-dp-item-task">${escapeHtml(a.task)}</div>
+                    <div class="actual-tl-dp-item-meta">${escapeHtml(a.version)} / ${escapeHtml(a.process)} / ${escapeHtml(a.member)}</div>
+                </div>
+                <div class="actual-tl-dp-item-hours">${formatHours(a.hours)}h</div>
+            </div>`;
+    });
+
+    const panel = document.createElement('div');
+    panel.className = 'actual-tl-detail-panel';
+    panel.id = 'atlDetailPanel';
+    panel.innerHTML = `
+        <div class="actual-tl-dp-header">
+            <span class="actual-tl-dp-title">${dateLabel} の実績（${items.length}件）</span>
+            <button class="actual-tl-dp-close" id="atlDpClose">&times;</button>
+        </div>
+        <div class="actual-tl-dp-body">
+            <div class="actual-tl-dp-total">合計 <strong>${formatHours(totalHours)}h</strong></div>
+            <div class="actual-tl-dp-list">${listHtml}</div>
+        </div>
+    `;
+
+    document.body.appendChild(panel);
+    requestAnimationFrame(() => panel.classList.add('open'));
+
+    panel.querySelector('#atlDpClose').addEventListener('click', closeDetailPanel);
+
+    // 各アイテムクリックで個別詳細へ
+    panel.querySelectorAll('.actual-tl-dp-item').forEach(item => {
+        item.addEventListener('click', () => {
+            showBarDetailPanel(item.dataset.actualId);
+        });
+    });
 }
 
 function closeDetailPanel() {
