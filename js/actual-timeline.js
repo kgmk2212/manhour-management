@@ -281,14 +281,15 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
         }
         html += '</div>';
 
-        // 予定バー（上部レーン: 薄い帯）
+        // 予定バー（上部レーン: 薄い帯）— 同一version+taskの工程違いを結合
         const memberSchedules = getSchedulesForMember(member, year, month);
-        memberSchedules.forEach(sch => {
+        const mergedSchedules = mergeSchedulesByTask(memberSchedules);
+        mergedSchedules.forEach(sch => {
             const barInfo = calcGanttBar(sch.startDate, sch.endDate, year, month, daysInMonth);
             if (!barInfo) return;
             const color = getTaskColor(sch.version, sch.task);
             html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};top:4px;height:${SCHEDULE_LANE_H - 4}px;"
-                data-schedule-id="${sch.id}" title="${escapeHtml(sch.task)} (予定)">
+                data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
                 <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
             </div>`;
         });
@@ -2097,6 +2098,64 @@ function groupActualsByDateTask(memberActuals) {
         groups[key].ids.push(a.id);
     });
     return Object.values(groups);
+}
+
+/**
+ * 予定（スケジュール）を version+task でグループ化し、日付範囲を結合
+ * 同じ対応の別工程を1本のバーにまとめる
+ */
+function mergeSchedulesByTask(scheduleList) {
+    if (scheduleList.length === 0) return [];
+
+    // version+task でグループ化
+    const byTask = {};
+    scheduleList.forEach(s => {
+        const key = `${s.version}|${s.task}`;
+        if (!byTask[key]) byTask[key] = { version: s.version, task: s.task, ranges: [], ids: [] };
+        byTask[key].ranges.push({ start: s.startDate, end: s.endDate });
+        byTask[key].ids.push(s.id);
+    });
+
+    const merged = [];
+
+    Object.values(byTask).forEach(group => {
+        // 日付範囲をソートして隣接・重複をマージ
+        group.ranges.sort((a, b) => a.start.localeCompare(b.start));
+
+        let current = { start: group.ranges[0].start, end: group.ranges[0].end };
+
+        for (let i = 1; i < group.ranges.length; i++) {
+            const r = group.ranges[i];
+            // 現在の終了日の翌日以内に次の開始日があれば結合
+            const nextDay = new Date(current.end);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const nextDayStr = nextDay.toISOString().slice(0, 10);
+
+            if (r.start <= nextDayStr) {
+                // 隣接または重複 → 結合（終了日は最大を取る）
+                if (r.end > current.end) current.end = r.end;
+            } else {
+                // 非隣接 → 新バー
+                merged.push({
+                    version: group.version,
+                    task: group.task,
+                    startDate: current.start,
+                    endDate: current.end,
+                    ids: group.ids
+                });
+                current = { start: r.start, end: r.end };
+            }
+        }
+        merged.push({
+            version: group.version,
+            task: group.task,
+            startDate: current.start,
+            endDate: current.end,
+            ids: group.ids
+        });
+    });
+
+    return merged;
 }
 
 /**
