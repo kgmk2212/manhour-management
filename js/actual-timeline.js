@@ -701,19 +701,13 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                 const color = getTaskColor(sch.version, sch.task);
                 const pad = 4; // px padding from column edge
 
-                // レイアウト計算: 1→全幅, 2→左右分割, 3+→斜めスタガー
+                // レイアウト計算: 1→全幅, 2+→斜めスタガー
                 let leftPx, rightPx, labelTopOffset;
                 if (schCount === 1) {
                     leftPx = pad;
                     rightPx = pad;
                     labelTopOffset = 0;
-                } else if (schCount === 2) {
-                    const half = (DAILY_COL_WIDTH - pad * 2) / 2;
-                    leftPx = pad + si * half;
-                    rightPx = DAILY_COL_WIDTH - leftPx - half;
-                    labelTopOffset = 0;
                 } else {
-                    // 3+: 斜めスタガー — 各ブロックを右に12px、下に14pxずつずらす
                     const staggerX = 12;
                     const staggerY = 14;
                     leftPx = pad + si * staggerX;
