@@ -7085,8 +7085,7 @@ li.drop-below {
         display: block;
         font-size: 9px;
         padding: 0 4px;
-        margin-left: 0;
-        margin-top: 2px;
+        margin: 2px auto 0;
         width: fit-content;
     }
 
