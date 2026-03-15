@@ -433,8 +433,8 @@ function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
 
 /** 日別ビュー: 1時間あたりの高さ(px) — 縦軸=時間 */
 const DAILY_HOUR_HEIGHT = 72;
-/** 日別ビュー: 昼休み帯の高さ(px) — 業務スロットより小さく */
-const LUNCH_ZONE_HEIGHT = 36;
+/** 日別ビュー: 昼休み帯の高さ(px) — 1時間分 */
+const LUNCH_ZONE_HEIGHT = DAILY_HOUR_HEIGHT;
 /** 日別ビュー: 1メンバー列の幅(px) */
 const DAILY_COL_WIDTH = 140;
 /** 昼休み時間帯 */
@@ -482,30 +482,36 @@ function renderDailyView() {
     const d = new Date(dateStr);
     const dayOfWeek = d.getDay();
     const holiday = getHoliday(dateStr);
-    const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || !!holiday;
+    const isCalendarHoliday = dayOfWeek === 0 || dayOfWeek === 6 || !!holiday;
+    // 休日出勤チェック: 実績があれば営業日扱い
+    const hasActuals = actuals.some(a => a.date === dateStr);
+    const isHoliday = isCalendarHoliday && !hasActuals;
+
     let headerText = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
     if (holiday) headerText += ` ${holiday}`;
-    else if (isHoliday) headerText += ' 休日';
+    else if (isCalendarHoliday) headerText += ' 休日';
     dom.currentMonth.textContent = headerText;
 
     const members = getTimelineMembers();
-    const totalHeight = (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT + LUNCH_ZONE_HEIGHT;
+    const totalHeight = isHoliday
+        ? (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT
+        : (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT + LUNCH_ZONE_HEIGHT;
     const totalWidth = members.length * DAILY_COL_WIDTH;
 
     // ラベル列 → 時間ラベル（9:00〜17:00）
-    renderDailyTimeLabels(totalHeight);
+    renderDailyTimeLabels(totalHeight, isHoliday);
 
     // ヘッダー → メンバー名
     renderDailyMemberHeader(members);
 
     // 本体 → 縦時間 × 横メンバーのグリッド
-    renderDailyBody(members, dateStr, totalWidth, totalHeight);
+    renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday);
 }
 
 /**
  * 日別: 時間ラベル列（左サイドに9:00〜17:00を縦表示）
  */
-function renderDailyTimeLabels(totalHeight) {
+function renderDailyTimeLabels(totalHeight, isHoliday) {
     dom.labelsHeader.textContent = '時間';
 
     let html = '';
@@ -513,29 +519,40 @@ function renderDailyTimeLabels(totalHeight) {
     const isToday = currentDate === now.toISOString().slice(0, 10);
     const currentHour = now.getHours();
 
-    // 午前スロット (9:00-11:00)
-    for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
-        const isNow = isToday && h === currentHour;
-        let cls = 'actual-tl-dv-time-label';
-        if (isNow) cls += ' now';
-        html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
-            <span class="actual-tl-dv-time-text">${h}:00</span>
-        </div>`;
-    }
+    if (isHoliday) {
+        // 休日: 昼休みなしの連続9:00-18:00
+        for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+            if (h >= LUNCH_START && h < LUNCH_END) continue;
+            html += `<div class="actual-tl-dv-time-label" style="height:${DAILY_HOUR_HEIGHT}px;">
+                <span class="actual-tl-dv-time-text">${h}:00</span>
+            </div>`;
+        }
+    } else {
+        // 午前スロット (9:00-11:00)
+        for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
+            const isNow = isToday && h === currentHour;
+            let cls = 'actual-tl-dv-time-label';
+            if (isNow) cls += ' now';
+            html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
+                <span class="actual-tl-dv-time-text">${h}:00</span>
+            </div>`;
+        }
 
-    // 昼休みゾーン
-    html += `<div class="actual-tl-dv-time-label lunch-zone" style="height:${LUNCH_ZONE_HEIGHT}px;">
-        <span class="actual-tl-dv-time-text">昼休み</span>
-    </div>`;
-
-    // 午後スロット (13:00-17:00)
-    for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
-        const isNow = isToday && h === currentHour;
-        let cls = 'actual-tl-dv-time-label';
-        if (isNow) cls += ' now';
-        html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
-            <span class="actual-tl-dv-time-text">${h}:00</span>
+        // 昼休みゾーン（12:00 ラベル付き）
+        html += `<div class="actual-tl-dv-time-label lunch-zone" style="height:${LUNCH_ZONE_HEIGHT}px;">
+            <span class="actual-tl-dv-time-text">12:00</span>
+            <span class="actual-tl-dv-lunch-badge">昼休み</span>
         </div>`;
+
+        // 午後スロット (13:00-17:00)
+        for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
+            const isNow = isToday && h === currentHour;
+            let cls = 'actual-tl-dv-time-label';
+            if (isNow) cls += ' now';
+            html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
+                <span class="actual-tl-dv-time-text">${h}:00</span>
+            </div>`;
+        }
     }
 
     dom.labelsBody.innerHTML = `<div style="height:${totalHeight}px;">${html}</div>`;
@@ -566,27 +583,33 @@ function renderDailyMemberHeader(members) {
 /**
  * 日別: 本体描画（縦=時間、横=メンバー列）
  */
-function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
+function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday) {
     let html = '';
 
-    // 休日/祝日チェック — 休日はバーを一切表示しない
-    const dateObj = new Date(dateStr);
-    const dayOfWeek = dateObj.getDay();
-    const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || !!getHoliday(dateStr);
-
-    // 時間グリッド背景（午前 + 昼休みゾーン + 午後）
+    // 時間グリッド背景
     html += '<div class="actual-tl-dv-grid" style="position:absolute;inset:0;pointer-events:none;">';
-    // 午前グリッド線 (9:00-11:00)
-    for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
-        const top = (h - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
-        html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
-    }
-    // 昼休みゾーン
-    html += `<div class="actual-tl-dv-grid-line lunch-zone" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
-    // 午後グリッド線 (13:00-17:00)
-    for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
-        const top = AFTERNOON_TOP + (h - LUNCH_END) * DAILY_HOUR_HEIGHT;
-        html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+    if (isHoliday) {
+        // 休日: 昼休みなし、連続グリッド
+        let idx = 0;
+        for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+            if (h >= LUNCH_START && h < LUNCH_END) continue;
+            const top = idx * DAILY_HOUR_HEIGHT;
+            html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+            idx++;
+        }
+    } else {
+        // 午前グリッド線 (9:00-11:00)
+        for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
+            const top = (h - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+            html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+        }
+        // 昼休みゾーン
+        html += `<div class="actual-tl-dv-grid-line lunch-zone" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
+        // 午後グリッド線 (13:00-17:00)
+        for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
+            const top = AFTERNOON_TOP + (h - LUNCH_END) * DAILY_HOUR_HEIGHT;
+            html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+        }
     }
     // 現在時刻ライン
     const now = new Date();
@@ -594,7 +617,9 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
         const nowHour = now.getHours();
         const nowMin = now.getMinutes();
         if (nowHour >= WORK_START_HOUR && nowHour < WORK_END_HOUR && !(nowHour >= LUNCH_START && nowHour < LUNCH_END)) {
-            const nowTop = clockToY(nowHour, nowMin);
+            const nowTop = isHoliday
+                ? (() => { let h = nowHour < LUNCH_START ? nowHour - WORK_START_HOUR : nowHour - WORK_START_HOUR - 1; return (h + nowMin / 60) * DAILY_HOUR_HEIGHT; })()
+                : clockToY(nowHour, nowMin);
             html += `<div class="actual-tl-dv-now-line" style="top:${nowTop}px;"></div>`;
         }
     }
@@ -605,8 +630,10 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
         const colLeft = i * DAILY_COL_WIDTH;
         html += `<div class="actual-tl-dv-column" data-member="${escapeHtml(member)}" style="left:${colLeft}px;width:${DAILY_COL_WIDTH}px;height:${totalHeight}px;">`;
 
-        // 昼休みゾーンオーバーレイ（各列に描画）
-        html += `<div class="actual-tl-dv-lunch-overlay" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
+        // 昼休みゾーンオーバーレイ（営業日のみ）
+        if (!isHoliday) {
+            html += `<div class="actual-tl-dv-lunch-overlay" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
+        }
 
         if (!isHoliday) {
             // 予定ブロック（背景として薄く表示 — 昼休みを除いた午前+午後領域）
@@ -648,9 +675,8 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
                     </div>`;
                     // 午後部分
                     const afternoonPart = endHours - MORNING_HOURS;
-                    const afternoonTop = AFTERNOON_TOP;
                     const afternoonHeight = afternoonPart * DAILY_HOUR_HEIGHT;
-                    html += `<div class="actual-tl-dv-block" style="top:${afternoonTop}px;height:${afternoonHeight}px;background:${color};"
+                    html += `<div class="actual-tl-dv-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h (続き)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
