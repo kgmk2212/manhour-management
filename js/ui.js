@@ -323,6 +323,24 @@ export function showTab(tabName, options = {}) {
         window.onTabFilterChange(tabName);
     }
 
+    // タブ内のセグメントボタンで選択中のものを表示領域にスクロール
+    if (tabContent) {
+        requestAnimationFrame(() => {
+            tabContent.querySelectorAll('.segment-buttons').forEach(container => {
+                const activeBtn = container.querySelector('button.active');
+                if (activeBtn) {
+                    const containerRect = container.getBoundingClientRect();
+                    const btnRect = activeBtn.getBoundingClientRect();
+                    // ボタンがコンテナの表示領域外にある場合のみスクロール
+                    if (btnRect.left < containerRect.left || btnRect.right > containerRect.right) {
+                        const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+                        container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+                    }
+                }
+            });
+        });
+    }
+
     // 少し待ってからフラグを解除（スクロールイベントの発生を待つ）
     _tabSwitchTimerId = setTimeout(() => {
         _tabSwitchTimerId = null;

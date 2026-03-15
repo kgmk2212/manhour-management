@@ -2795,13 +2795,20 @@
                     syncBar(fixedBar, sourceBar);
                     attachBarEvents(fixedBar, sourceBar);
                     updateMobileFilterBtn(true);
-                    // 選択中のセグメントボタンを表示領域にスクロール
-                    var activeBtn = fixedBar.querySelector('.segment-buttons button.active');
-                    if (activeBtn) {
-                        setTimeout(function() {
-                            activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                        }, 50);
-                    }
+                    // 選択中のセグメントボタンを表示領域にスクロール（全コンテナ対象）
+                    setTimeout(function() {
+                        fixedBar.querySelectorAll('.segment-buttons').forEach(function(container) {
+                            var btn = container.querySelector('button.active');
+                            if (btn) {
+                                var cRect = container.getBoundingClientRect();
+                                var bRect = btn.getBoundingClientRect();
+                                if (bRect.left < cRect.left || bRect.right > cRect.right) {
+                                    var scrollLeft = container.scrollLeft + (bRect.left - cRect.left) - (container.clientWidth / 2) + (bRect.width / 2);
+                                    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+                                }
+                            }
+                        });
+                    }, 50);
                     // 表示後の状態監視（デバッグ）
                     var monitorBar = fixedBar;
                     [100, 300, 600, 1000].forEach(function(ms) {
