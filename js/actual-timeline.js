@@ -40,13 +40,18 @@ const dom = {};
 /** ガントビューの日幅(px) */
 const GANTT_DAY_WIDTH = 36;
 
-/** ガント行の高さ(px) — 予定レーンと実績レーンの2段構成 */
-const GANTT_ROW_HEIGHT = 72;
+/** ガント行の最小高さ(px) — 予定レーンと実績レーンの2段構成 */
+const GANTT_ROW_HEIGHT_MIN = 56;
+
+/** 実績バー1本あたりの高さ(px) */
+const ACTUAL_BAR_H = 20;
+/** 実績バー間のギャップ(px) */
+const ACTUAL_BAR_GAP = 3;
 
 /** 予定レーンの高さ(px) — 行上部 */
 const SCHEDULE_LANE_H = 16;
-/** 実績レーンの高さ(px) — 行下部 */
-const ACTUAL_LANE_TOP = 20;  // 予定レーン + 区切り余白
+/** 実績レーン開始Y(px) — 予定レーン + 区切り余白 */
+const ACTUAL_LANE_TOP = 20;
 
 /** 日別ビューの1時間幅(px) */
 const DAILY_HOUR_WIDTH = 100;
@@ -137,6 +142,43 @@ export function renderActualTimeline() {
 // ============================================
 
 /**
+ * メンバーごとの行高さを事前計算
+ * 同日バー重なり数に応じて行を広げる
+ */
+function calcMemberRowHeights(members, year, month) {
+    const heights = {};
+    members.forEach(member => {
+        const memberActuals = getActualsForMember(member, year, month);
+        const groupedActuals = groupActualsByDateTask(memberActuals);
+        const mergedBars = mergeAdjacentActuals(groupedActuals);
+
+        // 各日の同時バー数を計算
+        let maxOverlap = 1;
+        const dayBars = {};
+        mergedBars.forEach(bar => {
+            const start = new Date(bar.startDate);
+            const end = new Date(bar.endDate);
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const key = d.toISOString().slice(0, 10);
+                if (!dayBars[key]) dayBars[key] = 0;
+                dayBars[key]++;
+            }
+        });
+        Object.values(dayBars).forEach(count => {
+            maxOverlap = Math.max(maxOverlap, count);
+        });
+
+        // 行高さ = 予定レーン + 実績レーン（バー数分）
+        const actualLaneH = Math.max(
+            GANTT_ROW_HEIGHT_MIN - ACTUAL_LANE_TOP,
+            maxOverlap * (ACTUAL_BAR_H + ACTUAL_BAR_GAP) + ACTUAL_BAR_GAP
+        );
+        heights[member] = ACTUAL_LANE_TOP + actualLaneH;
+    });
+    return heights;
+}
+
+/**
  * ガントビュー描画
  */
 function renderGanttView() {
@@ -150,14 +192,17 @@ function renderGanttView() {
     // メンバーリスト取得
     const members = getTimelineMembers();
 
+    // メンバーごとの行高さを事前計算（実績バーの重なり数に応じて動的に決定）
+    const memberRowHeights = calcMemberRowHeights(members, year, month);
+
     // ヘッダー描画
     renderGanttHeader(year, month, daysInMonth, today);
 
     // ラベル描画
-    renderGanttLabels(members);
+    renderGanttLabels(members, memberRowHeights);
 
     // タイムライン本体描画
-    renderGanttBody(members, year, month, daysInMonth, today);
+    renderGanttBody(members, year, month, daysInMonth, today, memberRowHeights);
 }
 
 /**
@@ -193,13 +238,14 @@ function renderGanttHeader(year, month, daysInMonth, today) {
 /**
  * ガントラベル列描画
  */
-function renderGanttLabels(members) {
+function renderGanttLabels(members, memberRowHeights) {
     let html = '';
     members.forEach((member, i) => {
         const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
         const initial = member.charAt(0);
         const totalHours = getMemberTotalHours(member, currentMonth);
-        html += `<div class="actual-tl-label-row" data-member="${escapeHtml(member)}" style="height:${GANTT_ROW_HEIGHT}px;">
+        const rowH = memberRowHeights[member] || GANTT_ROW_HEIGHT_MIN;
+        html += `<div class="actual-tl-label-row" data-member="${escapeHtml(member)}" style="height:${rowH}px;">
             <div class="actual-tl-avatar" style="background:${color};">${escapeHtml(initial)}</div>
             <div class="actual-tl-label-info">
                 <div class="actual-tl-label-name">${escapeHtml(member)}</div>
@@ -213,12 +259,13 @@ function renderGanttLabels(members) {
 /**
  * ガント本体描画（日セル + バー）
  */
-function renderGanttBody(members, year, month, daysInMonth, today) {
+function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeights) {
     const totalWidth = daysInMonth * GANTT_DAY_WIDTH;
     let html = '';
 
     members.forEach((member) => {
-        html += `<div class="actual-tl-row" data-member="${escapeHtml(member)}" style="height:${GANTT_ROW_HEIGHT}px;">`;
+        const rowH = memberRowHeights[member] || GANTT_ROW_HEIGHT_MIN;
+        html += `<div class="actual-tl-row" data-member="${escapeHtml(member)}" style="height:${rowH}px;">`;
 
         // 背景セル
         html += '<div class="actual-tl-row-bg">';
@@ -252,9 +299,8 @@ function renderGanttBody(members, year, month, daysInMonth, today) {
         const mergedBars = mergeAdjacentActuals(groupedActuals);
 
         // 全実績バーを実績レーン（下部）に配置
-        const actualLaneH = GANTT_ROW_HEIGHT - ACTUAL_LANE_TOP - 4; // 実績レーンの使える高さ
         const allBars = mergedBars;
-        const barLayout = calculateBarLayout(allBars, ACTUAL_LANE_TOP, actualLaneH);
+        const barLayout = calculateBarLayout(allBars, ACTUAL_LANE_TOP);
 
         allBars.forEach((bar, idx) => {
             const startDay = new Date(bar.startDate).getDate();
@@ -2120,17 +2166,11 @@ function mergeAdjacentActuals(groupedActuals) {
  * 同じ日に重なるバーの垂直レイアウトを計算
  * 重なりがないバーも異なるスロットに分散配置し、視覚的な密集を避ける
  * @param {Array} mergedBars バー配列
- * @param {number} laneTop レーン開始Y座標（デフォルト: ACTUAL_LANE_TOP）
- * @param {number} laneHeight レーンの高さ（デフォルト: 行全体）
+ * @param {number} laneTop レーン開始Y座標（デフォルト: 0）
  * @returns {Array<{top: number, height: number}>} 各バーの top と height
  */
-function calculateBarLayout(mergedBars, laneTop, laneHeight) {
+function calculateBarLayout(mergedBars, laneTop) {
     const lt = laneTop !== undefined ? laneTop : 0;
-    const lh = laneHeight !== undefined ? laneHeight : GANTT_ROW_HEIGHT;
-    const BAR_GAP = 2;
-    const DEFAULT_BAR_H = Math.min(20, lh - 4);
-    const PADDING = 2;
-    const innerH = lh - PADDING * 2;
 
     if (mergedBars.length === 0) return [];
 
@@ -2146,22 +2186,12 @@ function calculateBarLayout(mergedBars, laneTop, laneHeight) {
         }
     });
 
-    // グローバル最大同日重なり数
-    let globalMaxOverlap = 1;
-    Object.values(dayBars).forEach(barIndices => {
-        globalMaxOverlap = Math.max(globalMaxOverlap, barIndices.length);
-    });
-
-    // スロット数 = 最低でもバー数（全バーが異なるスロットに入れるように）
-    // ただし、同日重なりがある場合はその最大値以上
-    const slotCount = Math.max(globalMaxOverlap, Math.min(mergedBars.length, 3));
-
     // グリーディなスロット割当: 重なりのあるバーを優先的にスロット配分
     const assignedSlots = {};
 
-    // まず同日重なりがあるバーにスロットを割り当て
+    // 重なり数が多い日から処理（安定的なスロット割当）
     Object.entries(dayBars)
-        .sort(([, a], [, b]) => b.length - a.length) // 重なり数が多い日から処理
+        .sort(([, a], [, b]) => b.length - a.length)
         .forEach(([, barIndices]) => {
             const usedSlots = new Set();
             barIndices.forEach(idx => {
@@ -2179,21 +2209,21 @@ function calculateBarLayout(mergedBars, laneTop, laneHeight) {
             });
         });
 
-    // 未割当バー（どの日にも重ならなかった単独バー）にもスロット分散
+    // 未割当バーにもスロット分散
+    let nextFreeSlot = 0;
     mergedBars.forEach((_, idx) => {
         if (assignedSlots[idx] === undefined) {
-            assignedSlots[idx] = idx % slotCount;
+            assignedSlots[idx] = nextFreeSlot++;
         }
     });
 
-    // バーの高さとY位置を計算
-    const barH = slotCount <= 1
-        ? DEFAULT_BAR_H
-        : Math.max(14, Math.floor((innerH - BAR_GAP * (slotCount - 1)) / slotCount));
+    // バーの高さ = 固定（行高さは事前にバー数に合わせて計算済み）
+    const barH = ACTUAL_BAR_H;
+    const step = barH + ACTUAL_BAR_GAP;
 
     return mergedBars.map((_, idx) => {
         const slot = assignedSlots[idx] || 0;
-        const top = lt + PADDING + slot * (barH + BAR_GAP);
+        const top = lt + ACTUAL_BAR_GAP + slot * step;
         return { top, height: barH };
     });
 }
