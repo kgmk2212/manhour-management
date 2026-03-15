@@ -31,6 +31,9 @@ let currentDate = '';
 /** ドラッグ状態 */
 let dragState = null;
 
+/** モバイル: タップ選択されたタスク */
+let selectedTask = null;
+
 /** DOM参照キャッシュ */
 const dom = {};
 
@@ -238,18 +241,33 @@ function renderGanttBody(members, year, month, daysInMonth, today) {
             </div>`;
         });
 
-        // 実績バー（solid）
+        // 実績バー（solid）— 隣接日を結合して表示
         const memberActuals = getActualsForMember(member, year, month);
         const groupedActuals = groupActualsByDateTask(memberActuals);
-        groupedActuals.forEach(group => {
-            const dayNum = new Date(group.date).getDate();
-            const left = (dayNum - 1) * GANTT_DAY_WIDTH + 2;
-            const width = GANTT_DAY_WIDTH - 4;
-            const color = getTaskColor(group.version, group.task);
-            html += `<div class="actual-tl-bar actual" style="left:${left}px;width:${width}px;background:${color};"
-                data-actual-ids="${group.ids.join(',')}" data-date="${group.date}" data-member="${escapeHtml(member)}"
-                title="${escapeHtml(group.task)} ${group.hours}h">
-                <span class="actual-tl-bar-hours">${group.hours}h</span>
+        const mergedBars = mergeAdjacentActuals(groupedActuals);
+
+        // 同じ日に複数タスクがある場合のスタッキング計算
+        const barLayout = calculateBarLayout(mergedBars);
+
+        mergedBars.forEach((bar, idx) => {
+            const startDay = new Date(bar.startDate).getDate();
+            const endDay = new Date(bar.endDate).getDate();
+            const spanDays = endDay - startDay + 1;
+            const left = (startDay - 1) * GANTT_DAY_WIDTH + 2;
+            const width = spanDays * GANTT_DAY_WIDTH - 4;
+            const color = getTaskColor(bar.version, bar.task);
+            const isMerged = spanDays > 1;
+            const layout = barLayout[idx];
+            const barHeight = layout.height;
+            const barTop = layout.top;
+            const mergedCls = isMerged ? ' merged' : '';
+            const label = isMerged
+                ? `<span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span><span class="actual-tl-bar-hours">${bar.totalHours}h</span>`
+                : `<span class="actual-tl-bar-hours">${bar.totalHours}h</span>`;
+            html += `<div class="actual-tl-bar actual${mergedCls}" style="left:${left}px;width:${width}px;height:${barHeight}px;top:${barTop}px;background:${color};"
+                data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
+                title="${escapeHtml(bar.task)} ${bar.totalHours}h (${bar.days}日間)">
+                ${label}
             </div>`;
         });
 
@@ -511,6 +529,8 @@ function renderRightPane() {
 
 /**
  * タスクカードのドラッグイベント設定
+ * モバイル: タップで選択 → パネル閉じ → タイムラインタップで配置
+ * デスクトップ: ドラッグ&ドロップ
  */
 function setupTaskCardDrag() {
     const cards = dom.paneBody?.querySelectorAll('.actual-tl-task-card');
@@ -518,8 +538,120 @@ function setupTaskCardDrag() {
 
     cards.forEach(card => {
         card.addEventListener('mousedown', onCardMouseDown);
-        card.addEventListener('touchstart', onCardTouchStart, { passive: false });
+        if (isMobile()) {
+            // モバイル: タップで選択モード
+            card.addEventListener('click', onCardTapSelect);
+        } else {
+            card.addEventListener('touchstart', onCardTouchStart, { passive: false });
+        }
     });
+}
+
+/**
+ * モバイルでカードをタップ → 選択してパネルを閉じる
+ */
+function onCardTapSelect(e) {
+    e.stopPropagation();
+    const card = e.currentTarget;
+    const version = card.dataset.version;
+    const task = card.dataset.task;
+    const process = card.dataset.process;
+    const member = card.dataset.member;
+    const hours = parseFloat(card.dataset.hours) || 1;
+    const color = getTaskColor(version, task);
+
+    // 既に同じタスクが選択されていたら解除
+    if (selectedTask && selectedTask.version === version && selectedTask.task === task && selectedTask.member === member) {
+        clearSelectedTask();
+        return;
+    }
+
+    // 選択状態を設定
+    selectedTask = { version, task, process, member, hours, color };
+
+    // 既存の選択をクリア
+    dom.paneBody?.querySelectorAll('.actual-tl-task-card.selected').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+
+    // パネルを閉じる
+    setPane(false);
+
+    // 選択中の表示をトースト的に出す
+    showSelectedTaskIndicator();
+}
+
+/**
+ * 選択中タスクインジケータ表示
+ */
+function showSelectedTaskIndicator() {
+    removeSelectedTaskIndicator();
+    if (!selectedTask) return;
+
+    const indicator = document.createElement('div');
+    indicator.className = 'actual-tl-selected-indicator';
+    indicator.id = 'atlSelectedIndicator';
+    indicator.innerHTML = `
+        <div class="actual-tl-si-bar" style="background:${selectedTask.color};"></div>
+        <span class="actual-tl-si-text">${escapeHtml(selectedTask.task)}</span>
+        <span class="actual-tl-si-hint">タイムラインをタップして配置</span>
+        <button class="actual-tl-si-cancel" id="atlSiCancel">&times;</button>
+    `;
+    document.body.appendChild(indicator);
+    indicator.querySelector('#atlSiCancel').addEventListener('click', clearSelectedTask);
+    requestAnimationFrame(() => indicator.classList.add('visible'));
+}
+
+function removeSelectedTaskIndicator() {
+    document.getElementById('atlSelectedIndicator')?.remove();
+}
+
+function clearSelectedTask() {
+    selectedTask = null;
+    dom.paneBody?.querySelectorAll('.actual-tl-task-card.selected').forEach(c => c.classList.remove('selected'));
+    removeSelectedTaskIndicator();
+}
+
+/**
+ * 選択中タスクをタイムライン上のタップ位置に配置
+ */
+function placeSelectedTaskAtPosition(e, row) {
+    if (!selectedTask) return;
+
+    const rect = row.getBoundingClientRect();
+    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const member = row.dataset.member;
+
+    let date, defaultHours;
+    if (viewMode === 'gantt') {
+        const [yr, mo] = currentMonth.split('-').map(Number);
+        const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
+        const daysInMonth = new Date(yr, mo, 0).getDate();
+        const day = Math.max(1, Math.min(daysInMonth, dayIdx + 1));
+        date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        defaultHours = selectedTask.hours;
+    } else {
+        date = currentDate;
+        const hourOffset = relX / DAILY_HOUR_WIDTH;
+        defaultHours = Math.max(0.5, Math.round(hourOffset * 2) / 2);
+    }
+
+    // インラインエディタを表示して工数確認
+    const dropInfo = {
+        row: row,
+        rect: row.getBoundingClientRect(),
+        member: member,
+        date: date
+    };
+    const cardState = {
+        version: selectedTask.version,
+        task: selectedTask.task,
+        process: selectedTask.process,
+        hours: defaultHours,
+        color: selectedTask.color
+    };
+    showInlineEditor(dropInfo, cardState);
+
+    clearSelectedTask();
 }
 
 function onCardMouseDown(e) {
@@ -783,12 +915,19 @@ function setupDailyEvents() {
 }
 
 /**
- * 行上のマウスダウン → 空エリアドラッグ開始
+ * 行上のマウスダウン → 空エリアドラッグ開始 or 選択タスク配置
  */
 function onRowMouseDown(e) {
     // バー上のクリックは無視
     if (e.target.closest('.actual-tl-bar')) return;
     if (e.button !== 0) return;
+
+    // モバイル: タスク選択中なら即配置
+    if (selectedTask && isMobile()) {
+        e.preventDefault();
+        placeSelectedTaskAtPosition(e, e.currentTarget);
+        return;
+    }
     e.preventDefault();
 
     const row = e.currentTarget;
@@ -875,6 +1014,14 @@ let touchAreaState = null;
 function onRowTouchStart(e) {
     if (e.target.closest('.actual-tl-bar')) return;
     if (e.touches.length !== 1) return;
+
+    // モバイル: タスク選択中なら即配置
+    if (selectedTask) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        placeSelectedTaskAtPosition(touch, e.currentTarget);
+        return;
+    }
 
     const touch = e.touches[0];
     const row = e.currentTarget;
@@ -1697,10 +1844,15 @@ function setPane(open) {
     if (toggleBtn) {
         toggleBtn.classList.toggle('active', open);
     }
-    // モバイルオーバーレイ制御
+    // モバイルオーバーレイ制御（モバイル時のみ）
     const overlay = document.getElementById('atlPaneOverlay');
-    if (overlay) {
+    if (overlay && isMobile()) {
         overlay.classList.toggle('active', open);
+        // bodyスクロールをロック/解除
+        document.body.style.overflow = open ? 'hidden' : '';
+    } else if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
@@ -1834,6 +1986,146 @@ function groupActualsByDateTask(memberActuals) {
         groups[key].ids.push(a.id);
     });
     return Object.values(groups);
+}
+
+/**
+ * 隣接する日の同じタスクを結合する
+ * groupActualsByDateTask の結果を受け取り、連続した日の同一 version+task をマージ
+ */
+function mergeAdjacentActuals(groupedActuals) {
+    if (groupedActuals.length === 0) return [];
+
+    // version+task でグループ分け
+    const byTask = {};
+    groupedActuals.forEach(g => {
+        const key = `${g.version}|${g.task}`;
+        if (!byTask[key]) byTask[key] = [];
+        byTask[key].push(g);
+    });
+
+    const merged = [];
+
+    Object.entries(byTask).forEach(([, groups]) => {
+        // 日付順にソート
+        groups.sort((a, b) => a.date.localeCompare(b.date));
+
+        let current = {
+            startDate: groups[0].date,
+            endDate: groups[0].date,
+            version: groups[0].version,
+            task: groups[0].task,
+            totalHours: groups[0].hours,
+            days: 1,
+            ids: [...groups[0].ids]
+        };
+
+        for (let i = 1; i < groups.length; i++) {
+            const g = groups[i];
+            // 前日の翌日か判定
+            const prevDate = new Date(current.endDate);
+            prevDate.setDate(prevDate.getDate() + 1);
+            const nextDateStr = prevDate.toISOString().slice(0, 10);
+
+            if (g.date === nextDateStr) {
+                // 隣接日 → 結合
+                current.endDate = g.date;
+                current.totalHours += g.hours;
+                current.days++;
+                current.ids.push(...g.ids);
+            } else {
+                // 非隣接 → 新バー開始
+                merged.push(current);
+                current = {
+                    startDate: g.date,
+                    endDate: g.date,
+                    version: g.version,
+                    task: g.task,
+                    totalHours: g.hours,
+                    days: 1,
+                    ids: [...g.ids]
+                };
+            }
+        }
+        merged.push(current);
+    });
+
+    // 開始日でソート（表示の安定性のため）
+    merged.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    return merged;
+}
+
+/**
+ * 同じ日に重なるバーの垂直レイアウトを計算
+ * @returns {Array<{top: number, height: number}>} 各バーの top と height
+ */
+function calculateBarLayout(mergedBars) {
+    const ROW_PADDING = 4;
+    const BAR_GAP = 2;
+    const DEFAULT_BAR_H = 24;
+    const rowInner = GANTT_ROW_HEIGHT - ROW_PADDING * 2;
+
+    // 各日にどのバーが存在するかマッピング
+    const dayBars = {};
+    mergedBars.forEach((bar, idx) => {
+        const start = new Date(bar.startDate);
+        const end = new Date(bar.endDate);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().slice(0, 10);
+            if (!dayBars[key]) dayBars[key] = [];
+            dayBars[key].push(idx);
+        }
+    });
+
+    // 各バーの「最大同日重なり数」を計算
+    const barMaxOverlap = new Array(mergedBars.length).fill(1);
+    const barSlot = new Array(mergedBars.length).fill(0);
+
+    // グリーディなスロット割当: 各日の重なりバーにスロットを配分
+    const assignedSlots = {};
+    Object.values(dayBars).forEach(barIndices => {
+        if (barIndices.length <= 1) return;
+        const count = barIndices.length;
+        barIndices.forEach(idx => {
+            barMaxOverlap[idx] = Math.max(barMaxOverlap[idx], count);
+        });
+    });
+
+    // 安定的なスロット割当
+    Object.entries(dayBars).forEach(([, barIndices]) => {
+        const usedSlots = new Set();
+        // 既に割り当て済みのスロットを確認
+        barIndices.forEach(idx => {
+            if (assignedSlots[idx] !== undefined) {
+                usedSlots.add(assignedSlots[idx]);
+            }
+        });
+        // 未割当バーにスロット配分
+        let nextSlot = 0;
+        barIndices.forEach(idx => {
+            if (assignedSlots[idx] !== undefined) return;
+            while (usedSlots.has(nextSlot)) nextSlot++;
+            assignedSlots[idx] = nextSlot;
+            barSlot[idx] = nextSlot;
+            usedSlots.add(nextSlot);
+            nextSlot++;
+        });
+    });
+
+    // 実際にスロットが割り当てられたか確認して、位置を計算
+    return mergedBars.map((_, idx) => {
+        const overlap = barMaxOverlap[idx];
+        const slot = assignedSlots[idx] || 0;
+
+        if (overlap <= 1) {
+            // 重なりなし → 行中央
+            return { top: (GANTT_ROW_HEIGHT - DEFAULT_BAR_H) / 2, height: DEFAULT_BAR_H };
+        }
+
+        // 重なりあり → 等分配置
+        const barH = Math.max(16, Math.floor((rowInner - BAR_GAP * (overlap - 1)) / overlap));
+        const top = ROW_PADDING + slot * (barH + BAR_GAP);
+        return { top, height: barH };
+    });
 }
 
 /**
