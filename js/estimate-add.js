@@ -872,21 +872,26 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
     if (!table) return;
 
     const headerRow = table.querySelector('thead tr');
-    const bodyRows = table.querySelectorAll('tbody tr');
+    const bodyRows = table.querySelectorAll('tbody tr[data-primary="true"]');
 
     if (!headerRow) return;
 
+    // ベース列数: 工程、担当、時間、+ボタン の4列
+    const BASE_COLS = 4;
+
     if (showWorkMonthColumn) {
         const isMobile = window.innerWidth <= 768;
-        // 作業月列を追加
-        if (headerRow.children.length === 3) {
+        // 作業月列を追加（+ボタン列の前に挿入）
+        if (headerRow.children.length === BASE_COLS) {
             const th = document.createElement('th');
             th.style.width = isMobile ? '100px' : '150px';
             th.style.padding = '8px';
             th.textContent = '作業月';
-            headerRow.appendChild(th);
+            th.dataset.workMonthCol = 'true';
+            // +ボタン列（最後の列）の前に挿入
+            headerRow.insertBefore(th, headerRow.lastElementChild);
 
-            // モバイル時、既存列幅を再調整（4列構成）
+            // モバイル時、既存列幅を再調整
             if (isMobile) {
                 const ths = headerRow.children;
                 ths[0].style.width = '40px';   // 工程
@@ -894,12 +899,12 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
             }
         }
 
-        bodyRows.forEach((row, index) => {
-            if (row.children.length === 3) {
+        bodyRows.forEach((row) => {
+            if (row.children.length === BASE_COLS) {
                 const td = document.createElement('td');
                 td.style.overflow = 'hidden';
-                const processes = PROCESS.TYPES;
-                const processName = processes[index];
+                td.dataset.workMonthCol = 'true';
+                const processName = row.dataset.process;
                 const selStyle = isMobile
                     ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 13px;'
                     : 'margin: 0; flex: 1;';
@@ -910,7 +915,8 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
                         <select id="addEst${processName}_endMonth" style="${selStyle}"></select>
                     </div>
                 `;
-                row.appendChild(td);
+                // +ボタン列（最後の列）の前に挿入
+                row.insertBefore(td, row.lastElementChild);
             }
         });
 
@@ -923,14 +929,16 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
             }
         }, 0);
     } else {
-        // 作業月列を削除
-        if (headerRow.children.length === 4) {
-            headerRow.removeChild(headerRow.lastChild);
+        // 作業月列を削除（data-workMonthColで特定）
+        const workMonthTh = headerRow.querySelector('[data-work-month-col]');
+        if (workMonthTh) {
+            headerRow.removeChild(workMonthTh);
         }
 
         bodyRows.forEach(row => {
-            if (row.children.length === 4) {
-                row.removeChild(row.lastChild);
+            const workMonthTd = row.querySelector('[data-work-month-col]');
+            if (workMonthTd) {
+                row.removeChild(workMonthTd);
             }
         });
     }
