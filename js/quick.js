@@ -435,10 +435,19 @@ export function updateQuickEstWorkMonthUI() {
     if (!startMonthMulti || !endMonth) return;
     if (!startMonthMulti.value) return;
 
+    // 月数が変わった場合はテーブルを再構築（2ヶ月⇔3ヶ月以上で表示が変わるため）
+    const headerRow = document.querySelector('#quickEstimateTable thead tr');
+    if (headerRow) {
+        const workMonthTh = headerRow.querySelector('[data-work-month-col]');
+        if (workMonthTh) {
+            updateQuickEstimateTableHeader(false);
+            updateQuickEstimateTableHeader(true);
+            return;
+        }
+    }
+
     // 工程別のデフォルト作業月を更新
-    if (endMonth.value && startMonthMulti.value && endMonth.value !== startMonthMulti.value) {
-        updateDefaultQuickProcessMonths(startMonthMulti.value, endMonth.value);
-    } else if (endMonth.value === startMonthMulti.value) {
+    if (endMonth.value) {
         updateDefaultQuickProcessMonths(startMonthMulti.value, endMonth.value);
     }
 }
@@ -505,17 +514,28 @@ export function updateQuickEstimateTableHeader(showWorkMonthColumn) {
 
     if (!headerRow) return;
 
+    // ベース列数: 工程、担当、時間 の3列
+    const BASE_COLS = 3;
+
     if (showWorkMonthColumn) {
         const isMobile = window.innerWidth <= 768;
+        // 期間の月数を取得
+        const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
+        const endMonthEl = document.getElementById('quickEstEndMonth');
+        const rangeMonths = (startMonthMulti && endMonthEl && startMonthMulti.value && endMonthEl.value)
+            ? Utils.generateMonthRange(startMonthMulti.value, endMonthEl.value) : [];
+        const isTwoMonths = rangeMonths.length === 2;
+
         // 作業月列を追加
-        if (headerRow.children.length === 3) {
+        if (headerRow.children.length === BASE_COLS) {
             const th = document.createElement('th');
-            th.style.width = isMobile ? '100px' : '150px';
+            th.style.width = isMobile ? (isTwoMonths ? '80px' : '100px') : (isTwoMonths ? '100px' : '150px');
             th.style.padding = '8px';
             th.textContent = '作業月';
+            th.dataset.workMonthCol = 'true';
             headerRow.appendChild(th);
 
-            // モバイル時、既存列幅を再調整（4列構成）
+            // モバイル時、既存列幅を再調整
             if (isMobile) {
                 const ths = headerRow.children;
                 ths[0].style.width = '40px';   // 工程
@@ -525,41 +545,49 @@ export function updateQuickEstimateTableHeader(showWorkMonthColumn) {
 
         const processes = PROCESS.TYPES;
         bodyRows.forEach((row, index) => {
-            if (row.children.length === 3) {
+            if (row.children.length === BASE_COLS) {
                 const td = document.createElement('td');
                 td.style.overflow = 'hidden';
+                td.dataset.workMonthCol = 'true';
                 const processName = processes[index];
                 const selStyle = isMobile
                     ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 13px;'
                     : 'margin: 0; flex: 1;';
-                td.innerHTML = `
-                    <div style="display: flex; gap: ${isMobile ? '2px' : '5px'}; align-items: center;">
-                        <select id="quickEst${processName}_startMonth" style="${selStyle}"></select>
-                        <span style="font-size: ${isMobile ? '11px' : '14px'};">〜</span>
-                        <select id="quickEst${processName}_endMonth" style="${selStyle}"></select>
-                    </div>
-                `;
+
+                if (isTwoMonths) {
+                    // 2ヶ月の場合は単一セレクト
+                    td.innerHTML = `<select id="quickEst${processName}_startMonth" style="${selStyle}"></select>`;
+                } else {
+                    // 3ヶ月以上の場合は範囲セレクト
+                    td.innerHTML = `
+                        <div style="display: flex; gap: ${isMobile ? '2px' : '5px'}; align-items: center;">
+                            <select id="quickEst${processName}_startMonth" style="${selStyle}"></select>
+                            <span style="font-size: ${isMobile ? '11px' : '14px'};">〜</span>
+                            <select id="quickEst${processName}_endMonth" style="${selStyle}"></select>
+                        </div>
+                    `;
+                }
                 row.appendChild(td);
             }
         });
 
         // DOM更新後に選択肢を設定
         setTimeout(() => {
-            const startMonthMulti = document.getElementById('quickEstStartMonthMulti');
-            const endMonth = document.getElementById('quickEstEndMonth');
-            if (startMonthMulti && endMonth && startMonthMulti.value && endMonth.value) {
-                updateDefaultQuickProcessMonths(startMonthMulti.value, endMonth.value);
+            if (startMonthMulti && endMonthEl && startMonthMulti.value && endMonthEl.value) {
+                updateDefaultQuickProcessMonths(startMonthMulti.value, endMonthEl.value);
             }
         }, 0);
     } else {
-        // 作業月列を削除
-        if (headerRow.children.length === 4) {
-            headerRow.removeChild(headerRow.lastChild);
+        // 作業月列を削除（data-workMonthColで特定）
+        const workMonthTh = headerRow.querySelector('[data-work-month-col]');
+        if (workMonthTh) {
+            headerRow.removeChild(workMonthTh);
         }
 
         bodyRows.forEach(row => {
-            if (row.children.length === 4) {
-                row.removeChild(row.lastChild);
+            const workMonthTd = row.querySelector('[data-work-month-col]');
+            if (workMonthTd) {
+                row.removeChild(workMonthTd);
             }
         });
     }
@@ -569,13 +597,21 @@ export function updateQuickEstimateTableHeader(showWorkMonthColumn) {
 export function updateDefaultQuickProcessMonths(startMonth, endMonth) {
     const defaults = Estimate.calculateDefaultWorkMonths(startMonth, endMonth);
     const months = Utils.generateMonthRange(startMonth, endMonth);
+    const isTwoMonths = months.length === 2;
 
     defaults.forEach(item => {
         const startSelect = document.getElementById(`quickEst${item.process}_startMonth`);
         const endSelect = document.getElementById(`quickEst${item.process}_endMonth`);
 
-        if (startSelect && endSelect) {
-            // セレクトボックスに選択肢を設定（年なし表示）
+        if (isTwoMonths && startSelect) {
+            // 2ヶ月の場合: 単一セレクトのみ
+            startSelect.innerHTML = '';
+            months.forEach(month => {
+                startSelect.innerHTML += `<option value="${month}">${parseInt(month.substring(5))}月</option>`;
+            });
+            startSelect.value = item.startMonth;
+        } else if (startSelect && endSelect) {
+            // 3ヶ月以上の場合: 範囲セレクト
             startSelect.innerHTML = '';
             endSelect.innerHTML = '';
             months.forEach(month => {
@@ -583,7 +619,6 @@ export function updateDefaultQuickProcessMonths(startMonth, endMonth) {
                 endSelect.innerHTML += `<option value="${month}">${parseInt(month.substring(5))}月</option>`;
             });
 
-            // デフォルト値を設定
             startSelect.value = item.startMonth;
             endSelect.value = item.endMonth;
         }
@@ -655,6 +690,11 @@ export function addQuickEstimate() {
                             monthlyHours[m] = hours / months.length;
                         });
                     }
+                } else if (procStartMonth) {
+                    // 2ヶ月モード: 単一セレクトのみ（_endMonth要素なし）
+                    workMonth = procStartMonth;
+                    workMonths = [procStartMonth];
+                    monthlyHours = { [procStartMonth]: hours };
                 } else {
                     // 工程別作業月が設定されていない場合は全期間
                     const months = Utils.generateMonthRange(startMonth, endMonth);
