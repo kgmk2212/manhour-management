@@ -6580,36 +6580,383 @@ li.drop-below {
     border-top: 1px solid var(--border-light);
 }
 
+/* ---- タッチ・スクロール最適化 ---- */
+.actual-tl-timeline-scroll {
+    -webkit-overflow-scrolling: touch;
+}
+
+.actual-tl-labels-body {
+    -webkit-overflow-scrolling: touch;
+}
+
+.actual-tl-pane-body {
+    -webkit-overflow-scrolling: touch;
+}
+
+.actual-tl-tp-list {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ロングプレス中のビジュアルフィードバック */
+.actual-tl-task-card.long-press-active {
+    border-color: var(--accent) !important;
+    background: var(--accent-light) !important;
+    box-shadow: 0 2px 12px rgba(45, 90, 39, 0.2) !important;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
 /* ---- モバイル対応 ---- */
 @media (max-width: 768px) {
+
+    /* ツールバー: 2行折り返し、コンパクト */
     .actual-tl-toolbar {
-        padding: 8px 12px;
-        gap: 8px;
+        padding: 8px 10px;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .actual-tl-nav {
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .actual-tl-nav-btn {
+        padding: 8px;
+        min-width: 36px;
+        min-height: 36px;
     }
 
     .actual-tl-current-month {
         font-size: 14px;
-        min-width: 90px;
-    }
-
-    .actual-tl-main {
-        max-height: calc(100vh - 300px);
-    }
-
-    .actual-tl-labels {
-        width: 100px;
-    }
-
-    .actual-tl-right-pane.open {
-        width: 200px;
+        min-width: 80px;
+        flex: 1;
     }
 
     .actual-tl-view-toggle {
-        order: -1;
+        order: 0;
     }
 
+    .actual-tl-view-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+
+    #atlTogglePane {
+        min-height: 34px;
+    }
+
+    /* メインエリア: 画面いっぱいに */
+    .actual-tl-main {
+        max-height: calc(100vh - 260px);
+        border-radius: var(--radius-sm);
+    }
+
+    /* ラベル列: 狭くする */
+    .actual-tl-labels {
+        width: 80px;
+    }
+
+    .actual-tl-labels-header {
+        height: 40px;
+        padding: 0 6px;
+        font-size: 9px;
+    }
+
+    .actual-tl-label-row {
+        padding: 0 6px;
+        gap: 4px;
+    }
+
+    .actual-tl-avatar {
+        width: 22px;
+        height: 22px;
+        font-size: 9px;
+    }
+
+    .actual-tl-label-name {
+        font-size: 10px;
+    }
+
+    .actual-tl-label-meta {
+        font-size: 9px;
+    }
+
+    /* ヘッダー高さ調整 */
+    .actual-tl-timeline-header {
+        height: 40px;
+    }
+
+    .actual-tl-day-header {
+        gap: 0;
+    }
+
+    .actual-tl-day-num {
+        font-size: 11px;
+    }
+
+    .actual-tl-day-label {
+        font-size: 8px;
+    }
+
+    .actual-tl-hour-header {
+        height: 40px;
+        font-size: 11px;
+    }
+
+    /* バー: タッチしやすいサイズ */
+    .actual-tl-bar {
+        height: 32px;
+        min-height: 32px;
+        border-radius: 5px;
+    }
+
+    .actual-tl-bar.daily-bar {
+        height: 48px;
+    }
+
+    .actual-tl-bar.scheduled {
+        height: 28px;
+    }
+
+    /* リサイズハンドル: タッチ用に広く */
+    .actual-tl-bar-resize {
+        width: 14px;
+    }
+
+    /* 右ペイン: オーバーレイ表示 */
+    .actual-tl-right-pane {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100% !important;
+        height: 100vh;
+        z-index: 90;
+        transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .actual-tl-right-pane.open {
+        right: 0;
+        width: 100% !important;
+    }
+
+    .actual-tl-pane-header {
+        padding: 14px 16px;
+    }
+
+    .actual-tl-pane-header h3 {
+        font-size: 15px;
+    }
+
+    .actual-tl-pane-close {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    /* タスクカード: タッチ領域確保 */
+    .actual-tl-task-card {
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        min-height: 48px;
+    }
+
+    .actual-tl-tc-name {
+        font-size: 13px;
+    }
+
+    .actual-tl-tc-detail {
+        font-size: 10px;
+    }
+
+    .actual-tl-tc-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    .actual-tl-tc-hours {
+        font-size: 12px;
+    }
+
+    .actual-tl-pane-section-header {
+        padding: 10px 14px;
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    .actual-tl-sec-avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
+
+    /* インラインエディタ: モバイルで中央固定 */
+    .actual-tl-inline-editor {
+        left: 50% !important;
+        top: auto !important;
+        bottom: 80px;
+        transform: translateX(-50%);
+        padding: 8px 12px;
+        gap: 8px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .actual-tl-ie-input {
+        width: 64px;
+        padding: 6px;
+        font-size: 16px;
+        min-height: 36px;
+    }
+
+    .actual-tl-ie-unit {
+        font-size: 14px;
+    }
+
+    .actual-tl-ie-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    /* タスクピッカー: 下からスライドアップ */
+    .actual-tl-task-picker {
+        position: fixed;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-height: 70vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: atlPickerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes atlPickerSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .actual-tl-tp-header {
+        padding: 16px 16px 10px;
+    }
+
+    .actual-tl-tp-title {
+        font-size: 16px;
+    }
+
+    .actual-tl-tp-time {
+        font-size: 13px;
+    }
+
+    .actual-tl-tp-search {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-height: 40px;
+    }
+
+    .actual-tl-tp-list {
+        max-height: 35vh;
+    }
+
+    .actual-tl-tp-item {
+        padding: 10px 16px;
+        min-height: 48px;
+    }
+
+    .actual-tl-tpi-name {
+        font-size: 13px;
+    }
+
+    .actual-tl-tpi-detail {
+        font-size: 10px;
+    }
+
+    .actual-tl-tp-footer {
+        padding: 12px 16px;
+        gap: 10px;
+    }
+
+    .actual-tl-tp-footer label {
+        font-size: 12px;
+    }
+
+    .actual-tl-tp-footer input {
+        width: 64px;
+        padding: 8px;
+        font-size: 16px;
+        min-height: 40px;
+    }
+
+    .actual-tl-tp-btn {
+        padding: 10px 18px;
+        font-size: 14px;
+        min-height: 40px;
+    }
+
+    /* 詳細パネル: フル幅 */
     .actual-tl-detail-panel {
         width: 100%;
         right: -100%;
     }
+
+    .actual-tl-dp-header {
+        padding: 16px;
+    }
+
+    .actual-tl-dp-close {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    .actual-tl-dp-body {
+        padding: 20px 16px;
+    }
+
+    .actual-tl-dp-field label {
+        font-size: 11px;
+    }
+
+    .actual-tl-dp-field span {
+        font-size: 15px;
+    }
+
+    .actual-tl-dp-actions {
+        flex-direction: column;
+    }
+
+    .actual-tl-dp-actions .btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    /* ドラッグ選択矩形: モバイルで大きめ表示 */
+    .actual-tl-ds-label {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+}
+
+/* ---- 右ペインオーバーレイ背景（モバイル用） ---- */
+.actual-tl-pane-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 89;
+    animation: atlOverlayIn 0.2s ease;
+}
+
+.actual-tl-pane-overlay.active {
+    display: block;
+}
+
+@keyframes atlOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

@@ -96,6 +96,9 @@ export function initActualTimeline() {
     document.getElementById('atlTogglePane')?.addEventListener('click', togglePane);
     document.getElementById('atlPaneClose')?.addEventListener('click', () => setPane(false));
 
+    // モバイル用オーバーレイ要素を作成
+    createPaneOverlay();
+
     // スクロール同期
     setupScrollSync();
 
@@ -527,13 +530,52 @@ function onCardMouseDown(e) {
     document.addEventListener('mouseup', onCardMouseUp);
 }
 
+/** カードのタッチ: ロングプレスで開始（スクロールと共存） */
+let cardLongPressTimer = null;
+let cardTouchStartPos = null;
+
 function onCardTouchStart(e) {
     if (e.touches.length !== 1) return;
-    e.preventDefault();
     const touch = e.touches[0];
-    startCardDrag(e.currentTarget, touch.clientX, touch.clientY);
-    document.addEventListener('touchmove', onCardTouchMove, { passive: false });
-    document.addEventListener('touchend', onCardTouchEnd);
+    const card = e.currentTarget;
+
+    cardTouchStartPos = { x: touch.clientX, y: touch.clientY };
+
+    // ロングプレスタイマー設定
+    cardLongPressTimer = setTimeout(() => {
+        cardLongPressTimer = null;
+        card.classList.add('long-press-active');
+        if (navigator.vibrate) navigator.vibrate(30);
+        startCardDrag(card, touch.clientX, touch.clientY);
+        document.addEventListener('touchmove', onCardTouchMove, { passive: false });
+        document.addEventListener('touchend', onCardTouchEnd);
+    }, LONG_PRESS_DELAY);
+
+    // 移動でキャンセル用
+    document.addEventListener('touchmove', onCardTouchCancelCheck, { passive: true });
+    document.addEventListener('touchend', onCardTouchCancelCleanup);
+}
+
+function onCardTouchCancelCheck(e) {
+    if (!cardTouchStartPos || !cardLongPressTimer) return;
+    const touch = e.touches[0];
+    const dist = Math.abs(touch.clientX - cardTouchStartPos.x) + Math.abs(touch.clientY - cardTouchStartPos.y);
+    if (dist > TOUCH_MOVE_THRESHOLD) {
+        // スクロール意図 → ロングプレスキャンセル
+        clearTimeout(cardLongPressTimer);
+        cardLongPressTimer = null;
+        document.removeEventListener('touchmove', onCardTouchCancelCheck);
+        document.removeEventListener('touchend', onCardTouchCancelCleanup);
+    }
+}
+
+function onCardTouchCancelCleanup() {
+    if (cardLongPressTimer) {
+        clearTimeout(cardLongPressTimer);
+        cardLongPressTimer = null;
+    }
+    document.removeEventListener('touchmove', onCardTouchCancelCheck);
+    document.removeEventListener('touchend', onCardTouchCancelCleanup);
 }
 
 function startCardDrag(card, x, y) {
@@ -590,6 +632,10 @@ function onCardMouseUp(e) {
 function onCardTouchEnd(e) {
     document.removeEventListener('touchmove', onCardTouchMove);
     document.removeEventListener('touchend', onCardTouchEnd);
+    // ロングプレスのビジュアルクリーンアップ
+    document.querySelectorAll('.actual-tl-task-card.long-press-active').forEach(c =>
+        c.classList.remove('long-press-active')
+    );
     const touch = e.changedTouches[0];
     finishCardDrag(touch.clientX, touch.clientY);
 }
@@ -697,6 +743,7 @@ function setupGanttEvents() {
 
     rows.forEach(row => {
         row.addEventListener('mousedown', onRowMouseDown);
+        row.addEventListener('touchstart', onRowTouchStart, { passive: false });
     });
 
     // 実績バーにクリックイベント
@@ -718,6 +765,7 @@ function setupDailyEvents() {
 
     rows.forEach(row => {
         row.addEventListener('mousedown', onRowMouseDown);
+        row.addEventListener('touchstart', onRowTouchStart, { passive: false });
     });
 
     // 実績バーにクリック&ドラッグイベント
@@ -770,40 +818,7 @@ function onAreaMouseMove(e) {
     if (dist < 5) return;
     dragState.moved = true;
 
-    const row = dragState.row;
-    const rect = row.getBoundingClientRect();
-    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
-
-    const x1 = Math.min(dragState.startX, relX);
-    const x2 = Math.max(dragState.startX, relX);
-
-    // 日/時間スナップ
-    let snappedX1, snappedX2, label;
-    if (viewMode === 'gantt') {
-        snappedX1 = Math.floor(x1 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
-        snappedX2 = Math.ceil(x2 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
-        const days = Math.round((snappedX2 - snappedX1) / GANTT_DAY_WIDTH);
-        label = `${days}日`;
-    } else {
-        const snapUnit = DAILY_HOUR_WIDTH / 2; // 30分スナップ
-        snappedX1 = Math.floor(x1 / snapUnit) * snapUnit;
-        snappedX2 = Math.ceil(x2 / snapUnit) * snapUnit;
-        const hours = (snappedX2 - snappedX1) / DAILY_HOUR_WIDTH;
-        label = `${hours}h`;
-    }
-
-    // 選択矩形更新
-    if (!dragState.selectRect) {
-        dragState.selectRect = document.createElement('div');
-        dragState.selectRect.className = 'actual-tl-drag-select';
-        row.appendChild(dragState.selectRect);
-    }
-
-    dragState.selectRect.style.left = `${snappedX1}px`;
-    dragState.selectRect.style.width = `${snappedX2 - snappedX1}px`;
-    dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
-    dragState.snappedX1 = snappedX1;
-    dragState.snappedX2 = snappedX2;
+    updateAreaDragVisual(e);
 }
 
 function onAreaMouseUp(e) {
@@ -847,6 +862,163 @@ function onAreaMouseUp(e) {
 }
 
 // ============================================
+// 空エリアドラッグ: タッチイベント対応
+// ============================================
+
+/** ロングプレス判定用定数 */
+const LONG_PRESS_DELAY = 400;
+const TOUCH_MOVE_THRESHOLD = 10;
+
+/** タッチ状態 */
+let touchAreaState = null;
+
+function onRowTouchStart(e) {
+    if (e.target.closest('.actual-tl-bar')) return;
+    if (e.touches.length !== 1) return;
+
+    const touch = e.touches[0];
+    const row = e.currentTarget;
+    const rect = row.getBoundingClientRect();
+    const relX = touch.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const member = row.dataset.member;
+
+    // ロングプレスタイマー開始
+    touchAreaState = {
+        member,
+        row,
+        startX: relX,
+        startClientX: touch.clientX,
+        startClientY: touch.clientY,
+        longPressTimer: null,
+        isLongPress: false,
+        hasMoved: false
+    };
+
+    touchAreaState.longPressTimer = setTimeout(() => {
+        if (!touchAreaState) return;
+        touchAreaState.isLongPress = true;
+
+        // 触覚フィードバック
+        if (navigator.vibrate) navigator.vibrate(30);
+
+        // ドラッグ状態に移行
+        dragState = {
+            type: 'area',
+            member,
+            row,
+            startX: relX,
+            startClientX: touch.clientX,
+            startClientY: touch.clientY,
+            selectRect: null,
+            moved: false
+        };
+    }, LONG_PRESS_DELAY);
+
+    document.addEventListener('touchmove', onAreaTouchMove, { passive: false });
+    document.addEventListener('touchend', onAreaTouchEnd);
+}
+
+function onAreaTouchMove(e) {
+    if (!touchAreaState) return;
+    const touch = e.touches[0];
+    const dist = Math.abs(touch.clientX - touchAreaState.startClientX) +
+                 Math.abs(touch.clientY - touchAreaState.startClientY);
+
+    // ロングプレス待ち中に動いたらキャンセル（スクロール意図）
+    if (!touchAreaState.isLongPress && dist > TOUCH_MOVE_THRESHOLD) {
+        clearTimeout(touchAreaState.longPressTimer);
+        touchAreaState = null;
+        return;
+    }
+
+    // ロングプレス成功後のドラッグ操作
+    if (dragState && dragState.type === 'area') {
+        e.preventDefault(); // スクロール抑制
+        // onAreaMouseMoveと同じロジックを再利用
+        const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
+        dragState.moved = true;
+        updateAreaDragVisual(fakeEvent);
+    }
+}
+
+function onAreaTouchEnd(e) {
+    document.removeEventListener('touchmove', onAreaTouchMove);
+    document.removeEventListener('touchend', onAreaTouchEnd);
+
+    if (touchAreaState) {
+        clearTimeout(touchAreaState.longPressTimer);
+    }
+
+    if (dragState && dragState.type === 'area' && dragState.moved) {
+        // 選択矩形削除
+        if (dragState.selectRect) {
+            dragState.selectRect.remove();
+        }
+
+        const member = dragState.member;
+        let date, hours;
+        const touch = e.changedTouches[0];
+
+        if (viewMode === 'gantt') {
+            const [yr, mo] = currentMonth.split('-').map(Number);
+            const dayIdx = Math.floor(dragState.snappedX1 / GANTT_DAY_WIDTH);
+            const day = Math.max(1, dayIdx + 1);
+            date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const days = Math.round((dragState.snappedX2 - dragState.snappedX1) / GANTT_DAY_WIDTH);
+            hours = days * 8;
+        } else {
+            date = currentDate;
+            hours = (dragState.snappedX2 - dragState.snappedX1) / DAILY_HOUR_WIDTH;
+        }
+
+        showTaskPicker(touch.clientX, touch.clientY, member, date, hours);
+    }
+
+    dragState = null;
+    touchAreaState = null;
+}
+
+/**
+ * エリアドラッグ描画更新（マウス・タッチ共通）
+ */
+function updateAreaDragVisual(e) {
+    if (!dragState || dragState.type !== 'area') return;
+
+    const row = dragState.row;
+    const rect = row.getBoundingClientRect();
+    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+
+    const x1 = Math.min(dragState.startX, relX);
+    const x2 = Math.max(dragState.startX, relX);
+
+    let snappedX1, snappedX2, label;
+    if (viewMode === 'gantt') {
+        snappedX1 = Math.floor(x1 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        snappedX2 = Math.ceil(x2 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        const days = Math.round((snappedX2 - snappedX1) / GANTT_DAY_WIDTH);
+        label = `${days}日`;
+    } else {
+        const snapUnit = DAILY_HOUR_WIDTH / 2;
+        snappedX1 = Math.floor(x1 / snapUnit) * snapUnit;
+        snappedX2 = Math.ceil(x2 / snapUnit) * snapUnit;
+        const hours = (snappedX2 - snappedX1) / DAILY_HOUR_WIDTH;
+        label = `${hours}h`;
+    }
+
+    if (!dragState.selectRect) {
+        dragState.selectRect = document.createElement('div');
+        dragState.selectRect.className = 'actual-tl-drag-select';
+        row.appendChild(dragState.selectRect);
+    }
+
+    dragState.selectRect.style.left = `${snappedX1}px`;
+    dragState.selectRect.style.width = `${snappedX2 - snappedX1}px`;
+    dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
+    dragState.snappedX1 = snappedX1;
+    dragState.snappedX2 = snappedX2;
+}
+
+// ============================================
 // インラインエディタ
 // ============================================
 
@@ -870,12 +1042,13 @@ function showInlineEditor(dropInfo, cardState) {
         <button class="actual-tl-ie-btn cancel" id="atlIeCancel" title="キャンセル">&#10005;</button>
     `;
 
-    // 位置設定 → ドロップ先の行に配置
-    const rowRect = dropInfo.row.getBoundingClientRect();
-
-    editor.style.position = 'fixed';
-    editor.style.left = `${Math.min(rowRect.right - 200, dropInfo.rect.left + 10)}px`;
-    editor.style.top = `${rowRect.top + rowRect.height / 2 - 16}px`;
+    // 位置設定（モバイルではCSS側で上書きされるため、デスクトップ用のみ設定）
+    if (!isMobile()) {
+        const rowRect = dropInfo.row.getBoundingClientRect();
+        editor.style.position = 'fixed';
+        editor.style.left = `${Math.min(rowRect.right - 200, dropInfo.rect.left + 10)}px`;
+        editor.style.top = `${rowRect.top + rowRect.height / 2 - 16}px`;
+    }
 
     document.body.appendChild(editor);
 
@@ -1524,6 +1697,28 @@ function setPane(open) {
     if (toggleBtn) {
         toggleBtn.classList.toggle('active', open);
     }
+    // モバイルオーバーレイ制御
+    const overlay = document.getElementById('atlPaneOverlay');
+    if (overlay) {
+        overlay.classList.toggle('active', open);
+    }
+}
+
+/**
+ * モバイル用ペインオーバーレイ作成
+ */
+function createPaneOverlay() {
+    if (document.getElementById('atlPaneOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'actual-tl-pane-overlay';
+    overlay.id = 'atlPaneOverlay';
+    overlay.addEventListener('click', () => setPane(false));
+    document.body.appendChild(overlay);
+}
+
+/** モバイル判定 */
+function isMobile() {
+    return window.innerWidth <= 768;
 }
 
 // ============================================
