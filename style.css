@@ -6003,6 +6003,47 @@ li.drop-below {
     border-bottom: 1px dashed rgba(120, 120, 120, 0.25);
 }
 
+/* 18:00 終業ライン */
+.actual-tl-dv-end-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(196, 132, 29, 0.4);
+    z-index: 4;
+    pointer-events: none;
+}
+
+/* 残業グリッド */
+.actual-tl-dv-grid-line.overtime {
+    background: rgba(196, 132, 29, 0.03);
+    border-bottom: 1px dashed rgba(196, 132, 29, 0.15);
+}
+
+/* 残業時間ラベル */
+.actual-tl-dv-time-label.overtime {
+    background: rgba(196, 132, 29, 0.04);
+}
+
+.actual-tl-dv-time-label.overtime .actual-tl-dv-time-text {
+    color: var(--accent-secondary, #C4841D);
+}
+
+/* 18:00 終了ラベル（高さ0のマーカー） */
+.actual-tl-dv-time-label.end-label {
+    border-bottom: none;
+    position: relative;
+    overflow: visible;
+}
+
+.actual-tl-dv-time-label.end-label .actual-tl-dv-time-text {
+    position: absolute;
+    top: -6px;
+    font-size: 10px;
+    color: rgba(196, 132, 29, 0.6);
+    font-weight: 600;
+}
+
 /* 現在時刻ライン */
 .actual-tl-dv-now-line {
     position: absolute;

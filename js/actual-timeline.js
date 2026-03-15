@@ -497,31 +497,45 @@ function renderDailyView() {
     }
 
     const members = getTimelineMembers();
-    const totalHeight = isHoliday
-        ? (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT
-        : (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT + LUNCH_ZONE_HEIGHT;
+    const baseWorkHours = MORNING_HOURS + AFTERNOON_HOURS; // 8h
+    const baseHeight = isHoliday
+        ? baseWorkHours * DAILY_HOUR_HEIGHT
+        : baseWorkHours * DAILY_HOUR_HEIGHT + LUNCH_ZONE_HEIGHT;
+
+    // メンバーごとの最大実績時間を計算 → 残業分をtotalHeightに反映
+    let maxMemberHours = 0;
+    members.forEach(member => {
+        const dayTotal = actuals
+            .filter(a => a.date === dateStr && a.member === member)
+            .reduce((sum, a) => sum + (a.hours || 0), 0);
+        if (dayTotal > maxMemberHours) maxMemberHours = dayTotal;
+    });
+    const overtimeHours = Math.max(0, maxMemberHours - baseWorkHours);
+    const totalHeight = baseHeight + Math.ceil(overtimeHours) * DAILY_HOUR_HEIGHT;
+
     const totalWidth = members.length * DAILY_COL_WIDTH;
 
-    // ラベル列 → 時間ラベル（9:00〜17:00）
-    renderDailyTimeLabels(totalHeight, isHoliday);
+    // ラベル列 → 時間ラベル（9:00〜18:00+残業）
+    renderDailyTimeLabels(totalHeight, isHoliday, overtimeHours);
 
     // ヘッダー → メンバー名
     renderDailyMemberHeader(members);
 
     // 本体 → 縦時間 × 横メンバーのグリッド
-    renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday);
+    renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, overtimeHours);
 }
 
 /**
- * 日別: 時間ラベル列（左サイドに9:00〜17:00を縦表示）
+ * 日別: 時間ラベル列（左サイドに9:00〜18:00+残業を縦表示）
  */
-function renderDailyTimeLabels(totalHeight, isHoliday) {
+function renderDailyTimeLabels(totalHeight, isHoliday, overtimeHours) {
     dom.labelsHeader.textContent = '時間';
 
     let html = '';
     const now = new Date();
     const isToday = currentDate === now.toISOString().slice(0, 10);
     const currentHour = now.getHours();
+    const otSlots = Math.ceil(overtimeHours || 0);
 
     if (isHoliday) {
         // 休日: 昼休みなしの連続9:00-18:00
@@ -557,6 +571,25 @@ function renderDailyTimeLabels(totalHeight, isHoliday) {
                 <span class="actual-tl-dv-time-text">${h}:00</span>
             </div>`;
         }
+
+        // 18:00 終業ライン（残業なし時は最終ラベル、残業時はスロット開始）
+        if (otSlots === 0) {
+            html += `<div class="actual-tl-dv-time-label end-label" style="height:0;">
+                <span class="actual-tl-dv-time-text">${WORK_END_HOUR}:00</span>
+            </div>`;
+        }
+
+        // 残業スロット (18:00, 19:00, ...)
+        for (let i = 0; i < otSlots; i++) {
+            const h = WORK_END_HOUR + i;
+            const isNow = isToday && h === currentHour;
+            let cls = 'actual-tl-dv-time-label overtime';
+            if (isNow) cls += ' now';
+            html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
+                <span class="actual-tl-dv-time-text">${h}:00</span>
+                ${i === 0 ? '<span class="actual-tl-dv-lunch-badge">残業</span>' : ''}
+            </div>`;
+        }
     }
 
     dom.labelsBody.innerHTML = `<div style="height:${totalHeight}px;">${html}</div>`;
@@ -587,8 +620,9 @@ function renderDailyMemberHeader(members) {
 /**
  * 日別: 本体描画（縦=時間、横=メンバー列）
  */
-function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday) {
+function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, overtimeHours) {
     let html = '';
+    const otSlots = Math.ceil(overtimeHours || 0);
 
     // 時間グリッド背景
     html += '<div class="actual-tl-dv-grid" style="position:absolute;inset:0;pointer-events:none;">';
@@ -614,16 +648,28 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday) {
             const top = AFTERNOON_TOP + (h - LUNCH_END) * DAILY_HOUR_HEIGHT;
             html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
         }
+        // 18:00 終業ライン
+        const endLineTop = AFTERNOON_TOP + AFTERNOON_HOURS * DAILY_HOUR_HEIGHT;
+        html += `<div class="actual-tl-dv-end-line" style="top:${endLineTop}px;"></div>`;
+        // 残業グリッド線
+        for (let i = 0; i < otSlots; i++) {
+            const top = endLineTop + i * DAILY_HOUR_HEIGHT;
+            html += `<div class="actual-tl-dv-grid-line overtime" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+        }
     }
     // 現在時刻ライン
     const now = new Date();
     if (dateStr === now.toISOString().slice(0, 10)) {
         const nowHour = now.getHours();
         const nowMin = now.getMinutes();
-        if (nowHour >= WORK_START_HOUR && nowHour < WORK_END_HOUR && !(nowHour >= LUNCH_START && nowHour < LUNCH_END)) {
+        const inWork = nowHour >= WORK_START_HOUR && (nowHour < WORK_END_HOUR + otSlots);
+        const inLunch = nowHour >= LUNCH_START && nowHour < LUNCH_END;
+        if (inWork && !inLunch) {
             const nowTop = isHoliday
-                ? (() => { let h = nowHour < LUNCH_START ? nowHour - WORK_START_HOUR : nowHour - WORK_START_HOUR - 1; return (h + nowMin / 60) * DAILY_HOUR_HEIGHT; })()
-                : clockToY(nowHour, nowMin);
+                ? (() => { const h = nowHour < LUNCH_START ? nowHour - WORK_START_HOUR : nowHour - WORK_START_HOUR - 1; return (h + nowMin / 60) * DAILY_HOUR_HEIGHT; })()
+                : (nowHour >= WORK_END_HOUR
+                    ? AFTERNOON_TOP + AFTERNOON_HOURS * DAILY_HOUR_HEIGHT + (nowHour - WORK_END_HOUR + nowMin / 60) * DAILY_HOUR_HEIGHT
+                    : clockToY(nowHour, nowMin));
             html += `<div class="actual-tl-dv-now-line" style="top:${nowTop}px;"></div>`;
         }
     }
@@ -2187,14 +2233,26 @@ function isMobile() {
 function setupScrollSync() {
     if (!dom.timelineScroll || !dom.labelsBody) return;
 
-    // タイムラインの縦スクロールとラベルを同期
+    let syncing = false;
+
+    function syncScroll(source, target) {
+        if (syncing) return;
+        syncing = true;
+        target.scrollTop = source.scrollTop;
+        requestAnimationFrame(() => {
+            // 2フレーム目で補正（慣性スクロール対策）
+            target.scrollTop = source.scrollTop;
+            syncing = false;
+        });
+    }
+
     dom.timelineScroll.addEventListener('scroll', () => {
-        dom.labelsBody.scrollTop = dom.timelineScroll.scrollTop;
-    });
+        syncScroll(dom.timelineScroll, dom.labelsBody);
+    }, { passive: true });
 
     dom.labelsBody.addEventListener('scroll', () => {
-        dom.timelineScroll.scrollTop = dom.labelsBody.scrollTop;
-    });
+        syncScroll(dom.labelsBody, dom.timelineScroll);
+    }, { passive: true });
 }
 
 /**
