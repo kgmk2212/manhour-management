@@ -5870,6 +5870,21 @@ li.drop-below {
     background: rgba(196, 132, 29, 0.04);
 }
 
+.actual-tl-dv-time-label.lunch-zone {
+    background: rgba(140, 140, 140, 0.06);
+    border-top: 1px dashed rgba(120, 120, 120, 0.25);
+    border-bottom: 1px dashed rgba(120, 120, 120, 0.25);
+    justify-content: center;
+    align-items: center;
+    padding: 0 12px;
+}
+
+.actual-tl-dv-time-label.lunch-zone .actual-tl-dv-time-text {
+    font-size: 10px;
+    color: rgba(120, 120, 120, 0.6);
+    font-weight: 500;
+}
+
 .actual-tl-dv-time-label.now {
     color: var(--accent);
     font-weight: 700;
@@ -5950,6 +5965,18 @@ li.drop-below {
     background: rgba(196, 132, 29, 0.04);
 }
 
+.actual-tl-dv-grid-line.lunch-zone {
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(120, 120, 120, 0.06) 4px,
+        rgba(120, 120, 120, 0.06) 8px
+    );
+    border-top: 1px dashed rgba(120, 120, 120, 0.25);
+    border-bottom: 1px dashed rgba(120, 120, 120, 0.25);
+}
+
 /* 現在時刻ライン */
 .actual-tl-dv-now-line {
     position: absolute;
@@ -5983,6 +6010,16 @@ li.drop-below {
 
 .actual-tl-dv-column:hover {
     background: rgba(45, 90, 39, 0.015);
+}
+
+/* 昼休みオーバーレイ（各メンバー列内） */
+.actual-tl-dv-lunch-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: rgba(140, 140, 140, 0.08);
+    z-index: 2;
+    pointer-events: none;
 }
 
 /* 予定ブロック（薄い背景帯） */

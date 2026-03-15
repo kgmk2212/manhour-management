@@ -433,31 +433,42 @@ function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
 
 /** 日別ビュー: 1時間あたりの高さ(px) — 縦軸=時間 */
 const DAILY_HOUR_HEIGHT = 72;
+/** 日別ビュー: 昼休み帯の高さ(px) — 業務スロットより小さく */
+const LUNCH_ZONE_HEIGHT = 36;
 /** 日別ビュー: 1メンバー列の幅(px) */
 const DAILY_COL_WIDTH = 140;
 /** 昼休み時間帯 */
 const LUNCH_START = 12;
 const LUNCH_END = 13;
-/** 表示する時間スロット（昼休みを除く） */
-const DAILY_WORK_HOURS = [];
-for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
-    if (h >= LUNCH_START && h < LUNCH_END) continue;
-    DAILY_WORK_HOURS.push(h);
+/** 午前の業務時間数 */
+const MORNING_HOURS = LUNCH_START - WORK_START_HOUR; // 3h (9,10,11)
+/** 午後の業務時間数 */
+const AFTERNOON_HOURS = WORK_END_HOUR - LUNCH_END; // 5h (13,14,15,16,17)
+/** 昼休みゾーンのY開始位置 */
+const LUNCH_ZONE_TOP = MORNING_HOURS * DAILY_HOUR_HEIGHT;
+/** 午後スロットのY開始位置 */
+const AFTERNOON_TOP = LUNCH_ZONE_TOP + LUNCH_ZONE_HEIGHT;
+
+
+/** 業務時間をY座標に変換（昼休みゾーン挿入対応） */
+function workHoursToY(accHours) {
+    if (accHours <= MORNING_HOURS) {
+        return accHours * DAILY_HOUR_HEIGHT;
+    }
+    // 午前を超えた分は午後ゾーンに配置
+    return AFTERNOON_TOP + (accHours - MORNING_HOURS) * DAILY_HOUR_HEIGHT;
 }
 
-/** 時間をY座標に変換（昼休みスキップ） */
-function hoursToY(hour, minutes) {
+/** 現在時刻をY座標に変換 */
+function clockToY(hour, minutes) {
     const m = minutes || 0;
-    // 昼休み前
     if (hour < LUNCH_START) {
         return (hour - WORK_START_HOUR + m / 60) * DAILY_HOUR_HEIGHT;
     }
-    // 昼休み中 → 昼前の末尾に
-    if (hour < LUNCH_END) {
-        return (LUNCH_START - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+    if (hour >= LUNCH_START && hour < LUNCH_END) {
+        return LUNCH_ZONE_TOP; // 昼休み中
     }
-    // 昼休み後 — 1時間分引く
-    return (hour - WORK_START_HOUR - (LUNCH_END - LUNCH_START) + m / 60) * DAILY_HOUR_HEIGHT;
+    return AFTERNOON_TOP + (hour - LUNCH_END + m / 60) * DAILY_HOUR_HEIGHT;
 }
 
 /**
@@ -467,12 +478,18 @@ function renderDailyView() {
     const dateStr = currentDate;
     const dow = getDayOfWeek(dateStr);
 
-    // 日表示に更新
+    // 日表示に更新（休日/祝日表示）
     const d = new Date(dateStr);
-    dom.currentMonth.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
+    const dayOfWeek = d.getDay();
+    const holiday = getHoliday(dateStr);
+    const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || !!holiday;
+    let headerText = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
+    if (holiday) headerText += ` ${holiday}`;
+    else if (isHoliday) headerText += ' 休日';
+    dom.currentMonth.textContent = headerText;
 
     const members = getTimelineMembers();
-    const totalHeight = DAILY_WORK_HOURS.length * DAILY_HOUR_HEIGHT;
+    const totalHeight = (MORNING_HOURS + AFTERNOON_HOURS) * DAILY_HOUR_HEIGHT + LUNCH_ZONE_HEIGHT;
     const totalWidth = members.length * DAILY_COL_WIDTH;
 
     // ラベル列 → 時間ラベル（9:00〜17:00）
@@ -496,16 +513,30 @@ function renderDailyTimeLabels(totalHeight) {
     const isToday = currentDate === now.toISOString().slice(0, 10);
     const currentHour = now.getHours();
 
-    DAILY_WORK_HOURS.forEach((h, i) => {
+    // 午前スロット (9:00-11:00)
+    for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
         const isNow = isToday && h === currentHour;
         let cls = 'actual-tl-dv-time-label';
         if (isNow) cls += ' now';
-        const lunchNote = (i === DAILY_WORK_HOURS.indexOf(LUNCH_END))
-            ? '<span class="actual-tl-dv-lunch-badge">昼休み↑</span>' : '';
         html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
-            <span class="actual-tl-dv-time-text">${h}:00</span>${lunchNote}
+            <span class="actual-tl-dv-time-text">${h}:00</span>
         </div>`;
-    });
+    }
+
+    // 昼休みゾーン
+    html += `<div class="actual-tl-dv-time-label lunch-zone" style="height:${LUNCH_ZONE_HEIGHT}px;">
+        <span class="actual-tl-dv-time-text">昼休み</span>
+    </div>`;
+
+    // 午後スロット (13:00-17:00)
+    for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
+        const isNow = isToday && h === currentHour;
+        let cls = 'actual-tl-dv-time-label';
+        if (isNow) cls += ' now';
+        html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
+            <span class="actual-tl-dv-time-text">${h}:00</span>
+        </div>`;
+    }
 
     dom.labelsBody.innerHTML = `<div style="height:${totalHeight}px;">${html}</div>`;
 }
@@ -538,19 +569,32 @@ function renderDailyMemberHeader(members) {
 function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
     let html = '';
 
-    // 時間グリッド背景（昼休みスキップ）
+    // 休日/祝日チェック — 休日はバーを一切表示しない
+    const dateObj = new Date(dateStr);
+    const dayOfWeek = dateObj.getDay();
+    const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || !!getHoliday(dateStr);
+
+    // 時間グリッド背景（午前 + 昼休みゾーン + 午後）
     html += '<div class="actual-tl-dv-grid" style="position:absolute;inset:0;pointer-events:none;">';
-    DAILY_WORK_HOURS.forEach((_, i) => {
-        const top = i * DAILY_HOUR_HEIGHT;
+    // 午前グリッド線 (9:00-11:00)
+    for (let h = WORK_START_HOUR; h < LUNCH_START; h++) {
+        const top = (h - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
         html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
-    });
+    }
+    // 昼休みゾーン
+    html += `<div class="actual-tl-dv-grid-line lunch-zone" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
+    // 午後グリッド線 (13:00-17:00)
+    for (let h = LUNCH_END; h < WORK_END_HOUR; h++) {
+        const top = AFTERNOON_TOP + (h - LUNCH_END) * DAILY_HOUR_HEIGHT;
+        html += `<div class="actual-tl-dv-grid-line" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+    }
     // 現在時刻ライン
     const now = new Date();
     if (dateStr === now.toISOString().slice(0, 10)) {
         const nowHour = now.getHours();
         const nowMin = now.getMinutes();
         if (nowHour >= WORK_START_HOUR && nowHour < WORK_END_HOUR && !(nowHour >= LUNCH_START && nowHour < LUNCH_END)) {
-            const nowTop = hoursToY(nowHour, nowMin);
+            const nowTop = clockToY(nowHour, nowMin);
             html += `<div class="actual-tl-dv-now-line" style="top:${nowTop}px;"></div>`;
         }
     }
@@ -561,32 +605,70 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
         const colLeft = i * DAILY_COL_WIDTH;
         html += `<div class="actual-tl-dv-column" data-member="${escapeHtml(member)}" style="left:${colLeft}px;width:${DAILY_COL_WIDTH}px;height:${totalHeight}px;">`;
 
-        // 予定ブロック（背景として薄く表示 — 昼休み除く全時間帯）
-        const memberSchedules = getSchedulesForDate(member, dateStr);
-        const mergedDaySch = mergeSchedulesByTask(memberSchedules);
-        mergedDaySch.forEach(sch => {
-            const color = getTaskColor(sch.version, sch.task);
-            html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${totalHeight}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
-                data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
-                <span class="actual-tl-dv-sch-label" style="color:${color};">${escapeHtml(sch.task)}</span>
-            </div>`;
-        });
+        // 昼休みゾーンオーバーレイ（各列に描画）
+        html += `<div class="actual-tl-dv-lunch-overlay" style="top:${LUNCH_ZONE_TOP}px;height:${LUNCH_ZONE_HEIGHT}px;"></div>`;
 
-        // 実績ブロック（縦に積み上げ）
-        const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
-        let accumulatedHours = 0;
-        dayActuals.forEach(act => {
-            const top = accumulatedHours * DAILY_HOUR_HEIGHT;
-            const height = act.hours * DAILY_HOUR_HEIGHT;
-            const color = getTaskColor(act.version, act.task);
-            html += `<div class="actual-tl-dv-block" style="top:${top}px;height:${height}px;background:${color};"
-                data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
-                title="${escapeHtml(act.task)} ${act.hours}h">
-                <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
-                <span class="actual-tl-dv-block-hours">${act.hours}h</span>
-            </div>`;
-            accumulatedHours += act.hours;
-        });
+        if (!isHoliday) {
+            // 予定ブロック（背景として薄く表示 — 昼休みを除いた午前+午後領域）
+            const memberSchedules = getSchedulesForDate(member, dateStr);
+            const mergedDaySch = mergeSchedulesByTask(memberSchedules);
+            mergedDaySch.forEach(sch => {
+                const color = getTaskColor(sch.version, sch.task);
+                // 午前領域
+                html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${LUNCH_ZONE_TOP}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
+                    data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
+                    <span class="actual-tl-dv-sch-label" style="color:${color};">${escapeHtml(sch.task)}</span>
+                </div>`;
+                // 午後領域
+                const afternoonHeight = AFTERNOON_HOURS * DAILY_HOUR_HEIGHT;
+                html += `<div class="actual-tl-dv-sch-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
+                    data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
+                </div>`;
+            });
+
+            // 実績ブロック（縦に積み上げ — 昼休みゾーンを自動的にスキップ）
+            const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
+            let accumulatedHours = 0;
+            dayActuals.forEach(act => {
+                const top = workHoursToY(accumulatedHours);
+                const endHours = accumulatedHours + act.hours;
+
+                // バーが午前→午後をまたぐ場合は分割して描画
+                if (accumulatedHours < MORNING_HOURS && endHours > MORNING_HOURS) {
+                    // 午前部分
+                    const morningPart = MORNING_HOURS - accumulatedHours;
+                    const morningTop = workHoursToY(accumulatedHours);
+                    const morningHeight = morningPart * DAILY_HOUR_HEIGHT;
+                    const color = getTaskColor(act.version, act.task);
+                    html += `<div class="actual-tl-dv-block" style="top:${morningTop}px;height:${morningHeight}px;background:${color};"
+                        data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
+                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                        <span class="actual-tl-dv-block-hours">${act.hours}h</span>
+                    </div>`;
+                    // 午後部分
+                    const afternoonPart = endHours - MORNING_HOURS;
+                    const afternoonTop = AFTERNOON_TOP;
+                    const afternoonHeight = afternoonPart * DAILY_HOUR_HEIGHT;
+                    html += `<div class="actual-tl-dv-block" style="top:${afternoonTop}px;height:${afternoonHeight}px;background:${color};"
+                        data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
+                        title="${escapeHtml(act.task)} ${act.hours}h (続き)">
+                        <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                    </div>`;
+                } else {
+                    // 午前のみ or 午後のみ — 通常描画
+                    const height = act.hours * DAILY_HOUR_HEIGHT;
+                    const color = getTaskColor(act.version, act.task);
+                    html += `<div class="actual-tl-dv-block" style="top:${top}px;height:${height}px;background:${color};"
+                        data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
+                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                        <span class="actual-tl-dv-block-hours">${act.hours}h</span>
+                    </div>`;
+                }
+                accumulatedHours += act.hours;
+            });
+        }
 
         html += '</div>';
     });
