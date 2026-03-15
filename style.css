@@ -5915,23 +5915,36 @@ li.drop-below {
     margin-left: 0;
 }
 
-/* 予定バー（dimmed, dashed） */
+/* 予定バー（上部レーン: 薄い帯） */
 .actual-tl-bar.scheduled {
-    opacity: 0.2;
-    border: 2px dashed;
+    opacity: 0.35;
     cursor: pointer;
-    height: 24px;
-    top: 50%;
-    transform: translateY(-50%);
+    border-radius: 2px;
+    transform: none;
 }
 
 .actual-tl-bar.scheduled:hover {
-    opacity: 0.45;
+    opacity: 0.55;
 }
 
 .actual-tl-bar.scheduled .actual-tl-bar-text {
     font-weight: 600;
-    font-size: 9px;
+    font-size: 8px;
+    opacity: 0.8;
+}
+
+/* 予定/実績レーン区切り線 */
+.actual-tl-row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 18px;
+    height: 1px;
+    background: var(--border-light);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1;
 }
 
 /* マージされた実績バー（連続日表示） */
@@ -6052,7 +6065,7 @@ li.drop-below {
     align-items: flex-start;
     justify-content: center;
     padding-top: 4px;
-    top: 4px;
+    top: 20px;
     bottom: 4px;
     animation: atlSelectPulse 2s ease-in-out infinite;
 }
@@ -6859,7 +6872,7 @@ li.drop-below {
     }
 
     .actual-tl-bar.scheduled {
-        height: 18px;
+        /* Mobile: thinner schedule bars */
     }
 
     /* リサイズハンドル: タッチ用に広く */

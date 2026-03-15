@@ -40,8 +40,13 @@ const dom = {};
 /** ガントビューの日幅(px) */
 const GANTT_DAY_WIDTH = 36;
 
-/** ガント行の高さ(px) */
-const GANTT_ROW_HEIGHT = 52;
+/** ガント行の高さ(px) — 予定レーンと実績レーンの2段構成 */
+const GANTT_ROW_HEIGHT = 72;
+
+/** 予定レーンの高さ(px) — 行上部 */
+const SCHEDULE_LANE_H = 16;
+/** 実績レーンの高さ(px) — 行下部 */
+const ACTUAL_LANE_TOP = 20;  // 予定レーン + 区切り余白
 
 /** 日別ビューの1時間幅(px) */
 const DAILY_HOUR_WIDTH = 100;
@@ -229,13 +234,13 @@ function renderGanttBody(members, year, month, daysInMonth, today) {
         }
         html += '</div>';
 
-        // 予定バー（dimmed, dashed）
+        // 予定バー（上部レーン: 薄い帯）
         const memberSchedules = getSchedulesForMember(member, year, month);
         memberSchedules.forEach(sch => {
             const barInfo = calcGanttBar(sch.startDate, sch.endDate, year, month, daysInMonth);
             if (!barInfo) return;
             const color = getTaskColor(sch.version, sch.task);
-            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};"
+            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};top:4px;height:${SCHEDULE_LANE_H - 4}px;"
                 data-schedule-id="${sch.id}" title="${escapeHtml(sch.task)} (予定)">
                 <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
             </div>`;
@@ -246,83 +251,35 @@ function renderGanttBody(members, year, month, daysInMonth, today) {
         const groupedActuals = groupActualsByDateTask(memberActuals);
         const mergedBars = mergeAdjacentActuals(groupedActuals);
 
-        // 複数日バー（merged）と単日バーを分離
-        const multiDayBars = mergedBars.filter(b => b.days > 1);
-        const singleDayBars = mergedBars.filter(b => b.days === 1);
+        // 全実績バーを実績レーン（下部）に配置
+        const actualLaneH = GANTT_ROW_HEIGHT - ACTUAL_LANE_TOP - 4; // 実績レーンの使える高さ
+        const allBars = mergedBars;
+        const barLayout = calculateBarLayout(allBars, ACTUAL_LANE_TOP, actualLaneH);
 
-        // 単日バーを日付でグループ化
-        const singleByDate = {};
-        singleDayBars.forEach(b => {
-            if (!singleByDate[b.startDate]) singleByDate[b.startDate] = [];
-            singleByDate[b.startDate].push(b);
-        });
-
-        // 複数日バーの垂直スロット計算（複数日バー同士の重なりのみ）
-        const multiLayout = calculateBarLayout(multiDayBars);
-        // 単日バーが使える垂直位置: 複数日バーがある日はオフセット
-        const multiDayDates = new Set();
-        multiDayBars.forEach(b => {
-            const s = new Date(b.startDate);
-            const e = new Date(b.endDate);
-            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-                multiDayDates.add(d.toISOString().slice(0, 10));
-            }
-        });
-
-        // 複数日バーを描画
-        multiDayBars.forEach((bar, idx) => {
+        allBars.forEach((bar, idx) => {
             const startDay = new Date(bar.startDate).getDate();
             const endDay = new Date(bar.endDate).getDate();
             const spanDays = endDay - startDay + 1;
             const left = (startDay - 1) * GANTT_DAY_WIDTH + 1;
             const width = spanDays * GANTT_DAY_WIDTH - 2;
             const color = getTaskColor(bar.version, bar.task);
-            const layout = multiLayout[idx];
-            html += `<div class="actual-tl-bar actual merged" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
-                data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
-                title="${escapeHtml(bar.task)} ${bar.totalHours}h (${bar.days}日間)">
-                <span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span>
-                <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
-            </div>`;
-        });
+            const layout = barLayout[idx];
+            const mergedClass = bar.days > 1 ? ' merged' : '';
 
-        // 単日バーを描画 — 1タスクなら通常バー、複数タスクならセグメントバー
-        Object.entries(singleByDate).forEach(([dateStr, bars]) => {
-            const dayNum = new Date(dateStr).getDate();
-            const left = (dayNum - 1) * GANTT_DAY_WIDTH + 2;
-            const width = GANTT_DAY_WIDTH - 4;
-            // 複数日バーと重なる日はオフセット
-            const overlapMulti = multiDayDates.has(dateStr);
-            const barH = overlapMulti ? 18 : 24;
-            const barTop = overlapMulti
-                ? GANTT_ROW_HEIGHT - barH - 4
-                : (GANTT_ROW_HEIGHT - barH) / 2;
-            const allIds = bars.flatMap(b => b.ids);
-            const totalHours = bars.reduce((s, b) => s + b.totalHours, 0);
-
-            if (bars.length === 1) {
-                // 1タスク → 通常バー
-                const bar = bars[0];
-                const color = getTaskColor(bar.version, bar.task);
-                html += `<div class="actual-tl-bar actual" style="left:${left}px;width:${width}px;height:${barH}px;top:${barTop}px;background:${color};"
-                    data-actual-ids="${allIds.join(',')}" data-start-date="${dateStr}" data-end-date="${dateStr}" data-member="${escapeHtml(member)}"
+            if (bar.days === 1) {
+                // 単日バー
+                html += `<div class="actual-tl-bar actual${mergedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
+                    data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
                     title="${escapeHtml(bar.task)} ${bar.totalHours}h">
                     <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
                 </div>`;
             } else {
-                // 複数タスク → セグメントバー
-                let segHtml = '';
-                bars.forEach(bar => {
-                    const pct = (bar.totalHours / totalHours) * 100;
-                    const color = getTaskColor(bar.version, bar.task);
-                    segHtml += `<div class="actual-tl-seg" style="width:${pct}%;background:${color};" title="${escapeHtml(bar.task)} ${bar.totalHours}h"></div>`;
-                });
-                const countBadge = bars.length > 1 ? `<span class="actual-tl-bar-count">${bars.length}</span>` : '';
-                html += `<div class="actual-tl-bar actual segmented" style="left:${left}px;width:${width}px;height:${barH}px;top:${barTop}px;"
-                    data-actual-ids="${allIds.join(',')}" data-start-date="${dateStr}" data-end-date="${dateStr}" data-member="${escapeHtml(member)}"
-                    title="${bars.map(b => b.task).join(', ')} 計${totalHours}h">
-                    <div class="actual-tl-seg-track">${segHtml}</div>
-                    ${countBadge}
+                // 複数日バー
+                html += `<div class="actual-tl-bar actual${mergedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
+                    data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
+                    title="${escapeHtml(bar.task)} ${bar.totalHours}h (${bar.days}日間)">
+                    <span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span>
+                    <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
                 </div>`;
             }
         });
@@ -2161,13 +2118,18 @@ function mergeAdjacentActuals(groupedActuals) {
 
 /**
  * 同じ日に重なるバーの垂直レイアウトを計算
+ * @param {Array} mergedBars バー配列
+ * @param {number} laneTop レーン開始Y座標（デフォルト: ACTUAL_LANE_TOP）
+ * @param {number} laneHeight レーンの高さ（デフォルト: 行全体）
  * @returns {Array<{top: number, height: number}>} 各バーの top と height
  */
-function calculateBarLayout(mergedBars) {
-    const ROW_PADDING = 4;
+function calculateBarLayout(mergedBars, laneTop, laneHeight) {
+    const lt = laneTop !== undefined ? laneTop : 0;
+    const lh = laneHeight !== undefined ? laneHeight : GANTT_ROW_HEIGHT;
     const BAR_GAP = 2;
-    const DEFAULT_BAR_H = 24;
-    const rowInner = GANTT_ROW_HEIGHT - ROW_PADDING * 2;
+    const DEFAULT_BAR_H = Math.min(22, lh - 4);
+    const PADDING = 2;
+    const innerH = lh - PADDING * 2;
 
     // 各日にどのバーが存在するかマッピング
     const dayBars = {};
@@ -2183,7 +2145,6 @@ function calculateBarLayout(mergedBars) {
 
     // 各バーの「最大同日重なり数」を計算
     const barMaxOverlap = new Array(mergedBars.length).fill(1);
-    const barSlot = new Array(mergedBars.length).fill(0);
 
     // グリーディなスロット割当: 各日の重なりバーにスロットを配分
     const assignedSlots = {};
@@ -2198,37 +2159,33 @@ function calculateBarLayout(mergedBars) {
     // 安定的なスロット割当
     Object.entries(dayBars).forEach(([, barIndices]) => {
         const usedSlots = new Set();
-        // 既に割り当て済みのスロットを確認
         barIndices.forEach(idx => {
             if (assignedSlots[idx] !== undefined) {
                 usedSlots.add(assignedSlots[idx]);
             }
         });
-        // 未割当バーにスロット配分
         let nextSlot = 0;
         barIndices.forEach(idx => {
             if (assignedSlots[idx] !== undefined) return;
             while (usedSlots.has(nextSlot)) nextSlot++;
             assignedSlots[idx] = nextSlot;
-            barSlot[idx] = nextSlot;
             usedSlots.add(nextSlot);
             nextSlot++;
         });
     });
 
-    // 実際にスロットが割り当てられたか確認して、位置を計算
     return mergedBars.map((_, idx) => {
         const overlap = barMaxOverlap[idx];
         const slot = assignedSlots[idx] || 0;
 
         if (overlap <= 1) {
-            // 重なりなし → 行中央
-            return { top: (GANTT_ROW_HEIGHT - DEFAULT_BAR_H) / 2, height: DEFAULT_BAR_H };
+            // 重なりなし → レーン中央
+            return { top: lt + PADDING + (innerH - DEFAULT_BAR_H) / 2, height: DEFAULT_BAR_H };
         }
 
-        // 重なりあり → 等分配置
-        const barH = Math.max(16, Math.floor((rowInner - BAR_GAP * (overlap - 1)) / overlap));
-        const top = ROW_PADDING + slot * (barH + BAR_GAP);
+        // 重なりあり → レーン内で等分配置
+        const barH = Math.max(14, Math.floor((innerH - BAR_GAP * (overlap - 1)) / overlap));
+        const top = lt + PADDING + slot * (barH + BAR_GAP);
         return { top, height: barH };
     });
 }
