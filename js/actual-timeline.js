@@ -2118,6 +2118,7 @@ function mergeAdjacentActuals(groupedActuals) {
 
 /**
  * 同じ日に重なるバーの垂直レイアウトを計算
+ * 重なりがないバーも異なるスロットに分散配置し、視覚的な密集を避ける
  * @param {Array} mergedBars バー配列
  * @param {number} laneTop レーン開始Y座標（デフォルト: ACTUAL_LANE_TOP）
  * @param {number} laneHeight レーンの高さ（デフォルト: 行全体）
@@ -2127,9 +2128,11 @@ function calculateBarLayout(mergedBars, laneTop, laneHeight) {
     const lt = laneTop !== undefined ? laneTop : 0;
     const lh = laneHeight !== undefined ? laneHeight : GANTT_ROW_HEIGHT;
     const BAR_GAP = 2;
-    const DEFAULT_BAR_H = Math.min(22, lh - 4);
+    const DEFAULT_BAR_H = Math.min(20, lh - 4);
     const PADDING = 2;
     const innerH = lh - PADDING * 2;
+
+    if (mergedBars.length === 0) return [];
 
     // 各日にどのバーが存在するかマッピング
     const dayBars = {};
@@ -2143,48 +2146,53 @@ function calculateBarLayout(mergedBars, laneTop, laneHeight) {
         }
     });
 
-    // 各バーの「最大同日重なり数」を計算
-    const barMaxOverlap = new Array(mergedBars.length).fill(1);
-
-    // グリーディなスロット割当: 各日の重なりバーにスロットを配分
-    const assignedSlots = {};
+    // グローバル最大同日重なり数
+    let globalMaxOverlap = 1;
     Object.values(dayBars).forEach(barIndices => {
-        if (barIndices.length <= 1) return;
-        const count = barIndices.length;
-        barIndices.forEach(idx => {
-            barMaxOverlap[idx] = Math.max(barMaxOverlap[idx], count);
-        });
+        globalMaxOverlap = Math.max(globalMaxOverlap, barIndices.length);
     });
 
-    // 安定的なスロット割当
-    Object.entries(dayBars).forEach(([, barIndices]) => {
-        const usedSlots = new Set();
-        barIndices.forEach(idx => {
-            if (assignedSlots[idx] !== undefined) {
-                usedSlots.add(assignedSlots[idx]);
-            }
+    // スロット数 = 最低でもバー数（全バーが異なるスロットに入れるように）
+    // ただし、同日重なりがある場合はその最大値以上
+    const slotCount = Math.max(globalMaxOverlap, Math.min(mergedBars.length, 3));
+
+    // グリーディなスロット割当: 重なりのあるバーを優先的にスロット配分
+    const assignedSlots = {};
+
+    // まず同日重なりがあるバーにスロットを割り当て
+    Object.entries(dayBars)
+        .sort(([, a], [, b]) => b.length - a.length) // 重なり数が多い日から処理
+        .forEach(([, barIndices]) => {
+            const usedSlots = new Set();
+            barIndices.forEach(idx => {
+                if (assignedSlots[idx] !== undefined) {
+                    usedSlots.add(assignedSlots[idx]);
+                }
+            });
+            let nextSlot = 0;
+            barIndices.forEach(idx => {
+                if (assignedSlots[idx] !== undefined) return;
+                while (usedSlots.has(nextSlot)) nextSlot++;
+                assignedSlots[idx] = nextSlot;
+                usedSlots.add(nextSlot);
+                nextSlot++;
+            });
         });
-        let nextSlot = 0;
-        barIndices.forEach(idx => {
-            if (assignedSlots[idx] !== undefined) return;
-            while (usedSlots.has(nextSlot)) nextSlot++;
-            assignedSlots[idx] = nextSlot;
-            usedSlots.add(nextSlot);
-            nextSlot++;
-        });
+
+    // 未割当バー（どの日にも重ならなかった単独バー）にもスロット分散
+    mergedBars.forEach((_, idx) => {
+        if (assignedSlots[idx] === undefined) {
+            assignedSlots[idx] = idx % slotCount;
+        }
     });
+
+    // バーの高さとY位置を計算
+    const barH = slotCount <= 1
+        ? DEFAULT_BAR_H
+        : Math.max(14, Math.floor((innerH - BAR_GAP * (slotCount - 1)) / slotCount));
 
     return mergedBars.map((_, idx) => {
-        const overlap = barMaxOverlap[idx];
         const slot = assignedSlots[idx] || 0;
-
-        if (overlap <= 1) {
-            // 重なりなし → レーン中央
-            return { top: lt + PADDING + (innerH - DEFAULT_BAR_H) / 2, height: DEFAULT_BAR_H };
-        }
-
-        // 重なりあり → レーン内で等分配置
-        const barH = Math.max(14, Math.floor((innerH - BAR_GAP * (overlap - 1)) / overlap));
         const top = lt + PADDING + slot * (barH + BAR_GAP);
         return { top, height: barH };
     });
