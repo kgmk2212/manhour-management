@@ -5617,24 +5617,28 @@ li.drop-below {
 
 .actual-tl-section {
     flex: 1;
-    display: flex;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: 156px 1fr;
+    grid-template-rows: auto 1fr;
+    overflow: auto;
     position: relative;
     min-width: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ラベル列・タイムラインスクロールは display:contents でグリッドに展開 */
+.actual-tl-labels {
+    display: contents;
 }
 
 /* ---- ラベル列 ---- */
-.actual-tl-labels {
-    width: 156px;
-    flex-shrink: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-}
-
 .actual-tl-labels-header {
+    grid-column: 1;
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 20;
     height: 50px;
     display: flex;
     align-items: center;
@@ -5645,13 +5649,18 @@ li.drop-below {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     background: var(--surface-elevated);
-    flex-shrink: 0;
 }
 
 .actual-tl-labels-body {
-    flex: 1;
-    overflow: hidden;
+    grid-column: 1;
+    grid-row: 2;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
 }
 
 .actual-tl-label-row {
@@ -5709,15 +5718,13 @@ li.drop-below {
 
 /* ---- タイムラインスクロール領域 ---- */
 .actual-tl-timeline-scroll {
-    flex: 1;
-    overflow: auto;
-    position: relative;
-    min-width: 0;
-    -webkit-overflow-scrolling: touch;
+    display: contents;
 }
 
 /* ---- ガントビュー: ヘッダー（日付） ---- */
 .actual-tl-timeline-header {
+    grid-column: 2;
+    grid-row: 1;
     position: sticky;
     top: 0;
     z-index: 15;
@@ -5725,6 +5732,11 @@ li.drop-below {
     display: flex;
     background: var(--surface-elevated);
     border-bottom: 1px solid var(--border);
+}
+
+.actual-tl-timeline-body {
+    grid-column: 2;
+    grid-row: 2;
 }
 
 .actual-tl-day-header {
@@ -7008,11 +7020,6 @@ li.drop-below {
     flex-shrink: 0;
 }
 
-/* ---- タッチ・スクロール最適化 ---- */
-.actual-tl-timeline-scroll {
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
-}
 
 
 .actual-tl-pane-body {
@@ -7113,8 +7120,8 @@ li.drop-below {
     }
 
     /* ラベル列: 狭くする */
-    .actual-tl-labels {
-        width: 80px;
+    .actual-tl-section {
+        grid-template-columns: 80px 1fr;
     }
 
     .actual-tl-labels-header {

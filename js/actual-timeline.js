@@ -86,6 +86,7 @@ const AVATAR_COLORS = [
 export function initActualTimeline() {
     // DOM参照をキャッシュ
     dom.container = document.getElementById('actualTimeline');
+    dom.section = dom.container?.querySelector('.actual-tl-section');
     dom.labelsHeader = document.getElementById('atlLabelsHeader');
     dom.labelsBody = document.getElementById('atlLabelsBody');
     dom.timelineScroll = document.getElementById('atlTimelineScroll');
@@ -117,9 +118,6 @@ export function initActualTimeline() {
 
     // モバイル用オーバーレイ要素を作成
     createPaneOverlay();
-
-    // スクロール同期
-    setupScrollSync();
 
     // タイムライン内スワイプ（日別: 日付切替、ガント: 月切替）
     setupTimelineSwipe();
@@ -913,7 +911,7 @@ function placeSelectedTaskAtPosition(e, row) {
     if (!selectedTask) return;
 
     const rect = row.getBoundingClientRect();
-    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const relX = e.clientX - rect.left + dom.section.scrollLeft;
     const member = row.dataset.member;
 
     let date, defaultHours;
@@ -1141,7 +1139,7 @@ function getDropInfo(x, y) {
         const rect = row.getBoundingClientRect();
         if (y >= rect.top && y <= rect.bottom) {
             const member = row.dataset.member;
-            const relX = x - rect.left + dom.timelineScroll.scrollLeft;
+            const relX = x - rect.left + dom.section.scrollLeft;
 
             if (viewMode === 'gantt') {
                 const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
@@ -1236,7 +1234,7 @@ function onRowMouseDown(e) {
 
     const row = e.currentTarget;
     const rect = row.getBoundingClientRect();
-    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const relX = e.clientX - rect.left + dom.section.scrollLeft;
     const member = row.dataset.member;
 
     dragState = {
@@ -1330,7 +1328,7 @@ function onRowTouchStart(e) {
     const touch = e.touches[0];
     const row = e.currentTarget;
     const rect = row.getBoundingClientRect();
-    const relX = touch.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const relX = touch.clientX - rect.left + dom.section.scrollLeft;
     const member = row.dataset.member;
 
     // ロングプレスタイマー開始
@@ -1437,7 +1435,7 @@ function updateAreaDragVisual(e) {
 
     const row = dragState.row;
     const rect = row.getBoundingClientRect();
-    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const relX = e.clientX - rect.left + dom.section.scrollLeft;
 
     const x1 = Math.min(dragState.startX, relX);
     const x2 = Math.max(dragState.startX, relX);
@@ -2136,8 +2134,8 @@ function goToToday() {
     // 今日の列にスクロール
     if (viewMode === 'gantt') {
         const todayDay = now.getDate();
-        const scrollLeft = (todayDay - 1) * GANTT_DAY_WIDTH - dom.timelineScroll.clientWidth / 2;
-        dom.timelineScroll.scrollLeft = Math.max(0, scrollLeft);
+        const scrollLeft = (todayDay - 1) * GANTT_DAY_WIDTH - dom.section.clientWidth / 2;
+        dom.section.scrollLeft = Math.max(0, scrollLeft);
     }
 }
 
@@ -2227,19 +2225,6 @@ function isMobile() {
 }
 
 // ============================================
-// スクロール同期
-// ============================================
-
-function setupScrollSync() {
-    if (!dom.timelineScroll || !dom.labelsBody) return;
-
-    // ラベル列は overflow:hidden — タイムラインのスクロールに片方向追従のみ
-    // フィードバックループなし、ネイティブスクロール性能を維持
-    dom.timelineScroll.addEventListener('scroll', () => {
-        dom.labelsBody.scrollTop = dom.timelineScroll.scrollTop;
-    }, { passive: true });
-}
-
 /**
  * タイムライン内横スワイプ → 日別:日切替 / ガント:月切替（指追従アニメーション付き）
  */
@@ -2250,31 +2235,32 @@ function setupTimelineSwipe() {
     let startX = 0, startY = 0, swiping = false, confirmed = false, startTime = 0;
     let startScrollLeft = 0;
 
-    /**
-     * スクロール端チェック — スクロール可能な方向がある場合はネイティブスクロールに任せる
-     * スワイプナビゲーションはスクロール端到達時のみ発動
-     */
+    /** スクロール端チェック — 余地がある場合はネイティブスクロールに任せる */
     function canNativeScroll(dx) {
-        const sc = dom.timelineScroll;
+        const sc = dom.section;
         if (!sc) return false;
         const maxScroll = sc.scrollWidth - sc.clientWidth;
-        if (maxScroll <= 0) return false; // スクロール不要 → スワイプナビ可
-        if (dx > 0) {
-            // 右スワイプ（前へ） → 左端にいなければネイティブスクロール
-            return startScrollLeft > 2;
-        } else {
-            // 左スワイプ（次へ） → 右端にいなければネイティブスクロール
-            return startScrollLeft < maxScroll - 2;
-        }
+        if (maxScroll <= 0) return false;
+        if (dx > 0) return startScrollLeft > 2;
+        return startScrollLeft < maxScroll - 2;
+    }
+
+    /** アニメーション対象: タイムライン本体（ラベル列は動かさない） */
+    function setBodyAnim(transform, opacity, transition) {
+        [dom.timelineBody, dom.timelineHeader].forEach(el => {
+            if (!el) return;
+            el.style.transition = transition || '';
+            el.style.transform = transform;
+            el.style.opacity = opacity;
+        });
     }
 
     el.addEventListener('touchstart', (e) => {
-        // ドラッグ中やペイン内は除外
         if (dragState || e.target.closest('.actual-tl-right-pane, .actual-tl-task-card')) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         startTime = Date.now();
-        startScrollLeft = dom.timelineScroll ? dom.timelineScroll.scrollLeft : 0;
+        startScrollLeft = dom.section ? dom.section.scrollLeft : 0;
         swiping = true;
         confirmed = false;
     }, { passive: true });
@@ -2286,30 +2272,18 @@ function setupTimelineSwipe() {
 
         if (!confirmed) {
             if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-                // 縦優勢ならキャンセル
-                if (Math.abs(dy) > Math.abs(dx) * 1.2) {
-                    swiping = false;
-                    return;
-                }
-                // スクロール余地がある方向ならネイティブスクロールに委ねる
-                if (canNativeScroll(dx)) {
-                    swiping = false;
-                    return;
-                }
+                if (Math.abs(dy) > Math.abs(dx) * 1.2) { swiping = false; return; }
+                if (canNativeScroll(dx)) { swiping = false; return; }
                 confirmed = true;
-                // タイムライン本体のみ追従開始（ラベル列は固定）
-                dom.timelineScroll.style.transition = 'none';
+                setBodyAnim('translateX(0)', '1', 'none');
             }
             return;
         }
 
         if (e.cancelable) e.preventDefault();
-
-        // 指追従: タイムライン本体のみ横にずらす（ラベル列は固定）
         const clamped = Math.max(-120, Math.min(120, dx));
-        const opacity = 1 - Math.abs(clamped) / 300;
-        dom.timelineScroll.style.transform = `translateX(${clamped}px)`;
-        dom.timelineScroll.style.opacity = opacity;
+        const opacity = String(1 - Math.abs(clamped) / 300);
+        setBodyAnim(`translateX(${clamped}px)`, opacity, 'none');
     }, { passive: false });
 
     el.addEventListener('touchend', (e) => {
@@ -2322,35 +2296,21 @@ function setupTimelineSwipe() {
         const threshold = velocity > 0.4 ? 30 : 60;
 
         if (confirmed && Math.abs(dx) > threshold) {
-            const direction = dx > 0 ? -1 : 1; // 右スワイプ → 前日/前月
-            // アニメーション: スライドアウト（タイムライン本体のみ）
+            const direction = dx > 0 ? -1 : 1;
             const slideOut = direction > 0 ? -200 : 200;
-            dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            dom.timelineScroll.style.transform = `translateX(${slideOut}px)`;
-            dom.timelineScroll.style.opacity = '0';
+            const trans = 'transform 0.2s ease, opacity 0.2s ease';
+            setBodyAnim(`translateX(${slideOut}px)`, '0', trans);
 
             setTimeout(() => {
-                // ナビゲーション実行
-                if (viewMode === 'daily') {
-                    navigateDay(direction);
-                } else {
-                    navigateMonth(direction);
-                }
-                // スライドイン（反対側から）
-                dom.timelineScroll.style.transition = 'none';
-                dom.timelineScroll.style.transform = `translateX(${-slideOut}px)`;
-                dom.timelineScroll.style.opacity = '0';
+                if (viewMode === 'daily') navigateDay(direction);
+                else navigateMonth(direction);
+                setBodyAnim(`translateX(${-slideOut}px)`, '0', 'none');
                 requestAnimationFrame(() => {
-                    dom.timelineScroll.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-                    dom.timelineScroll.style.transform = 'translateX(0)';
-                    dom.timelineScroll.style.opacity = '1';
+                    setBodyAnim('translateX(0)', '1', 'transform 0.25s ease, opacity 0.25s ease');
                 });
             }, 200);
         } else {
-            // 戻す
-            dom.timelineScroll.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            dom.timelineScroll.style.transform = 'translateX(0)';
-            dom.timelineScroll.style.opacity = '1';
+            setBodyAnim('translateX(0)', '1', 'transform 0.2s ease, opacity 0.2s ease');
         }
     }, { passive: true });
 }
