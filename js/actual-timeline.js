@@ -41,7 +41,7 @@ const dom = {};
 const GANTT_DAY_WIDTH = 36;
 
 /** ガント行の高さ(px) */
-const GANTT_ROW_HEIGHT = 52;
+const GANTT_ROW_HEIGHT = 48;
 
 /** 日別ビューの1時間幅(px) */
 const DAILY_HOUR_WIDTH = 100;
