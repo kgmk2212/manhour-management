@@ -1,0 +1,1716 @@
+// ============================================
+// タイムライン実績入力モジュール (actual-timeline.js)
+// ============================================
+
+import {
+    estimates, actuals, schedules, memberOrder
+} from './state.js';
+
+import { showAlert, sortMembers, formatHours, escapeHtml } from './utils.js';
+import { getHoliday, getDayOfWeek } from './actual.js';
+import { getTaskColor } from './schedule.js';
+import { pushAction } from './history.js';
+import { saveData } from './storage.js';
+
+// ============================================
+// モジュール内部状態
+// ============================================
+
+/** 現在の表示年月 (YYYY-MM) */
+let currentMonth = '';
+
+/** 現在のビューモード: 'gantt' | 'daily' */
+let viewMode = 'gantt';
+
+/** 右ペイン開閉状態 */
+let paneOpen = false;
+
+/** 日別ビュー: 現在の日付 (YYYY-MM-DD) */
+let currentDate = '';
+
+/** ドラッグ状態 */
+let dragState = null;
+
+/** DOM参照キャッシュ */
+const dom = {};
+
+/** ガントビューの日幅(px) */
+const GANTT_DAY_WIDTH = 36;
+
+/** ガント行の高さ(px) */
+const GANTT_ROW_HEIGHT = 52;
+
+/** 日別ビューの1時間幅(px) */
+const DAILY_HOUR_WIDTH = 100;
+
+/** 日別ビューの行高さ(px) */
+const DAILY_ROW_HEIGHT = 72;
+
+/** 日別ビューの業務時間 */
+const WORK_START_HOUR = 9;
+const WORK_END_HOUR = 18;
+
+/** メンバーアバター色パレット */
+const AVATAR_COLORS = [
+    '#2D5A27', '#1D6FA5', '#7C3AED', '#C4841D',
+    '#BE185D', '#0F766E', '#475569', '#1E3A5F',
+    '#C42020', '#128F40'
+];
+
+// ============================================
+// 初期化
+// ============================================
+
+/**
+ * タイムラインモジュール初期化
+ */
+export function initActualTimeline() {
+    // DOM参照をキャッシュ
+    dom.container = document.getElementById('actualTimeline');
+    dom.labelsHeader = document.getElementById('atlLabelsHeader');
+    dom.labelsBody = document.getElementById('atlLabelsBody');
+    dom.timelineScroll = document.getElementById('atlTimelineScroll');
+    dom.timelineHeader = document.getElementById('atlTimelineHeader');
+    dom.timelineBody = document.getElementById('atlTimelineBody');
+    dom.currentMonth = document.getElementById('atlCurrentMonth');
+    dom.rightPane = document.getElementById('atlRightPane');
+    dom.paneBody = document.getElementById('atlPaneBody');
+
+    if (!dom.container) return;
+
+    // 初期月を設定
+    const now = new Date();
+    currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    currentDate = now.toISOString().slice(0, 10);
+
+    // ナビゲーションボタン
+    document.getElementById('atlPrevMonth')?.addEventListener('click', () => navigateMonth(-1));
+    document.getElementById('atlNextMonth')?.addEventListener('click', () => navigateMonth(1));
+    document.getElementById('atlToday')?.addEventListener('click', goToToday);
+
+    // ビュー切替
+    document.getElementById('atlViewGantt')?.addEventListener('click', () => setViewMode('gantt'));
+    document.getElementById('atlViewDaily')?.addEventListener('click', () => setViewMode('daily'));
+
+    // 右ペイントグル
+    document.getElementById('atlTogglePane')?.addEventListener('click', togglePane);
+    document.getElementById('atlPaneClose')?.addEventListener('click', () => setPane(false));
+
+    // スクロール同期
+    setupScrollSync();
+
+    console.log('✅ actual-timeline.js: 初期化完了');
+}
+
+// ============================================
+// メインレンダリング
+// ============================================
+
+/**
+ * タイムラインビューを描画
+ */
+export function renderActualTimeline() {
+    if (!dom.container) return;
+
+    if (viewMode === 'gantt') {
+        renderGanttView();
+    } else {
+        renderDailyView();
+    }
+
+    renderRightPane();
+}
+
+// ============================================
+// ガントビュー
+// ============================================
+
+/**
+ * ガントビュー描画
+ */
+function renderGanttView() {
+    const [year, month] = currentMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 月表示更新
+    dom.currentMonth.textContent = `${year}年${month}月`;
+
+    // メンバーリスト取得
+    const members = getTimelineMembers();
+
+    // ヘッダー描画
+    renderGanttHeader(year, month, daysInMonth, today);
+
+    // ラベル描画
+    renderGanttLabels(members);
+
+    // タイムライン本体描画
+    renderGanttBody(members, year, month, daysInMonth, today);
+}
+
+/**
+ * ガントヘッダー描画（日付行）
+ */
+function renderGanttHeader(year, month, daysInMonth, today) {
+    let html = '';
+    const totalWidth = daysInMonth * GANTT_DAY_WIDTH;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dow = new Date(dateStr).getDay();
+        const holiday = getHoliday(dateStr);
+        const isWeekend = dow === 0 || dow === 6;
+        const isToday = dateStr === today;
+        const dayLabel = getDayOfWeek(dateStr);
+
+        let cls = 'actual-tl-day-header';
+        if (isWeekend) cls += ' weekend';
+        if (holiday) cls += ' holiday';
+        if (isToday) cls += ' today';
+
+        html += `<div class="${cls}" style="width:${GANTT_DAY_WIDTH}px;min-width:${GANTT_DAY_WIDTH}px;" data-date="${dateStr}">
+            <span class="actual-tl-day-num">${d}</span>
+            <span class="actual-tl-day-label">${dayLabel}</span>
+        </div>`;
+    }
+
+    dom.timelineHeader.innerHTML = html;
+    dom.timelineHeader.style.width = `${totalWidth}px`;
+}
+
+/**
+ * ガントラベル列描画
+ */
+function renderGanttLabels(members) {
+    let html = '';
+    members.forEach((member, i) => {
+        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const initial = member.charAt(0);
+        const totalHours = getMemberTotalHours(member, currentMonth);
+        html += `<div class="actual-tl-label-row" data-member="${escapeHtml(member)}" style="height:${GANTT_ROW_HEIGHT}px;">
+            <div class="actual-tl-avatar" style="background:${color};">${escapeHtml(initial)}</div>
+            <div class="actual-tl-label-info">
+                <div class="actual-tl-label-name">${escapeHtml(member)}</div>
+                <div class="actual-tl-label-meta">${formatHours(totalHours)}h</div>
+            </div>
+        </div>`;
+    });
+    dom.labelsBody.innerHTML = html;
+}
+
+/**
+ * ガント本体描画（日セル + バー）
+ */
+function renderGanttBody(members, year, month, daysInMonth, today) {
+    const totalWidth = daysInMonth * GANTT_DAY_WIDTH;
+    let html = '';
+
+    members.forEach((member) => {
+        html += `<div class="actual-tl-row" data-member="${escapeHtml(member)}" style="height:${GANTT_ROW_HEIGHT}px;">`;
+
+        // 背景セル
+        html += '<div class="actual-tl-row-bg">';
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dow = new Date(dateStr).getDay();
+            const holiday = getHoliday(dateStr);
+            const isWeekend = dow === 0 || dow === 6;
+            let cls = 'actual-tl-day-cell';
+            if (isWeekend) cls += ' weekend';
+            if (holiday) cls += ' holiday';
+            html += `<div class="${cls}" style="width:${GANTT_DAY_WIDTH}px;min-width:${GANTT_DAY_WIDTH}px;" data-date="${dateStr}"></div>`;
+        }
+        html += '</div>';
+
+        // 予定バー（dimmed, dashed）
+        const memberSchedules = getSchedulesForMember(member, year, month);
+        memberSchedules.forEach(sch => {
+            const barInfo = calcGanttBar(sch.startDate, sch.endDate, year, month, daysInMonth);
+            if (!barInfo) return;
+            const color = getTaskColor(sch.version, sch.task);
+            html += `<div class="actual-tl-bar scheduled" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};"
+                data-schedule-id="${sch.id}" title="${escapeHtml(sch.task)} (予定)">
+                <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
+            </div>`;
+        });
+
+        // 実績バー（solid）
+        const memberActuals = getActualsForMember(member, year, month);
+        const groupedActuals = groupActualsByDateTask(memberActuals);
+        groupedActuals.forEach(group => {
+            const dayNum = new Date(group.date).getDate();
+            const left = (dayNum - 1) * GANTT_DAY_WIDTH + 2;
+            const width = GANTT_DAY_WIDTH - 4;
+            const color = getTaskColor(group.version, group.task);
+            html += `<div class="actual-tl-bar actual" style="left:${left}px;width:${width}px;background:${color};"
+                data-actual-ids="${group.ids.join(',')}" data-date="${group.date}" data-member="${escapeHtml(member)}"
+                title="${escapeHtml(group.task)} ${group.hours}h">
+                <span class="actual-tl-bar-hours">${group.hours}h</span>
+            </div>`;
+        });
+
+        // 今日ライン
+        if (today.startsWith(`${year}-${String(month).padStart(2, '0')}`)) {
+            const todayDay = new Date(today).getDate();
+            const todayLeft = (todayDay - 1) * GANTT_DAY_WIDTH + GANTT_DAY_WIDTH / 2;
+            html += `<div class="actual-tl-today-line" style="left:${todayLeft}px;"></div>`;
+        }
+
+        html += '</div>';
+    });
+
+    dom.timelineBody.innerHTML = html;
+    dom.timelineBody.style.width = `${totalWidth}px`;
+
+    // イベント設定
+    setupGanttEvents();
+}
+
+/**
+ * ガントバーの左位置と幅を計算
+ */
+function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month - 1, daysInMonth);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (end < monthStart || start > monthEnd) return null;
+
+    const clampedStart = start < monthStart ? monthStart : start;
+    const clampedEnd = end > monthEnd ? monthEnd : end;
+
+    const startDay = clampedStart.getDate();
+    const endDay = clampedEnd.getDate();
+
+    const left = (startDay - 1) * GANTT_DAY_WIDTH;
+    const width = (endDay - startDay + 1) * GANTT_DAY_WIDTH;
+
+    return { left, width };
+}
+
+// ============================================
+// 日別ビュー
+// ============================================
+
+/**
+ * 日別ビュー描画 (9:00-18:00)
+ */
+function renderDailyView() {
+    const dateStr = currentDate;
+    const dow = getDayOfWeek(dateStr);
+
+    // 月表示更新 → 日表示
+    const d = new Date(dateStr);
+    dom.currentMonth.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
+
+    const members = getTimelineMembers();
+    const totalHours = WORK_END_HOUR - WORK_START_HOUR;
+    const totalWidth = totalHours * DAILY_HOUR_WIDTH;
+
+    // ヘッダー描画
+    renderDailyHeader(totalWidth);
+
+    // ラベル描画
+    renderDailyLabels(members);
+
+    // タイムライン本体描画
+    renderDailyBody(members, dateStr, totalWidth);
+}
+
+/**
+ * 日別ヘッダー描画（時間軸）
+ */
+function renderDailyHeader(totalWidth) {
+    let html = '';
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+        const isLunch = h === 12;
+        const isNow = h === currentHour;
+        let cls = 'actual-tl-hour-header';
+        if (isLunch) cls += ' lunch';
+        if (isNow) cls += ' now';
+        html += `<div class="${cls}" style="width:${DAILY_HOUR_WIDTH}px;min-width:${DAILY_HOUR_WIDTH}px;">
+            ${h}:00
+        </div>`;
+    }
+
+    dom.timelineHeader.innerHTML = html;
+    dom.timelineHeader.style.width = `${totalWidth}px`;
+}
+
+/**
+ * 日別ラベル描画
+ */
+function renderDailyLabels(members) {
+    let html = '';
+    members.forEach((member, i) => {
+        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const initial = member.charAt(0);
+        const dayHours = getMemberDayHours(member, currentDate);
+        html += `<div class="actual-tl-label-row" data-member="${escapeHtml(member)}" style="height:${DAILY_ROW_HEIGHT}px;">
+            <div class="actual-tl-avatar" style="background:${color};">${escapeHtml(initial)}</div>
+            <div class="actual-tl-label-info">
+                <div class="actual-tl-label-name">${escapeHtml(member)}</div>
+                <div class="actual-tl-label-meta">${formatHours(dayHours)}h</div>
+            </div>
+        </div>`;
+    });
+    dom.labelsBody.innerHTML = html;
+}
+
+/**
+ * 日別タイムライン本体描画
+ */
+function renderDailyBody(members, dateStr, totalWidth) {
+    let html = '';
+
+    members.forEach((member) => {
+        html += `<div class="actual-tl-row daily" data-member="${escapeHtml(member)}" style="height:${DAILY_ROW_HEIGHT}px;">`;
+
+        // 時間列背景
+        html += '<div class="actual-tl-row-bg">';
+        for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+            const isLunch = h === 12;
+            let cls = 'actual-tl-hour-cell';
+            if (isLunch) cls += ' lunch';
+            html += `<div class="${cls}" style="width:${DAILY_HOUR_WIDTH}px;min-width:${DAILY_HOUR_WIDTH}px;" data-hour="${h}"></div>`;
+        }
+        html += '</div>';
+
+        // 予定バー
+        const memberSchedules = getSchedulesForDate(member, dateStr);
+        memberSchedules.forEach(sch => {
+            const barInfo = calcDailyBar(sch);
+            if (!barInfo) return;
+            const color = getTaskColor(sch.version, sch.task);
+            html += `<div class="actual-tl-bar scheduled daily-bar" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};"
+                data-schedule-id="${sch.id}" title="${escapeHtml(sch.task)} (予定)">
+                <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
+            </div>`;
+        });
+
+        // 実績ブロック
+        const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
+        let accumulatedHours = 0;
+        dayActuals.forEach(act => {
+            const left = accumulatedHours * DAILY_HOUR_WIDTH;
+            const width = act.hours * DAILY_HOUR_WIDTH;
+            const color = getTaskColor(act.version, act.task);
+            html += `<div class="actual-tl-bar actual daily-bar" style="left:${left}px;width:${width}px;background:${color};"
+                data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
+                title="${escapeHtml(act.task)} ${act.hours}h">
+                <span class="actual-tl-bar-text">${escapeHtml(act.task)}</span>
+                <span class="actual-tl-bar-hours">${act.hours}h</span>
+                <div class="actual-tl-bar-resize left"></div>
+                <div class="actual-tl-bar-resize right"></div>
+            </div>`;
+            accumulatedHours += act.hours;
+        });
+
+        // 現在時刻ライン
+        const now = new Date();
+        if (dateStr === now.toISOString().slice(0, 10)) {
+            const nowHour = now.getHours() + now.getMinutes() / 60;
+            if (nowHour >= WORK_START_HOUR && nowHour <= WORK_END_HOUR) {
+                const nowLeft = (nowHour - WORK_START_HOUR) * DAILY_HOUR_WIDTH;
+                html += `<div class="actual-tl-today-line" style="left:${nowLeft}px;"></div>`;
+            }
+        }
+
+        html += '</div>';
+    });
+
+    dom.timelineBody.innerHTML = html;
+    dom.timelineBody.style.width = `${totalWidth}px`;
+
+    // イベント設定
+    setupDailyEvents();
+}
+
+/**
+ * 日別バー位置計算（予定をhour幅に変換）
+ */
+function calcDailyBar(schedule) {
+    // スケジュールは日単位なので、予定バーは全幅で表示
+    const totalHours = WORK_END_HOUR - WORK_START_HOUR;
+    const hoursPerDay = schedule.hoursPerDay || 8;
+    const width = Math.min(hoursPerDay, totalHours) * DAILY_HOUR_WIDTH;
+    return { left: 0, width };
+}
+
+// ============================================
+// 右ペイン（タスクパネル）
+// ============================================
+
+/**
+ * 右ペインを描画
+ */
+function renderRightPane() {
+    if (!dom.paneBody) return;
+
+    const members = getTimelineMembers();
+    let html = '';
+
+    members.forEach((member, i) => {
+        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const initial = member.charAt(0);
+        const memberTasks = getTasksForMember(member);
+
+        if (memberTasks.length === 0) return;
+
+        html += `<div class="actual-tl-pane-section" data-member="${escapeHtml(member)}">
+            <div class="actual-tl-pane-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="actual-tl-sec-avatar" style="background:${color};">${escapeHtml(initial)}</div>
+                <span class="actual-tl-sec-name">${escapeHtml(member)}</span>
+                <span class="actual-tl-sec-count">${memberTasks.length}</span>
+                <span class="actual-tl-sec-arrow">&#9662;</span>
+            </div>
+            <div class="actual-tl-pane-cards">`;
+
+        memberTasks.forEach(task => {
+            const taskColor = getTaskColor(task.version, task.task);
+            html += `<div class="actual-tl-task-card" draggable="false"
+                data-version="${escapeHtml(task.version)}" data-task="${escapeHtml(task.task)}"
+                data-process="${escapeHtml(task.process)}" data-member="${escapeHtml(member)}"
+                data-hours="${task.hours}">
+                <div class="actual-tl-tc-bar" style="background:${taskColor};"></div>
+                <div class="actual-tl-tc-info">
+                    <div class="actual-tl-tc-name">${escapeHtml(task.task)}</div>
+                    <div class="actual-tl-tc-detail">
+                        <span class="actual-tl-tc-badge">${escapeHtml(task.version)}</span>
+                        <span class="actual-tl-tc-badge">${escapeHtml(task.process)}</span>
+                    </div>
+                </div>
+                <span class="actual-tl-tc-hours">${formatHours(task.hours)}h</span>
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    if (!html) {
+        html = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">タスクがありません</div>';
+    }
+
+    dom.paneBody.innerHTML = html;
+
+    // タスクカードにドラッグイベント設定
+    setupTaskCardDrag();
+}
+
+// ============================================
+// ドラッグ&ドロップ: 右ペインからのドラッグ
+// ============================================
+
+/**
+ * タスクカードのドラッグイベント設定
+ */
+function setupTaskCardDrag() {
+    const cards = dom.paneBody?.querySelectorAll('.actual-tl-task-card');
+    if (!cards) return;
+
+    cards.forEach(card => {
+        card.addEventListener('mousedown', onCardMouseDown);
+        card.addEventListener('touchstart', onCardTouchStart, { passive: false });
+    });
+}
+
+function onCardMouseDown(e) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    startCardDrag(e.currentTarget, e.clientX, e.clientY);
+    document.addEventListener('mousemove', onCardMouseMove);
+    document.addEventListener('mouseup', onCardMouseUp);
+}
+
+function onCardTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    startCardDrag(e.currentTarget, touch.clientX, touch.clientY);
+    document.addEventListener('touchmove', onCardTouchMove, { passive: false });
+    document.addEventListener('touchend', onCardTouchEnd);
+}
+
+function startCardDrag(card, x, y) {
+    const version = card.dataset.version;
+    const task = card.dataset.task;
+    const process = card.dataset.process;
+    const member = card.dataset.member;
+    const hours = parseFloat(card.dataset.hours) || 1;
+    const color = getTaskColor(version, task);
+
+    dragState = {
+        type: 'card',
+        version, task, process, member, hours, color,
+        startX: x, startY: y,
+        ghost: null
+    };
+}
+
+function onCardMouseMove(e) {
+    if (!dragState || dragState.type !== 'card') return;
+    updateCardDrag(e.clientX, e.clientY);
+}
+
+function onCardTouchMove(e) {
+    if (!dragState || dragState.type !== 'card') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    updateCardDrag(touch.clientX, touch.clientY);
+}
+
+function updateCardDrag(x, y) {
+    // 一定距離動いたらゴースト表示
+    const dist = Math.abs(x - dragState.startX) + Math.abs(y - dragState.startY);
+    if (dist < 5) return;
+
+    if (!dragState.ghost) {
+        dragState.ghost = createDragGhost(dragState);
+        document.body.appendChild(dragState.ghost);
+    }
+
+    dragState.ghost.style.left = `${x + 12}px`;
+    dragState.ghost.style.top = `${y - 16}px`;
+
+    // ドロップターゲットのハイライト
+    updateDropTarget(x, y);
+}
+
+function onCardMouseUp(e) {
+    document.removeEventListener('mousemove', onCardMouseMove);
+    document.removeEventListener('mouseup', onCardMouseUp);
+    finishCardDrag(e.clientX, e.clientY);
+}
+
+function onCardTouchEnd(e) {
+    document.removeEventListener('touchmove', onCardTouchMove);
+    document.removeEventListener('touchend', onCardTouchEnd);
+    const touch = e.changedTouches[0];
+    finishCardDrag(touch.clientX, touch.clientY);
+}
+
+function finishCardDrag(x, y) {
+    if (!dragState || dragState.type !== 'card') {
+        dragState = null;
+        return;
+    }
+
+    // ゴースト削除
+    if (dragState.ghost) {
+        dragState.ghost.remove();
+    }
+
+    // ドロップターゲットをクリア
+    clearDropTargets();
+
+    // ドロップ先判定
+    const dropInfo = getDropInfo(x, y);
+    if (dropInfo) {
+        showInlineEditor(dropInfo, dragState);
+    }
+
+    dragState = null;
+}
+
+/**
+ * ドラッグゴースト要素作成
+ */
+function createDragGhost(state) {
+    const ghost = document.createElement('div');
+    ghost.className = 'actual-tl-drag-ghost';
+    ghost.innerHTML = `
+        <div class="actual-tl-dg-bar" style="background:${state.color};"></div>
+        <span>${escapeHtml(state.task)}</span>
+    `;
+    return ghost;
+}
+
+/**
+ * ドロップターゲットハイライト更新
+ */
+function updateDropTarget(_x, y) {
+    clearDropTargets();
+
+    const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+    const labels = dom.labelsBody?.querySelectorAll('.actual-tl-label-row');
+    if (!rows) return;
+
+    rows.forEach((row, i) => {
+        const rect = row.getBoundingClientRect();
+        if (y >= rect.top && y <= rect.bottom) {
+            row.classList.add('drop-target');
+            if (labels && labels[i]) {
+                labels[i].classList.add('drop-target');
+            }
+        }
+    });
+}
+
+function clearDropTargets() {
+    document.querySelectorAll('.actual-tl-row.drop-target, .actual-tl-label-row.drop-target').forEach(el => {
+        el.classList.remove('drop-target');
+    });
+}
+
+/**
+ * ドロップ先情報を取得
+ */
+function getDropInfo(x, y) {
+    const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+    if (!rows) return null;
+
+    for (const row of rows) {
+        const rect = row.getBoundingClientRect();
+        if (y >= rect.top && y <= rect.bottom) {
+            const member = row.dataset.member;
+            const relX = x - rect.left + dom.timelineScroll.scrollLeft;
+
+            if (viewMode === 'gantt') {
+                const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
+                const [yr, mo] = currentMonth.split('-').map(Number);
+                const daysInMonth = new Date(yr, mo, 0).getDate();
+                const day = Math.max(1, Math.min(daysInMonth, dayIdx + 1));
+                const date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                return { member, date, row, rect };
+            } else {
+                const hourOffset = relX / DAILY_HOUR_WIDTH;
+                const hour = Math.floor(WORK_START_HOUR + hourOffset);
+                return { member, date: currentDate, hour, row, rect };
+            }
+        }
+    }
+    return null;
+}
+
+// ============================================
+// 空エリアドラッグ → タスクピッカー
+// ============================================
+
+function setupGanttEvents() {
+    const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+    if (!rows) return;
+
+    rows.forEach(row => {
+        row.addEventListener('mousedown', onRowMouseDown);
+    });
+
+    // 実績バーにクリックイベント
+    const actualBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.actual');
+    actualBars?.forEach(bar => {
+        bar.addEventListener('click', onActualBarClick);
+    });
+
+    // 予定バーにクリックイベント（クイック登録）
+    const scheduledBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.scheduled');
+    scheduledBars?.forEach(bar => {
+        bar.addEventListener('click', onScheduledBarClick);
+    });
+}
+
+function setupDailyEvents() {
+    const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+    if (!rows) return;
+
+    rows.forEach(row => {
+        row.addEventListener('mousedown', onRowMouseDown);
+    });
+
+    // 実績バーにクリック&ドラッグイベント
+    const actualBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.actual');
+    actualBars?.forEach(bar => {
+        bar.addEventListener('click', onActualBarClick);
+        setupBarResize(bar);
+    });
+
+    // 予定バーにクリックイベント
+    const scheduledBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.scheduled');
+    scheduledBars?.forEach(bar => {
+        bar.addEventListener('click', onScheduledBarClick);
+    });
+}
+
+/**
+ * 行上のマウスダウン → 空エリアドラッグ開始
+ */
+function onRowMouseDown(e) {
+    // バー上のクリックは無視
+    if (e.target.closest('.actual-tl-bar')) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+
+    const row = e.currentTarget;
+    const rect = row.getBoundingClientRect();
+    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+    const member = row.dataset.member;
+
+    dragState = {
+        type: 'area',
+        member,
+        row,
+        startX: relX,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        selectRect: null,
+        moved: false
+    };
+
+    document.addEventListener('mousemove', onAreaMouseMove);
+    document.addEventListener('mouseup', onAreaMouseUp);
+}
+
+function onAreaMouseMove(e) {
+    if (!dragState || dragState.type !== 'area') return;
+
+    const dist = Math.abs(e.clientX - dragState.startClientX) + Math.abs(e.clientY - dragState.startClientY);
+    if (dist < 5) return;
+    dragState.moved = true;
+
+    const row = dragState.row;
+    const rect = row.getBoundingClientRect();
+    const relX = e.clientX - rect.left + dom.timelineScroll.scrollLeft;
+
+    const x1 = Math.min(dragState.startX, relX);
+    const x2 = Math.max(dragState.startX, relX);
+
+    // 日/時間スナップ
+    let snappedX1, snappedX2, label;
+    if (viewMode === 'gantt') {
+        snappedX1 = Math.floor(x1 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        snappedX2 = Math.ceil(x2 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        const days = Math.round((snappedX2 - snappedX1) / GANTT_DAY_WIDTH);
+        label = `${days}日`;
+    } else {
+        const snapUnit = DAILY_HOUR_WIDTH / 2; // 30分スナップ
+        snappedX1 = Math.floor(x1 / snapUnit) * snapUnit;
+        snappedX2 = Math.ceil(x2 / snapUnit) * snapUnit;
+        const hours = (snappedX2 - snappedX1) / DAILY_HOUR_WIDTH;
+        label = `${hours}h`;
+    }
+
+    // 選択矩形更新
+    if (!dragState.selectRect) {
+        dragState.selectRect = document.createElement('div');
+        dragState.selectRect.className = 'actual-tl-drag-select';
+        row.appendChild(dragState.selectRect);
+    }
+
+    dragState.selectRect.style.left = `${snappedX1}px`;
+    dragState.selectRect.style.width = `${snappedX2 - snappedX1}px`;
+    dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
+    dragState.snappedX1 = snappedX1;
+    dragState.snappedX2 = snappedX2;
+}
+
+function onAreaMouseUp(e) {
+    document.removeEventListener('mousemove', onAreaMouseMove);
+    document.removeEventListener('mouseup', onAreaMouseUp);
+
+    if (!dragState || dragState.type !== 'area') {
+        dragState = null;
+        return;
+    }
+
+    if (!dragState.moved) {
+        dragState = null;
+        return;
+    }
+
+    // 選択矩形削除
+    if (dragState.selectRect) {
+        dragState.selectRect.remove();
+    }
+
+    // 選択範囲からタスクピッカー表示
+    const member = dragState.member;
+    let date, hours;
+
+    if (viewMode === 'gantt') {
+        const [yr, mo] = currentMonth.split('-').map(Number);
+        const dayIdx = Math.floor(dragState.snappedX1 / GANTT_DAY_WIDTH);
+        const day = Math.max(1, dayIdx + 1);
+        date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const days = Math.round((dragState.snappedX2 - dragState.snappedX1) / GANTT_DAY_WIDTH);
+        hours = days * 8; // デフォルト8h/日
+    } else {
+        date = currentDate;
+        hours = (dragState.snappedX2 - dragState.snappedX1) / DAILY_HOUR_WIDTH;
+    }
+
+    showTaskPicker(e.clientX, e.clientY, member, date, hours);
+
+    dragState = null;
+}
+
+// ============================================
+// インラインエディタ
+// ============================================
+
+/**
+ * インラインエディタ表示（右ペインドラッグ後）
+ */
+function showInlineEditor(dropInfo, cardState) {
+    // 既存のエディタを閉じる
+    closeInlineEditor();
+
+    const editor = document.createElement('div');
+    editor.className = 'actual-tl-inline-editor';
+    editor.id = 'atlInlineEditor';
+
+    const defaultHours = cardState.hours || 1;
+
+    editor.innerHTML = `
+        <input type="number" class="actual-tl-ie-input" value="${defaultHours}" min="0.5" max="24" step="0.5" id="atlIeHours">
+        <span class="actual-tl-ie-unit">h</span>
+        <button class="actual-tl-ie-btn confirm" id="atlIeConfirm" title="確定">&#10003;</button>
+        <button class="actual-tl-ie-btn cancel" id="atlIeCancel" title="キャンセル">&#10005;</button>
+    `;
+
+    // 位置設定 → ドロップ先の行に配置
+    const rowRect = dropInfo.row.getBoundingClientRect();
+
+    editor.style.position = 'fixed';
+    editor.style.left = `${Math.min(rowRect.right - 200, dropInfo.rect.left + 10)}px`;
+    editor.style.top = `${rowRect.top + rowRect.height / 2 - 16}px`;
+
+    document.body.appendChild(editor);
+
+    const input = editor.querySelector('#atlIeHours');
+    input.focus();
+    input.select();
+
+    // 確定
+    editor.querySelector('#atlIeConfirm').addEventListener('click', () => {
+        const hours = parseFloat(input.value);
+        if (!hours || hours <= 0) {
+            closeInlineEditor();
+            return;
+        }
+        createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+        closeInlineEditor();
+    });
+
+    // キャンセル
+    editor.querySelector('#atlIeCancel').addEventListener('click', closeInlineEditor);
+
+    // Enterで確定、Escでキャンセル
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const hours = parseFloat(input.value);
+            if (hours && hours > 0) {
+                createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+            }
+            closeInlineEditor();
+        } else if (e.key === 'Escape') {
+            closeInlineEditor();
+        }
+    });
+
+    // 外クリックで閉じる
+    setTimeout(() => {
+        document.addEventListener('mousedown', onEditorOutsideClick);
+    }, 0);
+}
+
+function onEditorOutsideClick(e) {
+    const editor = document.getElementById('atlInlineEditor');
+    if (editor && !editor.contains(e.target)) {
+        closeInlineEditor();
+    }
+}
+
+function closeInlineEditor() {
+    const editor = document.getElementById('atlInlineEditor');
+    if (editor) editor.remove();
+    document.removeEventListener('mousedown', onEditorOutsideClick);
+}
+
+// ============================================
+// タスクピッカーポップアップ
+// ============================================
+
+/**
+ * タスクピッカー表示（空エリアドラッグ後）
+ */
+function showTaskPicker(x, y, member, date, defaultHours) {
+    closeTaskPicker();
+
+    const tasks = getTasksForMember(member);
+    if (tasks.length === 0) {
+        // タスクがない場合は全タスクを表示
+        const allTasks = getAllTasks();
+        if (allTasks.length === 0) {
+            showAlert('見積データがありません', false);
+            return;
+        }
+    }
+
+    const picker = document.createElement('div');
+    picker.className = 'actual-tl-task-picker';
+    picker.id = 'atlTaskPicker';
+
+    const dateLabel = formatDateLabel(date);
+    const allTasks = getTasksForMember(member).length > 0 ? getTasksForMember(member) : getAllTasks();
+
+    picker.innerHTML = `
+        <div class="actual-tl-tp-header">
+            <div class="actual-tl-tp-title">タスクを選択</div>
+            <div class="actual-tl-tp-time">${escapeHtml(member)} / ${dateLabel}</div>
+            <input type="text" class="actual-tl-tp-search" placeholder="検索..." id="atlTpSearch">
+        </div>
+        <div class="actual-tl-tp-list" id="atlTpList">
+            ${renderTaskPickerItems(allTasks)}
+        </div>
+        <div class="actual-tl-tp-footer">
+            <label>工数:</label>
+            <input type="number" id="atlTpHours" value="${Math.round(defaultHours * 10) / 10}" min="0.5" max="24" step="0.5">
+            <span class="actual-tl-tpf-unit">h</span>
+            <div style="flex:1;"></div>
+            <button class="actual-tl-tp-btn cancel" id="atlTpCancel">キャンセル</button>
+            <button class="actual-tl-tp-btn confirm" id="atlTpConfirm">確定</button>
+        </div>
+    `;
+
+    // 位置調整
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = x;
+    let top = y;
+    if (left + 300 > vw) left = vw - 310;
+    if (top + 360 > vh) top = vh - 370;
+    if (left < 10) left = 10;
+    if (top < 10) top = 10;
+
+    picker.style.left = `${left}px`;
+    picker.style.top = `${top}px`;
+
+    document.body.appendChild(picker);
+
+    let selectedTask = null;
+
+    // 検索
+    picker.querySelector('#atlTpSearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = allTasks.filter(t =>
+            t.task.toLowerCase().includes(query) ||
+            t.version.toLowerCase().includes(query) ||
+            t.process.toLowerCase().includes(query)
+        );
+        picker.querySelector('#atlTpList').innerHTML = renderTaskPickerItems(filtered);
+        bindTaskPickerItems(picker, member, date);
+    });
+
+    // タスク選択バインド
+    bindTaskPickerItems(picker, member, date);
+
+    function bindTaskPickerItems() {
+        picker.querySelectorAll('.actual-tl-tp-item').forEach(item => {
+            item.addEventListener('click', () => {
+                picker.querySelectorAll('.actual-tl-tp-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedTask = {
+                    version: item.dataset.version,
+                    task: item.dataset.task,
+                    process: item.dataset.process
+                };
+            });
+        });
+    }
+
+    // 確定
+    picker.querySelector('#atlTpConfirm').addEventListener('click', () => {
+        if (!selectedTask) {
+            showAlert('タスクを選択してください', false);
+            return;
+        }
+        const hours = parseFloat(picker.querySelector('#atlTpHours').value);
+        if (!hours || hours <= 0) {
+            showAlert('工数を入力してください', false);
+            return;
+        }
+        createActual(member, date, selectedTask.version, selectedTask.task, selectedTask.process, hours);
+        closeTaskPicker();
+    });
+
+    // キャンセル
+    picker.querySelector('#atlTpCancel').addEventListener('click', closeTaskPicker);
+
+    // Escで閉じる
+    picker.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeTaskPicker();
+    });
+
+    // 外クリック
+    setTimeout(() => {
+        document.addEventListener('mousedown', onPickerOutsideClick);
+    }, 0);
+
+    // フォーカス
+    picker.querySelector('#atlTpSearch').focus();
+}
+
+function onPickerOutsideClick(e) {
+    const picker = document.getElementById('atlTaskPicker');
+    if (picker && !picker.contains(e.target)) {
+        closeTaskPicker();
+    }
+}
+
+function closeTaskPicker() {
+    const picker = document.getElementById('atlTaskPicker');
+    if (picker) picker.remove();
+    document.removeEventListener('mousedown', onPickerOutsideClick);
+}
+
+function renderTaskPickerItems(tasks) {
+    return tasks.map(t => {
+        const color = getTaskColor(t.version, t.task);
+        return `<div class="actual-tl-tp-item" data-version="${escapeHtml(t.version)}" data-task="${escapeHtml(t.task)}" data-process="${escapeHtml(t.process)}">
+            <div class="actual-tl-tpi-bar" style="background:${color};"></div>
+            <div class="actual-tl-tpi-info">
+                <div class="actual-tl-tpi-name">${escapeHtml(t.task)}</div>
+                <div class="actual-tl-tpi-detail">
+                    <span class="actual-tl-tpi-badge">${escapeHtml(t.version)}</span>
+                    <span class="actual-tl-tpi-badge">${escapeHtml(t.process)}</span>
+                </div>
+            </div>
+            <span class="actual-tl-tpi-hours">${formatHours(t.hours)}h</span>
+        </div>`;
+    }).join('');
+}
+
+// ============================================
+// バー操作（Phase 4）
+// ============================================
+
+/**
+ * 実績バークリック → 詳細パネル
+ */
+function onActualBarClick(e) {
+    e.stopPropagation();
+    const bar = e.currentTarget;
+    const actualId = bar.dataset.actualId;
+    const actualIds = bar.dataset.actualIds;
+
+    if (actualId) {
+        showBarDetailPanel(actualId);
+    } else if (actualIds) {
+        // 複数のactualがまとまっている場合
+        const ids = actualIds.split(',');
+        if (ids.length === 1) {
+            showBarDetailPanel(ids[0]);
+        } else {
+            showGroupDetailPanel(ids);
+        }
+    }
+}
+
+/**
+ * 予定バークリック → クイック登録
+ */
+function onScheduledBarClick(e) {
+    e.stopPropagation();
+    const bar = e.currentTarget;
+    const scheduleId = bar.dataset.scheduleId;
+    const schedule = schedules.find(s => String(s.id) === String(scheduleId));
+    if (!schedule) return;
+
+    // 確認ダイアログ → 即登録
+    const member = bar.closest('.actual-tl-row')?.dataset.member || schedule.member;
+    const date = viewMode === 'gantt' ? bar.dataset.date || getCurrentGanttDate(bar) : currentDate;
+
+    showQuickRegisterConfirm(e.clientX, e.clientY, schedule, member, date);
+}
+
+/**
+ * クイック登録確認ポップアップ
+ */
+function showQuickRegisterConfirm(x, y, schedule, member, date) {
+    closeTaskPicker(); // 既存のピッカーを閉じる
+    closeInlineEditor();
+
+    const popup = document.createElement('div');
+    popup.className = 'actual-tl-task-picker'; // 同じスタイルを再利用
+    popup.id = 'atlTaskPicker';
+    popup.style.width = '260px';
+
+    const dateLabel = formatDateLabel(date || new Date().toISOString().slice(0, 10));
+    const defaultHours = schedule.hoursPerDay || 8;
+
+    popup.innerHTML = `
+        <div class="actual-tl-tp-header">
+            <div class="actual-tl-tp-title">予定から登録</div>
+            <div class="actual-tl-tp-time">${escapeHtml(schedule.task)} / ${dateLabel}</div>
+        </div>
+        <div style="padding:12px 14px;">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+                ${escapeHtml(schedule.version)} / ${escapeHtml(schedule.process)}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <label style="font-size:11px;font-weight:600;">工数:</label>
+                <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.5" max="24" step="0.5"
+                    style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;text-align:center;">
+                <span style="font-size:11px;color:var(--text-muted);">h</span>
+            </div>
+        </div>
+        <div class="actual-tl-tp-footer">
+            <div style="flex:1;"></div>
+            <button class="actual-tl-tp-btn cancel" id="atlTpCancel">キャンセル</button>
+            <button class="actual-tl-tp-btn confirm" id="atlTpConfirm">登録</button>
+        </div>
+    `;
+
+    // 位置
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = x;
+    let top = y;
+    if (left + 260 > vw) left = vw - 270;
+    if (top + 200 > vh) top = vh - 210;
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+
+    document.body.appendChild(popup);
+
+    const input = popup.querySelector('#atlQuickHours');
+    input.focus();
+    input.select();
+
+    popup.querySelector('#atlTpConfirm').addEventListener('click', () => {
+        const hours = parseFloat(input.value);
+        if (!hours || hours <= 0) return;
+        createActual(member, date, schedule.version, schedule.task, schedule.process, hours);
+        closeTaskPicker();
+    });
+
+    popup.querySelector('#atlTpCancel').addEventListener('click', closeTaskPicker);
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const hours = parseFloat(input.value);
+            if (hours && hours > 0) {
+                createActual(member, date, schedule.version, schedule.task, schedule.process, hours);
+            }
+            closeTaskPicker();
+        } else if (e.key === 'Escape') {
+            closeTaskPicker();
+        }
+    });
+
+    setTimeout(() => {
+        document.addEventListener('mousedown', onPickerOutsideClick);
+    }, 0);
+}
+
+/**
+ * バー詳細パネル表示
+ */
+function showBarDetailPanel(actualId) {
+    const actual = actuals.find(a => String(a.id) === String(actualId));
+    if (!actual) return;
+
+    closeDetailPanel();
+
+    const color = getTaskColor(actual.version, actual.task);
+    const panel = document.createElement('div');
+    panel.className = 'actual-tl-detail-panel';
+    panel.id = 'atlDetailPanel';
+
+    panel.innerHTML = `
+        <div class="actual-tl-dp-header">
+            <span class="actual-tl-dp-title">実績詳細</span>
+            <button class="actual-tl-dp-close" id="atlDpClose">&times;</button>
+        </div>
+        <div class="actual-tl-dp-body">
+            <div class="actual-tl-dp-color-bar" style="background:${color};"></div>
+            <div class="actual-tl-dp-field">
+                <label>タスク</label>
+                <span>${escapeHtml(actual.task)}</span>
+            </div>
+            <div class="actual-tl-dp-field">
+                <label>版数</label>
+                <span>${escapeHtml(actual.version)}</span>
+            </div>
+            <div class="actual-tl-dp-field">
+                <label>工程</label>
+                <span>${escapeHtml(actual.process)}</span>
+            </div>
+            <div class="actual-tl-dp-field">
+                <label>担当者</label>
+                <span>${escapeHtml(actual.member)}</span>
+            </div>
+            <div class="actual-tl-dp-field">
+                <label>日付</label>
+                <span>${actual.date}</span>
+            </div>
+            <div class="actual-tl-dp-field">
+                <label>工数</label>
+                <span>${formatHours(actual.hours)}h</span>
+            </div>
+            <div class="actual-tl-dp-actions">
+                <button class="btn btn-secondary btn-sm" id="atlDpEdit">編集</button>
+                <button class="btn btn-sm" id="atlDpDelete" style="background:var(--danger);color:#fff;border-color:var(--danger);">削除</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(panel);
+    // アニメーションのため少し遅延
+    requestAnimationFrame(() => panel.classList.add('open'));
+
+    panel.querySelector('#atlDpClose').addEventListener('click', closeDetailPanel);
+
+    panel.querySelector('#atlDpEdit').addEventListener('click', () => {
+        closeDetailPanel();
+        // 既存の編集モーダルを呼び出す
+        if (typeof window.editActual === 'function') {
+            window.editActual(actual.id);
+        }
+    });
+
+    panel.querySelector('#atlDpDelete').addEventListener('click', () => {
+        if (confirm('この実績を削除しますか？')) {
+            deleteActualById(actual.id);
+            closeDetailPanel();
+        }
+    });
+}
+
+/**
+ * グループ詳細パネル（同日・同タスクの複数実績）
+ */
+function showGroupDetailPanel(ids) {
+    const items = ids.map(id => actuals.find(a => String(a.id) === String(id))).filter(Boolean);
+    if (items.length === 0) return;
+    // 最初のものを表示
+    showBarDetailPanel(ids[0]);
+}
+
+function closeDetailPanel() {
+    const panel = document.getElementById('atlDetailPanel');
+    if (panel) {
+        panel.classList.remove('open');
+        setTimeout(() => panel.remove(), 300);
+    }
+}
+
+/**
+ * バーリサイズ設定（日別ビュー）
+ */
+function setupBarResize(bar) {
+    const leftHandle = bar.querySelector('.actual-tl-bar-resize.left');
+    const rightHandle = bar.querySelector('.actual-tl-bar-resize.right');
+
+    if (rightHandle) {
+        rightHandle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            startBarResize(bar, 'right', e.clientX);
+        });
+    }
+
+    if (leftHandle) {
+        leftHandle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            startBarResize(bar, 'left', e.clientX);
+        });
+    }
+}
+
+function startBarResize(bar, direction, startX) {
+    const actualId = bar.dataset.actualId;
+    const actual = actuals.find(a => String(a.id) === String(actualId));
+    if (!actual) return;
+
+    const origLeft = parseFloat(bar.style.left);
+    const origWidth = parseFloat(bar.style.width);
+    const snapUnit = DAILY_HOUR_WIDTH / 2; // 30分スナップ
+
+    const onMove = (e) => {
+        const dx = e.clientX - startX;
+
+        if (direction === 'right') {
+            const newWidth = Math.max(snapUnit, Math.round((origWidth + dx) / snapUnit) * snapUnit);
+            bar.style.width = `${newWidth}px`;
+            const hours = newWidth / DAILY_HOUR_WIDTH;
+            const hoursLabel = bar.querySelector('.actual-tl-bar-hours');
+            if (hoursLabel) hoursLabel.textContent = `${Math.round(hours * 10) / 10}h`;
+        } else {
+            const maxDx = origWidth - snapUnit;
+            const clampedDx = Math.max(-origLeft, Math.min(maxDx, Math.round(dx / snapUnit) * snapUnit));
+            bar.style.left = `${origLeft + clampedDx}px`;
+            bar.style.width = `${origWidth - clampedDx}px`;
+            const hours = (origWidth - clampedDx) / DAILY_HOUR_WIDTH;
+            const hoursLabel = bar.querySelector('.actual-tl-bar-hours');
+            if (hoursLabel) hoursLabel.textContent = `${Math.round(hours * 10) / 10}h`;
+        }
+    };
+
+    const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+
+        // 新しい工数を計算して保存
+        const newWidth = parseFloat(bar.style.width);
+        const newHours = Math.round((newWidth / DAILY_HOUR_WIDTH) * 10) / 10;
+
+        if (newHours !== actual.hours && newHours > 0) {
+            const oldHours = actual.hours;
+            actual.hours = newHours;
+            saveData();
+            pushAction({
+                type: 'editActual',
+                id: actual.id,
+                before: { ...actual, hours: oldHours },
+                after: { ...actual }
+            });
+            showToast(`工数を${formatHours(newHours)}hに変更しました`);
+            renderActualTimeline();
+        }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+// ============================================
+// CRUD操作
+// ============================================
+
+/**
+ * ドロップからの実績作成
+ */
+function createActualFromDrop(member, date, cardState, hours) {
+    createActual(member, date, cardState.version, cardState.task, cardState.process, hours);
+}
+
+/**
+ * 実績作成
+ */
+function createActual(member, date, version, task, process, hours) {
+    const id = Date.now() + Math.random();
+    const newActual = { id, date, version, task, process, member, hours };
+
+    actuals.push(newActual);
+    saveData();
+    pushAction({
+        type: 'addActual',
+        data: { ...newActual }
+    });
+
+    showToast(`実績を登録: ${task} ${formatHours(hours)}h`);
+
+    // 再描画
+    renderActualTimeline();
+
+    // 他のビューも更新
+    if (typeof window.renderTodayActuals === 'function') {
+        window.renderTodayActuals();
+    }
+}
+
+/**
+ * 実績削除
+ */
+function deleteActualById(id) {
+    const idx = actuals.findIndex(a => String(a.id) === String(id));
+    if (idx === -1) return;
+
+    const deleted = actuals.splice(idx, 1)[0];
+    saveData();
+    pushAction({
+        type: 'deleteActual',
+        data: { ...deleted }
+    });
+
+    showToast('実績を削除しました');
+    renderActualTimeline();
+
+    if (typeof window.renderTodayActuals === 'function') {
+        window.renderTodayActuals();
+    }
+}
+
+// ============================================
+// ナビゲーション
+// ============================================
+
+function navigateMonth(delta) {
+    const [year, month] = currentMonth.split('-').map(Number);
+    const d = new Date(year, month - 1 + delta, 1);
+    currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    if (viewMode === 'daily') {
+        // 日別ビューの場合は月の1日に移動
+        currentDate = `${currentMonth}-01`;
+    }
+
+    renderActualTimeline();
+}
+
+function goToToday() {
+    const now = new Date();
+    currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    currentDate = now.toISOString().slice(0, 10);
+    renderActualTimeline();
+
+    // 今日の列にスクロール
+    if (viewMode === 'gantt') {
+        const todayDay = now.getDate();
+        const scrollLeft = (todayDay - 1) * GANTT_DAY_WIDTH - dom.timelineScroll.clientWidth / 2;
+        dom.timelineScroll.scrollLeft = Math.max(0, scrollLeft);
+    }
+}
+
+function setViewMode(mode) {
+    viewMode = mode;
+
+    const btnGantt = document.getElementById('atlViewGantt');
+    const btnDaily = document.getElementById('atlViewDaily');
+    if (btnGantt) btnGantt.classList.toggle('active', mode === 'gantt');
+    if (btnDaily) btnDaily.classList.toggle('active', mode === 'daily');
+
+    // 日別ビューでナビゲーションボタンの動作を切替
+    const prevBtn = document.getElementById('atlPrevMonth');
+    const nextBtn = document.getElementById('atlNextMonth');
+    if (mode === 'daily') {
+        prevBtn?.setAttribute('title', '前日');
+        nextBtn?.setAttribute('title', '次日');
+        // ナビを日単位に変更
+        prevBtn?.replaceWith(prevBtn.cloneNode(true));
+        nextBtn?.replaceWith(nextBtn.cloneNode(true));
+        document.getElementById('atlPrevMonth')?.addEventListener('click', () => navigateDay(-1));
+        document.getElementById('atlNextMonth')?.addEventListener('click', () => navigateDay(1));
+    } else {
+        prevBtn?.setAttribute('title', '前月');
+        nextBtn?.setAttribute('title', '次月');
+        prevBtn?.replaceWith(prevBtn.cloneNode(true));
+        nextBtn?.replaceWith(nextBtn.cloneNode(true));
+        document.getElementById('atlPrevMonth')?.addEventListener('click', () => navigateMonth(-1));
+        document.getElementById('atlNextMonth')?.addEventListener('click', () => navigateMonth(1));
+    }
+
+    renderActualTimeline();
+}
+
+function navigateDay(delta) {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() + delta);
+    currentDate = d.toISOString().slice(0, 10);
+    currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    renderActualTimeline();
+}
+
+// ============================================
+// 右ペイン制御
+// ============================================
+
+function togglePane() {
+    setPane(!paneOpen);
+}
+
+function setPane(open) {
+    paneOpen = open;
+    if (dom.rightPane) {
+        dom.rightPane.classList.toggle('open', open);
+    }
+    const toggleBtn = document.getElementById('atlTogglePane');
+    if (toggleBtn) {
+        toggleBtn.classList.toggle('active', open);
+    }
+}
+
+// ============================================
+// スクロール同期
+// ============================================
+
+function setupScrollSync() {
+    if (!dom.timelineScroll || !dom.labelsBody) return;
+
+    // タイムラインの縦スクロールとラベルを同期
+    dom.timelineScroll.addEventListener('scroll', () => {
+        dom.labelsBody.scrollTop = dom.timelineScroll.scrollTop;
+    });
+
+    dom.labelsBody.addEventListener('scroll', () => {
+        dom.timelineScroll.scrollTop = dom.labelsBody.scrollTop;
+    });
+}
+
+// ============================================
+// データ取得ヘルパー
+// ============================================
+
+/**
+ * タイムラインに表示するメンバーリスト取得
+ */
+function getTimelineMembers() {
+    const memberSet = new Set();
+
+    // 見積からメンバーを取得
+    estimates.forEach(est => {
+        if (est.member) memberSet.add(est.member);
+    });
+
+    // 実績からメンバーを取得
+    actuals.forEach(act => {
+        if (act.member) memberSet.add(act.member);
+    });
+
+    // スケジュールからメンバーを取得
+    schedules.forEach(sch => {
+        if (sch.member) memberSet.add(sch.member);
+    });
+
+    return sortMembers(Array.from(memberSet), memberOrder);
+}
+
+/**
+ * メンバーの月合計工数
+ */
+function getMemberTotalHours(member, yearMonth) {
+    return actuals
+        .filter(a => a.member === member && a.date && a.date.startsWith(yearMonth))
+        .reduce((sum, a) => sum + (a.hours || 0), 0);
+}
+
+/**
+ * メンバーの日合計工数
+ */
+function getMemberDayHours(member, dateStr) {
+    return actuals
+        .filter(a => a.member === member && a.date === dateStr)
+        .reduce((sum, a) => sum + (a.hours || 0), 0);
+}
+
+/**
+ * メンバーのスケジュール取得（月）
+ */
+function getSchedulesForMember(member, year, month) {
+    return schedules.filter(s => {
+        if (s.member !== member) return false;
+        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+        return (s.startDate && s.startDate.startsWith(monthStr)) ||
+               (s.endDate && s.endDate.startsWith(monthStr)) ||
+               (s.startDate <= `${monthStr}-31` && s.endDate >= `${monthStr}-01`);
+    });
+}
+
+/**
+ * メンバーのスケジュール取得（日）
+ */
+function getSchedulesForDate(member, dateStr) {
+    return schedules.filter(s =>
+        s.member === member && s.startDate <= dateStr && s.endDate >= dateStr
+    );
+}
+
+/**
+ * メンバーの実績取得（月）
+ */
+function getActualsForMember(member, year, month) {
+    const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+    return actuals.filter(a => a.member === member && a.date && a.date.startsWith(monthStr));
+}
+
+/**
+ * 実績を日+タスクでグループ化
+ */
+function groupActualsByDateTask(memberActuals) {
+    const groups = {};
+    memberActuals.forEach(a => {
+        const key = `${a.date}|${a.version}|${a.task}`;
+        if (!groups[key]) {
+            groups[key] = {
+                date: a.date,
+                version: a.version,
+                task: a.task,
+                hours: 0,
+                ids: []
+            };
+        }
+        groups[key].hours += a.hours || 0;
+        groups[key].ids.push(a.id);
+    });
+    return Object.values(groups);
+}
+
+/**
+ * メンバーのタスク一覧（estimatesから）
+ */
+function getTasksForMember(member) {
+    const taskMap = {};
+    estimates.forEach(est => {
+        if (est.member !== member) return;
+        const key = `${est.version}|${est.task}|${est.process}`;
+        if (!taskMap[key]) {
+            taskMap[key] = {
+                version: est.version || '',
+                task: est.task || '',
+                process: est.process || '',
+                hours: 0,
+                member: est.member
+            };
+        }
+        taskMap[key].hours += est.hours || 0;
+    });
+    return Object.values(taskMap);
+}
+
+/**
+ * 全タスク取得
+ */
+function getAllTasks() {
+    const taskMap = {};
+    estimates.forEach(est => {
+        const key = `${est.version}|${est.task}|${est.process}`;
+        if (!taskMap[key]) {
+            taskMap[key] = {
+                version: est.version || '',
+                task: est.task || '',
+                process: est.process || '',
+                hours: 0
+            };
+        }
+        taskMap[key].hours += est.hours || 0;
+    });
+    return Object.values(taskMap);
+}
+
+/**
+ * 現在のガントビューの日付取得（バー要素から）
+ */
+function getCurrentGanttDate(bar) {
+    // バーの位置から日付を推定
+    const left = parseFloat(bar.style.left) || 0;
+    const dayIdx = Math.floor(left / GANTT_DAY_WIDTH);
+    const [yr, mo] = currentMonth.split('-').map(Number);
+    const day = Math.max(1, dayIdx + 1);
+    return `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// ============================================
+// UI ヘルパー
+// ============================================
+
+/**
+ * 日付ラベルフォーマット
+ */
+function formatDateLabel(dateStr) {
+    const d = new Date(dateStr);
+    const dow = getDayOfWeek(dateStr);
+    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} (${dow})`;
+}
+
+/**
+ * トースト通知
+ */
+function showToast(message) {
+    showAlert(message, true);
+}

@@ -127,16 +127,31 @@ export function renderActualList() {
         return;
     }
 
-    if (viewType === 'matrix') {
-        if (viewMode === 'member') {
-            renderMemberCalendar();
-        } else {
-            renderActualMatrix();
+    if (viewType === 'timeline') {
+        // タイムラインビュー: 専用コンテナを表示
+        container.style.display = 'none';
+        const tlContainer = document.getElementById('actualTimeline');
+        if (tlContainer) tlContainer.style.display = '';
+        if (typeof window.renderActualTimeline === 'function') {
+            window.renderActualTimeline();
         }
-    } else if (viewType === 'grid') {
-        renderCalendarGrid();
     } else {
-        renderActualListView();
+        // 従来ビュー: actualListを表示、タイムラインを非表示
+        container.style.display = '';
+        const tlContainer = document.getElementById('actualTimeline');
+        if (tlContainer) tlContainer.style.display = 'none';
+
+        if (viewType === 'matrix') {
+            if (viewMode === 'member') {
+                renderMemberCalendar();
+            } else {
+                renderActualMatrix();
+            }
+        } else if (viewType === 'grid') {
+            renderCalendarGrid();
+        } else {
+            renderActualListView();
+        }
     }
 
     // セグメントボタンのハイライトを更新

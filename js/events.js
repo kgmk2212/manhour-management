@@ -362,6 +362,11 @@ export function initEventHandlers() {
         btnActualGrid.addEventListener('click', () => setActualViewType('grid'));
     }
 
+    const btnActualTimeline = document.getElementById('btnActualTimeline');
+    if (btnActualTimeline) {
+        btnActualTimeline.addEventListener('click', () => setActualViewType('timeline'));
+    }
+
     // フィルタ (Compact)
     const actualMemberSelect = document.getElementById('actualMemberSelect');
     if (actualMemberSelect) {

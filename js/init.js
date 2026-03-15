@@ -23,6 +23,7 @@ import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
 import * as History from './history.js';
+import * as ActualTimeline from './actual-timeline.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -433,6 +434,10 @@ window.registerCheckedSchedules = Schedule.registerCheckedSchedules;
 window.calculateEndDate = Schedule.calculateEndDate;
 window.getTaskColor = Schedule.getTaskColor;
 
+// actual-timeline.js の関数
+window.initActualTimeline = ActualTimeline.initActualTimeline;
+window.renderActualTimeline = ActualTimeline.renderActualTimeline;
+
 // state.js のスケジュール関連エクスポート
 window.schedules = State.schedules;
 window.scheduleSettings = State.scheduleSettings;
@@ -648,6 +653,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // スケジュール（ガントチャート）モジュールの初期化
     Schedule.initScheduleModule();
+
+    // タイムライン実績入力モジュールの初期化
+    ActualTimeline.initActualTimeline();
 
     // グローバル Undo/Redo キーボードショートカットを設定
     History.setupGlobalKeyboardShortcuts();

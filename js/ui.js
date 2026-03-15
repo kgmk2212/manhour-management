@@ -1649,10 +1649,12 @@ export function setActualViewType(type) {
     const btnMatrix = document.getElementById('btnActualMatrix');
     const btnGrid = document.getElementById('btnActualGrid');
     const btnList = document.getElementById('btnActualList');
+    const btnTimeline = document.getElementById('btnActualTimeline');
 
     if (btnMatrix) btnMatrix.classList.remove('active');
     if (btnGrid) btnGrid.classList.remove('active');
     if (btnList) btnList.classList.remove('active');
+    if (btnTimeline) btnTimeline.classList.remove('active');
 
     if (type === 'matrix' && btnMatrix) {
         btnMatrix.classList.add('active');
@@ -1660,6 +1662,8 @@ export function setActualViewType(type) {
         btnGrid.classList.add('active');
     } else if (type === 'list' && btnList) {
         btnList.classList.add('active');
+    } else if (type === 'timeline' && btnTimeline) {
+        btnTimeline.classList.add('active');
     }
 
     if (typeof window.renderActualList === 'function') {
@@ -1964,10 +1968,14 @@ export function updateSegmentedButtons() {
     // 実績一覧のセグメントボタン（表示形式）
     const btnActualMatrix = document.getElementById('btnActualMatrix');
     const btnActualList = document.getElementById('btnActualList');
+    const btnActualGrid = document.getElementById('btnActualGrid');
+    const btnActualTimeline = document.getElementById('btnActualTimeline');
     if (btnActualMatrix && btnActualList) {
         const actualViewType = document.getElementById('actualViewType').value;
         btnActualMatrix.classList.toggle('active', actualViewType === 'matrix');
         btnActualList.classList.toggle('active', actualViewType === 'list');
+        if (btnActualGrid) btnActualGrid.classList.toggle('active', actualViewType === 'grid');
+        if (btnActualTimeline) btnActualTimeline.classList.toggle('active', actualViewType === 'timeline');
     }
 
     // 実績一覧のセグメントボタン（担当者）
