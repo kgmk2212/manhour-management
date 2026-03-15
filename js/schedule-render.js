@@ -1004,10 +1004,11 @@ export class GanttChartRenderer {
      * メンバードットの色を取得
      */
     getMemberDotColor(label, index) {
+        // メンバー用：タスク色と区別するためニュートラル・低彩度系
         const dotColors = [
-            '#2D5A27', '#1D6FA5', '#C4841D', '#B91C1C',
-            '#7C3AED', '#0D9488', '#EA580C', '#DB2777',
-            '#4F46E5', '#65A30D', '#0891B2', '#9333EA'
+            '#5C6B7A', '#7A6B5C', '#6B5C7A', '#5C7A6B',
+            '#7A5C6B', '#6B7A5C', '#5C6B8A', '#8A6B5C',
+            '#6B5C8A', '#5C8A6B', '#7A7A5C', '#5C7A7A'
         ];
         return dotColors[index % dotColors.length];
     }
