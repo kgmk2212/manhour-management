@@ -401,7 +401,7 @@ export const THEME_TASK_COLORS = {
 
     // Ocean: 海と空の涼やかな配色、コーラルやサンドのアクセント
     'ocean': [
-        '#1D6FA5', // 1  Ocean（大洋）
+        '#2A6080', // 1  Ocean（深海）
         '#C44320', // 2  Coral（珊瑚）
         '#2D8A4E', // 3  Seagrass（海草）
         '#C88A14', // 4  Sand（砂金）
@@ -429,7 +429,7 @@ export const THEME_TASK_COLORS = {
 
     // Violet: 華やかで創造的、紫を軸にした鮮烈な配色
     'violet': [
-        '#7C3AED', // 1  Violet（菫）
+        '#5A4570', // 1  Wisteria（藤）
         '#D03020', // 2  Ruby（紅玉）
         '#1880A0', // 3  Sapphire（蒼玉）
         '#D89018', // 4  Marigold（金盞花）
@@ -457,7 +457,7 @@ export const THEME_TASK_COLORS = {
 
     // Amber: 暖かく豊かな配色、金・橙・琥珀を軸に
     'amber': [
-        '#C4841D', // 1  Amber（琥珀）
+        '#7D5A28', // 1  Kohaku（琥珀）
         '#C83828', // 2  Cinnabar（辰砂）
         '#1860A0', // 3  Lapis（瑠璃）
         '#2D6A30', // 4  Basil（蘖）
@@ -541,7 +541,7 @@ export const THEME_TASK_COLORS = {
 
     // Rose: 華やかなピンク/ベリー系、グリーンとティールのコントラスト
     'rose': [
-        '#BE185D', // 1  Rose（薔薇）
+        '#8E3050', // 1  Kurenai（紅）
         '#C83828', // 2  Poppy（罌粟）
         '#1A6A90', // 3  Dusk Blue（暮青）
         '#C08818', // 4  Honey（蜂蜜）
@@ -597,7 +597,7 @@ export const THEME_TASK_COLORS = {
 
     // Slate: プロフェッショナル、彩度を抑えた落ち着いた配色
     'slate': [
-        '#475569', // 1  Slate（石板）
+        '#556270', // 1  Aonezu（青鼠）
         '#8A4030', // 2  Muted Red（灰赤）
         '#2A5A80', // 3  Muted Blue（灰青）
         '#8A7028', // 4  Muted Gold（灰金）

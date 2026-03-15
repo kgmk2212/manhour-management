@@ -155,14 +155,14 @@ export function loadThemeSettings() {
 // Ink & Amber テーマカラー定義
 const THEME_COLORS = {
     'forest': { accent: '#2D5A27', accentHover: '#3A7232', accentLight: '#EBF5EA', sidebarActiveBg: 'rgba(45,90,39,0.2)' },
-    'ocean':  { accent: '#1D6FA5', accentHover: '#2580B8', accentLight: '#EFF6FF', sidebarActiveBg: 'rgba(29,111,165,0.2)' },
-    'violet': { accent: '#7C3AED', accentHover: '#8B5CF6', accentLight: '#F5F3FF', sidebarActiveBg: 'rgba(124,58,237,0.2)' },
-    'amber':  { accent: '#C4841D', accentHover: '#D4941F', accentLight: '#FFF8ED', sidebarActiveBg: 'rgba(196,132,29,0.2)' },
+    'ocean':  { accent: '#2A6080', accentHover: '#3A7498', accentLight: '#EDF3F8', sidebarActiveBg: 'rgba(42,96,128,0.2)' },
+    'violet': { accent: '#5A4570', accentHover: '#6D5885', accentLight: '#F2EEF5', sidebarActiveBg: 'rgba(90,69,112,0.2)' },
+    'amber':  { accent: '#7D5A28', accentHover: '#926C35', accentLight: '#F6F1E7', sidebarActiveBg: 'rgba(125,90,40,0.2)' },
     'ink':    { accent: '#1A1814', accentHover: '#2D2A25', accentLight: '#F0EEEA', sidebarActiveBg: 'rgba(255,255,255,0.08)' },
     'deep-blue': { accent: '#1E3A5F', accentHover: '#264D7A', accentLight: '#EFF4FA', sidebarActiveBg: 'rgba(30,58,95,0.2)' },
-    'rose':      { accent: '#BE185D', accentHover: '#DB2777', accentLight: '#FDF2F8', sidebarActiveBg: 'rgba(190,24,93,0.2)' },
+    'rose':      { accent: '#8E3050', accentHover: '#A44065', accentLight: '#FAF0F3', sidebarActiveBg: 'rgba(142,48,80,0.2)' },
     'teal':      { accent: '#0F766E', accentHover: '#14937A', accentLight: '#F0FDFA', sidebarActiveBg: 'rgba(15,118,110,0.2)' },
-    'slate':     { accent: '#475569', accentHover: '#64748B', accentLight: '#F1F5F9', sidebarActiveBg: 'rgba(71,85,105,0.2)' }
+    'slate':     { accent: '#556270', accentHover: '#687888', accentLight: '#F1F4F6', sidebarActiveBg: 'rgba(85,98,112,0.2)' }
 };
 
 export function applyTheme() {
