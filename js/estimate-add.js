@@ -201,21 +201,39 @@ export function openEditAllProcesses(version, task) {
     // 既存データで工程テーブルをプリフィル
     const taskEstimates = State.estimates.filter(e => e.version === version && e.task === task);
 
-    // 作業月のプリフィル: 最も多い作業月を初期値にする
-    const monthCounts = {};
+    // 作業月のプリフィル: 全工程の月範囲を判定
+    const allWorkMonths = new Set();
+    const processWorkMonths = {}; // 工程別の作業月
     taskEstimates.forEach(e => {
         const est = Utils.normalizeEstimate(e);
         if (est.workMonths && est.workMonths.length > 0) {
-            est.workMonths.forEach(m => {
-                monthCounts[m] = (monthCounts[m] || 0) + 1;
-            });
+            est.workMonths.forEach(m => allWorkMonths.add(m));
+            processWorkMonths[est.process] = est.workMonths;
         }
     });
-    const sortedMonths = Object.entries(monthCounts).sort((a, b) => b[1] - a[1]);
-    if (sortedMonths.length > 0) {
-        const mostCommonMonth = sortedMonths[0][0];
+
+    const uniqueMonths = [...allWorkMonths].sort();
+    const isMultiMonth = uniqueMonths.length >= 2;
+
+    if (isMultiMonth) {
+        // 複数月モードに切り替え
+        const multiRadio = document.querySelector('input[name="addEstMonthType"][value="multi"]');
+        if (multiRadio) multiRadio.checked = true;
+
+        const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+        const endMonthEl = document.getElementById('addEstEndMonth');
+        if (startMonthMulti) startMonthMulti.value = uniqueMonths[0];
+        if (endMonthEl) {
+            Utils.generateMonthOptions('addEstEndMonth', uniqueMonths[uniqueMonths.length - 1], uniqueMonths[0]);
+            endMonthEl.value = uniqueMonths[uniqueMonths.length - 1];
+        }
+
+        // テーブルに作業月列を表示
+        switchAddEstMonthType();
+    } else if (uniqueMonths.length === 1) {
+        // 単一月モード
         const startMonthSelect = document.getElementById('addEstStartMonth');
-        if (startMonthSelect) startMonthSelect.value = mostCommonMonth;
+        if (startMonthSelect) startMonthSelect.value = uniqueMonths[0];
     }
 
     // 各工程の担当・工数をプリフィル
@@ -231,6 +249,29 @@ export function openEditAllProcesses(version, task) {
             if (hoursInput) hoursInput.value = '';
         }
     });
+
+    // 複数月モードの場合、各工程の作業月をプリフィル
+    if (isMultiMonth) {
+        setTimeout(() => {
+            PROCESS.TYPES.forEach(proc => {
+                const procMonths = processWorkMonths[proc];
+                if (!procMonths || procMonths.length === 0) return;
+
+                const startSelect = document.getElementById(`addEst${proc}_startMonth`);
+                const endSelect = document.getElementById(`addEst${proc}_endMonth`);
+
+                if (uniqueMonths.length === 2 && startSelect) {
+                    // 2ヶ月モード: 単一セレクトに最初の作業月を設定
+                    startSelect.value = procMonths[0];
+                } else if (startSelect && endSelect) {
+                    // 3ヶ月以上: 範囲セレクトに設定
+                    const sorted = [...procMonths].sort();
+                    startSelect.value = sorted[0];
+                    endSelect.value = sorted[sorted.length - 1];
+                }
+            });
+        }, 50);
+    }
 
     // ボタンテキスト変更
     const submitBtn = document.getElementById('addEstSubmitBtn');
