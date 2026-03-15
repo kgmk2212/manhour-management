@@ -5651,16 +5651,7 @@ li.drop-below {
 
 .actual-tl-labels-body {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* ラベル行のスクロールバーを隠す */
-.actual-tl-labels-body::-webkit-scrollbar {
-    display: none;
-}
-.actual-tl-labels-body {
-    scrollbar-width: none;
+    overflow: hidden;
 }
 
 .actual-tl-label-row {
@@ -7023,9 +7014,6 @@ li.drop-below {
     touch-action: pan-x pan-y;
 }
 
-.actual-tl-labels-body {
-    -webkit-overflow-scrolling: touch;
-}
 
 .actual-tl-pane-body {
     -webkit-overflow-scrolling: touch;

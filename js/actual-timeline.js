@@ -2233,25 +2233,10 @@ function isMobile() {
 function setupScrollSync() {
     if (!dom.timelineScroll || !dom.labelsBody) return;
 
-    let syncing = false;
-
-    function syncScroll(source, target) {
-        if (syncing) return;
-        syncing = true;
-        target.scrollTop = source.scrollTop;
-        requestAnimationFrame(() => {
-            // 2フレーム目で補正（慣性スクロール対策）
-            target.scrollTop = source.scrollTop;
-            syncing = false;
-        });
-    }
-
+    // ラベル列は overflow:hidden — タイムラインのスクロールに片方向追従のみ
+    // フィードバックループなし、ネイティブスクロール性能を維持
     dom.timelineScroll.addEventListener('scroll', () => {
-        syncScroll(dom.timelineScroll, dom.labelsBody);
-    }, { passive: true });
-
-    dom.labelsBody.addEventListener('scroll', () => {
-        syncScroll(dom.labelsBody, dom.timelineScroll);
+        dom.labelsBody.scrollTop = dom.timelineScroll.scrollTop;
     }, { passive: true });
 }
 
