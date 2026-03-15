@@ -56,9 +56,6 @@ const ACTUAL_LANE_TOP = 20;
 /** 日別ビューの1時間幅(px) */
 const DAILY_HOUR_WIDTH = 100;
 
-/** 日別ビューの行高さ(px) */
-const DAILY_ROW_HEIGHT = 72;
-
 /** 日別ビューの業務時間 */
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 18;
@@ -197,6 +194,11 @@ function renderGanttView() {
 
     // 月表示更新
     dom.currentMonth.textContent = `${year}年${month}月`;
+    dom.labelsHeader.textContent = '担当者';
+
+    // タイムラインのheight制約をリセット（日別ビューで設定される場合）
+    dom.timelineBody.style.height = '';
+    dom.timelineBody.style.position = '';
 
     // メンバーリスト取得
     const members = getTimelineMembers();
@@ -384,152 +386,152 @@ function calcGanttBar(startDate, endDate, year, month, daysInMonth) {
 // 日別ビュー
 // ============================================
 
+/** 日別ビュー: 1時間あたりの高さ(px) — 縦軸=時間 */
+const DAILY_HOUR_HEIGHT = 72;
+/** 日別ビュー: 1メンバー列の幅(px) */
+const DAILY_COL_WIDTH = 140;
+
 /**
- * 日別ビュー描画 (9:00-18:00)
+ * 日別ビュー描画 — 縦軸=時間(9:00-18:00)、横軸=担当者
  */
 function renderDailyView() {
     const dateStr = currentDate;
     const dow = getDayOfWeek(dateStr);
 
-    // 月表示更新 → 日表示
+    // 日表示に更新
     const d = new Date(dateStr);
     dom.currentMonth.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${dow})`;
 
     const members = getTimelineMembers();
     const totalHours = WORK_END_HOUR - WORK_START_HOUR;
-    const totalWidth = totalHours * DAILY_HOUR_WIDTH;
+    const totalHeight = totalHours * DAILY_HOUR_HEIGHT;
+    const totalWidth = members.length * DAILY_COL_WIDTH;
 
-    // ヘッダー描画
-    renderDailyHeader(totalWidth);
+    // ラベル列 → 時間ラベル（9:00〜17:00）
+    renderDailyTimeLabels(totalHeight);
 
-    // ラベル描画
-    renderDailyLabels(members);
+    // ヘッダー → メンバー名
+    renderDailyMemberHeader(members);
 
-    // タイムライン本体描画
-    renderDailyBody(members, dateStr, totalWidth);
+    // 本体 → 縦時間 × 横メンバーのグリッド
+    renderDailyBody(members, dateStr, totalWidth, totalHeight);
 }
 
 /**
- * 日別ヘッダー描画（時間軸）
+ * 日別: 時間ラベル列（左サイドに9:00〜17:00を縦表示）
  */
-function renderDailyHeader(totalWidth) {
+function renderDailyTimeLabels(totalHeight) {
+    // ヘッダー位置は「時間」ラベルにする
+    dom.labelsHeader.textContent = '時間';
+
     let html = '';
     const now = new Date();
+    const isToday = currentDate === now.toISOString().slice(0, 10);
     const currentHour = now.getHours();
 
     for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
         const isLunch = h === 12;
-        const isNow = h === currentHour;
-        let cls = 'actual-tl-hour-header';
+        const isNow = isToday && h === currentHour;
+        let cls = 'actual-tl-dv-time-label';
         if (isLunch) cls += ' lunch';
         if (isNow) cls += ' now';
-        html += `<div class="${cls}" style="width:${DAILY_HOUR_WIDTH}px;min-width:${DAILY_HOUR_WIDTH}px;">
-            ${h}:00
+        html += `<div class="${cls}" style="height:${DAILY_HOUR_HEIGHT}px;">
+            <span class="actual-tl-dv-time-text">${h}:00</span>
         </div>`;
     }
 
-    dom.timelineHeader.innerHTML = html;
-    dom.timelineHeader.style.width = `${totalWidth}px`;
+    dom.labelsBody.innerHTML = `<div style="height:${totalHeight}px;">${html}</div>`;
 }
 
 /**
- * 日別ラベル描画
+ * 日別: メンバーヘッダー（上部に横並び）
  */
-function renderDailyLabels(members) {
+function renderDailyMemberHeader(members) {
     let html = '';
     members.forEach((member, i) => {
         const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
         const initial = member.charAt(0);
         const dayHours = getMemberDayHours(member, currentDate);
-        html += `<div class="actual-tl-label-row" data-member="${escapeHtml(member)}" style="height:${DAILY_ROW_HEIGHT}px;">
-            <div class="actual-tl-avatar" style="background:${color};">${escapeHtml(initial)}</div>
-            <div class="actual-tl-label-info">
-                <div class="actual-tl-label-name">${escapeHtml(member)}</div>
-                <div class="actual-tl-label-meta">${formatHours(dayHours)}h</div>
+        html += `<div class="actual-tl-dv-member-header" style="width:${DAILY_COL_WIDTH}px;min-width:${DAILY_COL_WIDTH}px;">
+            <div class="actual-tl-dv-member-avatar" style="background:${color};">${escapeHtml(initial)}</div>
+            <div class="actual-tl-dv-member-info">
+                <div class="actual-tl-dv-member-name">${escapeHtml(member)}</div>
+                <div class="actual-tl-dv-member-hours">${formatHours(dayHours)}h</div>
             </div>
         </div>`;
     });
-    dom.labelsBody.innerHTML = html;
+
+    dom.timelineHeader.innerHTML = html;
+    dom.timelineHeader.style.width = `${members.length * DAILY_COL_WIDTH}px`;
 }
 
 /**
- * 日別タイムライン本体描画
+ * 日別: 本体描画（縦=時間、横=メンバー列）
  */
-function renderDailyBody(members, dateStr, totalWidth) {
+function renderDailyBody(members, dateStr, totalWidth, totalHeight) {
     let html = '';
 
-    members.forEach((member) => {
-        html += `<div class="actual-tl-row daily" data-member="${escapeHtml(member)}" style="height:${DAILY_ROW_HEIGHT}px;">`;
-
-        // 時間列背景
-        html += '<div class="actual-tl-row-bg">';
-        for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
-            const isLunch = h === 12;
-            let cls = 'actual-tl-hour-cell';
-            if (isLunch) cls += ' lunch';
-            html += `<div class="${cls}" style="width:${DAILY_HOUR_WIDTH}px;min-width:${DAILY_HOUR_WIDTH}px;" data-hour="${h}"></div>`;
+    // 時間グリッド背景（全メンバー共通の横線）
+    html += '<div class="actual-tl-dv-grid" style="position:absolute;inset:0;pointer-events:none;">';
+    for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+        const top = (h - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+        const isLunch = h === 12;
+        html += `<div class="actual-tl-dv-grid-line${isLunch ? ' lunch' : ''}" style="top:${top}px;height:${DAILY_HOUR_HEIGHT}px;"></div>`;
+    }
+    // 現在時刻ライン
+    const now = new Date();
+    if (dateStr === now.toISOString().slice(0, 10)) {
+        const nowHour = now.getHours() + now.getMinutes() / 60;
+        if (nowHour >= WORK_START_HOUR && nowHour <= WORK_END_HOUR) {
+            const nowTop = (nowHour - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+            html += `<div class="actual-tl-dv-now-line" style="top:${nowTop}px;"></div>`;
         }
-        html += '</div>';
+    }
+    html += '</div>';
 
-        // 予定バー
+    // メンバー列
+    members.forEach((member, i) => {
+        const colLeft = i * DAILY_COL_WIDTH;
+        html += `<div class="actual-tl-dv-column" data-member="${escapeHtml(member)}" style="left:${colLeft}px;width:${DAILY_COL_WIDTH}px;height:${totalHeight}px;">`;
+
+        // 予定ブロック（背景として薄く表示）
         const memberSchedules = getSchedulesForDate(member, dateStr);
-        memberSchedules.forEach(sch => {
-            const barInfo = calcDailyBar(sch);
-            if (!barInfo) return;
+        const mergedDaySch = mergeSchedulesByTask(memberSchedules);
+        mergedDaySch.forEach(sch => {
             const color = getTaskColor(sch.version, sch.task);
-            html += `<div class="actual-tl-bar scheduled daily-bar" style="left:${barInfo.left}px;width:${barInfo.width}px;background:${color};"
-                data-schedule-id="${sch.id}" title="${escapeHtml(sch.task)} (予定)">
-                <span class="actual-tl-bar-text">${escapeHtml(sch.task)}</span>
+            // 予定は終日表示（上から下まで薄い帯）
+            html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${totalHeight}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
+                data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
+                <span class="actual-tl-dv-sch-label" style="color:${color};">${escapeHtml(sch.task)}</span>
             </div>`;
         });
 
-        // 実績ブロック
+        // 実績ブロック（縦に積み上げ）
         const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
         let accumulatedHours = 0;
         dayActuals.forEach(act => {
-            const left = accumulatedHours * DAILY_HOUR_WIDTH;
-            const width = act.hours * DAILY_HOUR_WIDTH;
+            const top = accumulatedHours * DAILY_HOUR_HEIGHT;
+            const height = act.hours * DAILY_HOUR_HEIGHT;
             const color = getTaskColor(act.version, act.task);
-            html += `<div class="actual-tl-bar actual daily-bar" style="left:${left}px;width:${width}px;background:${color};"
+            html += `<div class="actual-tl-dv-block" style="top:${top}px;height:${height}px;background:${color};"
                 data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                 title="${escapeHtml(act.task)} ${act.hours}h">
-                <span class="actual-tl-bar-text">${escapeHtml(act.task)}</span>
-                <span class="actual-tl-bar-hours">${act.hours}h</span>
-                <div class="actual-tl-bar-resize left"></div>
-                <div class="actual-tl-bar-resize right"></div>
+                <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                <span class="actual-tl-dv-block-hours">${act.hours}h</span>
             </div>`;
             accumulatedHours += act.hours;
         });
-
-        // 現在時刻ライン
-        const now = new Date();
-        if (dateStr === now.toISOString().slice(0, 10)) {
-            const nowHour = now.getHours() + now.getMinutes() / 60;
-            if (nowHour >= WORK_START_HOUR && nowHour <= WORK_END_HOUR) {
-                const nowLeft = (nowHour - WORK_START_HOUR) * DAILY_HOUR_WIDTH;
-                html += `<div class="actual-tl-today-line" style="left:${nowLeft}px;"></div>`;
-            }
-        }
 
         html += '</div>';
     });
 
     dom.timelineBody.innerHTML = html;
     dom.timelineBody.style.width = `${totalWidth}px`;
+    dom.timelineBody.style.height = `${totalHeight}px`;
+    dom.timelineBody.style.position = 'relative';
 
     // イベント設定
     setupDailyEvents();
-}
-
-/**
- * 日別バー位置計算（予定をhour幅に変換）
- */
-function calcDailyBar(schedule) {
-    // スケジュールは日単位なので、予定バーは全幅で表示
-    const totalHours = WORK_END_HOUR - WORK_START_HOUR;
-    const hoursPerDay = schedule.hoursPerDay || 8;
-    const width = Math.min(hoursPerDay, totalHours) * DAILY_HOUR_WIDTH;
-    return { left: 0, width };
 }
 
 // ============================================
@@ -961,25 +963,34 @@ function setupGanttEvents() {
 }
 
 function setupDailyEvents() {
+    // 新レイアウト: カラムベースのイベント
+    const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
+    if (columns) {
+        columns.forEach(col => {
+            col.addEventListener('mousedown', onRowMouseDown);
+            col.addEventListener('touchstart', onRowTouchStart, { passive: false });
+        });
+    }
+
+    // 旧レイアウト互換: 行ベースのイベント
     const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
-    if (!rows) return;
+    if (rows) {
+        rows.forEach(row => {
+            row.addEventListener('mousedown', onRowMouseDown);
+            row.addEventListener('touchstart', onRowTouchStart, { passive: false });
+        });
+    }
 
-    rows.forEach(row => {
-        row.addEventListener('mousedown', onRowMouseDown);
-        row.addEventListener('touchstart', onRowTouchStart, { passive: false });
+    // 実績ブロックにクリックイベント
+    const actualBlocks = dom.timelineBody?.querySelectorAll('.actual-tl-dv-block, .actual-tl-bar.actual');
+    actualBlocks?.forEach(block => {
+        block.addEventListener('click', onActualBarClick);
     });
 
-    // 実績バーにクリック&ドラッグイベント
-    const actualBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.actual');
-    actualBars?.forEach(bar => {
-        bar.addEventListener('click', onActualBarClick);
-        setupBarResize(bar);
-    });
-
-    // 予定バーにクリックイベント
-    const scheduledBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.scheduled');
-    scheduledBars?.forEach(bar => {
-        bar.addEventListener('click', onScheduledBarClick);
+    // 予定ブロックにクリックイベント
+    const schBlocks = dom.timelineBody?.querySelectorAll('.actual-tl-dv-sch-block, .actual-tl-bar.scheduled');
+    schBlocks?.forEach(block => {
+        block.addEventListener('click', onScheduledBarClick);
     });
 }
 
