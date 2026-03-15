@@ -99,19 +99,9 @@ export function editEstimate(id) {
     // memberOptionsのHTMLを保持（追加行で再利用）
     window._editEstMemberOptionsHTML = memberSelect.innerHTML;
 
+    generateMonthOptions('editEstimateWorkMonth', estimate.workMonth || '');
     const workMonthSelect = document.getElementById('editEstimateWorkMonth');
-    workMonthSelect.innerHTML = '<option value="">-- 作業月を選択 --</option>';
-
-    const workMonths = [...new Set(estimates.map(e => e.workMonth).filter(m => m))];
-    workMonths.sort();
-
-    workMonths.forEach(month => {
-        const option = document.createElement('option');
-        option.value = month;
-        option.textContent = month;
-        workMonthSelect.appendChild(option);
-    });
-
+    workMonthSelect.insertAdjacentHTML('afterbegin', '<option value="">-- 作業月を選択 --</option>');
     workMonthSelect.value = estimate.workMonth || '';
 
     const est = normalizeEstimate(estimate);
