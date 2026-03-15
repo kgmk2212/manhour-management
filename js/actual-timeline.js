@@ -687,16 +687,43 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
             // 予定ブロック（背景として薄く表示 — 昼休みを除いた午前+午後領域）
             const memberSchedules = getSchedulesForDate(member, dateStr);
             const mergedDaySch = mergeSchedulesByTask(memberSchedules);
-            mergedDaySch.forEach(sch => {
+            const schCount = mergedDaySch.length;
+            const afternoonHeight = AFTERNOON_HOURS * DAILY_HOUR_HEIGHT;
+
+            mergedDaySch.forEach((sch, si) => {
                 const color = getTaskColor(sch.version, sch.task);
+                const pad = 4; // px padding from column edge
+
+                // レイアウト計算: 1→全幅, 2→左右分割, 3+→斜めスタガー
+                let leftPx, rightPx, labelTopOffset;
+                if (schCount === 1) {
+                    leftPx = pad;
+                    rightPx = pad;
+                    labelTopOffset = 0;
+                } else if (schCount === 2) {
+                    const half = (DAILY_COL_WIDTH - pad * 2) / 2;
+                    leftPx = pad + si * half;
+                    rightPx = DAILY_COL_WIDTH - leftPx - half;
+                    labelTopOffset = 0;
+                } else {
+                    // 3+: 斜めスタガー — 各ブロックを右に12px、下に14pxずつずらす
+                    const staggerX = 12;
+                    const staggerY = 14;
+                    leftPx = pad + si * staggerX;
+                    rightPx = pad + (schCount - 1 - si) * staggerX;
+                    labelTopOffset = si * staggerY;
+                }
+
+                const leftStyle = `left:${leftPx}px;right:${rightPx}px`;
+                const labelOffset = labelTopOffset > 0 ? `padding-top:${labelTopOffset + 6}px;` : '';
+
                 // 午前領域
-                html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${LUNCH_ZONE_TOP}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
+                html += `<div class="actual-tl-dv-sch-block" style="top:0;height:${LUNCH_ZONE_TOP}px;${leftStyle};background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
                     data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
-                    <span class="actual-tl-dv-sch-label" style="color:${color};">${escapeHtml(sch.task)}</span>
+                    <span class="actual-tl-dv-sch-label" style="color:${color};${labelOffset}">${escapeHtml(sch.task)}</span>
                 </div>`;
                 // 午後領域
-                const afternoonHeight = AFTERNOON_HOURS * DAILY_HOUR_HEIGHT;
-                html += `<div class="actual-tl-dv-sch-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
+                html += `<div class="actual-tl-dv-sch-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;${leftStyle};background:${hexToRgba(color, 0.12)};border-left:3px solid ${hexToRgba(color, 0.4)};"
                     data-schedule-ids="${sch.ids.join(',')}" title="${escapeHtml(sch.task)} (予定)">
                 </div>`;
             });
