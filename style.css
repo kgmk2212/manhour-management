@@ -6409,6 +6409,58 @@ li.drop-below {
     border-radius: 2px;
 }
 
+/* ---- 縦方向ドラッグ選択（日別ビュー用） ---- */
+.actual-tl-drag-select-v {
+    top: auto;
+    bottom: auto;
+}
+
+/* ---- バードラッグゴースト（実績移動用） ---- */
+.actual-tl-bar-ghost {
+    position: fixed;
+    z-index: 200;
+    pointer-events: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(26, 24, 20, 0.18), 0 2px 8px rgba(26, 24, 20, 0.08);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.92;
+    transform: scale(1.04) rotate(-1deg);
+    white-space: nowrap;
+    transition: transform 0.1s ease;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actual-tl-bar-ghost span {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* ---- ドロップターゲットハイライト ---- */
+.actual-tl-drop-target {
+    background: rgba(45, 90, 39, 0.06) !important;
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    transition: background 0.15s ease, outline 0.15s ease;
+}
+
+/* ---- ドラッグ可能バーのカーソル ---- */
+.actual-tl-bar.actual,
+.actual-tl-dv-block {
+    cursor: grab;
+}
+
+.actual-tl-bar.actual:active,
+.actual-tl-dv-block:active {
+    cursor: grabbing;
+}
+
 /* ---- 右ペイン（タスクパネル） ---- */
 .actual-tl-right-pane {
     width: 0;

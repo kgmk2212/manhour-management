@@ -464,6 +464,18 @@ function workHoursToY(accHours) {
     return AFTERNOON_TOP + (accHours - MORNING_HOURS) * DAILY_HOUR_HEIGHT;
 }
 
+/** Y座標を業務時間（累積）に変換 — workHoursToYの逆関数 */
+function yToWorkHours(y) {
+    if (y <= LUNCH_ZONE_TOP) {
+        return Math.max(0, y / DAILY_HOUR_HEIGHT);
+    }
+    if (y <= AFTERNOON_TOP) {
+        // 昼休みゾーン内 → 午前の終わり
+        return MORNING_HOURS;
+    }
+    return MORNING_HOURS + (y - AFTERNOON_TOP) / DAILY_HOUR_HEIGHT;
+}
+
 /** 現在時刻をY座標に変換 */
 function clockToY(hour, minutes) {
     const m = minutes || 0;
@@ -1210,6 +1222,9 @@ function setupGanttEvents() {
     scheduledBars?.forEach(bar => {
         bar.addEventListener('click', onScheduledBarClick);
     });
+
+    // 実績バーにドラッグイベント
+    setupBarDragEvents();
 }
 
 function setupDailyEvents() {
@@ -1242,14 +1257,17 @@ function setupDailyEvents() {
     schBlocks?.forEach(block => {
         block.addEventListener('click', onScheduledBarClick);
     });
+
+    // 実績ブロックにドラッグイベント
+    setupBarDragEvents();
 }
 
 /**
  * 行上のマウスダウン → 空エリアドラッグ開始 or 選択タスク配置
  */
 function onRowMouseDown(e) {
-    // バー上のクリックは無視
-    if (e.target.closest('.actual-tl-bar')) return;
+    // バー/ブロック上のクリックは無視
+    if (e.target.closest('.actual-tl-bar') || e.target.closest('.actual-tl-dv-block')) return;
     if (e.button !== 0) return;
 
     // モバイル: タスク選択中なら即配置
@@ -1263,6 +1281,7 @@ function onRowMouseDown(e) {
     const row = e.currentTarget;
     const rect = row.getBoundingClientRect();
     const relX = e.clientX - rect.left + dom.section.scrollLeft;
+    const relY = e.clientY - rect.top;
     const member = row.dataset.member;
 
     dragState = {
@@ -1270,6 +1289,7 @@ function onRowMouseDown(e) {
         member,
         row,
         startX: relX,
+        startY: relY,
         startClientX: e.clientX,
         startClientY: e.clientY,
         selectRect: null,
@@ -1322,7 +1342,9 @@ function onAreaMouseUp(e) {
         hours = days * 8; // デフォルト8h/日
     } else {
         date = currentDate;
-        hours = (dragState.snappedX2 - dragState.snappedX1) / DAILY_HOUR_WIDTH;
+        const h1 = yToWorkHours(dragState.snappedY1);
+        const h2 = yToWorkHours(dragState.snappedY2);
+        hours = Math.round((h2 - h1) * 10) / 10;
     }
 
     showTaskPicker(e.clientX, e.clientY, member, date, hours);
@@ -1342,7 +1364,7 @@ const TOUCH_MOVE_THRESHOLD = 10;
 let touchAreaState = null;
 
 function onRowTouchStart(e) {
-    if (e.target.closest('.actual-tl-bar')) return;
+    if (e.target.closest('.actual-tl-bar') || e.target.closest('.actual-tl-dv-block')) return;
     if (e.touches.length !== 1) return;
 
     // モバイル: タスク選択中なら即配置
@@ -1357,6 +1379,7 @@ function onRowTouchStart(e) {
     const row = e.currentTarget;
     const rect = row.getBoundingClientRect();
     const relX = touch.clientX - rect.left + dom.section.scrollLeft;
+    const relY = touch.clientY - rect.top;
     const member = row.dataset.member;
 
     // ロングプレスタイマー開始
@@ -1364,6 +1387,7 @@ function onRowTouchStart(e) {
         member,
         row,
         startX: relX,
+        startY: relY,
         startClientX: touch.clientX,
         startClientY: touch.clientY,
         longPressTimer: null,
@@ -1384,6 +1408,7 @@ function onRowTouchStart(e) {
             member,
             row,
             startX: relX,
+            startY: relY,
             startClientX: touch.clientX,
             startClientY: touch.clientY,
             selectRect: null,
@@ -1445,7 +1470,9 @@ function onAreaTouchEnd(e) {
             hours = days * 8;
         } else {
             date = currentDate;
-            hours = (dragState.snappedX2 - dragState.snappedX1) / DAILY_HOUR_WIDTH;
+            const h1 = yToWorkHours(dragState.snappedY1);
+            const h2 = yToWorkHours(dragState.snappedY2);
+            hours = Math.round((h2 - h1) * 10) / 10;
         }
 
         showTaskPicker(touch.clientX, touch.clientY, member, date, hours);
@@ -1463,36 +1490,71 @@ function updateAreaDragVisual(e) {
 
     const row = dragState.row;
     const rect = row.getBoundingClientRect();
-    const relX = e.clientX - rect.left + dom.section.scrollLeft;
 
-    const x1 = Math.min(dragState.startX, relX);
-    const x2 = Math.max(dragState.startX, relX);
-
-    let snappedX1, snappedX2, label;
     if (viewMode === 'gantt') {
-        snappedX1 = Math.floor(x1 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
-        snappedX2 = Math.ceil(x2 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        // ガントビュー: 横方向ドラッグ
+        const relX = e.clientX - rect.left + dom.section.scrollLeft;
+        const x1 = Math.min(dragState.startX, relX);
+        const x2 = Math.max(dragState.startX, relX);
+
+        const snappedX1 = Math.floor(x1 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
+        const snappedX2 = Math.ceil(x2 / GANTT_DAY_WIDTH) * GANTT_DAY_WIDTH;
         const days = Math.round((snappedX2 - snappedX1) / GANTT_DAY_WIDTH);
-        label = `${days}日`;
+        const label = `${days}日`;
+
+        if (!dragState.selectRect) {
+            dragState.selectRect = document.createElement('div');
+            dragState.selectRect.className = 'actual-tl-drag-select';
+            row.appendChild(dragState.selectRect);
+        }
+
+        dragState.selectRect.style.left = `${snappedX1}px`;
+        dragState.selectRect.style.width = `${snappedX2 - snappedX1}px`;
+        dragState.selectRect.style.top = '';
+        dragState.selectRect.style.height = '';
+        dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
+        dragState.snappedX1 = snappedX1;
+        dragState.snappedX2 = snappedX2;
     } else {
-        const snapUnit = DAILY_HOUR_WIDTH / 2;
-        snappedX1 = Math.floor(x1 / snapUnit) * snapUnit;
-        snappedX2 = Math.ceil(x2 / snapUnit) * snapUnit;
-        const hours = (snappedX2 - snappedX1) / DAILY_HOUR_WIDTH;
-        label = `${hours}h`;
-    }
+        // 日別ビュー: 縦方向ドラッグ（時間軸が縦）
+        const relY = e.clientY - rect.top;
+        const y1 = Math.min(dragState.startY, relY);
+        const y2 = Math.max(dragState.startY, relY);
 
-    if (!dragState.selectRect) {
-        dragState.selectRect = document.createElement('div');
-        dragState.selectRect.className = 'actual-tl-drag-select';
-        row.appendChild(dragState.selectRect);
-    }
+        // 30分スナップ（0.5h単位）
+        const snapUnit = DAILY_HOUR_HEIGHT / 2;
+        // 昼休みゾーンを跨がないようにスナップ
+        let snappedY1 = Math.floor(y1 / snapUnit) * snapUnit;
+        let snappedY2 = Math.ceil(y2 / snapUnit) * snapUnit;
 
-    dragState.selectRect.style.left = `${snappedX1}px`;
-    dragState.selectRect.style.width = `${snappedX2 - snappedX1}px`;
-    dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
-    dragState.snappedX1 = snappedX1;
-    dragState.snappedX2 = snappedX2;
+        // 昼休みゾーン内にスナップしないよう調整
+        if (snappedY1 > LUNCH_ZONE_TOP && snappedY1 < AFTERNOON_TOP) {
+            snappedY1 = AFTERNOON_TOP;
+        }
+        if (snappedY2 > LUNCH_ZONE_TOP && snappedY2 < AFTERNOON_TOP) {
+            snappedY2 = LUNCH_ZONE_TOP;
+        }
+
+        const hours1 = yToWorkHours(snappedY1);
+        const hours2 = yToWorkHours(snappedY2);
+        const hours = Math.round((hours2 - hours1) * 10) / 10;
+        const label = `${hours}h`;
+
+        if (!dragState.selectRect) {
+            dragState.selectRect = document.createElement('div');
+            dragState.selectRect.className = 'actual-tl-drag-select actual-tl-drag-select-v';
+            row.appendChild(dragState.selectRect);
+        }
+
+        dragState.selectRect.style.top = `${snappedY1}px`;
+        dragState.selectRect.style.height = `${snappedY2 - snappedY1}px`;
+        dragState.selectRect.style.left = '4px';
+        dragState.selectRect.style.right = '4px';
+        dragState.selectRect.style.width = 'auto';
+        dragState.selectRect.innerHTML = `<span class="actual-tl-ds-label">${label}</span>`;
+        dragState.snappedY1 = snappedY1;
+        dragState.snappedY2 = snappedY2;
+    }
 }
 
 // ============================================
@@ -1998,84 +2060,297 @@ function closeDetailPanel() {
     }
 }
 
-/**
- * バーリサイズ設定（日別ビュー）
- */
-function setupBarResize(bar) {
-    const leftHandle = bar.querySelector('.actual-tl-bar-resize.left');
-    const rightHandle = bar.querySelector('.actual-tl-bar-resize.right');
+// ============================================
+// バードラッグ&ドロップ（実績バーの移動）
+// ============================================
 
-    if (rightHandle) {
-        rightHandle.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            startBarResize(bar, 'right', e.clientX);
-        });
+/** バードラッグ状態 */
+let barDragState = null;
+
+/**
+ * 実績バー/ブロックにドラッグイベントを設定
+ */
+function setupBarDragEvents() {
+    const bars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.actual, .actual-tl-dv-block');
+    if (!bars) return;
+
+    bars.forEach(bar => {
+        bar.addEventListener('mousedown', onBarMouseDown);
+        bar.addEventListener('touchstart', onBarTouchStart, { passive: false });
+    });
+}
+
+function onBarMouseDown(e) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+
+    const bar = e.currentTarget;
+    const actualId = bar.dataset.actualId;
+    const actualIds = bar.dataset.actualIds;
+
+    // 移動対象のactualを特定
+    let targetActual;
+    if (actualId) {
+        targetActual = actuals.find(a => String(a.id) === String(actualId));
+    } else if (actualIds) {
+        const ids = actualIds.split(',');
+        targetActual = actuals.find(a => String(a.id) === String(ids[0]));
+    }
+    if (!targetActual) return;
+
+    barDragState = {
+        bar,
+        actual: targetActual,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        ghost: null,
+        moved: false,
+        origMember: targetActual.member,
+        origDate: targetActual.date,
+    };
+
+    document.addEventListener('mousemove', onBarDragMove);
+    document.addEventListener('mouseup', onBarDragEnd);
+}
+
+/** タッチ: ロングプレスでドラッグ開始 */
+let barTouchState = null;
+
+function onBarTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+
+    const bar = e.currentTarget;
+    const actualId = bar.dataset.actualId;
+    const actualIds = bar.dataset.actualIds;
+
+    let targetActual;
+    if (actualId) {
+        targetActual = actuals.find(a => String(a.id) === String(actualId));
+    } else if (actualIds) {
+        const ids = actualIds.split(',');
+        targetActual = actuals.find(a => String(a.id) === String(ids[0]));
+    }
+    if (!targetActual) return;
+
+    const touch = e.touches[0];
+
+    barTouchState = {
+        bar,
+        actual: targetActual,
+        startClientX: touch.clientX,
+        startClientY: touch.clientY,
+        longPressTimer: null,
+        isLongPress: false,
+    };
+
+    barTouchState.longPressTimer = setTimeout(() => {
+        if (!barTouchState) return;
+        barTouchState.isLongPress = true;
+        if (navigator.vibrate) navigator.vibrate(30);
+
+        barDragState = {
+            bar,
+            actual: targetActual,
+            startClientX: touch.clientX,
+            startClientY: touch.clientY,
+            ghost: null,
+            moved: false,
+            origMember: targetActual.member,
+            origDate: targetActual.date,
+        };
+
+        createBarGhost(barDragState, touch.clientX, touch.clientY);
+        barDragState.moved = true;
+        bar.style.opacity = '0.3';
+    }, LONG_PRESS_DELAY);
+
+    document.addEventListener('touchmove', onBarTouchMove, { passive: false });
+    document.addEventListener('touchend', onBarTouchEnd);
+}
+
+function onBarTouchMove(e) {
+    if (!barTouchState) return;
+    const touch = e.touches[0];
+    const dist = Math.abs(touch.clientX - barTouchState.startClientX) +
+                 Math.abs(touch.clientY - barTouchState.startClientY);
+
+    if (!barTouchState.isLongPress && dist > TOUCH_MOVE_THRESHOLD) {
+        clearTimeout(barTouchState.longPressTimer);
+        document.removeEventListener('touchmove', onBarTouchMove);
+        document.removeEventListener('touchend', onBarTouchEnd);
+        barTouchState = null;
+        return;
     }
 
-    if (leftHandle) {
-        leftHandle.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            startBarResize(bar, 'left', e.clientX);
-        });
+    if (barDragState && barDragState.moved) {
+        e.preventDefault();
+        updateBarGhostPosition(touch.clientX, touch.clientY);
+        highlightDropTarget(touch.clientX, touch.clientY);
     }
 }
 
-function startBarResize(bar, direction, startX) {
-    const actualId = bar.dataset.actualId;
-    const actual = actuals.find(a => String(a.id) === String(actualId));
-    if (!actual) return;
+function onBarTouchEnd(e) {
+    document.removeEventListener('touchmove', onBarTouchMove);
+    document.removeEventListener('touchend', onBarTouchEnd);
 
-    const origLeft = parseFloat(bar.style.left);
-    const origWidth = parseFloat(bar.style.width);
-    const snapUnit = DAILY_HOUR_WIDTH / 2; // 30分スナップ
+    if (barTouchState) {
+        clearTimeout(barTouchState.longPressTimer);
+    }
 
-    const onMove = (e) => {
-        const dx = e.clientX - startX;
+    if (barDragState && barDragState.moved) {
+        const touch = e.changedTouches[0];
+        finalizeBarDrop(touch.clientX, touch.clientY);
+    } else if (barTouchState && !barTouchState.isLongPress) {
+        // タップ → クリックとして処理
+        onActualBarClick({ stopPropagation: () => {}, currentTarget: barTouchState.bar });
+    }
 
-        if (direction === 'right') {
-            const newWidth = Math.max(snapUnit, Math.round((origWidth + dx) / snapUnit) * snapUnit);
-            bar.style.width = `${newWidth}px`;
-            const hours = newWidth / DAILY_HOUR_WIDTH;
-            const hoursLabel = bar.querySelector('.actual-tl-bar-hours');
-            if (hoursLabel) hoursLabel.textContent = `${Math.round(hours * 10) / 10}h`;
-        } else {
-            const maxDx = origWidth - snapUnit;
-            const clampedDx = Math.max(-origLeft, Math.min(maxDx, Math.round(dx / snapUnit) * snapUnit));
-            bar.style.left = `${origLeft + clampedDx}px`;
-            bar.style.width = `${origWidth - clampedDx}px`;
-            const hours = (origWidth - clampedDx) / DAILY_HOUR_WIDTH;
-            const hoursLabel = bar.querySelector('.actual-tl-bar-hours');
-            if (hoursLabel) hoursLabel.textContent = `${Math.round(hours * 10) / 10}h`;
+    cleanupBarDrag();
+    barTouchState = null;
+}
+
+function onBarDragMove(e) {
+    if (!barDragState) return;
+
+    const dist = Math.abs(e.clientX - barDragState.startClientX) + Math.abs(e.clientY - barDragState.startClientY);
+    if (!barDragState.moved && dist < 5) return;
+
+    if (!barDragState.moved) {
+        barDragState.moved = true;
+        createBarGhost(barDragState, e.clientX, e.clientY);
+        barDragState.bar.style.opacity = '0.3';
+    }
+
+    updateBarGhostPosition(e.clientX, e.clientY);
+    highlightDropTarget(e.clientX, e.clientY);
+}
+
+function onBarDragEnd(e) {
+    document.removeEventListener('mousemove', onBarDragMove);
+    document.removeEventListener('mouseup', onBarDragEnd);
+
+    if (barDragState && barDragState.moved) {
+        finalizeBarDrop(e.clientX, e.clientY);
+    }
+
+    cleanupBarDrag();
+}
+
+function createBarGhost(state, x, y) {
+    const ghost = document.createElement('div');
+    ghost.className = 'actual-tl-bar-ghost';
+    const color = getTaskColor(state.actual.version, state.actual.task);
+    ghost.style.background = color;
+    ghost.innerHTML = `<span>${escapeHtml(state.actual.task)} ${formatHours(state.actual.hours)}h</span>`;
+    ghost.style.left = `${x - 40}px`;
+    ghost.style.top = `${y - 14}px`;
+    document.body.appendChild(ghost);
+    state.ghost = ghost;
+}
+
+function updateBarGhostPosition(x, y) {
+    if (!barDragState?.ghost) return;
+    barDragState.ghost.style.left = `${x - 40}px`;
+    barDragState.ghost.style.top = `${y - 14}px`;
+}
+
+function highlightDropTarget(x, y) {
+    // 既存のハイライトをクリア
+    dom.timelineBody?.querySelectorAll('.actual-tl-drop-target').forEach(el => {
+        el.classList.remove('actual-tl-drop-target');
+    });
+
+    const target = getDropTarget(x, y);
+    if (target?.element) {
+        target.element.classList.add('actual-tl-drop-target');
+    }
+}
+
+function getDropTarget(x, y) {
+    if (viewMode === 'gantt') {
+        // ガント: ドロップ先 = メンバー行 + 日
+        const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+        if (!rows) return null;
+
+        for (const row of rows) {
+            const rect = row.getBoundingClientRect();
+            if (y >= rect.top && y <= rect.bottom) {
+                const relX = x - rect.left + dom.section.scrollLeft;
+                const [yr, mo] = currentMonth.split('-').map(Number);
+                const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
+                const daysInMonth = new Date(yr, mo, 0).getDate();
+                const day = Math.max(1, Math.min(daysInMonth, dayIdx + 1));
+                const date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                return {
+                    element: row,
+                    member: row.dataset.member,
+                    date
+                };
+            }
         }
-    };
+    } else {
+        // 日別: ドロップ先 = メンバー列（日は固定 = currentDate）
+        const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
+        if (!columns) return null;
 
-    const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-
-        // 新しい工数を計算して保存
-        const newWidth = parseFloat(bar.style.width);
-        const newHours = Math.round((newWidth / DAILY_HOUR_WIDTH) * 10) / 10;
-
-        if (newHours !== actual.hours && newHours > 0) {
-            const oldHours = actual.hours;
-            actual.hours = newHours;
-            saveData();
-            pushAction({
-                type: 'editActual',
-                id: actual.id,
-                before: { ...actual, hours: oldHours },
-                after: { ...actual }
-            });
-            showToast(`工数を${formatHours(newHours)}hに変更しました`);
-            renderActualTimeline();
+        for (const col of columns) {
+            const rect = col.getBoundingClientRect();
+            if (x >= rect.left && x <= rect.right) {
+                return {
+                    element: col,
+                    member: col.dataset.member,
+                    date: currentDate
+                };
+            }
         }
-    };
+    }
+    return null;
+}
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+function finalizeBarDrop(x, y) {
+    const target = getDropTarget(x, y);
+    if (!target) return;
+
+    const actual = barDragState.actual;
+    const newMember = target.member;
+    const newDate = target.date;
+
+    // 変更がなければ何もしない
+    if (newMember === actual.member && newDate === actual.date) return;
+
+    const before = { ...actual };
+    actual.member = newMember;
+    actual.date = newDate;
+
+    saveData();
+    pushAction({
+        type: 'editActual',
+        id: actual.id,
+        before,
+        after: { ...actual }
+    });
+
+    const changes = [];
+    if (before.member !== newMember) changes.push(`${escapeHtml(newMember)}`);
+    if (before.date !== newDate) changes.push(newDate);
+    showToast(`実績を移動: ${changes.join(' / ')}`);
+
+    renderActualTimeline();
+    if (typeof window.renderTodayActuals === 'function') {
+        window.renderTodayActuals();
+    }
+}
+
+function cleanupBarDrag() {
+    if (barDragState) {
+        if (barDragState.ghost) barDragState.ghost.remove();
+        if (barDragState.bar) barDragState.bar.style.opacity = '';
+    }
+    dom.timelineBody?.querySelectorAll('.actual-tl-drop-target').forEach(el => {
+        el.classList.remove('actual-tl-drop-target');
+    });
+    barDragState = null;
 }
 
 // ============================================
