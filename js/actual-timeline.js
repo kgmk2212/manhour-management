@@ -9,6 +9,7 @@ import {
 import { showAlert, sortMembers, formatHours, escapeHtml } from './utils.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
 import { getTaskColor } from './schedule.js';
+import { calculateVersionProgress } from './report.js';
 import { pushAction } from './history.js';
 import { saveData } from './storage.js';
 
@@ -778,6 +779,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                         title="${escapeHtml(act.task)} ${act.hours}h">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
                         <span class="actual-tl-dv-block-hours">${act.hours}h</span>
+                        <div class="actual-tl-dv-resize-handle" data-actual-id="${act.id}"></div>
                     </div>`;
                 }
                 accumulatedHours += act.hours;
@@ -1144,26 +1146,38 @@ function createDragGhost(state) {
 /**
  * ドロップターゲットハイライト更新
  */
-function updateDropTarget(_x, y) {
+function updateDropTarget(x, y) {
     clearDropTargets();
 
-    const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
-    const labels = dom.labelsBody?.querySelectorAll('.actual-tl-label-row');
-    if (!rows) return;
-
-    rows.forEach((row, i) => {
-        const rect = row.getBoundingClientRect();
-        if (y >= rect.top && y <= rect.bottom) {
-            row.classList.add('drop-target');
-            if (labels && labels[i]) {
-                labels[i].classList.add('drop-target');
+    if (viewMode === 'daily') {
+        // 日別ビュー: メンバー列ベース
+        const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
+        if (!columns) return;
+        columns.forEach(col => {
+            const rect = col.getBoundingClientRect();
+            if (x >= rect.left && x <= rect.right) {
+                col.classList.add('drop-target');
             }
-        }
-    });
+        });
+    } else {
+        // ガントビュー: 行ベース
+        const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
+        const labels = dom.labelsBody?.querySelectorAll('.actual-tl-label-row');
+        if (!rows) return;
+        rows.forEach((row, i) => {
+            const rect = row.getBoundingClientRect();
+            if (y >= rect.top && y <= rect.bottom) {
+                row.classList.add('drop-target');
+                if (labels && labels[i]) {
+                    labels[i].classList.add('drop-target');
+                }
+            }
+        });
+    }
 }
 
 function clearDropTargets() {
-    document.querySelectorAll('.actual-tl-row.drop-target, .actual-tl-label-row.drop-target').forEach(el => {
+    document.querySelectorAll('.actual-tl-row.drop-target, .actual-tl-label-row.drop-target, .actual-tl-dv-column.drop-target').forEach(el => {
         el.classList.remove('drop-target');
     });
 }
@@ -1172,6 +1186,20 @@ function clearDropTargets() {
  * ドロップ先情報を取得
  */
 function getDropInfo(x, y) {
+    if (viewMode === 'daily') {
+        // 日別ビュー: メンバー列から判定
+        const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
+        if (!columns) return null;
+        for (const col of columns) {
+            const rect = col.getBoundingClientRect();
+            if (x >= rect.left && x <= rect.right) {
+                return { member: col.dataset.member, date: currentDate, row: col, rect };
+            }
+        }
+        return null;
+    }
+
+    // ガントビュー: 行から判定
     const rows = dom.timelineBody?.querySelectorAll('.actual-tl-row');
     if (!rows) return null;
 
@@ -1180,19 +1208,12 @@ function getDropInfo(x, y) {
         if (y >= rect.top && y <= rect.bottom) {
             const member = row.dataset.member;
             const relX = x - rect.left + dom.section.scrollLeft;
-
-            if (viewMode === 'gantt') {
-                const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
-                const [yr, mo] = currentMonth.split('-').map(Number);
-                const daysInMonth = new Date(yr, mo, 0).getDate();
-                const day = Math.max(1, Math.min(daysInMonth, dayIdx + 1));
-                const date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                return { member, date, row, rect };
-            } else {
-                const hourOffset = relX / DAILY_HOUR_WIDTH;
-                const hour = Math.floor(WORK_START_HOUR + hourOffset);
-                return { member, date: currentDate, hour, row, rect };
-            }
+            const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
+            const [yr, mo] = currentMonth.split('-').map(Number);
+            const daysInMonth = new Date(yr, mo, 0).getDate();
+            const day = Math.max(1, Math.min(daysInMonth, dayIdx + 1));
+            const date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            return { member, date, row, rect };
         }
     }
     return null;
@@ -1260,13 +1281,17 @@ function setupDailyEvents() {
 
     // 実績ブロックにドラッグイベント
     setupBarDragEvents();
+
+    // リサイズハンドル（日別ビューのみ）
+    setupBlockResizeHandles();
 }
 
 /**
  * 行上のマウスダウン → 空エリアドラッグ開始 or 選択タスク配置
  */
 function onRowMouseDown(e) {
-    // バー/ブロック上のクリックは無視
+    // バー/ブロック/リサイズハンドル上のクリックは無視
+    if (e.target.closest('.actual-tl-dv-resize-handle')) return;
     if (e.target.closest('.actual-tl-bar') || e.target.closest('.actual-tl-dv-block')) return;
     if (e.button !== 0) return;
 
@@ -1364,6 +1389,7 @@ const TOUCH_MOVE_THRESHOLD = 10;
 let touchAreaState = null;
 
 function onRowTouchStart(e) {
+    if (e.target.closest('.actual-tl-dv-resize-handle')) return;
     if (e.target.closest('.actual-tl-bar') || e.target.closest('.actual-tl-dv-block')) return;
     if (e.touches.length !== 1) return;
 
@@ -1653,7 +1679,6 @@ function showTaskPicker(x, y, member, date, defaultHours) {
 
     const tasks = getTasksForMember(member);
     if (tasks.length === 0) {
-        // タスクがない場合は全タスクを表示
         const allTasks = getAllTasks();
         if (allTasks.length === 0) {
             showAlert('見積データがありません', false);
@@ -1667,24 +1692,28 @@ function showTaskPicker(x, y, member, date, defaultHours) {
 
     const dateLabel = formatDateLabel(date);
     const allTasks = getTasksForMember(member).length > 0 ? getTasksForMember(member) : getAllTasks();
+    const roundedHours = Math.round(defaultHours * 10) / 10;
 
     picker.innerHTML = `
         <div class="actual-tl-tp-header">
-            <div class="actual-tl-tp-title">タスクを選択</div>
-            <div class="actual-tl-tp-time">${escapeHtml(member)} / ${dateLabel}</div>
+            <div class="actual-tl-tp-header-top">
+                <div>
+                    <div class="actual-tl-tp-title">実績を登録</div>
+                    <div class="actual-tl-tp-time">${escapeHtml(member)} / ${dateLabel}</div>
+                </div>
+                <div class="actual-tl-tp-hours-ctrl">
+                    <button class="actual-tl-tp-hours-btn" id="atlTpHoursDec">&minus;</button>
+                    <input type="number" id="atlTpHours" value="${roundedHours}" min="0.5" max="24" step="0.5">
+                    <span class="actual-tl-tp-hours-unit">h</span>
+                    <button class="actual-tl-tp-hours-btn" id="atlTpHoursInc">&plus;</button>
+                </div>
+            </div>
             <input type="text" class="actual-tl-tp-search" placeholder="検索..." id="atlTpSearch">
         </div>
         <div class="actual-tl-tp-list" id="atlTpList">
             ${renderTaskPickerItems(allTasks)}
         </div>
-        <div class="actual-tl-tp-footer">
-            <label>工数:</label>
-            <input type="number" id="atlTpHours" value="${Math.round(defaultHours * 10) / 10}" min="0.5" max="24" step="0.5">
-            <span class="actual-tl-tpf-unit">h</span>
-            <div style="flex:1;"></div>
-            <button class="actual-tl-tp-btn cancel" id="atlTpCancel">キャンセル</button>
-            <button class="actual-tl-tp-btn confirm" id="atlTpConfirm">確定</button>
-        </div>
+        <div class="actual-tl-tp-hint">タスクをクリックで即登録</div>
     `;
 
     // 位置調整
@@ -1702,7 +1731,16 @@ function showTaskPicker(x, y, member, date, defaultHours) {
 
     document.body.appendChild(picker);
 
-    let selectedTask = null;
+    // 工数 +/- ボタン
+    const hoursInput = picker.querySelector('#atlTpHours');
+    picker.querySelector('#atlTpHoursDec').addEventListener('click', () => {
+        const v = parseFloat(hoursInput.value) || 1;
+        hoursInput.value = Math.max(0.5, Math.round((v - 0.5) * 10) / 10);
+    });
+    picker.querySelector('#atlTpHoursInc').addEventListener('click', () => {
+        const v = parseFloat(hoursInput.value) || 0;
+        hoursInput.value = Math.min(24, Math.round((v + 0.5) * 10) / 10);
+    });
 
     // 検索
     picker.querySelector('#atlTpSearch').addEventListener('input', (e) => {
@@ -1713,43 +1751,25 @@ function showTaskPicker(x, y, member, date, defaultHours) {
             t.process.toLowerCase().includes(query)
         );
         picker.querySelector('#atlTpList').innerHTML = renderTaskPickerItems(filtered);
-        bindTaskPickerItems(picker, member, date);
+        bindTaskPickerItems();
     });
 
-    // タスク選択バインド
-    bindTaskPickerItems(picker, member, date);
+    // タスクアイテム: クリックで即登録
+    bindTaskPickerItems();
 
     function bindTaskPickerItems() {
         picker.querySelectorAll('.actual-tl-tp-item').forEach(item => {
             item.addEventListener('click', () => {
-                picker.querySelectorAll('.actual-tl-tp-item').forEach(i => i.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedTask = {
-                    version: item.dataset.version,
-                    task: item.dataset.task,
-                    process: item.dataset.process
-                };
+                const hours = parseFloat(hoursInput.value);
+                if (!hours || hours <= 0) {
+                    showAlert('工数を入力してください', false);
+                    return;
+                }
+                createActual(member, date, item.dataset.version, item.dataset.task, item.dataset.process, hours);
+                closeTaskPicker();
             });
         });
     }
-
-    // 確定
-    picker.querySelector('#atlTpConfirm').addEventListener('click', () => {
-        if (!selectedTask) {
-            showAlert('タスクを選択してください', false);
-            return;
-        }
-        const hours = parseFloat(picker.querySelector('#atlTpHours').value);
-        if (!hours || hours <= 0) {
-            showAlert('工数を入力してください', false);
-            return;
-        }
-        createActual(member, date, selectedTask.version, selectedTask.task, selectedTask.process, hours);
-        closeTaskPicker();
-    });
-
-    // キャンセル
-    picker.querySelector('#atlTpCancel').addEventListener('click', closeTaskPicker);
 
     // Escで閉じる
     picker.addEventListener('keydown', (e) => {
@@ -2082,6 +2102,7 @@ function setupBarDragEvents() {
 
 function onBarMouseDown(e) {
     if (e.button !== 0) return;
+    if (e.target.closest('.actual-tl-dv-resize-handle')) return;
     e.stopPropagation();
 
     const bar = e.currentTarget;
@@ -2118,6 +2139,7 @@ let barTouchState = null;
 
 function onBarTouchStart(e) {
     if (e.touches.length !== 1) return;
+    if (e.target.closest('.actual-tl-dv-resize-handle')) return;
     e.stopPropagation();
 
     const bar = e.currentTarget;
@@ -2351,6 +2373,125 @@ function cleanupBarDrag() {
         el.classList.remove('actual-tl-drop-target');
     });
     barDragState = null;
+}
+
+// ============================================
+// ブロックリサイズ（日別ビュー: 下端ドラッグで工数変更）
+// ============================================
+
+function setupBlockResizeHandles() {
+    const handles = dom.timelineBody?.querySelectorAll('.actual-tl-dv-resize-handle');
+    if (!handles) return;
+
+    handles.forEach(handle => {
+        handle.addEventListener('mousedown', onResizeHandleMouseDown);
+        handle.addEventListener('touchstart', onResizeHandleTouchStart, { passive: false });
+    });
+}
+
+let resizeState = null;
+
+function onResizeHandleMouseDown(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const handle = e.currentTarget;
+    const block = handle.closest('.actual-tl-dv-block');
+    if (!block) return;
+    startBlockResize(block, e.clientY);
+    document.addEventListener('mousemove', onResizeMouseMove);
+    document.addEventListener('mouseup', onResizeMouseUp);
+}
+
+function onResizeHandleTouchStart(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const handle = e.currentTarget;
+    const block = handle.closest('.actual-tl-dv-block');
+    if (!block) return;
+    const touch = e.touches[0];
+    startBlockResize(block, touch.clientY);
+    document.addEventListener('touchmove', onResizeTouchMove, { passive: false });
+    document.addEventListener('touchend', onResizeTouchEnd);
+}
+
+function startBlockResize(block, startY) {
+    const actualId = block.dataset.actualId;
+    const actual = actuals.find(a => String(a.id) === String(actualId));
+    if (!actual) return;
+
+    resizeState = {
+        block,
+        actual,
+        startY,
+        origHeight: parseFloat(block.style.height),
+        origHours: actual.hours,
+    };
+    block.classList.add('resizing');
+}
+
+function onResizeMouseMove(e) {
+    if (!resizeState) return;
+    updateBlockResize(e.clientY);
+}
+
+function onResizeTouchMove(e) {
+    if (!resizeState) return;
+    e.preventDefault();
+    updateBlockResize(e.touches[0].clientY);
+}
+
+function updateBlockResize(clientY) {
+    if (!resizeState) return;
+    const dy = clientY - resizeState.startY;
+    const snapUnit = DAILY_HOUR_HEIGHT / 2; // 30分スナップ
+    const newHeight = Math.max(snapUnit, Math.round((resizeState.origHeight + dy) / snapUnit) * snapUnit);
+    const newHours = Math.round((newHeight / DAILY_HOUR_HEIGHT) * 10) / 10;
+
+    resizeState.block.style.height = `${newHeight}px`;
+    const hoursLabel = resizeState.block.querySelector('.actual-tl-dv-block-hours');
+    if (hoursLabel) hoursLabel.textContent = `${newHours}h`;
+}
+
+function onResizeMouseUp() {
+    document.removeEventListener('mousemove', onResizeMouseMove);
+    document.removeEventListener('mouseup', onResizeMouseUp);
+    finalizeBlockResize();
+}
+
+function onResizeTouchEnd() {
+    document.removeEventListener('touchmove', onResizeTouchMove);
+    document.removeEventListener('touchend', onResizeTouchEnd);
+    finalizeBlockResize();
+}
+
+function finalizeBlockResize() {
+    if (!resizeState) return;
+
+    const newHeight = parseFloat(resizeState.block.style.height);
+    const newHours = Math.round((newHeight / DAILY_HOUR_HEIGHT) * 10) / 10;
+
+    resizeState.block.classList.remove('resizing');
+
+    if (newHours !== resizeState.origHours && newHours > 0) {
+        const before = { ...resizeState.actual };
+        resizeState.actual.hours = newHours;
+        saveData();
+        pushAction({
+            type: 'editActual',
+            id: resizeState.actual.id,
+            before,
+            after: { ...resizeState.actual }
+        });
+        showToast(`工数を${formatHours(newHours)}hに変更`);
+        renderActualTimeline();
+    } else {
+        // 元に戻す
+        resizeState.block.style.height = `${resizeState.origHeight}px`;
+        const hoursLabel = resizeState.block.querySelector('.actual-tl-dv-block-hours');
+        if (hoursLabel) hoursLabel.textContent = `${resizeState.origHours}h`;
+    }
+
+    resizeState = null;
 }
 
 // ============================================
@@ -2909,13 +3050,38 @@ function calculateBarLayout(mergedBars, laneTop) {
     });
 }
 
+/** 完了済み版数のキャッシュ */
+let _completedVersionsCache = null;
+let _completedVersionsCacheKey = '';
+
+function getCompletedVersions() {
+    // 簡易キャッシュ: actuals/estimatesの長さをキーにする
+    const cacheKey = `${actuals.length}-${estimates.length}`;
+    if (_completedVersionsCacheKey === cacheKey && _completedVersionsCache) {
+        return _completedVersionsCache;
+    }
+    const completed = new Set();
+    const allVersions = [...new Set(estimates.map(e => e.version))];
+    allVersions.forEach(version => {
+        const progress = calculateVersionProgress(version);
+        if (progress.totalTasks > 0 && progress.completedTasks === progress.totalTasks) {
+            completed.add(version);
+        }
+    });
+    _completedVersionsCache = completed;
+    _completedVersionsCacheKey = cacheKey;
+    return completed;
+}
+
 /**
- * メンバーのタスク一覧（estimatesから）
+ * メンバーのタスク一覧（estimatesから、完了済み版数を除外）
  */
 function getTasksForMember(member) {
+    const completedVersions = getCompletedVersions();
     const taskMap = {};
     estimates.forEach(est => {
         if (est.member !== member) return;
+        if (completedVersions.has(est.version)) return;
         const key = `${est.version}|${est.task}|${est.process}`;
         if (!taskMap[key]) {
             taskMap[key] = {
@@ -2932,11 +3098,13 @@ function getTasksForMember(member) {
 }
 
 /**
- * 全タスク取得
+ * 全タスク取得（完了済み版数を除外）
  */
 function getAllTasks() {
+    const completedVersions = getCompletedVersions();
     const taskMap = {};
     estimates.forEach(est => {
+        if (completedVersions.has(est.version)) return;
         const key = `${est.version}|${est.task}|${est.process}`;
         if (!taskMap[key]) {
             taskMap[key] = {

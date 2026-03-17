@@ -6137,6 +6137,42 @@ li.drop-below {
     filter: brightness(1.06);
 }
 
+.actual-tl-dv-block:hover .actual-tl-dv-resize-handle {
+    opacity: 1;
+}
+
+/* ---- ブロックリサイズハンドル ---- */
+.actual-tl-dv-resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    right: 8px;
+    height: 8px;
+    cursor: ns-resize;
+    border-radius: 0 0 6px 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 6;
+}
+
+.actual-tl-dv-resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.actual-tl-dv-block.resizing {
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0.9;
+}
+
 .actual-tl-dv-block-task {
     font-size: 11px;
     font-weight: 700;
@@ -6798,14 +6834,6 @@ li.drop-below {
     transition: background var(--transition);
 }
 
-.actual-tl-tp-item:hover {
-    background: var(--surface-elevated);
-}
-
-.actual-tl-tp-item.selected {
-    background: var(--accent-light);
-}
-
 .actual-tl-tpi-bar {
     width: 4px;
     height: 24px;
@@ -6847,6 +6875,101 @@ li.drop-below {
     flex-shrink: 0;
 }
 
+/* タスクピッカー: ヘッダー上段 */
+.actual-tl-tp-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* タスクピッカー: 工数コントロール（ヘッダー内） */
+.actual-tl-tp-hours-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.actual-tl-tp-hours-ctrl input {
+    width: 40px;
+    padding: 3px 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.actual-tl-tp-hours-ctrl input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.actual-tl-tp-hours-unit {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 2px;
+}
+
+.actual-tl-tp-hours-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    padding: 0;
+}
+
+.actual-tl-tp-hours-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* タスクピッカー: ヒントテキスト */
+.actual-tl-tp-hint {
+    padding: 6px 14px;
+    border-top: 1px solid var(--border-light);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+/* タスクピッカー: アイテムのホバー強化 */
+.actual-tl-tp-item:hover {
+    background: var(--accent-light);
+}
+
+.actual-tl-tp-item:active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.actual-tl-tp-item:active .actual-tl-tpi-name,
+.actual-tl-tp-item:active .actual-tl-tpi-hours {
+    color: #fff;
+}
+
+.actual-tl-tp-item:active .actual-tl-tpi-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* レガシー: 旧footer/btn (クイック登録確認で使用) */
 .actual-tl-tp-footer {
     padding: 10px 14px;
     border-top: 1px solid var(--border-light);
@@ -6892,6 +7015,7 @@ li.drop-below {
     cursor: pointer;
     transition: all var(--transition);
     border: none;
+    white-space: nowrap;
 }
 
 .actual-tl-tp-btn.cancel {
@@ -7400,6 +7524,33 @@ li.drop-below {
         font-size: 10px;
     }
 
+    .actual-tl-tp-header-top {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .actual-tl-tp-hours-ctrl input {
+        width: 50px;
+        font-size: 16px;
+        padding: 6px 4px;
+        min-height: 36px;
+    }
+
+    .actual-tl-tp-hours-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .actual-tl-tp-hours-unit {
+        font-size: 14px;
+    }
+
+    .actual-tl-tp-hint {
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+
     .actual-tl-tp-footer {
         padding: 12px 16px;
         gap: 10px;
@@ -7420,6 +7571,7 @@ li.drop-below {
         padding: 10px 18px;
         font-size: 14px;
         min-height: 40px;
+        white-space: nowrap;
     }
 
     /* 詳細パネル: フル幅 */
