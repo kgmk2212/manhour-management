@@ -14,7 +14,7 @@ import {
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
-const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
+const TAB_ORDER = ['quick', 'report', 'analytics', 'estimate', 'actual', 'schedule', 'settings'];
 
 // ============================================
 // スクロール比率ユーティリティ（表内相対位置）
@@ -277,6 +277,11 @@ export function showTab(tabName, options = {}) {
         // 実績一覧を再描画（他タブで月フィルタが変更されている可能性があるため）
         if (typeof window.renderActualList === 'function') {
             window.renderActualList();
+        }
+    } else if (tabName === 'analytics') {
+        // 分析タブのチャートを初期化/再描画
+        if (typeof window.initReportAnalytics === 'function') {
+            window.initReportAnalytics();
         }
     } else if (tabName === 'schedule') {
         // スケジュールタブを再描画（Canvas内容がクリアされている場合に備えて）

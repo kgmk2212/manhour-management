@@ -24,6 +24,7 @@ import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
 import * as History from './history.js';
 import * as ActualTimeline from './actual-timeline.js';
+import { initReportAnalytics } from './report-analytics.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -368,6 +369,9 @@ window.renderReportMatrix = Report.renderReportMatrix;
 window.toggleProgressSection = Report.toggleProgressSection;
 
 // schedule.js の関数
+// report-analytics.js の関数
+window.initReportAnalytics = initReportAnalytics;
+
 window.initScheduleModule = Schedule.initScheduleModule;
 window.renderScheduleView = Schedule.renderScheduleView;
 window.navigateScheduleMonth = Schedule.navigateScheduleMonth;

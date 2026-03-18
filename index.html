@@ -17,7 +17,7 @@
         (function () {
             try {
                 var savedTab = localStorage.getItem('manhour_currentTab');
-                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
+                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'analytics', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
             } catch (e) { }
@@ -60,6 +60,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css?v=20260310-8">
+    <link rel="stylesheet" href="report-analytics.css?v=20260319-1">
     <style>
         /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
         [data-early-tab] #quick.tab-content.active { display: none !important; }
@@ -67,6 +68,7 @@
         [data-early-tab="actual"] #actual.tab-content { display: block !important; }
         [data-early-tab="report"] #report.tab-content { display: block !important; }
         [data-early-tab="schedule"] #schedule.tab-content { display: block !important; }
+        [data-early-tab="analytics"] #analytics.tab-content { display: block !important; }
         [data-early-tab="settings"] #settings.tab-content { display: block !important; }
     </style>
 </head>
@@ -100,6 +102,10 @@
                 <div class="nav-item" data-tab="report">
                     <span class="nav-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                     <span class="nav-item-label">レポート</span>
+                </div>
+                <div class="nav-item" data-tab="analytics">
+                    <span class="nav-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+                    <span class="nav-item-label">分析</span>
                 </div>
                 <div class="nav-item" data-tab="estimate">
                     <span class="nav-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
@@ -162,6 +168,10 @@
             <button class="mobile-tab-item" data-tab="report">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span>レポート</span>
+            </button>
+            <button class="mobile-tab-item" data-tab="analytics">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <span>分析</span>
             </button>
             <button class="mobile-tab-item" data-tab="estimate">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1077,6 +1087,401 @@
                 </div>
             </div>
             <!-- /schedule -->
+
+            <!-- [ANALYTICS] 分析タブ -->
+            <div id="analytics" class="tab-content">
+                <div class="ra-page-header">
+                    <h1>レポート分析</h1>
+                    <p>見積と実績の集計・分析を表示します</p>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="ra-filter-bar">
+                    <label>フィルタ:</label>
+                    <select>
+                        <option>月別</option>
+                        <option>版数別</option>
+                    </select>
+                    <label>表示月:</label>
+                    <select>
+                        <option>全期間</option>
+                        <option>2026年3月</option>
+                        <option>2026年2月</option>
+                        <option>2026年1月</option>
+                    </select>
+                </div>
+
+                <!-- KPI Summary Row -->
+                <div class="ra-kpi-row">
+                    <div class="ra-kpi-card accent">
+                        <div class="ra-kpi-label">総見積工数</div>
+                        <div class="ra-kpi-value">842h</div>
+                        <div class="ra-kpi-sub">105.3人日 / 4.8人月</div>
+                        <canvas class="ra-kpi-sparkline" id="ra-sparkline1"></canvas>
+                    </div>
+                    <div class="ra-kpi-card accent">
+                        <div class="ra-kpi-label">総実績工数</div>
+                        <div class="ra-kpi-value">798h</div>
+                        <div class="ra-kpi-sub">99.8人日 / 4.5人月</div>
+                        <canvas class="ra-kpi-sparkline" id="ra-sparkline2"></canvas>
+                    </div>
+                    <div class="ra-kpi-card">
+                        <div class="ra-kpi-label">差異</div>
+                        <div class="ra-kpi-value" style="color: var(--success);">-44h</div>
+                        <div class="ra-kpi-badge positive">
+                            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2L8 6H2Z" fill="currentColor"/></svg>
+                            予算内
+                        </div>
+                    </div>
+                    <div class="ra-kpi-card">
+                        <div class="ra-kpi-label">実績率</div>
+                        <div class="ra-kpi-value">94.8%</div>
+                        <div class="ra-kpi-badge positive">
+                            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 2L8 6H2Z" fill="currentColor"/></svg>
+                            良好
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Bar -->
+                <div class="ra-alert-bar" id="ra-alertBar">
+                    <div class="ra-alert-bar-icon">&#9888;&#65039;</div>
+                    <div class="ra-alert-bar-content">
+                        <div class="ra-alert-item">
+                            <span class="ra-alert-count danger">3</span>
+                            <span>超過タスク</span>
+                        </div>
+                        <div class="ra-alert-item">
+                            <span class="ra-alert-count warning">2</span>
+                            <span>注意タスク</span>
+                        </div>
+                        <div class="ra-alert-item">
+                            <span class="ra-alert-count info">87%</span>
+                            <span>キャパシティ使用率</span>
+                        </div>
+                    </div>
+                    <div class="ra-alert-expand" id="ra-alertExpandText">詳細 &#9662;</div>
+                </div>
+
+                <!-- Alert Detail (expandable) -->
+                <div class="ra-alert-detail" id="ra-alertDetail">
+                    <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;">要対応タスク</div>
+                    <div class="ra-alert-detail-grid">
+                        <div class="ra-alert-task">
+                            <div class="ra-alert-task-status exceeded"></div>
+                            <div class="ra-alert-task-name">V3.0 - ユーザー管理 [PG]</div>
+                            <div class="ra-alert-task-value" style="color:var(--danger);">+62%</div>
+                        </div>
+                        <div class="ra-alert-task">
+                            <div class="ra-alert-task-status exceeded"></div>
+                            <div class="ra-alert-task-name">V3.0 - API連携 [IT]</div>
+                            <div class="ra-alert-task-value" style="color:var(--danger);">+55%</div>
+                        </div>
+                        <div class="ra-alert-task">
+                            <div class="ra-alert-task-status exceeded"></div>
+                            <div class="ra-alert-task-name">V2.0 - 帳票出力 [PT]</div>
+                            <div class="ra-alert-task-value" style="color:var(--danger);">+51%</div>
+                        </div>
+                        <div class="ra-alert-task">
+                            <div class="ra-alert-task-status warning"></div>
+                            <div class="ra-alert-task-name">V3.1 - 検索機能 [PG]</div>
+                            <div class="ra-alert-task-value" style="color:var(--warning);">+38%</div>
+                        </div>
+                        <div class="ra-alert-task">
+                            <div class="ra-alert-task-status warning"></div>
+                            <div class="ra-alert-task-name">V3.0 - ダッシュボード [UI]</div>
+                            <div class="ra-alert-task-value" style="color:var(--warning);">+25%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Dashboard Grid -->
+                <div class="ra-analytics-grid">
+                    <!-- 1. Process Est vs Actual -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">工程別 見積 vs 実績</div>
+                                <div class="ra-chart-card-subtitle">工程ごとの予実比較</div>
+                            </div>
+                        </div>
+                        <div class="ra-chart-legend">
+                            <div class="ra-chart-legend-item">
+                                <div class="ra-chart-legend-dot" style="background: var(--chart-est);"></div>
+                                見積
+                            </div>
+                            <div class="ra-chart-legend-item">
+                                <div class="ra-chart-legend-dot" style="background: var(--chart-act);"></div>
+                                実績
+                            </div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartProcessBar" height="200"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            <strong>PG工程</strong>が見積対比+18%で最も乖離が大きい。<strong>UI工程</strong>は精度が最も高い。
+                        </div>
+                    </div>
+
+                    <!-- 2. Estimation Bias -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">見積バイアス分析</div>
+                                <div class="ra-chart-card-subtitle">工程別の過大/過小見積傾向</div>
+                            </div>
+                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartBias" height="200"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            <strong>PG・IT</strong>は系統的に過小見積（実績超過）。次回見積時に<strong>1.15〜1.2倍</strong>の補正を推奨。
+                        </div>
+                    </div>
+
+                    <!-- 3. Monthly Trend -->
+                    <div class="ra-chart-card full-width">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">月別推移</div>
+                                <div class="ra-chart-card-subtitle">見積・実績の累積推移と乖離</div>
+                            </div>
+                        </div>
+                        <div class="ra-chart-legend">
+                            <div class="ra-chart-legend-item">
+                                <div class="ra-chart-legend-dot" style="background: var(--chart-est);"></div>
+                                見積
+                            </div>
+                            <div class="ra-chart-legend-item">
+                                <div class="ra-chart-legend-dot" style="background: var(--chart-act);"></div>
+                                実績
+                            </div>
+                            <div class="ra-chart-legend-item">
+                                <div class="ra-chart-legend-dot" style="background: var(--danger); border-radius: 50%;"></div>
+                                乖離
+                            </div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartTrend" height="180"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            2月以降、実績が見積を上回る傾向。3月は差異が縮小し改善の兆し。
+                        </div>
+                    </div>
+
+                    <!-- 4. Pareto Analysis -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">工数配分（パレート分析）</div>
+                                <div class="ra-chart-card-subtitle">上位タスクへの工数集中度</div>
+                            </div>
+                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartPareto" height="220"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            上位<strong>3タスク（30%）</strong>が実績工数の<strong>62%</strong>を占める。リソース集中の意思決定に活用可能。
+                        </div>
+                    </div>
+
+                    <!-- 5. Member Workload -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">メンバー負荷分布</div>
+                                <div class="ra-chart-card-subtitle">工程別の時間配分と負荷バランス</div>
+                            </div>
+                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                        </div>
+                        <div class="ra-chart-legend">
+                            <div class="ra-chart-legend-item"><div class="ra-chart-legend-dot" style="background: var(--chart-1);"></div>UI</div>
+                            <div class="ra-chart-legend-item"><div class="ra-chart-legend-dot" style="background: var(--chart-2);"></div>PG</div>
+                            <div class="ra-chart-legend-item"><div class="ra-chart-legend-dot" style="background: var(--chart-3);"></div>PT</div>
+                            <div class="ra-chart-legend-item"><div class="ra-chart-legend-dot" style="background: var(--chart-4);"></div>IT</div>
+                            <div class="ra-chart-legend-item"><div class="ra-chart-legend-dot" style="background: var(--chart-5);"></div>ST</div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartMemberWorkload" height="200"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            <strong>田中</strong>に負荷が集中（総工数の31%）。<strong>渡辺</strong>に余裕あり（キャパ67%）。
+                        </div>
+                    </div>
+
+                    <!-- 6. Risk Heatmap -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">リスクヒートマップ</div>
+                                <div class="ra-chart-card-subtitle">版数×工程の超過率マトリクス</div>
+                            </div>
+                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                        </div>
+                        <div class="ra-chart-card-body" id="ra-heatmapContainer">
+                            <!-- rendered by JS -->
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            <strong>V3.0のPG・IT</strong>が高リスクゾーン。V2.0は全工程で安定。
+                        </div>
+                    </div>
+
+                    <!-- 7. Accuracy Trend -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">見積精度トレンド</div>
+                                <div class="ra-chart-card-subtitle">版数を重ねた精度改善の推移</div>
+                            </div>
+                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartAccuracyTrend" height="200"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            見積精度は<strong>V1.0 → V3.1</strong>で徐々に改善。V3.1は誤差<strong>5%以内</strong>で高精度。
+                        </div>
+                    </div>
+
+                    <!-- 8. Status Distribution -->
+                    <div class="ra-chart-card">
+                        <div class="ra-chart-card-header">
+                            <div>
+                                <div class="ra-chart-card-title">ステータス分布</div>
+                                <div class="ra-chart-card-subtitle">全タスクの進行状況</div>
+                            </div>
+                        </div>
+                        <div class="ra-chart-card-body">
+                            <canvas id="ra-chartDonut" height="200"></canvas>
+                        </div>
+                        <div class="ra-chart-card-insight">
+                            <strong>76%</strong>のタスクが順調以上。超過3件は要対応。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Sections -->
+                <div class="ra-detail-section" id="ra-memberDetail">
+                    <div class="ra-detail-section-header">
+                        <div class="ra-detail-section-arrow">&#9654;</div>
+                        <div class="ra-detail-section-title">担当者別工数</div>
+                    </div>
+                    <div class="ra-detail-section-body">
+                        <table class="ra-data-table">
+                            <thead>
+                                <tr>
+                                    <th>担当者</th>
+                                    <th style="text-align:right;">見積(h)</th>
+                                    <th style="text-align:right;">実績(h)</th>
+                                    <th style="text-align:right;">差異</th>
+                                    <th style="text-align:right;">精度</th>
+                                    <th style="width:100px;">バランス</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight:600;">田中</td>
+                                    <td class="num">264.0</td>
+                                    <td class="num">248.5</td>
+                                    <td class="num text-success">-15.5</td>
+                                    <td class="num">94.1%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:94.1%; background:var(--success);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">佐藤</td>
+                                    <td class="num">218.0</td>
+                                    <td class="num">231.0</td>
+                                    <td class="num text-danger">+13.0</td>
+                                    <td class="num text-danger">106.0%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:100%; background:var(--warning);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">鈴木</td>
+                                    <td class="num">186.0</td>
+                                    <td class="num">178.5</td>
+                                    <td class="num text-success">-7.5</td>
+                                    <td class="num">95.9%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:95.9%; background:var(--success);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">高橋</td>
+                                    <td class="num">112.0</td>
+                                    <td class="num">98.0</td>
+                                    <td class="num text-success">-14.0</td>
+                                    <td class="num">87.5%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:87.5%; background:var(--success);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">渡辺</td>
+                                    <td class="num">62.0</td>
+                                    <td class="num">42.0</td>
+                                    <td class="num text-success">-20.0</td>
+                                    <td class="num">67.7%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:67.7%; background:var(--info);"></div></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ra-detail-section" id="ra-versionDetail">
+                    <div class="ra-detail-section-header">
+                        <div class="ra-detail-section-arrow">&#9654;</div>
+                        <div class="ra-detail-section-title">版数別進捗</div>
+                    </div>
+                    <div class="ra-detail-section-body">
+                        <table class="ra-data-table">
+                            <thead>
+                                <tr>
+                                    <th>版数</th>
+                                    <th style="text-align:right;">見積(h)</th>
+                                    <th style="text-align:right;">実績(h)</th>
+                                    <th style="text-align:right;">差異</th>
+                                    <th style="text-align:right;">精度</th>
+                                    <th style="width:100px;">進捗</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight:600;">V1.0</td>
+                                    <td class="num">180.0</td>
+                                    <td class="num">172.0</td>
+                                    <td class="num text-success">-8.0</td>
+                                    <td class="num">95.6%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:100%; background:var(--success);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">V2.0</td>
+                                    <td class="num">248.0</td>
+                                    <td class="num">241.0</td>
+                                    <td class="num text-success">-7.0</td>
+                                    <td class="num">97.2%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:100%; background:var(--success);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">V3.0</td>
+                                    <td class="num">312.0</td>
+                                    <td class="num">325.0</td>
+                                    <td class="num text-danger">+13.0</td>
+                                    <td class="num text-danger">104.2%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:100%; background:var(--warning);"></div></div></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">V3.1</td>
+                                    <td class="num">102.0</td>
+                                    <td class="num">60.0</td>
+                                    <td class="num text-success">-42.0</td>
+                                    <td class="num">58.8%</td>
+                                    <td><div class="ra-mini-bar"><div class="ra-mini-bar-fill" style="width:58.8%; background:var(--info);"></div></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- /analytics -->
 
             <div id="settings" class="tab-content">
                 <div class="page-header">
