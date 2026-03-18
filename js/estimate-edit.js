@@ -21,6 +21,10 @@ import { updateSchedule, calculateEndDate, showToast } from './schedule.js';
 // 見積編集
 // ============================================
 
+// 編集中の月別工数を保持するキャッシュ
+// totalHoursが一時的に0/空になりDOM入力が破棄されても値を失わないようにする
+let _editMonthlyHoursCache = {};
+
 /**
  * 見積編集モーダルを開く
  */
@@ -122,6 +126,9 @@ export function editEstimate(id) {
         document.querySelector('input[name="editWorkMonthMode"][value="single"]').checked = true;
         toggleEditWorkMonthMode();
     }
+
+    // 編集モーダルを開くときにキャッシュをクリア
+    _editMonthlyHoursCache = {};
 
     document.getElementById('editEstimateModal').style.display = 'flex';
 }
@@ -259,10 +266,12 @@ export function saveEstimateEdit() {
 
     if (!existingRemaining) {
         // 見込み残存が未設定 → タスク工程レベルの見積合計で作成
+        // 注意: 見積データは既に更新済みなので、旧時間との差分を補正する
         const totalEstHours = estimates
             .filter(e => e.version === version && e.task === task && e.process === process)
             .reduce((sum, e) => sum + e.hours, 0);
-        saveRemainingEstimate(version, task, process, member, totalEstHours);
+        const correctedTotal = totalEstHours - hours + oldEstimate.hours;
+        saveRemainingEstimate(version, task, process, member, correctedTotal);
     } else if (oldEstimate.hours && oldEstimate.hours !== hours) {
         // 見積時間が変更された → タスク工程レベルの残存を差分調整
         oldRemainingHours = existingRemaining.remainingHours;
@@ -303,7 +312,12 @@ export function saveEstimateEdit() {
     pushAction({
         type: 'estimate_edit',
         description: `見積編集: ${task} (${process || 'その他'})`,
-        data: { before: oldEstimate, after: { ...estimates[estimateIndex] } }
+        data: {
+            before: oldEstimate,
+            after: { ...estimates[estimateIndex] },
+            remainingBefore: oldRemainingHours !== null ? { version, task, process, member, remainingHours: oldRemainingHours } : null,
+            remainingAfter: newRemainingHours !== null ? { version, task, process, member, remainingHours: newRemainingHours } : null
+        }
     });
 
     // 追加担当者行を新規見積レコードとして作成
@@ -355,8 +369,11 @@ export function saveEstimateEdit() {
 
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.updateTabFilterContent === 'function') window.updateTabFilterContent(false);
 
     if (scheduleToastMsg) {
         showToast(scheduleToastMsg, 'info', 5000);
@@ -412,6 +429,18 @@ export function updateEditMonthPreview() {
     const method = document.querySelector('input[name="editSplitMethod"]:checked').value;
     const preview = document.getElementById('editMonthPreview');
 
+    // DOM入力フィールドが存在する間にキャッシュを更新する
+    // （totalHoursが一時的に0になりDOMが破棄される前に値を保存）
+    if (startMonth && endMonth && startMonth <= endMonth) {
+        const currentMonths = generateMonthRange(startMonth, endMonth);
+        currentMonths.forEach((month, index) => {
+            const input = document.getElementById(`editMonthHours_${index}`);
+            if (input) {
+                _editMonthlyHoursCache[month] = parseFloat(input.value) || 0;
+            }
+        });
+    }
+
     if (!startMonth || !endMonth || totalHours <= 0) {
         preview.innerHTML = '<p style="color: #999; font-size: 14px;">総工数と作業期間を入力してください</p>';
         return;
@@ -429,16 +458,8 @@ export function updateEditMonthPreview() {
     const normalizedEstimate = normalizeEstimate(currentEstimate);
     const savedMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
 
-    // 既存のDOM入力フィールドから編集中の値を取得（再生成時に値が失われないようにする）
-    const editedMonthlyHours = {};
-    months.forEach((month, index) => {
-        const input = document.getElementById(`editMonthHours_${index}`);
-        if (input) {
-            editedMonthlyHours[month] = parseFloat(input.value) || 0;
-        }
-    });
-    const hasEditedValues = Object.keys(editedMonthlyHours).length > 0;
-    const currentMonthlyHours = hasEditedValues ? editedMonthlyHours : savedMonthlyHours;
+    // 値の優先順位: キャッシュ > 保存済みデータ > 0
+    const currentMonthlyHours = Object.keys(_editMonthlyHoursCache).length > 0 ? _editMonthlyHoursCache : savedMonthlyHours;
 
     let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid var(--accent); max-height: 300px; overflow-y: auto;">';
     html += '<strong style="color: var(--text-primary);">📋 月別工数</strong><br>';
@@ -463,7 +484,7 @@ export function updateEditMonthPreview() {
             calculatedTotal += existingHours;
             html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
             html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-            html += `<input type="number" id="editMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
+            html += `<input type="number" id="editMonthHours_${index}" value="${existingHours}" step="0.25" min="0" `;
             html += `onchange="updateEditManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
             html += `</div>`;
         });
@@ -492,7 +513,7 @@ export function updateEditManualTotal() {
     const months = generateMonthRange(startMonth, endMonth);
     let total = 0;
 
-    months.forEach((month, index) => {
+    months.forEach((_, index) => {
         const input = document.getElementById(`editMonthHours_${index}`);
         if (input) {
             total += parseFloat(input.value) || 0;
@@ -535,7 +556,7 @@ export function addEditEstimateMemberRow() {
     row.innerHTML = `
         <select class="edit-est-extra-member">${memberOptions}</select>
         <div class="edit-est-hours-input">
-            <input type="number" class="edit-est-extra-hours" step="0.5" min="0" placeholder="h">
+            <input type="number" class="edit-est-extra-hours" step="0.25" min="0" placeholder="h">
             <span class="edit-est-hours-unit">h</span>
         </div>
         <div class="edit-est-row-action">

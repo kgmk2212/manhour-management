@@ -749,8 +749,10 @@ export function addQuickEstimate() {
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+    if (typeof window.updateTabFilterContent === 'function') window.updateTabFilterContent(false);
 
     // Reset form
     document.getElementById('quickEstTask').value = '';

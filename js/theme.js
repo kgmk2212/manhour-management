@@ -102,14 +102,15 @@ export function updateChartColorPreview() {
 // 旧テーマ名 → 新テーマ名のマッピング
 const THEME_MIGRATION = {
     'deep-blue': 'deep-blue', 'navy': 'ocean', 'ocean': 'ocean', 'sky': 'ocean', 'cyan': 'ocean',
-    'teal': 'forest', 'green': 'forest', 'emerald': 'forest',
+    'green': 'forest', 'emerald': 'forest',
     'indigo': 'violet', 'purple': 'violet',
-    'slate': 'ink',
-    'forest': 'forest', 'violet': 'violet', 'amber': 'amber', 'ink': 'ink'
+    'forest': 'forest', 'violet': 'violet', 'amber': 'amber', 'ink': 'ink',
+    'rose': 'rose', 'teal': 'teal', 'slate': 'slate'
 };
 
 function migrateThemeColor(color) {
-    return THEME_MIGRATION[color] || 'forest';
+    if (color === 'custom') return 'custom';
+    return THEME_MIGRATION[color] || color;
 }
 
 export function loadThemeSettings() {
@@ -152,6 +153,89 @@ export function loadThemeSettings() {
     applyTheme();
 }
 
+// ============================================
+// カスタムカラーヘルパー
+// ============================================
+
+/**
+ * HEX色からRGB値を取得
+ * @param {string} hex - HEXカラーコード（例: '#2D5A27'）
+ * @returns {{r: number, g: number, b: number}}
+ */
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 45, g: 90, b: 39 };
+}
+
+/**
+ * RGB値をHEXに変換
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @returns {string}
+ */
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+/**
+ * HEXカラーからテーマカラーセットを生成
+ * @param {string} hex - アクセントカラーのHEX値
+ * @returns {{accent: string, accentHover: string, accentLight: string, sidebarActiveBg: string}}
+ */
+function generateThemeFromHex(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    // hover: 20%明るく
+    const hoverR = Math.min(255, r + Math.round((255 - r) * 0.2));
+    const hoverG = Math.min(255, g + Math.round((255 - g) * 0.2));
+    const hoverB = Math.min(255, b + Math.round((255 - b) * 0.2));
+    // light: ごく薄い背景色
+    const lightR = Math.min(255, Math.round(r * 0.08 + 255 * 0.92));
+    const lightG = Math.min(255, Math.round(g * 0.08 + 255 * 0.92));
+    const lightB = Math.min(255, Math.round(b * 0.08 + 255 * 0.92));
+
+    return {
+        accent: hex,
+        accentHover: rgbToHex(hoverR, hoverG, hoverB),
+        accentLight: rgbToHex(lightR, lightG, lightB),
+        sidebarActiveBg: `rgba(${r},${g},${b},0.2)`
+    };
+}
+
+// カスタムカラーの保存キー
+const CUSTOM_COLOR_KEY = 'manhour_customThemeColor';
+
+/**
+ * カスタムテーマカラーを取得
+ * @returns {string} HEXカラーコード
+ */
+function getCustomColor() {
+    try {
+        return localStorage.getItem(CUSTOM_COLOR_KEY) || '#2D5A27';
+    } catch (e) {
+        return '#2D5A27';
+    }
+}
+
+/**
+ * カスタムテーマカラーを保存
+ * @param {string} hex - HEXカラーコード
+ */
+function saveCustomColor(hex) {
+    try {
+        localStorage.setItem(CUSTOM_COLOR_KEY, hex);
+    } catch (e) {
+        // ignore
+    }
+}
+
 // Ink & Amber テーマカラー定義
 const THEME_COLORS = {
     'forest': { accent: '#2D5A27', accentHover: '#3A7232', accentLight: '#EBF5EA', sidebarActiveBg: 'rgba(45,90,39,0.2)' },
@@ -164,6 +248,18 @@ const THEME_COLORS = {
     'teal':      { accent: '#0F766E', accentHover: '#14937A', accentLight: '#F0FDFA', sidebarActiveBg: 'rgba(15,118,110,0.2)' },
     'slate':     { accent: '#556270', accentHover: '#687888', accentLight: '#F1F4F6', sidebarActiveBg: 'rgba(85,98,112,0.2)' }
 };
+
+/**
+ * テーマカラーを取得（カスタムテーマ対応）
+ * @param {string} themeColor - テーマ名
+ * @returns {{accent: string, accentHover: string, accentLight: string, sidebarActiveBg: string}}
+ */
+function getThemeColors(themeColor) {
+    if (themeColor === 'custom') {
+        return generateThemeFromHex(getCustomColor());
+    }
+    return THEME_COLORS[themeColor] || THEME_COLORS['forest'];
+}
 
 export function applyTheme() {
     const colorEl = document.getElementById('themeColor');
@@ -214,6 +310,19 @@ export function applyTheme() {
         s.classList.toggle('active', s.dataset.theme === window.currentThemeColor);
     });
 
+    // カスタムスウォッチのactive状態を更新
+    const customSwatch = document.getElementById('customColorSwatch');
+    if (customSwatch) {
+        customSwatch.classList.toggle('active', window.currentThemeColor === 'custom');
+        if (window.currentThemeColor === 'custom') {
+            const customColor = getCustomColor();
+            customSwatch.style.background = customColor;
+        } else {
+            // カスタムが非選択の場合はグラデーション表示に戻す
+            customSwatch.style.background = 'conic-gradient(#f44336, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f44336)';
+        }
+    }
+
     if (typeof window.saveData === 'function') {
         window.saveData(true);
     }
@@ -226,7 +335,7 @@ export function updateThemePreview() {
 
 export function updateThemeElements() {
     const themeColor = window.currentThemeColor || 'forest';
-    const theme = THEME_COLORS[themeColor] || THEME_COLORS['forest'];
+    const theme = getThemeColors(themeColor);
 
     // CSS変数を更新（Ink & Amber デザインシステム）
     const root = document.documentElement;
@@ -236,6 +345,10 @@ export function updateThemeElements() {
     root.style.setProperty('--sidebar-active-bg', theme.sidebarActiveBg);
     root.style.setProperty('--success', theme.accent);
 
+    // フォーカスリングをアクセントカラーに基づいて設定
+    const { r, g, b } = hexToRgb(theme.accent);
+    root.style.setProperty('--accent-focus-ring', `rgba(${r},${g},${b},0.08)`);
+
     // 旧CSS変数も互換性のため設定
     root.style.setProperty('--theme-color', theme.accent);
     root.style.setProperty('--theme-gradient', theme.accent);
@@ -243,7 +356,7 @@ export function updateThemeElements() {
     // モーダルヘッダーのテーマカラーを更新
     const modalHeaders = document.querySelectorAll('.modal-header');
     modalHeaders.forEach(header => {
-        header.className = header.className.replace(/modal-theme-\w+/g, '').trim();
+        header.className = header.className.replace(/modal-theme-[\w-]+/g, '').trim();
         header.classList.add('modal-header', `modal-theme-${themeColor}`);
     });
 
@@ -488,6 +601,62 @@ export function applyDefaultReportViewType() {
     if (typeof window.setReportViewType === 'function') {
         window.setReportViewType(defaultViewType);
     }
+}
+
+// ============================================
+// カスタムカラーピッカー初期化
+// ============================================
+
+/**
+ * カスタムカラーピッカーのイベントを設定
+ */
+export function initCustomColorPicker() {
+    const picker = document.getElementById('customColorPicker');
+    const swatch = document.getElementById('customColorSwatch');
+    if (!picker || !swatch) return;
+
+    // 保存済みカスタムカラーを反映
+    const savedColor = getCustomColor();
+    picker.value = savedColor;
+    if (window.currentThemeColor === 'custom') {
+        swatch.style.background = savedColor;
+        swatch.classList.add('active');
+    }
+
+    // カラーピッカーの変更（リアルタイムプレビュー）
+    picker.addEventListener('input', (e) => {
+        const hex = e.target.value;
+        saveCustomColor(hex);
+        swatch.style.background = hex;
+
+        // カスタムテーマに切り替え
+        const themeSelect = document.getElementById('themeColor');
+        if (themeSelect) {
+            themeSelect.value = 'custom';
+        }
+        setCurrentThemeColor('custom');
+
+        // スウォッチのactive状態を更新
+        document.querySelectorAll('.color-swatch[data-theme]').forEach(s => {
+            s.classList.remove('active');
+        });
+        swatch.classList.add('active');
+
+        updateThemeElements();
+    });
+
+    // カラーピッカーを閉じた時に保存
+    picker.addEventListener('change', (e) => {
+        const hex = e.target.value;
+        saveCustomColor(hex);
+
+        // カスタムテーマに切り替えてフル適用
+        const themeSelect = document.getElementById('themeColor');
+        if (themeSelect) {
+            themeSelect.value = 'custom';
+        }
+        applyTheme();
+    });
 }
 
 console.log('✅ モジュール theme.js loaded');

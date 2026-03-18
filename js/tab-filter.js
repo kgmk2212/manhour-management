@@ -609,16 +609,18 @@ function setupFilterButtonEvents(container, containerId, selectElement, onChange
     });
 }
 
-// 選択中ボタンを表示エリア内にスクロール（同期的に実行）
+// 選択中ボタンを表示エリア内にスクロール（レンダリング後に実行）
 function scrollToActiveButton(container) {
     if (!container) return;
-    const activeBtn = container.querySelector('button.active');
-    if (activeBtn) {
-        const containerRect = container.getBoundingClientRect();
-        const btnRect = activeBtn.getBoundingClientRect();
-        const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
-        container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
-    }
+    requestAnimationFrame(() => {
+        const activeBtn = container.querySelector('button.active');
+        if (activeBtn) {
+            const containerRect = container.getBoundingClientRect();
+            const btnRect = activeBtn.getBoundingClientRect();
+            const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+            container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+        }
+    });
 }
 
 // フィルタトグルボタンの表示/非表示

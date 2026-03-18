@@ -481,12 +481,14 @@ function saveEditAllProcesses() {
     // 保存・UI更新
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
     renderEstimateList();
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.updateTabFilterContent === 'function') window.updateTabFilterContent(false);
 
     resetEditMode();
     resetAddEstimateForm();
@@ -1090,7 +1092,7 @@ export function addEstimateMemberRow(proc) {
     newRow.innerHTML = `
         <td style="text-align: center; color: var(--text-muted); font-size: 11px;">┗</td>
         <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
-        <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+        <td><input type="number" class="est-extra-hours" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
         <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>
     `;
 
@@ -1225,9 +1227,11 @@ function addOtherWorkEstimate() {
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.updateTabFilterContent === 'function') window.updateTabFilterContent(false);
     resetAddEstimateForm();
     document.getElementById('addEstimateModal').style.display = 'none';
 
@@ -1384,9 +1388,11 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
 
     if (typeof window.saveData === 'function') window.saveData();
     if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
     if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.updateTabFilterContent === 'function') window.updateTabFilterContent(false);
 
     // 単一工程モードの場合、対応詳細モーダルに戻る
     const returnTo = singleProcessMode ? { version: singleProcessMode.version, task: singleProcessMode.task, process: singleProcessMode.process } : null;

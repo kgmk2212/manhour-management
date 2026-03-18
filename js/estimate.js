@@ -472,7 +472,7 @@ function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
         // 月指定あり: 月別工数があればそれを使用（filterType問わず）
         filtered.forEach(e => {
             const est = normalizeEstimate(e);
-            if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+            if (est.monthlyHours && est.monthlyHours[monthFilter] !== undefined) {
                 totalHours += est.monthlyHours[monthFilter];
             } else if (!est.workMonths || est.workMonths.length === 0) {
                 totalHours += est.hours;
@@ -581,7 +581,7 @@ function calculateMemberSummary(filtered, filterType, monthFilter) {
         if (monthFilter === 'all') {
             // 月指定なし: 全工数を合算
             memberSummary[member] += est.hours;
-        } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
+        } else if (est.monthlyHours && est.monthlyHours[monthFilter] !== undefined) {
             // 月指定あり: 月別工数を使用（filterType問わず）
             memberSummary[member] += est.monthlyHours[monthFilter];
         } else if (!est.workMonths || est.workMonths.length === 0) {
@@ -764,7 +764,7 @@ export function renderEstimateGrouped() {
 
         const est = normalizeEstimate(e);
         let displayHours = e.hours;
-        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter] !== undefined) {
             displayHours = est.monthlyHours[workMonthFilter];
         }
 
@@ -812,7 +812,7 @@ export function renderEstimateGrouped() {
                 let taskDisplayHtml = escapeHtml(taskGroup.task) || '(未設定)';
                 const escapedTask = escapeForHandler(taskGroup.task || '');
 
-                html += `<tr style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${escapeForHandler(version)}', '${escapedTask}')">`;
+                html += `<tr class="estimate-clickable-row" style="cursor: pointer;" onclick="showOtherWorkTaskDetail('${escapeForHandler(version)}', '${escapedTask}')">`;
                 html += `<td style="font-weight: 600;">${taskDisplayHtml}</td>`;
                 html += `<td>${members}</td>`;
                 html += `<td style="text-align: right;">
@@ -841,9 +841,9 @@ export function renderEstimateGrouped() {
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
-            html += '<tr><th style="min-width: 50px;">選択</th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th style="min-width: 50px;">選択</th><th class="drag-handle-col"></th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         } else {
-            html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
+            html += '<tr><th class="drag-handle-col"></th><th style="min-width: 200px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">工数</th><th style="min-width: 150px;">対応合計</th></tr>';
         }
 
         // タスクを着手順でソート
@@ -935,7 +935,11 @@ export function renderEstimateGrouped() {
                 }
 
                 if (index === 0) {
-                    html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span>${taskDisplayHtml}</td>`;
+                    html += `<td rowspan="${sortedProcesses.length}" class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
+                    const escapedVerGrouped = escapeForHandler(version);
+                    const escapedTskGrouped = escapeForHandler(taskGroup.task);
+                    html += `<td rowspan="${sortedProcesses.length}" class="clickable-cell" style="vertical-align: top; padding-top: 12px; font-weight: 600; cursor: pointer;"
+                        onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVerGrouped}', '${escapedTskGrouped}')">${taskDisplayHtml}</td>`;
                 }
 
                 if (workMonthSelectionMode) {
@@ -949,14 +953,19 @@ export function renderEstimateGrouped() {
                         <div class="work-month-block">${processWorkMonthBlock}</div>
                     </td>`;
                 } else {
-                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span></td>`;
+                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="event.stopPropagation(); showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span></td>`;
                 }
 
-                html += `<td style="${grayStyle}">${escapeHtml(proc.member)}</td>`;
-                html += `<td style="text-align: right; ${grayStyle}">${proc.hours}h</td>`;
+                const escapedVerRow = escapeForHandler(version);
+                const escapedTskRow = escapeForHandler(taskGroup.task);
+                html += `<td class="estimate-clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVerRow}', '${escapedTskRow}')">${escapeHtml(proc.member)}</td>`;
+                html += `<td class="estimate-clickable-cell" style="text-align: right; cursor: pointer; ${grayStyle}" onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVerRow}', '${escapedTskRow}')">${proc.hours}h</td>`;
 
                 if (index === 0) {
-                    html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
+                    const escapedVerTotal = escapeForHandler(version);
+                    const escapedTskTotal = escapeForHandler(taskGroup.task);
+                    html += `<td rowspan="${sortedProcesses.length}" class="estimate-clickable-cell" style="vertical-align: top; padding-top: 12px; text-align: right; cursor: pointer;"
+                        onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVerTotal}', '${escapedTskTotal}')">
                         <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
                         <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
                     </td>`;
@@ -976,6 +985,7 @@ export function renderEstimateGrouped() {
         if (workMonthSelectionMode) {
             html += `<td></td>`;
         }
+        html += `<td></td>`; /* drag handle column */
         html += `<td style="text-align: right; padding-right: 20px;">${versionLabel} 合計</td>`;
         html += `<td colspan="2"></td>`;
         html += `<td style="text-align: right;">${formatNumber(versionTotal, 1)}h</td>`;
@@ -1037,7 +1047,7 @@ export function renderEstimateMatrix() {
 
         const est = normalizeEstimate(e);
         let displayHours = e.hours;
-        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
+        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter] !== undefined) {
             displayHours = est.monthlyHours[workMonthFilter];
         }
 
@@ -1112,6 +1122,25 @@ export function renderEstimateMatrix() {
                 html += '</tr>';
             });
 
+            // その他工数の版合計行
+            let otherVersionTotal = 0;
+            Object.values(versionGroups[version]).forEach(group => {
+                Object.values(group.processes).forEach(p => {
+                    otherVersionTotal += p.hours;
+                });
+            });
+            const otherVersionDays = otherVersionTotal / 8;
+            const otherVersionMonths = otherVersionDays / workingDaysPerMonth;
+
+            html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
+            html += `<td style="text-align: right; padding-right: 20px;">その他工数 合計</td>`;
+            html += `<td style="text-align: center;"></td>`;
+            html += `<td style="text-align: center;">
+                <div>${formatNumber(otherVersionTotal, 1)}h</div>
+                <div style="font-size: 11px;">${formatNumber(otherVersionDays, 1)}人日 / ${formatNumber(otherVersionMonths, 2)}人月</div>
+            </td>`;
+            html += `</tr>`;
+
             html += '</table></div>';
             html += '</div>';
             return;
@@ -1120,7 +1149,7 @@ export function renderEstimateMatrix() {
         html += `<div style="margin-bottom: 30px;">`;
         html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
-        html += '<tr><th style="min-width: 200px;">対応名</th>';
+        html += '<tr><th class="drag-handle-col"></th><th style="min-width: 200px;">対応名</th>';
         processOrder.forEach(proc => {
             html += `<th style="min-width: 100px; text-align: center;">${proc}</th>`;
         });
@@ -1142,10 +1171,11 @@ export function renderEstimateMatrix() {
             const escapedTsk = escapeForHandler(group.task);
 
             html += `<tr data-drag-task="${escapeHtml(group.task)}" data-drag-version="${escapeHtml(version)}">`;
+            html += `<td class="drag-handle-cell"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span></td>`;
             html += `<td class="clickable-cell" style="font-weight: 600; cursor: pointer;"
-                onclick="showTaskDetail('${escapedVer}', '${escapedTsk}')"
+                onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVer}', '${escapedTsk}')"
                 onmouseover="this.style.color='var(--theme-color, #1976d2)'"
-                onmouseout="this.style.color=''"><span class="drag-handle" title="ドラッグで着手順を変更">⠿</span>${taskDisplayHtml}</td>`;
+                onmouseout="this.style.color=''">${taskDisplayHtml}</td>`;
 
             let total = 0;
             processOrder.forEach(proc => {
@@ -1172,13 +1202,48 @@ export function renderEstimateMatrix() {
             const totalDays = total / 8;
             const totalMonths = totalDays / workingDaysPerMonth;
 
-            html += `<td style="text-align: center;">
+            html += `<td class="estimate-clickable-cell" style="text-align: center; cursor: pointer;"
+                onclick="if (!window._estimateDragOccurred) showTaskDetail('${escapedVer}', '${escapedTsk}')">
                 <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
                 <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
                 <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
             </td>`;
             html += '</tr>';
         });
+
+        // 版数合計行
+        let versionTotal = 0;
+        const versionProcessTotals = {};
+        processOrder.forEach(proc => { versionProcessTotals[proc] = 0; });
+
+        Object.values(versionGroups[version]).forEach(group => {
+            processOrder.forEach(proc => {
+                if (group.processes[proc]) {
+                    versionProcessTotals[proc] += group.processes[proc].hours;
+                    versionTotal += group.processes[proc].hours;
+                }
+            });
+        });
+        const versionDays = versionTotal / 8;
+        const versionMonths = versionDays / workingDaysPerMonth;
+
+        const versionLabel = escapeHtml(version) || 'その他工数';
+        html += `<tr style="background: #f5f5f5; font-weight: 700;">`;
+        html += `<td></td>`; /* drag handle column */
+        html += `<td style="text-align: right; padding-right: 20px;">${versionLabel} 合計</td>`;
+        processOrder.forEach(proc => {
+            const procTotal = versionProcessTotals[proc];
+            if (procTotal > 0) {
+                html += `<td style="text-align: center;">${formatNumber(procTotal, 1)}h</td>`;
+            } else {
+                html += `<td style="text-align: center; color: #ccc;">-</td>`;
+            }
+        });
+        html += `<td style="text-align: center;">
+            <div>${formatNumber(versionTotal, 1)}h</div>
+            <div style="font-size: 11px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
+        </td>`;
+        html += `</tr>`;
 
         html += '</table></div>';
         html += '</div>';
@@ -1218,7 +1283,7 @@ export function renderEstimateDetailList() {
         const est = normalizeEstimate(e);
 
         let displayHours = est.hours;
-        if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
+        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter] !== undefined) {
             displayHours = est.monthlyHours[workMonthFilter];
         }
 
@@ -1243,7 +1308,7 @@ export function renderEstimateDetailList() {
         }
 
         html += `
-            <tr>
+            <tr class="estimate-clickable-row" style="cursor: pointer;" onclick="if (!event.target.closest('button')) showEstimateDetail(${est.id})">
                 <td>${escapeHtml(est.version)}</td>
                 <td>${escapeHtml(est.task)}</td>
                 <td><span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span></td>
@@ -1957,6 +2022,7 @@ export function updateTaskSortOrder(version, orderedTasks) {
 }
 
 // ドラッグ中の状態管理
+window._estimateDragOccurred = false;
 let dragState = {
     dragging: false,
     sourceVersion: null,
@@ -2022,6 +2088,7 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         sourceTask: taskName,
         sourceIndex: sourceIndex
     };
+    window._estimateDragOccurred = true;
 
     // ドラッグ中のスタイル: 元の行を薄くする
     const sourceRows = taskRowMap.get(taskName) || [];
@@ -2134,6 +2201,8 @@ function startDrag(startEvent, row, table, version, taskKeys) {
         }
 
         dragState = { dragging: false, sourceVersion: null, sourceTask: null, sourceIndex: -1 };
+        // Delay reset of drag flag so click events fired after mouseup don't trigger detail view
+        setTimeout(() => { window._estimateDragOccurred = false; }, 100);
     };
 
     document.addEventListener('mousemove', onMove);

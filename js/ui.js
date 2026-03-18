@@ -811,20 +811,11 @@ export function initSmartSticky() {
                     return;
                 }
 
-                // モバイルのみ（デスクトップではサイドバーがあるので不要）
+                // モバイルタブバーは常時表示（スクロール位置に関わらずアクセス可能に）
+                // 以前の動作: 下スクロールで非表示、上スクロールで表示
+                // 変更理由: スクロール下部でもタブ切替を容易にするため
                 if (window.innerWidth <= 768) {
-                    // 下にスクロール → タブバーを隠す
-                    if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                        mobileTabBar.classList.add('is-hidden');
-                    }
-                    // 上にスクロール → タブバーを表示
-                    else if (currentScrollY < lastScrollY) {
-                        mobileTabBar.classList.remove('is-hidden');
-                    }
-                    // ページ上部では常に表示
-                    if (currentScrollY < 20) {
-                        mobileTabBar.classList.remove('is-hidden');
-                    }
+                    mobileTabBar.classList.remove('is-hidden');
                 }
 
                 lastScrollY = currentScrollY;
@@ -903,7 +894,7 @@ export function initTabSwipe() {
         // タイムライン内では独自のスワイプ操作を使用するためタブスワイプを無効化
         if (target.closest('#actualTimeline')) return true;
 
-        const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode, #calendarTableWrapper');
+        const element = target.closest('.modal.active, .custom-dropdown, #dragHandle, #workMonthAssignmentMode, #calendarTableWrapper, .calendar-grid');
         return element !== null;
     }
 
@@ -972,15 +963,15 @@ export function initTabSwipe() {
 
         if (!currentTab) return false;
 
-        // 現在のスクロール位置を保存
-        swipeStartScrollY = window.scrollY;
-
         // .contentのpaddingを取得
         const contentStyle = getComputedStyle(content);
         const paddingLeft = contentStyle.paddingLeft;
         const paddingRight = contentStyle.paddingRight;
         const paddingTop = contentStyle.paddingTop;
         const paddingTopPx = parseFloat(paddingTop);
+
+        // 現在のスクロール位置を保存（fixedに切り替える直前に取得して誤差を最小化）
+        swipeStartScrollY = window.scrollY;
 
         // bodyをfixedにしてスクロールを完全にロック（縦スクロール位置を固定）
         document.body.style.position = 'fixed';
@@ -1587,6 +1578,8 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
             const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
             container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
         }
+        // スクロールインジケーターを初期化
+        initSegmentScrollIndicator(container);
     }, 0);
 }
 
@@ -1609,6 +1602,111 @@ export function updateSegmentButtonSelection(containerId, value) {
         } else {
             btn.classList.remove('active');
         }
+    });
+}
+
+// ============================================
+// セグメントボタン スクロールインジケーター
+// ============================================
+
+/**
+ * セグメントボタンのスクロールインジケーター（左右フェード）を初期化
+ * @param {HTMLElement} container - .segment-buttons 要素
+ */
+function initSegmentScrollIndicator(container) {
+    if (!container || !container.classList.contains('segment-buttons')) return;
+
+    // 既にラッパーがある場合はスキップ
+    if (container.parentElement && container.parentElement.classList.contains('segment-buttons-wrapper')) {
+        updateSegmentScrollIndicator(container);
+        return;
+    }
+
+    // ラッパーを作成してcontainerを包む
+    const wrapper = document.createElement('div');
+    wrapper.className = 'segment-buttons-wrapper';
+
+    // containerのインラインmax-widthをラッパーに移動
+    if (container.style.maxWidth) {
+        wrapper.style.maxWidth = container.style.maxWidth;
+        container.style.maxWidth = '';
+    }
+
+    container.parentNode.insertBefore(wrapper, container);
+    wrapper.appendChild(container);
+
+    // PC用の左右矢印ボタンを追加
+    const leftArrow = document.createElement('button');
+    leftArrow.className = 'segment-scroll-arrow segment-scroll-arrow-left';
+    leftArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>';
+    leftArrow.setAttribute('aria-label', '左へスクロール');
+    leftArrow.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const btnWidth = container.querySelector('button')?.offsetWidth || 80;
+        container.scrollBy({ left: -btnWidth * 2, behavior: 'smooth' });
+    });
+
+    const rightArrow = document.createElement('button');
+    rightArrow.className = 'segment-scroll-arrow segment-scroll-arrow-right';
+    rightArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>';
+    rightArrow.setAttribute('aria-label', '右へスクロール');
+    rightArrow.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const btnWidth = container.querySelector('button')?.offsetWidth || 80;
+        container.scrollBy({ left: btnWidth * 2, behavior: 'smooth' });
+    });
+
+    wrapper.insertBefore(leftArrow, container);
+    wrapper.appendChild(rightArrow);
+
+    // スクロールイベントでインジケーター更新
+    container.addEventListener('scroll', () => {
+        updateSegmentScrollIndicator(container);
+    }, { passive: true });
+
+    // 初期状態を設定
+    updateSegmentScrollIndicator(container);
+
+    // リサイズ時にも更新
+    const ro = new ResizeObserver(() => {
+        updateSegmentScrollIndicator(container);
+    });
+    ro.observe(container);
+}
+
+/**
+ * スクロール位置に基づいてインジケーターの表示/非表示を更新
+ * @param {HTMLElement} container - .segment-buttons 要素
+ */
+function updateSegmentScrollIndicator(container) {
+    const wrapper = container.parentElement;
+    if (!wrapper || !wrapper.classList.contains('segment-buttons-wrapper')) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const hasOverflow = scrollWidth > clientWidth + 1; // 1px余裕
+
+    if (!hasOverflow) {
+        wrapper.classList.remove('scroll-left', 'scroll-right');
+        return;
+    }
+
+    const canScrollLeft = scrollLeft > 2;
+    const canScrollRight = scrollLeft < scrollWidth - clientWidth - 2;
+
+    // 左側にスクロール可能か
+    wrapper.classList.toggle('scroll-left', canScrollLeft);
+    // 右側にスクロール可能か
+    wrapper.classList.toggle('scroll-right', canScrollRight);
+}
+
+/**
+ * 全てのセグメントボタンのスクロールインジケーターを初期化
+ */
+export function initAllSegmentScrollIndicators() {
+    document.querySelectorAll('.segment-buttons').forEach(container => {
+        initSegmentScrollIndicator(container);
     });
 }
 
@@ -2214,7 +2312,10 @@ export function updateVersionOptions() {
             }
         });
 
-        updateReportVersionOptions(sortedVersions);
+        // レポートの現在選択中の月を取得し、版数フィルタに反映
+        const reportMonth = document.getElementById('reportMonth');
+        const currentReportMonth = reportMonth ? reportMonth.value : 'all';
+        updateReportVersionOptions(null, currentReportMonth);
     } catch (e) {
         console.error('updateVersionOptions error:', e);
     }
@@ -2891,7 +2992,33 @@ export function setDefaultActualMonth() {
 
     const select2 = document.getElementById('actualMonthFilter2');
 
-    const defaultMonth = getDefaultMonth(select);
+    // 実績データから最新の実績登録日を特定し、そのdate（作業日）の月をデフォルトにする
+    let defaultMonth = null;
+    if (actuals.length > 0) {
+        // createdAt（登録日時）が最新の実績を見つける
+        let latestActual = actuals[0];
+        actuals.forEach(a => {
+            const aCreated = a.createdAt || new Date(Math.floor(a.id)).toISOString();
+            const latestCreated = latestActual.createdAt || new Date(Math.floor(latestActual.id)).toISOString();
+            if (aCreated > latestCreated) {
+                latestActual = a;
+            }
+        });
+        if (latestActual.date) {
+            const latestMonth = latestActual.date.substring(0, 7);
+            // その月が選択肢に存在するか確認
+            const options = Array.from(select.options);
+            if (options.some(opt => opt.value === latestMonth)) {
+                defaultMonth = latestMonth;
+            }
+        }
+    }
+
+    // 実績がないか、該当月が選択肢にない場合はフォールバック
+    if (!defaultMonth) {
+        defaultMonth = getDefaultMonth(select);
+    }
+
     select.value = defaultMonth;
     if (select2) select2.value = defaultMonth;
 
@@ -2948,7 +3075,10 @@ export function syncMonthToReport(value) {
     if (reportMonthButtons2) {
         updateSegmentButtonSelection('reportMonthButtons2', value);
     }
-    
+
+    // in-memoryのフィルタ状態も更新（タブ切替時にフィルタボタンが連動するように）
+    setReportFilterState({ month: value });
+
     // 同期後にlocalStorageも更新
     saveReportFilterToStorage();
 }
@@ -2966,6 +3096,9 @@ export function syncMonthToEstimate(value) {
 
     // 版数フィルタの選択肢を連動して更新（レポート用）
     updateReportVersionOptions(null, value);
+
+    // in-memoryのフィルタ状態も更新（タブ切替時にフィルタボタンが連動するように）
+    setEstimateFilterState({ month: value });
 
     // 同期後にlocalStorageも更新
     saveEstimateFilterToStorage();
@@ -3000,7 +3133,10 @@ export function syncVersionToReport(value) {
     if (reportVersionButtons2) {
         updateSegmentButtonSelection('reportVersionButtons2', value);
     }
-    
+
+    // in-memoryのフィルタ状態も更新（タブ切替時にフィルタボタンが連動するように）
+    setReportFilterState({ version: value });
+
     // 同期後にlocalStorageも更新
     saveReportFilterToStorage();
 }
@@ -3018,7 +3154,10 @@ export function syncVersionToEstimate(value) {
 
     // 月フィルタの選択肢を連動して更新
     updateMonthOptions(value);
-    
+
+    // in-memoryのフィルタ状態も更新（タブ切替時にフィルタボタンが連動するように）
+    setEstimateFilterState({ version: value });
+
     // 同期後にlocalStorageも更新
     saveEstimateFilterToStorage();
 }
@@ -4092,10 +4231,31 @@ export function initSidebar() {
         }
     } catch (e) { /* ignore */ }
 
+    // 折りたたみボタンのアイコン更新
+    const updateCollapseIcon = () => {
+        if (!collapseBtn) return;
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        collapseBtn.title = isCollapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ';
+        const svg = collapseBtn.querySelector('svg');
+        if (svg) {
+            if (isCollapsed) {
+                // 右向き矢印（展開方向）
+                svg.innerHTML = '<polyline points="13 7 18 12 13 17"/><polyline points="6 7 11 12 6 17"/>';
+            } else {
+                // 左向き矢印（折りたたみ方向）
+                svg.innerHTML = '<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>';
+            }
+        }
+    };
+
+    // 初期アイコン状態を設定
+    updateCollapseIcon();
+
     // 折りたたみボタン
     if (collapseBtn) {
         collapseBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
+            updateCollapseIcon();
             try {
                 localStorage.setItem('manhour_sidebarCollapsed', sidebar.classList.contains('collapsed'));
             } catch (e) { /* ignore */ }

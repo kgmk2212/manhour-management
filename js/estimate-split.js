@@ -120,7 +120,7 @@ export function updateSplitPreview() {
             calculatedTotal += existingHours;
             html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
             html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-            html += `<input type="number" id="splitMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
+            html += `<input type="number" id="splitMonthHours_${index}" value="${existingHours}" step="0.25" min="0" `;
             html += `onchange="updateSplitManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
             html += `</div>`;
         });
@@ -336,7 +336,7 @@ export function updateMonthPreview() {
             const [y, m] = month.split('-');
             html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
             html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-            html += `<input type="number" id="monthHours_${index}" value="0" step="0.1" min="0" `;
+            html += `<input type="number" id="monthHours_${index}" value="0" step="0.25" min="0" `;
             html += `onchange="updateManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
             html += `</div>`;
         });

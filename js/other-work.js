@@ -4,6 +4,7 @@
 
 import * as State from './state.js';
 import { pushAction } from './history.js';
+import { showAlert } from './utils.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -27,7 +28,7 @@ export function addMeeting() {
     console.log('hours:', hours, 'date:', date);
 
     if (!hours || hours <= 0) {
-        alert('工数を入力してください');
+        showAlert('工数を入力してください');
         return;
     }
 
@@ -39,7 +40,7 @@ export function addMeeting() {
     console.log('members:', Array.from(members));
 
     if (members.size === 0) {
-        alert('担当者が登録されていません。先に見積または実績を登録してください。');
+        showAlert('担当者が登録されていません。先に見積または実績を登録してください。');
         return;
     }
 
@@ -77,7 +78,7 @@ export function addMeeting() {
     document.getElementById('meetingHours').value = '';
     closeOtherWorkModal();
 
-    alert(`打ち合わせを${members.size}名分登録しました（${date}）`);
+    showAlert(`打ち合わせを${members.size}名分登録しました（${date}）`);
 }
 
 // その他作業を追加
@@ -100,17 +101,17 @@ export function addOtherWork() {
     console.log('workName:', workName, 'member:', member, 'hours:', hours, 'date:', date);
 
     if (!workName) {
-        alert('作業名を入力してください');
+        showAlert('作業名を入力してください');
         return;
     }
 
     if (!member) {
-        alert('担当者を選択してください');
+        showAlert('担当者を選択してください');
         return;
     }
 
     if (!hours || hours <= 0) {
-        alert('工数を入力してください');
+        showAlert('工数を入力してください');
         return;
     }
 
@@ -144,7 +145,7 @@ export function addOtherWork() {
     document.getElementById('otherWorkHours').value = '';
     closeOtherWorkModal();
 
-    alert(`その他作業を登録しました（${date}）`);
+    showAlert(`その他作業を登録しました（${date}）`);
 }
 
 // その他作業モーダルを開く

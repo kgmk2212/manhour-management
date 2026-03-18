@@ -248,6 +248,7 @@ window.renderActualMatrix = Actual.renderActualMatrix;
 window.renderActualListView = Actual.renderActualListView;
 window.renderCalendarGrid = Actual.renderCalendarGrid;
 window.showWorkDetail = Actual.showWorkDetail;
+window.showGridDayDetail = Actual.showGridDayDetail;
 window.closeWorkModal = Actual.closeWorkModal;
 window.deleteActual = Actual.deleteActual;
 window.editActualFromModal = Actual.editActualFromModal;
@@ -594,6 +595,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
 
+    // セグメントボタンのスクロールインジケーター（左右フェード）を初期化
+    if (typeof UI.initAllSegmentScrollIndicators === 'function') {
+        // レンダリング完了後に実行
+        setTimeout(() => UI.initAllSegmentScrollIndicators(), 100);
+    }
+
     // レイアウト設定を適用（loadDataはDOMContentLoaded前に実行されるため、ここで再適用）
     UI.applyLayoutSettings();
 
@@ -632,6 +639,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // カスタムカラーピッカーの初期化
+    Theme.initCustomColorPicker();
+
     // タブインジケーター（スライドアニメーション）を初期化
     // ※showTabの前に初期化して、showTab内でupdateTabIndicatorが呼ばれるようにする
     UI.initTabIndicator();
@@ -650,6 +660,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // localStorageエラーは無視、デフォルトタブを表示
         UI.showTab('quick');
     }
+
+    // FOUC防止: 正しいタブとテーマが適用されたのでコンテンツを表示
+    document.body.classList.remove('js-loading');
 
     // スケジュール（ガントチャート）モジュールの初期化
     Schedule.initScheduleModule();

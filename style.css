@@ -32,6 +32,7 @@
     --sidebar-text-active: #F7F6F3;
     --sidebar-hover: rgba(255, 255, 255, 0.06);
     --sidebar-active-bg: rgba(45, 90, 39, 0.2);
+    --accent-focus-ring: rgba(45, 90, 39, 0.08);
     --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-md: 8px;
@@ -84,6 +85,15 @@ a:hover {
 img {
     max-width: 100%;
     display: block;
+}
+
+/* ---- 3b. FOUC Prevention ---- */
+/* Hide content until JS initializes to prevent flash of unstyled/wrong-tab content */
+body.js-loading .app-layout {
+    opacity: 0;
+}
+body.js-loading {
+    background: var(--bg);
 }
 
 /* ---- 4. App Layout ---- */
@@ -279,7 +289,7 @@ img {
 }
 
 .sidebar.collapsed .sidebar-collapse-btn svg {
-    transform: scaleX(-1);
+    /* Icon direction is handled via JS in initSidebar() */
 }
 
 .sidebar.collapsed .sidebar-footer > div {
@@ -579,12 +589,12 @@ img {
 }
 
 .btn-success {
-    background: #27ae60;
+    background: var(--accent);
     color: #FFFFFF;
 }
 
 .btn-success:hover {
-    background: #219a52;
+    background: var(--accent-hover);
 }
 
 .btn-danger {
@@ -612,7 +622,7 @@ img {
 }
 
 .btn-accent:hover {
-    background: #A96F18;
+    background: var(--accent-secondary-hover, #A96F18);
 }
 
 .btn-ghost {
@@ -627,12 +637,12 @@ img {
 
 .btn-outline {
     background: transparent;
-    border: 1px solid #6c757d;
-    color: #6c757d;
+    border: 1px solid var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .btn-outline:hover {
-    background: #6c757d;
+    background: var(--text-muted);
     color: #FFFFFF;
 }
 
@@ -668,7 +678,7 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.08);
+    box-shadow: 0 0 0 3px var(--accent-focus-ring, rgba(45, 90, 39, 0.08));
     background: #FFFFFF;
 }
 
@@ -875,6 +885,114 @@ label {
 }
 
 /* Segment buttons (pill-style filter buttons) */
+.segment-buttons-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+}
+
+.segment-buttons-wrapper::before,
+.segment-buttons-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.segment-buttons-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, var(--surface-elevated, #fff), transparent);
+    border-radius: 6px 0 0 6px;
+}
+
+.segment-buttons-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, var(--surface-elevated, #fff), transparent);
+    border-radius: 0 6px 6px 0;
+}
+
+.segment-buttons-wrapper.scroll-left::before {
+    opacity: 1;
+}
+
+.segment-buttons-wrapper.scroll-right::after {
+    opacity: 1;
+}
+
+/* ---- Segment scroll arrow buttons (PC) ---- */
+.segment-scroll-arrow {
+    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface, #fff);
+    color: var(--text-secondary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.segment-scroll-arrow svg {
+    display: block;
+    margin: auto;
+}
+
+.segment-scroll-arrow:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.segment-scroll-arrow-left {
+    left: -4px;
+}
+
+.segment-scroll-arrow-right {
+    right: -4px;
+}
+
+/* Show arrows only on PC when there's overflow */
+@media (min-width: 769px) {
+    .segment-scroll-arrow {
+        display: flex;
+    }
+
+    .segment-buttons-wrapper.scroll-left .segment-scroll-arrow-left {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .segment-buttons-wrapper.scroll-right .segment-scroll-arrow-right {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Adjust fade gradient to accommodate arrow buttons */
+    .segment-buttons-wrapper::before {
+        left: 20px;
+    }
+
+    .segment-buttons-wrapper::after {
+        right: 20px;
+    }
+}
+
 .segment-buttons {
     display: inline-flex;
     gap: 0;
@@ -943,6 +1061,18 @@ label {
 
 .segment-buttons button.no-data:hover {
     opacity: 0.7;
+}
+
+/* PC: larger segment buttons for easier clicking */
+@media (min-width: 769px) {
+    .segment-buttons button {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .segment-buttons {
+        scrollbar-width: thin;
+    }
 }
 
 /* Scrollbar styling for segment button containers */
@@ -1611,6 +1741,54 @@ table td[rowspan] {
     color: #FFFFFF;
 }
 
+/* Capacity analysis section header */
+.capacity-analysis-section h4 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Capacity standard label */
+.capacity-standard-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
+}
+
+.capacity-standard-info strong {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.capacity-standard-info .detail {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Capacity summary row (余裕 / 実績残り) */
+.capacity-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light, rgba(0,0,0,0.06));
+    font-size: 13px;
+}
+
+.capacity-summary-row .label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.capacity-summary-row .value {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
 .capacity-fill.estimate {
     background: var(--accent);
 }
@@ -1619,12 +1797,24 @@ table td[rowspan] {
     background: var(--accent-secondary);
 }
 
+/* Capacity bar background (100% baseline) */
+.capacity-bg-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+
 /* Capacity overflow */
 .capacity-bar-overflow {
     position: absolute;
     top: 0;
     height: 100%;
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 10px 10px 0;
     background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
 }
@@ -1707,12 +1897,12 @@ table td[rowspan] {
     width: 116px;
     height: 58px;
     border-radius: 58px 58px 0 0;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: var(--surface-elevated, #f8fafc);
 }
 
 .capacity-gauge-needle {
     position: absolute;
-    bottom: 20px;
+    bottom: 0;
     left: 50%;
     width: 3px;
     height: 50px;
@@ -1724,7 +1914,7 @@ table td[rowspan] {
 
 .capacity-gauge-center {
     position: absolute;
-    bottom: 13px;
+    bottom: -5px;
     left: 50%;
     transform: translateX(-50%);
     width: 14px;
@@ -2101,6 +2291,36 @@ table tr[style*="1565c0"] th:first-child {
     overflow: hidden;
     background: var(--surface);
     min-height: 400px;
+}
+
+/* スケジュール色凡例 */
+.schedule-color-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding: 8px 14px;
+    margin-top: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.schedule-color-legend .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.schedule-color-legend .legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 #ganttCanvas,
@@ -3202,10 +3422,47 @@ table tr[style*="1565c0"] th:first-child {
     border-color: var(--text-primary);
 }
 
+.color-swatch-custom {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color var(--transition);
+    position: relative;
+    overflow: hidden;
+    background: conic-gradient(
+        #f44336, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f44336
+    );
+}
+
+.color-swatch-custom.active {
+    border-color: var(--text-primary);
+}
+
+.color-swatch-custom input[type="color"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
 .setting-buttons {
     display: flex;
     gap: 10px;
     margin-top: 8px;
+}
+
+.setting-backup-buttons .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 /* ---- 23. Modals ---- */
@@ -3287,36 +3544,23 @@ table tr[style*="1565c0"] th:first-child {
     margin-right: auto;
 }
 
-/* Modal theme colors - Ink & Amber palette */
-.modal-theme-forest {
-    background: #2D5A27;
-}
-
-.modal-theme-ocean {
-    background: #1D6FA5;
-}
-
-.modal-theme-violet {
-    background: #7C3AED;
-}
-
-.modal-theme-amber {
-    background: #C4841D;
-}
-
-.modal-theme-ink {
-    background: #1A1814;
-}
-
-/* Legacy modal theme fallbacks (keeps existing JS working) */
-.modal-theme-purple,
+/* Modal theme colors - all use CSS variable for full theme support */
+.modal-theme-forest,
+.modal-theme-ocean,
+.modal-theme-violet,
+.modal-theme-amber,
+.modal-theme-ink,
 .modal-theme-deep-blue,
+.modal-theme-rose,
 .modal-theme-teal,
+.modal-theme-slate,
+.modal-theme-custom,
+/* Legacy modal theme fallbacks */
+.modal-theme-purple,
 .modal-theme-cyan,
 .modal-theme-sky,
 .modal-theme-indigo,
 .modal-theme-navy,
-.modal-theme-slate,
 .modal-theme-green,
 .modal-theme-emerald {
     background: var(--accent);
@@ -3770,6 +4014,11 @@ table tr[style*="1565c0"] th:first-child {
     color: var(--danger);
     font-size: 13px;
     cursor: pointer;
+    line-height: 1.4;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 .ed-delete-link:hover {
@@ -3856,6 +4105,54 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-delete-link:hover {
     text-decoration: underline;
+}
+
+/* Clickable cards in work detail modal */
+.wd-card-clickable {
+    cursor: pointer;
+    transition: background 150ms, box-shadow 150ms, transform 150ms;
+}
+
+.wd-card-clickable:hover {
+    background: var(--surface-elevated);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.wd-card-clickable:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Clickable work-items in classic modal */
+.work-item-clickable {
+    cursor: pointer;
+    transition: background 150ms, box-shadow 150ms, transform 150ms;
+}
+
+.work-item-clickable:hover {
+    background: var(--surface);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.work-item-clickable:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Clickable table rows in actual list */
+.actual-row-clickable {
+    cursor: pointer;
+    transition: background 150ms;
+}
+
+.actual-row-clickable:hover {
+    background: var(--surface-elevated, #f8f9fa) !important;
+}
+
+.actual-row-clickable:active {
+    background: var(--border-light, #e9ecef) !important;
 }
 
 .wd-hero {
@@ -4099,6 +4396,19 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     background: var(--surface-elevated);
 }
 
+.estimate-clickable-cell {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.estimate-clickable-cell:hover {
+    background: var(--surface-elevated, #f0f4f8);
+}
+
+.estimate-clickable-row:hover td {
+    background: var(--surface-elevated, #f0f4f8);
+}
+
 /* ---- 35. Manpower Display ---- */
 .manpower-display {
     font-size: 11px;
@@ -4317,6 +4627,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     .main-content {
         margin-left: 0 !important;
         position: relative;
+        touch-action: pan-y;  /* Browser handles vertical scroll; JS handles horizontal swipe */
     }
 
     body {
@@ -4342,18 +4653,28 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
     /* Settings: make setting-row wrap on mobile */
     .setting-row {
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: flex-start;
         gap: 8px;
+    }
+
+    .setting-row > div:first-child {
+        width: 100%;
+    }
+
+    .setting-desc {
+        word-break: normal;
+        overflow-wrap: break-word;
     }
 
     .color-swatches {
         flex-wrap: wrap;
     }
 
-    /* Stats grid */
+    /* Stats grid: force 2 columns on mobile */
     .stat-grid,
     .stats-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px;
     }
 
@@ -4733,22 +5054,21 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .capacity-gauge-needle {
-        height: 42px;
-        bottom: 20px;
+        height: 38px;
     }
 
     .capacity-gauge-center {
-        bottom: 13px;
+        bottom: -5px;
     }
 
     .capacity-gauge-value {
-        font-size: 16px;
-        bottom: -12px;
+        font-size: 15px;
+        bottom: -25px;
     }
 
     .capacity-gauge-label {
-        font-size: 12px;
-        bottom: -30px;
+        font-size: 11px;
+        bottom: -42px;
     }
 
     /* Capacity analysis section mobile */
@@ -4882,6 +5202,8 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
 /* ---- 46. Sticky Filter Bar ---- */
 .filter-bar-sticky {
+    position: sticky;
+    top: 0;
     z-index: 10;
     background: var(--bg);
     padding: 12px 0;
@@ -4889,6 +5211,23 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     padding-left: 40px;
     padding-right: 40px;
     border-bottom: 1px solid var(--border-light);
+}
+
+/* Segmented filter bars: sticky on PC for easy access when scrolled */
+@media (min-width: 769px) {
+    #reportFiltersSegmented,
+    #estimateFiltersSegmented,
+    #actualFiltersSegmented {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border-light);
+        margin-left: -40px;
+        margin-right: -40px;
+        padding-left: 40px;
+        padding-right: 40px;
+    }
 }
 
 @media (max-width: 1024px) {
@@ -5408,34 +5747,52 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
    ドラッグ&ドロップ（着手順）
    ============================================ */
 
-/* ドラッグハンドルアイコン（対応名セル内インライン配置） */
+/* ドラッグハンドル列（テーブルヘッダー） */
+.drag-handle-col {
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    padding: 0 !important;
+    border-right: 2px solid var(--border, #e0e0e0);
+}
+
+/* ドラッグハンドルセル（テーブルボディ） */
+.drag-handle-cell {
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    padding: 0 !important;
+    text-align: center;
+    vertical-align: middle;
+    border-right: 2px solid var(--border, #e0e0e0);
+    background: var(--surface-elevated, #fafafa);
+}
+
+/* ドラッグハンドルアイコン */
 .drag-handle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 28px;
     cursor: grab;
-    color: var(--text-tertiary, #aaa);
-    font-size: 13px;
+    color: var(--text-tertiary, #bbb);
+    font-size: 15px;
     line-height: 1;
     border-radius: var(--radius-xs, 4px);
     transition: color 0.15s, background 0.15s;
     user-select: none;
     -webkit-user-select: none;
-    margin-right: 4px;
-    vertical-align: middle;
-    flex-shrink: 0;
 }
 
 .drag-handle:hover {
     color: var(--text-secondary, #666);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.05));
+    background: var(--surface-hover, rgba(0, 0, 0, 0.08));
 }
 
 .drag-handle:active {
     cursor: grabbing;
-    color: var(--theme-color, #1976d2);
+    color: var(--accent);
 }
 
 /* ドラッグ中の行（元の位置） */
@@ -5465,19 +5822,19 @@ li.dragging {
 
 /* ドロップインジケータ */
 tr.drop-above {
-    box-shadow: inset 0 2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 2px 0 0 var(--accent);
 }
 
 tr.drop-below {
-    box-shadow: inset 0 -2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 -2px 0 0 var(--accent);
 }
 
 li.drop-above {
-    box-shadow: inset 0 2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 2px 0 0 var(--accent);
 }
 
 li.drop-below {
-    box-shadow: inset 0 -2px 0 0 var(--theme-color, #1976d2);
+    box-shadow: inset 0 -2px 0 0 var(--accent);
 }
 
 /* 未登録ドロップダウンのドラッグハンドル（対応名の右、label外） */
@@ -5493,6 +5850,11 @@ li.drop-below {
 
 /* モバイル対応: ハンドルを非表示にし、ロングプレスで並べ替え */
 @media (max-width: 768px) {
+    .drag-handle-col,
+    .drag-handle-cell {
+        display: none;
+    }
+
     .drag-handle {
         display: none;
     }
@@ -7706,4 +8068,30 @@ li.drop-below {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+/* ---- Number Input Spinner Enhancement ---- */
+/* Make number input up/down spinners larger and more touch-friendly */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: inner-spin-button;
+    opacity: 1;
+    width: 20px;
+    height: 28px;
+    cursor: pointer;
+}
+
+/* On mobile, make spinners even larger for touch targets */
+@media (max-width: 768px) {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        width: 28px;
+        height: 36px;
+    }
+
+    input[type="number"] {
+        font-size: 16px;
+        padding: 10px 12px;
+        min-height: 44px;
+    }
 }

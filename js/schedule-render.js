@@ -507,6 +507,57 @@ export class GanttChartRenderer {
         if (this.scrollContainer && savedScrollDate !== null) {
             this.scrollContainer.scrollLeft = this.dateToX(savedScrollDate);
         }
+
+        // 色凡例を描画
+        this.renderColorLegend(visibleSchedules);
+    }
+
+    /**
+     * 色凡例をDOM要素として描画（ガントチャート下部）
+     * 現在表示中のタスクの色→タスク名マッピングをコンパクトに表示
+     * @param {Array} visibleSchedules - 表示中のスケジュール配列
+     */
+    renderColorLegend(visibleSchedules) {
+        const ganttContainer = document.getElementById('ganttContainer');
+        if (!ganttContainer) return;
+
+        // 既存の凡例を取得または作成
+        let legend = document.getElementById('scheduleColorLegend');
+        if (!legend) {
+            legend = document.createElement('div');
+            legend.id = 'scheduleColorLegend';
+            legend.className = 'schedule-color-legend';
+            ganttContainer.parentElement.insertBefore(legend, ganttContainer.nextSibling);
+        }
+
+        // 表示中のタスクから色→タスク名の一意マッピングを構築
+        const colorTaskMap = new Map(); // color -> { task, version }
+        visibleSchedules.forEach(schedule => {
+            const color = getTaskColor(schedule.version, schedule.task);
+            const key = `${schedule.version}/${schedule.task}`;
+            if (!colorTaskMap.has(key)) {
+                colorTaskMap.set(key, { task: schedule.task, version: schedule.version, color });
+            }
+        });
+
+        if (colorTaskMap.size === 0) {
+            legend.style.display = 'none';
+            return;
+        }
+
+        legend.style.display = '';
+
+        // 凡例のHTMLを構築
+        const items = [...colorTaskMap.values()];
+        // タスク名でソート
+        items.sort((a, b) => a.task.localeCompare(b.task, 'ja'));
+
+        const html = items.map(item => {
+            const taskLabel = escapeHtml(item.task);
+            return `<span class="legend-item"><span class="legend-swatch" style="background:${item.color}"></span>${taskLabel}</span>`;
+        }).join('');
+
+        legend.innerHTML = html;
     }
 
     /**
@@ -585,6 +636,9 @@ export class GanttChartRenderer {
         if (!isMobile && this.customLabelWidths[viewMode]) return this.customLabelWidths[viewMode];
         if (!isMobile) return LABEL_WIDTH;
 
+        // モバイル時は固定列を狭くする（最大120px）
+        const MOBILE_MAX_LABEL_WIDTH = 120;
+
         // canvasでテキスト幅を計測
         const ctx = this.labelCtx;
         ctx.font = '600 13px system-ui, -apple-system, sans-serif';
@@ -598,7 +652,8 @@ export class GanttChartRenderer {
         const hasDot = rows.some(r => r.color || r.type === 'member');
         const textStart = hasDot ? LABEL_TEXT_OFFSET : LABEL_DOT_LEFT;
         const contentWidth = Math.max(40, Math.ceil(textStart + maxTextWidth + LABEL_PADDING));
-        return contentWidth;
+        // モバイル時は上限を設けてタイムラインの表示領域を確保
+        return Math.min(contentWidth, MOBILE_MAX_LABEL_WIDTH);
     }
 
     // ============================================
@@ -643,7 +698,7 @@ export class GanttChartRenderer {
 
                 if (date.getTime() === today.getTime()) {
                     // 今日: アクセントライト背景
-                    ctx.fillStyle = '#EBF5EA';  // --accent-light
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-light').trim() || '#EBF5EA';
                     ctx.fillRect(x, dayZoneY, DAY_WIDTH, HEADER_HEIGHT - dayZoneY);
                 } else if (isWeekend(date)) {
                     ctx.fillStyle = WEEKEND;
@@ -695,7 +750,7 @@ export class GanttChartRenderer {
 
                 if (isToday) {
                     // 今日: アクセントカラー
-                    ctx.fillStyle = '#2D5A27';  // --accent
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2D5A27';
                 } else if (dayOfWeek === 0 || isHoliday(date)) {
                     ctx.fillStyle = '#B91C1C';  // --danger
                 } else if (dayOfWeek === 6) {
@@ -917,9 +972,67 @@ export class GanttChartRenderer {
             const sorted = [...row.schedules].sort((a, b) =>
                 new Date(a.startDate) - new Date(b.startDate)
             );
-            sorted.forEach(schedule => {
-                this.drawScheduleBar(schedule, y);
+
+            // 重なり検出: 各バーにスタガーオフセットを割り当て
+            const staggerOffsets = this.computeStaggerOffsets(sorted);
+
+            sorted.forEach((schedule, idx) => {
+                this.drawScheduleBar(schedule, y, staggerOffsets[idx]);
             });
+        });
+    }
+
+    /**
+     * 重なるバーのスタガーオフセットを計算
+     * 日付が重なるバー同士を検出し、縦方向に少しずらして視認性を上げる
+     * @param {Array} sortedSchedules - 開始日昇順のスケジュール配列
+     * @returns {Array<number>} 各スケジュールのY方向オフセット（px）
+     */
+    computeStaggerOffsets(sortedSchedules) {
+        const STAGGER_PX = 3; // 1段あたりのずらし量
+        const MAX_STAGGER = 2; // 最大スタガー段数
+
+        if (sortedSchedules.length <= 1) {
+            return sortedSchedules.map(() => 0);
+        }
+
+        // 各バーが使用する「レーン」を割り当て（貪欲法）
+        // レーンごとに「そのレーンの最後のバーの終了日」を記録
+        const lanes = []; // lanes[i] = endDate of last bar in lane i
+        const laneAssignment = [];
+
+        for (const schedule of sortedSchedules) {
+            const start = new Date(schedule.startDate);
+            const end = new Date(schedule.endDate);
+
+            // 終了済みのレーンを探す（重ならないレーン）
+            let assignedLane = -1;
+            for (let i = 0; i < lanes.length; i++) {
+                if (lanes[i] < start) {
+                    assignedLane = i;
+                    lanes[i] = end;
+                    break;
+                }
+            }
+
+            if (assignedLane === -1) {
+                // 全レーンと重なる → 新しいレーンを作成
+                assignedLane = lanes.length;
+                lanes.push(end);
+            }
+
+            laneAssignment.push(assignedLane);
+        }
+
+        // レーンが1つだけなら重なりなし
+        if (lanes.length <= 1) {
+            return sortedSchedules.map(() => 0);
+        }
+
+        // オフセットを計算（レーン0=0px, レーン1=+STAGGER, レーン2=+2*STAGGER, ...）
+        return laneAssignment.map(lane => {
+            const clampedLane = Math.min(lane, MAX_STAGGER);
+            return clampedLane * STAGGER_PX;
         });
     }
 
@@ -1015,8 +1128,11 @@ export class GanttChartRenderer {
 
     /**
      * スケジュールバーを描画（dateToX座標系）
+     * @param {Object} schedule - スケジュールデータ
+     * @param {number} rowY - 行のY座標
+     * @param {number} [staggerOffset=0] - 重なりバーの縦方向オフセット（px）
      */
-    drawScheduleBar(schedule, rowY) {
+    drawScheduleBar(schedule, rowY, staggerOffset = 0) {
         const ctx = this.timelineCtx;
 
         const startDate = new Date(schedule.startDate);
@@ -1031,7 +1147,7 @@ export class GanttChartRenderer {
         const barX = this.dateToX(visibleStart);
         const barEndX = this.dateToX(visibleEnd) + DAY_WIDTH;
         const barWidth = barEndX - barX;
-        const barY = rowY + ROW_PADDING;
+        const barY = rowY + ROW_PADDING + staggerOffset;
 
         // 完了版数かどうか
         const isCompletedVersion = this.completedVersions.has(schedule.version);
@@ -1105,6 +1221,18 @@ export class GanttChartRenderer {
         ctx.globalAlpha = 1.0;
 
         ctx.restore();
+
+        // スタガーされたバーに上端の区切り線を追加（重なりを視覚化）
+        if (staggerOffset > 0) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(barX + BAR_RADIUS, barY);
+            ctx.lineTo(barX + barWidth - BAR_RADIUS, barY);
+            ctx.stroke();
+            ctx.restore();
+        }
 
         // 長押しハイライト（モバイルドラッグ開始時）
         if (this.highlightedScheduleId === schedule.id) {
@@ -1852,7 +1980,7 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     ctx.globalAlpha = 0.6;
     ctx.fillStyle = '#1D6FA5';  // --info
     fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
-    ctx.strokeStyle = '#2D5A27';  // --accent
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2D5A27';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     strokeRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);

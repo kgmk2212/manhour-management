@@ -165,6 +165,14 @@ function applyUndo(action) {
     } else if (t === 'estimate_edit') {
         const idx = State.estimates.findIndex(e => e.id === action.data.before.id);
         if (idx !== -1) State.estimates[idx] = { ...action.data.before };
+        // 見込み残存時間も元に戻す
+        if (action.data.remainingBefore !== null && action.data.remainingBefore !== undefined) {
+            const r = action.data.remainingBefore;
+            const rIdx = State.remainingEstimates.findIndex(re =>
+                re.version === r.version && re.task === r.task && re.process === r.process
+            );
+            if (rIdx !== -1) State.remainingEstimates[rIdx] = { ...State.remainingEstimates[rIdx], remainingHours: r.remainingHours };
+        }
     } else if (t === 'estimate_delete') {
         State.estimates.push(...action.data.deleted);
         if (action.data.deletedRemaining) {
@@ -219,6 +227,15 @@ function applyUndo(action) {
             // 新規作成だった → 削除
             State.setRemainingEstimates(State.remainingEstimates.filter(r => r.id !== d.after.id));
         }
+        // ステータス自動変更も元に戻す
+        if (d.autoStatusChange) {
+            const sIdx = State.schedules.findIndex(s => s.id === d.autoStatusChange.scheduleId);
+            if (sIdx !== -1) {
+                const newSchedules = [...State.schedules];
+                newSchedules[sIdx] = { ...newSchedules[sIdx], status: d.autoStatusChange.oldStatus };
+                State.setSchedules(newSchedules);
+            }
+        }
     } else if (t === 'remaining_bulk_edit') {
         const d = action.data;
         d.changes.forEach(ch => {
@@ -248,6 +265,14 @@ function applyRedo(action) {
     } else if (t === 'estimate_edit') {
         const idx = State.estimates.findIndex(e => e.id === action.data.after.id);
         if (idx !== -1) State.estimates[idx] = { ...action.data.after };
+        // 見込み残存時間もやり直す
+        if (action.data.remainingAfter !== null && action.data.remainingAfter !== undefined) {
+            const r = action.data.remainingAfter;
+            const rIdx = State.remainingEstimates.findIndex(re =>
+                re.version === r.version && re.task === r.task && re.process === r.process
+            );
+            if (rIdx !== -1) State.remainingEstimates[rIdx] = { ...State.remainingEstimates[rIdx], remainingHours: r.remainingHours };
+        }
     } else if (t === 'estimate_delete') {
         const ids = new Set(action.data.deleted.map(e => e.id));
         State.estimates = State.estimates.filter(e => !ids.has(e.id));
@@ -298,6 +323,15 @@ function applyRedo(action) {
         const idx = State.remainingEstimates.findIndex(r => r.id === d.after.id);
         if (idx !== -1) State.remainingEstimates[idx] = { ...d.after };
         else State.remainingEstimates.push({ ...d.after });
+        // ステータス自動変更も再適用
+        if (d.autoStatusChange) {
+            const sIdx = State.schedules.findIndex(s => s.id === d.autoStatusChange.scheduleId);
+            if (sIdx !== -1) {
+                const newSchedules = [...State.schedules];
+                newSchedules[sIdx] = { ...newSchedules[sIdx], status: d.autoStatusChange.newStatus };
+                State.setSchedules(newSchedules);
+            }
+        }
     } else if (t === 'remaining_bulk_edit') {
         const d = action.data;
         d.changes.forEach(ch => {
@@ -514,10 +548,9 @@ function fullRefreshUI() {
 }
 
 /**
- * スケジュール操作時のみトーストを表示
+ * Undo/Redo操作時にトーストを表示（全アクションタイプ対応）
  */
 function showScheduleToast(action, mode) {
-    if (!action.type.startsWith('schedule_')) return;
     if (typeof window.showScheduleToast !== 'function') return;
 
     const verb = mode === 'undo' ? '元に戻しました' : 'やり直しました';

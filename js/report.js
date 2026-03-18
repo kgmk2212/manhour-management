@@ -378,8 +378,13 @@ export function createProgressBar(progressRate, status, options = {}) {
         overflowWidth = 100 - barWidth;
     }
 
+    // 0%の場合は背景にストライプパターンを使って罫線と区別する
+    const bgStyle = clampedRate === 0 && status !== 'completed'
+        ? `background: repeating-linear-gradient(90deg, #ecf0f1, #ecf0f1 4px, #e4e7ea 4px, #e4e7ea 5px); border: 1px solid #ddd;`
+        : `background: #ecf0f1;`;
+
     let html = `
-        <div style="position: relative; background: #ecf0f1; border-radius: 10px; height: ${height}; overflow: hidden;">
+        <div style="position: relative; ${bgStyle} border-radius: 10px; height: ${height}; overflow: hidden;">
             <div style="
                 width: ${barWidth}%;
                 height: 100%;
@@ -773,7 +778,7 @@ export function renderBulkRemainingTable() {
                         <input type="number"
                                class="bulk-remaining-input"
                                value="${remainingHours}"
-                               step="0.5"
+                               step="0.25"
                                min="0"
                                placeholder="0"
                                onchange="updateBulkRowStatus(this)"
@@ -992,17 +997,29 @@ export function generateProgressBar(version, task, process) {
         progressRate = (actualHours / (actualHours + remainingHours)) * 100;
     }
 
-    // 進捗率が0%の場合はバーを表示しない（罫線と紛らわしいため）
-    if (progressRate === 0) {
-        return '';
-    }
-
     const barColor = getProgressColor(progressRate);
     const barWidth = Math.min(progressRate, 100); // 100%を超えても表示は100%まで
     const displayRate = progressRate.toFixed(0);
     const remainingDisplay = remainingHours.toFixed(1);
 
     let progressBarHtml = '';
+
+    // 進捗率が0%の場合は「0%」テキストのみ表示（罫線と紛らわしいバーを避ける）
+    if (progressRate === 0) {
+        if (progressBarStyle === 'bottom') {
+            progressBarHtml = `
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; overflow: hidden;" title="進捗率: 0% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                </div>
+            `;
+        } else {
+            progressBarHtml = `
+                <div style="margin-top: 4px; text-align: center;" title="進捗率: 0% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                    <span style="font-size: 9px; color: #aaa;">0%</span>
+                </div>
+            `;
+        }
+        return progressBarHtml;
+    }
 
     if (progressBarStyle === 'bottom') {
         // セル下部に表示するスタイル（未進捗部分も表示）
@@ -1128,11 +1145,15 @@ function updateReportTitle(filterType, selectedMonth, selectedVersion) {
     if (!titleElement) return;
 
     let periodText = '';
-    if (selectedMonth === 'all') {
+    if (!selectedMonth || selectedMonth === 'all') {
         periodText = '全期間';
     } else {
         const [year, month] = selectedMonth.split('-');
-        periodText = `${year}年${parseInt(month)}月`;
+        if (year && month) {
+            periodText = `${year}年${parseInt(month)}月`;
+        } else {
+            periodText = '全期間';
+        }
     }
 
     let versionText = '';
@@ -1177,6 +1198,37 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
 
     document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
     document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
+
+    // 月平均を計算・表示
+    const monthlyAvgEl = document.getElementById('monthlyAverageInfo');
+    if (monthlyAvgEl) {
+        // 見積データと実績データから月数を取得
+        const estMonthsSet = new Set();
+        filteredEstimates.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths && est.workMonths.length > 0) {
+                est.workMonths.forEach(m => estMonthsSet.add(m));
+            }
+        });
+        const actMonthsSet = new Set();
+        filteredActuals.forEach(a => {
+            const month = a.date ? a.date.substring(0, 7) : null;
+            if (month) actMonthsSet.add(month);
+        });
+
+        // 見積月数と実績月数のうち大きい方を使用
+        const numMonths = Math.max(estMonthsSet.size, actMonthsSet.size);
+
+        if (numMonths >= 2) {
+            const avgEst = (totalEst / numMonths).toFixed(1);
+            const avgAct = (totalAct / numMonths).toFixed(1);
+            const avgDiff = (diff / numMonths).toFixed(1);
+            monthlyAvgEl.innerHTML = `月平均（${numMonths}ヶ月）: 見積 ${avgEst}h / 実績 ${avgAct}h / 差異 ${parseFloat(avgDiff) >= 0 ? '+' : ''}${avgDiff}h`;
+            monthlyAvgEl.style.display = 'block';
+        } else {
+            monthlyAvgEl.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -1303,6 +1355,9 @@ function renderPhase1AccuracyAnalysis(filteredEstimates, filteredActuals) {
     if (reportSettings.warningTasksEnabled) {
         html += renderWarningTasks(filteredEstimates, filteredActuals);
     }
+
+    // 対応ごとの内訳（その他作業合計含む）
+    html += renderTaskBreakdown(filteredEstimates, filteredActuals);
 
     html += '</div>'; // close phase1-content
     html += '</div>';
@@ -1470,6 +1525,120 @@ function renderWarningTasks(filteredEstimates, filteredActuals) {
 }
 
 /**
+ * 対応ごとの内訳を描画（その他作業の合計含む）
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @returns {string} HTMLコンテンツ
+ */
+function renderTaskBreakdown(filteredEstimates, filteredActuals) {
+    const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
+    const taskSummary = {};
+    let otherWorkEst = 0;
+    let otherWorkAct = 0;
+
+    filteredEstimates.forEach(e => {
+        if (isOtherWork(e)) {
+            otherWorkEst += e.hours;
+            return;
+        }
+        const key = `${e.version}\t${e.task}`;
+        if (!taskSummary[key]) {
+            taskSummary[key] = { version: e.version, task: e.task, estimate: 0, actual: 0 };
+        }
+        taskSummary[key].estimate += e.hours;
+    });
+
+    filteredActuals.forEach(a => {
+        if (isOtherWork(a)) {
+            otherWorkAct += a.hours;
+            return;
+        }
+        const key = `${a.version}\t${a.task}`;
+        if (!taskSummary[key]) {
+            taskSummary[key] = { version: a.version, task: a.task, estimate: 0, actual: 0 };
+        }
+        taskSummary[key].actual += a.hours;
+    });
+
+    const tasks = Object.values(taskSummary).sort((a, b) => {
+        const cmp = (a.version || '').localeCompare(b.version || '');
+        if (cmp !== 0) return cmp;
+        return (a.task || '').localeCompare(b.task || '');
+    });
+
+    if (tasks.length === 0 && otherWorkEst === 0 && otherWorkAct === 0) {
+        return '';
+    }
+
+    let html = '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e9ecef;">';
+    html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">対応ごとの内訳</h4>';
+    html += '<div style="max-height: 400px; overflow-y: auto;">';
+    html += '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+    html += '<thead><tr style="background: #f8f9fa; position: sticky; top: 0;">';
+    html += '<th style="text-align: left; padding: 8px; border-bottom: 2px solid #dee2e6;">版数</th>';
+    html += '<th style="text-align: left; padding: 8px; border-bottom: 2px solid #dee2e6;">対応名</th>';
+    html += '<th style="text-align: right; padding: 8px; border-bottom: 2px solid #dee2e6;">見積</th>';
+    html += '<th style="text-align: right; padding: 8px; border-bottom: 2px solid #dee2e6;">実績</th>';
+    html += '<th style="text-align: right; padding: 8px; border-bottom: 2px solid #dee2e6;">差異</th>';
+    html += '<th style="text-align: right; padding: 8px; border-bottom: 2px solid #dee2e6;">精度</th>';
+    html += '</tr></thead><tbody>';
+
+    let grandTotalEst = 0;
+    let grandTotalAct = 0;
+
+    tasks.forEach(t => {
+        const diff = t.actual - t.estimate;
+        const accuracy = t.estimate > 0 ? (t.actual / t.estimate * 100).toFixed(1) : '-';
+        const diffColor = diff > 0 ? '#dc3545' : diff < 0 ? '#28a745' : '#495057';
+        grandTotalEst += t.estimate;
+        grandTotalAct += t.actual;
+
+        html += '<tr style="border-bottom: 1px solid #f0f0f0;">';
+        html += `<td style="padding: 6px 8px;">${escapeHtml(t.version)}</td>`;
+        html += `<td style="padding: 6px 8px;">${escapeHtml(t.task)}</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${t.estimate.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${t.actual.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px; color: ${diffColor};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${accuracy}${accuracy !== '-' ? '%' : ''}</td>`;
+        html += '</tr>';
+    });
+
+    // その他作業の合計行
+    if (otherWorkEst > 0 || otherWorkAct > 0) {
+        const otherDiff = otherWorkAct - otherWorkEst;
+        const otherAccuracy = otherWorkEst > 0 ? (otherWorkAct / otherWorkEst * 100).toFixed(1) : '-';
+        const otherDiffColor = otherDiff > 0 ? '#dc3545' : otherDiff < 0 ? '#28a745' : '#495057';
+        grandTotalEst += otherWorkEst;
+        grandTotalAct += otherWorkAct;
+
+        html += '<tr style="border-bottom: 1px solid #f0f0f0; background: #fff8f0;">';
+        html += `<td style="padding: 6px 8px; font-style: italic;" colspan="2">その他作業 合計</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${otherWorkEst.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${otherWorkAct.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px; color: ${otherDiffColor};">${otherDiff > 0 ? '+' : ''}${otherDiff.toFixed(1)}h</td>`;
+        html += `<td style="text-align: right; padding: 6px 8px;">${otherAccuracy}${otherAccuracy !== '-' ? '%' : ''}</td>`;
+        html += '</tr>';
+    }
+
+    // 総合計行
+    const grandDiff = grandTotalAct - grandTotalEst;
+    const grandAccuracy = grandTotalEst > 0 ? (grandTotalAct / grandTotalEst * 100).toFixed(1) : '-';
+    const grandDiffColor = grandDiff > 0 ? '#dc3545' : grandDiff < 0 ? '#28a745' : '#495057';
+
+    html += '<tr style="border-top: 2px solid #dee2e6; background: #f8f9fa; font-weight: 600;">';
+    html += `<td style="padding: 8px;" colspan="2">総合計</td>`;
+    html += `<td style="text-align: right; padding: 8px;">${grandTotalEst.toFixed(1)}h</td>`;
+    html += `<td style="text-align: right; padding: 8px;">${grandTotalAct.toFixed(1)}h</td>`;
+    html += `<td style="text-align: right; padding: 8px; color: ${grandDiffColor};">${grandDiff > 0 ? '+' : ''}${grandDiff.toFixed(1)}h</td>`;
+    html += `<td style="text-align: right; padding: 8px;">${grandAccuracy}${grandAccuracy !== '-' ? '%' : ''}</td>`;
+    html += '</tr>';
+
+    html += '</tbody></table>';
+    html += '</div></div>';
+    return html;
+}
+
+/**
  * Phase 2: ビジュアル分析を描画
  * 工程別バーチャート、月別推移を表示
  * @param {Array} filteredEstimates - フィルタ済み見積データ
@@ -1528,7 +1697,7 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         processSummary[processKey].actual += a.hours;
     });
 
-    const maxHours = Math.max(...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
+    const maxHours = Math.max(0, ...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
 
     let html = '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
     html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">工程別見積vs実績</h4>';
@@ -1540,22 +1709,24 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
 
     sortedProcesses.forEach(proc => {
         const data = processSummary[proc];
-        const estWidth = (data.estimate / maxHours * 100).toFixed(1);
-        const actWidth = (data.actual / maxHours * 100).toFixed(1);
+        const estWidth = maxHours > 0 ? (data.estimate / maxHours * 100).toFixed(1) : 0;
+        const actWidth = maxHours > 0 ? (data.actual / maxHours * 100).toFixed(1) : 0;
 
         html += '<div style="margin-bottom: 15px;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
-        html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
+        html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 5px 10px; align-items: center;">';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
-        html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
-        html += '</div></div>';
+        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">`;
+        html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; min-width: ${data.estimate > 0 ? '2px' : '0'};">`;
+        html += '</div>';
+        html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${estWidth > 50 ? 'white' : '#495057'};">${data.estimate.toFixed(1)}h</span>`;
+        html += '</div>';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
-        html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: 12px; font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
-        html += '</div></div>';
+        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">`;
+        html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; min-width: ${data.actual > 0 ? '2px' : '0'};">`;
+        html += '</div>';
+        html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${actWidth > 50 ? 'white' : '#495057'};">${data.actual.toFixed(1)}h</span>`;
+        html += '</div>';
         html += '</div></div>';
     });
 
@@ -2044,7 +2215,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
     // 選択月の実働日数を取得
     const selectedMonth = document.getElementById('reportMonth').value;
     let workingDaysPerMonth = 20;
-    if (selectedMonth !== 'all') {
+    if (selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')) {
         const [year, month] = selectedMonth.split('-');
         workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
     }
@@ -2234,13 +2405,15 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     // Calculate Working Days for Conversion Basis
     let workingDaysPerMonth = 20;
     let workDaysLabel = 'デフォルト20日';
-    if (selectedMonth && selectedMonth !== 'all') {
+    if (selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')) {
         // 特定の月が選択されている場合
         const [year, month] = selectedMonth.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        if (calculatedDays > 0) {
-            workingDaysPerMonth = calculatedDays;
-            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        if (year && month) {
+            const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+            if (calculatedDays > 0) {
+                workingDaysPerMonth = calculatedDays;
+                workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+            }
         }
     } else {
         // 全期間/版数別の場合: 見積もりに含まれる作業月の平均営業日数を計算
@@ -2272,7 +2445,12 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     // Update Conversion Params Header
     const conversionParams = document.getElementById('reportConversionParams');
     if (conversionParams) {
-        conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）`;
+        // 月標準合計工数を計算（8h × 営業日数）
+        const monthlyStandardHours = workingDaysPerMonth * 8;
+        const standardHoursText = selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')
+            ? ` | 月標準工数: ${monthlyStandardHours}h（8h×${workingDaysPerMonth}日）`
+            : '';
+        conversionParams.innerHTML = `<strong>換算基準:</strong> 1人日 = 8h、1人月 = ${workingDaysPerMonth}人日（${workDaysLabel}）${standardHoursText}`;
         conversionParams.style.display = 'block';
     }
 
@@ -2356,6 +2534,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
         let contentHtml = '';
         let versionTotalEst = 0;
         let versionTotalAct = 0;
+        let versionTotalRemainingHours = 0;
 
         Object.values(versionGroups[version]).forEach(taskGroup => {
             let totalEst = 0;
@@ -2466,9 +2645,11 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         const title = bgColorMode === 'month' ? `title="${getMonthColor(est.workMonths || []).tooltip}"` : '';
 
                         // deviation mode default style
+                        // Bug fix: 未完了タスク（remaining > 0）はEAC（実績+残存）で乖離色を判定
                         let devStyle = '';
                         if (bgColorMode === 'deviation') {
-                            devStyle = `background: ${getDeviationColor(est.hours, act.hours)};`;
+                            const deviationCompare = cellRemainingHours > 0 ? (act.hours + cellRemainingHours) : act.hours;
+                            devStyle = `background: ${getDeviationColor(est.hours, deviationCompare)};`;
                         }
 
                         contentHtml += `<td style="text-align: center; ${bgColor ? 'background:' + bgColor + ';' : devStyle} cursor: pointer;" ${onclick} ${title}>${cellInner}</td>`;
@@ -2479,7 +2660,9 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
                 // Total Column using renderCellOptionA
                 const totalDiff = totalAct - totalEst;
-                const totalBgColor = bgColorMode === 'deviation' ? getDeviationColor(totalEst, totalAct) : '#ffffff';
+                // Bug fix: 未完了タスクはEAC（実績+残存）で乖離色を判定
+                const totalDeviationCompare = totalRemainingHours > 0 ? (totalAct + totalRemainingHours) : totalAct;
+                const totalBgColor = bgColorMode === 'deviation' ? getDeviationColor(totalEst, totalDeviationCompare) : '#ffffff';
                 const totalCellInner = renderCellOptionA(
                     version,
                     taskGroup.task,
@@ -2492,6 +2675,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 );
 
                 contentHtml += `<td style="text-align: center; background: ${totalBgColor};">${totalCellInner}</td></tr>`;
+                versionTotalRemainingHours += totalRemainingHours;
             }
         });
 
@@ -2518,7 +2702,9 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             } else {
                 displayProcesses.forEach(() => html += '<td></td>');
             }
-            const vBg = bgColorMode === 'deviation' ? getDeviationColor(versionTotalEst, versionTotalAct) : '#f8fafc';
+            // Bug fix: 未完了タスクはEAC（実績+残存）で乖離色を判定
+            const versionDeviationCompare = versionTotalRemainingHours > 0 ? (versionTotalAct + versionTotalRemainingHours) : versionTotalAct;
+            const vBg = bgColorMode === 'deviation' ? getDeviationColor(versionTotalEst, versionDeviationCompare) : '#f8fafc';
             const versionTotalEstDays = versionTotalEst / 8;
             const versionTotalActDays = versionTotalAct / 8;
             const versionTotalEstMonths = versionTotalEstDays / workingDaysPerMonth;
@@ -2609,34 +2795,50 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             progressRate = 0;
         }
 
-        // 進捗率が0%の場合はバーを表示しない（罫線と紛らわしいため）
-        if ((est.hours > 0 || actualHours > 0) && progressRate > 0) {
-            const barColor = getProgressColor(progressRate);
-            const barWidth = Math.min(progressRate, 100);
-            const displayRate = progressRate.toFixed(0);
+        if ((est.hours > 0 || actualHours > 0)) {
             const remainingDisplay = (remaining || 0).toFixed(1);
 
-            if (progressBarStyle === 'bottom') {
-                // セル下部に表示するスタイル
-                progressBarHtml = `
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
-                        <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
-                    </div>
-                `;
+            // 進捗率が0%の場合は「0%」テキストのみ表示（罫線と紛らわしいバーを避ける）
+            if (progressRate === 0) {
+                if (progressBarStyle === 'bottom') {
+                    progressBarHtml = `
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; overflow: hidden;" title="進捗率: 0% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                        </div>
+                    `;
+                } else {
+                    progressBarHtml = `
+                        <div style="margin-top: 4px; text-align: center;" title="進捗率: 0% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                            <span style="font-size: 9px; color: #aaa;">0%</span>
+                        </div>
+                    `;
+                }
             } else {
-                // セル内に表示するスタイル（デフォルト）
-                const percentageHtml = showProgressPercentageSetting
-                    ? `<div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
-                    : '';
+                const barColor = getProgressColor(progressRate);
+                const barWidth = Math.min(progressRate, 100);
+                const displayRate = progressRate.toFixed(0);
 
-                progressBarHtml = `
-                    <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
-                        <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                if (progressBarStyle === 'bottom') {
+                    // セル下部に表示するスタイル
+                    progressBarHtml = `
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #e8e8e8; border-top: 1px solid #d0d0d0; overflow: hidden;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
                             <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
                         </div>
-                        ${percentageHtml}
-                    </div>
-                `;
+                    `;
+                } else {
+                    // セル内に表示するスタイル（デフォルト）
+                    const percentageHtml = showProgressPercentageSetting
+                        ? `<div style="font-size: 9px; color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+                        : '';
+
+                    progressBarHtml = `
+                        <div style="margin-top: 6px; position: relative;" title="進捗率: ${displayRate}% | 実績: ${actualHours.toFixed(1)}h | 残: ${remainingDisplay}h">
+                            <div style="height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                                <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; transition: width 0.3s;"></div>
+                            </div>
+                            ${percentageHtml}
+                        </div>
+                    `;
+                }
             }
         }
     }
@@ -2959,13 +3161,15 @@ function calculateWorkingDaysForCapacity(filterType, selectedMonth, filteredEsti
     let workingDays = 20;
     let label = '20日';
 
-    if (selectedMonth && selectedMonth !== 'all') {
+    if (selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')) {
         // 特定の月が選択されている場合
         const [year, month] = selectedMonth.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        if (calculatedDays > 0) {
-            workingDays = calculatedDays;
-            label = `${workingDays}日`;
+        if (year && month) {
+            const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+            if (calculatedDays > 0) {
+                workingDays = calculatedDays;
+                label = `${workingDays}日`;
+            }
         }
     } else {
         // 月が全期間の場合: 見積もりに含まれる作業月の営業日数を合計
@@ -3191,7 +3395,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             const overPercent = (estimatePercent - 100).toFixed(0);
             estimateTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${totalEstimate.toFixed(1)}h (+${overPercent}%)</span>`;
             estimateBarEl.style.width = '100%';
-            estimateBarEl.style.borderRadius = '12px';
+            estimateBarEl.style.borderRadius = '10px';
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
 
             // はみ出し部分は非表示
@@ -3202,7 +3406,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             // 通常: バーは実際の割合で表示
             estimateTextEl.textContent = `${totalEstimate.toFixed(1)}h (${estimatePercent.toFixed(0)}%)`;
             estimateBarEl.style.width = estimatePercent + '%';
-            estimateBarEl.style.borderRadius = '12px';
+            estimateBarEl.style.borderRadius = '10px';
             estimateBarEl.style.background = `linear-gradient(90deg, rgba(59, 130, 246, ${opacity}) 0%, rgba(29, 78, 216, ${opacity}) 100%)`;
 
             if (estimateOverflowEl) {
@@ -3224,7 +3428,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             const overPercent = (actualPercent - 100).toFixed(0);
             actualTextEl.innerHTML = `<span style="color: #dc2626;">⚠️ ${totalActual.toFixed(1)}h (+${overPercent}%)</span>`;
             actualBarEl.style.width = '100%';
-            actualBarEl.style.borderRadius = '12px';
+            actualBarEl.style.borderRadius = '10px';
             actualBarEl.style.background = `linear-gradient(90deg, rgba(239, 68, 68, ${opacity}) 0%, rgba(220, 38, 38, ${opacity}) 100%)`;
 
             // はみ出し部分は非表示
@@ -3235,7 +3439,7 @@ function updateBarDisplay(totalEstimate, totalActual, estimatePercent, actualPer
             // 通常
             actualTextEl.textContent = `${totalActual.toFixed(1)}h (${actualPercent.toFixed(0)}%)`;
             actualBarEl.style.width = actualPercent + '%';
-            actualBarEl.style.borderRadius = '12px';
+            actualBarEl.style.borderRadius = '10px';
             actualBarEl.style.background = `linear-gradient(90deg, rgba(34, 197, 94, ${opacity}) 0%, rgba(22, 163, 74, ${opacity}) 100%)`;
 
             if (actualOverflowEl) {

@@ -60,9 +60,11 @@ export function renderTodayActuals() {
         return;
     }
 
-    let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>工数</th><th>操作</th></tr>';
+    let html = '<div class="table-wrapper"><table><tr><th>時刻</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th style="text-align: right;">工数</th><th>操作</th></tr>';
 
+    let totalHours = 0;
     todayData.forEach(a => {
+        totalHours += a.hours;
         let time = '-';
         if (a.createdAt) {
             const date = new Date(a.createdAt);
@@ -71,21 +73,25 @@ export function renderTodayActuals() {
             }
         }
         html += `
-            <tr>
+            <tr class="actual-row-clickable" onclick="editActual(${a.id})" title="クリックして編集">
                 <td>${time}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
                 <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
                 <td>${escapeHtml(a.member)}</td>
-                <td>${escapeHtml(String(a.hours))}h</td>
+                <td style="text-align: right;">${escapeHtml(String(a.hours))}h</td>
                 <td>
-                    <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
+                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteActual(${a.id})">削除</button>
                 </td>
             </tr>
         `;
     });
 
+    html += `<tr style="background: var(--accent); color: #fff; font-weight: 700;">
+        <td colspan="5" style="text-align: right;">合計</td>
+        <td style="text-align: right;">${formatHours(totalHours)}h</td>
+        <td></td>
+    </tr>`;
     html += '</table></div>';
     container.innerHTML = html;
 }
@@ -712,7 +718,7 @@ export function renderActualListView() {
         filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
     }
 
-    let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
+    let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th style="text-align: right;">実績工数</th><th>操作</th></tr>';
 
     // 担当者順を取得
     const memberOrderInput = document.getElementById('memberOrder').value.trim();
@@ -736,23 +742,29 @@ export function renderActualListView() {
         return;
     }
 
+    let totalHours = 0;
     sortedActuals.forEach(a => {
+        totalHours += a.hours;
         html += `
-            <tr>
+            <tr class="actual-row-clickable" onclick="editActual(${a.id})" title="クリックして編集">
                 <td>${escapeHtml(a.date)}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
                 <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
                 <td>${escapeHtml(a.member)}</td>
-                <td>${escapeHtml(String(a.hours))}h</td>
+                <td style="text-align: right;">${escapeHtml(String(a.hours))}h</td>
                 <td>
-                    <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
+                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteActual(${a.id})">削除</button>
                 </td>
             </tr>
         `;
     });
 
+    html += `<tr style="background: var(--accent); color: #fff; font-weight: 700;">
+        <td colspan="5" style="text-align: right;">合計</td>
+        <td style="text-align: right;">${formatHours(totalHours)}h</td>
+        <td></td>
+    </tr>`;
     html += '</table></div>';
     container.innerHTML = html;
 }
@@ -803,7 +815,7 @@ export function showWorkDetail(member, date) {
 
         dayActuals.forEach(actual => {
             html += `
-                <div class="work-item">
+                <div class="work-item work-item-clickable" onclick="editActualFromModal(${actual.id})" title="クリックして編集">
                     <div class="work-item-header">
                         <div class="work-item-title">${escapeHtml(actual.task)}</div>
                         <div class="work-item-hours">${actual.hours}h</div>
@@ -813,8 +825,7 @@ export function showWorkDetail(member, date) {
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
-                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
-                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                        <button onclick="event.stopPropagation(); deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
             `;
@@ -875,7 +886,7 @@ export function showWorkDetail(member, date) {
             html += '<div class="wd-section-label">作業内容</div>';
             dayActuals.forEach(actual => {
                 html += `
-                    <div class="wd-card">
+                    <div class="wd-card wd-card-clickable" onclick="editActualFromModal(${actual.id})" title="クリックして編集">
                         <div class="wd-card-header">
                             <div class="wd-card-title">${escapeHtml(actual.task)}</div>
                             <div class="wd-card-hours">${actual.hours}h</div>
@@ -886,8 +897,7 @@ export function showWorkDetail(member, date) {
                             ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '<span>工程なし</span>'}
                         </div>
                         <div class="wd-card-actions">
-                            <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editActualFromModal(${actual.id})">編集</a>
-                            <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')">削除</a>
+                            <a href="#" class="wd-delete-link" onclick="event.stopPropagation(); event.preventDefault(); deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')">削除</a>
                         </div>
                     </div>
                 `;
@@ -916,6 +926,112 @@ export function showWorkDetail(member, date) {
  */
 export function closeWorkModal() {
     document.getElementById('workModal').style.display = 'none';
+}
+
+/**
+ * グリッド表示の日別詳細モーダルを表示（全担当者の実績を表示）
+ * @param {string} date - 'YYYY-MM-DD' 形式の日付文字列
+ */
+export function showGridDayDetail(date) {
+    const dayActuals = actuals.filter(a => a.date === date);
+    if (dayActuals.length === 0) return;
+
+    const [year, month, day] = date.split('-');
+    const dayOfWeek = getDayOfWeek(date);
+
+    const isClassic = window.modalDesignStyle === 'classic';
+    const totalHours = dayActuals.reduce((sum, a) => sum + a.hours, 0);
+
+    // 担当者別にグループ化
+    const memberGroup = {};
+    dayActuals.forEach(a => {
+        if (!memberGroup[a.member]) memberGroup[a.member] = [];
+        memberGroup[a.member].push(a);
+    });
+
+    let html = '';
+
+    if (isClassic) {
+        document.getElementById('modalTitle').textContent =
+            `${year}年${parseInt(month)}月${parseInt(day)}日(${dayOfWeek})の作業`;
+
+        Object.keys(memberGroup).forEach(member => {
+            const memberActuals = memberGroup[member];
+            const memberTotal = memberActuals.reduce((sum, a) => sum + a.hours, 0);
+
+            html += `<div style="margin-bottom: 16px;">`;
+            html += `<div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-light);">${escapeHtml(member)} (${formatHours(memberTotal)}h)</div>`;
+
+            memberActuals.forEach(actual => {
+                html += `
+                    <div class="work-item work-item-clickable" onclick="editActualFromModal(${actual.id})" title="クリックして編集">
+                        <div class="work-item-header">
+                            <div class="work-item-title">${escapeHtml(actual.task)}</div>
+                            <div class="work-item-hours">${actual.hours}h</div>
+                        </div>
+                        <div class="work-item-details">
+                            <span><strong>版数:</strong> ${escapeHtml(actual.version) || '(なし)'}</span>
+                            <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
+                        </div>
+                        <div style="margin-top: 8px; text-align: right;">
+                            <button onclick="event.stopPropagation(); deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+        });
+
+        html += `
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
+                <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}時間</strong>
+                <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
+            </div>
+        `;
+    } else {
+        document.getElementById('modalTitle').textContent =
+            `${parseInt(month)}/${parseInt(day)}(${dayOfWeek})の作業`;
+
+        html += `
+            <div class="wd-hero">
+                <div class="wd-hero-hours">${formatHours(totalHours)}<span class="wd-hours-unit">h</span></div>
+                <div class="wd-hero-label">合計工数 (${dayActuals.length}件)</div>
+            </div>
+        `;
+
+        Object.keys(memberGroup).forEach(member => {
+            const memberActuals = memberGroup[member];
+            const memberTotal = memberActuals.reduce((sum, a) => sum + a.hours, 0);
+
+            html += '<div class="wd-section">';
+            html += `<div class="wd-section-label">${escapeHtml(member)} (${formatHours(memberTotal)}h)</div>`;
+
+            memberActuals.forEach(actual => {
+                html += `
+                    <div class="wd-card wd-card-clickable" onclick="editActualFromModal(${actual.id})" title="クリックして編集">
+                        <div class="wd-card-header">
+                            <div class="wd-card-title">${escapeHtml(actual.task)}</div>
+                            <div class="wd-card-hours">${actual.hours}h</div>
+                        </div>
+                        <div class="wd-card-meta">
+                            <span>${escapeHtml(actual.version) || '版数なし'}</span>
+                            <span style="color: #ccc;">·</span>
+                            ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '<span>工程なし</span>'}
+                        </div>
+                        <div class="wd-card-actions">
+                            <a href="#" class="wd-delete-link" onclick="event.stopPropagation(); event.preventDefault(); deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')">削除</a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+        });
+    }
+
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('workModal').style.display = 'flex';
 }
 
 // ============================================
@@ -1055,7 +1171,7 @@ export function addActualFromCalendar(member, date) {
 export function editActual(id) {
     const actual = actuals.find(a => a.id === id);
     if (!actual) {
-        alert('データが見つかりません');
+        showAlert('データが見つかりません');
         return;
     }
 
@@ -1185,7 +1301,7 @@ export function saveActualEdit() {
     // その他作業（version空）の場合、processは必須としない
     const isOtherWorkEdit = !version;
     if (!date || !task || (!isOtherWorkEdit && !process) || !member || !hours) {
-        alert('すべての項目を入力してください');
+        showAlert('すべての項目を入力してください');
         return;
     }
 
@@ -1727,7 +1843,22 @@ export function renderCalendarGrid() {
 
         const data = dailyData[dateStr];
 
-        html += `<div class="${cellClass}">`;
+        // クリックハンドラ: データがある場合は詳細表示
+        let cellOnclick = '';
+        if (data) {
+            if (viewMode === 'member') {
+                const selectedMember = document.getElementById('actualMemberSelect').value;
+                if (selectedMember) {
+                    cellOnclick = ` onclick="showWorkDetail('${escapeForHandler(selectedMember)}', '${escapeForHandler(dateStr)}')"`;
+                } else {
+                    cellOnclick = ` onclick="showGridDayDetail('${escapeForHandler(dateStr)}')"`;
+                }
+            } else {
+                cellOnclick = ` onclick="showGridDayDetail('${escapeForHandler(dateStr)}')"`;
+            }
+        }
+
+        html += `<div class="${cellClass}"${cellOnclick}>`;
         html += `<div class="calendar-date">${day}</div>`;
 
         if (holiday) {

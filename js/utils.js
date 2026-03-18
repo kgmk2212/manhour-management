@@ -139,8 +139,8 @@ export function generateMonthOptions(selectId, selectedValue = '', minValue = nu
         const year = current.getFullYear();
         const month = current.getMonth() + 1;
         const value = `${year}-${String(month).padStart(2, '0')}`;
-        // minValueが指定されている場合、それより後の月のみを含める
-        if (!minValue || value > minValue) {
+        // minValueが指定されている場合、それ以降の月のみを含める
+        if (!minValue || value >= minValue) {
             months.push({ value, label: `${year}年${month}月` });
         }
         current.setMonth(current.getMonth() + 1);

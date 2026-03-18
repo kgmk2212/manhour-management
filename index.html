@@ -28,21 +28,39 @@
         (function () {
             var themes = {
                 'forest': { a: '#2D5A27', h: '#3A7232', l: '#EBF5EA', s: 'rgba(45,90,39,0.2)' },
-                'ocean':  { a: '#1D6FA5', h: '#2580B8', l: '#EFF6FF', s: 'rgba(29,111,165,0.2)' },
-                'violet': { a: '#7C3AED', h: '#8B5CF6', l: '#F5F3FF', s: 'rgba(124,58,237,0.2)' },
-                'amber':  { a: '#C4841D', h: '#D4941F', l: '#FFF8ED', s: 'rgba(196,132,29,0.2)' },
+                'ocean':  { a: '#2A6080', h: '#3A7498', l: '#EDF3F8', s: 'rgba(42,96,128,0.2)' },
+                'violet': { a: '#5A4570', h: '#6D5885', l: '#F2EEF5', s: 'rgba(90,69,112,0.2)' },
+                'amber':  { a: '#7D5A28', h: '#926C35', l: '#F6F1E7', s: 'rgba(125,90,40,0.2)' },
                 'ink':    { a: '#1A1814', h: '#2D2A25', l: '#F0EEEA', s: 'rgba(255,255,255,0.08)' },
                 'deep-blue': { a: '#1E3A5F', h: '#264D7A', l: '#EFF4FA', s: 'rgba(30,58,95,0.2)' },
-                'rose':   { a: '#BE185D', h: '#DB2777', l: '#FDF2F8', s: 'rgba(190,24,93,0.2)' },
+                'rose':   { a: '#8E3050', h: '#A44065', l: '#FAF0F3', s: 'rgba(142,48,80,0.2)' },
                 'teal':   { a: '#0F766E', h: '#14937A', l: '#F0FDFA', s: 'rgba(15,118,110,0.2)' },
-                'slate':  { a: '#475569', h: '#64748B', l: '#F1F5F9', s: 'rgba(71,85,105,0.2)' }
+                'slate':  { a: '#556270', h: '#687888', l: '#F1F4F6', s: 'rgba(85,98,112,0.2)' }
             };
+            function hexToRgb(hex) {
+                var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : null;
+            }
+            function genTheme(hex) {
+                var c = hexToRgb(hex); if (!c) return null;
+                function clamp(v) { return Math.max(0,Math.min(255,Math.round(v))); }
+                function toHex(n) { var h = clamp(n).toString(16); return h.length===1?'0'+h:h; }
+                var hr=clamp(c.r+(255-c.r)*0.2), hg=clamp(c.g+(255-c.g)*0.2), hb=clamp(c.b+(255-c.b)*0.2);
+                var lr=clamp(c.r*0.08+255*0.92), lg=clamp(c.g*0.08+255*0.92), lb=clamp(c.b*0.08+255*0.92);
+                return { a:hex, h:'#'+toHex(hr)+toHex(hg)+toHex(hb), l:'#'+toHex(lr)+toHex(lg)+toHex(lb), s:'rgba('+c.r+','+c.g+','+c.b+',0.2)' };
+            }
             try {
                 var tc = null;
                 var saved = localStorage.getItem('manhour_settings');
                 if (saved) { var s = JSON.parse(saved); tc = s.themeColor; }
                 if (!tc) tc = localStorage.getItem('manhour_themeColor');
-                var t = tc && themes[tc] ? themes[tc] : null;
+                var t = null;
+                if (tc === 'custom') {
+                    var cc = localStorage.getItem('manhour_customThemeColor') || '#2D5A27';
+                    t = genTheme(cc);
+                } else {
+                    t = tc && themes[tc] ? themes[tc] : null;
+                }
                 if (t) {
                     var r = document.documentElement.style;
                     r.setProperty('--accent', t.a);
@@ -68,10 +86,42 @@
         [data-early-tab="report"] #report.tab-content { display: block !important; }
         [data-early-tab="schedule"] #schedule.tab-content { display: block !important; }
         [data-early-tab="settings"] #settings.tab-content { display: block !important; }
+
+        /* 早期タブ適用：タブボタンのactive状態を正しいタブに切り替え（ズレ防止） */
+        /* quickのactive状態を解除 */
+        [data-early-tab] .nav-item[data-tab="quick"].active {
+            background: transparent !important;
+            color: var(--sidebar-text) !important;
+            border-left-color: transparent !important;
+            font-weight: 400 !important;
+        }
+        [data-early-tab] .mobile-tab-item[data-tab="quick"].active {
+            color: var(--sidebar-text) !important;
+            opacity: 0.5 !important;
+        }
+        /* 保存タブにactive状態を適用 */
+        [data-early-tab="estimate"] .nav-item[data-tab="estimate"],
+        [data-early-tab="actual"] .nav-item[data-tab="actual"],
+        [data-early-tab="report"] .nav-item[data-tab="report"],
+        [data-early-tab="schedule"] .nav-item[data-tab="schedule"],
+        [data-early-tab="settings"] .nav-item[data-tab="settings"] {
+            background: var(--sidebar-active-bg) !important;
+            color: var(--sidebar-text-active) !important;
+            border-left-color: var(--accent) !important;
+            font-weight: 600 !important;
+        }
+        [data-early-tab="estimate"] .mobile-tab-item[data-tab="estimate"],
+        [data-early-tab="actual"] .mobile-tab-item[data-tab="actual"],
+        [data-early-tab="report"] .mobile-tab-item[data-tab="report"],
+        [data-early-tab="schedule"] .mobile-tab-item[data-tab="schedule"],
+        [data-early-tab="settings"] .mobile-tab-item[data-tab="settings"] {
+            color: var(--sidebar-text-active) !important;
+            opacity: 1 !important;
+        }
     </style>
 </head>
 
-<body>
+<body class="js-loading">
     <script>
         // 早期タブ適用
         (function () {
@@ -295,35 +345,35 @@
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-ui">UI</span></td>
                                         <td><select id="quickEstUI_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-pg">PG</span></td>
                                         <td><select id="quickEstPG_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-pt">PT</span></td>
                                         <td><select id="quickEstPT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-it">IT</span></td>
                                         <td><select id="quickEstIT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-st">ST</span></td>
                                         <td><select id="quickEstST_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                 </tbody>
@@ -480,17 +530,22 @@
                     </div>
                 </div>
 
+                <!-- 月平均情報 -->
+                <div id="monthlyAverageInfo"
+                    style="display: none; margin-bottom: 15px; background: var(--info-light, #e8f4fd); padding: 10px 15px; border-radius: 6px; font-size: 13px; color: var(--info, #0c5460); font-weight: 500;">
+                </div>
+
                 <!-- キャパシティ分析 -->
                 <div id="capacityAnalysis" class="capacity-analysis-section" style="margin: 20px 0; background: var(--surface-elevated); padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">キャパシティ分析</h4>
+                            <h4 style="margin: 0; color: var(--text-primary);">キャパシティ分析</h4>
                             <span id="capacityWarningBadge" class="capacity-warning-badge" style="display: none;">⚠️ 超過中</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 14px; color: var(--text-secondary);">
-                                標準: <strong id="capacityStandard" style="color: var(--text-primary); font-size: 16px;">176h</strong>
-                                <span style="font-size: 12px; color: var(--text-muted);" id="capacityStandardDetail">(22日×8h×1人)</span>
+                            <div class="capacity-standard-info">
+                                標準: <strong id="capacityStandard" style="color: var(--text-primary);">176h</strong>
+                                <span class="detail" id="capacityStandardDetail">(22日×8h×1人)</span>
                             </div>
                             <!-- 設定ボタン -->
                             <div style="position: relative;">
@@ -522,27 +577,21 @@
                             <div id="capacityBarContainer" style="flex: 1; position: relative; overflow: visible;">
                                 <!-- 見積バー -->
                                 <div id="capacityEstimateBarRow" style="position: relative; height: 24px; margin-bottom: 6px;">
-                                    <!-- 100%の背景 -->
-                                    <div class="capacity-bg-bar" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);"></div>
-                                    <!-- 実際のバー -->
-                                    <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 70%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
-                                    <!-- 超過部分（100%超えた分のみ表示） -->
+                                    <div class="capacity-bg-bar"></div>
+                                    <div id="capacityEstimateBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 70%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; transition: width 0.3s ease;"></div>
                                     <div id="capacityEstimateStripe" class="capacity-bar-overflow" style="display: none;"></div>
                                 </div>
                                 <!-- 実績バー -->
                                 <div id="capacityActualBarRow" style="position: relative; height: 24px;">
-                                    <!-- 100%の背景 -->
-                                    <div class="capacity-bg-bar" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);"></div>
-                                    <!-- 実際のバー -->
-                                    <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 52%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; transition: width 0.3s ease;"></div>
-                                    <!-- 超過部分（100%超えた分のみ表示） -->
+                                    <div class="capacity-bg-bar"></div>
+                                    <div id="capacityActualBar" style="position: absolute; left: 0; top: 0; height: 100%; width: 52%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); border-radius: 10px; transition: width 0.3s ease;"></div>
                                     <div id="capacityActualStripe" class="capacity-bar-overflow" style="display: none;"></div>
                                 </div>
                             </div>
                             <!-- 数値列 -->
                             <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px; flex-shrink: 0;">
-                                <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
-                                <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px; font-variant-numeric: tabular-nums;" id="capacityEstimateText">160h (91%)</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px; font-variant-numeric: tabular-nums;" id="capacityActualText">120h (68%)</div>
                             </div>
                         </div>
                     </div>
@@ -571,14 +620,14 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px;">
+                    <div class="capacity-summary-row">
                         <div id="capacityDiffContainer">
-                            <span style="color: var(--text-secondary);">余裕:</span>
-                            <strong id="capacityDiff" style="color: #16a34a; font-size: 16px;">+16h</strong>
+                            <span class="label">余裕:</span>
+                            <strong id="capacityDiff" class="value" style="color: #16a34a;">+16h</strong>
                         </div>
                         <div>
-                            <span id="capacityRemainingLabel" style="color: var(--text-secondary);">実績残り:</span>
-                            <strong id="capacityRemaining" style="color: var(--text-primary); font-size: 16px;">56h</strong>
+                            <span id="capacityRemainingLabel" class="label">実績残り:</span>
+                            <strong id="capacityRemaining" class="value" style="color: var(--text-primary);">56h</strong>
                         </div>
                     </div>
                 </div>
@@ -1095,6 +1144,7 @@
                     <option value="rose">Rose</option>
                     <option value="teal">Teal</option>
                     <option value="slate">Slate</option>
+                    <option value="custom">Custom</option>
                 </select>
                 <select id="themePattern" style="display:none;"><option value="none">none</option></select>
                 <select id="themeTabColor" style="display:none;"><option value="same">same</option></select>
@@ -1123,6 +1173,9 @@
                             <div class="color-swatch" data-theme="rose" style="background:#8E3050;" title="Rose"></div>
                             <div class="color-swatch" data-theme="teal" style="background:#0F766E;" title="Teal"></div>
                             <div class="color-swatch" data-theme="slate" style="background:#556270;" title="Slate"></div>
+                            <div class="color-swatch-custom" data-theme="custom" id="customColorSwatch" title="カスタムカラー">
+                                <input type="color" id="customColorPicker" value="#2D5A27">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1302,6 +1355,18 @@
                         自動バックアップ
                     </div>
                     <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">データ保存時に自動的にJSONファイルをダウンロードします。</p>
+
+                    <!-- 手動バックアップ・復元ボタン（モバイルでもアクセス可能） -->
+                    <div class="setting-backup-buttons" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                        <button class="btn btn-sm" id="btnExportBackupSettings" style="flex:1; font-size: 13px; padding: 10px 12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            バックアップ
+                        </button>
+                        <button class="btn btn-sm" id="btnImportBackupSettings" style="flex:1; font-size: 13px; padding: 10px 12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            復元
+                        </button>
+                    </div>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -1887,7 +1952,7 @@
                         <div class="edit-est-member-row edit-est-member-primary" id="editEstPrimaryRow">
                             <select id="editEstimateMember"></select>
                             <div class="edit-est-hours-input">
-                                <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="h">
+                                <input type="number" id="editEstimateHours" step="0.25" min="0" placeholder="h">
                                 <span class="edit-est-hours-unit">h</span>
                             </div>
                             <div class="edit-est-row-action"></div>
@@ -1930,11 +1995,13 @@
                     <!-- 複数月分割モード -->
                     <div id="editMultiMonthSection" style="display: none;">
                         <div style="background: var(--surface-elevated); padding: 15px; border-radius: 6px; border: 1px solid var(--border);">
-                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                                <label style="flex: 1;">作業期間:</label>
-                                <select id="editStartMonth"></select>
-                                <span>〜</span>
-                                <select id="editEndMonth"></select>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                                <label style="white-space: nowrap; flex-shrink: 0;">作業期間:</label>
+                                <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0;">
+                                    <select id="editStartMonth" style="flex: 1; min-width: 0;"></select>
+                                    <span>〜</span>
+                                    <select id="editEndMonth" style="flex: 1; min-width: 0;"></select>
+                                </div>
                             </div>
 
                             <div style="display: flex; gap: 20px; margin-bottom: 10px;">
@@ -2044,7 +2111,7 @@
 
                 <div class="form-group">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">⏱️ 見込残存時間 (h)</label>
-                    <input type="number" id="remainingHoursInput" step="0.1" min="0"
+                    <input type="number" id="remainingHoursInput" step="0.25" min="0"
                         style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     <small style="color: var(--text-muted); display: block; margin-top: 5px;">
                         0を入力すると完了（100%）として扱われます
@@ -2129,9 +2196,9 @@
                             </div>
                             <div id="addEstMultiMonthInput" style="display: none;">
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select id="addEstStartMonthMulti"></select>
-                                    <span>〜</span>
-                                    <select id="addEstEndMonth"></select>
+                                    <select id="addEstStartMonthMulti" style="flex: 1; min-width: 0;"></select>
+                                    <span style="flex-shrink: 0;">〜</span>
+                                    <select id="addEstEndMonth" style="flex: 1; min-width: 0;"></select>
                                 </div>
                             </div>
                         </div>
@@ -2151,31 +2218,31 @@
                                 <tr data-process="UI" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
                                     <td><select id="addEstUI_member" style="margin: 0;"></select></td>
-                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('UI')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="PG" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
                                     <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PG')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="PT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
                                     <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PT')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="IT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
                                     <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('IT')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="ST" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
                                     <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
-                                    <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstST" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('ST')" title="担当者を追加">+</button></td>
                                 </tr>
                             </tbody>
@@ -2216,7 +2283,7 @@
                     </div>
                     <div class="form-group">
                         <label>見積工数 (h)</label>
-                        <input type="number" id="addEstOtherHours" step="0.5" min="0" placeholder="例: 2">
+                        <input type="number" id="addEstOtherHours" step="0.25" min="0" placeholder="例: 2">
                     </div>
                 </div>
 
@@ -2246,16 +2313,16 @@
 
                 <div class="form-group">
                     <label>総工数</label>
-                    <input type="number" id="splitTotalHours" step="0.1" min="0" readonly style="background: var(--surface-elevated);">
+                    <input type="number" id="splitTotalHours" step="0.25" min="0" readonly style="background: var(--surface-elevated);">
                     <span style="margin-left: 5px;">時間</span>
                 </div>
 
                 <div class="form-group">
                     <label>作業期間</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="splitStartMonth" onchange="updateSplitPreview()"></select>
-                        <span>〜</span>
-                        <select id="splitEndMonth" onchange="updateSplitPreview()"></select>
+                        <select id="splitStartMonth" onchange="updateSplitPreview()" style="flex: 1; min-width: 0;"></select>
+                        <span style="flex-shrink: 0;">〜</span>
+                        <select id="splitEndMonth" onchange="updateSplitPreview()" style="flex: 1; min-width: 0;"></select>
                     </div>
                 </div>
 
@@ -2306,7 +2373,7 @@
                     <p style="color: var(--text-muted); margin-bottom: 15px;">全担当者に同じ工数で登録されます。</p>
                     <div class="form-group">
                         <label>工数 (h)</label>
-                        <input type="number" id="meetingHours" step="0.5" min="0" placeholder="例: 2">
+                        <input type="number" id="meetingHours" step="0.25" min="0" placeholder="例: 2">
                     </div>
                     <button class="btn btn-success" onclick="addMeeting()">全員分追加</button>
                 </div>
@@ -2325,7 +2392,7 @@
                     </div>
                     <div class="form-group">
                         <label>工数 (h)</label>
-                        <input type="number" id="otherWorkHours" step="0.5" min="0" placeholder="例: 4">
+                        <input type="number" id="otherWorkHours" step="0.25" min="0" placeholder="例: 4">
                     </div>
                     <button class="btn btn-success" onclick="addOtherWork()">追加</button>
                 </div>
@@ -2765,6 +2832,16 @@
                         mobileFilterBtn.style.display = '';
                         return;
                     }
+                    // ページ固定フィルタOFF時: スクロール位置に関係なく常にフィルタボタンを表示
+                    if (currentMode === 'off') {
+                        var bar = findBar();
+                        if (bar) {
+                            mobileFilterBtn.style.display = '';
+                        } else {
+                            mobileFilterBtn.style.display = 'none';
+                        }
+                        return;
+                    }
                     // 手動表示中はボタンを常に表示（閉じるために必要）
                     if (manuallyShown && fixedBar) {
                         mobileFilterBtn.style.display = '';
@@ -2853,6 +2930,21 @@
                 }
 
                 function onScroll() {
+                    // offモード時: 手動表示中のバーをスクロールで自動クローズ
+                    if (currentMode === 'off') {
+                        if (manuallyShown && fixedBar) {
+                            if (Date.now() < btnInteractingUntil) return;
+                            if (Date.now() - manuallyShownAt < 800) return;
+                            var bar = findBar();
+                            if (bar && bar.getBoundingClientRect().bottom >= 0) {
+                                manuallyShown = false;
+                                hideFixedBar('off-scroll-bar-in-view');
+                            }
+                        }
+                        // モバイルフィルタボタンの表示状態を更新
+                        updateFilterBtnVisibility();
+                        return;
+                    }
                     if (currentMode !== 'smartSticky') return;
                     // ボタン操作中はスクロールを無視
                     if (Date.now() < btnInteractingUntil) return;
@@ -2905,39 +2997,98 @@
 
                 // --- ホバーモード ---
                 var HOVER_ZONE = 40;
+                var HOVER_SHOW_DELAY = 150;  // 表示までの遅延（ms）- 素早い通過で誤表示しない
+                var HOVER_HIDE_DELAY = 200;  // 非表示までの遅延（ms）- 要素間移動でちらつかない
+                var hoverShowTimer = null;
+                var hoverHideTimer = null;
+                var hoverBarIsInZone = false; // マウスがホバーゾーン内にいるか
 
                 function showHoverBar(bar) {
                     if (hoverBar && hoverSourceBar === bar) return;
-                    hideHoverBar();
+                    // 非表示タイマーが走っていたらキャンセル（再表示不要）
+                    if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null; }
+                    hideHoverBarImmediate();
                     hoverBar = createBarElement(bar);
                     document.body.appendChild(hoverBar);
                     hoverSourceBar = bar;
                     syncBar(hoverBar, hoverSourceBar);
                     attachBarEvents(hoverBar, hoverSourceBar);
+                    // ホバーバーからマウスが出たら遅延非表示（即座に消さない）
                     hoverBar.addEventListener('mouseleave', function() {
-                        hideHoverBar();
+                        scheduleHideHoverBar();
+                    });
+                    // ホバーバーにマウスが入ったら非表示タイマーをキャンセル
+                    hoverBar.addEventListener('mouseenter', function() {
+                        if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null; }
                     });
                     updateMobileFilterBtn(true);
                 }
 
-                function hideHoverBar() {
+                // 遅延付き非表示（ちらつき防止）
+                function scheduleHideHoverBar() {
+                    if (hoverHideTimer) return; // 既にスケジュール済み
+                    hoverHideTimer = setTimeout(function() {
+                        hoverHideTimer = null;
+                        // マウスがまだホバーゾーン内にいる場合は非表示にしない
+                        if (hoverBarIsInZone) return;
+                        hideHoverBarImmediate();
+                    }, HOVER_HIDE_DELAY);
+                }
+
+                // 即座に非表示（タイマーなし、内部用）
+                function hideHoverBarImmediate() {
                     if (hoverBar) { hoverBar.remove(); hoverBar = null; hoverSourceBar = null; }
                     updateMobileFilterBtn(false);
                 }
 
+                function hideHoverBar() {
+                    // 表示タイマーもキャンセル
+                    if (hoverShowTimer) { clearTimeout(hoverShowTimer); hoverShowTimer = null; }
+                    if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null; }
+                    hideHoverBarImmediate();
+                }
+
                 document.addEventListener('mousemove', function(e) {
                     if (currentMode !== 'hover') return;
-                    if (hoverBar) return; // 既に表示中
                     var mcRect = mc ? mc.getBoundingClientRect() : { top: 0, left: 0, right: window.innerWidth };
                     var inMcX = e.clientX >= mcRect.left && e.clientX <= (mcRect.right || window.innerWidth);
                     var nearTop = e.clientY <= HOVER_ZONE;
-                    if (nearTop && inMcX) {
-                        var bar = findBar();
-                        if (bar && (bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden())) {
-                            showHoverBar(bar);
+                    var inZone = nearTop && inMcX;
+
+                    hoverBarIsInZone = inZone;
+
+                    if (inZone) {
+                        // ホバーゾーン内: 非表示タイマーをキャンセル
+                        if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null; }
+                        // 既に表示中 or 表示タイマー実行中なら何もしない
+                        if (hoverBar || hoverShowTimer) return;
+                        // 遅延付きで表示（素早い通過では表示しない）
+                        hoverShowTimer = setTimeout(function() {
+                            hoverShowTimer = null;
+                            if (!hoverBarIsInZone) return; // タイマー中にゾーンを出た
+                            if (hoverBar) return; // 既に表示済み
+                            var bar = findBar();
+                            if (bar && (bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden())) {
+                                showHoverBar(bar);
+                            }
+                        }, HOVER_SHOW_DELAY);
+                    } else {
+                        // ホバーゾーン外: 表示タイマーをキャンセル
+                        if (hoverShowTimer) { clearTimeout(hoverShowTimer); hoverShowTimer = null; }
+                        // バーが表示中なら遅延非表示をスケジュール（バー上にマウスがある場合はmouseleaveで処理）
+                        if (hoverBar && !isMouseOverElement(hoverBar, e)) {
+                            scheduleHideHoverBar();
                         }
                     }
                 }, { passive: true });
+
+                // マウスが要素上にあるかチェック（mousemoveイベントの座標で判定）
+                function isMouseOverElement(el, e) {
+                    if (!el) return false;
+                    var rect = el.getBoundingClientRect();
+                    return e.clientX >= rect.left && e.clientX <= rect.right &&
+                           e.clientY >= rect.top && e.clientY <= rect.bottom;
+                }
 
                 // --- モバイルフィルタボタン: タップでフィルタバー表示/非表示 ---
                 var lastToggleAt = 0; // 開く/閉じる操作のタイムスタンプ（重複イベント防止）
@@ -2982,7 +3133,8 @@
                         btnInteractingUntil = now + 1000;
                         blockHideUntil = now + 1000; // 1秒間は何があってもhideを完全ブロック
                         var bar = findBar();
-                        if (bar && bar.getBoundingClientRect().bottom < 0) {
+                        // offモード時はスクロール位置に関係なくバーを表示可能
+                        if (bar && (bar.getBoundingClientRect().bottom < 0 || currentMode === 'off')) {
                             manuallyShown = true;
                             manuallyShownAt = now;
                             ignoreScrollUntil = now + 1000;
@@ -3001,6 +3153,9 @@
                 if (mc) mc.addEventListener('scroll', onScrollUpdateBtn, { passive: true });
                 window.addEventListener('scroll', onScrollUpdateBtn, { passive: true });
 
+                // 初期表示時にフィルタボタンの表示状態を設定
+                setTimeout(function() { updateFilterBtnVisibility(); }, 100);
+
                 // --- タブ切替時にリセット ---
                 document.querySelectorAll('.nav-item, .mobile-tab-item').forEach(function(item) {
                     item.addEventListener('click', function() {
@@ -3014,6 +3169,10 @@
                         if (mobileFilterBtn) {
                             mobileFilterBtn.style.display = 'none';
                             mobileFilterBtn.classList.remove('is-open');
+                        }
+                        // offモード時: タブ切替後にフィルタボタンの表示状態を再評価
+                        if (currentMode === 'off') {
+                            setTimeout(function() { updateFilterBtnVisibility(); }, 400);
                         }
                     });
                 });

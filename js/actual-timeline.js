@@ -967,7 +967,7 @@ function placeSelectedTaskAtPosition(e, row) {
     } else {
         date = currentDate;
         const hourOffset = relX / DAILY_HOUR_WIDTH;
-        defaultHours = Math.max(0.5, Math.round(hourOffset * 2) / 2);
+        defaultHours = Math.max(0.25, Math.round(hourOffset * 4) / 4);
     }
 
     // インラインエディタを表示して工数確認
@@ -1547,8 +1547,8 @@ function updateAreaDragVisual(e) {
         const y1 = Math.min(dragState.startY, relY);
         const y2 = Math.max(dragState.startY, relY);
 
-        // 30分スナップ（0.5h単位）
-        const snapUnit = DAILY_HOUR_HEIGHT / 2;
+        // 15分スナップ（0.25h単位）
+        const snapUnit = DAILY_HOUR_HEIGHT / 4;
         // 昼休みゾーンを跨がないようにスナップ
         let snappedY1 = Math.floor(y1 / snapUnit) * snapUnit;
         let snappedY2 = Math.ceil(y2 / snapUnit) * snapUnit;
@@ -1601,7 +1601,7 @@ function showInlineEditor(dropInfo, cardState) {
     const defaultHours = cardState.hours || 1;
 
     editor.innerHTML = `
-        <input type="number" class="actual-tl-ie-input" value="${defaultHours}" min="0.5" max="24" step="0.5" id="atlIeHours">
+        <input type="number" class="actual-tl-ie-input" value="${defaultHours}" min="0.25" max="24" step="0.25" id="atlIeHours">
         <span class="actual-tl-ie-unit">h</span>
         <button class="actual-tl-ie-btn confirm" id="atlIeConfirm" title="確定">&#10003;</button>
         <button class="actual-tl-ie-btn cancel" id="atlIeCancel" title="キャンセル">&#10005;</button>
@@ -1703,7 +1703,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
                 </div>
                 <div class="actual-tl-tp-hours-ctrl">
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursDec">&minus;</button>
-                    <input type="number" id="atlTpHours" value="${roundedHours}" min="0.5" max="24" step="0.5">
+                    <input type="number" id="atlTpHours" value="${roundedHours}" min="0.25" max="24" step="0.25">
                     <span class="actual-tl-tp-hours-unit">h</span>
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursInc">&plus;</button>
                 </div>
@@ -1735,11 +1735,11 @@ function showTaskPicker(x, y, member, date, defaultHours) {
     const hoursInput = picker.querySelector('#atlTpHours');
     picker.querySelector('#atlTpHoursDec').addEventListener('click', () => {
         const v = parseFloat(hoursInput.value) || 1;
-        hoursInput.value = Math.max(0.5, Math.round((v - 0.5) * 10) / 10);
+        hoursInput.value = Math.max(0.25, Math.round((v - 0.25) * 100) / 100);
     });
     picker.querySelector('#atlTpHoursInc').addEventListener('click', () => {
         const v = parseFloat(hoursInput.value) || 0;
-        hoursInput.value = Math.min(24, Math.round((v + 0.5) * 10) / 10);
+        hoursInput.value = Math.min(24, Math.round((v + 0.25) * 100) / 100);
     });
 
     // 検索
@@ -1884,7 +1884,7 @@ function showQuickRegisterConfirm(x, y, schedule, member, date) {
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <label style="font-size:11px;font-weight:600;">工数:</label>
-                <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.5" max="24" step="0.5"
+                <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.25" max="24" step="0.25"
                     style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;text-align:center;">
                 <span style="font-size:11px;color:var(--text-muted);">h</span>
             </div>

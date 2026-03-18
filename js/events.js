@@ -117,6 +117,17 @@ export function initEventHandlers() {
         importBtn.addEventListener('click', importBackup);
     }
 
+    // 設定画面内のバックアップ・復元ボタン（モバイル用）
+    const exportBtnSettings = document.getElementById('btnExportBackupSettings');
+    if (exportBtnSettings) {
+        exportBtnSettings.addEventListener('click', exportBackup);
+    }
+
+    const importBtnSettings = document.getElementById('btnImportBackupSettings');
+    if (importBtnSettings) {
+        importBtnSettings.addEventListener('click', importBackup);
+    }
+
     // タブ切り替え
     // タブ切り替え（イベント委譲）
     function handleTabClick(e) {
@@ -667,10 +678,26 @@ export function initEventHandlers() {
         radio.addEventListener('change', toggleEditWorkMonthMode);
     });
 
-    ['editStartMonth', 'editEndMonth'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', updateEditMonthPreview);
-    });
+    const editStartMonth = document.getElementById('editStartMonth');
+    const editEndMonth = document.getElementById('editEndMonth');
+    if (editStartMonth) {
+        editStartMonth.addEventListener('change', () => {
+            // 開始月が終了月より後の場合、終了月を開始月に合わせる
+            if (editEndMonth && editStartMonth.value > editEndMonth.value) {
+                editEndMonth.value = editStartMonth.value;
+            }
+            updateEditMonthPreview();
+        });
+    }
+    if (editEndMonth) {
+        editEndMonth.addEventListener('change', () => {
+            // 終了月が開始月より前の場合、開始月を終了月に合わせる
+            if (editStartMonth && editEndMonth.value < editStartMonth.value) {
+                editStartMonth.value = editEndMonth.value;
+            }
+            updateEditMonthPreview();
+        });
+    }
 
     document.querySelectorAll('input[name="editSplitMethod"]').forEach(radio => {
         radio.addEventListener('change', updateEditMonthPreview);
