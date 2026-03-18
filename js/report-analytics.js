@@ -3,10 +3,14 @@
  * Reads from app state (estimates, actuals, remainingEstimates)
  */
 
-import { estimates, actuals, remainingEstimates } from './state.js';
-import { calculateProgress, calculateVersionProgress } from './report.js';
+import { calculateProgress, calculateVersionProgress, clearProgressCache } from './report.js';
 import { PROCESS } from './constants.js';
 import { formatHours, hoursToManDays, hoursToManMonths } from './utils.js';
+
+// Always read latest data from window to avoid stale references after loadData()
+function getEstimates() { return window.estimates || []; }
+function getActuals() { return window.actuals || []; }
+function getRemainingEstimates() { return window.remainingEstimates || []; }
 
 const DPR = window.devicePixelRatio || 1;
 const COLORS = {
@@ -24,32 +28,32 @@ const PROC_TYPES = PROCESS.TYPES; // ['UI','PG','PT','IT','ST']
 /** Get all unique non-empty versions */
 function getAllVersions() {
     const set = new Set();
-    estimates.forEach(e => { if (e.version) set.add(e.version); });
-    actuals.forEach(a => { if (a.version) set.add(a.version); });
+    getEstimates().forEach(e => { if (e.version) set.add(e.version); });
+    getActuals().forEach(a => { if (a.version) set.add(a.version); });
     return [...set].sort();
 }
 
 /** Get all unique non-empty members */
 function getAllMembers() {
     const set = new Set();
-    estimates.forEach(e => { if (e.member) set.add(e.member); });
-    actuals.forEach(a => { if (a.member) set.add(a.member); });
+    getEstimates().forEach(e => { if (e.member) set.add(e.member); });
+    getActuals().forEach(a => { if (a.member) set.add(a.member); });
     return [...set].sort();
 }
 
 /** Get all unique version+task combos */
 function getAllTasks() {
     const set = new Set();
-    estimates.forEach(e => { if (e.version && e.task) set.add(`${e.version}\t${e.task}`); });
-    actuals.forEach(a => { if (a.version && a.task) set.add(`${a.version}\t${a.task}`); });
+    getEstimates().forEach(e => { if (e.version && e.task) set.add(`${e.version}\t${e.task}`); });
+    getActuals().forEach(a => { if (a.version && a.task) set.add(`${a.version}\t${a.task}`); });
     return [...set].map(k => { const [v, t] = k.split('\t'); return { version: v, task: t }; });
 }
 
 /** Get all unique months from actuals (YYYY-MM) and estimate workMonths */
 function getAllMonths() {
     const set = new Set();
-    actuals.forEach(a => { if (a.date) set.add(a.date.substring(0, 7)); });
-    estimates.forEach(e => {
+    getActuals().forEach(a => { if (a.date) set.add(a.date.substring(0, 7)); });
+    getEstimates().forEach(e => {
         if (e.workMonths && e.workMonths.length) {
             e.workMonths.forEach(m => set.add(m));
         } else if (e.workMonth) {
@@ -84,15 +88,18 @@ function computeData(monthFilter) {
     const allMonths = getAllMonths();
     const tasks = getAllTasks();
 
+    const est = getEstimates();
+    const act = getActuals();
+
     // Filter actuals by month if needed
     const filteredActuals = monthFilter
-        ? actuals.filter(a => a.date && a.date.startsWith(monthFilter))
-        : actuals;
+        ? act.filter(a => a.date && a.date.startsWith(monthFilter))
+        : act;
 
     // --- Totals ---
     const totalEst = monthFilter
-        ? estimates.reduce((sum, e) => sum + getEstimateHoursForMonth(e, monthFilter), 0)
-        : estimates.reduce((sum, e) => sum + e.hours, 0);
+        ? est.reduce((sum, e) => sum + getEstimateHoursForMonth(e, monthFilter), 0)
+        : est.reduce((sum, e) => sum + e.hours, 0);
     const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
     const diff = totalAct - totalEst;
     const rate = totalEst > 0 ? (totalAct / totalEst) * 100 : 0;
@@ -101,8 +108,8 @@ function computeData(monthFilter) {
     const processData = PROC_TYPES.map(p => ({
         label: p,
         est: monthFilter
-            ? estimates.filter(e => e.process === p).reduce((s, e) => s + getEstimateHoursForMonth(e, monthFilter), 0)
-            : estimates.filter(e => e.process === p).reduce((s, e) => s + e.hours, 0),
+            ? est.filter(e => e.process === p).reduce((s, e) => s + getEstimateHoursForMonth(e, monthFilter), 0)
+            : est.filter(e => e.process === p).reduce((s, e) => s + e.hours, 0),
         act: filteredActuals.filter(a => a.process === p).reduce((s, a) => s + a.hours, 0),
     }));
 
@@ -115,10 +122,10 @@ function computeData(monthFilter) {
     // --- Monthly trend ---
     const trendMonths = allMonths.slice(-6); // last 6 months
     const monthlyEst = trendMonths.map(m =>
-        estimates.reduce((sum, e) => sum + getEstimateHoursForMonth(e, m), 0)
+        est.reduce((sum, e) => sum + getEstimateHoursForMonth(e, m), 0)
     );
     const monthlyAct = trendMonths.map(m =>
-        actuals.filter(a => a.date && a.date.startsWith(m)).reduce((s, a) => s + a.hours, 0)
+        act.filter(a => a.date && a.date.startsWith(m)).reduce((s, a) => s + a.hours, 0)
     );
 
     // --- Pareto (top tasks by actual hours) ---
@@ -146,24 +153,24 @@ function computeData(monthFilter) {
     // --- Risk heatmap (version × process overrun %) ---
     const heatmapData = versions.map(v => {
         return PROC_TYPES.map(p => {
-            const est = estimates.filter(e => e.version === v && e.process === p)
+            const pEst = est.filter(e => e.version === v && e.process === p)
                 .reduce((s, e) => s + e.hours, 0);
-            const act = filteredActuals.filter(a => a.version === v && a.process === p)
+            const pAct = filteredActuals.filter(a => a.version === v && a.process === p)
                 .reduce((s, a) => s + a.hours, 0);
-            if (est === 0 && act === 0) return null;
-            if (est === 0) return act > 0 ? 100 : null;
-            return Math.round(((act - est) / est) * 100);
+            if (pEst === 0 && pAct === 0) return null;
+            if (pEst === 0) return pAct > 0 ? 100 : null;
+            return Math.round(((pAct - pEst) / pEst) * 100);
         });
     });
 
     // --- Accuracy trend (per version: actual/estimate ratio × 100) ---
     const accuracyData = versions.map(v => {
-        const vEst = estimates.filter(e => e.version === v).reduce((s, e) => s + e.hours, 0);
-        const vAct = actuals.filter(a => a.version === v).reduce((s, a) => s + a.hours, 0);
+        const vEst = est.filter(e => e.version === v).reduce((s, e) => s + e.hours, 0);
+        const vAct = act.filter(a => a.version === v).reduce((s, a) => s + a.hours, 0);
         return vEst > 0 ? (vAct / vEst) * 100 : null;
     }).filter(v => v !== null);
-    const accuracyVersions = versions.filter((v, i) => {
-        const vEst = estimates.filter(e => e.version === v).reduce((s, e) => s + e.hours, 0);
+    const accuracyVersions = versions.filter(v => {
+        const vEst = est.filter(e => e.version === v).reduce((s, e) => s + e.hours, 0);
         return vEst > 0;
     });
 
@@ -185,11 +192,11 @@ function computeData(monthFilter) {
 
     // --- Member table data ---
     const memberTableData = members.map(name => {
-        const est = monthFilter
-            ? estimates.filter(e => e.member === name).reduce((s, e) => s + getEstimateHoursForMonth(e, monthFilter), 0)
-            : estimates.filter(e => e.member === name).reduce((s, e) => s + e.hours, 0);
-        const act = filteredActuals.filter(a => a.member === name).reduce((s, a) => s + a.hours, 0);
-        return { name, est, act, diff: act - est, rate: est > 0 ? (act / est) * 100 : 0 };
+        const mEst = monthFilter
+            ? est.filter(e => e.member === name).reduce((s, e) => s + getEstimateHoursForMonth(e, monthFilter), 0)
+            : est.filter(e => e.member === name).reduce((s, e) => s + e.hours, 0);
+        const mAct = filteredActuals.filter(a => a.member === name).reduce((s, a) => s + a.hours, 0);
+        return { name, est: mEst, act: mAct, diff: mAct - mEst, rate: mEst > 0 ? (mAct / mEst) * 100 : 0 };
     }).filter(m => m.est > 0 || m.act > 0);
 
     // --- Version table data ---
@@ -968,6 +975,8 @@ function toggleDetail(el, e) {
 let cachedData = null;
 
 function renderAll(monthFilter) {
+    // Clear progress cache to ensure fresh calculations
+    clearProgressCache();
     cachedData = computeData(monthFilter || null);
     const d = cachedData;
 
