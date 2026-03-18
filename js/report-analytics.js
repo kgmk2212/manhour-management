@@ -477,6 +477,9 @@ function updateFilterOptions(allMonths) {
 function setupCanvas(id, drawFn) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
+    // Collapse canvas before measuring parent to avoid feedback loop
+    canvas.style.width = '0px';
+    canvas.style.height = '0px';
     const w = canvas.parentElement.clientWidth;
     const h = parseInt(canvas.getAttribute('height')) || 200;
     canvas.width = w * DPR;
@@ -1030,5 +1033,8 @@ export function initReportAnalytics() {
         initialized = true;
     }
 
-    requestAnimationFrame(() => renderAll(getMonthFilter()));
+    // Double rAF ensures the tab is visible and laid out before measuring canvas sizes
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => renderAll(getMonthFilter()));
+    });
 }

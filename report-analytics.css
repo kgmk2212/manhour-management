@@ -292,8 +292,8 @@
     position: relative;
 }
 #analytics .ra-chart-card-body canvas {
-    width: 100%;
     display: block;
+    max-width: 100%;
 }
 #analytics .ra-chart-card-insight {
     padding: 10px 18px 14px;
