@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>版数別タスク構成比 - モックアップ</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --surface-sunken: #F0EEEA;
+    --border: #E7E5E0;
+    --border-light: #F0EEEA;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #9C9690;
+    --accent: #2D5A27;
+    --accent-secondary: #C4841D;
+    --accent-secondary-light: #FFF8ED;
+    --danger: #B91C1C;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(26, 24, 20, 0.04);
+    --shadow-md: 0 2px 8px rgba(26, 24, 20, 0.06);
+    --transition: 200ms ease;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; }
+body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text-primary);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    padding: 32px; max-width: 1100px; margin: 0 auto;
+}
+
+.mockup-banner {
+    background: linear-gradient(135deg, #1A1814 0%, #2D2A25 100%);
+    color: #F7F6F3; padding: 16px 24px; border-radius: var(--radius-lg);
+    margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between;
+}
+.mockup-banner h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.mockup-banner span { font-size: 12px; color: #9C9690; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px; }
+
+.design-notes {
+    background: var(--accent-secondary-light); border: 1px solid rgba(196, 132, 29, 0.2);
+    border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 32px;
+    font-size: 13px; color: var(--text-secondary); line-height: 1.7;
+}
+.design-notes strong { color: var(--text-primary); }
+.design-notes ul { margin: 8px 0 0 20px; }
+.design-notes li { margin-bottom: 4px; }
+
+.section-label {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
+}
+
+/* ---- Chart Card ---- */
+.chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden; transition: box-shadow var(--transition);
+}
+.chart-card:hover { box-shadow: var(--shadow-md); }
+.chart-card-header {
+    display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 0;
+}
+.chart-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.chart-card-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.chart-card-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--accent-secondary-light); color: var(--accent-secondary); }
+.chart-card-body { padding: 12px 18px 16px; position: relative; }
+.chart-card-insight { padding: 10px 18px 14px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-secondary); background: var(--surface-elevated); }
+.chart-card-insight strong { color: var(--text-primary); }
+
+/* ---- Version Selector (案A) ---- */
+.version-selector {
+    display: flex; gap: 6px; padding: 8px 18px 4px; flex-wrap: wrap;
+}
+.version-btn {
+    padding: 4px 12px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--text-secondary);
+    cursor: pointer; transition: all var(--transition); font-family: inherit;
+}
+.version-btn:hover { background: var(--surface-sunken); }
+.version-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ---- Donut + Legend Layout ---- */
+.donut-layout {
+    display: flex; align-items: flex-start; gap: 20px;
+}
+.donut-canvas-wrap {
+    flex-shrink: 0; position: relative;
+}
+.donut-legend {
+    flex: 1; min-width: 0;
+}
+.donut-legend-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--border-light);
+}
+.donut-legend-item:last-child { border-bottom: none; }
+.donut-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.donut-legend-name { flex: 1; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.donut-legend-hours { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.donut-legend-pct { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-muted); width: 36px; text-align: right; }
+.donut-legend-bar-wrap { width: 48px; flex-shrink: 0; }
+.donut-legend-bar { height: 4px; border-radius: 2px; background: var(--surface-sunken); overflow: hidden; }
+.donut-legend-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ---- Small Multiples Grid (案B) ---- */
+.multiples-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+.mini-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 16px; transition: box-shadow var(--transition);
+}
+.mini-card:hover { box-shadow: var(--shadow-md); }
+.mini-card-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.mini-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.mini-card-total { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.mini-card-body { display: flex; align-items: flex-start; gap: 14px; }
+.mini-legend { flex: 1; min-width: 0; }
+.mini-legend-item {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+    font-size: 11px;
+}
+.mini-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.mini-legend-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); font-weight: 500; }
+.mini-legend-val { font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 680px) {
+    body { padding: 16px; }
+    .donut-layout { flex-direction: column; align-items: center; }
+    .multiples-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 440px) {
+    .multiples-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+    <h1>版数別タスク構成比</h1>
+    <span>mockup v2 / 2026-03-19</span>
+</div>
+
+<div class="design-notes">
+    <strong>目的</strong>: ある版数の中で、各タスク（対応）が全体のどれくらいの工数を占めているか可視化する。
+    <ul>
+        <li>上位タスクの支配度を直感的に把握（「この版数はほぼXX対応に使われている」）</li>
+        <li>見積ベース/実績ベースを切り替え可能</li>
+        <li>タスクが多い版数は上位5件+その他にまとめる</li>
+    </ul>
+    以下に2つのレイアウト案を提示。
+</div>
+
+<!-- ============================================ -->
+<!-- 案A: セレクタ + 大きいドーナツ1つ            -->
+<!-- ============================================ -->
+<div class="section-label">案A — 版数セレクタ + フォーカス表示</div>
+<div class="chart-card" style="margin-bottom: 40px;">
+    <div class="chart-card-header">
+        <div>
+            <div class="chart-card-title">タスク構成比</div>
+            <div class="chart-card-subtitle">選択した版数内のタスク別工数配分</div>
+        </div>
+        <div class="chart-card-badge">新規</div>
+    </div>
+    <div class="version-selector" id="versionSelector"></div>
+    <div class="chart-card-body">
+        <div class="donut-layout">
+            <div class="donut-canvas-wrap">
+                <canvas id="focusDonut" width="200" height="200"></canvas>
+            </div>
+            <div class="donut-legend" id="focusLegend"></div>
+        </div>
+    </div>
+    <div class="chart-card-insight" id="focusInsight"></div>
+</div>
+
+<!-- ============================================ -->
+<!-- 案B: 全版数スモールマルチプル               -->
+<!-- ============================================ -->
+<div class="section-label">案B — 全版数を一覧で比較（スモールマルチプル）</div>
+<div class="multiples-grid" id="multiplesGrid"></div>
+
+<script>
+const DPR = window.devicePixelRatio || 1;
+
+// Earthy palette for tasks (up to 8 + "その他")
+const TASK_PALETTE = [
+    '#2D5A27', '#1D6FA5', '#C4841D', '#7C3AED',
+    '#B91C1C', '#0F766E', '#BE185D', '#1E3A5F',
+    '#9C9690',
+];
+
+// Sample data: version → tasks
+const DATA = {
+    'V1.0': [
+        { task: 'ログイン', est: 42, act: 38 },
+        { task: 'マスタ管理', est: 56, act: 52 },
+        { task: 'ダッシュボード', est: 48, act: 50 },
+        { task: '設定', est: 34, act: 32 },
+    ],
+    'V2.0': [
+        { task: 'ユーザー管理', est: 68, act: 72 },
+        { task: '帳票出力', est: 78, act: 71 },
+        { task: '検索機能', est: 54, act: 52 },
+        { task: 'バッチ処理', est: 28, act: 26 },
+        { task: 'メール通知', est: 20, act: 20 },
+    ],
+    'V3.0': [
+        { task: 'ユーザー管理', est: 86, act: 139 },
+        { task: 'API連携', est: 72, act: 112 },
+        { task: '帳票出力', est: 58, act: 28 },
+        { task: 'ダッシュボード', est: 44, act: 26 },
+        { task: '検索機能', est: 32, act: 12 },
+        { task: '権限管理', est: 20, act: 8 },
+    ],
+    'V3.1': [
+        { task: '検索機能', est: 38, act: 24 },
+        { task: 'API連携', est: 34, act: 20 },
+        { task: 'ダッシュボード', est: 30, act: 16 },
+    ],
+};
+
+function initCanvas(canvas, w, h) {
+    canvas.width = w * DPR; canvas.height = h * DPR;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d'); ctx.scale(DPR, DPR);
+    return ctx;
+}
+
+/**
+ * Draw donut chart.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx center x
+ * @param {number} cy center y
+ * @param {number} outerR outer radius
+ * @param {number} innerR inner radius
+ * @param {{label:string, value:number, color:string}[]} slices
+ * @param {string} centerLine1 - main text
+ * @param {string} centerLine2 - sub text
+ * @param {boolean} showLabels - show % on slices
+ */
+function drawDonut(ctx, cx, cy, outerR, innerR, slices, centerLine1, centerLine2, showLabels) {
+    const total = slices.reduce((s, d) => s + d.value, 0);
+    if (total === 0) return;
+    const gap = slices.length > 1 ? 0.02 : 0;
+
+    let angle = -Math.PI / 2;
+    slices.forEach(d => {
+        const sliceAngle = (d.value / total) * Math.PI * 2 - gap;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+        ctx.arc(cx, cy, outerR, angle, angle + sliceAngle);
+        ctx.arc(cx, cy, innerR, angle + sliceAngle, angle, true);
+        ctx.closePath();
+        ctx.fillStyle = d.color;
+        ctx.fill();
+
+        if (showLabels) {
+            const pct = Math.round((d.value / total) * 100);
+            if (pct >= 10) {
+                const midAngle = angle + sliceAngle / 2;
+                const labelR = (outerR + innerR) / 2;
+                ctx.fillStyle = '#fff';
+                ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(pct + '%', cx + Math.cos(midAngle) * labelR, cy + Math.sin(midAngle) * labelR + 4);
+            }
+        }
+        angle += sliceAngle + gap;
+    });
+
+    // Center text
+    ctx.fillStyle = '#1A1814';
+    ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(centerLine1, cx, cy - 6);
+    ctx.font = '500 10px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+    ctx.fillStyle = '#6B6560';
+    ctx.fillText(centerLine2, cx, cy + 12);
+    ctx.textBaseline = 'alphabetic';
+}
+
+/** Prepare slices: sort desc, group small items as "その他", max items */
+function prepareSlices(tasks, key, maxItems = 6) {
+    const sorted = tasks.slice().sort((a, b) => b[key] - a[key]);
+    const total = sorted.reduce((s, t) => s + t[key], 0);
+    const result = [];
+    let otherSum = 0;
+
+    sorted.forEach((t, i) => {
+        if (i < maxItems - 1 || sorted.length <= maxItems) {
+            result.push({ label: t.task, value: t[key], color: TASK_PALETTE[i % TASK_PALETTE.length] });
+        } else {
+            otherSum += t[key];
+        }
+    });
+    if (otherSum > 0) {
+        result.push({ label: 'その他', value: otherSum, color: TASK_PALETTE[8] });
+    }
+    return { slices: result, total };
+}
+
+// ============================================
+// 案A: Focus donut with version selector
+// ============================================
+let currentVersion = Object.keys(DATA)[0];
+
+function renderVersionSelector() {
+    const el = document.getElementById('versionSelector');
+    el.innerHTML = Object.keys(DATA).map(v =>
+        `<button class="version-btn ${v === currentVersion ? 'active' : ''}" data-version="${v}">${v}</button>`
+    ).join('');
+    el.querySelectorAll('.version-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentVersion = btn.dataset.version;
+            el.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFocusDonut();
+        });
+    });
+}
+
+function renderFocusDonut() {
+    const canvas = document.getElementById('focusDonut');
+    const ctx = initCanvas(canvas, 200, 200);
+    const tasks = DATA[currentVersion];
+    const { slices, total } = prepareSlices(tasks, 'act');
+
+    drawDonut(ctx, 100, 100, 90, 52, slices, total + 'h', currentVersion + ' 実績', true);
+
+    // Legend
+    const legend = document.getElementById('focusLegend');
+    legend.innerHTML = slices.map(s => {
+        const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
+        const barW = Math.min(pct, 100);
+        return `<div class="donut-legend-item">
+            <div class="donut-legend-dot" style="background:${s.color}"></div>
+            <div class="donut-legend-name">${s.label}</div>
+            <div class="donut-legend-hours">${s.value}h</div>
+            <div class="donut-legend-pct">${pct}%</div>
+            <div class="donut-legend-bar-wrap"><div class="donut-legend-bar"><div class="donut-legend-bar-fill" style="width:${barW}%;background:${s.color}"></div></div></div>
+        </div>`;
+    }).join('');
+
+    // Insight
+    const insight = document.getElementById('focusInsight');
+    if (slices.length >= 2) {
+        const top = slices[0];
+        const topPct = total > 0 ? Math.round((top.value / total) * 100) : 0;
+        const top2Sum = slices.slice(0, 2).reduce((s, d) => s + d.value, 0);
+        const top2Pct = total > 0 ? Math.round((top2Sum / total) * 100) : 0;
+        insight.innerHTML = `<strong>${top.label}</strong>が${topPct}%で最大。上位2タスクで全体の<strong>${top2Pct}%</strong>を占める。`;
+    } else if (slices.length === 1) {
+        insight.innerHTML = `<strong>${slices[0].label}</strong>のみ。`;
+    } else {
+        insight.innerHTML = 'データなし';
+    }
+}
+
+// ============================================
+// 案B: Small multiples
+// ============================================
+function renderMultiples() {
+    const grid = document.getElementById('multiplesGrid');
+    grid.innerHTML = '';
+
+    Object.entries(DATA).forEach(([version, tasks]) => {
+        const card = document.createElement('div');
+        card.className = 'mini-card';
+
+        const { slices, total } = prepareSlices(tasks, 'act', 5);
+
+        card.innerHTML = `
+            <div class="mini-card-header">
+                <div class="mini-card-title">${version}</div>
+                <div class="mini-card-total">${total}h</div>
+            </div>
+            <div class="mini-card-body">
+                <canvas width="100" height="100" style="flex-shrink:0;"></canvas>
+                <div class="mini-legend">
+                    ${slices.map(s => {
+                        const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
+                        return `<div class="mini-legend-item">
+                            <div class="mini-legend-dot" style="background:${s.color}"></div>
+                            <div class="mini-legend-name">${s.label}</div>
+                            <div class="mini-legend-val">${pct}%</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+
+        const canvas = card.querySelector('canvas');
+        const ctx = initCanvas(canvas, 100, 100);
+        drawDonut(ctx, 50, 50, 46, 28, slices, '', '', false);
+    });
+}
+
+// ============================================
+// Init
+// ============================================
+window.addEventListener('DOMContentLoaded', () => {
+    requestAnimationFrame(() => {
+        renderVersionSelector();
+        renderFocusDonut();
+        renderMultiples();
+    });
+});
+</script>
+
+</body>
+</html>

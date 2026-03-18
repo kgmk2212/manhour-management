@@ -208,6 +208,31 @@ function computeData(monthFilter) {
     // Capacity usage (total actual / total estimate)
     const capacityUsage = totalEst > 0 ? Math.round((totalAct / totalEst) * 100) : 0;
 
+    // --- Version task distribution (small multiples) ---
+    const versionTaskData = versions.map(v => {
+        const taskMap = {};
+        filteredActuals.filter(a => a.version === v).forEach(a => {
+            const key = a.task || '(未設定)';
+            taskMap[key] = (taskMap[key] || 0) + a.hours;
+        });
+        const sorted = Object.entries(taskMap)
+            .map(([task, hours]) => ({ task, hours }))
+            .sort((a, b) => b.hours - a.hours);
+        const total = sorted.reduce((s, t) => s + t.hours, 0);
+        // Top 5 + others
+        const slices = [];
+        let otherSum = 0;
+        sorted.forEach((t, i) => {
+            if (i < 5 || sorted.length <= 6) {
+                slices.push(t);
+            } else {
+                otherSum += t.hours;
+            }
+        });
+        if (otherSum > 0) slices.push({ task: 'その他', hours: otherSum });
+        return { version: v, slices, total };
+    }).filter(v => v.total > 0);
+
     return {
         totalEst, totalAct, diff, rate,
         processData, biasData,
@@ -217,7 +242,7 @@ function computeData(monthFilter) {
         accuracyVersions, accuracyData,
         statusCounts, exceededTasks, warningTasks,
         memberTableData, versionTableData,
-        allMonths, capacityUsage,
+        allMonths, capacityUsage, versionTaskData,
     };
 }
 
@@ -813,6 +838,96 @@ function drawDonut(ctx, w, h, statusCounts) {
     ctx.textBaseline = 'alphabetic';
 }
 
+// ---- 9. Version Task Distribution (Small Multiples) ----
+const TASK_PALETTE = [
+    '#2D5A27', '#1D6FA5', '#C4841D', '#7C3AED',
+    '#B91C1C', '#0F766E', '#BE185D', '#1E3A5F',
+    '#9C9690',
+];
+
+function drawMiniDonut(canvas, slices, total) {
+    const size = 90;
+    canvas.width = size * DPR;
+    canvas.height = size * DPR;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 4, innerR = outerR * 0.54;
+    const gap = slices.length > 1 ? 0.03 : 0;
+
+    let angle = -Math.PI / 2;
+    slices.forEach((s, i) => {
+        const sliceAngle = (s.hours / total) * Math.PI * 2 - gap;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+        ctx.arc(cx, cy, outerR, angle, angle + sliceAngle);
+        ctx.arc(cx, cy, innerR, angle + sliceAngle, angle, true);
+        ctx.closePath();
+        ctx.fillStyle = TASK_PALETTE[i % TASK_PALETTE.length];
+        ctx.fill();
+        angle += sliceAngle + gap;
+    });
+
+    // Center total
+    ctx.fillStyle = COLORS.textDark;
+    ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(total) + 'h', cx, cy);
+    ctx.textBaseline = 'alphabetic';
+}
+
+function renderVersionTaskMultiples(versionTaskData) {
+    const container = document.getElementById('ra-multiples-grid');
+    if (!container) return;
+    if (versionTaskData.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">データなし</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    versionTaskData.forEach(({ version, slices, total }) => {
+        const card = document.createElement('div');
+        card.className = 'ra-mini-card';
+
+        const legendHtml = slices.map((s, i) => {
+            const pct = total > 0 ? Math.round((s.hours / total) * 100) : 0;
+            return `<div class="ra-mini-legend-item">
+                <div class="ra-mini-legend-dot" style="background:${TASK_PALETTE[i % TASK_PALETTE.length]}"></div>
+                <div class="ra-mini-legend-name">${escapeHtml(s.task)}</div>
+                <div class="ra-mini-legend-val">${pct}%</div>
+            </div>`;
+        }).join('');
+
+        card.innerHTML = `
+            <div class="ra-mini-card-header">
+                <div class="ra-mini-card-title">${escapeHtml(version)}</div>
+                <div class="ra-mini-card-total">${Math.round(total)}h</div>
+            </div>
+            <div class="ra-mini-card-body">
+                <canvas></canvas>
+                <div class="ra-mini-legend">${legendHtml}</div>
+            </div>
+        `;
+        container.appendChild(card);
+
+        const canvas = card.querySelector('canvas');
+        drawMiniDonut(canvas, slices, total);
+    });
+
+    // Insight
+    const insight = document.getElementById('ra-insight-multiples');
+    if (insight && versionTaskData.length > 0) {
+        const maxV = versionTaskData.reduce((a, b) => b.total > a.total ? b : a);
+        const topTask = maxV.slices[0];
+        const topPct = maxV.total > 0 ? Math.round((topTask.hours / maxV.total) * 100) : 0;
+        insight.innerHTML = `<strong>${maxV.version}</strong>が最大工数（${Math.round(maxV.total)}h）。トップは<strong>${escapeHtml(topTask.task)}</strong>で${topPct}%を占める。`;
+    }
+}
+
 function drawSparkline(id, data, color) {
     const canvas = document.getElementById(id);
     if (!canvas || !data || data.length < 2) return;
@@ -869,6 +984,7 @@ function renderAll(monthFilter) {
     renderHeatmap(d.versions, d.heatmapData);
     setupCanvas('ra-chartAccuracyTrend', (ctx, w, h) => drawAccuracyTrend(ctx, w, h, d.accuracyVersions, d.accuracyData));
     setupCanvas('ra-chartDonut', (ctx, w, h) => drawDonut(ctx, w, h, d.statusCounts));
+    renderVersionTaskMultiples(d.versionTaskData);
     drawSparkline('ra-sparkline1', d.monthlyEst, 'rgba(255,255,255,0.5)');
     drawSparkline('ra-sparkline2', d.monthlyAct, 'rgba(255,255,255,0.5)');
 
