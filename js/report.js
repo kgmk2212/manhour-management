@@ -43,7 +43,9 @@ import {
     generateMonthColorLegend,
     sortMembers,
     escapeHtml,
-    escapeForHandler
+    escapeForHandler,
+    hoursToManDays,
+    hoursToManMonths
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 import { pushAction } from './history.js';
@@ -560,6 +562,12 @@ export function renderProgressSummaryCards(versionFilter) {
         });
     });
 
+    const eacDays = hoursToManDays(totalEac).toFixed(1);
+    const eacMonths = hoursToManMonths(totalEac).toFixed(2);
+    const actDays = hoursToManDays(totalActual).toFixed(1);
+    const actMonths = hoursToManMonths(totalActual).toFixed(2);
+    const remDays = hoursToManDays(totalRemaining).toFixed(1);
+
     container.innerHTML = `
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>全体進捗率</h3>
@@ -571,13 +579,19 @@ export function renderProgressSummaryCards(versionFilter) {
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>予測総工数</h3>
             <div class="value">${totalEac.toFixed(1)}h</div>
-            <div style="font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 5px;">
+            <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;">
+                ${eacDays}人日 / ${eacMonths}人月
+            </div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 3px;">
                 見積: ${totalEstimated.toFixed(1)}h / 差異: ${variance >= 0 ? '+' : ''}${variance.toFixed(1)}h
             </div>
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>実績 / 残存</h3>
             <div class="value">${totalActual.toFixed(1)}h / ${totalRemaining.toFixed(1)}h</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;">
+                ${actDays}人日 / ${remDays}人日
+            </div>
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>状態別</h3>
@@ -1175,21 +1189,29 @@ function updateReportTitle(filterType, selectedMonth, selectedVersion) {
 }
 
 /**
- * レポートサマリーを計算・表示
- * @param {Array} filteredActuals - フィルタ済み実績データ
- * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * 工数を人日・人月付きでフォーマット
+ * @param {number} hours - 工数
  * @param {number} workingDaysPerMonth - 月間稼働日数
+ * @returns {string} "120.0h (15.0人日 / 0.75人月)"
  */
+function formatHoursWithManpower(hours, workingDaysPerMonth) {
+    const manDays = hoursToManDays(hours).toFixed(1);
+    const manMonths = hoursToManMonths(hours, workingDaysPerMonth * 8).toFixed(2);
+    return `${hours.toFixed(1)}h (${manDays}人日 / ${manMonths}人月)`;
+}
+
 function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth) {
     const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
     const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
     const diff = totalAct - totalEst;
     const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
 
-    const estManDays = (totalEst / 8).toFixed(1);
-    const estManMonths = (totalEst / 8 / workingDaysPerMonth).toFixed(2);
-    const actManDays = (totalAct / 8).toFixed(1);
-    const actManMonths = (totalAct / 8 / workingDaysPerMonth).toFixed(2);
+    const estManDays = hoursToManDays(totalEst).toFixed(1);
+    const estManMonths = hoursToManMonths(totalEst, workingDaysPerMonth * 8).toFixed(2);
+    const actManDays = hoursToManDays(totalAct).toFixed(1);
+    const actManMonths = hoursToManMonths(totalAct, workingDaysPerMonth * 8).toFixed(2);
+    const diffManDays = hoursToManDays(Math.abs(diff)).toFixed(1);
+    const diffManMonths = hoursToManMonths(Math.abs(diff), workingDaysPerMonth * 8).toFixed(2);
 
     document.getElementById('totalEstimate').textContent = totalEst.toFixed(1) + 'h';
     document.getElementById('totalActual').textContent = totalAct.toFixed(1) + 'h';
@@ -1198,6 +1220,12 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
 
     document.getElementById('totalEstimateManpower').textContent = `${estManDays}人日 / ${estManMonths}人月`;
     document.getElementById('totalActualManpower').textContent = `${actManDays}人日 / ${actManMonths}人月`;
+
+    // 差異カードにも人日・人月を表示
+    const diffManpowerEl = document.getElementById('totalDiffManpower');
+    if (diffManpowerEl) {
+        diffManpowerEl.textContent = `${diffManDays}人日 / ${diffManMonths}人月`;
+    }
 
     // 月平均を計算・表示
     const monthlyAvgEl = document.getElementById('monthlyAverageInfo');
@@ -1223,12 +1251,77 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
             const avgEst = (totalEst / numMonths).toFixed(1);
             const avgAct = (totalAct / numMonths).toFixed(1);
             const avgDiff = (diff / numMonths).toFixed(1);
-            monthlyAvgEl.innerHTML = `月平均（${numMonths}ヶ月）: 見積 ${avgEst}h / 実績 ${avgAct}h / 差異 ${parseFloat(avgDiff) >= 0 ? '+' : ''}${avgDiff}h`;
+            const avgEstDays = hoursToManDays(totalEst / numMonths).toFixed(1);
+            const avgActDays = hoursToManDays(totalAct / numMonths).toFixed(1);
+            monthlyAvgEl.innerHTML = `月平均（${numMonths}ヶ月）: 見積 ${avgEst}h（${avgEstDays}人日） / 実績 ${avgAct}h（${avgActDays}人日） / 差異 ${parseFloat(avgDiff) >= 0 ? '+' : ''}${avgDiff}h`;
             monthlyAvgEl.style.display = 'block';
         } else {
             monthlyAvgEl.style.display = 'none';
         }
     }
+
+    // 担当者別集計を表示
+    displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
+}
+
+/**
+ * レポートサマリー内の担当者別集計を表示
+ */
+function displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth) {
+    const container = document.getElementById('reportMemberSummary');
+    if (!container) return;
+
+    // 担当者を抽出
+    const allMembers = new Set();
+    filteredEstimates.forEach(e => allMembers.add(e.member));
+    filteredActuals.forEach(a => allMembers.add(a.member));
+
+    const memberOrderInput = document.getElementById('memberOrder');
+    const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
+    const members = sortMembers(allMembers, memberOrderValue);
+
+    if (members.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+
+    let html = '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">';
+    html += '<h4 style="margin: 0; color: var(--text-primary); font-size: 14px; font-weight: 600;">担当者別集計</h4>';
+    html += `<span style="font-size: 12px; color: var(--text-secondary);">${members.length}名</span>`;
+    html += '</div>';
+    html += '<div style="display: flex; gap: 10px; flex-wrap: wrap;">';
+
+    members.forEach(member => {
+        const est = filteredEstimates.filter(e => e.member === member).reduce((sum, e) => sum + e.hours, 0);
+        const act = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
+        const diff = act - est;
+        const actDays = hoursToManDays(act).toFixed(1);
+        const actMonths = hoursToManMonths(act, workingDaysPerMonth * 8).toFixed(2);
+        const estDays = hoursToManDays(est).toFixed(1);
+
+        html += `
+            <div style="background: var(--surface); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); border-left: 4px solid var(--accent); min-width: 160px; flex: 1; max-width: 240px;">
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500;">${escapeHtml(member)}</div>
+                <div style="display: flex; gap: 12px; align-items: baseline;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">見積</div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary);">${est.toFixed(1)}h</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">実績</div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary);">${act.toFixed(1)}h</div>
+                    </div>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">${actDays}人日 / ${actMonths}人月</div>
+                <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : 'var(--text-secondary)'}; margin-top: 2px;">差異: ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}h</div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 /**
@@ -1712,20 +1805,32 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         const estWidth = maxHours > 0 ? (data.estimate / maxHours * 100).toFixed(1) : 0;
         const actWidth = maxHours > 0 ? (data.actual / maxHours * 100).toFixed(1) : 0;
 
+        // バーが短い場合（30%未満）はラベルをバーの右外側に表示
+        const estLabelOutside = parseFloat(estWidth) < 30;
+        const actLabelOutside = parseFloat(actWidth) < 30;
+
         html += '<div style="margin-bottom: 15px;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
         html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 5px 10px; align-items: center;">';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">`;
+        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; min-width: ${data.estimate > 0 ? '2px' : '0'};">`;
         html += '</div>';
-        html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${estWidth > 50 ? 'white' : '#495057'};">${data.estimate.toFixed(1)}h</span>`;
+        if (estLabelOutside) {
+            html += `<span style="position: absolute; left: calc(${estWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap;">${data.estimate.toFixed(1)}h</span>`;
+        } else {
+            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(estWidth) > 50 ? 'white' : '#495057'};">${data.estimate.toFixed(1)}h</span>`;
+        }
         html += '</div>';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">`;
+        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; min-width: ${data.actual > 0 ? '2px' : '0'};">`;
         html += '</div>';
-        html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${actWidth > 50 ? 'white' : '#495057'};">${data.actual.toFixed(1)}h</span>`;
+        if (actLabelOutside) {
+            html += `<span style="position: absolute; left: calc(${actWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap;">${data.actual.toFixed(1)}h</span>`;
+        } else {
+            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(actWidth) > 50 ? 'white' : '#495057'};">${data.actual.toFixed(1)}h</span>`;
+        }
         html += '</div>';
         html += '</div></div>';
     });
@@ -2141,22 +2246,51 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
 
     let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
+    let grandTotalEst = 0, grandTotalAct = 0;
+
     members.forEach(member => {
         const est = adjustedEstimates[member] || 0;
         const act = filteredActuals.filter(a => a.member === member).reduce((sum, a) => sum + a.hours, 0);
         const diff = act - est;
         const rate = est > 0 ? ((diff / est) * 100).toFixed(1) : 0;
+        const estDays = hoursToManDays(est).toFixed(1);
+        const actDays = hoursToManDays(act).toFixed(1);
+        const actMonths = hoursToManMonths(act).toFixed(2);
+
+        grandTotalEst += est;
+        grandTotalAct += act;
+
+        const manpowerSub = isMobile
+            ? `<div style="font-size: 11px; color: #888;">${actDays}人日</div>`
+            : `<div style="font-size: 11px; color: #888;">${actDays}人日 / ${actMonths}人月</div>`;
 
         html += `
             <tr>
                 <td><strong>${escapeHtml(member)}</strong></td>
-                <td>${est.toFixed(1)}h</td>
-                <td>${act.toFixed(1)}h</td>
+                <td>${est.toFixed(1)}h<div style="font-size: 11px; color: #888;">${estDays}人日</div></td>
+                <td>${act.toFixed(1)}h${manpowerSub}</td>
                 <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
                 <td>${rate}%</td>
             </tr>
         `;
     });
+
+    // 合計行
+    const grandDiff = grandTotalAct - grandTotalEst;
+    const grandRate = grandTotalEst > 0 ? ((grandDiff / grandTotalEst) * 100).toFixed(1) : 0;
+    const grandEstDays = hoursToManDays(grandTotalEst).toFixed(1);
+    const grandActDays = hoursToManDays(grandTotalAct).toFixed(1);
+    const grandActMonths = hoursToManMonths(grandTotalAct).toFixed(2);
+
+    html += `
+        <tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">
+            <td>合計</td>
+            <td>${grandTotalEst.toFixed(1)}h<div style="font-size: 11px; color: #888;">${grandEstDays}人日</div></td>
+            <td>${grandTotalAct.toFixed(1)}h<div style="font-size: 11px; color: #888;">${grandActDays}人日 / ${grandActMonths}人月</div></td>
+            <td style="color: ${grandDiff >= 0 ? '#e74c3c' : '#27ae60'}">${grandDiff >= 0 ? '+' : ''}${grandDiff.toFixed(1)}h</td>
+            <td>${grandRate}%</td>
+        </tr>
+    `;
 
     html += '</table></div>';
     document.getElementById('memberReport').innerHTML = html;
@@ -2182,21 +2316,44 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
 
     let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
+    let grandTotalEst = 0, grandTotalAct = 0;
+
     versions.forEach(version => {
         const versionDisplay = (version && version.trim() !== '') ? version : 'その他工数';
         const est = filteredEstimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
         const act = filteredActuals.filter(a => a.version === version).reduce((sum, a) => sum + a.hours, 0);
         const progress = est > 0 ? (act / est * 100).toFixed(1) : 0;
+        const estDays = hoursToManDays(est).toFixed(1);
+        const actDays = hoursToManDays(act).toFixed(1);
+        const actMonths = hoursToManMonths(act).toFixed(2);
+
+        grandTotalEst += est;
+        grandTotalAct += act;
 
         html += `
             <tr>
                 <td><strong>${escapeHtml(versionDisplay)}</strong></td>
-                <td>${est.toFixed(1)}h</td>
-                <td>${act.toFixed(1)}h</td>
+                <td>${est.toFixed(1)}h<div style="font-size: 11px; color: #888;">${estDays}人日</div></td>
+                <td>${act.toFixed(1)}h<div style="font-size: 11px; color: #888;">${actDays}人日 / ${actMonths}人月</div></td>
                 <td>${progress}%</td>
             </tr>
         `;
     });
+
+    // 合計行
+    const grandProgress = grandTotalEst > 0 ? (grandTotalAct / grandTotalEst * 100).toFixed(1) : 0;
+    const grandEstDays = hoursToManDays(grandTotalEst).toFixed(1);
+    const grandActDays = hoursToManDays(grandTotalAct).toFixed(1);
+    const grandActMonths = hoursToManMonths(grandTotalAct).toFixed(2);
+
+    html += `
+        <tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">
+            <td>合計</td>
+            <td>${grandTotalEst.toFixed(1)}h<div style="font-size: 11px; color: #888;">${grandEstDays}人日</div></td>
+            <td>${grandTotalAct.toFixed(1)}h<div style="font-size: 11px; color: #888;">${grandActDays}人日 / ${grandActMonths}人月</div></td>
+            <td>${grandProgress}%</td>
+        </tr>
+    `;
 
     html += '</table></div>';
     document.getElementById('versionReport').innerHTML = html;
@@ -2294,6 +2451,9 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
         let tableBody = '';
         let versionTotalEst = 0;
         let versionTotalAct = 0;
+        // 担当者別集計用
+        const versionMemberEst = {};
+        const versionMemberAct = {};
 
         Object.values(versionGroups[version]).forEach(taskGroup => {
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -2313,6 +2473,13 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                 const act = taskGroup.actuals[proc] || { members: new Set(), hours: 0 };
                 totalEst += est.hours;
                 totalAct += act.hours;
+                // 担当者別に集計
+                est.members.forEach(m => {
+                    versionMemberEst[m] = (versionMemberEst[m] || 0) + est.hours / est.members.size;
+                });
+                act.members.forEach(m => {
+                    versionMemberAct[m] = (versionMemberAct[m] || 0) + act.hours / act.members.size;
+                });
             });
             const totalDiff = totalAct - totalEst;
 
@@ -2353,10 +2520,13 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                     : 'min-width: 100px; padding: 8px;';
                 tableBody += `<td style="${progressCellStyle}">${progressBarHtml || '<span style="color: #ccc; font-size: 13px;">-</span>'}</td>`;
                 if (index === 0) {
+                    const totalEstDays = hoursToManDays(totalEst).toFixed(1);
+                    const totalActDays = hoursToManDays(totalAct).toFixed(1);
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                         <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
                         <div style="font-weight: 600;">実績: ${totalAct.toFixed(1)}h</div>
                         <div style="font-weight: 700; color: ${totalDiff > 0 ? '#e74c3c' : totalDiff < 0 ? '#27ae60' : '#666'}">差異: ${totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(1)}h</div>
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">${totalEstDays}/${totalActDays}人日</div>
                     </td>`;
                 }
                 tableBody += '</tr>';
@@ -2365,6 +2535,10 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
         if (tableBody) {
             const versionTotalDiff = versionTotalAct - versionTotalEst;
+            const vTotalEstDays = hoursToManDays(versionTotalEst).toFixed(1);
+            const vTotalActDays = hoursToManDays(versionTotalAct).toFixed(1);
+            const vTotalEstMonths = hoursToManMonths(versionTotalEst, workingDaysPerMonth * 8).toFixed(2);
+            const vTotalActMonths = hoursToManMonths(versionTotalAct, workingDaysPerMonth * 8).toFixed(2);
 
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${escapeHtml(version)}</h3>`;
@@ -2372,18 +2546,44 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
             html += '<tr><th style="min-width: 150px;">対応名</th><th style="min-width: 80px;">工程</th><th style="min-width: 80px;">担当</th><th style="min-width: 80px;">見積</th><th style="min-width: 80px;">実績</th><th style="min-width: 80px;">差異</th><th style="min-width: 100px;">進捗</th><th style="min-width: 100px;">対応合計</th></tr>';
             html += tableBody;
 
+            // 合計行（人日・人月付き）
             html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
             html += `<td style="padding: 12px; position: sticky; left: 0; background: #f5f5f5; z-index: 1;">合計</td>`;
             html += '<td></td>';
             html += '<td></td>';
-            html += `<td style="text-align: right;">${versionTotalEst.toFixed(1)}h</td>`;
-            html += `<td style="text-align: right;">${versionTotalAct.toFixed(1)}h</td>`;
+            html += `<td style="text-align: right;">${versionTotalEst.toFixed(1)}h<div style="font-size: 11px; font-weight: normal; color: #888;">${vTotalEstDays}人日 / ${vTotalEstMonths}人月</div></td>`;
+            html += `<td style="text-align: right;">${versionTotalAct.toFixed(1)}h<div style="font-size: 11px; font-weight: normal; color: #888;">${vTotalActDays}人日 / ${vTotalActMonths}人月</div></td>`;
             html += `<td style="text-align: right; color: ${versionTotalDiff > 0 ? '#e74c3c' : versionTotalDiff < 0 ? '#27ae60' : '#666'}">${versionTotalDiff > 0 ? '+' : ''}${versionTotalDiff.toFixed(1)}h</td>`;
             html += '<td></td>';
             html += '<td></td>';
             html += '</tr>';
 
             html += '</table></div>';
+
+            // 担当者別小計（版数ごと）
+            const memberNames = [...new Set([...Object.keys(versionMemberEst), ...Object.keys(versionMemberAct)])];
+            if (memberNames.length > 0) {
+                const memberOrderInput = document.getElementById('memberOrder');
+                const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
+                const sortedMemberNames = sortMembers(memberNames, memberOrderValue);
+
+                html += '<div style="margin-top: 8px; margin-bottom: 10px;">';
+                html += '<div style="font-size: 12px; color: var(--text-secondary, #666); margin-bottom: 6px; font-weight: 600;">担当者別小計</div>';
+                html += '<div style="display: flex; gap: 8px; flex-wrap: wrap;">';
+                sortedMemberNames.forEach(member => {
+                    const mEst = versionMemberEst[member] || 0;
+                    const mAct = versionMemberAct[member] || 0;
+                    const mActDays = hoursToManDays(mAct).toFixed(1);
+                    const mActMonths = hoursToManMonths(mAct, workingDaysPerMonth * 8).toFixed(2);
+                    html += `<div style="background: var(--surface, #fff); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border, #e2e8f0); font-size: 12px; min-width: 120px;">
+                        <div style="font-weight: 600; color: var(--text-primary, #333); margin-bottom: 2px;">${escapeHtml(member)}</div>
+                        <div style="color: var(--text-secondary, #666);">見積 ${mEst.toFixed(1)}h / 実績 ${mAct.toFixed(1)}h</div>
+                        <div style="color: #888; font-size: 11px;">${mActDays}人日 / ${mActMonths}人月</div>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+
             html += '</div>';
         }
     });

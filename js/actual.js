@@ -12,6 +12,16 @@ import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './esti
 import { pushAction } from './history.js';
 
 // ============================================
+// カレンダー実績入力 検索式の状態管理
+// ============================================
+
+/** カレンダーからの実績入力で選択されたタスク情報 */
+let selectedCalendarTask = null;
+
+/** カレンダー実績入力のタスク一覧（検索・フィルタ用） */
+let calendarTaskList = [];
+
+// ============================================
 // 祝日・曜日判定
 // ============================================
 
@@ -1118,10 +1128,20 @@ export function addActualFromCalendar(member, date) {
         }
     }
 
-    document.getElementById('editActualTaskSelect').style.display = 'block';
+    // 検索式UIに切り替え
+    document.getElementById('editActualTaskSelect').style.display = 'none';
     document.getElementById('editActualTaskSelect').value = '';
     document.getElementById('editActualTaskSearch').style.display = 'none';
     document.getElementById('editActualTaskSearch').value = '';
+    const searchContainer = document.getElementById('editActualTaskSearchContainer');
+    const searchInput = document.getElementById('editActualTaskSearchInput');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    if (searchContainer) searchContainer.style.display = 'block';
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (dropdown) dropdown.style.display = 'none';
+    selectedCalendarTask = null;
 
     if (previousActual) {
         document.getElementById('editActualProcess').value = previousActual.process;
@@ -1150,11 +1170,19 @@ export function addActualFromCalendar(member, date) {
     const [year, month, day] = date.split('-');
     modalTitle.textContent = `実績を新規登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
 
-    updateEditActualTaskList(member, false, versionSelect.value, document.getElementById('editActualProcess').value);
+    // タスク一覧を検索式UI用にビルド（Bug 1: 検索式に変更）
+    buildCalendarTaskList(member, versionSelect.value, document.getElementById('editActualProcess').value);
 
     if (previousActual) {
-        const taskSelect = document.getElementById('editActualTaskSelect');
-        taskSelect.value = previousActual.task;
+        // 前回の実績があれば検索ボックスに表示して選択済みにする
+        const matchTask = calendarTaskList.find(t =>
+            t.version === previousActual.version && t.task === previousActual.task && t.process === previousActual.process
+        );
+        if (matchTask && searchInput) {
+            selectedCalendarTask = matchTask;
+            searchInput.value = matchTask.display;
+            if (clearBtn) clearBtn.style.display = 'block';
+        }
     }
 
     document.getElementById('editActualOtherBtn').style.display = 'block';
@@ -1183,6 +1211,11 @@ export function editActual(id) {
     const taskSelect = document.getElementById('editActualTaskSelect');
     const taskInput = document.getElementById('editActualTaskSearch');
     const processSelect = document.getElementById('editActualProcess');
+
+    // 編集時は検索式UIを非表示にしてselect式に戻す
+    const searchContainer = document.getElementById('editActualTaskSearchContainer');
+    if (searchContainer) searchContainer.style.display = 'none';
+    selectedCalendarTask = null;
 
     if (isOther) {
         // その他工数: 版数・工程は非表示/無効化し、対応名は自由入力
@@ -1271,6 +1304,11 @@ export function closeEditActualModal() {
     const processSelect = document.getElementById('editActualProcess');
     if (versionSelect) versionSelect.disabled = false;
     if (processSelect) processSelect.disabled = false;
+    // カレンダー検索式の状態をリセット
+    selectedCalendarTask = null;
+    calendarTaskList = [];
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    if (dropdown) dropdown.style.display = 'none';
 }
 
 /**
@@ -1284,13 +1322,34 @@ export function closeEditActualModal() {
 export function saveActualEdit() {
     const id = parseFloat(document.getElementById('editActualId').value);
     const date = document.getElementById('editActualDate').value;
-    const version = document.getElementById('editActualVersion').value;
+    let version = document.getElementById('editActualVersion').value;
 
     const taskSelect = document.getElementById('editActualTaskSelect');
     const taskInput = document.getElementById('editActualTaskSearch');
-    const task = taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__'
-        ? taskSelect.value
-        : taskInput.value;
+    const searchInput = document.getElementById('editActualTaskSearchInput');
+
+    // カレンダー検索式で選択されたタスクがある場合はそれを優先
+    let task;
+    if (selectedCalendarTask) {
+        task = selectedCalendarTask.task;
+        version = selectedCalendarTask.version;
+        document.getElementById('editActualVersion').value = version;
+        document.getElementById('editActualProcess').value = selectedCalendarTask.process;
+    } else if (taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__') {
+        task = taskSelect.value;
+    } else if (taskInput.style.display !== 'none' && taskInput.value) {
+        task = taskInput.value;
+    } else if (searchInput) {
+        // 検索ボックスのコンテナが表示されている場合
+        const searchContainer = document.getElementById('editActualTaskSearchContainer');
+        if (searchContainer && searchContainer.style.display !== 'none' && searchInput.value) {
+            task = searchInput.value;
+        } else {
+            task = '';
+        }
+    } else {
+        task = '';
+    }
 
     const process = document.getElementById('editActualProcess').value;
     const member = document.getElementById('editActualMember').value;
@@ -1571,6 +1630,221 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
     select.appendChild(newOption);
 }
 
+// ============================================
+// カレンダー実績入力 検索式タスク選択（Bug 1 & Bug 2）
+// ============================================
+
+/**
+ * カレンダー実績入力用のタスク一覧を構築
+ * Bug 1: 検索式に変更
+ * Bug 2: 担当者のタスクを優先し、残作業なしを後方に配置
+ */
+function buildCalendarTaskList(member, selectedVersion, selectedProcess) {
+    calendarTaskList = [];
+
+    let allEstimates = [...estimates];
+
+    if (selectedVersion && selectedVersion !== '') {
+        allEstimates = allEstimates.filter(e => e.version === selectedVersion);
+    }
+
+    if (selectedProcess && selectedProcess !== '') {
+        allEstimates = allEstimates.filter(e => e.process === selectedProcess);
+    }
+
+    // 編集中の日付から月を取得
+    const editDateEl = document.getElementById('editActualDate');
+    const editDate = editDateEl ? editDateEl.value : '';
+    const editMonth = editDate ? editDate.substring(0, 7) : '';
+
+    // 実績合計を計算
+    const actualTotals = {};
+    actuals.forEach(a => {
+        const isOther = isOtherWork(a);
+        let key;
+        if (isOther) {
+            const aMonth = a.date ? a.date.substring(0, 7) : '';
+            key = `${a.version}_${a.task}_${a.process}_${a.member}_${aMonth}`;
+        } else {
+            key = `${a.version}_${a.task}_${a.process}`;
+        }
+        actualTotals[key] = (actualTotals[key] || 0) + a.hours;
+    });
+
+    allEstimates.forEach(est => {
+        const isOther = isOtherWork(est);
+        let actualHours, estHours;
+
+        if (isOther) {
+            const key = `${est.version}_${est.task}_${est.process}_${est.member}_${editMonth}`;
+            actualHours = actualTotals[key] || 0;
+            const normalized = normalizeEstimate(est);
+            estHours = (normalized.monthlyHours && normalized.monthlyHours[editMonth]) || 0;
+        } else {
+            const key = `${est.version}_${est.task}_${est.process}`;
+            actualHours = actualTotals[key] || 0;
+            estHours = est.hours;
+        }
+
+        const remaining = estHours - actualHours;
+
+        // その他工数で今月に見積がなければスキップ
+        if (isOther && estHours === 0 && editMonth) {
+            return;
+        }
+
+        let statusText;
+        if (remaining > 0) {
+            statusText = `残: ${formatHours(remaining)}h`;
+        } else if (remaining < 0) {
+            statusText = `超過: ${formatHours(Math.abs(remaining))}h`;
+        } else {
+            statusText = '完了';
+        }
+
+        const processLabel = isOther ? '' : ` [${est.process}]`;
+        const displayText = `${est.task}${processLabel} (${statusText})`;
+
+        calendarTaskList.push({
+            version: est.version,
+            task: est.task,
+            process: est.process,
+            member: est.member,
+            remaining: remaining,
+            display: displayText,
+            isOwn: est.member === member,
+            isCompleted: remaining <= 0
+        });
+    });
+
+    // Bug 2: ソート - 自分のタスク優先、残作業ありを優先
+    calendarTaskList.sort((a, b) => {
+        // 自分のタスクを優先
+        if (a.isOwn !== b.isOwn) return a.isOwn ? -1 : 1;
+        // 残作業ありを優先
+        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        // 残りが多い順
+        return b.remaining - a.remaining;
+    });
+}
+
+/**
+ * カレンダー実績入力の検索フィルタ
+ */
+export function filterCalendarTaskList() {
+    const searchInput = document.getElementById('editActualTaskSearchInput');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    if (!searchInput || !dropdown) return;
+
+    const searchText = searchInput.value.toLowerCase();
+    const calendarMember = document.getElementById('editActualModal').dataset.calendarMember || '';
+
+    // 検索テキストで絞り込み
+    let filtered = calendarTaskList;
+    if (searchText) {
+        filtered = filtered.filter(taskInfo =>
+            taskInfo.display.toLowerCase().includes(searchText) ||
+            taskInfo.version.toLowerCase().includes(searchText) ||
+            taskInfo.member.toLowerCase().includes(searchText)
+        );
+    }
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="custom-dropdown-empty">該当する対応が見つかりません</div>' +
+            '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--accent); font-weight: 500;">自由入力で登録...</div>';
+    } else {
+        let html = '';
+        let lastSection = '';
+
+        filtered.forEach(taskInfo => {
+            const section = taskInfo.isOwn ? 'own' : 'other';
+            if (section !== lastSection) {
+                if (section === 'own') {
+                    html += `<div style="padding: 6px 16px; font-size: 11px; color: var(--accent); font-weight: 600; background: var(--accent-light); border-bottom: 1px solid var(--border-light);">担当：${escapeHtml(calendarMember)}</div>`;
+                } else {
+                    html += `<div style="padding: 6px 16px; font-size: 11px; color: var(--text-muted); font-weight: 600; background: var(--surface-elevated); border-bottom: 1px solid var(--border-light);">他の担当者</div>`;
+                }
+                lastSection = section;
+            }
+
+            const value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
+            const completedStyle = taskInfo.isCompleted ? 'color: var(--text-muted); opacity: 0.7;' : '';
+            const memberLabel = taskInfo.isOwn ? '' : ` <span style="color: var(--text-muted); font-size: 11px;">(${escapeHtml(taskInfo.member)})</span>`;
+
+            html += `<div class="custom-dropdown-item" onmousedown="selectCalendarTask('${escapeForHandler(value)}', '${escapeForHandler(taskInfo.display)}')" style="${completedStyle}">${escapeHtml(taskInfo.display)}${memberLabel}</div>`;
+        });
+
+        html += '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--accent); font-weight: 500; border-top: 2px solid var(--border-light);">自由入力で登録...</div>';
+        dropdown.innerHTML = html;
+    }
+
+    dropdown.style.display = 'block';
+}
+
+/**
+ * カレンダー実績入力でタスクを選択
+ */
+export function selectCalendarTask(value, display) {
+    const [version, task, process, member] = value.split('|');
+
+    selectedCalendarTask = { version, task, process, member };
+
+    const searchInput = document.getElementById('editActualTaskSearchInput');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+    const versionSelect = document.getElementById('editActualVersion');
+    const processSelect = document.getElementById('editActualProcess');
+
+    if (searchInput) searchInput.value = display;
+    if (clearBtn) clearBtn.style.display = 'block';
+    if (dropdown) dropdown.style.display = 'none';
+
+    // 版数と工程を自動追従
+    if (version && versionSelect) versionSelect.value = version;
+    if (process && processSelect) processSelect.value = process;
+
+    // 残存時間の初期値を表示
+    if (version && task && process) {
+        const existingRemaining = getRemainingEstimate(version, task, process, member);
+        const remainingInput = document.getElementById('editActualRemainingHours');
+        if (remainingInput) {
+            remainingInput.value = existingRemaining ? existingRemaining.remainingHours : '';
+        }
+    }
+}
+
+/**
+ * カレンダー実績入力で自由入力モードに切替
+ */
+export function selectCalendarTaskFreeInput() {
+    const searchContainer = document.getElementById('editActualTaskSearchContainer');
+    const taskInput = document.getElementById('editActualTaskSearch');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+
+    if (searchContainer) searchContainer.style.display = 'none';
+    if (taskInput) {
+        taskInput.style.display = 'block';
+        taskInput.value = '';
+        taskInput.focus();
+    }
+    if (dropdown) dropdown.style.display = 'none';
+    selectedCalendarTask = null;
+}
+
+/**
+ * カレンダー実績入力の検索選択をクリア
+ */
+export function clearCalendarTaskSelection() {
+    const searchInput = document.getElementById('editActualTaskSearchInput');
+    const clearBtn = document.getElementById('editActualTaskClearBtn');
+    const dropdown = document.getElementById('editActualTaskDropdown');
+
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (dropdown) dropdown.style.display = 'none';
+    selectedCalendarTask = null;
+}
+
 /**
  * カレンダーからその他作業モーダルを開く
  */
@@ -1714,6 +1988,19 @@ export function handleActualProcessChange() {
         // テキスト入力モードの場合は名前だけで保持（完全一致するかは不明だが試行）
         // ただし updateEditActualTaskList は select を再構築するので、
         // テキスト入力モードから戻ることは想定しにくいが、念のため。
+    }
+
+    // カレンダー検索式が表示されている場合はそちらも更新
+    const searchContainer = document.getElementById('editActualTaskSearchContainer');
+    if (searchContainer && searchContainer.style.display !== 'none') {
+        buildCalendarTaskList(member, version, process);
+        // 選択状態をクリア（プロセスが変わったため）
+        selectedCalendarTask = null;
+        const searchInput = document.getElementById('editActualTaskSearchInput');
+        const clearBtn = document.getElementById('editActualTaskClearBtn');
+        if (searchInput) searchInput.value = '';
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
     }
 
     // 現在選択されている対応名を保持したいが、プロセスが変わるとリスト内容が変わるため、

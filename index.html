@@ -201,6 +201,9 @@
             <button class="mobile-filter-btn" id="mobileFilterBtn" aria-label="フィルタ" style="display:none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             </button>
+            <button class="mobile-history-btn" id="mobileHistoryBtn" aria-label="変更履歴" onclick="openHistoryModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
         </div>
 
         <!-- Mobile Bottom Tab Bar -->
@@ -507,7 +510,7 @@
 
 
 
-                <div class="stats-grid">
+                <div class="stats-grid report-summary-grid">
                     <div class="stat-card stat-accent">
                         <h3>総見積工数</h3>
                         <div class="value" id="totalEstimate">0h</div>
@@ -523,6 +526,8 @@
                     <div class="stat-card stat-accent">
                         <h3>差異</h3>
                         <div class="value" id="totalDiff">0h</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px;"
+                            id="totalDiffManpower"></div>
                     </div>
                     <div class="stat-card stat-accent">
                         <h3>実績率</h3>
@@ -533,6 +538,11 @@
                 <!-- 月平均情報 -->
                 <div id="monthlyAverageInfo"
                     style="display: none; margin-bottom: 15px; background: var(--info-light, #e8f4fd); padding: 10px 15px; border-radius: 6px; font-size: 13px; color: var(--info, #0c5460); font-weight: 500;">
+                </div>
+
+                <!-- 担当者別集計 -->
+                <div id="reportMemberSummary"
+                    style="display: none; margin-bottom: 20px; background: var(--surface-elevated, #f8fafc); padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border, #e2e8f0);">
                 </div>
 
                 <!-- キャパシティ分析 -->
@@ -873,6 +883,17 @@
                     style="margin-bottom: 15px; margin-top: 0px; background: var(--info-light); padding: 10px 15px; border-radius: 6px; font-size: 13px; color: var(--info); display: none;">
                 </div>
 
+                <!-- あいまい検索 -->
+                <div id="estimateSearchContainer" style="margin-bottom: 12px; position: relative;">
+                    <input type="text" id="estimateSearchInput" placeholder="対応名・版数・担当者で検索..."
+                        style="width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--surface-elevated); color: var(--text-primary); box-sizing: border-box;">
+                    <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <button id="estimateSearchClear" style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted); font-size: 16px;" title="検索をクリア">&times;</button>
+                </div>
+
                 <div id="estimateList"></div>
 
                 <div id="estimateMemberSummary" style="margin-top: 30px; display: none;"></div>
@@ -1152,6 +1173,12 @@
 
                 <div class="settings-grid">
 
+                <!-- ===== 表示設定 ===== -->
+                <div class="settings-group-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    表示設定
+                </div>
+
                 <!-- テーマカラー設定 -->
                 <div class="setting-section">
                     <div class="setting-section-title">
@@ -1349,6 +1376,12 @@
                     </div>
                 </div>
 
+                <!-- ===== データ管理 ===== -->
+                <div class="settings-group-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    データ管理
+                </div>
+
                 <div class="setting-section">
                     <div class="setting-section-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1378,6 +1411,48 @@
                             ・オフにしても、手動バックアップボタンは使用できます
                         </small>
                     </div>
+                </div>
+
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        会社休日設定
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">会社の夏季休暇、年末年始休暇などを登録できます。実働日数の計算に反映されます。</p>
+
+                    <div class="form-group">
+                        <label>休日名</label>
+                        <input type="text" id="companyHolidayName" placeholder="例: 夏季休暇">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>開始日</label>
+                            <input type="date" id="companyHolidayStartDate">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>終了日</label>
+                            <input type="date" id="companyHolidayEndDate">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btnAddCompanyHoliday"
+                        style="margin-bottom: 20px;">休日を追加</button>
+
+                    <div id="companyHolidayList"></div>
+                </div>
+
+                <!-- Hidden elements for removed UI/UX settings (JS compatibility) -->
+                <input type="checkbox" id="tabBarAlwaysVisible" style="display:none;">
+                <input type="checkbox" id="tabFilterAlwaysExpanded" style="display:none;">
+                <select id="tabFilterButtonStyle" style="display:none;"><option value="pill">pill</option></select>
+                <select id="tabFilterLayout" style="display:none;"><option value="two-lines">two-lines</option></select>
+                <select id="mobileTabDesign" style="display:none;"><option value="capsule">capsule</option></select>
+
+                <!-- ===== 詳細設定 ===== -->
+                <div class="settings-group-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    詳細設定
                 </div>
 
                 <div class="setting-section">
@@ -1422,13 +1497,6 @@
 
                     <button class="btn btn-primary" id="btnUpdateAllDisplays" style="margin-top: 10px;">設定を適用</button>
                 </div>
-
-                <!-- Hidden elements for removed UI/UX settings (JS compatibility) -->
-                <input type="checkbox" id="tabBarAlwaysVisible" style="display:none;">
-                <input type="checkbox" id="tabFilterAlwaysExpanded" style="display:none;">
-                <select id="tabFilterButtonStyle" style="display:none;"><option value="pill">pill</option></select>
-                <select id="tabFilterLayout" style="display:none;"><option value="two-lines">two-lines</option></select>
-                <select id="mobileTabDesign" style="display:none;"><option value="capsule">capsule</option></select>
 
                 <!-- スケジュールバー色設定 -->
                 <div class="setting-section">
@@ -1691,35 +1759,6 @@
                     </small>
                 </div>
 
-                <div class="setting-section">
-                    <div class="setting-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        会社休日設定
-                    </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">会社の夏季休暇、年末年始休暇などを登録できます。実働日数の計算に反映されます。</p>
-
-                    <div class="form-group">
-                        <label>休日名</label>
-                        <input type="text" id="companyHolidayName" placeholder="例: 夏季休暇">
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div class="form-group" style="flex: 1; margin: 0;">
-                            <label>開始日</label>
-                            <input type="date" id="companyHolidayStartDate">
-                        </div>
-                        <div class="form-group" style="flex: 1; margin: 0;">
-                            <label>終了日</label>
-                            <input type="date" id="companyHolidayEndDate">
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary" id="btnAddCompanyHoliday"
-                        style="margin-bottom: 20px;">休日を追加</button>
-
-                    <div id="companyHolidayList"></div>
-                </div>
-
                 </div><!-- /.settings-grid -->
             </div><!-- /#settings -->
         </main><!-- /.main-content -->
@@ -1783,13 +1822,20 @@
                         工程を選択して候補を絞り込むことができます。
                     </small>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                     <label>対応名</label>
-                    <select id="editActualTaskSelect" style="margin-bottom: 10px;">
+                    <select id="editActualTaskSelect" style="margin-bottom: 10px; display: none;">
                         <option value="">-- 対応を選択 --</option>
                     </select>
+                    <div id="editActualTaskSearchContainer" style="position: relative;">
+                        <input type="text" id="editActualTaskSearchInput" placeholder="対応名を入力して検索..."
+                            autocomplete="off" style="padding-right: 35px;">
+                        <button id="editActualTaskClearBtn"
+                            style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px 8px; line-height: 1;"
+                            title="クリア">&times;</button>
+                        <div id="editActualTaskDropdown" class="custom-dropdown" style="display: none;"></div>
+                    </div>
                     <input type="text" id="editActualTaskSearch" placeholder="対応名を入力" style="display: none;">
-
                 </div>
                 <div class="form-group">
                     <label>担当</label>
@@ -1814,9 +1860,9 @@
                 <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <button class="btn btn-primary" id="btnSaveActualEdit">保存</button>
                     <button class="btn" id="editActualOtherBtn"
-                        style="background: var(--success); color: white; display: none;">その他作業</button>
+                        style="background: #43A047; color: white; display: none;">その他作業</button>
                     <button class="btn" id="editActualVacationBtn"
-                        style="background: var(--warning); color: white; display: none;">休暇登録</button>
+                        style="background: #f57c00; color: white; display: none;">休暇登録</button>
                     <button class="btn" id="btnCloseEditActualModalCancel"
                         style="background: var(--text-muted); color: white;">キャンセル</button>
                 </div>
@@ -2063,7 +2109,7 @@
                     <input type="text" id="editTaskName" placeholder="X対応">
                 </div>
                 <div style="margin-top: 15px; padding: 15px; background: var(--accent-secondary-light); border-radius: 6px;">
-                    <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
+                    <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">変更内容</div>
                     <div style="font-size: 13px; color: #856404;">
                         この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
                 </div>
@@ -2110,7 +2156,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">⏱️ 見込残存時間 (h)</label>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">見込残存時間 (h)</label>
                     <input type="number" id="remainingHoursInput" step="0.25" min="0"
                         style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     <small style="color: var(--text-muted); display: block; margin-top: 5px;">
@@ -2121,8 +2167,7 @@
                 <!-- 登録実績リスト -->
                 <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
                     <label
-                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">📄
-                        実績一覧（表示期間内）</label>
+                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333;">実績一覧（表示期間内）</label>
                     <div id="remainingHoursActualsContent"
                         style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
                         <!-- 実績リストをここに表示 -->
@@ -2143,7 +2188,7 @@
     <div id="addEstimateModal" class="modal">
         <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
-                <h3>📝 見積登録</h3>
+                <h3>見積登録</h3>
                 <button class="modal-close" onclick="closeAddEstimateModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -2266,7 +2311,7 @@
                 <!-- ========== その他工数モードのフォーム ========== -->
                 <div id="addEstOtherForm" style="display: none;">
                     <div class="other-work-description">
-                        <span class="other-work-icon">📋</span>
+                        <span class="other-work-icon" style="font-size: 16px; color: var(--text-secondary);">*</span>
                         <span>打ち合わせや付随作業など、版数・帳票名に紐付かない工数を登録します。</span>
                     </div>
                     <div class="form-group">

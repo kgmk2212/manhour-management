@@ -399,6 +399,34 @@ body.js-loading {
     color: var(--sidebar-text-active);
 }
 
+.mobile-history-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--sidebar-text);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: opacity 0.25s ease, background 0.2s ease;
+    flex-shrink: 0;
+    opacity: 0.6;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-history-btn:active {
+    transform: scale(0.9);
+    opacity: 0.8;
+}
+
+.mobile-history-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* ---- 6b. Mobile Bottom Tab Bar ---- */
 .mobile-tab-bar {
     display: none;
@@ -1632,6 +1660,19 @@ table td[rowspan] {
     margin-bottom: 24px;
 }
 
+/* Report summary grid: enhanced layout */
+.report-summary-grid {
+    gap: 12px;
+}
+
+.report-summary-grid .stat-card {
+    transition: transform 0.15s ease;
+}
+
+.report-summary-grid .stat-card:hover {
+    transform: translateY(-2px);
+}
+
 .stat-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -1683,10 +1724,24 @@ table td[rowspan] {
 .stat-card.stat-accent {
     background: var(--accent);
     border-color: transparent;
+    padding: 20px 22px;
 }
 
-.stat-card.stat-accent h3,
-.stat-card.stat-accent .value,
+.stat-card.stat-accent h3 {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-card.stat-accent .value {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
 .stat-card.stat-accent div {
     color: #fff;
 }
@@ -3371,6 +3426,38 @@ table tr[style*="1565c0"] th:first-child {
     font-size: 12px;
     color: var(--text-muted);
     margin-top: 2px;
+}
+
+/* Settings group headers */
+.settings-group-header {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 24px 0 8px 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-group-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.settings-group-header:first-child {
+    padding-top: 0;
+}
+
+.settings-group-header svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.5;
 }
 
 .toggle {

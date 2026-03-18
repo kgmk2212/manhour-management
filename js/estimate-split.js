@@ -98,7 +98,7 @@ export function updateSplitPreview() {
     const currentMonthlyHours = normalizedEstimate && normalizedEstimate.monthlyHours ? normalizedEstimate.monthlyHours : {};
 
     let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid var(--accent);">';
-    html += '<strong style="color: var(--text-primary);">📋 分割プレビュー</strong><br>';
+    html += '<strong style="color: var(--text-primary);">分割プレビュー</strong><br>';
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {
@@ -317,7 +317,7 @@ export function updateMonthPreview() {
 
     const months = generateMonthRange(startMonth, endMonth);
     let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #2196f3;">';
-    html += '<strong style="color: #1976d2;">📋 プレビュー</strong><br>';
+    html += '<strong style="color: #1976d2;">プレビュー</strong><br>';
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {

@@ -21,47 +21,87 @@ const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'setting
 // ============================================
 
 /**
- * 表の中での現在のスクロール位置の比率を計算
- * 表の先頭が画面上部にある時を0%、表の末尾が画面下部にある時を100%とする
+ * 表の中での現在のスクロール位置を、最初の可視行を基準にしたオフセットとして保存
+ * 行単位で位置を追跡するため、フィルタ変更で行数が変わっても精度が高い
  * @param {HTMLElement} tableElement - 対象の表要素（estimateList, reportDetailViewなど）
- * @returns {number|null} - スクロール比率（0〜1）、または null
+ * @returns {object|null} - { rowIndex, offsetFromRowTop, totalRows, pixelOffsetFromTableTop } または null
  */
 function getTableScrollRatio(tableElement) {
     if (!tableElement) return null;
 
-    // ドキュメント座標系で表の絶対位置を取得（offsetTopはoffsetParent相対なので不適切）
     const tableRect = tableElement.getBoundingClientRect();
     const tableTop = tableRect.top + window.scrollY;
-    const tableHeight = tableElement.offsetHeight;
-    const viewportHeight = window.innerHeight;
+    const viewportTop = window.scrollY;
 
-    // 表が画面より小さい場合は比率計算不要
-    if (tableHeight <= viewportHeight) return 0;
+    // ビューポート上端の表先頭からの相対ピクセルオフセット
+    const pixelOffsetFromTableTop = viewportTop - tableTop;
 
-    // 表の先頭から現在のビューポート位置までの距離
-    const scrolledIntoTable = window.scrollY - tableTop;
+    // 表内の行を取得（tr要素またはグループ見出しのdiv）
+    const rows = tableElement.querySelectorAll('tr, .version-header, [class*="estimate-grouped"] tr');
+    if (rows.length === 0) {
+        // 行がない場合はピクセルオフセットのみ保存
+        return { rowIndex: -1, offsetFromRowTop: 0, totalRows: 0, pixelOffsetFromTableTop };
+    }
 
-    // 表内でスクロール可能な最大距離（表の高さ - ビューポートの高さ）
-    const maxScrollInTable = tableHeight - viewportHeight;
+    // ビューポート上端に最も近い行を見つける
+    let bestRowIndex = 0;
+    let bestDistance = Infinity;
+    for (let i = 0; i < rows.length; i++) {
+        const rowRect = rows[i].getBoundingClientRect();
+        // 行の上端がビューポート上端にどれだけ近いか
+        const distance = Math.abs(rowRect.top);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestRowIndex = i;
+        }
+        // 行がビューポートの下に行ったら探索終了
+        if (rowRect.top > window.innerHeight) break;
+    }
 
-    // 比率を計算（0〜1の範囲にクランプ）
-    const ratio = Math.max(0, Math.min(1, scrolledIntoTable / maxScrollInTable));
+    const targetRowRect = rows[bestRowIndex].getBoundingClientRect();
+    const offsetFromRowTop = -targetRowRect.top; // 行の上端からビューポート上端までの距離
 
-    return ratio;
+    return {
+        rowIndex: bestRowIndex,
+        offsetFromRowTop,
+        totalRows: rows.length,
+        pixelOffsetFromTableTop,
+        // 行数ベースの比率（フォールバック用）
+        rowRatio: rows.length > 1 ? bestRowIndex / (rows.length - 1) : 0
+    };
 }
 
 /**
  * 表の中での相対位置を復元
- * フィルタ変更などで表のサイズが変わっても、相対的な位置を維持する
+ * フィルタ変更などで表のサイズが変わっても、行ベースの位置追跡で精度を維持する
  * @param {HTMLElement} tableElement - 対象の表要素
- * @param {number|null} ratio - 復元する比率（0〜1）
+ * @param {object|null} savedPos - getTableScrollRatioの戻り値
  */
-function restoreTableScrollRatio(tableElement, ratio) {
-    if (!tableElement || ratio === null || ratio === undefined) return;
+function restoreTableScrollRatio(tableElement, savedPos) {
+    if (!tableElement || savedPos === null || savedPos === undefined) return;
+
+    // 後方互換性: 数値が渡された場合は旧ロジックで処理
+    if (typeof savedPos === 'number') {
+        const ratio = savedPos;
+        requestAnimationFrame(() => {
+            const tableRect = tableElement.getBoundingClientRect();
+            const tableTop = tableRect.top + window.scrollY;
+            const tableHeight = tableElement.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            if (tableHeight <= viewportHeight) {
+                window.scrollTo(0, tableTop);
+                return;
+            }
+            const maxScrollInTable = tableHeight - viewportHeight;
+            const newScrollY = tableTop + (ratio * maxScrollInTable);
+            const clampedScrollY = Math.max(tableTop, Math.min(newScrollY, tableTop + maxScrollInTable));
+            window.scrollTo(0, clampedScrollY);
+        });
+        return;
+    }
 
     // レンダリング完了を待ってから復元
     requestAnimationFrame(() => {
-        // ドキュメント座標系で表の絶対位置を取得
         const tableRect = tableElement.getBoundingClientRect();
         const tableTop = tableRect.top + window.scrollY;
         const tableHeight = tableElement.offsetHeight;
@@ -73,16 +113,32 @@ function restoreTableScrollRatio(tableElement, ratio) {
             return;
         }
 
-        // 新しい表のサイズでスクロール可能な最大距離
-        const maxScrollInTable = tableHeight - viewportHeight;
+        const rows = tableElement.querySelectorAll('tr, .version-header, [class*="estimate-grouped"] tr');
 
-        // 比率を適用して新しいスクロール位置を計算
-        const newScrollY = tableTop + (ratio * maxScrollInTable);
+        if (rows.length > 0 && savedPos.totalRows > 0) {
+            // 行数比率を使って対応する行を見つける
+            const targetRowIndex = Math.min(
+                Math.round(savedPos.rowRatio * (rows.length - 1)),
+                rows.length - 1
+            );
+            const targetRow = rows[targetRowIndex];
+            const targetRowRect = targetRow.getBoundingClientRect();
+            const targetRowTop = targetRowRect.top + window.scrollY;
 
-        // 表の範囲内に収まるようにクランプ
-        const clampedScrollY = Math.max(tableTop, Math.min(newScrollY, tableTop + maxScrollInTable));
+            // 保存時の行内オフセットを復元
+            const newScrollY = targetRowTop + savedPos.offsetFromRowTop;
 
-        window.scrollTo(0, clampedScrollY);
+            // 表の範囲内にクランプ
+            const maxScrollInTable = tableHeight - viewportHeight;
+            const clampedScrollY = Math.max(tableTop, Math.min(newScrollY, tableTop + maxScrollInTable));
+            window.scrollTo(0, clampedScrollY);
+        } else {
+            // 行が見つからない場合はピクセルオフセットで復元
+            const newScrollY = tableTop + savedPos.pixelOffsetFromTableTop;
+            const maxScrollInTable = tableHeight - viewportHeight;
+            const clampedScrollY = Math.max(tableTop, Math.min(newScrollY, tableTop + maxScrollInTable));
+            window.scrollTo(0, clampedScrollY);
+        }
     });
 }
 
@@ -2833,26 +2889,53 @@ export function updateActualMonthOptions() {
 
     const currentValue = select ? select.value : 'all';
 
-    // 実績データから最古の月を特定
+    // Bug 4: 実績データ + 見積データから最古の月を特定
+    // 実績のない月も表示できるよう、見積の期間も考慮する
     let oldestMonth = null;
+    let newestMonth = null;
     actuals.forEach(a => {
         if (a.date) {
             const month = a.date.substring(0, 7);
-            if (!oldestMonth || month < oldestMonth) {
-                oldestMonth = month;
-            }
+            if (!oldestMonth || month < oldestMonth) oldestMonth = month;
+            if (!newestMonth || month > newestMonth) newestMonth = month;
+        }
+    });
+
+    // 見積データからも月情報を取得
+    estimates.forEach(e => {
+        // 見積に開始月がある場合
+        if (e.startMonth) {
+            const month = e.startMonth.substring(0, 7);
+            if (!oldestMonth || month < oldestMonth) oldestMonth = month;
+        }
+        // monthlyHoursがある場合（月別見積）
+        const normalized = normalizeEstimate(e);
+        if (normalized.monthlyHours) {
+            Object.keys(normalized.monthlyHours).forEach(month => {
+                if (normalized.monthlyHours[month] > 0) {
+                    if (!oldestMonth || month < oldestMonth) oldestMonth = month;
+                    if (!newestMonth || month > newestMonth) newestMonth = month;
+                }
+            });
         }
     });
 
     // 最古の月が無い場合は現在年の1月から
     const now = new Date();
     const currentYear = now.getFullYear();
+    const currentMonth = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     if (!oldestMonth) {
         oldestMonth = `${currentYear}-01`;
     }
 
-    // 来年の12月まで
-    const endMonth = `${currentYear + 1}-12`;
+    // 終了月: 翌月 or 最新データ月 or 来年12月 の最大
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonthStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+    let endMonth = nextMonthStr;
+    if (newestMonth && newestMonth > endMonth) endMonth = newestMonth;
+    // 少なくとも来年12月まで
+    const maxEnd = `${currentYear + 1}-12`;
+    if (maxEnd > endMonth) endMonth = maxEnd;
 
     // 最古の月から来年12月までの全ての月を生成
     const allMonths = [];
@@ -3961,7 +4044,19 @@ export function handleVersionChange(selectId) {
             member = modal.dataset.calendarMember;
         }
 
-        if (member && typeof window.updateEditActualTaskList === 'function') {
+        // カレンダー検索式が表示されている場合はそちらを更新
+        const searchContainer = document.getElementById('editActualTaskSearchContainer');
+        if (searchContainer && searchContainer.style.display !== 'none' && member) {
+            const processSelect = document.getElementById('editActualProcess');
+            const process = processSelect ? processSelect.value : '';
+            if (typeof window.filterCalendarTaskList === 'function') {
+                // buildCalendarTaskList は actual.js 内のプライベート関数なので
+                // handleActualProcessChange 経由で再構築する
+                if (typeof window.handleActualProcessChange === 'function') {
+                    window.handleActualProcessChange();
+                }
+            }
+        } else if (member && typeof window.updateEditActualTaskList === 'function') {
             const editIdInput = document.getElementById('editActualId');
             const isEditMode = editIdInput && editIdInput.value !== '';
             window.updateEditActualTaskList(member, isEditMode, select.value);

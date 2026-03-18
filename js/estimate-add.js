@@ -117,7 +117,7 @@ export function openAddEstimateSingleProcess(version, task, process) {
 
     // モーダルタイトルを変更
     const titleEl = modal.querySelector('.modal-header h3');
-    if (titleEl) titleEl.textContent = `📝 ${process} 工程を追加`;
+    if (titleEl) titleEl.textContent = `${process} 工程を追加`;
 
     // 対象工程の時間フィールドにフォーカス
     setTimeout(() => {
@@ -515,7 +515,7 @@ function resetEditMode() {
         modal.dataset.editTask = '';
 
         const titleEl = modal.querySelector('.modal-header h3');
-        if (titleEl) titleEl.textContent = '📝 見積登録';
+        if (titleEl) titleEl.textContent = '見積登録';
 
         const modeSelector = document.getElementById('addEstModeSelector');
         if (modeSelector) modeSelector.style.display = '';
@@ -564,7 +564,7 @@ function exitSingleProcessMode() {
     // タイトルを元に戻す
     const modal = document.getElementById('addEstimateModal');
     const titleEl = modal?.querySelector('.modal-header h3');
-    if (titleEl) titleEl.textContent = '📝 見積登録';
+    if (titleEl) titleEl.textContent = '見積登録';
 }
 
 /**

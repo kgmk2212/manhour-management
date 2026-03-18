@@ -179,6 +179,40 @@ export function initEventHandlers() {
         quickTaskClearBtn.addEventListener('click', clearQuickTaskSelection);
     }
 
+    // カレンダー実績入力の検索式タスク選択
+    const editActualTaskSearchInput = document.getElementById('editActualTaskSearchInput');
+    if (editActualTaskSearchInput) {
+        editActualTaskSearchInput.addEventListener('input', () => {
+            if (typeof window.filterCalendarTaskList === 'function') {
+                window.filterCalendarTaskList();
+            }
+        });
+        editActualTaskSearchInput.addEventListener('focus', () => {
+            if (typeof window.filterCalendarTaskList === 'function') {
+                window.filterCalendarTaskList();
+            }
+        });
+
+        // 外クリックで閉じる
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('editActualTaskDropdown');
+            if (dropdown && dropdown.style.display !== 'none') {
+                if (!editActualTaskSearchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    const editActualTaskClearBtn = document.getElementById('editActualTaskClearBtn');
+    if (editActualTaskClearBtn) {
+        editActualTaskClearBtn.addEventListener('click', () => {
+            if (typeof window.clearCalendarTaskSelection === 'function') {
+                window.clearCalendarTaskSelection();
+            }
+        });
+    }
+
     const quickMemberSelect = document.getElementById('quickMemberSelect');
     if (quickMemberSelect) {
         quickMemberSelect.addEventListener('change', handleMemberChange);

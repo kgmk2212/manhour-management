@@ -403,17 +403,34 @@ export function toggleEditWorkMonthMode() {
         singleSection.style.display = 'none';
         multiSection.style.display = 'block';
 
+        // Bug fix: 単一月→複数月切替時、登録済みの月をデフォルトにする
         const singleMonthValue = document.getElementById('editEstimateWorkMonth').value;
         let defaultMonth;
         if (singleMonthValue) {
             defaultMonth = singleMonthValue;
         } else {
-            const now = new Date();
-            defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            // フォールバック: 編集中の見積データから作業月を取得
+            const editId = parseFloat(document.getElementById('editEstimateId').value);
+            const currentEstimate = estimates.find(e => e.id === editId);
+            if (currentEstimate) {
+                const est = normalizeEstimate(currentEstimate);
+                if (est.workMonths && est.workMonths.length > 0) {
+                    defaultMonth = est.workMonths[0];
+                } else if (currentEstimate.workMonth) {
+                    defaultMonth = currentEstimate.workMonth;
+                }
+            }
+            if (!defaultMonth) {
+                const now = new Date();
+                defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
         }
 
         generateMonthOptions('editStartMonth', defaultMonth);
         generateMonthOptions('editEndMonth', defaultMonth);
+        // 明示的にvalueをセット（generateMonthOptionsのselected属性だけでは不十分な場合の保険）
+        document.getElementById('editStartMonth').value = defaultMonth;
+        document.getElementById('editEndMonth').value = defaultMonth;
 
         updateEditMonthPreview();
     }
@@ -462,7 +479,7 @@ export function updateEditMonthPreview() {
     const currentMonthlyHours = Object.keys(_editMonthlyHoursCache).length > 0 ? _editMonthlyHoursCache : savedMonthlyHours;
 
     let html = '<div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid var(--accent); max-height: 300px; overflow-y: auto;">';
-    html += '<strong style="color: var(--text-primary);">📋 月別工数</strong><br>';
+    html += '<strong style="color: var(--text-primary);">月別工数</strong><br>';
     html += '<div style="margin-top: 10px;">';
 
     if (method === 'equal') {

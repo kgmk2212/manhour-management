@@ -714,6 +714,12 @@ export function renderEstimateList() {
     if (typeof window.updateSegmentedButtons === 'function') {
         window.updateSegmentedButtons();
     }
+
+    // 検索クエリがあれば再適用
+    const searchInput = document.getElementById('estimateSearchInput');
+    if (searchInput && searchInput.value.trim()) {
+        applyEstimateSearch(searchInput.value);
+    }
 }
 
 /**
@@ -1693,8 +1699,11 @@ export function showTaskDetail(version, task) {
         });
 
         html += '</div>';
-        html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">`;
+        html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">`;
+        html += `<div style="display: flex; gap: 8px;">`;
+        html += `<button onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応名を編集</button>`;
         html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">全工程を編集</button>`;
+        html += `</div>`;
         html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応を全削除</button>`;
         html += `</div>`;
     } else {
@@ -1776,6 +1785,7 @@ export function showTaskDetail(version, task) {
 
         html += `
             <div class="ed-actions">
+                <button class="btn btn-primary" onclick="editTaskFromTaskModal('${escapedVersion}', '${escapedTask}')">対応名を編集</button>
                 <button class="btn btn-secondary" onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')">全工程を編集</button>
                 <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
             </div>`;
@@ -2362,5 +2372,284 @@ function initMobileLongPressDrag(table, version, taskKeys) {
         row.addEventListener('touchcancel', onTouchEnd);
     });
 }
+
+// ============================================
+// あいまい検索 (Fuzzy Search)
+// ============================================
+
+let _searchDebounceTimer = null;
+
+/**
+ * 検索クエリに基づいて見積一覧の表示をフィルタリング
+ * 版数・対応名・担当者名・工程名に対するcontains検索を行い、
+ * マッチしない行を非表示にする。マッチ部分をハイライト表示する。
+ * @param {string} query - 検索クエリ
+ */
+function applyEstimateSearch(query) {
+    const container = document.getElementById('estimateList');
+    if (!container) return;
+
+    const normalizedQuery = query.trim().toLowerCase();
+
+    // 検索クリアボタンの表示制御
+    const clearBtn = document.getElementById('estimateSearchClear');
+    if (clearBtn) {
+        clearBtn.style.display = normalizedQuery ? 'block' : 'none';
+    }
+
+    // 検索クエリが空なら全て表示して終了
+    if (!normalizedQuery) {
+        clearEstimateSearchHighlight(container);
+        showAllEstimateRows(container);
+        return;
+    }
+
+    // スペース区切りで複数キーワードのAND検索
+    const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 0);
+
+    // テーブル内の行をタスクグループ単位で処理（rowspan対応）
+    const tables = container.querySelectorAll('table');
+    tables.forEach(table => {
+        const allRows = Array.from(table.querySelectorAll('tr'));
+
+        // タスクグループ（rowspanで結びついた行群）を特定
+        const taskGroups = [];
+        let currentGroup = [];
+
+        allRows.forEach((row, idx) => {
+            if (row.querySelector('th')) return; // ヘッダー行はスキップ
+
+            // rowspanを持つtdがある行 = タスクの最初の行
+            const hasRowspan = row.querySelector('td[rowspan]');
+            if (hasRowspan && currentGroup.length > 0) {
+                taskGroups.push(currentGroup);
+                currentGroup = [];
+            }
+            currentGroup.push(row);
+        });
+        if (currentGroup.length > 0) {
+            taskGroups.push(currentGroup);
+        }
+
+        // 各タスクグループに対してマッチ判定
+        taskGroups.forEach(group => {
+            // 合計行の判定（inline styleのbackground/font-weightで判定）
+            const firstRow = group[0];
+            const bgStyle = firstRow.getAttribute('style') || '';
+            const isFooterRow = group.length === 1 &&
+                (bgStyle.includes('#f5f5f5') ||
+                 bgStyle.includes('font-weight') && (bgStyle.includes('700') || bgStyle.includes('bold')) ||
+                 firstRow.querySelector('td[colspan]'));
+            if (isFooterRow) return; // 合計行はスキップ（常に表示）
+
+            // グループ全体のテキストを結合してマッチ判定
+            const groupText = group.map(r => r.textContent).join(' ').toLowerCase();
+            const matches = keywords.every(kw => groupText.includes(kw));
+
+            group.forEach(row => {
+                row.style.display = matches ? '' : 'none';
+                if (matches) {
+                    highlightMatchesInRow(row, keywords);
+                } else {
+                    removeHighlightsInRow(row);
+                }
+            });
+        });
+    });
+
+    // 版数グループの見出しと空グループの非表示処理
+    const versionSections = container.querySelectorAll('div[style*="margin-bottom"]');
+    versionSections.forEach(section => {
+        const versionHeader = section.querySelector('.version-header');
+        const table = section.querySelector('table');
+        if (!table) return;
+
+        // 版数ヘッダー名もマッチ対象にする
+        const headerText = versionHeader ? versionHeader.textContent.toLowerCase() : '';
+        const headerMatches = keywords.every(kw => headerText.includes(kw));
+
+        if (headerMatches) {
+            // 版数名がマッチしたら全行表示
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (!row.querySelector('th')) {
+                    row.style.display = '';
+                    removeHighlightsInRow(row);
+                }
+            });
+            section.style.display = '';
+            return;
+        }
+
+        // テーブル内に表示中のデータ行があるか確認
+        const dataRows = table.querySelectorAll('tr');
+        let hasVisibleDataRow = false;
+        dataRows.forEach(row => {
+            if (row.querySelector('th')) return;
+            // 合計行はスキップ
+            const rowStyle = row.getAttribute('style') || '';
+            if (rowStyle.includes('#f5f5f5') || rowStyle.includes('font-weight: 700') || rowStyle.includes('font-weight: bold')) return;
+            if (row.querySelector('td[colspan]')) return;
+            if (row.style.display !== 'none') {
+                hasVisibleDataRow = true;
+            }
+        });
+
+        section.style.display = hasVisibleDataRow ? '' : 'none';
+    });
+}
+
+/**
+ * 行内のテキストノードにハイライトを適用
+ */
+function highlightMatchesInRow(row, keywords) {
+    // 既存のハイライトを除去
+    removeHighlightsInRow(row);
+
+    const cells = row.querySelectorAll('td');
+    cells.forEach(cell => {
+        // input要素やbutton要素の中はスキップ
+        if (cell.querySelector('input, button, select')) return;
+        highlightTextNodes(cell, keywords);
+    });
+}
+
+/**
+ * テキストノードを再帰的に探索してマッチ部分をハイライト
+ */
+function highlightTextNodes(node, keywords) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent;
+        const lowerText = text.toLowerCase();
+
+        // いずれかのキーワードがマッチするか確認
+        let hasMatch = false;
+        for (const kw of keywords) {
+            if (lowerText.includes(kw)) {
+                hasMatch = true;
+                break;
+            }
+        }
+
+        if (!hasMatch) return;
+
+        // マッチ位置を特定してハイライト用のspanに置き換え
+        const fragment = document.createDocumentFragment();
+        let remaining = text;
+        let lowerRemaining = remaining.toLowerCase();
+
+        while (remaining.length > 0) {
+            let earliestIdx = -1;
+            let earliestKw = '';
+            for (const kw of keywords) {
+                const idx = lowerRemaining.indexOf(kw);
+                if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) {
+                    earliestIdx = idx;
+                    earliestKw = kw;
+                }
+            }
+
+            if (earliestIdx === -1) {
+                fragment.appendChild(document.createTextNode(remaining));
+                break;
+            }
+
+            if (earliestIdx > 0) {
+                fragment.appendChild(document.createTextNode(remaining.substring(0, earliestIdx)));
+            }
+
+            const matchText = remaining.substring(earliestIdx, earliestIdx + earliestKw.length);
+            const mark = document.createElement('mark');
+            mark.className = 'estimate-search-highlight';
+            mark.style.cssText = 'background: #fff3cd; padding: 0 1px; border-radius: 2px;';
+            mark.textContent = matchText;
+            fragment.appendChild(mark);
+
+            remaining = remaining.substring(earliestIdx + earliestKw.length);
+            lowerRemaining = remaining.toLowerCase();
+        }
+
+        node.parentNode.replaceChild(fragment, node);
+    } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'MARK') {
+        // 子ノードを配列にコピーしてから走査（DOM変更に対応）
+        const children = Array.from(node.childNodes);
+        children.forEach(child => highlightTextNodes(child, keywords));
+    }
+}
+
+/**
+ * 行内のハイライトを除去
+ */
+function removeHighlightsInRow(row) {
+    const marks = row.querySelectorAll('mark.estimate-search-highlight');
+    marks.forEach(mark => {
+        const parent = mark.parentNode;
+        parent.replaceChild(document.createTextNode(mark.textContent), mark);
+        parent.normalize();
+    });
+}
+
+/**
+ * ハイライトをすべて除去
+ */
+function clearEstimateSearchHighlight(container) {
+    const marks = container.querySelectorAll('mark.estimate-search-highlight');
+    marks.forEach(mark => {
+        const parent = mark.parentNode;
+        parent.replaceChild(document.createTextNode(mark.textContent), mark);
+        parent.normalize();
+    });
+}
+
+/**
+ * 全行を表示状態に復元
+ */
+function showAllEstimateRows(container) {
+    // テーブル行の表示を復元
+    const rows = container.querySelectorAll('tr');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    // 版数セクションの表示を復元
+    const sections = container.querySelectorAll('div[style*="margin-bottom"]');
+    sections.forEach(section => {
+        section.style.display = '';
+    });
+}
+
+/**
+ * 検索入力のイベントリスナーを初期化
+ */
+function initEstimateSearch() {
+    const searchInput = document.getElementById('estimateSearchInput');
+    const clearBtn = document.getElementById('estimateSearchClear');
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(_searchDebounceTimer);
+        _searchDebounceTimer = setTimeout(() => {
+            applyEstimateSearch(searchInput.value);
+        }, 200);
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            applyEstimateSearch('');
+            searchInput.focus();
+        });
+    }
+}
+
+// DOMContentLoaded時に初期化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEstimateSearch);
+} else {
+    initEstimateSearch();
+}
+
+// window経由でも再適用可能にする
+window.applyEstimateSearch = applyEstimateSearch;
 
 console.log('✅ モジュール estimate.js loaded');
