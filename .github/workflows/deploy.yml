@@ -54,6 +54,13 @@ jobs:
           path: experiment-fixes
         continue-on-error: true
 
+      - name: Checkout experiment/analytics branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/analytics
+          path: experiment-analytics
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -85,6 +92,15 @@ jobs:
             echo "✅ experiment/fixes をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/fixes ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/analyticsブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-analytics" ]; then
+            mkdir -p deploy/preview/analytics
+            cp -r experiment-analytics/* deploy/preview/analytics/
+            echo "✅ experiment/analytics をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/analytics ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
