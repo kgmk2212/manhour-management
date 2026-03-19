@@ -1415,6 +1415,32 @@ tr.est-extra-member-row td:first-child {
     background: var(--danger-light);
 }
 
+/* Split among members button */
+.est-split-member-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    padding: 0;
+    margin-right: 2px;
+}
+
+.est-split-member-btn:hover {
+    border-color: var(--info);
+    color: var(--info);
+    background: var(--info-light);
+}
+
 /* Edit modal - member rows */
 .edit-est-members-wrap {
     background: var(--surface-elevated);
@@ -1532,11 +1558,10 @@ tr.est-extra-member-row td:first-child {
     line-height: 1;
 }
 
-/* Report matrix */
+/* Report matrix - match estimate matrix column widths */
 table.estimate-matrix.report-matrix {
     min-width: 0;
     width: 100%;
-    table-layout: fixed;
 }
 
 table.estimate-matrix.report-matrix th,
@@ -1545,21 +1570,6 @@ table.estimate-matrix.report-matrix td {
     word-break: break-word;
     padding: 6px 4px;
     overflow: hidden;
-}
-
-table.estimate-matrix.report-matrix th:first-child,
-table.estimate-matrix.report-matrix td:first-child {
-    width: 25%;
-}
-
-table.estimate-matrix.report-matrix th:not(:first-child):not(:last-child),
-table.estimate-matrix.report-matrix td:not(:first-child):not(:last-child) {
-    width: 12%;
-}
-
-table.estimate-matrix.report-matrix th:last-child,
-table.estimate-matrix.report-matrix td:last-child {
-    width: 15%;
 }
 
 /* Rowspan sticky columns */
@@ -6167,6 +6177,147 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: var(--text-secondary);
     margin: 0 1px;
 }
+/* 変更詳細（before/after） */
+.history-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    padding: 4px 8px;
+    background: var(--surface);
+    border-radius: var(--radius-xs);
+    border-left: 2px solid var(--border);
+    line-height: 1.5;
+    word-break: break-all;
+}
+/* 履歴モーダルタブ */
+.history-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    background: var(--surface-elevated);
+}
+.history-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.history-tab:hover {
+    color: var(--text-primary);
+}
+.history-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+/* トースト種別バッジ */
+.toast-type-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 4px;
+}
+.toast-type-success { background: var(--accent-light); color: var(--accent); }
+.toast-type-error { background: var(--danger-light); color: var(--danger); }
+.toast-type-warning { background: #FFF8E1; color: #F57F17; }
+.toast-type-info { background: var(--info-light); color: var(--info); }
+
+/* マージダイアログ */
+.merge-dialog-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 0;
+}
+.merge-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.merge-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.merge-section-title .merge-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface);
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+.merge-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: var(--radius-xs);
+    margin-bottom: 4px;
+    background: var(--surface);
+}
+.merge-item:hover {
+    background: var(--surface-elevated);
+}
+.merge-item-info {
+    flex: 1;
+    min-width: 0;
+}
+.merge-item-key {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.merge-item-diff {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.merge-action-select {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 3px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--surface);
+    color: var(--text-primary);
+}
+.merge-summary {
+    padding: 12px 16px;
+    background: var(--surface-elevated);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.merge-summary-counts {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.merge-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.merge-summary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
 
 /* ============================================
    ドラッグ&ドロップ（着手順）
@@ -8548,3 +8699,141 @@ input[type="number"]::-webkit-outer-spin-button {
         padding: 3px !important;
     }
 }
+
+/* ---- Layout Density Themes ---- */
+
+/* Compact: tighter padding, smaller fonts */
+body.theme-compact {
+    font-size: 12px;
+}
+
+body.theme-compact .main-content {
+    padding: 12px 16px;
+}
+
+body.theme-compact .setting-section {
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+body.theme-compact .modal-content {
+    padding: 14px;
+}
+
+body.theme-compact .modal-header {
+    padding: 10px 14px;
+}
+
+body.theme-compact .modal-body {
+    padding: 14px;
+}
+
+body.theme-compact .form-group {
+    margin-bottom: 8px;
+}
+
+body.theme-compact .form-group label {
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+body.theme-compact input,
+body.theme-compact select,
+body.theme-compact textarea {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+body.theme-compact .btn {
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+body.theme-compact table th,
+body.theme-compact table td {
+    padding: 4px 6px;
+    font-size: 12px;
+}
+
+body.theme-compact .nav-item {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+body.theme-compact .card,
+body.theme-compact .setting-row {
+    padding: 8px 10px;
+}
+
+body.theme-compact h1 { font-size: 1.4em; }
+body.theme-compact h2 { font-size: 1.2em; }
+body.theme-compact h3 { font-size: 1.05em; }
+body.theme-compact h4 { font-size: 0.95em; }
+
+/* Spacious: more padding, larger fonts */
+body.theme-spacious {
+    font-size: 15px;
+}
+
+body.theme-spacious .main-content {
+    padding: 28px 32px;
+}
+
+body.theme-spacious .setting-section {
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+body.theme-spacious .modal-content {
+    padding: 24px;
+}
+
+body.theme-spacious .modal-header {
+    padding: 18px 24px;
+}
+
+body.theme-spacious .modal-body {
+    padding: 24px;
+}
+
+body.theme-spacious .form-group {
+    margin-bottom: 18px;
+}
+
+body.theme-spacious .form-group label {
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+body.theme-spacious input,
+body.theme-spacious select,
+body.theme-spacious textarea {
+    padding: 10px 14px;
+    font-size: 15px;
+}
+
+body.theme-spacious .btn {
+    padding: 10px 20px;
+    font-size: 15px;
+}
+
+body.theme-spacious table th,
+body.theme-spacious table td {
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+body.theme-spacious .nav-item {
+    padding: 12px 20px;
+    font-size: 14px;
+}
+
+body.theme-spacious .card,
+body.theme-spacious .setting-row {
+    padding: 16px 20px;
+}
+
+body.theme-spacious h1 { font-size: 1.8em; }
+body.theme-spacious h2 { font-size: 1.5em; }
+body.theme-spacious h3 { font-size: 1.25em; }
+body.theme-spacious h4 { font-size: 1.1em; }

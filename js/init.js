@@ -181,6 +181,7 @@ window.saveMatrixEstActFormat = Theme.saveMatrixEstActFormat;
 window.saveDefaultViewTypeSetting = Theme.saveDefaultViewTypeSetting;
 window.applyDefaultEstimateViewType = Theme.applyDefaultEstimateViewType;
 window.applyDefaultReportViewType = Theme.applyDefaultReportViewType;
+window.changeLayoutDensity = Theme.changeLayoutDensity;
 
 // estimate.js の関数
 window.getWorkingDays = Estimate.getWorkingDays;
@@ -340,6 +341,7 @@ window.openEditAllProcesses = EstimateAdd.openEditAllProcesses;
 window.autoFillMember = EstimateAdd.autoFillMember;
 window.addEstimateMemberRow = EstimateAdd.addEstimateMemberRow;
 window.removeEstimateMemberRow = EstimateAdd.removeEstimateMemberRow;
+window.splitEstimateAmongMembers = EstimateAdd.splitEstimateAmongMembers;
 window.initAddEstimateForm = EstimateAdd.initAddEstimateForm;
 window.updateAddEstWorkMonthUI = EstimateAdd.updateAddEstWorkMonthUI;
 window.switchAddEstMonthType = EstimateAdd.switchAddEstMonthType;
@@ -435,6 +437,8 @@ window.openHistoryModal = History.openHistoryModal;
 window.closeHistoryModal = History.closeHistoryModal;
 window.revertToAction = History.revertToAction;
 window.redoToAction = History.redoToAction;
+window.switchHistoryTab = History.switchHistoryTab;
+window.recordToast = History.recordToast;
 
 // スケジュール用のヘルパー関数（history.js から参照）
 window.updateScheduleFn = Schedule.updateSchedule;

@@ -15,6 +15,11 @@ export function showAlert(message, dismissible = false) {
 
     if (messageEl) messageEl.textContent = message;
 
+    // 通知履歴に記録（window経由で循環依存を回避）
+    if (typeof window.recordToast === 'function') {
+        window.recordToast(message, dismissible ? 'success' : 'error');
+    }
+
     // クラシック/モダン切り替え
     if (content) content.classList.toggle('classic-alert', isClassic);
 

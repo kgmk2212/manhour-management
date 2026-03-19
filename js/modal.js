@@ -123,7 +123,7 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
                 if (value === 0) return;
                 const widthPct = (value / maxHours) * 100;
                 const color = getBreakdownMemberColor(index);
-                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; min-width: 0; overflow: hidden;" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
+                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #333; font-weight: 600; min-width: 0; overflow: hidden; text-shadow: 0 0 2px rgba(255,255,255,0.6);" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
             });
             html += '</div>';
             html += '</div>';
@@ -139,7 +139,7 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
                 if (value === 0) return;
                 const widthPct = (value / maxHours) * 100;
                 const color = getBreakdownMemberColor(index);
-                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; min-width: 0; overflow: hidden;" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
+                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #333; font-weight: 600; min-width: 0; overflow: hidden; text-shadow: 0 0 2px rgba(255,255,255,0.6);" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
             });
             html += '</div>';
             html += '</div>';
@@ -165,14 +165,44 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
     modal.style.display = 'flex';
 }
 
-// 内訳モーダル用の担当者カラーパレット
+// 内訳モーダル用の担当者カラーパレット（テーマカラー連動パステル）
 function getBreakdownMemberColor(index) {
-    const colors = [
-        '#5B7FD3', '#D4789C', '#4BA0C9', '#5BB88A',
-        '#C4724D', '#6AAFAB', '#9B8EC4', '#C9A055',
-        '#7CAA6E', '#B08DAA', '#6D9FBF', '#C48E6A'
-    ];
-    return colors[index % colors.length];
+    // テーマのアクセントカラーからパステルパレットを生成
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2D5A27';
+    const hsl = hexToHSL(accent);
+
+    // ベース色相からオフセットして複数のパステルカラーを生成
+    const hueOffsets = [0, 30, 60, 150, 210, 270, 330, 45, 120, 180, 240, 300];
+    const offset = hueOffsets[index % hueOffsets.length];
+    const h = (hsl.h + offset) % 360;
+    // パステル: 高い明度（65-70%）、中程度の彩度（50-55%）
+    const s = 50 + (index % 3) * 5;
+    const l = 62 + (index % 3) * 3;
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+/**
+ * HEXカラーをHSLに変換
+ */
+function hexToHSL(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const r = parseInt(hex.substr(0, 2), 16) / 255;
+    const g = parseInt(hex.substr(2, 2), 16) / 255;
+    const b = parseInt(hex.substr(4, 2), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+            case g: h = ((b - r) / d + 2) * 60; break;
+            case b: h = ((r - g) / d + 4) * 60; break;
+        }
+    }
+    return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
 // 工程内訳ドーナツグラフを描画（レガシー互換: window公開用）

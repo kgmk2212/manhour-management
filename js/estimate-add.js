@@ -908,7 +908,12 @@ export function switchAddEstMonthType() {
             // 終了月の選択肢を開始月より後の月のみに更新
             const currentEndValue = endMonth ? endMonth.value : '';
             Utils.generateMonthOptions('addEstEndMonth', currentEndValue, startMonth);
-            if (endMonth && !endMonth.value) {
+
+            // 工数から終了月を自動算出（160h = 1人月）
+            const autoEndMonth = calculateEndMonthFromHours(startMonth);
+            if (autoEndMonth && endMonth) {
+                endMonth.value = autoEndMonth;
+            } else if (endMonth && !endMonth.value) {
                 endMonth.value = startMonth;
             }
         }
@@ -1040,6 +1045,41 @@ export function updateDefaultAddProcessMonths(startMonth, endMonth) {
     });
 }
 
+/**
+ * 入力済み工数の合計から終了月を自動算出する
+ * 160h = 1人月として計算し、開始月 + 必要月数 - 1 を返す
+ * @param {string} startMonth - 開始月（YYYY-MM形式）
+ * @returns {string|null} 終了月（YYYY-MM形式）、工数未入力の場合null
+ */
+function calculateEndMonthFromHours(startMonth) {
+    if (!startMonth) return null;
+
+    let totalHours = 0;
+    PROCESS.TYPES.forEach(proc => {
+        const hours = parseFloat(document.getElementById(`addEst${proc}`)?.value) || 0;
+        totalHours += hours;
+
+        // 追加担当者行の時間も加算
+        const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
+        extraRows.forEach(row => {
+            const input = row.querySelector('.est-extra-hours');
+            totalHours += parseFloat(input?.value) || 0;
+        });
+    });
+
+    if (totalHours <= 0) return null;
+
+    // 160h = 1人月（8h * 20日）。最低1ヶ月、端数は切り上げ
+    const monthsNeeded = Math.max(1, Math.ceil(totalHours / 160));
+
+    // 開始月からmonthsNeeded - 1ヶ月後を計算
+    const [y, m] = startMonth.split('-').map(Number);
+    const endDate = new Date(y, m - 1 + monthsNeeded - 1, 1);
+    const endYear = endDate.getFullYear();
+    const endMon = endDate.getMonth() + 1;
+    return `${endYear}-${String(endMon).padStart(2, '0')}`;
+}
+
 export function updateAddEstimateTotals() {
     const processes = PROCESS.TYPES;
     let totalHours = 0;
@@ -1063,6 +1103,67 @@ export function updateAddEstimateTotals() {
     document.getElementById('addEstTotalHours').textContent = totalHours.toFixed(1);
     document.getElementById('addEstTotalDays').textContent = totalDays;
     document.getElementById('addEstTotalMonths').textContent = totalMonths;
+
+    // 複数月モード中の場合、終了月も自動更新
+    const monthType = document.querySelector('input[name="addEstMonthType"]:checked')?.value || 'single';
+    if (monthType === 'multi') {
+        const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+        const endMonth = document.getElementById('addEstEndMonth');
+        if (startMonthMulti && endMonth && startMonthMulti.value) {
+            const autoEndMonth = calculateEndMonthFromHours(startMonthMulti.value);
+            if (autoEndMonth) {
+                endMonth.value = autoEndMonth;
+                updateAddEstWorkMonthUI();
+            }
+        }
+    }
+}
+
+/**
+ * 工程内の見積を担当者間で均等分割
+ * プライマリ行の時間を、プライマリ＋追加行の人数で均等に割り当てる
+ * @param {string} proc - 工程名（UI/PG/PT/IT/ST）
+ */
+export function splitEstimateAmongMembers(proc) {
+    const primaryInput = document.getElementById(`addEst${proc}`);
+    const primaryHours = parseFloat(primaryInput?.value) || 0;
+
+    // 追加行を取得
+    const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
+
+    if (extraRows.length === 0) {
+        // 追加行がない場合は何もしない（分割対象がない）
+        return;
+    }
+
+    // 全担当者の時間合計（プライマリ + 追加行）
+    let totalHours = primaryHours;
+    extraRows.forEach(row => {
+        totalHours += parseFloat(row.querySelector('.est-extra-hours')?.value) || 0;
+    });
+
+    if (totalHours <= 0) {
+        // 合計が0の場合は何もしない
+        return;
+    }
+
+    // 人数（プライマリ + 追加行）
+    const memberCount = 1 + extraRows.length;
+    const perMember = Math.round((totalHours / memberCount) * 100) / 100; // 小数2桁
+    const remainder = Math.round((totalHours - perMember * memberCount) * 100) / 100;
+
+    // プライマリ行に割り当て（端数はプライマリが吸収）
+    primaryInput.value = (perMember + remainder).toFixed(2).replace(/\.?0+$/, '') || '0';
+
+    // 追加行に割り当て
+    extraRows.forEach(row => {
+        const input = row.querySelector('.est-extra-hours');
+        if (input) {
+            input.value = perMember.toFixed(2).replace(/\.?0+$/, '') || '0';
+        }
+    });
+
+    updateAddEstimateTotals();
 }
 
 /**
@@ -1097,6 +1198,9 @@ export function addEstimateMemberRow(proc) {
     `;
 
     lastRow.after(newRow);
+
+    // 分割ボタンを表示（追加行が1つ以上あれば表示）
+    updateSplitButtonVisibility(proc);
 }
 
 /**
@@ -1105,8 +1209,11 @@ export function addEstimateMemberRow(proc) {
 export function removeEstimateMemberRow(btn) {
     const row = btn.closest('tr');
     if (row) {
+        const proc = row.dataset.process;
         row.remove();
         updateAddEstimateTotals();
+        // 分割ボタンの表示/非表示を更新
+        if (proc) updateSplitButtonVisibility(proc);
     }
 }
 
@@ -1117,6 +1224,19 @@ export function removeAllExtraMemberRows() {
     const table = document.getElementById('addEstimateTable');
     if (!table) return;
     table.querySelectorAll('tr.est-extra-member-row').forEach(row => row.remove());
+    // 全工程の分割ボタンを非表示
+    PROCESS.TYPES.forEach(proc => updateSplitButtonVisibility(proc));
+}
+
+/**
+ * 分割ボタンの表示/非表示を更新
+ * @param {string} proc - 工程名
+ */
+function updateSplitButtonVisibility(proc) {
+    const splitBtn = document.getElementById(`splitBtn${proc}`);
+    if (!splitBtn) return;
+    const extraCount = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).length;
+    splitBtn.style.display = extraCount > 0 ? 'inline-flex' : 'none';
 }
 
 /**

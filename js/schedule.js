@@ -13,7 +13,7 @@ import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, s
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
-import { pushAction, canUndo, canRedo } from './history.js';
+import { pushAction, canUndo, canRedo, recordToast } from './history.js';
 import { calculateVersionProgress } from './report.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
@@ -2310,6 +2310,9 @@ function createToastContainer() {
  * @param {number} duration - 表示時間（ms）
  */
 export function showToast(message, type = 'info', duration = 3000, options = {}) {
+    // 通知履歴に記録
+    recordToast(message, type);
+
     const container = createToastContainer();
 
     const icons = {

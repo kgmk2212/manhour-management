@@ -1254,6 +1254,25 @@
                     </div>
                 </div>
 
+                <!-- レイアウト密度設定 -->
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        レイアウト密度
+                    </div>
+                    <div class="setting-row">
+                        <div>
+                            <div class="setting-label">表示密度</div>
+                            <div class="setting-desc">パディングやフォントサイズの密度を変更します</div>
+                        </div>
+                        <select id="layoutDensity" onchange="changeLayoutDensity()">
+                            <option value="compact">コンパクト</option>
+                            <option value="comfortable" selected>標準</option>
+                            <option value="spacious">ゆったり</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- マトリクス表示の月色分け設定 -->
                 <div class="setting-section">
                     <div class="setting-section-title">
@@ -2364,31 +2383,31 @@
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
                                     <td><select id="addEstUI_member" style="margin: 0;"></select></td>
                                     <td><input type="number" id="addEstUI" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('UI')" title="担当者を追加">+</button></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-split-member-btn" id="splitBtnUI" onclick="splitEstimateAmongMembers('UI')" title="均等分割" style="display:none;">÷</button><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('UI')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="PG" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
                                     <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
                                     <td><input type="number" id="addEstPG" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PG')" title="担当者を追加">+</button></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-split-member-btn" id="splitBtnPG" onclick="splitEstimateAmongMembers('PG')" title="均等分割" style="display:none;">÷</button><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PG')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="PT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
                                     <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
                                     <td><input type="number" id="addEstPT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PT')" title="担当者を追加">+</button></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-split-member-btn" id="splitBtnPT" onclick="splitEstimateAmongMembers('PT')" title="均等分割" style="display:none;">÷</button><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PT')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="IT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
                                     <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
                                     <td><input type="number" id="addEstIT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('IT')" title="担当者を追加">+</button></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-split-member-btn" id="splitBtnIT" onclick="splitEstimateAmongMembers('IT')" title="均等分割" style="display:none;">÷</button><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('IT')" title="担当者を追加">+</button></td>
                                 </tr>
                                 <tr data-process="ST" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
                                     <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
                                     <td><input type="number" id="addEstST" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
-                                    <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('ST')" title="担当者を追加">+</button></td>
+                                    <td class="est-add-member-cell"><button type="button" class="est-split-member-btn" id="splitBtnST" onclick="splitEstimateAmongMembers('ST')" title="均等分割" style="display:none;">÷</button><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('ST')" title="担当者を追加">+</button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -2846,11 +2865,12 @@
 
     <!-- 変更履歴モーダル -->
     <div id="historyModal" class="modal">
-        <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-content" style="max-width: 560px;">
             <div class="modal-header modal-theme-ink">
                 <h3>変更履歴</h3>
                 <span class="close" onclick="closeHistoryModal()">&times;</span>
             </div>
+            <!-- タブバーは JS (history.js) で動的に挿入される -->
             <div class="modal-body" id="historyList" style="max-height: 60vh; overflow-y: auto; padding: 0;">
                 <!-- JS で動的生成 -->
             </div>

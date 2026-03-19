@@ -17,7 +17,8 @@ import {
     currentThemeColor, setTaskColorMap, scheduleBarColorMode, setScheduleBarColorMode,
     isEstimateTabFirstView, setIsEstimateTabFirstView,
     isReportTabFirstView, setIsReportTabFirstView,
-    mobileTabDesign, setMobileTabDesign
+    mobileTabDesign, setMobileTabDesign,
+    layoutDensity, setLayoutDensity
 } from './state.js';
 
 
@@ -150,6 +151,7 @@ export function loadThemeSettings() {
     }
 
     loadMobileTabDesign();
+    loadLayoutDensity();
     applyTheme();
 }
 
@@ -554,6 +556,35 @@ export function changeMobileTabDesign() {
     setMobileTabDesign(value);
     localStorage.setItem('mobileTabDesign', value);
     applyTheme();
+}
+
+// ============================================
+// レイアウト密度設定
+// ============================================
+
+export function loadLayoutDensity() {
+    try {
+        const saved = localStorage.getItem('manhour_settings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+            if (settings.layoutDensity) {
+                setLayoutDensity(settings.layoutDensity);
+                const el = document.getElementById('layoutDensity');
+                if (el) el.value = settings.layoutDensity;
+            }
+        }
+    } catch (e) { }
+}
+
+export function changeLayoutDensity() {
+    const el = document.getElementById('layoutDensity');
+    if (!el) return;
+
+    const value = el.value;
+    setLayoutDensity(value);
+    if (typeof window.saveData === 'function') {
+        window.saveData(true);
+    }
 }
 
 // ============================================

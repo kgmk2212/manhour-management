@@ -1222,7 +1222,8 @@ export function renderEstimateMatrix() {
     });
 
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
-    const showMonthColors = showMonthColorsSetting;
+    // 月別フィルタ選択時は自動的に月色を表示（全期間表示時はユーザー設定に従う）
+    const showMonthColors = showMonthColorsSetting || workMonthFilter !== 'all';
 
     let html = '<div style="margin-bottom: 30px;">';
 

@@ -29,12 +29,13 @@ import {
     taskColorMap, setTaskColorMap,
     taskSortOrder, setTaskSortOrder,
     setWorkDetailStyle, setModalDesignStyle,
+    layoutDensity, setLayoutDensity,
     autoBackupFrequency, setAutoBackupFrequency,
     autoBackupMaxCount, setAutoBackupMaxCount,
     otherWorkTemplates, setOtherWorkTemplates
 } from './state.js';
 
-import { showAlert } from './utils.js';
+import { showAlert, escapeHtml, formatHours } from './utils.js';
 import { clearProgressCache } from './report.js';
 import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { loadHistory } from './history.js';
@@ -343,6 +344,7 @@ export function saveData(skipAutoBackup = false) {
             chartColorScheme: selectedChartColorScheme,
             workDetailStyle: window.workDetailStyle,
             modalDesignStyle: window.modalDesignStyle,
+            layoutDensity: window.layoutDensity || 'comfortable',
             estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
         }
     };
@@ -531,6 +533,12 @@ export function loadData() {
                 const el = document.getElementById('modalDesignStyle');
                 if (el) el.value = settings.modalDesignStyle;
             }
+            // レイアウト密度設定を読み込み
+            if (settings.layoutDensity) {
+                setLayoutDensity(settings.layoutDensity);
+                const el = document.getElementById('layoutDensity');
+                if (el) el.value = settings.layoutDensity;
+            }
 
             if (settings.estimateStandardDisplay) {
                 const el = document.getElementById('estimateStandardDisplay');
@@ -691,8 +699,14 @@ export function handleFileImport(event) {
                     remainingEstimates.length > 0 ||
                     schedules.length > 0;
 
-                // データがある場合のみ確認ダイアログを表示
-                if (!hasExistingData || confirm('現在のデータを復元したデータで上書きしますか？')) {
+                // データがある場合: マージか上書きかを選択
+                if (hasExistingData) {
+                    showImportChoiceDialog(data);
+                    return;
+                }
+
+                // データが空の場合: そのまま上書き
+                if (true) {
                     setEstimates(data.estimates || []);
                     setActuals(data.actuals || []);
                     setCompanyHolidays(data.companyHolidays || []);
@@ -922,6 +936,604 @@ export function handleFileImport(event) {
     }
 
     event.target.value = '';
+}
+
+// ============================================
+// インポート選択ダイアログ
+// ============================================
+
+/**
+ * インポート時に上書き/マージ選択ダイアログを表示
+ * @param {Object} importedData - インポートされたデータ
+ */
+function showImportChoiceDialog(importedData) {
+    // 既存のダイアログがあれば削除
+    const existing = document.getElementById('importChoiceModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'importChoiceModal';
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header modal-theme-ink">
+                <h3>データのインポート</h3>
+                <span class="close" onclick="document.getElementById('importChoiceModal').remove()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                    現在のデータが存在します。インポート方法を選択してください。
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="importChoiceReplace" class="btn" style="padding: 12px; text-align: left;">
+                        <div style="font-weight: 600; font-size: 13px;">全データを上書き</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">現在のデータをインポートデータで完全に置き換えます</div>
+                    </button>
+                    <button id="importChoiceMerge" class="btn" style="padding: 12px; text-align: left;">
+                        <div style="font-weight: 600; font-size: 13px;">差分をマージ</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">差分を確認し、項目ごとに取り込む/スキップを選べます</div>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('importChoiceModal').remove()" class="btn btn-secondary btn-sm">キャンセル</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('importChoiceReplace').addEventListener('click', () => {
+        modal.remove();
+        applyFullReplace(importedData);
+    });
+
+    document.getElementById('importChoiceMerge').addEventListener('click', () => {
+        modal.remove();
+        showMergeDialog(importedData);
+    });
+}
+
+/**
+ * 既存のフルリプレース処理を実行
+ * @param {Object} data - インポートデータ
+ */
+function applyFullReplace(data) {
+    setEstimates(data.estimates || []);
+    setActuals(data.actuals || []);
+    setCompanyHolidays(data.companyHolidays || []);
+    setVacations(data.vacations || []);
+    setRemainingEstimates(data.remainingEstimates || []);
+
+    if (data.schedules) {
+        setSchedules(data.schedules);
+        const maxId = data.schedules.reduce((max, s) => {
+            const match = s.id && s.id.match(/sch_(\d+)/);
+            return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        setNextScheduleId(maxId + 1);
+    }
+    if (data.scheduleSettings) setScheduleSettings(data.scheduleSettings);
+    if (data.taskColorMap) {
+        const allColors = new Set();
+        Object.values(THEME_TASK_COLORS).forEach(p => p.forEach(c => allColors.add(c)));
+        const hasOldColors = Object.values(data.taskColorMap).some(c => !allColors.has(c));
+        setTaskColorMap(hasOldColors ? {} : data.taskColorMap);
+    }
+
+    if (companyHolidays.length > 0) {
+        const ids = companyHolidays.map(h => h.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) setNextCompanyHolidayId(Math.max(...ids) + 1);
+    }
+    if (vacations.length > 0) {
+        const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) setNextVacationId(Math.max(...ids) + 1);
+    }
+
+    if (data.settings) applyImportedSettings(data.settings, data.memberOrder);
+
+    saveData(true);
+    if (typeof window.applyTheme === 'function') window.applyTheme();
+    if (typeof window.applyLayoutSettings === 'function') window.applyLayoutSettings();
+    refreshAllUI();
+    showAlert('データを復元しました', true);
+}
+
+/**
+ * 設定データを適用（上書きインポート・マージ共通）
+ */
+function applyImportedSettings(settings, legacyMemberOrder) {
+    if (!settings) {
+        if (legacyMemberOrder) {
+            const el = document.getElementById('memberOrder');
+            if (el) el.value = legacyMemberOrder;
+        }
+        return;
+    }
+
+    // テーマ設定
+    if (settings.themeColor) {
+        setCurrentThemeColor(settings.themeColor);
+        const el = document.getElementById('themeColor');
+        if (el) el.value = settings.themeColor;
+    }
+    if (settings.themePattern) {
+        setCurrentThemePattern(settings.themePattern);
+        const el = document.getElementById('themePattern');
+        if (el) el.value = settings.themePattern;
+    }
+    if (settings.themeTabColor) {
+        setCurrentTabColor(settings.themeTabColor);
+        const el = document.getElementById('themeTabColor');
+        if (el) el.value = settings.themeTabColor;
+    }
+    if (settings.themeBackgroundColor) {
+        setCurrentBackgroundColor(settings.themeBackgroundColor);
+        const el = document.getElementById('themeBackgroundColor');
+        if (el) el.value = settings.themeBackgroundColor;
+    }
+
+    // レイアウト設定
+    if (settings.estimateLayout) window.estimateLayout = settings.estimateLayout;
+    if (settings.actualLayout) window.actualLayout = settings.actualLayout;
+    if (settings.reportLayout) window.reportLayout = settings.reportLayout;
+
+    // 月色分け設定
+    if (settings.showMonthColors !== undefined) {
+        setShowMonthColorsSetting(settings.showMonthColors);
+        const checkbox = document.getElementById('showMonthColorsCheckbox');
+        if (checkbox) checkbox.checked = settings.showMonthColors;
+    }
+
+    // レポートマトリクス背景色モード
+    if (settings.reportMatrixBgColorMode) {
+        setReportMatrixBgColorMode(settings.reportMatrixBgColorMode);
+    }
+
+    // 進捗バー設定
+    if (settings.showProgressBars !== undefined) setShowProgressBarsSetting(settings.showProgressBars);
+    if (settings.showProgressPercentage !== undefined) setShowProgressPercentageSetting(settings.showProgressPercentage);
+    if (settings.progressBarStyle) setProgressBarStyle(settings.progressBarStyle);
+    if (settings.matrixEstActFormat) setMatrixEstActFormat(settings.matrixEstActFormat);
+    if (settings.filterBarMode) {
+        setFilterBarMode(settings.filterBarMode);
+        if (typeof window.applyFilterBarMode === 'function') window.applyFilterBarMode();
+    }
+    if (settings.scheduleBarColorMode) setScheduleBarColorMode(settings.scheduleBarColorMode);
+
+    // 担当者順
+    if (settings.memberOrder) {
+        setMemberOrder(settings.memberOrder);
+        const el = document.getElementById('memberOrder');
+        if (el) el.value = settings.memberOrder;
+    }
+
+    // デバッグ・開発設定
+    if (settings.debugModeEnabled !== undefined) {
+        setDebugModeEnabled(settings.debugModeEnabled);
+        localStorage.setItem('debugModeEnabled', debugModeEnabled);
+    }
+    if (settings.devFeaturesEnabled !== undefined) {
+        setDevFeaturesEnabled(settings.devFeaturesEnabled);
+        localStorage.setItem('devFeaturesEnabled', devFeaturesEnabled);
+        if (typeof window.loadDevFeaturesSetting === 'function') window.loadDevFeaturesSetting();
+    }
+
+    // レイアウト密度
+    if (settings.layoutDensity) {
+        setLayoutDensity(settings.layoutDensity);
+        const el = document.getElementById('layoutDensity');
+        if (el) el.value = settings.layoutDensity;
+    }
+}
+
+/**
+ * 全UI更新（インポート後）
+ */
+function refreshAllUI() {
+    try { localStorage.removeItem('manhour_reportFilterState'); } catch (e) { /* ignore */ }
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.setDefaultReportMonth === 'function') window.setDefaultReportMonth();
+    if (typeof window.updateEstimateMonthOptions === 'function') window.updateEstimateMonthOptions();
+    if (typeof window.updateEstimateVersionOptions === 'function') window.updateEstimateVersionOptions();
+    if (typeof window.setDefaultEstimateMonth === 'function') window.setDefaultEstimateMonth();
+    if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
+    if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+    if (typeof window.renderActualList === 'function') window.renderActualList();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+    if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+}
+
+// ============================================
+// データマージ機能
+// ============================================
+
+/**
+ * 見積のマッチングキーを生成
+ * version + task + process + member + workMonths
+ */
+function estimateKey(e) {
+    const months = Array.isArray(e.workMonths) ? e.workMonths.sort().join(',') : (e.workMonth || '');
+    return `${e.version}|${e.task}|${e.process}|${e.member}|${months}`;
+}
+
+/**
+ * 実績のマッチングキーを生成
+ * version + task + process + member + date
+ */
+function actualKey(a) {
+    return `${a.version || ''}|${a.task}|${a.process}|${a.member}|${a.date}`;
+}
+
+/**
+ * 2つのデータ配列を比較して差分を生成
+ * @param {Array} currentArr - 現在のデータ
+ * @param {Array} importArr - インポートデータ
+ * @param {Function} keyFn - キー生成関数
+ * @param {Function} compareFn - 同一キーの値比較関数
+ * @returns {Object} { onlyCurrent, onlyImport, conflicts, identical }
+ */
+function compareArrays(currentArr, importArr, keyFn, compareFn) {
+    const currentMap = new Map();
+    const importMap = new Map();
+
+    currentArr.forEach(item => {
+        const k = keyFn(item);
+        currentMap.set(k, item);
+    });
+    importArr.forEach(item => {
+        const k = keyFn(item);
+        importMap.set(k, item);
+    });
+
+    const onlyCurrent = [];
+    const onlyImport = [];
+    const conflicts = [];
+    const identical = [];
+
+    // Check current items
+    for (const [k, item] of currentMap) {
+        if (!importMap.has(k)) {
+            onlyCurrent.push({ key: k, current: item });
+        } else {
+            const importItem = importMap.get(k);
+            if (compareFn(item, importItem)) {
+                identical.push({ key: k, current: item, imported: importItem });
+            } else {
+                conflicts.push({ key: k, current: item, imported: importItem });
+            }
+        }
+    }
+
+    // Check import-only items
+    for (const [k, item] of importMap) {
+        if (!currentMap.has(k)) {
+            onlyImport.push({ key: k, imported: item });
+        }
+    }
+
+    return { onlyCurrent, onlyImport, conflicts, identical };
+}
+
+/**
+ * 見積の値比較
+ */
+function estimatesEqual(a, b) {
+    return a.hours === b.hours;
+}
+
+/**
+ * 実績の値比較
+ */
+function actualsEqual(a, b) {
+    return a.hours === b.hours;
+}
+
+/**
+ * 見積項目の表示名を生成
+ */
+function estimateLabel(e) {
+    return `${e.version} / ${e.task} / ${e.process} / ${e.member}`;
+}
+
+/**
+ * 実績項目の表示名を生成
+ */
+function actualLabel(a) {
+    return `${a.date} ${a.task} / ${a.process} / ${a.member}`;
+}
+
+/**
+ * マージダイアログを表示
+ * @param {Object} importedData - インポートされたデータ
+ */
+function showMergeDialog(importedData) {
+    const importEstimates = importedData.estimates || [];
+    const importActuals = importedData.actuals || [];
+
+    const estDiff = compareArrays(estimates, importEstimates, estimateKey, estimatesEqual);
+    const actDiff = compareArrays(actuals, importActuals, actualKey, actualsEqual);
+
+    // 既存のダイアログがあれば削除
+    const existing = document.getElementById('mergeModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'mergeModal';
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+
+    let bodyHtml = '';
+
+    // Summary
+    const totalChanges = estDiff.onlyImport.length + estDiff.conflicts.length +
+                          actDiff.onlyImport.length + actDiff.conflicts.length;
+
+    bodyHtml += `<div class="merge-summary">
+        <div class="merge-summary-counts">
+            <span class="merge-summary-item"><span class="merge-summary-dot" style="background: var(--accent);"></span> 追加可能: ${estDiff.onlyImport.length + actDiff.onlyImport.length}件</span>
+            <span class="merge-summary-item"><span class="merge-summary-dot" style="background: #F57F17;"></span> 競合: ${estDiff.conflicts.length + actDiff.conflicts.length}件</span>
+            <span class="merge-summary-item"><span class="merge-summary-dot" style="background: var(--text-muted);"></span> 同一: ${estDiff.identical.length + actDiff.identical.length}件</span>
+            <span class="merge-summary-item"><span class="merge-summary-dot" style="background: var(--info);"></span> 現在のみ: ${estDiff.onlyCurrent.length + actDiff.onlyCurrent.length}件</span>
+        </div>
+    </div>`;
+
+    if (totalChanges === 0) {
+        bodyHtml += `<div class="merge-section" style="text-align: center; padding: 40px 16px;">
+            <div style="font-size: 14px; color: var(--text-secondary);">差分がありません</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">インポートデータと現在のデータは同一です</div>
+        </div>`;
+    }
+
+    // --- 見積: インポートのみ（追加候補） ---
+    if (estDiff.onlyImport.length > 0) {
+        bodyHtml += `<div class="merge-section">
+            <div class="merge-section-title">
+                <span style="color: var(--accent);">見積 - 追加候補</span>
+                <span class="merge-count">${estDiff.onlyImport.length}件</span>
+                <label style="margin-left: auto; font-size: 11px; font-weight: normal; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" class="merge-select-all" data-group="est-add" checked> 全選択
+                </label>
+            </div>`;
+        estDiff.onlyImport.forEach((item, i) => {
+            bodyHtml += `<div class="merge-item">
+                <input type="checkbox" class="merge-cb" data-type="est-add" data-idx="${i}" checked>
+                <div class="merge-item-info">
+                    <div class="merge-item-key">${escapeHtml(estimateLabel(item.imported))}</div>
+                    <div class="merge-item-diff">${formatHours(item.imported.hours)}h</div>
+                </div>
+            </div>`;
+        });
+        bodyHtml += `</div>`;
+    }
+
+    // --- 見積: 競合 ---
+    if (estDiff.conflicts.length > 0) {
+        bodyHtml += `<div class="merge-section">
+            <div class="merge-section-title">
+                <span style="color: #F57F17;">見積 - 競合</span>
+                <span class="merge-count">${estDiff.conflicts.length}件</span>
+            </div>`;
+        estDiff.conflicts.forEach((item, i) => {
+            bodyHtml += `<div class="merge-item">
+                <div class="merge-item-info">
+                    <div class="merge-item-key">${escapeHtml(estimateLabel(item.current))}</div>
+                    <div class="merge-item-diff">現在: ${formatHours(item.current.hours)}h → インポート: ${formatHours(item.imported.hours)}h</div>
+                </div>
+                <select class="merge-action-select" data-type="est-conflict" data-idx="${i}">
+                    <option value="keep">現在を維持</option>
+                    <option value="import">インポートで更新</option>
+                </select>
+            </div>`;
+        });
+        bodyHtml += `</div>`;
+    }
+
+    // --- 実績: インポートのみ（追加候補） ---
+    if (actDiff.onlyImport.length > 0) {
+        bodyHtml += `<div class="merge-section">
+            <div class="merge-section-title">
+                <span style="color: var(--accent);">実績 - 追加候補</span>
+                <span class="merge-count">${actDiff.onlyImport.length}件</span>
+                <label style="margin-left: auto; font-size: 11px; font-weight: normal; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" class="merge-select-all" data-group="act-add" checked> 全選択
+                </label>
+            </div>`;
+        actDiff.onlyImport.forEach((item, i) => {
+            bodyHtml += `<div class="merge-item">
+                <input type="checkbox" class="merge-cb" data-type="act-add" data-idx="${i}" checked>
+                <div class="merge-item-info">
+                    <div class="merge-item-key">${escapeHtml(actualLabel(item.imported))}</div>
+                    <div class="merge-item-diff">${formatHours(item.imported.hours)}h</div>
+                </div>
+            </div>`;
+        });
+        bodyHtml += `</div>`;
+    }
+
+    // --- 実績: 競合 ---
+    if (actDiff.conflicts.length > 0) {
+        bodyHtml += `<div class="merge-section">
+            <div class="merge-section-title">
+                <span style="color: #F57F17;">実績 - 競合</span>
+                <span class="merge-count">${actDiff.conflicts.length}件</span>
+            </div>`;
+        actDiff.conflicts.forEach((item, i) => {
+            bodyHtml += `<div class="merge-item">
+                <div class="merge-item-info">
+                    <div class="merge-item-key">${escapeHtml(actualLabel(item.current))}</div>
+                    <div class="merge-item-diff">現在: ${formatHours(item.current.hours)}h → インポート: ${formatHours(item.imported.hours)}h</div>
+                </div>
+                <select class="merge-action-select" data-type="act-conflict" data-idx="${i}">
+                    <option value="keep">現在を維持</option>
+                    <option value="import">インポートで更新</option>
+                </select>
+            </div>`;
+        });
+        bodyHtml += `</div>`;
+    }
+
+    // --- 同一データ（折りたたみ） ---
+    const identicalCount = estDiff.identical.length + actDiff.identical.length;
+    if (identicalCount > 0) {
+        bodyHtml += `<div class="merge-section">
+            <details>
+                <summary style="cursor: pointer; font-size: 12px; color: var(--text-muted);">同一データ (${identicalCount}件) - 変更なし</summary>
+                <div style="margin-top: 8px;">`;
+        estDiff.identical.slice(0, 20).forEach(item => {
+            bodyHtml += `<div style="font-size: 11px; color: var(--text-muted); padding: 2px 0;">${escapeHtml(estimateLabel(item.current))} - ${formatHours(item.current.hours)}h</div>`;
+        });
+        actDiff.identical.slice(0, 20).forEach(item => {
+            bodyHtml += `<div style="font-size: 11px; color: var(--text-muted); padding: 2px 0;">${escapeHtml(actualLabel(item.current))} - ${formatHours(item.current.hours)}h</div>`;
+        });
+        if (identicalCount > 40) {
+            bodyHtml += `<div style="font-size: 11px; color: var(--text-muted); padding: 4px 0;">...他${identicalCount - 40}件</div>`;
+        }
+        bodyHtml += `</div></details></div>`;
+    }
+
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header modal-theme-ink">
+                <h3>データマージ</h3>
+                <span class="close" onclick="document.getElementById('mergeModal').remove()">&times;</span>
+            </div>
+            <div class="merge-dialog-body">
+                ${bodyHtml}
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button onclick="document.getElementById('mergeModal').remove()" class="btn btn-secondary btn-sm">キャンセル</button>
+                ${totalChanges > 0
+                    ? `<button id="mergeApplyBtn" class="btn btn-sm" style="background: var(--accent); color: #fff;">マージ実行</button>`
+                    : ''}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 全選択チェックボックスのイベント
+    modal.querySelectorAll('.merge-select-all').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const group = cb.dataset.group;
+            modal.querySelectorAll(`.merge-cb[data-type="${group}"]`).forEach(itemCb => {
+                itemCb.checked = cb.checked;
+            });
+        });
+    });
+
+    // マージ実行ボタン
+    const applyBtn = document.getElementById('mergeApplyBtn');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', () => {
+            executeMerge(estDiff, actDiff, importedData, modal);
+        });
+    }
+}
+
+/**
+ * マージを実行
+ */
+function executeMerge(estDiff, actDiff, importedData, modal) {
+    let addedEstimates = 0;
+    let updatedEstimates = 0;
+    let addedActuals = 0;
+    let updatedActuals = 0;
+
+    // 見積 - 追加
+    const estAddCbs = modal.querySelectorAll('.merge-cb[data-type="est-add"]');
+    estAddCbs.forEach(cb => {
+        if (cb.checked) {
+            const idx = parseInt(cb.dataset.idx, 10);
+            const item = estDiff.onlyImport[idx];
+            if (item) {
+                const newEst = { ...item.imported };
+                // IDを新しく振る
+                newEst.id = Date.now() + Math.random();
+                estimates.push(newEst);
+                addedEstimates++;
+            }
+        }
+    });
+
+    // 見積 - 競合解決
+    const estConflictSelects = modal.querySelectorAll('.merge-action-select[data-type="est-conflict"]');
+    estConflictSelects.forEach(select => {
+        if (select.value === 'import') {
+            const idx = parseInt(select.dataset.idx, 10);
+            const item = estDiff.conflicts[idx];
+            if (item) {
+                const existIdx = estimates.findIndex(e => estimateKey(e) === item.key);
+                if (existIdx !== -1) {
+                    estimates[existIdx] = { ...estimates[existIdx], hours: item.imported.hours };
+                    // monthlyHours もインポートから取得（存在する場合）
+                    if (item.imported.monthlyHours) {
+                        estimates[existIdx].monthlyHours = { ...item.imported.monthlyHours };
+                    }
+                    updatedEstimates++;
+                }
+            }
+        }
+    });
+
+    // 実績 - 追加
+    const actAddCbs = modal.querySelectorAll('.merge-cb[data-type="act-add"]');
+    actAddCbs.forEach(cb => {
+        if (cb.checked) {
+            const idx = parseInt(cb.dataset.idx, 10);
+            const item = actDiff.onlyImport[idx];
+            if (item) {
+                const newAct = { ...item.imported };
+                newAct.id = Date.now() + Math.random();
+                actuals.push(newAct);
+                addedActuals++;
+            }
+        }
+    });
+
+    // 実績 - 競合解決
+    const actConflictSelects = modal.querySelectorAll('.merge-action-select[data-type="act-conflict"]');
+    actConflictSelects.forEach(select => {
+        if (select.value === 'import') {
+            const idx = parseInt(select.dataset.idx, 10);
+            const item = actDiff.conflicts[idx];
+            if (item) {
+                const existIdx = actuals.findIndex(a => actualKey(a) === item.key);
+                if (existIdx !== -1) {
+                    actuals[existIdx] = { ...actuals[existIdx], hours: item.imported.hours };
+                    updatedActuals++;
+                }
+            }
+        }
+    });
+
+    modal.remove();
+
+    // ステート更新
+    setEstimates([...estimates]);
+    setActuals([...actuals]);
+
+    saveData(true);
+
+    // 進捗キャッシュクリア
+    clearProgressCache();
+
+    refreshAllUI();
+
+    const parts = [];
+    if (addedEstimates > 0) parts.push(`見積${addedEstimates}件追加`);
+    if (updatedEstimates > 0) parts.push(`見積${updatedEstimates}件更新`);
+    if (addedActuals > 0) parts.push(`実績${addedActuals}件追加`);
+    if (updatedActuals > 0) parts.push(`実績${updatedActuals}件更新`);
+
+    if (parts.length > 0) {
+        showAlert(`マージ完了: ${parts.join('、')}`, true);
+    } else {
+        showAlert('変更はありませんでした', true);
+    }
 }
 
 console.log('✅ モジュール storage.js loaded');

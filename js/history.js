@@ -6,11 +6,14 @@ import * as State from './state.js';
 import * as Utils from './utils.js';
 
 const MAX_HISTORY = 50;
+const MAX_TOAST_HISTORY = 50;
 const STORAGE_KEY_UNDO = 'manhour_undoHistory';
 const STORAGE_KEY_REDO = 'manhour_redoHistory';
+const STORAGE_KEY_TOASTS = 'manhour_toastHistory';
 
 let undoStack = [];
 let redoStack = [];
+let toastHistory = [];
 
 // ============================================
 // スタック操作
@@ -643,6 +646,185 @@ function showScheduleToast(action, mode) {
 }
 
 // ============================================
+// トースト通知履歴
+// ============================================
+
+/**
+ * トースト通知を履歴に記録
+ * @param {string} message - 通知メッセージ
+ * @param {string} type - 'success' | 'error' | 'info' | 'warning'
+ */
+export function recordToast(message, type = 'info') {
+    toastHistory.push({
+        message,
+        type,
+        timestamp: new Date().toISOString()
+    });
+    if (toastHistory.length > MAX_TOAST_HISTORY) {
+        toastHistory.shift();
+    }
+    saveToastHistory();
+}
+
+/**
+ * トースト履歴を取得
+ * @returns {Array} トースト履歴（新しい順）
+ */
+export function getToastHistory() {
+    return [...toastHistory].reverse();
+}
+
+function saveToastHistory() {
+    try {
+        localStorage.setItem(STORAGE_KEY_TOASTS, JSON.stringify(toastHistory));
+    } catch (e) {
+        // 容量超過時は古い履歴を削除
+        while (toastHistory.length > 10) toastHistory.shift();
+        try {
+            localStorage.setItem(STORAGE_KEY_TOASTS, JSON.stringify(toastHistory));
+        } catch (e2) {
+            console.error('Toast history save failed:', e2);
+        }
+    }
+}
+
+function loadToastHistory() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY_TOASTS);
+        toastHistory = data ? JSON.parse(data) : [];
+    } catch (e) {
+        toastHistory = [];
+    }
+}
+
+// ============================================
+// 変更詳細の抽出ヘルパー
+// ============================================
+
+/**
+ * アクションから変更前後の詳細テキストを生成
+ * @param {Object} action - 履歴アクション
+ * @returns {string|null} 詳細テキスト（HTMLエスケープ済み）
+ */
+function getActionDetail(action) {
+    const t = action.type;
+    const d = action.data;
+    if (!d) return null;
+
+    const parts = [];
+
+    // --- 見積 ---
+    if (t === 'estimate_edit' && d.before && d.after) {
+        if (d.before.hours !== d.after.hours) {
+            parts.push(`工数: ${d.before.hours}h → ${d.after.hours}h`);
+        }
+        if (d.before.task !== d.after.task) {
+            parts.push(`対応: ${d.before.task} → ${d.after.task}`);
+        }
+        if (d.before.process !== d.after.process) {
+            parts.push(`工程: ${d.before.process} → ${d.after.process}`);
+        }
+        if (d.before.member !== d.after.member) {
+            parts.push(`担当: ${d.before.member} → ${d.after.member}`);
+        }
+        if (d.before.version !== d.after.version) {
+            parts.push(`版数: ${d.before.version} → ${d.after.version}`);
+        }
+        const beforeMonths = (d.before.workMonths || []).join(',');
+        const afterMonths = (d.after.workMonths || []).join(',');
+        if (beforeMonths !== afterMonths) {
+            parts.push(`作業月: ${beforeMonths || '未設定'} → ${afterMonths || '未設定'}`);
+        }
+    }
+
+    // --- 見積追加 ---
+    if ((t === 'estimate_add' || t === 'estimate_add_other') && d.added) {
+        const items = Array.isArray(d.added) ? d.added : [d.added];
+        items.forEach(item => {
+            parts.push(`${item.version} / ${item.task} / ${item.process} / ${item.member}: ${item.hours}h`);
+        });
+    }
+
+    // --- 見積削除 ---
+    if (t === 'estimate_delete' && d.deleted) {
+        const items = Array.isArray(d.deleted) ? d.deleted : [d.deleted];
+        items.slice(0, 3).forEach(item => {
+            parts.push(`${item.version} / ${item.task} / ${item.process}: ${item.hours}h`);
+        });
+        if (items.length > 3) parts.push(`...他${items.length - 3}件`);
+    }
+
+    // --- タスク削除 ---
+    if (t === 'task_delete' && d.deleted) {
+        const items = Array.isArray(d.deleted) ? d.deleted : [d.deleted];
+        const totalHours = items.reduce((sum, item) => sum + (item.hours || 0), 0);
+        parts.push(`${items.length}件の見積 (計${totalHours}h)`);
+    }
+
+    // --- 実績編集 ---
+    if (t === 'actual_edit' && d.before && d.after) {
+        if (d.isNew) {
+            parts.push(`${d.after.date} ${d.after.task} / ${d.after.process}: ${d.after.hours}h`);
+        } else {
+            if (d.before.hours !== d.after.hours) {
+                parts.push(`工数: ${d.before.hours}h → ${d.after.hours}h`);
+            }
+            if (d.before.task !== d.after.task) {
+                parts.push(`対応: ${d.before.task} → ${d.after.task}`);
+            }
+            if (d.before.process !== d.after.process) {
+                parts.push(`工程: ${d.before.process} → ${d.after.process}`);
+            }
+            if (d.before.member !== d.after.member) {
+                parts.push(`担当: ${d.before.member} → ${d.after.member}`);
+            }
+            if (d.before.date !== d.after.date) {
+                parts.push(`日付: ${d.before.date} → ${d.after.date}`);
+            }
+        }
+    }
+
+    // --- 実績追加 ---
+    if (t === 'actual_add' && d.added) {
+        parts.push(`${d.added.date} ${d.added.task} / ${d.added.process} / ${d.added.member}: ${d.added.hours}h`);
+    }
+
+    // --- 実績削除 ---
+    if (t === 'actual_delete' && d.deleted) {
+        parts.push(`${d.deleted.date} ${d.deleted.task} / ${d.deleted.process}: ${d.deleted.hours}h`);
+    }
+
+    // --- 見込残存 ---
+    if (t === 'remaining_edit' && d.before && d.after) {
+        const oldH = d.before ? d.before.remainingHours : '(新規)';
+        const newH = d.after.remainingHours;
+        parts.push(`残存: ${oldH}h → ${newH}h`);
+    } else if (t === 'remaining_edit' && !d.before && d.after) {
+        parts.push(`残存: (新規) → ${d.after.remainingHours}h`);
+    }
+
+    // --- 一括編集 ---
+    if (t === 'estimate_bulk_edit' || t === 'task_edit') {
+        const count = (d.beforeEstimates || []).length;
+        if (count > 0) parts.push(`${count}件の見積を変更`);
+    }
+
+    // --- スケジュール ---
+    if (t === 'schedule_move' && d.oldStartDate && d.newStartDate) {
+        parts.push(`${d.oldStartDate} → ${d.newStartDate}`);
+    }
+    if (t === 'schedule_status_change') {
+        parts.push(`${d.oldStatus || '?'} → ${d.newStatus || '?'}`);
+    }
+    if (t === 'schedule_member_change') {
+        const oldM = d.oldScheduleState?.member || '?';
+        parts.push(`${oldM} → ${d.newMember || '?'}`);
+    }
+
+    return parts.length > 0 ? parts.join('\n') : null;
+}
+
+// ============================================
 // localStorage 永続化
 // ============================================
 
@@ -674,6 +856,7 @@ export function loadHistory() {
         undoStack = [];
         redoStack = [];
     }
+    loadToastHistory();
 }
 
 // ============================================
@@ -725,13 +908,105 @@ function refreshHistoryModalIfOpen() {
 export function openHistoryModal() {
     const modal = document.getElementById('historyModal');
     if (!modal) return;
-    renderHistoryList();
+
+    // タブUIを挿入（まだない場合）
+    ensureHistoryTabs();
+    switchHistoryTab('changes');
     modal.style.display = 'flex';
+}
+
+function ensureHistoryTabs() {
+    const modal = document.getElementById('historyModal');
+    if (!modal) return;
+    const body = modal.querySelector('.modal-body');
+    if (!body) return;
+
+    // 既にタブが存在する場合はスキップ
+    if (modal.querySelector('.history-tabs')) return;
+
+    // body の前にタブバーを挿入
+    const tabBar = document.createElement('div');
+    tabBar.className = 'history-tabs';
+    tabBar.innerHTML = `
+        <button class="history-tab active" data-tab="changes" onclick="window.switchHistoryTab('changes')">変更履歴</button>
+        <button class="history-tab" data-tab="notifications" onclick="window.switchHistoryTab('notifications')">通知履歴</button>
+    `;
+    body.parentNode.insertBefore(tabBar, body);
+
+    // 通知履歴コンテナを追加
+    const notifContainer = document.createElement('div');
+    notifContainer.id = 'notificationHistoryList';
+    notifContainer.style.cssText = 'max-height: 60vh; overflow-y: auto; padding: 0; display: none;';
+    body.parentNode.insertBefore(notifContainer, body.nextSibling);
+}
+
+/**
+ * 履歴モーダルのタブを切り替え
+ */
+export function switchHistoryTab(tab) {
+    const modal = document.getElementById('historyModal');
+    if (!modal) return;
+
+    // タブボタンの active 切り替え
+    modal.querySelectorAll('.history-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+
+    const historyList = document.getElementById('historyList');
+    const notifList = document.getElementById('notificationHistoryList');
+
+    if (tab === 'changes') {
+        if (historyList) historyList.style.display = '';
+        if (notifList) notifList.style.display = 'none';
+        renderHistoryList();
+    } else {
+        if (historyList) historyList.style.display = 'none';
+        if (notifList) notifList.style.display = '';
+        renderNotificationHistory();
+    }
 }
 
 export function closeHistoryModal() {
     const modal = document.getElementById('historyModal');
     if (modal) modal.style.display = 'none';
+}
+
+function renderNotificationHistory() {
+    const container = document.getElementById('notificationHistoryList');
+    if (!container) return;
+
+    const toasts = getToastHistory();
+
+    if (toasts.length === 0) {
+        container.innerHTML = `<div class="history-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div>通知履歴はありません</div>
+        </div>`;
+        return;
+    }
+
+    const typeIcons = {
+        success: { icon: '&#10003;', cls: 'history-icon-add' },
+        error: { icon: '&#10005;', cls: 'history-icon-delete' },
+        warning: { icon: '&#9888;', cls: 'history-icon-remaining' },
+        info: { icon: 'i', cls: 'history-icon-edit' }
+    };
+
+    let html = '';
+    toasts.forEach(toast => {
+        const time = formatTime(toast.timestamp);
+        const { icon, cls } = typeIcons[toast.type] || typeIcons.info;
+        html += `<div class="history-item">
+            <span class="history-icon ${cls}" style="font-size: 14px; display: flex; align-items: center; justify-content: center;">${icon}</span>
+            <div class="history-info">
+                <div class="history-desc">${Utils.escapeHtml(toast.message)}</div>
+                <div class="history-time">${time}</div>
+            </div>
+            <span class="toast-type-badge toast-type-${toast.type}">${toast.type}</span>
+        </div>`;
+    });
+
+    container.innerHTML = html;
 }
 
 function renderHistoryList() {
@@ -767,6 +1042,13 @@ function renderHistoryList() {
         return { svg: icons.edit, cls: 'history-icon-edit' };
     }
 
+    function renderDetailHtml(item) {
+        const detail = getActionDetail(item);
+        if (!detail) return '';
+        const lines = detail.split('\n').map(l => Utils.escapeHtml(l));
+        return `<div class="history-detail">${lines.join('<br>')}</div>`;
+    }
+
     let html = '';
 
     // Redo items (undone actions, shown at top, dimmed, with redo buttons)
@@ -778,6 +1060,7 @@ function renderHistoryList() {
             <span class="history-icon ${cls}">${svg}</span>
             <div class="history-info">
                 <div class="history-desc">${Utils.escapeHtml(item.description || item.type)}</div>
+                ${renderDetailHtml(item)}
                 <div class="history-time">${time}（取り消し済み）</div>
             </div>
             ${isLatestRedo
@@ -801,6 +1084,7 @@ function renderHistoryList() {
             <span class="history-icon ${cls}">${svg}</span>
             <div class="history-info">
                 <div class="history-desc">${Utils.escapeHtml(item.description || item.type)}</div>
+                ${renderDetailHtml(item)}
                 <div class="history-time">${time}</div>
             </div>
             ${isLatest
