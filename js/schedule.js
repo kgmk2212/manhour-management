@@ -47,10 +47,11 @@ export function initScheduleModule() {
         openScheduleDetailModal(schedule.id);
     });
     
-    // ドラッグ&ドロップハンドラをセットアップ
-    setupDragAndDrop((scheduleId, newStartDate) => {
-        handleScheduleDrag(scheduleId, newStartDate);
-    });
+    // ドラッグ&ドロップハンドラをセットアップ（水平: 日付変更、垂直: 担当者変更）
+    setupDragAndDrop(
+        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
+    );
     
     // ツールチップハンドラをセットアップ
     setupTooltipHandler();
@@ -58,7 +59,8 @@ export function initScheduleModule() {
     // タッチイベントハンドラをセットアップ（モバイル対応）
     setupTouchHandlers(
         (schedule) => { openScheduleDetailModal(schedule.id); },
-        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); }
+        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
     );
 
     // スケジュールタブ固有のキーボードショートカットをセットアップ
@@ -1673,6 +1675,72 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     });
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * ドラッグによる担当者変更を処理（縦方向D&D）
+ * スケジュールと対応する見積の担当者を同時に更新
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} newMember - 新しい担当者名
+ * @param {string} newStartDate - 新しい開始日（YYYY-MM-DD）
+ */
+export function handleScheduleMemberDrag(scheduleId, newMember, newStartDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    const oldMember = schedule.member;
+    if (oldMember === newMember) return;
+
+    const oldStartDate = schedule.startDate;
+    const oldEndDate = schedule.endDate;
+
+    // 新しい担当者の営業日を考慮して終了日を再計算
+    const newEndDate = calculateEndDate(newStartDate, schedule.estimatedHours, newMember);
+
+    // 対応する見積を検索
+    const estimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === oldMember
+    );
+
+    // Undo用に記録
+    pushAction({
+        type: 'schedule_member_change',
+        description: `担当者変更: ${schedule.task}（${schedule.process}）${oldMember} → ${newMember}`,
+        data: {
+            scheduleId,
+            oldMember,
+            newMember,
+            oldStartDate,
+            newStartDate,
+            oldEndDate,
+            newEndDate,
+            estimateId: estimate ? estimate.id : null,
+            oldEstimate: estimate ? { ...estimate } : null
+        }
+    });
+
+    // スケジュールを更新
+    updateSchedule(scheduleId, {
+        member: newMember,
+        startDate: newStartDate,
+        endDate: newEndDate
+    });
+
+    // 見積の担当者も更新
+    if (estimate) {
+        const estimateIndex = estimates.findIndex(e => e.id === estimate.id);
+        if (estimateIndex !== -1) {
+            estimates[estimateIndex] = { ...estimates[estimateIndex], member: newMember };
+            if (typeof window.saveData === 'function') {
+                window.saveData();
+            }
+        }
+    }
+
+    showToast(`担当者を変更: ${oldMember} → ${newMember}`, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**

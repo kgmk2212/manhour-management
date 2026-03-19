@@ -13,6 +13,7 @@
 |----------|------|----------|
 | `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
 | `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須） |
+| `experiment/fixes` | 一括修正 | redesignベースの各種修正をまとめて試験 |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
 
 > **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
@@ -25,6 +26,7 @@
 |-------------|---------|------|
 | `manhour-management` | `main` | 安定版（メイン） |
 | `manhour-redesign` | `experiment/redesign` | リデザイン実験 |
+| `manhour-fixes` | `experiment/fixes` | 一括修正 |
 | `manhour-experiment` | `experiment/sandbox` | 実験用 |
 
 ### 作業前の確認事項
