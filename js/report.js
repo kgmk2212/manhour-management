@@ -1069,6 +1069,52 @@ export function getAnalysisGradients() {
 }
 
 /**
+ * レポートの人月換算基準（営業日数）を計算する
+ * @param {string} selectedMonth - 選択された月（'YYYY-MM' or 'all'）
+ * @param {Array} estimateData - 見積データ配列
+ * @returns {Object} { workingDaysPerMonth, workDaysLabel }
+ */
+function calculateReportConversionBasis(selectedMonth, estimateData) {
+    let workingDaysPerMonth = 20;
+    let workDaysLabel = 'デフォルト20日';
+
+    if (selectedMonth && selectedMonth !== 'all') {
+        const [year, month] = selectedMonth.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        if (calculatedDays > 0) {
+            workingDaysPerMonth = calculatedDays;
+            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        }
+    } else {
+        const workMonthsSet = new Set();
+        estimateData.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths && est.workMonths.length > 0) {
+                est.workMonths.forEach(m => workMonthsSet.add(m));
+            }
+        });
+
+        if (workMonthsSet.size > 0) {
+            let totalDays = 0;
+            workMonthsSet.forEach(m => {
+                const [y, mo] = m.split('-');
+                totalDays += getWorkingDays(parseInt(y), parseInt(mo));
+            });
+            workingDaysPerMonth = Math.round(totalDays / workMonthsSet.size);
+            if (workMonthsSet.size === 1) {
+                const singleMonth = [...workMonthsSet][0];
+                const [y, mo] = singleMonth.split('-');
+                workDaysLabel = `${y}年${parseInt(mo)}月の営業日数（${workingDaysPerMonth}日）`;
+            } else {
+                workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
+            }
+        }
+    }
+
+    return { workingDaysPerMonth, workDaysLabel };
+}
+
+/**
  * レポート用のフィルタリング済みデータを取得
  * @param {string} filterType - フィルタタイプ（'month' | 'version'）
  * @param {string} selectedMonth - 選択された月
@@ -1228,12 +1274,7 @@ export function updateReport() {
     updateReportTitle(filterType, selectedMonth, selectedVersion);
 
     // 月間稼働日数を取得
-    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
-    let workingDaysPerMonth = 20;
-    if (filterType === 'month' && selectedMonth !== 'all') {
-        const [year, month] = selectedMonth.split('-');
-        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
-    }
+    const { workingDaysPerMonth } = calculateReportConversionBasis(selectedMonth, filteredEstimates);
 
     // サマリー表示
     displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
@@ -2070,15 +2111,6 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
     // window経由で関数を呼び出し
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
-
-    // 選択月の実働日数を取得
-    const selectedMonth = document.getElementById('reportMonth').value;
-    let workingDaysPerMonth = 20;
-    if (selectedMonth !== 'all') {
-        const [year, month] = selectedMonth.split('-');
-        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
-    }
 
     // 版数ごとにグループ化
     const versionGroups = {};
@@ -2263,42 +2295,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     let hasUnassigned = false;
 
     // Calculate Working Days for Conversion Basis
-    let workingDaysPerMonth = 20;
-    let workDaysLabel = 'デフォルト20日';
-    if (selectedMonth && selectedMonth !== 'all') {
-        // 特定の月が選択されている場合
-        const [year, month] = selectedMonth.split('-');
-        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-        if (calculatedDays > 0) {
-            workingDaysPerMonth = calculatedDays;
-            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-        }
-    } else {
-        // 全期間/版数別の場合: 見積もりに含まれる作業月の平均営業日数を計算
-        const workMonthsSet = new Set();
-        filteredEstimates.forEach(e => {
-            const est = normalizeEstimate(e);
-            if (est.workMonths && est.workMonths.length > 0) {
-                est.workMonths.forEach(m => workMonthsSet.add(m));
-            }
-        });
-
-        if (workMonthsSet.size > 0) {
-            let totalDays = 0;
-            workMonthsSet.forEach(m => {
-                const [year, month] = m.split('-');
-                totalDays += getWorkingDays(parseInt(year), parseInt(month));
-            });
-            workingDaysPerMonth = Math.round(totalDays / workMonthsSet.size);
-            if (workMonthsSet.size === 1) {
-                const singleMonth = [...workMonthsSet][0];
-                const [year, month] = singleMonth.split('-');
-                workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-            } else {
-                workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
-            }
-        }
-    }
+    const { workingDaysPerMonth, workDaysLabel } = calculateReportConversionBasis(selectedMonth, filteredEstimates);
 
     // Update Conversion Params Header
     const conversionParams = document.getElementById('reportConversionParams');
