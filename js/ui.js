@@ -401,7 +401,7 @@ export function initTabIndicator() {
     let savedTab = 'quick';
     try {
         const stored = localStorage.getItem('manhour_currentTab');
-        if (stored && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(stored)) {
+        if (stored && TAB_ORDER.includes(stored)) {
             savedTab = stored;
         }
     } catch (e) {
