@@ -2347,10 +2347,9 @@ function finalizeBarDrop(x, y) {
 
     saveData();
     pushAction({
-        type: 'editActual',
-        id: actual.id,
-        before,
-        after: { ...actual }
+        type: 'actual_edit',
+        description: `実績移動: ${actual.task} → ${newMember} ${newDate}`,
+        data: { before, after: { ...actual }, isNew: false }
     });
 
     const changes = [];
@@ -2477,10 +2476,9 @@ function finalizeBlockResize() {
         resizeState.actual.hours = newHours;
         saveData();
         pushAction({
-            type: 'editActual',
-            id: resizeState.actual.id,
-            before,
-            after: { ...resizeState.actual }
+            type: 'actual_edit',
+            description: `工数変更: ${resizeState.actual.task} ${resizeState.origHours}h → ${newHours}h`,
+            data: { before, after: { ...resizeState.actual }, isNew: false }
         });
         showToast(`工数を${formatHours(newHours)}hに変更`);
         renderActualTimeline();
@@ -2515,8 +2513,9 @@ function createActual(member, date, version, task, process, hours) {
     actuals.push(newActual);
     saveData();
     pushAction({
-        type: 'addActual',
-        data: { ...newActual }
+        type: 'actual_add',
+        description: `実績追加: ${task} (${process}) ${hours}h`,
+        data: { added: { ...newActual } }
     });
 
     showToast(`実績を登録: ${task} ${formatHours(hours)}h`);
@@ -2540,8 +2539,9 @@ function deleteActualById(id) {
     const deleted = actuals.splice(idx, 1)[0];
     saveData();
     pushAction({
-        type: 'deleteActual',
-        data: { ...deleted }
+        type: 'actual_delete',
+        description: `実績削除: ${deleted.task} (${deleted.process}) ${deleted.hours}h`,
+        data: { deleted: { ...deleted } }
     });
 
     showToast('実績を削除しました');
