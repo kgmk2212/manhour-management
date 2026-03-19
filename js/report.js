@@ -28,7 +28,8 @@ import {
     setDevFeaturesEnabled,
     matrixEstActFormat,
 
-    currentThemeColor
+    currentThemeColor,
+    multiFilterState
 } from './state.js';
 
 import {
@@ -1083,28 +1084,29 @@ export function getAnalysisGradients() {
  * @param {string} selectedVersion - 選択された版数
  * @returns {Object} { filteredActuals, filteredEstimates }
  */
-function filterReportData(filterType, selectedMonth, selectedVersion) {
+function filterReportData(filterType, selectedMonth, selectedVersion, multiMonths = null, multiVersions = null) {
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     let filteredActuals = actuals;
     // 最初に見積データを正規化
     let filteredEstimates = estimates.map(e => normalizeEstimate(e));
 
-    // 版数フィルタを適用
-    if (selectedVersion !== 'all') {
+    // 版数フィルタを適用（複数選択対応）
+    const versionValues = multiVersions || (selectedVersion !== 'all' ? [selectedVersion] : null);
+    if (versionValues) {
         // 選択された版数の作業予定月を収集
         const versionMonths = new Set();
-        filteredEstimates.filter(e => e.version === selectedVersion).forEach(e => {
+        filteredEstimates.filter(e => versionValues.includes(e.version)).forEach(e => {
             if (e.workMonths) {
                 e.workMonths.forEach(m => versionMonths.add(m));
             }
         });
         // 実績の日付からも月を収集
-        filteredActuals.filter(a => a.version === selectedVersion).forEach(a => {
+        filteredActuals.filter(a => versionValues.includes(a.version)).forEach(a => {
             if (a.date) versionMonths.add(a.date.substring(0, 7));
         });
 
         filteredEstimates = filteredEstimates.filter(e => {
-            if (e.version === selectedVersion) return true;
+            if (versionValues.includes(e.version)) return true;
             // その他工数は、版の作業予定月と重なるものを含める
             if (isOtherWork(e)) {
                 if (!e.workMonths || e.workMonths.length === 0) return true;
@@ -1114,7 +1116,7 @@ function filterReportData(filterType, selectedMonth, selectedVersion) {
         });
 
         filteredActuals = filteredActuals.filter(a => {
-            if (a.version === selectedVersion) return true;
+            if (versionValues.includes(a.version)) return true;
             // その他工数の実績は、版の作業予定月内のものを含める
             if (isOtherWork(a)) {
                 if (!a.date) return true;
@@ -1124,29 +1126,94 @@ function filterReportData(filterType, selectedMonth, selectedVersion) {
         });
     }
 
-    // 月フィルタを適用
-    if (selectedMonth !== 'all') {
+    // 月フィルタを適用（複数選択対応）
+    const monthValues = multiMonths || (selectedMonth !== 'all' ? [selectedMonth] : null);
+    if (monthValues) {
         filteredActuals = filteredActuals.filter(a => {
-            return a.date && a.date.startsWith(selectedMonth);
+            return a.date && monthValues.some(m => a.date.startsWith(m));
         });
 
         filteredEstimates = filteredEstimates.filter(e => {
             if (!e.workMonths || e.workMonths.length === 0) {
                 return true;
             }
-            return e.workMonths.includes(selectedMonth);
+            return e.workMonths.some(m => monthValues.includes(m));
         }).map(e => {
-            let hoursForMonth = 0;
-            if (e.monthlyHours && e.monthlyHours[selectedMonth] !== undefined) {
-                hoursForMonth = e.monthlyHours[selectedMonth];
-            } else if (!e.workMonths || e.workMonths.length === 0) {
-                hoursForMonth = e.hours;
+            // 複数月の場合はマッチする月の工数を合算
+            if (monthValues.length === 1) {
+                const month = monthValues[0];
+                let hoursForMonth = 0;
+                if (e.monthlyHours && e.monthlyHours[month] !== undefined) {
+                    hoursForMonth = e.monthlyHours[month];
+                } else if (!e.workMonths || e.workMonths.length === 0) {
+                    hoursForMonth = e.hours;
+                }
+                return { ...e, hours: hoursForMonth };
+            } else {
+                // 複数月: マッチする月の工数を合算
+                let totalHours = 0;
+                if (e.monthlyHours) {
+                    monthValues.forEach(month => {
+                        if (e.monthlyHours[month] !== undefined) {
+                            totalHours += e.monthlyHours[month];
+                        }
+                    });
+                }
+                if (totalHours === 0 && (!e.workMonths || e.workMonths.length === 0)) {
+                    totalHours = e.hours;
+                }
+                return { ...e, hours: totalHours > 0 ? totalHours : e.hours };
             }
-            return { ...e, hours: hoursForMonth };
         });
     }
 
     return { filteredActuals, filteredEstimates };
+}
+
+/**
+ * レポート用の人月換算基準（営業日数）を計算する
+ * @param {string} selectedMonth - 選択された月 (例: '2026-03' or 'all')
+ * @param {Array} estimateData - 見積データ配列
+ * @returns {{ workingDaysPerMonth: number, workDaysLabel: string }}
+ */
+function calculateReportConversionBasis(selectedMonth, estimateData) {
+    let workingDaysPerMonth = 20;
+    let workDaysLabel = 'デフォルト20日';
+
+    if (selectedMonth && selectedMonth !== 'all') {
+        const [year, month] = selectedMonth.split('-');
+        const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
+        if (calculatedDays > 0) {
+            workingDaysPerMonth = calculatedDays;
+            workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
+        }
+    } else {
+        const workMonthsSet = new Set();
+        estimateData.forEach(e => {
+            const est = normalizeEstimate(e);
+            if (est.workMonths && est.workMonths.length > 0) {
+                est.workMonths.forEach(m => workMonthsSet.add(m));
+            }
+        });
+
+        if (workMonthsSet.size > 0) {
+            let totalDays = 0;
+            workMonthsSet.forEach(m => {
+                const [y, mo] = m.split('-');
+                totalDays += getWorkingDays(parseInt(y), parseInt(mo));
+            });
+            workingDaysPerMonth = Math.round(totalDays / workMonthsSet.size);
+            if (workMonthsSet.size === 1) {
+                const singleMonth = [...workMonthsSet][0];
+                const [y, mo] = singleMonth.split('-');
+                workDaysLabel = `${y}年${parseInt(mo)}月の営業日数（${workingDaysPerMonth}日）`;
+            } else {
+                workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
+            }
+        }
+    }
+
+    return { workingDaysPerMonth, workDaysLabel };
 }
 
 /**
@@ -1398,19 +1465,18 @@ export function updateReport() {
     const defaultViewTypeElement = document.getElementById('defaultReportViewType');
     const viewType = defaultViewTypeElement ? defaultViewTypeElement.value : 'matrix';
 
-    // フィルタリング
-    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
+    // 複数選択状態をチェック
+    const multiMonths = multiFilterState.reportMonths;
+    const multiVersions = multiFilterState.reportVersions;
+
+    // フィルタリング（複数選択対応）
+    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion, multiMonths, multiVersions);
 
     // タイトル更新
     updateReportTitle(filterType, selectedMonth, selectedVersion);
 
-    // 月間稼働日数を取得
-    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
-    let workingDaysPerMonth = 20;
-    if (filterType === 'month' && selectedMonth !== 'all') {
-        const [year, month] = selectedMonth.split('-');
-        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
-    }
+    // 月間稼働日数を取得（営業日数ベース）
+    const { workingDaysPerMonth } = calculateReportConversionBasis(selectedMonth, filteredEstimates);
 
     // サマリー表示
     displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
@@ -1463,6 +1529,9 @@ export function updateReport() {
             });
         });
     }
+
+    // バーチャートのツールチップを初期化
+    initBarChartTooltips(container);
 
     renderMemberReport(filteredActuals, filteredEstimates);
     renderVersionReport(filteredActuals, filteredEstimates);
@@ -1855,6 +1924,10 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
 
     const maxHours = Math.max(0, ...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
 
+    // 全体合計（パーセンテージ表示用）
+    const totalEstimate = Object.values(processSummary).reduce((s, p) => s + p.estimate, 0);
+    const totalActual = Object.values(processSummary).reduce((s, p) => s + p.actual, 0);
+
     let html = '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
     html += '<h4 style="margin: 0 0 10px 0; color: #495057; font-size: 16px;">工程別見積vs実績</h4>';
 
@@ -1867,32 +1940,40 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         const data = processSummary[proc];
         const estWidth = maxHours > 0 ? (data.estimate / maxHours * 100).toFixed(1) : 0;
         const actWidth = maxHours > 0 ? (data.actual / maxHours * 100).toFixed(1) : 0;
+        const estPct = totalEstimate > 0 ? (data.estimate / totalEstimate * 100).toFixed(1) : '0.0';
+        const actPct = totalActual > 0 ? (data.actual / totalActual * 100).toFixed(1) : '0.0';
+        const diff = data.actual - data.estimate;
+        const diffStr = (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h';
 
         // バーが短い場合（30%未満）はラベルをバーの右外側に表示
         const estLabelOutside = parseFloat(estWidth) < 30;
         const actLabelOutside = parseFloat(actWidth) < 30;
 
+        // ツールチップ用データ属性
+        const estTooltipText = `${proc} 見積: ${data.estimate.toFixed(1)}h (全体の${estPct}%)`;
+        const actTooltipText = `${proc} 実績: ${data.actual.toFixed(1)}h (全体の${actPct}%) | 差異: ${diffStr}`;
+
         html += '<div style="margin-bottom: 15px;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
         html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 5px 10px; align-items: center;">';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">見積</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible;">`;
-        html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; min-width: ${data.estimate > 0 ? '2px' : '0'};">`;
+        html += `<div class="report-bar-container" data-bar-tooltip="${escapeHtml(estTooltipText)}" style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible; cursor: pointer;">`;
+        html += `<div class="report-bar-fill" style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; min-width: ${data.estimate > 0 ? '2px' : '0'}; transition: filter 0.15s;">`;
         html += '</div>';
         if (estLabelOutside) {
-            html += `<span style="position: absolute; left: calc(${estWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap;">${data.estimate.toFixed(1)}h</span>`;
+            html += `<span style="position: absolute; left: calc(${estWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap; pointer-events: none;">${data.estimate.toFixed(1)}h</span>`;
         } else {
-            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(estWidth) > 50 ? 'white' : '#495057'};">${data.estimate.toFixed(1)}h</span>`;
+            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(estWidth) > 50 ? 'white' : '#495057'}; pointer-events: none;">${data.estimate.toFixed(1)}h</span>`;
         }
         html += '</div>';
         html += '<div style="text-align: right; font-size: 13px; color: #6c757d;">実績</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible;">`;
-        html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; min-width: ${data.actual > 0 ? '2px' : '0'};">`;
+        html += `<div class="report-bar-container" data-bar-tooltip="${escapeHtml(actTooltipText)}" style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative; overflow: visible; cursor: pointer;">`;
+        html += `<div class="report-bar-fill" style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; min-width: ${data.actual > 0 ? '2px' : '0'}; transition: filter 0.15s;">`;
         html += '</div>';
         if (actLabelOutside) {
-            html += `<span style="position: absolute; left: calc(${actWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap;">${data.actual.toFixed(1)}h</span>`;
+            html += `<span style="position: absolute; left: calc(${actWidth}% + 5px); top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap; pointer-events: none;">${data.actual.toFixed(1)}h</span>`;
         } else {
-            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(actWidth) > 50 ? 'white' : '#495057'};">${data.actual.toFixed(1)}h</span>`;
+            html += `<span style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: ${parseFloat(actWidth) > 50 ? 'white' : '#495057'}; pointer-events: none;">${data.actual.toFixed(1)}h</span>`;
         }
         html += '</div>';
         html += '</div></div>';
@@ -1949,27 +2030,33 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
         const estWidth = maxMonthlyHours > 0 ? (data.estimate / maxMonthlyHours * 100).toFixed(1) : 0;
         const actWidth = maxMonthlyHours > 0 ? (data.actual / maxMonthlyHours * 100).toFixed(1) : 0;
         const diff = data.actual - data.estimate;
+        const diffStr = (diff > 0 ? '+' : '') + diff.toFixed(1) + 'h';
+        const accuracy = data.estimate > 0 ? (data.actual / data.estimate * 100).toFixed(1) : '-';
+        const monthLabel = `${year}年${parseInt(monthNum)}月`;
+
+        const estTooltipText = `${monthLabel} 見積: ${data.estimate.toFixed(1)}h`;
+        const actTooltipText = `${monthLabel} 実績: ${data.actual.toFixed(1)}h | 差異: ${diffStr}${accuracy !== '-' ? ' | 精度: ' + accuracy + '%' : ''}`;
 
         html += '<div style="margin-bottom: 12px;">';
-        html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${year}年${parseInt(monthNum)}月</div>`;
+        html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${monthLabel}</div>`;
         html += '<div style="display: flex; gap: 10px;">';
         html += '<div style="flex: 1;">';
         html += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
         html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">見積</span>';
-        html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
-        html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
+        html += `<div class="report-bar-container" data-bar-tooltip="${escapeHtml(estTooltipText)}" style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px; cursor: pointer;">`;
+        html += `<div class="report-bar-fill" style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; transition: filter 0.15s;"></div>`;
         html += '</div>';
         html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
         html += '</div>';
         html += '<div style="display: flex; align-items: center; gap: 5px;">';
         html += '<span style="font-size: 12px; color: #6c757d; min-width: 40px;">実績</span>';
-        html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
-        html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
+        html += `<div class="report-bar-container" data-bar-tooltip="${escapeHtml(actTooltipText)}" style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px; cursor: pointer;">`;
+        html += `<div class="report-bar-fill" style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; transition: filter 0.15s;"></div>`;
         html += '</div>';
         html += `<span style="font-size: 12px; color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
         html += '</div>';
         html += '</div>';
-        html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+        html += `<div style="min-width: 60px; text-align: right; font-size: 13px; color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diffStr}</div>`;
         html += '</div></div>';
     });
 
@@ -2491,15 +2578,10 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
 
     // window経由で関数を呼び出し
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
-    const getWorkingDays = typeof window.getWorkingDays === 'function' ? window.getWorkingDays : (() => 20);
 
-    // 選択月の実働日数を取得
+    // 営業日数ベースで稼働日数を取得
     const selectedMonth = document.getElementById('reportMonth').value;
-    let workingDaysPerMonth = 20;
-    if (selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')) {
-        const [year, month] = selectedMonth.split('-');
-        workingDaysPerMonth = getWorkingDays(parseInt(year), parseInt(month));
-    }
+    const { workingDaysPerMonth } = calculateReportConversionBasis(selectedMonth, filteredEstimates);
 
     // 版数ごとにグループ化
     const versionGroups = {};
@@ -2727,44 +2809,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     let hasUnassigned = false;
 
     // Calculate Working Days for Conversion Basis
-    let workingDaysPerMonth = 20;
-    let workDaysLabel = 'デフォルト20日';
-    if (selectedMonth && selectedMonth !== 'all' && selectedMonth.includes('-')) {
-        // 特定の月が選択されている場合
-        const [year, month] = selectedMonth.split('-');
-        if (year && month) {
-            const calculatedDays = getWorkingDays(parseInt(year), parseInt(month));
-            if (calculatedDays > 0) {
-                workingDaysPerMonth = calculatedDays;
-                workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-            }
-        }
-    } else {
-        // 全期間/版数別の場合: 見積もりに含まれる作業月の平均営業日数を計算
-        const workMonthsSet = new Set();
-        filteredEstimates.forEach(e => {
-            const est = normalizeEstimate(e);
-            if (est.workMonths && est.workMonths.length > 0) {
-                est.workMonths.forEach(m => workMonthsSet.add(m));
-            }
-        });
-
-        if (workMonthsSet.size > 0) {
-            let totalDays = 0;
-            workMonthsSet.forEach(m => {
-                const [year, month] = m.split('-');
-                totalDays += getWorkingDays(parseInt(year), parseInt(month));
-            });
-            workingDaysPerMonth = Math.round(totalDays / workMonthsSet.size);
-            if (workMonthsSet.size === 1) {
-                const singleMonth = [...workMonthsSet][0];
-                const [year, month] = singleMonth.split('-');
-                workDaysLabel = `${year}年${parseInt(month)}月の営業日数（${workingDaysPerMonth}日）`;
-            } else {
-                workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
-            }
-        }
-    }
+    const { workingDaysPerMonth, workDaysLabel } = calculateReportConversionBasis(selectedMonth, filteredEstimates);
 
     // Update Conversion Params Header
     const conversionParams = document.getElementById('reportConversionParams');
@@ -2978,7 +3023,10 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
                         contentHtml += `<td style="text-align: center; ${bgColor ? 'background:' + bgColor + ';' : devStyle} cursor: pointer;" ${onclick} ${title}>${cellInner}</td>`;
                     } else {
-                        contentHtml += `<td style="text-align: center; color: #ccc;">-</td>`;
+                        const emptyV = escapeForHandler(version);
+                        const emptyT = escapeForHandler(taskGroup.task);
+                        const emptyP = escapeForHandler(proc);
+                        contentHtml += `<td style="text-align: center; color: #ccc; cursor: pointer;" onclick="openMatrixCellEditor(event, '${emptyV}', '${emptyT}', '${emptyP}')" title="クリックで見積・実績を追加">-</td>`;
                     }
                 });
 
@@ -3218,8 +3266,386 @@ function getCellOnclick(version, task, process, est, act) {
     const v = escapeForHandler(version);
     const t = escapeForHandler(task);
     const p = escapeForHandler(process);
-    // 複数人でも詳細モーダルを開く（名前部分クリック時のみ内訳モーダル）
-    return `onclick="openRemainingHoursModal('${v}', '${t}', '${p}')"`;
+    // マトリクスセルエディタを開く（見積・実績・残存すべて編集可能）
+    return `onclick="openMatrixCellEditor(event, '${v}', '${t}', '${p}')"`;
+}
+
+// ============================================
+// マトリクスセルエディタ（見積・実績・残存の編集ポップアップ）
+// ============================================
+
+/**
+ * マトリクスセルクリック時にセルエディタポップアップを開く
+ * @param {Event} event - クリックイベント
+ * @param {string} version - 版数
+ * @param {string} task - 対応名
+ * @param {string} process - 工程
+ */
+export function openMatrixCellEditor(event, version, task, process) {
+    event.stopPropagation();
+
+    // 既存のポップアップがあれば閉じる
+    closeMatrixCellEditor();
+
+    // 該当セルの見積を取得
+    const cellEstimates = estimates.filter(e =>
+        e.version === version && e.task === task && e.process === process
+    );
+    const totalEstHours = cellEstimates.reduce((sum, e) => sum + e.hours, 0);
+
+    // 該当セルの実績を取得
+    const cellActuals = actuals.filter(a =>
+        a.version === version && a.task === task && a.process === process
+    );
+    const totalActHours = cellActuals.reduce((sum, a) => sum + a.hours, 0);
+
+    // 残存時間を取得
+    const remainingData = remainingEstimates.find(r =>
+        r.version === version && r.task === task && r.process === process
+    );
+    const remainingHours = remainingData ? remainingData.remainingHours : '';
+
+    // 担当者リストを取得（見積と実績から）
+    const memberSet = new Set();
+    cellEstimates.forEach(e => { if (e.member) memberSet.add(e.member); });
+    cellActuals.forEach(a => { if (a.member) memberSet.add(a.member); });
+    // 全体の担当者も追加（新規追加用）
+    estimates.forEach(e => { if (e.member) memberSet.add(e.member); });
+    actuals.forEach(a => { if (a.member) memberSet.add(a.member); });
+    const allMembers = [...memberSet].sort();
+
+    // セル担当者（デフォルト選択用）
+    const cellMembers = new Set();
+    cellEstimates.forEach(e => { if (e.member) cellMembers.add(e.member); });
+    cellActuals.forEach(a => { if (a.member) cellMembers.add(a.member); });
+    const defaultMember = cellMembers.size > 0 ? [...cellMembers][0] : (allMembers.length > 0 ? allMembers[0] : '');
+
+    // 今日の日付
+    const today = new Date().toISOString().split('T')[0];
+
+    // 見積の個別リスト（編集用）
+    let estimateListHtml = '';
+    if (cellEstimates.length > 0) {
+        estimateListHtml = cellEstimates.map(e => `
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: #666; min-width: 60px;">${escapeHtml(e.member || '-')}</span>
+                <input type="number" class="matrix-est-edit-input" data-estimate-id="${e.id}"
+                    value="${e.hours}" step="0.5" min="0"
+                    style="width: 70px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;">
+                <span style="font-size: 12px; color: #888;">h</span>
+            </div>
+        `).join('');
+    } else {
+        estimateListHtml = `
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <select id="matrixNewEstMember" style="width: 100px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                    ${allMembers.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('')}
+                </select>
+                <input type="number" id="matrixNewEstHours" placeholder="0"
+                    step="0.5" min="0"
+                    style="width: 70px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;">
+                <span style="font-size: 12px; color: #888;">h</span>
+            </div>
+        `;
+    }
+
+    // 担当者選択のHTML
+    const memberOptions = allMembers.map(m =>
+        `<option value="${escapeHtml(m)}" ${m === defaultMember ? 'selected' : ''}>${escapeHtml(m)}</option>`
+    ).join('');
+
+    // ポップアップHTML
+    const popup = document.createElement('div');
+    popup.id = 'matrixCellEditorPopup';
+    popup.style.cssText = 'position: fixed; z-index: 10000; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #e0e0e0; min-width: 320px; max-width: 400px; font-size: 13px;';
+
+    popup.innerHTML = `
+        <div style="padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 600; font-size: 14px; color: #333;">${escapeHtml(process)}</div>
+            <button onclick="closeMatrixCellEditor()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #999; padding: 0 4px;">&times;</button>
+        </div>
+        <div style="padding: 12px 16px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;">
+            ${escapeHtml(version)} / ${escapeHtml(task)}
+        </div>
+
+        <!-- 見積セクション -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: #555; font-size: 12px;">
+                見積 <span style="color: #999;">(${totalEstHours.toFixed(1)}h)</span>
+            </div>
+            <div id="matrixEstimateList">
+                ${estimateListHtml}
+            </div>
+            <button onclick="saveMatrixEstimates('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')"
+                style="margin-top: 6px; padding: 4px 12px; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
+                見積を保存
+            </button>
+        </div>
+
+        <!-- 実績追加セクション -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: #555; font-size: 12px;">
+                実績追加 <span style="color: #999;">(現在 ${totalActHours.toFixed(1)}h)</span>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <input type="date" id="matrixActualDate" value="${today}"
+                    style="padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 130px;">
+                <input type="number" id="matrixActualHours" placeholder="8" step="0.25" min="0"
+                    style="width: 60px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;">
+                <span style="font-size: 12px; color: #888;">h</span>
+            </div>
+            <div style="margin-top: 6px; display: flex; gap: 6px; align-items: center;">
+                <select id="matrixActualMember" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                    ${memberOptions}
+                </select>
+                <button onclick="addMatrixActual('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')"
+                    style="padding: 4px 12px; background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    追加
+                </button>
+            </div>
+        </div>
+
+        <!-- 残存時間セクション -->
+        <div style="padding: 12px 16px;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: #555; font-size: 12px;">見込残存時間</div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="number" id="matrixRemainingHours" value="${remainingHours !== '' ? remainingHours : ''}"
+                    placeholder="未設定" step="0.25" min="0"
+                    style="flex: 1; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;">
+                <span style="font-size: 12px; color: #888;">h</span>
+                <button onclick="saveMatrixRemaining('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')"
+                    style="padding: 4px 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    保存
+                </button>
+            </div>
+            <small style="color: #999; font-size: 11px;">0 = 完了扱い</small>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    // ポップアップの位置を調整（クリック位置の近くに表示）
+    const rect = popup.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = event.clientX - rect.width / 2;
+    let top = event.clientY + 10;
+
+    // 画面外にはみ出さないよう調整
+    if (left + rect.width > viewportWidth - 10) left = viewportWidth - rect.width - 10;
+    if (left < 10) left = 10;
+    if (top + rect.height > viewportHeight - 10) top = event.clientY - rect.height - 10;
+    if (top < 10) top = 10;
+
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+
+    // 背景クリックで閉じる
+    setTimeout(() => {
+        document.addEventListener('click', _matrixCellEditorOutsideClick);
+    }, 0);
+}
+
+function _matrixCellEditorOutsideClick(e) {
+    const popup = document.getElementById('matrixCellEditorPopup');
+    if (popup && !popup.contains(e.target)) {
+        closeMatrixCellEditor();
+    }
+}
+
+/**
+ * マトリクスセルエディタを閉じる
+ */
+export function closeMatrixCellEditor() {
+    const popup = document.getElementById('matrixCellEditorPopup');
+    if (popup) popup.remove();
+    document.removeEventListener('click', _matrixCellEditorOutsideClick);
+}
+
+/**
+ * マトリクスセルエディタから見積を保存
+ */
+export function saveMatrixEstimates(version, task, process) {
+    // 既存見積の更新
+    const inputs = document.querySelectorAll('.matrix-est-edit-input');
+    let changed = false;
+
+    inputs.forEach(input => {
+        const estId = parseFloat(input.dataset.estimateId);
+        const newHours = parseFloat(input.value);
+        if (isNaN(newHours) || newHours < 0) return;
+
+        const estimate = estimates.find(e => e.id === estId);
+        if (estimate && estimate.hours !== newHours) {
+            const oldHours = estimate.hours;
+            estimate.hours = newHours;
+
+            // monthlyHours も更新（単月の場合）
+            const est = normalizeEstimate(estimate);
+            if (est.workMonths && est.workMonths.length === 1 && estimate.monthlyHours) {
+                estimate.monthlyHours[est.workMonths[0]] = newHours;
+            }
+
+            pushAction({
+                type: 'editEstimate',
+                id: estId,
+                before: { hours: oldHours },
+                after: { hours: newHours }
+            });
+            changed = true;
+        }
+    });
+
+    // 新規見積の追加
+    const newEstMember = document.getElementById('matrixNewEstMember');
+    const newEstHours = document.getElementById('matrixNewEstHours');
+    if (newEstMember && newEstHours && newEstHours.value) {
+        const hours = parseFloat(newEstHours.value);
+        const member = newEstMember.value;
+        if (!isNaN(hours) && hours > 0 && member) {
+            const newEstimate = {
+                id: Date.now() + Math.random(),
+                version: version,
+                task: task,
+                process: process,
+                member: member,
+                hours: hours,
+                workMonths: [],
+                monthlyHours: {},
+                createdAt: new Date().toISOString()
+            };
+            estimates.push(newEstimate);
+
+            pushAction({
+                type: 'addEstimate',
+                description: `見積追加(マトリクス): ${task} (${process}) ${hours}h`,
+                data: { added: { ...newEstimate } }
+            });
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        if (typeof window.saveData === 'function') window.saveData();
+        closeMatrixCellEditor();
+        if (typeof window.updateReport === 'function') window.updateReport();
+        if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+        if (typeof window.showAlert === 'function') window.showAlert('見積を保存しました', true);
+    } else {
+        closeMatrixCellEditor();
+    }
+}
+
+/**
+ * マトリクスセルエディタから実績を追加
+ */
+export function addMatrixActual(version, task, process) {
+    const dateInput = document.getElementById('matrixActualDate');
+    const hoursInput = document.getElementById('matrixActualHours');
+    const memberSelect = document.getElementById('matrixActualMember');
+
+    const date = dateInput ? dateInput.value : '';
+    const hours = hoursInput ? parseFloat(hoursInput.value) : 0;
+    const member = memberSelect ? memberSelect.value : '';
+
+    if (!date) {
+        alert('日付を入力してください');
+        return;
+    }
+    if (!hours || hours <= 0) {
+        alert('実績工数を入力してください');
+        return;
+    }
+    if (!member) {
+        alert('担当者を選択してください');
+        return;
+    }
+
+    const newActual = {
+        id: Date.now() + Math.random(),
+        date: date,
+        version: version,
+        task: task,
+        process: process,
+        member: member,
+        hours: hours,
+        createdAt: new Date().toISOString()
+    };
+    actuals.push(newActual);
+
+    pushAction({
+        type: 'actual_add',
+        description: `実績追加(マトリクス): ${task} (${process}) ${hours}h`,
+        data: { added: { ...newActual } }
+    });
+
+    if (typeof window.saveData === 'function') window.saveData();
+    closeMatrixCellEditor();
+
+    // 画面を更新
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.renderActualList === 'function') window.renderActualList();
+    if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.showAlert === 'function') window.showAlert('実績を追加しました', true);
+}
+
+/**
+ * マトリクスセルエディタから残存時間を保存
+ */
+export function saveMatrixRemaining(version, task, process) {
+    const input = document.getElementById('matrixRemainingHours');
+    const hours = parseFloat(input?.value);
+
+    if (isNaN(hours) || hours < 0) {
+        alert('正しい時間を入力してください');
+        return;
+    }
+
+    // 担当者を取得（見積/実績から最初の担当者）
+    const cellEstimates = estimates.filter(e =>
+        e.version === version && e.task === task && e.process === process
+    );
+    const cellActuals = actuals.filter(a =>
+        a.version === version && a.task === task && a.process === process
+    );
+    const memberSet = new Set();
+    cellEstimates.forEach(e => { if (e.member) memberSet.add(e.member); });
+    cellActuals.forEach(a => { if (a.member) memberSet.add(a.member); });
+    const member = memberSet.size > 0 ? [...memberSet][0] : '';
+
+    // 変更前の状態を記録
+    const oldRemaining = remainingEstimates.find(r =>
+        r.version === version && r.task === task && r.process === process
+    );
+    const beforeCopy = oldRemaining ? { ...oldRemaining } : null;
+
+    // 見込残存時間を保存（saveRemainingEstimateにスケジュール連動も含まれている）
+    if (typeof window.saveRemainingEstimate === 'function') {
+        window.saveRemainingEstimate(version, task, process, member, hours);
+    }
+
+    // 変更後の状態を記録
+    const newRemaining = remainingEstimates.find(r =>
+        r.version === version && r.task === task && r.process === process
+    );
+
+    pushAction({
+        type: 'remaining_edit',
+        description: `見込残存変更(マトリクス): ${task} (${process}) ${hours}h`,
+        data: {
+            before: beforeCopy,
+            after: newRemaining ? { ...newRemaining } : null
+        }
+    });
+
+    if (typeof window.saveData === 'function') window.saveData(true);
+    closeMatrixCellEditor();
+    if (typeof window.updateReport === 'function') window.updateReport();
+    if (typeof window.showAlert === 'function') window.showAlert('残存時間を保存しました', true);
 }
 
 // 担当者別見積vs実績比較グラフを描画
@@ -3863,6 +4289,122 @@ export function initProgressSectionState() {
         if (content) content.style.display = '';
         if (icon) icon.textContent = '▼';
     }
+}
+
+// ============================================
+// バーチャートツールチップ
+// ============================================
+
+/**
+ * レポートのバーチャートにホバーツールチップを初期化する
+ * @param {HTMLElement} container - ツールチップを初期化するコンテナ要素
+ */
+function initBarChartTooltips(container) {
+    if (!container) return;
+
+    // 既存のツールチップ要素を取得または作成
+    let tooltip = document.getElementById('reportBarTooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'reportBarTooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            padding: 8px 12px;
+            background: rgba(33, 33, 33, 0.92);
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            max-width: 400px;
+            white-space: nowrap;
+            line-height: 1.4;
+        `;
+        document.body.appendChild(tooltip);
+    }
+
+    // イベント委譲で処理（パフォーマンス最適化）
+    container.addEventListener('mouseenter', (e) => {
+        const bar = e.target.closest('.report-bar-container');
+        if (!bar) return;
+        const text = bar.dataset.barTooltip;
+        if (!text) return;
+
+        tooltip.textContent = text;
+        tooltip.style.opacity = '1';
+
+        // バーのハイライト
+        const fill = bar.querySelector('.report-bar-fill');
+        if (fill) fill.style.filter = 'brightness(1.15)';
+
+        positionTooltip(bar, tooltip);
+    }, true);
+
+    container.addEventListener('mouseleave', (e) => {
+        const bar = e.target.closest('.report-bar-container');
+        if (!bar) return;
+
+        tooltip.style.opacity = '0';
+
+        const fill = bar.querySelector('.report-bar-fill');
+        if (fill) fill.style.filter = '';
+    }, true);
+
+    container.addEventListener('mousemove', (e) => {
+        const bar = e.target.closest('.report-bar-container');
+        if (!bar) return;
+        if (tooltip.style.opacity === '0') return;
+
+        // マウス追従ではなくバー中央に固定表示
+    }, true);
+
+    // タッチデバイス対応（タップで表示、他をタップで非表示）
+    container.addEventListener('touchstart', (e) => {
+        const bar = e.target.closest('.report-bar-container');
+        if (!bar) {
+            tooltip.style.opacity = '0';
+            return;
+        }
+        const text = bar.dataset.barTooltip;
+        if (!text) return;
+
+        tooltip.textContent = text;
+        tooltip.style.opacity = '1';
+        positionTooltip(bar, tooltip);
+
+        // 3秒後に自動非表示
+        setTimeout(() => {
+            tooltip.style.opacity = '0';
+        }, 3000);
+    }, { passive: true });
+}
+
+/**
+ * ツールチップをバーの上に配置する
+ */
+function positionTooltip(bar, tooltip) {
+    const rect = bar.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const vw = window.innerWidth;
+
+    // バーの上に配置
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    let top = rect.top - tooltipRect.height - 8;
+
+    // 画面外にはみ出さないよう調整
+    if (left < 8) left = 8;
+    if (left + tooltipRect.width > vw - 8) left = vw - tooltipRect.width - 8;
+    if (top < 8) {
+        // 上にスペースがなければ下に表示
+        top = rect.bottom + 8;
+    }
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
 }
 
 console.log('✅ モジュール report.js loaded');
