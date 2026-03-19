@@ -489,6 +489,53 @@ function clockToY(hour, minutes) {
     return AFTERNOON_TOP + (hour - LUNCH_END + m / 60) * DAILY_HOUR_HEIGHT;
 }
 
+/** 開始時刻(clock decimal, e.g. 9.0=9:00, 13.5=13:30)からY座標に変換 */
+function startTimeToY(st) {
+    if (st >= LUNCH_END) {
+        return AFTERNOON_TOP + (st - LUNCH_END) * DAILY_HOUR_HEIGHT;
+    }
+    if (st >= LUNCH_START) {
+        return LUNCH_ZONE_TOP;
+    }
+    return (st - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+}
+
+/** Y座標から開始時刻(clock decimal)に変換 */
+function yToStartTime(y) {
+    if (y <= LUNCH_ZONE_TOP) {
+        return WORK_START_HOUR + y / DAILY_HOUR_HEIGHT;
+    }
+    if (y <= AFTERNOON_TOP) {
+        return LUNCH_END; // 昼休みゾーン → 13:00
+    }
+    return LUNCH_END + (y - AFTERNOON_TOP) / DAILY_HOUR_HEIGHT;
+}
+
+/** 開始時刻を30分単位にスナップ（昼休みゾーン回避） */
+function snapStartTime(raw) {
+    const snapped = Math.round(raw * 2) / 2;
+    if (snapped >= LUNCH_START && snapped < LUNCH_END) {
+        return LUNCH_END;
+    }
+    return Math.max(WORK_START_HOUR, snapped);
+}
+
+/** 開始時刻(clock)と作業時間(h)から終了時刻(clock)を計算（昼休みスキップ） */
+function clockEndTime(startClock, workHours) {
+    if (startClock >= LUNCH_END) return startClock + workHours;
+    if (startClock >= LUNCH_START) return LUNCH_END + workHours;
+    const morningAvailable = LUNCH_START - startClock;
+    if (workHours <= morningAvailable) return startClock + workHours;
+    return LUNCH_END + (workHours - morningAvailable);
+}
+
+/** 時刻(clock decimal)を "H:MM" 文字列に変換 */
+function formatClockTime(clock) {
+    const h = Math.floor(clock);
+    const m = Math.round((clock - h) * 60);
+    return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 /**
  * 日別ビュー描画 — 縦軸=時間(9:00-18:00)、横軸=担当者
  */
@@ -742,47 +789,49 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                 </div>`;
             });
 
-            // 実績ブロック（縦に積み上げ — 昼休みゾーンを自動的にスキップ）
+            // 実績ブロック（startTimeで位置決定、未設定は積み上げ）
             const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
-            let accumulatedHours = 0;
+            dayActuals.sort((a, b) => (a.startTime ?? 999) - (b.startTime ?? 999));
+            let nextSlot = WORK_START_HOUR;
             dayActuals.forEach(act => {
-                const top = workHoursToY(accumulatedHours);
-                const endHours = accumulatedHours + act.hours;
+                const st = act.startTime ?? nextSlot;
+                const endClock = clockEndTime(st, act.hours);
+                const color = getTaskColor(act.version, act.task);
 
-                // バーが午前→午後をまたぐ場合は分割して描画
-                if (accumulatedHours < MORNING_HOURS && endHours > MORNING_HOURS) {
-                    // 午前部分
-                    const morningPart = MORNING_HOURS - accumulatedHours;
-                    const morningTop = workHoursToY(accumulatedHours);
-                    const morningHeight = morningPart * DAILY_HOUR_HEIGHT;
-                    const color = getTaskColor(act.version, act.task);
+                if (st < LUNCH_START && endClock > LUNCH_END) {
+                    // 午前→午後をまたぐ: 分割描画
+                    const morningHours = LUNCH_START - st;
+                    const morningTop = startTimeToY(st);
+                    const morningHeight = morningHours * DAILY_HOUR_HEIGHT;
                     html += `<div class="actual-tl-dv-block" style="top:${morningTop}px;height:${morningHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
-                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        title="${escapeHtml(act.task)} ${act.hours}h (${formatClockTime(st)}~)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
                         <span class="actual-tl-dv-block-hours">${act.hours}h</span>
                     </div>`;
-                    // 午後部分
-                    const afternoonPart = endHours - MORNING_HOURS;
-                    const afternoonHeight = afternoonPart * DAILY_HOUR_HEIGHT;
+                    const afternoonHours = act.hours - morningHours;
+                    const afternoonHeight = afternoonHours * DAILY_HOUR_HEIGHT;
                     html += `<div class="actual-tl-dv-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h (続き)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                        <div class="actual-tl-dv-resize-handle" data-actual-id="${act.id}"></div>
                     </div>`;
                 } else {
-                    // 午前のみ or 午後のみ — 通常描画
+                    const top = startTimeToY(st);
                     const height = act.hours * DAILY_HOUR_HEIGHT;
-                    const color = getTaskColor(act.version, act.task);
                     html += `<div class="actual-tl-dv-block" style="top:${top}px;height:${height}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
-                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        title="${escapeHtml(act.task)} ${act.hours}h (${formatClockTime(st)}~)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
                         <span class="actual-tl-dv-block-hours">${act.hours}h</span>
                         <div class="actual-tl-dv-resize-handle" data-actual-id="${act.id}"></div>
                     </div>`;
                 }
-                accumulatedHours += act.hours;
+                nextSlot = endClock;
+                if (nextSlot >= LUNCH_START && nextSlot < LUNCH_END) {
+                    nextSlot = LUNCH_END;
+                }
             });
         }
 
@@ -956,7 +1005,7 @@ function placeSelectedTaskAtPosition(e, row) {
     const relX = e.clientX - rect.left + dom.section.scrollLeft;
     const member = row.dataset.member;
 
-    let date, defaultHours;
+    let date, defaultHours, startTime;
     if (viewMode === 'gantt') {
         const [yr, mo] = currentMonth.split('-').map(Number);
         const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
@@ -966,8 +1015,10 @@ function placeSelectedTaskAtPosition(e, row) {
         defaultHours = selectedTask.hours;
     } else {
         date = currentDate;
-        const hourOffset = relX / DAILY_HOUR_WIDTH;
-        defaultHours = Math.max(0.5, Math.round(hourOffset * 2) / 2);
+        const relY = e.clientY - rect.top;
+        const rawClock = yToStartTime(relY);
+        startTime = snapStartTime(rawClock);
+        defaultHours = selectedTask.hours || 1;
     }
 
     // インラインエディタを表示して工数確認
@@ -975,7 +1026,8 @@ function placeSelectedTaskAtPosition(e, row) {
         row: row,
         rect: row.getBoundingClientRect(),
         member: member,
-        date: date
+        date: date,
+        startTime
     };
     const cardState = {
         version: selectedTask.version,
@@ -1193,7 +1245,9 @@ function getDropInfo(x, y) {
         for (const col of columns) {
             const rect = col.getBoundingClientRect();
             if (x >= rect.left && x <= rect.right) {
-                return { member: col.dataset.member, date: currentDate, row: col, rect };
+                const relY = y - rect.top;
+                const startTime = snapStartTime(yToStartTime(relY));
+                return { member: col.dataset.member, date: currentDate, row: col, rect, startTime };
             }
         }
         return null;
@@ -1358,6 +1412,7 @@ function onAreaMouseUp(e) {
     const member = dragState.member;
     let date, hours;
 
+    let startTime;
     if (viewMode === 'gantt') {
         const [yr, mo] = currentMonth.split('-').map(Number);
         const dayIdx = Math.floor(dragState.snappedX1 / GANTT_DAY_WIDTH);
@@ -1370,9 +1425,10 @@ function onAreaMouseUp(e) {
         const h1 = yToWorkHours(dragState.snappedY1);
         const h2 = yToWorkHours(dragState.snappedY2);
         hours = Math.round((h2 - h1) * 10) / 10;
+        startTime = snapStartTime(yToStartTime(dragState.snappedY1));
     }
 
-    showTaskPicker(e.clientX, e.clientY, member, date, hours);
+    showTaskPicker(e.clientX, e.clientY, member, date, hours, startTime);
 
     dragState = null;
 }
@@ -1484,7 +1540,7 @@ function onAreaTouchEnd(e) {
         }
 
         const member = dragState.member;
-        let date, hours;
+        let date, hours, startTime;
         const touch = e.changedTouches[0];
 
         if (viewMode === 'gantt') {
@@ -1499,9 +1555,10 @@ function onAreaTouchEnd(e) {
             const h1 = yToWorkHours(dragState.snappedY1);
             const h2 = yToWorkHours(dragState.snappedY2);
             hours = Math.round((h2 - h1) * 10) / 10;
+            startTime = snapStartTime(yToStartTime(dragState.snappedY1));
         }
 
-        showTaskPicker(touch.clientX, touch.clientY, member, date, hours);
+        showTaskPicker(touch.clientX, touch.clientY, member, date, hours, startTime);
     }
 
     dragState = null;
@@ -1628,7 +1685,7 @@ function showInlineEditor(dropInfo, cardState) {
             closeInlineEditor();
             return;
         }
-        createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+        createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours, dropInfo.startTime);
         closeInlineEditor();
     });
 
@@ -1640,7 +1697,7 @@ function showInlineEditor(dropInfo, cardState) {
         if (e.key === 'Enter') {
             const hours = parseFloat(input.value);
             if (hours && hours > 0) {
-                createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+                createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours, dropInfo.startTime);
             }
             closeInlineEditor();
         } else if (e.key === 'Escape') {
@@ -1674,7 +1731,7 @@ function closeInlineEditor() {
 /**
  * タスクピッカー表示（空エリアドラッグ後）
  */
-function showTaskPicker(x, y, member, date, defaultHours) {
+function showTaskPicker(x, y, member, date, defaultHours, startTime) {
     closeTaskPicker();
 
     const tasks = getTasksForMember(member);
@@ -1765,7 +1822,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
                     showAlert('工数を入力してください', false);
                     return;
                 }
-                createActual(member, date, item.dataset.version, item.dataset.task, item.dataset.process, hours);
+                createActual(member, date, item.dataset.version, item.dataset.task, item.dataset.process, hours, startTime);
                 closeTaskPicker();
             });
         });
@@ -2128,6 +2185,7 @@ function onBarMouseDown(e) {
         moved: false,
         origMember: targetActual.member,
         origDate: targetActual.date,
+        origStartTime: targetActual.startTime,
     };
 
     document.addEventListener('mousemove', onBarDragMove);
@@ -2180,6 +2238,7 @@ function onBarTouchStart(e) {
             moved: false,
             origMember: targetActual.member,
             origDate: targetActual.date,
+            origStartTime: targetActual.startTime,
         };
 
         createBarGhost(barDragState, touch.clientX, touch.clientY);
@@ -2312,17 +2371,20 @@ function getDropTarget(x, y) {
             }
         }
     } else {
-        // 日別: ドロップ先 = メンバー列（日は固定 = currentDate）
+        // 日別: ドロップ先 = メンバー列 + 時刻
         const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
         if (!columns) return null;
 
         for (const col of columns) {
             const rect = col.getBoundingClientRect();
             if (x >= rect.left && x <= rect.right) {
+                const relY = y - rect.top;
+                const startTime = snapStartTime(yToStartTime(relY));
                 return {
                     element: col,
                     member: col.dataset.member,
-                    date: currentDate
+                    date: currentDate,
+                    startTime
                 };
             }
         }
@@ -2337,13 +2399,16 @@ function finalizeBarDrop(x, y) {
     const actual = barDragState.actual;
     const newMember = target.member;
     const newDate = target.date;
+    const newStartTime = viewMode === 'daily' ? target.startTime : undefined;
 
     // 変更がなければ何もしない
-    if (newMember === actual.member && newDate === actual.date) return;
+    const startTimeChanged = newStartTime != null && newStartTime !== actual.startTime;
+    if (newMember === actual.member && newDate === actual.date && !startTimeChanged) return;
 
     const before = { ...actual };
     actual.member = newMember;
     actual.date = newDate;
+    if (newStartTime != null) actual.startTime = newStartTime;
 
     saveData();
     pushAction({
@@ -2355,6 +2420,8 @@ function finalizeBarDrop(x, y) {
     const changes = [];
     if (before.member !== newMember) changes.push(`${escapeHtml(newMember)}`);
     if (before.date !== newDate) changes.push(newDate);
+    if (startTimeChanged) changes.push(`${formatClockTime(newStartTime)}~`);
+    if (changes.length === 0) changes.push('時刻変更');
     showToast(`実績を移動: ${changes.join(' / ')}`);
 
     renderActualTimeline();
@@ -2499,16 +2566,17 @@ function finalizeBlockResize() {
 /**
  * ドロップからの実績作成
  */
-function createActualFromDrop(member, date, cardState, hours) {
-    createActual(member, date, cardState.version, cardState.task, cardState.process, hours);
+function createActualFromDrop(member, date, cardState, hours, startTime) {
+    createActual(member, date, cardState.version, cardState.task, cardState.process, hours, startTime);
 }
 
 /**
  * 実績作成
  */
-function createActual(member, date, version, task, process, hours) {
+function createActual(member, date, version, task, process, hours, startTime) {
     const id = Date.now() + Math.random();
     const newActual = { id, date, version, task, process, member, hours };
+    if (startTime != null) newActual.startTime = startTime;
 
     actuals.push(newActual);
     saveData();
