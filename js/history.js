@@ -441,6 +441,47 @@ function applyScheduleUndo(action) {
                 window.updateScheduleFn(action.data.scheduleId, action.data.oldValues);
             }
             break;
+        case 'member_change': {
+            // スケジュールを元の状態に復元
+            const oldState = action.data.oldScheduleState;
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    member: oldState.member,
+                    startDate: oldState.startDate,
+                    endDate: oldState.endDate
+                });
+            }
+            // 見積の復元
+            if (action.data.estimateUpdated && action.data.oldEstimateState) {
+                const est = action.data.oldEstimateState;
+                const idx = State.estimates.findIndex(e => e.id === est.id);
+                if (idx !== -1) {
+                    State.estimates[idx] = { ...est };
+                }
+            }
+            // 見込み残存時間の復元
+            if (action.data.oldRemainingState) {
+                const r = action.data.oldRemainingState;
+                // 新担当者側の残存を削除し、旧担当者側を復元
+                const newMember = action.data.newMember;
+                const oldMember = action.data.oldScheduleState.member;
+                State.setRemainingEstimates(
+                    State.remainingEstimates.filter(re =>
+                        !(re.version === r.version && re.task === r.task &&
+                          re.process === r.process && re.member === newMember)
+                    )
+                );
+                // 旧担当者側が存在しなければ追加
+                const existsOld = State.remainingEstimates.find(re =>
+                    re.version === r.version && re.task === r.task &&
+                    re.process === r.process && re.member === oldMember
+                );
+                if (!existsOld) {
+                    State.remainingEstimates.push({ ...r });
+                }
+            }
+            break;
+        }
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -499,6 +540,45 @@ function applyScheduleRedo(action) {
                 window.updateScheduleFn(action.data.scheduleId, action.data.newValues);
             }
             break;
+        case 'member_change': {
+            // 新しい担当者でスケジュールを再適用
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    member: action.data.newMember,
+                    startDate: action.data.newStartDate,
+                    endDate: action.data.newEndDate
+                });
+            }
+            // 見積の再適用
+            if (action.data.estimateUpdated && action.data.oldEstimateState) {
+                const est = action.data.oldEstimateState;
+                const idx = State.estimates.findIndex(e => e.id === est.id);
+                if (idx !== -1) {
+                    State.estimates[idx] = { ...State.estimates[idx], member: action.data.newMember };
+                }
+            }
+            // 見込み残存時間の再適用
+            if (action.data.oldRemainingState) {
+                const r = action.data.oldRemainingState;
+                const newMember = action.data.newMember;
+                const oldMember = action.data.oldScheduleState.member;
+                // 旧担当者側を削除し、新担当者側を追加
+                State.setRemainingEstimates(
+                    State.remainingEstimates.filter(re =>
+                        !(re.version === r.version && re.task === r.task &&
+                          re.process === r.process && re.member === oldMember)
+                    )
+                );
+                const existsNew = State.remainingEstimates.find(re =>
+                    re.version === r.version && re.task === r.task &&
+                    re.process === r.process && re.member === newMember
+                );
+                if (!existsNew) {
+                    State.remainingEstimates.push({ ...r, member: newMember });
+                }
+            }
+            break;
+        }
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -532,6 +612,11 @@ function refreshUI(action) {
     if (t === 'remaining_edit' || t === 'remaining_bulk_edit') {
         if (typeof window.updateReport === 'function') window.updateReport();
         if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+    }
+    if (t === 'schedule_member_change') {
+        // 担当者変更は見積も変更するため、見積UIも更新
+        if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+        if (typeof window.updateReport === 'function') window.updateReport();
     }
 }
 

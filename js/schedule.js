@@ -6,7 +6,7 @@ import {
     schedules, setSchedules, nextScheduleId, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap, currentThemeColor, scheduleBarColorMode,
-    estimates, actuals, vacations, companyHolidays, remainingEstimates,
+    estimates, setEstimates, actuals, vacations, companyHolidays, remainingEstimates,
     taskSortOrder, setTaskSortOrder
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, sortTaskKeysByOrder, updateTaskSortOrder } from './estimate.js';
@@ -48,17 +48,19 @@ export function initScheduleModule() {
     });
     
     // ドラッグ&ドロップハンドラをセットアップ
-    setupDragAndDrop((scheduleId, newStartDate) => {
-        handleScheduleDrag(scheduleId, newStartDate);
-    });
-    
+    setupDragAndDrop(
+        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        (scheduleId, oldMember, newMember, newStartDate) => { handleScheduleMemberChange(scheduleId, oldMember, newMember, newStartDate); }
+    );
+
     // ツールチップハンドラをセットアップ
     setupTooltipHandler();
 
     // タッチイベントハンドラをセットアップ（モバイル対応）
     setupTouchHandlers(
         (schedule) => { openScheduleDetailModal(schedule.id); },
-        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); }
+        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        (scheduleId, oldMember, newMember, newStartDate) => { handleScheduleMemberChange(scheduleId, oldMember, newMember, newStartDate); }
     );
 
     // スケジュールタブ固有のキーボードショートカットをセットアップ
@@ -1748,6 +1750,231 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     });
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * ドラッグによる担当者変更を処理（確認ダイアログ付き）
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} oldMember - 変更前の担当者
+ * @param {string} newMember - 変更先の担当者
+ * @param {string|null} newStartDate - 新しい開始日（日付も同時に変更する場合）
+ */
+function handleScheduleMemberChange(scheduleId, oldMember, newMember, newStartDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    // 確認ダイアログを表示
+    showMemberChangeConfirmDialog(schedule, oldMember, newMember, newStartDate);
+}
+
+/**
+ * 担当者変更確認ダイアログを表示
+ * @param {Object} schedule - スケジュールオブジェクト
+ * @param {string} oldMember - 変更前の担当者
+ * @param {string} newMember - 変更先の担当者
+ * @param {string|null} newStartDate - 新しい開始日（null の場合は日付変更なし）
+ */
+function showMemberChangeConfirmDialog(schedule, oldMember, newMember, newStartDate) {
+    // 既存のダイアログがあれば削除
+    const existing = document.getElementById('memberChangeConfirmDialog');
+    if (existing) existing.remove();
+
+    // 対応する見積の有無を確認
+    const relatedEstimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === oldMember
+    );
+
+    // 変更先に既存の見積があるか確認
+    const targetEstimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === newMember
+    );
+
+    let detailHtml = '';
+    if (relatedEstimate) {
+        detailHtml += `<div class="member-change-detail">
+            <span class="member-change-detail-label">見積:</span>
+            <span>${escapeHtml(schedule.version)} / ${escapeHtml(schedule.task)} / ${escapeHtml(schedule.process)}</span>
+        </div>
+        <div class="member-change-detail">
+            <span class="member-change-detail-label">工数:</span>
+            <span>${relatedEstimate.hours}h</span>
+        </div>`;
+    }
+    if (newStartDate) {
+        detailHtml += `<div class="member-change-detail">
+            <span class="member-change-detail-label">開始日:</span>
+            <span>${schedule.startDate} → ${newStartDate}</span>
+        </div>`;
+    }
+    if (targetEstimate) {
+        detailHtml += `<div class="member-change-warning">
+            ⚠ ${escapeHtml(newMember)} には同じ見積（${targetEstimate.hours}h）が既に存在します。見積の担当者は変更されません。
+        </div>`;
+    }
+
+    // ダイアログ作成
+    const overlay = document.createElement('div');
+    overlay.id = 'memberChangeConfirmDialog';
+    overlay.className = 'member-change-overlay';
+    overlay.innerHTML = `
+        <div class="member-change-dialog">
+            <div class="member-change-header">
+                <span class="member-change-icon">↕</span>
+                担当者の変更
+            </div>
+            <div class="member-change-body">
+                <div class="member-change-members">
+                    <span class="member-change-old">${escapeHtml(oldMember)}</span>
+                    <span class="member-change-arrow">→</span>
+                    <span class="member-change-new">${escapeHtml(newMember)}</span>
+                </div>
+                ${detailHtml}
+                <p class="member-change-note">${relatedEstimate && !targetEstimate ? '見積データの担当者も更新されます。' : 'スケジュールの担当者を変更します。'}</p>
+            </div>
+            <div class="member-change-actions">
+                <button class="member-change-cancel" id="memberChangeCancelBtn">キャンセル</button>
+                <button class="member-change-confirm" id="memberChangeConfirmBtn">変更する</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // フォーカスを確認ボタンへ
+    requestAnimationFrame(() => {
+        document.getElementById('memberChangeConfirmBtn')?.focus();
+    });
+
+    // イベントハンドラ
+    const cleanup = () => {
+        overlay.classList.add('member-change-closing');
+        setTimeout(() => overlay.remove(), 200);
+    };
+
+    document.getElementById('memberChangeCancelBtn').addEventListener('click', () => {
+        cleanup();
+        // キャンセル: 再描画して元の位置に戻す
+        renderScheduleView();
+    });
+
+    document.getElementById('memberChangeConfirmBtn').addEventListener('click', () => {
+        cleanup();
+        executeMemberChange(schedule, oldMember, newMember, newStartDate);
+    });
+
+    // オーバーレイクリックでキャンセル
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            cleanup();
+            renderScheduleView();
+        }
+    });
+
+    // Escキーでキャンセル
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            cleanup();
+            renderScheduleView();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+/**
+ * 担当者変更を実行
+ * @param {Object} schedule - スケジュールオブジェクト
+ * @param {string} oldMember - 変更前の担当者
+ * @param {string} newMember - 変更先の担当者
+ * @param {string|null} newStartDate - 新しい開始日
+ */
+function executeMemberChange(schedule, oldMember, newMember, newStartDate) {
+    // Undo用にすべての変更前状態を記録
+    const oldScheduleState = { ...schedule };
+
+    // 見積データの更新
+    const relatedEstimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === oldMember
+    );
+
+    // 変更先に既存の見積があるか確認
+    const targetEstimate = estimates.find(e =>
+        e.version === schedule.version &&
+        e.task === schedule.task &&
+        e.process === schedule.process &&
+        e.member === newMember
+    );
+
+    let estimateUpdated = false;
+    let oldEstimateState = null;
+
+    // 見積が存在し、変更先に同じ見積がなければ担当者を変更
+    if (relatedEstimate && !targetEstimate) {
+        oldEstimateState = { ...relatedEstimate };
+        const newEstimates = estimates.map(e => {
+            if (e.id === relatedEstimate.id) {
+                return { ...e, member: newMember };
+            }
+            return e;
+        });
+        setEstimates(newEstimates);
+        estimateUpdated = true;
+    }
+
+    // 見込み残存時間の移行
+    const oldRemaining = getRemainingEstimate(schedule.version, schedule.task, schedule.process, oldMember);
+    let oldRemainingState = null;
+    if (oldRemaining) {
+        oldRemainingState = { ...oldRemaining };
+        // 新しい担当者で保存
+        const targetRemaining = getRemainingEstimate(schedule.version, schedule.task, schedule.process, newMember);
+        if (!targetRemaining) {
+            saveRemainingEstimate(schedule.version, schedule.task, schedule.process, newMember, oldRemaining.hours);
+            deleteRemainingEstimate(schedule.version, schedule.task, schedule.process, oldMember);
+        }
+    }
+
+    // スケジュールの更新
+    const updates = { member: newMember };
+
+    if (newStartDate) {
+        updates.startDate = newStartDate;
+        updates.endDate = calculateEndDate(newStartDate, schedule.estimatedHours, newMember);
+    } else {
+        // 日付変更なしでも、新担当者のカレンダーで終了日を再計算
+        updates.endDate = calculateEndDate(schedule.startDate, schedule.estimatedHours, newMember);
+    }
+
+    // Undo用に記録
+    pushAction({
+        type: 'schedule_member_change',
+        description: `担当者変更: ${schedule.task} (${schedule.process}) ${oldMember} → ${newMember}`,
+        data: {
+            scheduleId: schedule.id,
+            oldScheduleState,
+            newMember,
+            newStartDate: updates.startDate || schedule.startDate,
+            newEndDate: updates.endDate,
+            estimateUpdated,
+            oldEstimateState,
+            oldRemainingState
+        }
+    });
+
+    updateSchedule(schedule.id, updates);
+
+    const messages = [`担当者を ${oldMember} → ${newMember} に変更しました`];
+    if (estimateUpdated) messages.push('見積も更新');
+    showToast(messages.join('（') + (messages.length > 1 ? '）' : ''), 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**

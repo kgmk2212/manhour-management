@@ -392,6 +392,16 @@ export function saveRemainingHoursFromModal() {
 
 // モーダルのクリック・ドラッグハンドラーをセットアップ
 export function setupModalHandlers() {
+    // 入力中データがあるモーダル（外側クリックで閉じない）
+    const dataEntryModalIds = new Set([
+        'addEstimateModal',
+        'editEstimateModal',
+        'editTaskModal',
+        'editActualModal',
+        'createScheduleModal',
+        'workModal'
+    ]);
+
     // モーダルIDと閉じる関数のマッピング
     const modals = [
         { id: 'workModal', closeFunc: () => { if (typeof window.closeWorkModal === 'function') window.closeWorkModal(); } },
@@ -409,6 +419,13 @@ export function setupModalHandlers() {
         { id: 'autoGenerateModal', closeFunc: () => { if (typeof window.closeAutoGenerateModal === 'function') window.closeAutoGenerateModal(); } }
     ];
 
+    // データ入力モーダルにpreventOutsideClickフラグを設定
+    modals.forEach(m => {
+        if (dataEntryModalIds.has(m.id)) {
+            m.preventOutsideClick = true;
+        }
+    });
+
     modals.forEach(modal => {
         const modalElement = document.getElementById(modal.id);
         if (!modalElement) return;
@@ -422,13 +439,14 @@ export function setupModalHandlers() {
 
         // mouseupイベントで終了位置を確認
         modalElement.addEventListener('mouseup', (e) => {
-            // preventOutsideClickがtrueの場合は、外側クリックで閉じない
-            if (modal.preventOutsideClick) {
-                return;
-            }
-
-            // mousedownとmouseupの両方がモーダル背景（.modal）だった場合のみ閉じる
+            // mousedownとmouseupの両方がモーダル背景（.modal）だった場合のみ処理
             if (mouseDownTarget === modalElement && e.target === modalElement) {
+                // preventOutsideClickがtrueの場合は、トースト通知を表示して閉じない
+                if (modal.preventOutsideClick) {
+                    showModalOutsideClickToast();
+                    mouseDownTarget = null;
+                    return;
+                }
                 modal.closeFunc();
             }
             mouseDownTarget = null;
@@ -439,6 +457,62 @@ export function setupModalHandlers() {
             mouseDownTarget = null;
         });
     });
+}
+
+// ============================================
+// トースト通知（モーダル外クリック時）
+// ============================================
+
+let _modalToastTimer = null;
+
+/**
+ * モーダル外クリック時にトースト通知を表示
+ */
+function showModalOutsideClickToast() {
+    // 既存のトーストがあれば削除
+    const existing = document.getElementById('modalOutsideClickToast');
+    if (existing) {
+        existing.remove();
+        clearTimeout(_modalToastTimer);
+    }
+
+    const toast = document.createElement('div');
+    toast.id = 'modalOutsideClickToast';
+    toast.textContent = '入力中のデータがあります';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-10px);
+        background: rgba(33, 33, 33, 0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 100000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+
+    document.body.appendChild(toast);
+
+    // アニメーション開始
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    // 2秒後にフェードアウト
+    _modalToastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-10px)';
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 200);
+    }, 2000);
 }
 
 console.log('✅ モジュール modal.js loaded');

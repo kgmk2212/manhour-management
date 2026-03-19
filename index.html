@@ -1409,9 +1409,44 @@
                             <span>自動バックアップを有効にする</span>
                         </label>
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                            ・オンにすると、実績や見積の登録・編集時に自動でバックアップファイルがダウンロードされます<br>
-                            ・オフにしても、手動バックアップボタンは使用できます
+                            ・オンにすると、実績や見積の登録・編集時にlocalStorageに自動バックアップが保存されます<br>
+                            ・オフにしても、手動バックアップボタンでファイルダウンロードが可能です
                         </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>バックアップ頻度</label>
+                        <select id="autoBackupFrequency" style="max-width: 200px;">
+                            <option value="every">毎回（データ保存時）</option>
+                            <option value="hourly">1時間に1回</option>
+                            <option value="daily">1日に1回</option>
+                        </select>
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+                            自動バックアップの実行間隔を設定します
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>保持するバックアップ数</label>
+                        <select id="autoBackupMaxCount" style="max-width: 200px;">
+                            <option value="3">3件</option>
+                            <option value="5" selected>5件</option>
+                            <option value="10">10件</option>
+                            <option value="20">20件</option>
+                        </select>
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+                            localStorage内に保持する自動バックアップの最大件数です。超えた分は古いものから自動削除されます
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <label style="margin: 0; font-weight: 600;">保存済み自動バックアップ</label>
+                            <button class="btn btn-sm" id="btnClearAllAutoBackups" style="font-size: 11px; padding: 3px 10px; color: var(--danger, #dc3545);">全て削除</button>
+                        </div>
+                        <div id="autoBackupList" style="max-height: 200px; overflow-y: auto;">
+                            <p style="color: var(--text-muted); font-size: 12px; margin: 0;">保存された自動バックアップはありません</p>
+                        </div>
                     </div>
                 </div>
 

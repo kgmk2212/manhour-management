@@ -609,6 +609,21 @@ export function initEventHandlers() {
     const autoBackupEnabled = document.getElementById('autoBackupEnabled');
     if (autoBackupEnabled) autoBackupEnabled.addEventListener('change', saveAutoBackupSetting);
 
+    const autoBackupFrequencyEl = document.getElementById('autoBackupFrequency');
+    if (autoBackupFrequencyEl) autoBackupFrequencyEl.addEventListener('change', () => {
+        if (typeof window.saveAutoBackupFrequency === 'function') window.saveAutoBackupFrequency();
+    });
+
+    const autoBackupMaxCountEl = document.getElementById('autoBackupMaxCount');
+    if (autoBackupMaxCountEl) autoBackupMaxCountEl.addEventListener('change', () => {
+        if (typeof window.saveAutoBackupMaxCount === 'function') window.saveAutoBackupMaxCount();
+    });
+
+    const btnClearAllAutoBackups = document.getElementById('btnClearAllAutoBackups');
+    if (btnClearAllAutoBackups) btnClearAllAutoBackups.addEventListener('click', () => {
+        if (typeof window.clearAllAutoBackups === 'function') window.clearAllAutoBackups();
+    });
+
     const rememberQuickInputMode = document.getElementById('rememberQuickInputMode');
     if (rememberQuickInputMode) rememberQuickInputMode.addEventListener('change', saveQuickInputModeSetting);
 

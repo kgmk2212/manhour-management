@@ -88,9 +88,17 @@ window.saveAutoBackupSetting = Storage.saveAutoBackupSetting;
 window.saveData = Storage.saveData;
 window.loadData = Storage.loadData;
 window.autoBackup = Storage.autoBackup;
+window.downloadBackup = Storage.downloadBackup;
 window.exportBackup = Storage.exportBackup;
 window.importBackup = Storage.importBackup;
 window.handleFileImport = Storage.handleFileImport;
+window.renderAutoBackupList = Storage.renderAutoBackupList;
+window.clearAllAutoBackups = Storage.clearAllAutoBackups;
+window.restoreFromAutoBackup = Storage.restoreFromAutoBackup;
+window.loadAutoBackupFrequency = Storage.loadAutoBackupFrequency;
+window.saveAutoBackupFrequency = Storage.saveAutoBackupFrequency;
+window.loadAutoBackupMaxCount = Storage.loadAutoBackupMaxCount;
+window.saveAutoBackupMaxCount = Storage.saveAutoBackupMaxCount;
 
 // ui.js の関数
 window.showTab = UI.showTab;
@@ -135,6 +143,10 @@ window.handleEstimateMonthChange = UI.handleEstimateMonthChange;
 window.handleEstimateVersionChange = UI.handleEstimateVersionChange;
 window.handleReportMonthChange = UI.handleReportMonthChange;
 window.handleReportVersionChange = UI.handleReportVersionChange;
+window.handleReportMonthMultiChange = UI.handleReportMonthMultiChange;
+window.handleReportVersionMultiChange = UI.handleReportVersionMultiChange;
+window.handleEstimateMonthMultiChange = UI.handleEstimateMonthMultiChange;
+window.handleEstimateVersionMultiChange = UI.handleEstimateVersionMultiChange;
 window.handleEstimateFilterTypeChange = UI.handleEstimateFilterTypeChange;
 window.setEstimateFilterType = UI.setEstimateFilterType;
 window.handleReportFilterTypeChange = UI.handleReportFilterTypeChange;
@@ -387,6 +399,11 @@ window.renderVersionReport = Report.renderVersionReport;
 window.renderReportGrouped = Report.renderReportGrouped;
 window.renderReportMatrix = Report.renderReportMatrix;
 window.toggleProgressSection = Report.toggleProgressSection;
+window.openMatrixCellEditor = Report.openMatrixCellEditor;
+window.closeMatrixCellEditor = Report.closeMatrixCellEditor;
+window.saveMatrixEstimates = Report.saveMatrixEstimates;
+window.addMatrixActual = Report.addMatrixActual;
+window.saveMatrixRemaining = Report.saveMatrixRemaining;
 
 // schedule.js の関数
 window.initScheduleModule = Schedule.initScheduleModule;
@@ -519,6 +536,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 各種設定の読み込み
     Storage.loadAutoBackupSetting();
+    Storage.loadAutoBackupFrequency();
+    Storage.loadAutoBackupMaxCount();
     Theme.loadThemeSettings();
     Report.loadReportSettings();
     Theme.loadChartColorScheme();
@@ -591,6 +610,7 @@ document.addEventListener('DOMContentLoaded', function () {
     Actual.renderTodayActuals();
     Report.updateReport();
     Vacation.renderCompanyHolidayList();
+    Storage.renderAutoBackupList();
 
     // キャパシティ表示設定の初期化
     Report.initCapacitySettings();

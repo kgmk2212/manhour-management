@@ -9,6 +9,29 @@ let _actualMonthExpanded = false;
 export function getActualMonthExpanded() { return _actualMonthExpanded; }
 export function setActualMonthExpanded(val) { _actualMonthExpanded = val; }
 
+// 複数選択状態（タブフィルタ内のボタン用）
+// key: containerId, value: Set of selected values
+const _multiSelectState = {};
+
+/**
+ * 複数選択状態を取得
+ * @param {string} containerId - ボタンコンテナのID
+ * @returns {string[]} 選択中の値の配列（空ならシングル選択モード）
+ */
+export function getMultiSelectValues(containerId) {
+    const state = _multiSelectState[containerId];
+    if (!state || state.size === 0) return [];
+    return Array.from(state);
+}
+
+/**
+ * 複数選択状態をクリア
+ * @param {string} containerId - ボタンコンテナのID
+ */
+export function clearMultiSelect(containerId) {
+    delete _multiSelectState[containerId];
+}
+
 // 設定の保存/読み込み
 export function saveTabBarAlwaysVisible() {
     const checkbox = document.getElementById('tabBarAlwaysVisible');
@@ -276,8 +299,8 @@ function renderReportFilters(container, scrollToActive = true) {
         if (typeof window.handleReportMonthChange === 'function') {
             window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    }, 'month');
+        updateTabFilterContent(false);
+    }, 'month', 'tabFilterMonthButtons');
 
     // 版数フィルタボタンを生成
     const versionButtons = generateFilterButtons(reportVersion, (value) => {
@@ -285,8 +308,8 @@ function renderReportFilters(container, scrollToActive = true) {
         if (typeof window.handleReportVersionChange === 'function') {
             window.handleReportVersionChange(value, 'reportVersionButtons2');
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+        updateTabFilterContent(false);
+    }, 'none', 'tabFilterVersionButtons');
 
     container.innerHTML = `
         <div class="tab-filter-row">
@@ -297,24 +320,43 @@ function renderReportFilters(container, scrollToActive = true) {
             <span class="tab-filter-label">表示月:</span>
             <div class="tab-filter-buttons" id="tabFilterMonthButtons">${monthButtons}</div>
         </div>
+        <p class="tab-filter-hint" style="margin: 2px 0 0; font-size: 10px; color: var(--text-muted); opacity: 0.7;">Ctrl/Cmd+クリックで複数選択</p>
     `;
 
-    // ボタンにイベントを設定
-    setupFilterButtonEvents(container, 'tabFilterVersionButtons', reportVersion, (value) => {
+    // ボタンにイベントを設定（マルチセレクト対応）
+    const onReportVersionChange = (value) => {
         reportVersion.value = value;
         if (typeof window.handleReportVersionChange === 'function') {
             window.handleReportVersionChange(value, 'reportVersionButtons2');
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+        updateTabFilterContent(false);
+    };
+    const onReportVersionMulti = (values) => {
+        reportVersion.value = values[0]; // select要素には最初の値をセット
+        if (typeof window.handleReportVersionMultiChange === 'function') {
+            window.handleReportVersionMultiChange(values);
+        } else if (typeof window.handleReportVersionChange === 'function') {
+            window.handleReportVersionChange(values[0], 'reportVersionButtons2');
+        }
+    };
+    setupFilterButtonEvents(container, 'tabFilterVersionButtons', reportVersion, onReportVersionChange, onReportVersionMulti);
 
-    setupFilterButtonEvents(container, 'tabFilterMonthButtons', reportMonth, (value) => {
+    const onReportMonthChange = (value) => {
         reportMonth.value = value;
         if (typeof window.handleReportMonthChange === 'function') {
             window.handleReportMonthChange(value, 'reportMonthButtons2');
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+        updateTabFilterContent(false);
+    };
+    const onReportMonthMulti = (values) => {
+        reportMonth.value = values[0];
+        if (typeof window.handleReportMonthMultiChange === 'function') {
+            window.handleReportMonthMultiChange(values);
+        } else if (typeof window.handleReportMonthChange === 'function') {
+            window.handleReportMonthChange(values[0], 'reportMonthButtons2');
+        }
+    };
+    setupFilterButtonEvents(container, 'tabFilterMonthButtons', reportMonth, onReportMonthChange, onReportMonthMulti);
 
     // ドラッグスクロールを有効化
     const versionBtnContainer = document.getElementById('tabFilterVersionButtons');
@@ -359,8 +401,8 @@ function renderEstimateFilters(container, scrollToActive = true) {
         } else {
             estimateMonth.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    }, 'month');
+        updateTabFilterContent(false);
+    }, 'month', 'tabFilterEstMonthButtons');
 
     // 版数フィルタボタンを生成（ソート済み）
     const versionButtons = generateFilterButtons(estimateVersion, (value) => {
@@ -370,8 +412,8 @@ function renderEstimateFilters(container, scrollToActive = true) {
         } else {
             estimateVersion.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    }, true);
+        updateTabFilterContent(false);
+    }, true, 'tabFilterEstVersionButtons');
 
     container.innerHTML = `
         <div class="tab-filter-row">
@@ -382,28 +424,47 @@ function renderEstimateFilters(container, scrollToActive = true) {
             <span class="tab-filter-label">表示月:</span>
             <div class="tab-filter-buttons" id="tabFilterEstMonthButtons">${monthButtons}</div>
         </div>
+        <p class="tab-filter-hint" style="margin: 2px 0 0; font-size: 10px; color: var(--text-muted); opacity: 0.7;">Ctrl/Cmd+クリックで複数選択</p>
     `;
 
-    // ボタンにイベントを設定
-    setupFilterButtonEvents(container, 'tabFilterEstVersionButtons', estimateVersion, (value) => {
+    // ボタンにイベントを設定（マルチセレクト対応）
+    const onEstVersionChange = (value) => {
         estimateVersion.value = value;
         if (typeof window.handleEstimateVersionChange === 'function') {
             window.handleEstimateVersionChange(value);
         } else {
             estimateVersion.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+        updateTabFilterContent(false);
+    };
+    const onEstVersionMulti = (values) => {
+        estimateVersion.value = values[0];
+        if (typeof window.handleEstimateVersionMultiChange === 'function') {
+            window.handleEstimateVersionMultiChange(values);
+        } else if (typeof window.handleEstimateVersionChange === 'function') {
+            window.handleEstimateVersionChange(values[0]);
+        }
+    };
+    setupFilterButtonEvents(container, 'tabFilterEstVersionButtons', estimateVersion, onEstVersionChange, onEstVersionMulti);
 
-    setupFilterButtonEvents(container, 'tabFilterEstMonthButtons', estimateMonth, (value) => {
+    const onEstMonthChange = (value) => {
         estimateMonth.value = value;
         if (typeof window.handleEstimateMonthChange === 'function') {
             window.handleEstimateMonthChange(value);
         } else {
             estimateMonth.dispatchEvent(new Event('change'));
         }
-        updateTabFilterContent(false); // クリック時はスクロールしない
-    });
+        updateTabFilterContent(false);
+    };
+    const onEstMonthMulti = (values) => {
+        estimateMonth.value = values[0];
+        if (typeof window.handleEstimateMonthMultiChange === 'function') {
+            window.handleEstimateMonthMultiChange(values);
+        } else if (typeof window.handleEstimateMonthChange === 'function') {
+            window.handleEstimateMonthChange(values[0]);
+        }
+    };
+    setupFilterButtonEvents(container, 'tabFilterEstMonthButtons', estimateMonth, onEstMonthChange, onEstMonthMulti);
 
     // ドラッグスクロールを有効化
     const versionBtnContainer = document.getElementById('tabFilterEstVersionButtons');
@@ -561,7 +622,8 @@ function renderActualFilters(container, scrollToActive = true) {
 
 // フィルタボタンのHTML生成
 // sortType: 'none' | 'version' | 'month'
-function generateFilterButtons(selectElement, onChange, sortType = 'none') {
+// containerId: マルチセレクト状態参照用
+function generateFilterButtons(selectElement, onChange, sortType = 'none', containerId = null) {
     const currentValue = selectElement.value;
     let options = Array.from(selectElement.options);
 
@@ -584,14 +646,25 @@ function generateFilterButtons(selectElement, onChange, sortType = 'none') {
         options.push(...otherOptions);
     }
 
+    // マルチセレクト状態を確認
+    const multiValues = containerId ? getMultiSelectValues(containerId) : [];
+    const isMulti = multiValues.length > 0;
+
     return options.map(option => {
-        const isActive = String(option.value) === String(currentValue);
+        const val = String(option.value);
+        let isActive;
+        if (isMulti) {
+            isActive = multiValues.includes(val);
+        } else {
+            isActive = val === String(currentValue);
+        }
         return `<button data-value="${escapeHtml(option.value)}" class="${isActive ? 'active' : ''}">${escapeHtml(option.text)}</button>`;
     }).join('');
 }
 
-// フィルタボタンにイベントを設定
-function setupFilterButtonEvents(container, containerId, selectElement, onChange) {
+// フィルタボタンにイベントを設定（マルチセレクト対応）
+// onMultiChange: (values: string[]) => void  複数選択時のコールバック
+function setupFilterButtonEvents(container, containerId, selectElement, onChange, onMultiChange = null) {
     const buttonContainer = document.getElementById(containerId);
     if (!buttonContainer) return;
 
@@ -603,10 +676,81 @@ function setupFilterButtonEvents(container, containerId, selectElement, onChange
             setTimeout(() => {
                 window.isTabInteracting = false;
             }, 300);
+
             const value = btn.dataset.value;
-            onChange(value);
+            const isMultiKey = e.ctrlKey || e.metaKey || e.shiftKey;
+
+            if (isMultiKey && value !== 'all' && onMultiChange) {
+                // マルチセレクトモード
+                if (!_multiSelectState[containerId]) {
+                    // 現在のシングル選択値をマルチに移行
+                    const currentVal = selectElement.value;
+                    _multiSelectState[containerId] = new Set();
+                    if (currentVal && currentVal !== 'all') {
+                        _multiSelectState[containerId].add(currentVal);
+                    }
+                }
+
+                const state = _multiSelectState[containerId];
+                if (state.has(value)) {
+                    state.delete(value);
+                    // 全て外されたらクリア（allに戻す）
+                    if (state.size === 0) {
+                        delete _multiSelectState[containerId];
+                        onChange('all');
+                        return;
+                    }
+                } else {
+                    state.add(value);
+                }
+
+                // ボタンのactive状態を更新
+                buttonContainer.querySelectorAll('button[data-value]').forEach(b => {
+                    b.classList.toggle('active', state.has(b.dataset.value));
+                });
+
+                // クリアボタンを表示
+                showMultiClearButton(buttonContainer, containerId, selectElement, onChange, onMultiChange);
+
+                // マルチ選択コールバック
+                onMultiChange(Array.from(state));
+            } else {
+                // シングル選択モード（従来の動作）
+                // マルチセレクト状態をクリア
+                delete _multiSelectState[containerId];
+
+                // クリアボタンを削除
+                const clearBtn = buttonContainer.querySelector('.multi-clear-btn');
+                if (clearBtn) clearBtn.remove();
+
+                onChange(value);
+            }
         });
     });
+}
+
+/**
+ * マルチセレクト解除ボタンを表示
+ */
+function showMultiClearButton(buttonContainer, containerId, selectElement, onChange, onMultiChange) {
+    // 既存のクリアボタンがあれば削除
+    const existing = buttonContainer.querySelector('.multi-clear-btn');
+    if (existing) existing.remove();
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'multi-clear-btn';
+    clearBtn.textContent = '\u00d7';
+    clearBtn.title = '複数選択を解除';
+    clearBtn.style.cssText = 'padding: 2px 6px; font-size: 14px; font-weight: bold; opacity: 0.6; flex-shrink: 0;';
+    clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.isTabInteracting = true;
+        setTimeout(() => { window.isTabInteracting = false; }, 300);
+        delete _multiSelectState[containerId];
+        clearBtn.remove();
+        onChange('all');
+    });
+    buttonContainer.appendChild(clearBtn);
 }
 
 // 選択中ボタンを表示エリア内にスクロール（レンダリング後に実行）

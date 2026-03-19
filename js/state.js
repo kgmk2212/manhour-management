@@ -266,6 +266,10 @@ export let mobileTabDesign = 'capsule'; // モバイルタブのデザイン: 'c
 export let workDetailStyle = 'modern'; // 作業詳細モーダルのスタイル: 'modern', 'classic'
 export let modalDesignStyle = 'modern'; // モーダル全体のデザインスタイル: 'modern', 'classic'
 
+// 自動バックアップ設定
+export let autoBackupFrequency = 'every'; // 自動バックアップ頻度: 'every', 'hourly', 'daily'
+export let autoBackupMaxCount = 5; // localStorage内に保持する自動バックアップの最大数
+
 // フィルタ状態の保持（画面遷移・データ更新時に維持するため）
 export let estimateFilterState = {
     month: null,       // null = 未設定（デフォルト適用）
@@ -276,6 +280,24 @@ export let reportFilterState = {
     month: null,
     version: null
 };
+
+// 複数フィルタ状態（null = シングル選択モード、string[] = 複数選択中）
+export let multiFilterState = {
+    reportMonths: null,
+    reportVersions: null,
+    estimateMonths: null,
+    estimateVersions: null
+};
+
+export function setMultiFilterState(key, values) {
+    multiFilterState[key] = values;
+    window.multiFilterState = multiFilterState;
+}
+
+export function clearMultiFilterState(key) {
+    multiFilterState[key] = null;
+    window.multiFilterState = multiFilterState;
+}
 
 // ============================================
 // Setter関数（他のモジュールから変更可能にする）
@@ -472,6 +494,16 @@ export function setModalDesignStyle(value) {
     } else {
         delete document.documentElement.dataset.modalDesign;
     }
+}
+
+export function setAutoBackupFrequency(value) {
+    autoBackupFrequency = value;
+    window.autoBackupFrequency = value;
+}
+
+export function setAutoBackupMaxCount(value) {
+    autoBackupMaxCount = value;
+    window.autoBackupMaxCount = value;
 }
 
 // ============================================

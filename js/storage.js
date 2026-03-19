@@ -28,7 +28,9 @@ import {
     scheduleSettings, setScheduleSettings,
     taskColorMap, setTaskColorMap,
     taskSortOrder, setTaskSortOrder,
-    setWorkDetailStyle, setModalDesignStyle
+    setWorkDetailStyle, setModalDesignStyle,
+    autoBackupFrequency, setAutoBackupFrequency,
+    autoBackupMaxCount, setAutoBackupMaxCount
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -56,6 +58,247 @@ export function saveAutoBackupSetting() {
 }
 
 // ============================================
+// 自動バックアップ頻度・保持数設定
+// ============================================
+
+export function loadAutoBackupFrequency() {
+    const saved = localStorage.getItem('autoBackupFrequency');
+    if (saved) setAutoBackupFrequency(saved);
+    const el = document.getElementById('autoBackupFrequency');
+    if (el) el.value = autoBackupFrequency;
+}
+
+export function saveAutoBackupFrequency() {
+    const el = document.getElementById('autoBackupFrequency');
+    if (el) {
+        setAutoBackupFrequency(el.value);
+        localStorage.setItem('autoBackupFrequency', el.value);
+    }
+}
+
+export function loadAutoBackupMaxCount() {
+    const saved = localStorage.getItem('autoBackupMaxCount');
+    if (saved) setAutoBackupMaxCount(parseInt(saved, 10));
+    const el = document.getElementById('autoBackupMaxCount');
+    if (el) el.value = autoBackupMaxCount;
+}
+
+export function saveAutoBackupMaxCount() {
+    const el = document.getElementById('autoBackupMaxCount');
+    if (el) {
+        setAutoBackupMaxCount(parseInt(el.value, 10));
+        localStorage.setItem('autoBackupMaxCount', el.value);
+    }
+}
+
+/**
+ * 自動バックアップ頻度チェック
+ * 頻度設定に基づいて、バックアップを実行すべきかどうかを判定
+ * @returns {boolean} バックアップを実行すべきならtrue
+ */
+function shouldRunAutoBackup() {
+    if (autoBackupFrequency === 'every') return true;
+
+    const lastBackupTime = localStorage.getItem('lastAutoBackupTime');
+    if (!lastBackupTime) return true;
+
+    const now = Date.now();
+    const elapsed = now - parseInt(lastBackupTime, 10);
+
+    if (autoBackupFrequency === 'hourly') {
+        return elapsed >= 60 * 60 * 1000; // 1時間
+    } else if (autoBackupFrequency === 'daily') {
+        return elapsed >= 24 * 60 * 60 * 1000; // 24時間
+    }
+
+    return true;
+}
+
+/**
+ * localStorageにバックアップを保存し、古いバックアップを自動削除
+ */
+function saveBackupToLocalStorage(data) {
+    const key = 'manhour_autoBackup_' + Date.now();
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem('lastAutoBackupTime', String(Date.now()));
+    } catch (e) {
+        console.warn('自動バックアップの保存に失敗しました（容量不足の可能性）:', e);
+        // 容量不足の場合は古いバックアップを削除してリトライ
+        cleanupOldBackups(1);
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            localStorage.setItem('lastAutoBackupTime', String(Date.now()));
+        } catch (e2) {
+            console.error('リトライ後も自動バックアップの保存に失敗:', e2);
+        }
+    }
+
+    // 保持数を超えたバックアップを削除
+    cleanupOldBackups(autoBackupMaxCount);
+}
+
+/**
+ * 古い自動バックアップをlocalStorageから削除
+ * @param {number} keepCount - 保持するバックアップ数
+ */
+function cleanupOldBackups(keepCount) {
+    const backupKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('manhour_autoBackup_')) {
+            backupKeys.push(key);
+        }
+    }
+
+    // タイムスタンプ順にソート（新しい順）
+    backupKeys.sort((a, b) => {
+        const tsA = parseInt(a.replace('manhour_autoBackup_', ''), 10);
+        const tsB = parseInt(b.replace('manhour_autoBackup_', ''), 10);
+        return tsB - tsA;
+    });
+
+    // keepCount を超えたものを削除
+    for (let i = keepCount; i < backupKeys.length; i++) {
+        localStorage.removeItem(backupKeys[i]);
+    }
+}
+
+/**
+ * localStorageに保存されている自動バックアップ一覧を取得
+ * @returns {Array<{key: string, timestamp: number, dateStr: string, size: number}>}
+ */
+export function getAutoBackupList() {
+    const backups = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('manhour_autoBackup_')) {
+            const ts = parseInt(key.replace('manhour_autoBackup_', ''), 10);
+            const date = new Date(ts);
+            const data = localStorage.getItem(key);
+            backups.push({
+                key,
+                timestamp: ts,
+                dateStr: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+                size: data ? data.length : 0
+            });
+        }
+    }
+    backups.sort((a, b) => b.timestamp - a.timestamp);
+    return backups;
+}
+
+/**
+ * 古い自動バックアップを全て削除
+ */
+export function clearAllAutoBackups() {
+    const backups = getAutoBackupList();
+    backups.forEach(b => localStorage.removeItem(b.key));
+    renderAutoBackupList();
+    showAlert(`${backups.length}件の自動バックアップを削除しました`, true);
+}
+
+/**
+ * 自動バックアップから復元
+ * @param {string} key - localStorageキー
+ */
+export function restoreFromAutoBackup(key) {
+    const data = localStorage.getItem(key);
+    if (!data) {
+        showAlert('バックアップデータが見つかりません', false);
+        return;
+    }
+
+    if (!confirm('このバックアップからデータを復元しますか？現在のデータは上書きされます。')) {
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(data);
+        // handleFileImportと同じ復元ロジックを再利用するため、Blobを使う
+        const blob = new Blob([JSON.stringify(parsed)], { type: 'application/json' });
+        const file = new File([blob], 'autobackup.json', { type: 'application/json' });
+        const event = { target: { files: [file], value: '' } };
+        handleFileImport(event);
+    } catch (e) {
+        console.error('自動バックアップ復元エラー:', e);
+        showAlert('バックアップデータの復元に失敗しました', false);
+    }
+}
+
+/**
+ * 自動バックアップ一覧をDOM上に描画
+ */
+export function renderAutoBackupList() {
+    const container = document.getElementById('autoBackupList');
+    if (!container) return;
+
+    const backups = getAutoBackupList();
+
+    if (backups.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 12px; margin: 0;">保存された自動バックアップはありません</p>';
+        return;
+    }
+
+    const formatSize = (bytes) => {
+        if (bytes < 1024) return `${bytes}B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+    };
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+    backups.forEach((b, i) => {
+        html += `<div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface); border-radius: 4px; font-size: 12px;">
+            <span style="flex: 1; color: var(--text-primary);">${b.dateStr}</span>
+            <span style="color: var(--text-muted); font-size: 11px;">${formatSize(b.size)}</span>
+            <button class="btn btn-sm" data-backup-key="${b.key}" data-action="restore" style="padding: 2px 8px; font-size: 11px;">復元</button>
+            <button class="btn btn-sm" data-backup-key="${b.key}" data-action="download" style="padding: 2px 8px; font-size: 11px;">DL</button>
+            <button class="btn btn-sm" data-backup-key="${b.key}" data-action="delete" style="padding: 2px 8px; font-size: 11px; color: var(--danger, #dc3545);">削除</button>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    // イベント設定
+    container.querySelectorAll('button[data-backup-key]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.backupKey;
+            const action = btn.dataset.action;
+            if (action === 'restore') {
+                restoreFromAutoBackup(key);
+            } else if (action === 'download') {
+                downloadAutoBackup(key);
+            } else if (action === 'delete') {
+                localStorage.removeItem(key);
+                renderAutoBackupList();
+                showAlert('バックアップを削除しました', true);
+            }
+        });
+    });
+}
+
+/**
+ * 自動バックアップをファイルとしてダウンロード
+ * @param {string} key - localStorageキー
+ */
+function downloadAutoBackup(key) {
+    const data = localStorage.getItem(key);
+    if (!data) return;
+
+    const ts = parseInt(key.replace('manhour_autoBackup_', ''), 10);
+    const date = new Date(ts);
+    const timestamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
+
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `工数管理_自動バックアップ_${timestamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============================================
 // データ保存・読み込み
 // ============================================
 
@@ -80,6 +323,8 @@ export function saveData(skipAutoBackup = false) {
             themePattern: window.currentThemePattern,
             themeTabColor: window.currentTabColor,
             autoBackup: window.autoBackupEnabled,
+            autoBackupFrequency: autoBackupFrequency,
+            autoBackupMaxCount: autoBackupMaxCount,
             estimateLayout: window.estimateLayout,
             actualLayout: window.actualLayout,
             reportLayout: window.reportLayout,
@@ -220,6 +465,14 @@ export function loadData() {
             if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
             if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
             if (settings.autoBackup !== undefined) window.autoBackupEnabled = settings.autoBackup;
+            if (settings.autoBackupFrequency) {
+                setAutoBackupFrequency(settings.autoBackupFrequency);
+                localStorage.setItem('autoBackupFrequency', settings.autoBackupFrequency);
+            }
+            if (settings.autoBackupMaxCount !== undefined) {
+                setAutoBackupMaxCount(settings.autoBackupMaxCount);
+                localStorage.setItem('autoBackupMaxCount', String(settings.autoBackupMaxCount));
+            }
             // レイアウト設定は読み込まない（セグメント表示に固定）
             if (settings.showMonthColors !== undefined) {
                 setShowMonthColorsSetting(settings.showMonthColors);
@@ -298,12 +551,10 @@ export function loadData() {
 // ============================================
 
 /**
- * 自動バックアップを実行
- * 全データをJSON形式でファイルとしてダウンロード（タイムスタンプ付きファイル名）
- * @returns {void}
+ * バックアップデータオブジェクトを生成
+ * @returns {Object} バックアップデータ
  */
-export function autoBackup() {
-    // 現在の設定を取得（担当者順はステート変数を優先）
+function createBackupData() {
     const memberOrderEl = document.getElementById('memberOrder');
     const memberOrderValue = window.memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
     const settings = {
@@ -333,7 +584,7 @@ export function autoBackup() {
         estimateStandardDisplay: document.getElementById('estimateStandardDisplay') ? document.getElementById('estimateStandardDisplay').value : 'subtext'
     };
 
-    const data = {
+    return {
         estimates: estimates,
         actuals: actuals,
         companyHolidays: companyHolidays,
@@ -346,20 +597,42 @@ export function autoBackup() {
         timestamp: new Date().toISOString(),
         version: '1.1'
     };
+}
+
+/**
+ * 自動バックアップを実行
+ * 頻度設定に基づきlocalStorageにバックアップを保存し、古いものを自動削除
+ * @returns {void}
+ */
+export function autoBackup() {
+    // 頻度チェック
+    if (!shouldRunAutoBackup()) return;
+
+    const data = createBackupData();
+
+    // localStorageに保存（自動管理）
+    saveBackupToLocalStorage(data);
+}
+
+/**
+ * 手動バックアップ（ファイルダウンロード）
+ * @returns {void}
+ */
+export function downloadBackup() {
+    const data = createBackupData();
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
 
-    // ローカルタイムでファイル名を生成
+    // ローカルタイムでファイル名を生成（YYYYMMDD-HHmm形式）
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const hour = String(now.getHours()).padStart(2, '0');
     const minute = String(now.getMinutes()).padStart(2, '0');
-    const second = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${year}-${month}-${day}_${hour}-${minute}-${second}`;
+    const timestamp = `${year}${month}${day}-${hour}${minute}`;
 
     a.href = url;
     a.download = `工数管理_バックアップ_${timestamp}.json`;
@@ -368,8 +641,8 @@ export function autoBackup() {
 }
 
 export function exportBackup() {
-    autoBackup();
-    showAlert('バックアップを作成しました', true);
+    downloadBackup();
+    showAlert('バックアップファイルをダウンロードしました', true);
 }
 
 export function importBackup() {

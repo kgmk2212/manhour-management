@@ -9,7 +9,8 @@ import {
     progressBarStyle, matrixEstActFormat, filterBarMode, scheduleBarColorMode,
     memberOrder, setMemberOrder, debugModeEnabled,
     estimateFilterState, reportFilterState,
-    setEstimateFilterState, setReportFilterState
+    setEstimateFilterState, setReportFilterState,
+    multiFilterState, setMultiFilterState, clearMultiFilterState
 } from './state.js';
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
@@ -178,7 +179,8 @@ function cleanupTabAnimation() {
         c.classList.remove(
             'anim-leaving', 'anim-entering',
             'anim-slide-out-left', 'anim-slide-out-right',
-            'anim-slide-in-left', 'anim-slide-in-right'
+            'anim-slide-in-left', 'anim-slide-in-right',
+            'anim-fade-out', 'anim-fade-in-right', 'anim-fade-in-left'
         );
     });
 }
@@ -228,13 +230,25 @@ export function showTab(tabName, options = {}) {
         const currentIndex = TAB_ORDER.indexOf(currentTabId);
         const nextIndex = TAB_ORDER.indexOf(tabName);
 
-        if (currentIndex !== -1 && nextIndex !== -1 && window.innerWidth <= 768) {
-            if (nextIndex > currentIndex) {
-                animationClassOut = 'anim-slide-out-left';
-                animationClassIn = 'anim-slide-in-right';
+        if (currentIndex !== -1 && nextIndex !== -1) {
+            if (window.innerWidth <= 768) {
+                // モバイル: スライドアニメーション
+                if (nextIndex > currentIndex) {
+                    animationClassOut = 'anim-slide-out-left';
+                    animationClassIn = 'anim-slide-in-right';
+                } else {
+                    animationClassOut = 'anim-slide-out-right';
+                    animationClassIn = 'anim-slide-in-left';
+                }
             } else {
-                animationClassOut = 'anim-slide-out-right';
-                animationClassIn = 'anim-slide-in-left';
+                // デスクトップ: フェードアニメーション
+                if (nextIndex > currentIndex) {
+                    animationClassOut = 'anim-fade-out';
+                    animationClassIn = 'anim-fade-in-right';
+                } else {
+                    animationClassOut = 'anim-fade-out';
+                    animationClassIn = 'anim-fade-in-left';
+                }
             }
         }
     }
@@ -295,7 +309,7 @@ export function showTab(tabName, options = {}) {
     if (tabContent) {
         tabContent.classList.add('active');
 
-        // モバイルアニメーション
+        // タブ切り替えアニメーション（モバイル: スライド、デスクトップ: フェード）
         if (animationClassOut && animationClassIn && currentActiveTab && currentActiveTab.id !== tabName) {
             // 退出タブ: active復元してアニメーション
             currentActiveTab.classList.add('active', 'anim-leaving', animationClassOut);
@@ -3434,6 +3448,9 @@ export function handleActualMonthChange(value, containerId) {
 }
 
 export function handleEstimateMonthChange(value, containerId) {
+    // シングル選択に戻るので複数選択状態をクリア
+    clearMultiFilterState('estimateMonths');
+
     const filterElement = document.getElementById('estimateMonthFilter');
     const currentMonth = filterElement ? filterElement.value : null;
 
@@ -3489,6 +3506,9 @@ export function handleEstimateMonthChange(value, containerId) {
 }
 
 export function handleEstimateVersionChange(value, containerId) {
+    // シングル選択に戻るので複数選択状態をクリア
+    clearMultiFilterState('estimateVersions');
+
     const filterElement = document.getElementById('estimateVersionFilter');
     if (filterElement) {
         filterElement.value = value;
@@ -3540,6 +3560,9 @@ export function handleEstimateVersionChange(value, containerId) {
 }
 
 export function handleReportMonthChange(value, containerId) {
+    // シングル選択に戻るので複数選択状態をクリア
+    clearMultiFilterState('reportMonths');
+
     const select = document.getElementById('reportMonth');
     const select2 = document.getElementById('reportMonth2');
     if (select) select.value = value;
@@ -3595,6 +3618,9 @@ export function handleReportMonthChange(value, containerId) {
 }
 
 export function handleReportVersionChange(value, containerId) {
+    // シングル選択に戻るので複数選択状態をクリア
+    clearMultiFilterState('reportVersions');
+
     const select = document.getElementById('reportVersion');
     const select2 = document.getElementById('reportVersion2');
     if (select) select.value = value;
@@ -4522,6 +4548,67 @@ export function initSmartStickyFilters() {
             lastY = mc ? mc.scrollTop : window.scrollY;
         });
     });
+}
+
+// ============================================
+// 複数フィルタ選択ハンドラ
+// ============================================
+
+/**
+ * レポート: 複数版数選択
+ * @param {string[]} versions - 選択された版数の配列
+ */
+export function handleReportVersionMultiChange(versions) {
+    setMultiFilterState('reportVersions', versions);
+    // select要素は最初の値に合わせる（表示用）
+    const select = document.getElementById('reportVersion');
+    if (select && versions.length > 0) select.value = versions[0];
+
+    if (typeof window.updateReport === 'function') {
+        window.updateReport();
+    }
+}
+
+/**
+ * レポート: 複数月選択
+ * @param {string[]} months - 選択された月の配列
+ */
+export function handleReportMonthMultiChange(months) {
+    setMultiFilterState('reportMonths', months);
+    const select = document.getElementById('reportMonth');
+    if (select && months.length > 0) select.value = months[0];
+
+    if (typeof window.updateReport === 'function') {
+        window.updateReport();
+    }
+}
+
+/**
+ * 見積: 複数版数選択
+ * @param {string[]} versions - 選択された版数の配列
+ */
+export function handleEstimateVersionMultiChange(versions) {
+    setMultiFilterState('estimateVersions', versions);
+    const select = document.getElementById('estimateVersionFilter');
+    if (select && versions.length > 0) select.value = versions[0];
+
+    if (typeof window.renderEstimateList === 'function') {
+        window.renderEstimateList();
+    }
+}
+
+/**
+ * 見積: 複数月選択
+ * @param {string[]} months - 選択された月の配列
+ */
+export function handleEstimateMonthMultiChange(months) {
+    setMultiFilterState('estimateMonths', months);
+    const select = document.getElementById('estimateMonthFilter');
+    if (select && months.length > 0) select.value = months[0];
+
+    if (typeof window.renderEstimateList === 'function') {
+        window.renderEstimateList();
+    }
 }
 
 console.log('✅ モジュール ui.js loaded');

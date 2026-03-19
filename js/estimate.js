@@ -11,7 +11,8 @@ import {
     currentThemeColor,
     showMonthColorsSetting,
     monthColors,
-    taskSortOrder, setTaskSortOrder
+    taskSortOrder, setTaskSortOrder,
+    multiFilterState, clearMultiFilterState
 } from './state.js';
 
 import {
@@ -415,14 +416,15 @@ export function migrateRemainingEstimatesToTaskLevel() {
  * @param {string} versionFilter - 版数フィルタ値
  * @returns {Array} フィルタ済み見積配列
  */
-function applyEstimateFilters(filterType, monthFilter, versionFilter) {
+function applyEstimateFilters(filterType, monthFilter, versionFilter, multiMonths = null, multiVersions = null) {
     let filtered = estimates;
 
-    // 版数フィルタを適用
-    if (versionFilter !== 'all') {
+    // 版数フィルタを適用（複数選択対応）
+    const versionValues = multiVersions || (versionFilter !== 'all' ? [versionFilter] : null);
+    if (versionValues) {
         // 選択された版数の作業予定月を収集
         const versionMonths = new Set();
-        estimates.filter(e => e.version === versionFilter).forEach(e => {
+        estimates.filter(e => versionValues.includes(e.version)).forEach(e => {
             const est = normalizeEstimate(e);
             if (est.workMonths) {
                 est.workMonths.forEach(m => versionMonths.add(m));
@@ -430,7 +432,7 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
         });
 
         filtered = filtered.filter(e => {
-            if (e.version === versionFilter) return true;
+            if (versionValues.includes(e.version)) return true;
             // その他工数は、版の作業予定月と重なるものを含める
             if (isOtherWork(e)) {
                 const est = normalizeEstimate(e);
@@ -441,14 +443,15 @@ function applyEstimateFilters(filterType, monthFilter, versionFilter) {
         });
     }
 
-    // 月フィルタを適用
-    if (monthFilter !== 'all') {
+    // 月フィルタを適用（複数選択対応）
+    const monthValues = multiMonths || (monthFilter !== 'all' ? [monthFilter] : null);
+    if (monthValues) {
         filtered = filtered.filter(e => {
             const est = normalizeEstimate(e);
             if (!est.workMonths || est.workMonths.length === 0) {
                 return true;
             }
-            return est.workMonths.includes(monthFilter);
+            return est.workMonths.some(m => monthValues.includes(m));
         });
     }
 
@@ -671,14 +674,20 @@ export function renderEstimateList() {
     const monthFilter = monthFilterElement.value;
     const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';
 
+    // 複数選択状態をチェック
+    const multiMonths = multiFilterState.estimateMonths;
+    const multiVersions = multiFilterState.estimateVersions;
+
     // データがない場合
     if (estimates.length === 0) {
         showEstimateEmptyState(container, '見積データがありません');
         return;
     }
 
-    // フィルタを適用
-    const filtered = applyEstimateFilters(filterType, monthFilter, versionFilter);
+    // フィルタを適用（複数選択対応）
+    const effectiveMonths = multiMonths || (monthFilter !== 'all' ? [monthFilter] : null);
+    const effectiveVersions = multiVersions || (versionFilter !== 'all' ? [versionFilter] : null);
+    const filtered = applyEstimateFilters(filterType, monthFilter, versionFilter, effectiveMonths, effectiveVersions);
     setFilteredEstimates(filtered);
 
     // フィルタ結果が空の場合

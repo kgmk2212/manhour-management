@@ -506,9 +506,9 @@ body.js-loading {
     display: block;
 }
 
-/* デスクトップ: タブコンテンツ切り替えフェードイン */
+/* デスクトップ: タブコンテンツ切り替えフェードイン（明示的アニメーション時はスキップ） */
 @media (min-width: 769px) {
-    .tab-content.active {
+    .tab-content.active:not(.anim-entering) {
         animation: tabFadeIn 0.2s ease;
     }
 }
@@ -516,6 +516,47 @@ body.js-loading {
 @keyframes tabFadeIn {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Desktop tab slide animations (directional fade + subtle slide) */
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.anim-fade-in-right { animation: fadeInRight 0.25s ease-out forwards; }
+.anim-fade-in-left { animation: fadeInLeft 0.25s ease-out forwards; }
+.anim-fade-out { animation: fadeOut 0.15s ease-out forwards; }
+
+/* 退出中タブ（デスクトップ）: 位置を維持してフェードアウト */
+.tab-content.anim-leaving.anim-fade-out {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 進入中タブ（デスクトップ）: 上に表示 */
+.tab-content.anim-entering.anim-fade-in-right,
+.tab-content.anim-entering.anim-fade-in-left {
+    position: relative;
+    z-index: 1;
+}
+
+/* Report bar chart hover effect */
+.report-bar-container:hover .report-bar-fill {
+    filter: brightness(1.15);
 }
 
 .page-header {
@@ -3999,6 +4040,161 @@ table tr[style*="1565c0"] th:first-child {
     }
 }
 
+/* ---- 25b. Member Change Confirmation Dialog ---- */
+
+.member-change-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+}
+
+.member-change-overlay.member-change-closing {
+    animation: fadeOut 0.2s ease forwards;
+}
+
+.member-change-dialog {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-width: 380px;
+    animation: slideIn 0.2s ease;
+    overflow: hidden;
+}
+
+.member-change-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--info);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.member-change-icon {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.member-change-body {
+    padding: 18px 20px;
+}
+
+.member-change-members {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.member-change-old {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.member-change-arrow {
+    color: var(--info);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.member-change-new {
+    font-weight: 600;
+    color: var(--info);
+    font-size: 15px;
+}
+
+.member-change-detail {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.member-change-detail-label {
+    color: var(--text-muted);
+    min-width: 48px;
+}
+
+.member-change-warning {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(217, 119, 6, 0.08);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--accent-secondary);
+    line-height: 1.5;
+}
+
+.member-change-note {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.member-change-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-light);
+    justify-content: flex-end;
+}
+
+.member-change-cancel {
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+.member-change-cancel:hover {
+    background: var(--surface-elevated);
+}
+
+.member-change-confirm {
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--info);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: inherit;
+}
+
+.member-change-confirm:hover {
+    opacity: 0.9;
+}
+
+.member-change-confirm:focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+}
+
 /* ---- 26. Work Detail & Estimate Detail (Modal Sub-components) ---- */
 
 /* Work item cards */
@@ -5345,20 +5541,37 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     border-bottom: 1px solid var(--border-light);
 }
 
-/* Segmented filter bars: sticky on PC for easy access when scrolled */
+/* Segmented filter bars: sticky on all screen sizes for easy access when scrolled */
+#reportFiltersSegmented,
+#estimateFiltersSegmented,
+#actualFiltersSegmented {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border-light);
+}
+
 @media (min-width: 769px) {
     #reportFiltersSegmented,
     #estimateFiltersSegmented,
     #actualFiltersSegmented {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: var(--bg);
-        border-bottom: 1px solid var(--border-light);
         margin-left: -40px;
         margin-right: -40px;
         padding-left: 40px;
         padding-right: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    #reportFiltersSegmented,
+    #estimateFiltersSegmented,
+    #actualFiltersSegmented {
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+        -webkit-overflow-scrolling: touch;
     }
 }
 

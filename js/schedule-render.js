@@ -1761,10 +1761,14 @@ const dragState = {
     originalStartDate: null,
     previewDate: null,
     autoScrollId: null,
-    pressStartTime: 0
+    pressStartTime: 0,
+    // 担当者変更ドラッグ用
+    originalMember: null,
+    previewMember: null,
+    previewRowIndex: -1
 };
 
-export function setupDragAndDrop(onScheduleUpdate) {
+export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -1789,6 +1793,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.originalStartDate = schedule.startDate;
                 dragState.previewDate = null;
                 dragState.pressStartTime = Date.now();
+                dragState.originalMember = schedule.member;
+                dragState.previewMember = null;
+                dragState.previewRowIndex = -1;
                 canvas.style.cursor = 'grabbing';
             }
         });
@@ -1805,13 +1812,36 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
+                // 担当者行の判定（担当者別ビューのみ）
+                let targetMember = null;
+                let targetRowIndex = -1;
+                const viewMode = scheduleSettings.viewMode;
+                if (viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows.length > 0) {
+                    const rowIdx = renderer.getRowIndexAtPosition(y);
+                    if (rowIdx >= 0 && rowIdx < renderer.rows.length) {
+                        const targetRow = renderer.rows[rowIdx];
+                        if (targetRow.type === 'member' && targetRow.label !== dragState.originalMember) {
+                            targetMember = targetRow.label;
+                            targetRowIndex = rowIdx;
+                        }
+                    }
+                }
+
+                // プレビュー担当者が変わった場合、再描画が必要
+                const memberChanged = targetMember !== dragState.previewMember;
+                dragState.previewMember = targetMember;
+                dragState.previewRowIndex = targetRowIndex;
+
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
-                    if (dateStr !== dragState.previewDate) {
+                    if (dateStr !== dragState.previewDate || memberChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr);
+                        drawDragPreview(renderer, dragState.schedule, dateStr, targetMember, targetRowIndex);
                     }
+                } else if (memberChanged) {
+                    // 日付が変わらなくても担当者行が変わったら再描画
+                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, targetMember, targetRowIndex);
                 }
 
                 // 端に近づいたら自動横スクロール
@@ -1871,9 +1901,21 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const pressDuration = Date.now() - dragState.pressStartTime;
 
             let didUpdate = false;
-            // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
-            if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
-                onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+            const draggedSchedule = dragState.schedule;
+            const previewMember = dragState.previewMember;
+            const originalMember = dragState.originalMember;
+            const previewDate = dragState.previewDate;
+            const originalStartDate = dragState.originalStartDate;
+
+            // 担当者変更があった場合（担当者別ビューで別の行にドロップ）
+            if (previewMember && previewMember !== originalMember && onMemberChange) {
+                // 日付変更もあった場合は両方のデータを渡す
+                const newStartDate = (previewDate && previewDate !== originalStartDate) ? previewDate : null;
+                onMemberChange(draggedSchedule.id, originalMember, previewMember, newStartDate);
+                didUpdate = true;
+            } else if (previewDate && previewDate !== originalStartDate && onScheduleUpdate) {
+                // 担当者変更なし、日付変更のみ
+                onScheduleUpdate(draggedSchedule.id, previewDate);
                 didUpdate = true;
             }
 
@@ -1885,6 +1927,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.originalMember = null;
+            dragState.previewMember = null;
+            dragState.previewRowIndex = -1;
             canvas.style.cursor = 'default';
 
             // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
@@ -1905,6 +1950,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.isDragging = false;
                 dragState.schedule = null;
                 dragState.previewDate = null;
+                dragState.originalMember = null;
+                dragState.previewMember = null;
+                dragState.previewRowIndex = -1;
 
                 const renderer = getRenderer();
                 if (renderer) {
@@ -1928,6 +1976,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.originalMember = null;
+            dragState.previewMember = null;
+            dragState.previewRowIndex = -1;
 
             const renderer = getRenderer();
             const canvas = document.getElementById('ganttTimelineCanvas');
@@ -1951,7 +2002,7 @@ function formatDateForDrag(date) {
     return `${year}-${month}-${day}`;
 }
 
-function drawDragPreview(renderer, schedule, newStartDate) {
+function drawDragPreview(renderer, schedule, newStartDate, targetMember = null, targetRowIndex = -1) {
     // render()内部で日付ベースのスクロール位置保持が行われる
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
 
@@ -1975,22 +2026,70 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     const originalRect = renderer.scheduleRects.find(r => r.schedule.id === schedule.id);
     if (!originalRect) return;
 
-    const barY = originalRect.y;
+    // 担当者変更時はターゲット行のY座標を使用
+    let barY;
+    if (targetMember && targetRowIndex >= 0) {
+        barY = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING;
 
+        // ターゲット行のハイライト表示
+        ctx.fillStyle = 'rgba(29, 111, 165, 0.10)';  // --info ベースの薄いハイライト
+        ctx.fillRect(0, HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT, renderer.timelineWidth, ROW_HEIGHT);
+
+        // ターゲット行の上下にボーダーライン
+        ctx.strokeStyle = 'rgba(29, 111, 165, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        const rowTop = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT;
+        ctx.beginPath();
+        ctx.moveTo(0, rowTop);
+        ctx.lineTo(renderer.timelineWidth, rowTop);
+        ctx.moveTo(0, rowTop + ROW_HEIGHT);
+        ctx.lineTo(renderer.timelineWidth, rowTop + ROW_HEIGHT);
+        ctx.stroke();
+
+        // ラベルキャンバスにもハイライトを描画
+        const labelCtx = renderer.labelCtx;
+        if (labelCtx) {
+            labelCtx.fillStyle = 'rgba(29, 111, 165, 0.10)';
+            labelCtx.fillRect(0, rowTop, renderer.labelWidth, ROW_HEIGHT);
+
+            labelCtx.strokeStyle = 'rgba(29, 111, 165, 0.35)';
+            labelCtx.lineWidth = 1.5;
+            labelCtx.setLineDash([]);
+            labelCtx.beginPath();
+            labelCtx.moveTo(0, rowTop);
+            labelCtx.lineTo(renderer.labelWidth, rowTop);
+            labelCtx.moveTo(0, rowTop + ROW_HEIGHT);
+            labelCtx.lineTo(renderer.labelWidth, rowTop + ROW_HEIGHT);
+            labelCtx.stroke();
+        }
+    } else {
+        barY = originalRect.y;
+    }
+
+    // プレビューバーの描画
     ctx.globalAlpha = 0.6;
-    ctx.fillStyle = '#1D6FA5';  // --info
+    ctx.fillStyle = targetMember ? '#8B5CF6' : '#1D6FA5';  // 担当者変更時は紫、日付変更時は青
     fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2D5A27';
+    ctx.strokeStyle = targetMember
+        ? 'rgba(139, 92, 246, 0.8)'
+        : (getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2D5A27');
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     strokeRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
     ctx.setLineDash([]);
     ctx.globalAlpha = 1.0;
 
+    // 日付ラベル
     ctx.fillStyle = TEXT_PRIMARY;
     ctx.font = '600 11px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+    if (targetMember) {
+        // 担当者変更時: 担当者名と矢印を表示
+        ctx.fillText(`→ ${targetMember}`, barX + barWidth / 2, barY - 5);
+    } else {
+        ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+    }
 }
 
 // ============================================
@@ -2032,7 +2131,7 @@ function resetTouchState() {
  * @param {Function} onScheduleClick - バータップ時のコールバック
  * @param {Function} onScheduleUpdate - バードラッグ完了時のコールバック
  */
-export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
+export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberChange) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -2072,6 +2171,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                     dragState.startY = y;
                     dragState.originalStartDate = schedule.startDate;
                     dragState.previewDate = null;
+                    dragState.originalMember = schedule.member;
+                    dragState.previewMember = null;
+                    dragState.previewRowIndex = -1;
 
                     renderer.highlightedScheduleId = schedule.id;
                     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
@@ -2109,14 +2211,36 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
 
                 const rect = canvas.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                // 担当者行の判定（担当者別ビューのみ）
+                let targetMember = null;
+                let targetRowIndex = -1;
+                const viewMode = scheduleSettings.viewMode;
+                if (viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows.length > 0) {
+                    const rowIdx = renderer.getRowIndexAtPosition(y);
+                    if (rowIdx >= 0 && rowIdx < renderer.rows.length) {
+                        const targetRow = renderer.rows[rowIdx];
+                        if (targetRow.type === 'member' && targetRow.label !== dragState.originalMember) {
+                            targetMember = targetRow.label;
+                            targetRowIndex = rowIdx;
+                        }
+                    }
+                }
+
+                const memberChanged = targetMember !== dragState.previewMember;
+                dragState.previewMember = targetMember;
+                dragState.previewRowIndex = targetRowIndex;
 
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
-                    if (dateStr !== dragState.previewDate) {
+                    if (dateStr !== dragState.previewDate || memberChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr);
+                        drawDragPreview(renderer, dragState.schedule, dateStr, targetMember, targetRowIndex);
                     }
+                } else if (memberChanged) {
+                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, targetMember, targetRowIndex);
                 }
 
                 // 端に近づいたら自動スクロール
@@ -2170,8 +2294,19 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 }
 
                 let didUpdate = false;
-                if (dragState.previewDate && onScheduleUpdate) {
-                    onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                const draggedSchedule = dragState.schedule;
+                const previewMember = dragState.previewMember;
+                const originalMember = dragState.originalMember;
+                const previewDate = dragState.previewDate;
+                const originalStartDate = dragState.originalStartDate;
+
+                // 担当者変更があった場合
+                if (previewMember && previewMember !== originalMember && onMemberChange) {
+                    const newStartDate = (previewDate && previewDate !== originalStartDate) ? previewDate : null;
+                    onMemberChange(draggedSchedule.id, originalMember, previewMember, newStartDate);
+                    didUpdate = true;
+                } else if (previewDate && onScheduleUpdate) {
+                    onScheduleUpdate(draggedSchedule.id, previewDate);
                     didUpdate = true;
                 }
 
@@ -2179,6 +2314,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 dragState.wasDragging = true;
                 dragState.schedule = null;
                 dragState.previewDate = null;
+                dragState.originalMember = null;
+                dragState.previewMember = null;
+                dragState.previewRowIndex = -1;
 
                 // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
                 // 再描画が済んでいるため、ここでの再描画は不要
@@ -2210,6 +2348,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.originalMember = null;
+            dragState.previewMember = null;
+            dragState.previewRowIndex = -1;
 
             const renderer = getRenderer();
             if (renderer) {
