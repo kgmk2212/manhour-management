@@ -642,6 +642,12 @@ export function initEventHandlers() {
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');
     if (btnAddCompanyHoliday) btnAddCompanyHoliday.addEventListener('click', addCompanyHoliday);
 
+    // その他工数テンプレート追加
+    const btnAddTemplate = document.getElementById('btnAddOtherWorkTemplate');
+    if (btnAddTemplate) btnAddTemplate.addEventListener('click', () => {
+        if (typeof window.addOtherWorkTemplate === 'function') window.addOtherWorkTemplate();
+    });
+
     const mobileTabDesignDropdown = document.getElementById('mobileTabDesign');
     if (mobileTabDesignDropdown) {
         mobileTabDesignDropdown.addEventListener('change', changeMobileTabDesign);

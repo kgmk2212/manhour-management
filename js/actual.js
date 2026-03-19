@@ -1732,10 +1732,53 @@ function buildCalendarTaskList(member, selectedVersion, selectedProcess) {
         });
     });
 
-    // Bug 2: ソート - 自分のタスク優先、残作業ありを優先
+    // Bug 2: 見積のない対応も実績の候補に出す
+    // 実績があるが見積にない（version+task+process）の組み合わせを収集
+    const estimateKeys = new Set();
+    estimates.forEach(est => {
+        const isOther = isOtherWork(est);
+        if (!isOther) {
+            estimateKeys.add(`${est.version}_${est.task}_${est.process}`);
+        }
+    });
+
+    // 実績から見積にないユニークな対応を抽出
+    const actualOnlyKeys = new Set();
+    actuals.forEach(a => {
+        const isOther = isOtherWork(a);
+        if (isOther) return; // その他工数は除外
+        const key = `${a.version}_${a.task}_${a.process}`;
+        if (!estimateKeys.has(key) && !actualOnlyKeys.has(key)) {
+            actualOnlyKeys.add(key);
+
+            // フィルタ条件を適用
+            if (selectedVersion && selectedVersion !== '' && a.version !== selectedVersion) return;
+            if (selectedProcess && selectedProcess !== '' && a.process !== selectedProcess) return;
+
+            const totalActualHours = actualTotals[key] || 0;
+            const processLabel = ` [${a.process}]`;
+            const displayText = `${a.task}${processLabel} (実績: ${formatHours(totalActualHours)}h, 見積なし)`;
+
+            calendarTaskList.push({
+                version: a.version,
+                task: a.task,
+                process: a.process,
+                member: a.member,
+                remaining: 0,
+                display: displayText,
+                isOwn: a.member === member,
+                isCompleted: false,
+                hasNoEstimate: true
+            });
+        }
+    });
+
+    // ソート - 自分のタスク優先、見積ありを優先、残作業ありを優先
     calendarTaskList.sort((a, b) => {
         // 自分のタスクを優先
         if (a.isOwn !== b.isOwn) return a.isOwn ? -1 : 1;
+        // 見積なしを下位に
+        if (a.hasNoEstimate !== b.hasNoEstimate) return a.hasNoEstimate ? 1 : -1;
         // 残作業ありを優先
         if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
         // 残りが多い順
@@ -1766,30 +1809,45 @@ export function filterCalendarTaskList() {
 
     if (filtered.length === 0) {
         dropdown.innerHTML = '<div class="custom-dropdown-empty">該当する対応が見つかりません</div>' +
-            '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--accent); font-weight: 500;">自由入力で登録...</div>';
+            '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border-light);">+ 新しい対応を追加...</div>';
     } else {
         let html = '';
         let lastSection = '';
+        let hasNoEstimateSection = false;
 
         filtered.forEach(taskInfo => {
-            const section = taskInfo.isOwn ? 'own' : 'other';
+            // セクション分けロジック: 自分/他/見積なし
+            let section;
+            if (taskInfo.hasNoEstimate) {
+                section = 'no-estimate';
+            } else {
+                section = taskInfo.isOwn ? 'own' : 'other';
+            }
+
             if (section !== lastSection) {
                 if (section === 'own') {
                     html += `<div style="padding: 6px 16px; font-size: 11px; color: var(--accent); font-weight: 600; background: var(--accent-light); border-bottom: 1px solid var(--border-light);">担当：${escapeHtml(calendarMember)}</div>`;
-                } else {
+                } else if (section === 'other') {
                     html += `<div style="padding: 6px 16px; font-size: 11px; color: var(--text-muted); font-weight: 600; background: var(--surface-elevated); border-bottom: 1px solid var(--border-light);">他の担当者</div>`;
+                } else if (section === 'no-estimate') {
+                    hasNoEstimateSection = true;
+                    html += `<div style="padding: 6px 16px; font-size: 11px; color: var(--warning, #f59e0b); font-weight: 600; background: var(--surface-elevated); border-bottom: 1px solid var(--border-light); border-top: 1px solid var(--border-light);">見積なし（実績のみ）</div>`;
                 }
                 lastSection = section;
             }
 
             const value = `${taskInfo.version}|${taskInfo.task}|${taskInfo.process}|${taskInfo.member}`;
             const completedStyle = taskInfo.isCompleted ? 'color: var(--text-muted); opacity: 0.7;' : '';
+            const noEstimateStyle = taskInfo.hasNoEstimate ? 'color: var(--warning, #f59e0b);' : '';
+            const itemStyle = completedStyle || noEstimateStyle;
             const memberLabel = taskInfo.isOwn ? '' : ` <span style="color: var(--text-muted); font-size: 11px;">(${escapeHtml(taskInfo.member)})</span>`;
+            const noEstimateIcon = taskInfo.hasNoEstimate ? '<span style="color: var(--warning, #f59e0b); font-size: 11px; margin-right: 4px;" title="見積登録なし">&#9888;</span>' : '';
 
-            html += `<div class="custom-dropdown-item" onmousedown="selectCalendarTask('${escapeForHandler(value)}', '${escapeForHandler(taskInfo.display)}')" style="${completedStyle}">${escapeHtml(taskInfo.display)}${memberLabel}</div>`;
+            html += `<div class="custom-dropdown-item" onmousedown="selectCalendarTask('${escapeForHandler(value)}', '${escapeForHandler(taskInfo.display)}')" style="${itemStyle}">${noEstimateIcon}${escapeHtml(taskInfo.display)}${memberLabel}</div>`;
         });
 
-        html += '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--accent); font-weight: 500; border-top: 2px solid var(--border-light);">自由入力で登録...</div>';
+        // Bug 3: 「新しい対応を追加...」を最下部に控えめに表示
+        html += '<div class="custom-dropdown-item" onmousedown="selectCalendarTaskFreeInput()" style="color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border-light);">+ 新しい対応を追加...</div>';
         dropdown.innerHTML = html;
     }
 
@@ -2098,7 +2156,9 @@ export function renderCalendarGrid() {
 
     let html = '';
     html += `<div class="actual-calendar-nav">`;
+    html += `<button class="month-nav-btn" onclick="navigateCalendarMonth(-1)" title="前月">&#9664;</button>`;
     html += `<div class="month-label">${year}年${month}月</div>`;
+    html += `<button class="month-nav-btn" onclick="navigateCalendarMonth(1)" title="翌月">&#9654;</button>`;
     html += `<div class="month-total">合計: <strong>${formatHours(totalHours)}h</strong></div>`;
     html += `</div>`;
 
@@ -2180,6 +2240,91 @@ export function renderCalendarGrid() {
     html += '</div>';
 
     container.innerHTML = html;
+}
+
+/**
+ * カレンダーグリッドの月を前後に移動
+ * @param {number} delta - -1 で前月、+1 で翌月
+ */
+export function navigateCalendarMonth(delta) {
+    const monthSelect = document.getElementById('actualMonthFilter');
+    if (!monthSelect) return;
+
+    const currentValue = monthSelect.value;
+    let year, month;
+
+    if (currentValue && currentValue !== 'all') {
+        const parts = currentValue.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+    } else {
+        const now = new Date();
+        year = now.getFullYear();
+        month = now.getMonth() + 1;
+    }
+
+    // 移動先の月を計算
+    month += delta;
+    if (month > 12) {
+        month = 1;
+        year++;
+    } else if (month < 1) {
+        month = 12;
+        year--;
+    }
+
+    const newValue = `${year}-${String(month).padStart(2, '0')}`;
+
+    // select に新しい月がオプションとして存在するか確認し、なければ追加
+    let optionExists = Array.from(monthSelect.options).some(opt => opt.value === newValue);
+    if (!optionExists) {
+        // 新しいオプションを適切な位置に挿入
+        const [y, m] = newValue.split('-');
+        const option = document.createElement('option');
+        option.value = newValue;
+        option.textContent = `${y}年${parseInt(m)}月`;
+
+        // 降順ソートの中で正しい位置に挿入
+        let inserted = false;
+        for (let i = 0; i < monthSelect.options.length; i++) {
+            const optVal = monthSelect.options[i].value;
+            if (optVal === 'all') continue;
+            if (newValue > optVal) {
+                monthSelect.insertBefore(option, monthSelect.options[i]);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) {
+            monthSelect.appendChild(option);
+        }
+
+        // select2 にも追加
+        const monthSelect2 = document.getElementById('actualMonthFilter2');
+        if (monthSelect2) {
+            const option2 = document.createElement('option');
+            option2.value = newValue;
+            option2.textContent = `${y}年${parseInt(m)}月`;
+            let inserted2 = false;
+            for (let i = 0; i < monthSelect2.options.length; i++) {
+                const optVal = monthSelect2.options[i].value;
+                if (optVal === 'all') continue;
+                if (newValue > optVal) {
+                    monthSelect2.insertBefore(option2, monthSelect2.options[i]);
+                    inserted2 = true;
+                    break;
+                }
+            }
+            if (!inserted2) {
+                monthSelect2.appendChild(option2);
+            }
+        }
+    }
+
+    // handleActualMonthChange を使って月を変更（セグメントボタン同期・アニメーション含む）
+    if (typeof window.handleActualMonthChange === 'function') {
+        window.handleActualMonthChange(newValue, 'actualMonthButtons2');
+    }
 }
 
 // ============================================

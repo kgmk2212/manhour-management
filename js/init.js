@@ -214,6 +214,7 @@ window.openEditAllProcessesFromTaskModal = Estimate.openEditAllProcessesFromTask
 window.updateTaskSortOrder = Estimate.updateTaskSortOrder;
 window.sortTaskKeysByOrder = Estimate.sortTaskKeysByOrder;
 window.startInlineEditEstimate = Estimate.startInlineEditEstimate;
+window.jumpToReportFromEstimate = Estimate.jumpToReportFromEstimate;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
@@ -260,6 +261,7 @@ window.setupCalendarSwipe = Actual.setupCalendarSwipe;
 window.renderActualMatrix = Actual.renderActualMatrix;
 window.renderActualListView = Actual.renderActualListView;
 window.renderCalendarGrid = Actual.renderCalendarGrid;
+window.navigateCalendarMonth = Actual.navigateCalendarMonth;
 window.showWorkDetail = Actual.showWorkDetail;
 window.showGridDayDetail = Actual.showGridDayDetail;
 window.closeWorkModal = Actual.closeWorkModal;
@@ -354,6 +356,10 @@ window.addOtherWork = OtherWork.addOtherWork;
 window.openOtherWorkModal = OtherWork.openOtherWorkModal;
 window.closeOtherWorkModal = OtherWork.closeOtherWorkModal;
 window.switchOtherWorkTab = OtherWork.switchOtherWorkTab;
+window.addOtherWorkTemplate = OtherWork.addOtherWorkTemplate;
+window.deleteOtherWorkTemplate = OtherWork.deleteOtherWorkTemplate;
+window.applyOtherWorkTemplates = OtherWork.applyOtherWorkTemplates;
+window.renderTemplateSettingsList = OtherWork.renderTemplateSettingsList;
 
 
 // modal.js の関数
@@ -459,6 +465,7 @@ window.setScheduleStatus = Schedule.setScheduleStatus;
 window.getFilteredSchedules = Schedule.getFilteredSchedules;
 window.applyScheduleFilters = Schedule.applyScheduleFilters;
 window.clearScheduleFilters = Schedule.clearScheduleFilters;
+window.toggleFilterHighlightMode = Schedule.toggleFilterHighlightMode;
 window.updateScheduleFilterOptions = Schedule.updateScheduleFilterOptions;
 window.exportSchedulesToExcel = Schedule.exportSchedulesToExcel;
 window.deleteFilteredSchedules = Schedule.deleteFilteredSchedules;
@@ -611,6 +618,7 @@ document.addEventListener('DOMContentLoaded', function () {
     Report.updateReport();
     Vacation.renderCompanyHolidayList();
     Storage.renderAutoBackupList();
+    OtherWork.renderTemplateSettingsList();
 
     // キャパシティ表示設定の初期化
     Report.initCapacitySettings();
@@ -689,16 +697,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // 保存されたタブを復元（リロード時に前回のタブに戻る）
     // ※initTabIndicator後に呼ぶことで、showTab内のupdateTabIndicatorが正しく動作する
     try {
-        const savedTab = localStorage.getItem('manhour_currentTab');
-        if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].includes(savedTab)) {
+        let savedTab = localStorage.getItem('manhour_currentTab');
+        // quickタブは実績一覧のモーダルに統合されたため、actualにフォールバック
+        if (savedTab === 'quick') savedTab = 'actual';
+        if (savedTab && ['estimate', 'actual', 'report', 'schedule', 'settings'].includes(savedTab)) {
             UI.showTab(savedTab);
         } else {
             // savedTabがない場合はデフォルトタブを表示（is-hidden解除のためshowTabを呼ぶ）
-            UI.showTab('quick');
+            UI.showTab('report');
         }
     } catch (e) {
         // localStorageエラーは無視、デフォルトタブを表示
-        UI.showTab('quick');
+        UI.showTab('report');
     }
 
     // FOUC防止: 正しいタブとテーマが適用されたのでコンテンツを表示

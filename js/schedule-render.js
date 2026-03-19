@@ -141,6 +141,7 @@ export class GanttChartRenderer {
         this.customLabelWidths = this.loadCustomLabelWidths();
         this.resizeHandle = null;
         this.completedVersions = new Set();  // 完了済み版数（グレーアウト対象）
+        this.grayedOutIds = new Set();       // ハイライトモード時のグレーアウト対象ID
     }
 
     /**
@@ -1074,20 +1075,27 @@ export class GanttChartRenderer {
                 row.schedules.length > 0 &&
                 row.schedules.every(s => this.completedVersions.has(s.version));
 
+            // ハイライトモード: 行全体がグレーアウト対象かどうか
+            const isGrayedOutRow = this.grayedOutIds.size > 0 &&
+                row.schedules.length > 0 &&
+                row.schedules.every(s => this.grayedOutIds.has(s.id));
+
+            const isDimmedRow = isCompletedRow || isGrayedOutRow;
+
             // メンバードット（色付き丸）
             if (row.color || row.type === 'member') {
                 const dotColor = row.color || this.getMemberDotColor(row.label, index);
-                ctx.fillStyle = isCompletedRow ? TEXT_MUTED : dotColor;
-                if (isCompletedRow) ctx.globalAlpha = 0.5;
+                ctx.fillStyle = isDimmedRow ? TEXT_MUTED : dotColor;
+                if (isDimmedRow) ctx.globalAlpha = 0.5;
                 ctx.beginPath();
                 ctx.arc(dotLeftPad + dotSize / 2, centerY, dotSize / 2, 0, Math.PI * 2);
                 ctx.fill();
-                if (isCompletedRow) ctx.globalAlpha = 1.0;
+                if (isDimmedRow) ctx.globalAlpha = 1.0;
             }
 
             // ラベルテキスト
-            ctx.fillStyle = isCompletedRow ? TEXT_MUTED : TEXT_PRIMARY;
-            ctx.font = isCompletedRow
+            ctx.fillStyle = isDimmedRow ? TEXT_MUTED : TEXT_PRIMARY;
+            ctx.font = isDimmedRow
                 ? '400 13px system-ui, -apple-system, sans-serif'
                 : '600 13px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'left';
@@ -1151,15 +1159,27 @@ export class GanttChartRenderer {
 
         // 完了版数かどうか
         const isCompletedVersion = this.completedVersions.has(schedule.version);
+        // ハイライトモードでグレーアウト対象かどうか
+        const isGrayedOut = this.grayedOutIds.has(schedule.id);
 
         // タスクの色を取得
-        const taskColor = isCompletedVersion
-            ? this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.7)
-            : getTaskColor(schedule.version, schedule.task);
+        let taskColor;
+        if (isGrayedOut) {
+            taskColor = this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.85);
+        } else if (isCompletedVersion) {
+            taskColor = this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.7);
+        } else {
+            taskColor = getTaskColor(schedule.version, schedule.task);
+        }
         const lightColor = this.lightenColor(taskColor, 0.6);
 
+        // グレーアウト対象はアルファを大幅に下げる
+        if (isGrayedOut) {
+            ctx.save();
+            ctx.globalAlpha = 0.25;
+        }
         // 完了版数はアルファを下げる
-        if (isCompletedVersion) {
+        else if (isCompletedVersion) {
             ctx.save();
             ctx.globalAlpha = 0.35;
         }
@@ -1231,6 +1251,31 @@ export class GanttChartRenderer {
             ctx.moveTo(barX + BAR_RADIUS, barY);
             ctx.lineTo(barX + barWidth - BAR_RADIUS, barY);
             ctx.stroke();
+            ctx.restore();
+        }
+
+        // 複数人分担インジケーター（同じタスク+工程を複数メンバーが担当している場合）
+        const coworkerCount = schedules.filter(s =>
+            s.id !== schedule.id &&
+            s.version === schedule.version &&
+            s.task === schedule.task &&
+            s.process === schedule.process
+        ).length;
+        if (coworkerCount > 0 && barWidth > 20) {
+            ctx.save();
+            // バー左端に小さな人数バッジを描画
+            const badgeSize = 12;
+            const badgeX = barX + 2;
+            const badgeY = barY + BAR_HEIGHT - badgeSize - 1;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.beginPath();
+            ctx.arc(badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 8px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${coworkerCount + 1}`, badgeX + badgeSize / 2, badgeY + badgeSize / 2);
             ctx.restore();
         }
 
@@ -1340,8 +1385,8 @@ export class GanttChartRenderer {
             }
         }
 
-        // 完了版数のアルファを復元
-        if (isCompletedVersion) {
+        // グレーアウト・完了版数のアルファを復元
+        if (isGrayedOut || isCompletedVersion) {
             ctx.restore();
         }
 
@@ -1592,6 +1637,19 @@ function showTooltip(schedule, x, y, renderer) {
         ? `${progressInfo.remainingHours.toFixed(1)}h ★`
         : `${progressInfo.remainingHours.toFixed(1)}h`;
 
+    // 同じタスク+工程を担当する他のメンバーを検索（複数人分担表示）
+    const coworkers = schedules.filter(s =>
+        s.id !== schedule.id &&
+        s.version === schedule.version &&
+        s.task === schedule.task &&
+        s.process === schedule.process
+    );
+    let coworkerHtml = '';
+    if (coworkers.length > 0) {
+        const coworkerNames = coworkers.map(s => escapeHtml(s.member)).join(', ');
+        coworkerHtml = `<div class="tooltip-row tooltip-coworkers"><span class="tooltip-label">共同:</span><span>${coworkerNames}</span></div>`;
+    }
+
     tooltip.innerHTML = `
         <div class="tooltip-header">
             <strong>${escapeHtml(schedule.task)}</strong>
@@ -1600,6 +1658,7 @@ function showTooltip(schedule, x, y, renderer) {
         <div class="tooltip-body">
             <div class="tooltip-row"><span class="tooltip-label">工程:</span><span>${escapeHtml(schedule.process)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">担当:</span><span>${escapeHtml(schedule.member)}</span></div>
+            ${coworkerHtml}
             <div class="tooltip-row"><span class="tooltip-label">期間:</span><span>${escapeHtml(schedule.startDate)} 〜 ${escapeHtml(schedule.endDate)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">進捗:</span><span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${progressInfo.actualHours.toFixed(1)}h / ${progressInfo.estimatedHours}h)</span></div>
             <div class="tooltip-row"><span class="tooltip-label">残:</span><span>${remainingDisplay}</span></div>

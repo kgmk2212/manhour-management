@@ -17,7 +17,9 @@
         (function () {
             try {
                 var savedTab = localStorage.getItem('manhour_currentTab');
-                if (savedTab && ['quick', 'estimate', 'actual', 'report', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
+                // quickタブは実績一覧のモーダルに統合されたため、actualにフォールバック
+                if (savedTab === 'quick') savedTab = 'actual';
+                if (savedTab && ['estimate', 'actual', 'report', 'schedule', 'settings'].indexOf(savedTab) !== -1) {
                     window.__earlySavedTab = savedTab;
                 }
             } catch (e) { }
@@ -79,8 +81,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css?v=20260310-8">
     <style>
-        /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
-        [data-early-tab] #quick.tab-content.active { display: none !important; }
+        /* 早期タブ適用：デフォルトのreportタブ以外が保存されている場合、reportを非表示にし保存タブを表示 */
+        [data-early-tab] #report.tab-content.active { display: none !important; }
         [data-early-tab="estimate"] #estimate.tab-content { display: block !important; }
         [data-early-tab="actual"] #actual.tab-content { display: block !important; }
         [data-early-tab="report"] #report.tab-content { display: block !important; }
@@ -88,14 +90,14 @@
         [data-early-tab="settings"] #settings.tab-content { display: block !important; }
 
         /* 早期タブ適用：タブボタンのactive状態を正しいタブに切り替え（ズレ防止） */
-        /* quickのactive状態を解除 */
-        [data-early-tab] .nav-item[data-tab="quick"].active {
+        /* reportのactive状態を解除（他タブが保存されている場合） */
+        [data-early-tab] .nav-item[data-tab="report"].active {
             background: transparent !important;
             color: var(--sidebar-text) !important;
             border-left-color: transparent !important;
             font-weight: 400 !important;
         }
-        [data-early-tab] .mobile-tab-item[data-tab="quick"].active {
+        [data-early-tab] .mobile-tab-item[data-tab="report"].active {
             color: var(--sidebar-text) !important;
             opacity: 0.5 !important;
         }
@@ -125,7 +127,7 @@
     <script>
         // 早期タブ適用
         (function () {
-            if (window.__earlySavedTab && window.__earlySavedTab !== 'quick') {
+            if (window.__earlySavedTab && window.__earlySavedTab !== 'report') {
                 document.documentElement.dataset.earlyTab = window.__earlySavedTab;
             }
         })();
@@ -143,11 +145,8 @@
                 <span class="sidebar-title">工数管理</span>
             </div>
             <nav class="sidebar-nav">
-                <div class="nav-item active" data-tab="quick">
-                    <span class="nav-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
-                    <span class="nav-item-label">クイック入力</span>
-                </div>
-                <div class="nav-item" data-tab="report">
+                <!-- クイック入力タブは実績一覧のモーダルに統合されたため非表示 -->
+                <div class="nav-item active" data-tab="report">
                     <span class="nav-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                     <span class="nav-item-label">レポート</span>
                 </div>
@@ -208,11 +207,8 @@
 
         <!-- Mobile Bottom Tab Bar -->
         <nav class="mobile-tab-bar" id="mobileTabBar">
-            <button class="mobile-tab-item active" data-tab="quick">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>入力</span>
-            </button>
-            <button class="mobile-tab-item" data-tab="report">
+            <!-- クイック入力タブは実績一覧のモーダルに統合されたため非表示 -->
+            <button class="mobile-tab-item active" data-tab="report">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span>レポート</span>
             </button>
@@ -232,7 +228,8 @@
 
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
-            <div id="quick" class="tab-content active">
+            <!-- クイック入力タブは実績一覧のモーダルに統合されたため非表示（JS参照を保持） -->
+            <div id="quick" class="tab-content" style="display:none !important;">
                 <div class="page-header">
                     <h1 class="page-title">クイック入力</h1>
                     <p class="page-subtitle">日々の実績記録、見積登録、休暇登録をすばやく行えます</p>
@@ -287,19 +284,19 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>帳票名</label>
+                            <label>処理名</label>
                             <select id="quickEstFormNameSelect"
                                 style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border);">
-                                <option value="">-- 帳票名を選択 --</option>
+                                <option value="">-- 処理名を選択 --</option>
                                 <option value="__new__">新規入力</option>
                             </select>
                             <div style="display: none; align-items: center; gap: 4px;" id="quickEstFormNameInputWrap">
-                                <input type="text" id="quickEstFormName" placeholder="帳票A"
+                                <input type="text" id="quickEstFormName" placeholder="処理A"
                                     style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); flex: 1;">
                                 <button type="button" onclick="revertFormNameToSelect('quick')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
                             </div>
                             <small
-                                style="color: var(--text-muted); display: block; margin-top: 5px; font-size: 11px;">既存の帳票名を選択、または新規入力できます</small>
+                                style="color: var(--text-muted); display: block; margin-top: 5px; font-size: 11px;">既存の処理名を選択、または新規入力できます</small>
                         </div>
                         <div class="form-group">
                             <label>対応名</label>
@@ -443,7 +440,7 @@
                 <div id="todayActuals"></div>
             </div>
 
-            <div id="report" class="tab-content">
+            <div id="report" class="tab-content active">
                 <div class="page-header">
                     <h1 class="page-title">レポート</h1>
                     <p class="page-subtitle">見積と実績の集計・分析を表示します</p>
@@ -754,6 +751,34 @@
                     <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: 13px;"></div>
                 </div>
 
+                <!-- 進捗サマリーバー（Bug 4: レポートタブへの行き来を減らす） -->
+                <div id="estimateProgressSummary"
+                    style="background: var(--surface-elevated); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: none; cursor: pointer; border: 1px solid var(--border-light); transition: background 0.15s ease;"
+                    onclick="jumpToReportFromEstimate()" title="クリックでレポートタブに移動">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted);">見積合計</span>
+                                <span id="epEstimateHours" style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-left: 4px;">0h</span>
+                            </div>
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted);">実績合計</span>
+                                <span id="epActualHours" style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-left: 4px;">0h</span>
+                            </div>
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted);">消化率</span>
+                                <span id="epProgressRate" style="font-size: 15px; font-weight: 700; margin-left: 4px;">0%</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div id="epProgressBar" style="width: 120px; height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden;">
+                                <div id="epProgressBarFill" style="width: 0%; height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease;"></div>
+                            </div>
+                            <span style="font-size: 11px; color: var(--accent);">&#9654; レポート</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 担当者別合計表示 -->
                 <div id="estimateMemberSummary"
                     style="background: var(--surface-elevated); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
@@ -792,6 +817,14 @@
                             <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">版数:</label>
                             <select id="estimateVersionFilter" style="padding: 3px 6px; font-size: 12px;">
                                 <option value="all">全版数</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto;">
+                            <label style="font-size: 12px; font-weight: 500; white-space: nowrap;">表示:</label>
+                            <select id="estimateViewTypeQuick" style="padding: 3px 6px; font-size: 12px;" onchange="setEstimateViewType(this.value)">
+                                <option value="grouped">グループ</option>
+                                <option value="matrix">マトリクス</option>
                             </select>
                         </div>
 
@@ -1060,6 +1093,14 @@
                         </button>
                         <button onclick="goToScheduleToday()" class="btn btn-secondary btn-sm" style="margin-left:8px;">今日</button>
                     </div>
+                    <div class="schedule-undo-redo" id="scheduleUndoRedo">
+                        <button onclick="historyUndo()" class="schedule-undo-btn" id="scheduleUndoBtn" title="元に戻す (Ctrl+Z)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        </button>
+                        <button onclick="historyRedo()" class="schedule-redo-btn" id="scheduleRedoBtn" title="やり直す (Ctrl+Y)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+                        </button>
+                    </div>
                     <div class="segment-control" style="margin-left:12px;">
                         <div class="segment-item active" id="viewMemberBtn" onclick="setScheduleViewMode('member')">担当者別</div>
                         <div class="segment-item" id="viewTaskBtn" onclick="setScheduleViewMode('task')">タスク別</div>
@@ -1107,6 +1148,10 @@
                             <option value="completed">完了</option>
                         </select>
                     </div>
+                    <label class="filter-highlight-toggle" title="フィルタに一致しないバーをグレーアウト（除外しない）">
+                        <input type="checkbox" id="scheduleFilterHighlight" onchange="toggleFilterHighlightMode()">
+                        <span class="filter-highlight-label">ハイライト</span>
+                    </label>
                     <button onclick="clearScheduleFilters()" class="btn btn-sm btn-outline">クリア</button>
                     <button onclick="deleteFilteredSchedules()" class="btn btn-sm btn-danger-outline"
                         title="フィルタされたスケジュールを削除">一括削除</button>
@@ -1492,24 +1537,8 @@
                     詳細設定
                 </div>
 
-                <div class="setting-section">
-                    <div class="setting-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                        クイック入力モード
-                    </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">クイック入力タブの実績入力/見積登録モードの動作を設定できます。</p>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="rememberQuickInputMode" style="width: auto; margin-right: 10px;">
-                            <span>前回のモード（実績/見積）を記憶する</span>
-                        </label>
-                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                            ・オフ（デフォルト）: 常に実績入力モードで開始します<br>
-                            ・オン: 前回使用したモード（実績入力 or 見積登録）を記憶し、次回も同じモードで開始します
-                        </small>
-                    </div>
-                </div>
+                <!-- クイック入力モード設定は実績一覧モーダルに統合されたため非表示（JS互換性のため要素を保持） -->
+                <input type="checkbox" id="rememberQuickInputMode" style="display:none;">
 
                 <div class="setting-section">
                     <div class="setting-section-title">
@@ -1533,6 +1562,40 @@
                     </div>
 
                     <button class="btn btn-primary" id="btnUpdateAllDisplays" style="margin-top: 10px;">設定を適用</button>
+                </div>
+
+                <!-- その他工数テンプレート設定 -->
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                        その他工数テンプレート
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size:12px;">
+                        定期的に発生する作業（朝会、コードレビュー等）をテンプレートとして登録できます。<br>
+                        その他作業モーダルから「テンプレート適用」で一括登録できます。
+                    </p>
+
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 2; min-width: 120px; margin: 0;">
+                            <label>作業名</label>
+                            <input type="text" id="templateWorkName" placeholder="例: 朝会">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 80px; margin: 0;">
+                            <label>工数 (h)</label>
+                            <input type="number" id="templateWorkHours" step="0.25" min="0" placeholder="0.25">
+                        </div>
+                        <div class="form-group" style="flex: 0 0 auto; margin: 0; display: flex; align-items: flex-end;">
+                            <label style="display: flex; align-items: center; cursor: pointer; white-space: nowrap;">
+                                <input type="checkbox" id="templateApplyToAll" style="width: auto; margin-right: 6px;" checked>
+                                <span style="font-size: 12px;">全員</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddOtherWorkTemplate" style="margin-bottom: 15px;">テンプレートを追加</button>
+
+                    <div id="otherWorkTemplateList" style="max-height: 300px; overflow-y: auto;">
+                        <p style="color: var(--text-muted); font-size: 12px; margin: 0;">登録されたテンプレートはありません</p>
+                    </div>
                 </div>
 
                 <!-- スケジュールバー色設定 -->
@@ -1736,6 +1799,39 @@
 
                     <div class="form-group">
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1:
+                            視覚化の強化</label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportChartEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
+                            <span>棒グラフ表示（版数別、工程別）</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportTrendEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
+                            <span>月別推移の表示</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2: 高度な分析</label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportMemberAnalysisEnabled"
+                                style="width: auto; margin-right: 10px;" checked>
+                            <span>担当者別の詳細分析</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="reportInsightsEnabled" style="width: auto; margin-right: 10px;"
+                                checked>
+                            <span>インサイト・推奨アクションの表示</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 3:
                             即効性の高い改善</label>
 
                         <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
@@ -1754,39 +1850,6 @@
                             <input type="checkbox" id="reportWarningTasksEnabled"
                                 style="width: auto; margin-right: 10px;" checked>
                             <span>要注意タスクのリスト表示</span>
-                        </label>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 2:
-                            視覚化の強化</label>
-
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportChartEnabled" style="width: auto; margin-right: 10px;"
-                                checked>
-                            <span>棒グラフ表示（版数別、工程別）</span>
-                        </label>
-
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportTrendEnabled" style="width: auto; margin-right: 10px;"
-                                checked>
-                            <span>月別推移の表示</span>
-                        </label>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 3: 高度な分析</label>
-
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportMemberAnalysisEnabled"
-                                style="width: auto; margin-right: 10px;" checked>
-                            <span>担当者別の詳細分析</span>
-                        </label>
-
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
-                            <input type="checkbox" id="reportInsightsEnabled" style="width: auto; margin-right: 10px;"
-                                checked>
-                            <span>インサイト・推奨アクションの表示</span>
                         </label>
                     </div>
 
@@ -2131,13 +2194,13 @@
                     <input type="text" id="editTaskVersionInput" placeholder="例: 第2025.12版" style="display: none;">
                 </div>
                 <div class="form-group">
-                    <label>帳票名</label>
+                    <label>処理名</label>
                     <select id="editTaskFormNameSelect">
-                        <option value="">-- 帳票名を選択 --</option>
+                        <option value="">-- 処理名を選択 --</option>
                         <option value="__new__">新規入力</option>
                     </select>
                     <div style="display: none; align-items: center; gap: 4px;" id="editTaskFormNameInputWrap">
-                        <input type="text" id="editTaskFormName" placeholder="帳票A" style="flex: 1;">
+                        <input type="text" id="editTaskFormName" placeholder="処理A" style="flex: 1;">
                         <button type="button" onclick="revertFormNameToSelect('editTask')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
                     </div>
                 </div>
@@ -2244,13 +2307,13 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>帳票名</label>
+                        <label>処理名</label>
                         <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
-                            <option value="">-- 帳票名を選択 --</option>
+                            <option value="">-- 処理名を選択 --</option>
                             <option value="__new__">新規入力</option>
                         </select>
                         <div style="display: none; align-items: center; gap: 4px;" id="addEstFormNameInputWrap">
-                            <input type="text" id="addEstFormName" placeholder="帳票A" style="flex: 1;">
+                            <input type="text" id="addEstFormName" placeholder="処理A" style="flex: 1;">
                             <button type="button" onclick="revertFormNameToSelect('add')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
                         </div>
                     </div>
@@ -2349,7 +2412,7 @@
                 <div id="addEstOtherForm" style="display: none;">
                     <div class="other-work-description">
                         <span class="other-work-icon" style="font-size: 16px; color: var(--text-secondary);">*</span>
-                        <span>打ち合わせや付随作業など、版数・帳票名に紐付かない工数を登録します。</span>
+                        <span>打ち合わせや付随作業など、版数・処理名に紐付かない工数を登録します。</span>
                     </div>
                     <div class="form-group">
                         <label>作業名</label>
@@ -2448,6 +2511,7 @@
                     <button id="meetingTab" class="other-work-tab active"
                         onclick="switchOtherWorkTab('meeting')">打ち合わせ</button>
                     <button id="customTab" class="other-work-tab" onclick="switchOtherWorkTab('custom')">任意作業</button>
+                    <button id="templateTab" class="other-work-tab" onclick="switchOtherWorkTab('template')">テンプレート適用</button>
                 </div>
 
                 <!-- 打ち合わせタブ -->
@@ -2477,6 +2541,18 @@
                         <input type="number" id="otherWorkHours" step="0.25" min="0" placeholder="例: 4">
                     </div>
                     <button class="btn btn-success" onclick="addOtherWork()">追加</button>
+                </div>
+
+                <!-- テンプレート適用タブ -->
+                <div id="templateForm" class="other-work-form" style="display: none;">
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">
+                        登録済みテンプレートの作業を一括で追加します。<br>
+                        <small>テンプレートは設定画面の「その他工数テンプレート」で管理できます。</small>
+                    </p>
+                    <div id="templateApplyList" style="margin-bottom: 15px;">
+                        <p style="color: var(--text-muted); font-size: 13px;">テンプレートが登録されていません。設定画面から追加してください。</p>
+                    </div>
+                    <button class="btn btn-success" onclick="applyOtherWorkTemplates()">テンプレートを一括適用</button>
                 </div>
             </div>
         </div>

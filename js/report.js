@@ -935,8 +935,8 @@ export function togglePhaseCollapse(phaseId) {
         arrow.textContent = phaseCollapsed[phaseId] ? '▶' : '▼';
     }
 
-    // Phase 3 が展開された場合、グラフを再描画（サイズ0で描画された可能性があるため）
-    if (phaseId === 'phase3' && !phaseCollapsed.phase3) {
+    // Phase 2（担当者分析）が展開された場合、グラフを再描画（サイズ0で描画された可能性があるため）
+    if (phaseId === 'phase2' && !phaseCollapsed.phase2) {
         if (typeof updateReport === 'function') {
             updateReport();
         }
@@ -1548,23 +1548,23 @@ export function updateReport() {
 // ============================================
 
 /**
- * Phase 1: 見積精度分析を描画
+ * Phase 3: 見積精度分析を描画
  * 工程別精度、異常値検出、警告タスク一覧を表示
  * @param {Array} filteredEstimates - フィルタ済み見積データ
  * @param {Array} filteredActuals - フィルタ済み実績データ
  * @returns {string} HTMLコンテンツ
  */
-function renderPhase1AccuracyAnalysis(filteredEstimates, filteredActuals) {
+function renderPhase3AccuracyAnalysis(filteredEstimates, filteredActuals) {
     if (!reportSettings.accuracyEnabled && !reportSettings.anomalyEnabled && !reportSettings.warningTasksEnabled) {
         return '';
     }
 
     let html = '';
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-    html += `<h3 onclick="togglePhaseCollapse('phase1')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase1-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase1 ? '▶' : '▼'}</span>`;
-    html += 'Phase 1: 見積精度分析</h3>';
-    html += `<div id="phase1-content" style="display: ${phaseCollapsed.phase1 ? 'none' : 'block'}; margin-top: 15px;">`;
+    html += `<h3 onclick="togglePhaseCollapse('phase3')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+    html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
+    html += 'Phase 3: 見積精度分析</h3>';
+    html += `<div id="phase3-content" style="display: ${phaseCollapsed.phase3 ? 'none' : 'block'}; margin-top: 15px;">`;
 
     // 工程別の精度計算
     if (reportSettings.accuracyEnabled) {
@@ -1584,7 +1584,7 @@ function renderPhase1AccuracyAnalysis(filteredEstimates, filteredActuals) {
     // 対応ごとの内訳（その他作業合計含む）
     html += renderTaskBreakdown(filteredEstimates, filteredActuals);
 
-    html += '</div>'; // close phase1-content
+    html += '</div>'; // close phase3-content
     html += '</div>';
 
     return html;
@@ -1864,24 +1864,24 @@ function renderTaskBreakdown(filteredEstimates, filteredActuals) {
 }
 
 /**
- * Phase 2: ビジュアル分析を描画
+ * Phase 1: ビジュアル分析を描画
  * 工程別バーチャート、月別推移を表示
  * @param {Array} filteredEstimates - フィルタ済み見積データ
  * @param {Array} filteredActuals - フィルタ済み実績データ
  * @param {string} selectedMonth - 選択された月（'all'で全期間）
  * @returns {string} HTMLコンテンツ
  */
-function renderPhase2VisualAnalysis(filteredEstimates, filteredActuals, selectedMonth) {
+function renderPhase1VisualAnalysis(filteredEstimates, filteredActuals, selectedMonth) {
     if (!reportSettings.chartEnabled && !reportSettings.trendEnabled) {
         return '';
     }
 
     let html = '';
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-    html += `<h3 onclick="togglePhaseCollapse('phase2')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
-    html += 'Phase 2: ビジュアル分析</h3>';
-    html += `<div id="phase2-content" style="display: ${phaseCollapsed.phase2 ? 'none' : 'block'}; margin-top: 15px;">`;
+    html += `<h3 onclick="togglePhaseCollapse('phase1')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+    html += `<span id="phase1-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase1 ? '▶' : '▼'}</span>`;
+    html += 'Phase 1: ビジュアル分析</h3>';
+    html += `<div id="phase1-content" style="display: ${phaseCollapsed.phase1 ? 'none' : 'block'}; margin-top: 15px;">`;
 
     // 工程別バーチャート
     if (reportSettings.chartEnabled) {
@@ -1893,7 +1893,7 @@ function renderPhase2VisualAnalysis(filteredEstimates, filteredActuals, selected
         html += renderMonthlyTrend(filteredEstimates, filteredActuals);
     }
 
-    html += '</div>'; // close phase2-content
+    html += '</div>'; // close phase1-content
     html += '</div>';
 
     return html;
@@ -2065,14 +2065,14 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
 }
 
 /**
- * Phase 3: 担当者分析とインサイトを描画
+ * Phase 2: 担当者分析とインサイトを描画
  * 担当者別パフォーマンス、グラフ、AIインサイトを表示
  * @param {Array} filteredEstimates - フィルタ済み見積データ
  * @param {Array} filteredActuals - フィルタ済み実績データ
  * @param {number} workingDaysPerMonth - 月あたり稼働日数
  * @returns {Object} { html: string, chartData: Object|null }
  */
-function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth) {
+function renderPhase2MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth) {
     if (!reportSettings.memberAnalysisEnabled && !reportSettings.insightsEnabled) {
         return { html: '', chartData: null };
     }
@@ -2081,10 +2081,10 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
     let chartData = null;
 
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
-    html += `<h3 onclick="togglePhaseCollapse('phase3')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
-    html += 'Phase 3: 担当者分析とインサイト</h3>';
-    html += `<div id="phase3-content" style="display: ${phaseCollapsed.phase3 ? 'none' : 'block'}; margin-top: 15px;">`;
+    html += `<h3 onclick="togglePhaseCollapse('phase2')" style="margin: 0; color: #495057; font-size: 18px; cursor: pointer; display: flex; align-items: center; user-select: none;">`;
+    html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: 14px;">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
+    html += 'Phase 2: 担当者分析とインサイト</h3>';
+    html += `<div id="phase2-content" style="display: ${phaseCollapsed.phase2 ? 'none' : 'block'}; margin-top: 15px;">`;
 
     // 担当者別パフォーマンス
     if (reportSettings.memberAnalysisEnabled) {
@@ -2098,7 +2098,7 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
         html += renderInsights(filteredEstimates, filteredActuals);
     }
 
-    html += '</div>'; // close phase3-content
+    html += '</div>'; // close phase2-content
     html += '</div>';
 
     return { html, chartData };
@@ -2325,17 +2325,17 @@ function renderInsights(filteredEstimates, filteredActuals) {
 export function renderReportAnalytics(filteredActuals, filteredEstimates, selectedMonth, workingDaysPerMonth) {
     let html = '';
 
-    // Phase 1: 見積精度分析
-    html += renderPhase1AccuracyAnalysis(filteredEstimates, filteredActuals);
+    // Phase 1: ビジュアル分析
+    html += renderPhase1VisualAnalysis(filteredEstimates, filteredActuals, selectedMonth);
 
-    // Phase 2: ビジュアル分析
-    html += renderPhase2VisualAnalysis(filteredEstimates, filteredActuals, selectedMonth);
+    // Phase 2: 担当者分析とインサイト
+    const phase2Result = renderPhase2MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth);
+    html += phase2Result.html;
 
-    // Phase 3: 担当者分析とインサイト
-    const phase3Result = renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth);
-    html += phase3Result.html;
+    // Phase 3: 見積精度分析
+    html += renderPhase3AccuracyAnalysis(filteredEstimates, filteredActuals);
 
-    return { html, chartData: phase3Result.chartData };
+    return { html, chartData: phase2Result.chartData };
 }
 
 // ============================================

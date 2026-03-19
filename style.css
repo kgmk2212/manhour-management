@@ -3025,6 +3025,75 @@ table tr[style*="1565c0"] th:first-child {
     min-width: 100px;
 }
 
+/* Highlight mode toggle */
+.filter-highlight-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.filter-highlight-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.filter-highlight-label {
+    font-size: 12px;
+}
+
+/* Mobile undo/redo buttons */
+.schedule-undo-redo {
+    display: none;
+    gap: 4px;
+    align-items: center;
+}
+
+.schedule-undo-btn,
+.schedule-redo-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.schedule-undo-btn:hover:not(:disabled),
+.schedule-redo-btn:hover:not(:disabled) {
+    background: var(--surface-elevated);
+}
+
+.schedule-undo-btn:disabled,
+.schedule-redo-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Tooltip coworkers row */
+.tooltip-coworkers {
+    border-top: 1px dashed var(--border-light, #e0e0e0);
+    padding-top: 3px;
+    margin-top: 2px;
+}
+
+.tooltip-coworkers span:last-child {
+    color: var(--accent, #2D5A27);
+    font-weight: 600;
+}
+
 /* Version filter multi-select */
 .version-filter-multi {
     position: relative;
@@ -5254,6 +5323,11 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
         flex-wrap: wrap;
     }
 
+    /* Show undo/redo buttons on mobile */
+    .schedule-undo-redo {
+        display: flex;
+    }
+
     .schedule-view-toggle {
         justify-content: center;
     }
@@ -5592,6 +5666,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 }
 
+/* ---- 46.5. Estimate Progress Summary (Bug 4) ---- */
+#estimateProgressSummary:hover {
+    background: var(--surface-hover, var(--accent-light, #f0f7ff)) !important;
+    border-color: var(--accent) !important;
+}
+
 /* ---- 47. Calendar Grid View (Actual List) ---- */
 .actual-calendar-nav {
     display: flex;
@@ -5883,7 +5963,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 }
 
-/* 帳票名 セレクトに戻すボタン */
+/* 処理名 セレクトに戻すボタン */
 .form-name-revert-btn {
     background: var(--surface-alt, var(--surface));
     border: 1px solid var(--border);

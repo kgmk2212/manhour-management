@@ -30,7 +30,8 @@ import {
     taskSortOrder, setTaskSortOrder,
     setWorkDetailStyle, setModalDesignStyle,
     autoBackupFrequency, setAutoBackupFrequency,
-    autoBackupMaxCount, setAutoBackupMaxCount
+    autoBackupMaxCount, setAutoBackupMaxCount,
+    otherWorkTemplates, setOtherWorkTemplates
 } from './state.js';
 
 import { showAlert } from './utils.js';
@@ -358,6 +359,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_taskSortOrder', JSON.stringify(taskSortOrder));
     localStorage.setItem('manhour_settings', JSON.stringify(data.settings));
     localStorage.setItem('manhour_estimateStandardDisplay', data.settings.estimateStandardDisplay);
+    localStorage.setItem('manhour_otherWorkTemplates', JSON.stringify(otherWorkTemplates));
 
     // 進捗計算キャッシュをクリア
     clearProgressCache();
@@ -372,7 +374,7 @@ export function saveData(skipAutoBackup = false) {
         window.updateVersionOptions();
     }
 
-    // 帳票名リストを更新
+    // 処理名リストを更新
     if (typeof window.updateFormNameOptions === 'function') {
         window.updateFormNameOptions();
     }
@@ -425,6 +427,11 @@ export function loadData() {
         const savedTaskSortOrder = localStorage.getItem('manhour_taskSortOrder');
         if (savedTaskSortOrder) {
             setTaskSortOrder(JSON.parse(savedTaskSortOrder));
+        }
+        // その他工数テンプレートの読み込み
+        const savedTemplates = localStorage.getItem('manhour_otherWorkTemplates');
+        if (savedTemplates) {
+            setOtherWorkTemplates(JSON.parse(savedTemplates));
         }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);

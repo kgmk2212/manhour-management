@@ -67,7 +67,7 @@ export function openAddEstimateSingleProcess(version, task, process) {
         versionSelect.disabled = true;
     }
 
-    // 帳票名・対応名をpre-fill＋読み取り専用
+    // 処理名・対応名をpre-fill＋読み取り専用
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
     const taskInput = document.getElementById('addEstTask');
@@ -155,7 +155,7 @@ export function openEditAllProcesses(version, task) {
     const versionSelect = document.getElementById('addEstVersion');
     if (versionSelect) versionSelect.value = version;
 
-    // 帳票名・対応名を分解してプリフィル（editTask()と同じロジック）
+    // 処理名・対応名を分解してプリフィル（editTask()と同じロジック）
     let formName = '';
     let taskName = '';
     if (task.includes('：')) {
@@ -296,7 +296,7 @@ function saveEditAllProcesses() {
     const taskName = document.getElementById('addEstTask').value.trim();
 
     if (!version) { alert('版数を選択してください'); return; }
-    if (!formName) { alert('帳票名を入力してください'); return; }
+    if (!formName) { alert('処理名を入力してください'); return; }
     if (!taskName) { alert('対応名を入力してください'); return; }
 
     const newTask = `${formName}：${taskName}`;
@@ -1259,10 +1259,10 @@ function addNormalEstimate() {
         endMonth = document.getElementById('addEstEndMonth').value;
     }
 
-    // 通常モード: 版数・帳票名・対応名を検証
+    // 通常モード: 版数・処理名・対応名を検証
     const version = document.getElementById('addEstVersion').value;
 
-    // 帳票名を取得（selectまたはinputから）
+    // 処理名を取得（selectまたはinputから）
     const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
     const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
@@ -1273,7 +1273,7 @@ function addNormalEstimate() {
     }
 
     if (!formName) {
-        alert('帳票名を入力してください');
+        alert('処理名を入力してください');
         return;
     }
 
@@ -1282,7 +1282,7 @@ function addNormalEstimate() {
         return;
     }
 
-    // 帳票名と対応名を結合
+    // 処理名と対応名を結合
     const task = `${formName}：${taskName}`;
 
     if (!startMonth) {

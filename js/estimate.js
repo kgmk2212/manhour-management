@@ -635,6 +635,137 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
 }
 
 /**
+ * Bug 4: 見積タブに進捗サマリーバーを表示
+ * 見積合計・実績合計・消化率を表示し、クリックでレポートタブに遷移
+ * @param {Array} filtered - フィルタ済み見積配列
+ * @param {string} filterType - フィルタタイプ
+ * @param {string} monthFilter - 月フィルタ値
+ * @param {number} totalEstimateHours - 合計見積工数
+ */
+function updateEstimateProgressSummary(filtered, filterType, monthFilter, totalEstimateHours) {
+    const container = document.getElementById('estimateProgressSummary');
+    if (!container) return;
+
+    // フィルタ条件に基づいて実績を抽出
+    let filteredActuals = [...actuals];
+
+    // 版数フィルタ
+    const versionFilterElement = document.getElementById('estimateVersionFilter');
+    const versionFilter = versionFilterElement ? versionFilterElement.value : 'all';
+
+    // 複数選択状態をチェック
+    const multiVersions = multiFilterState.estimateVersions;
+    const multiMonths = multiFilterState.estimateMonths;
+
+    // 見積に含まれる版数セット（フィルタ済みデータから）
+    const estimateVersions = new Set(filtered.map(e => e.version));
+
+    // 実績を同じ版数セットでフィルタ
+    if (multiVersions) {
+        filteredActuals = filteredActuals.filter(a => multiVersions.includes(a.version));
+    } else if (versionFilter && versionFilter !== 'all') {
+        filteredActuals = filteredActuals.filter(a => a.version === versionFilter);
+    } else if (filterType === 'version') {
+        filteredActuals = filteredActuals.filter(a => estimateVersions.has(a.version));
+    }
+
+    // 月フィルタ
+    if (multiMonths) {
+        filteredActuals = filteredActuals.filter(a => {
+            if (!a.date) return false;
+            const aMonth = a.date.substring(0, 7);
+            return multiMonths.includes(aMonth);
+        });
+    } else if (monthFilter && monthFilter !== 'all') {
+        filteredActuals = filteredActuals.filter(a => {
+            if (!a.date) return false;
+            return a.date.startsWith(monthFilter);
+        });
+    }
+
+    const totalActualHours = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
+    const progressRate = totalEstimateHours > 0 ? (totalActualHours / totalEstimateHours * 100) : 0;
+
+    // DOM更新
+    const estEl = document.getElementById('epEstimateHours');
+    const actEl = document.getElementById('epActualHours');
+    const rateEl = document.getElementById('epProgressRate');
+    const barFill = document.getElementById('epProgressBarFill');
+
+    if (estEl) estEl.textContent = totalEstimateHours.toFixed(1) + 'h';
+    if (actEl) actEl.textContent = totalActualHours.toFixed(1) + 'h';
+
+    if (rateEl) {
+        rateEl.textContent = progressRate.toFixed(1) + '%';
+        // 色をステータスに応じて変更
+        if (progressRate > 100) {
+            rateEl.style.color = 'var(--danger, #ef4444)';
+        } else if (progressRate >= 80) {
+            rateEl.style.color = 'var(--success, #22c55e)';
+        } else if (progressRate >= 50) {
+            rateEl.style.color = 'var(--accent)';
+        } else {
+            rateEl.style.color = 'var(--text-primary)';
+        }
+    }
+
+    if (barFill) {
+        barFill.style.width = Math.min(progressRate, 100) + '%';
+        if (progressRate > 100) {
+            barFill.style.background = 'var(--danger, #ef4444)';
+        } else {
+            barFill.style.background = 'var(--accent)';
+        }
+    }
+
+    container.style.display = 'block';
+}
+
+/**
+ * Bug 4: 見積タブからレポートタブにジャンプ（同じフィルタ条件で）
+ */
+export function jumpToReportFromEstimate() {
+    // 見積タブの現在のフィルタを取得
+    const monthFilter = document.getElementById('estimateMonthFilter');
+    const versionFilter = document.getElementById('estimateVersionFilter');
+    const filterType = document.getElementById('estimateFilterType');
+
+    // レポートタブのフィルタを同期
+    const reportMonth = document.getElementById('reportMonth');
+    const reportVersion = document.getElementById('reportVersion');
+    const reportFilterType = document.getElementById('reportFilterType');
+
+    if (monthFilter && reportMonth) {
+        // レポートの月フィルタに同じ値があるか確認
+        const optionExists = Array.from(reportMonth.options).some(opt => opt.value === monthFilter.value);
+        if (optionExists) {
+            reportMonth.value = monthFilter.value;
+        }
+    }
+
+    if (versionFilter && reportVersion) {
+        const optionExists = Array.from(reportVersion.options).some(opt => opt.value === versionFilter.value);
+        if (optionExists) {
+            reportVersion.value = versionFilter.value;
+        }
+    }
+
+    if (filterType && reportFilterType) {
+        reportFilterType.value = filterType.value;
+    }
+
+    // レポートタブに切り替え
+    if (typeof window.showTab === 'function') {
+        window.showTab('report');
+    }
+
+    // レポートを更新
+    if (typeof window.updateReport === 'function') {
+        window.updateReport();
+    }
+}
+
+/**
  * 空状態を表示（データなし/フィルタ結果なし）
  * @param {HTMLElement} container - コンテナ要素
  * @param {string} message - 表示メッセージ
@@ -651,6 +782,8 @@ function showEstimateEmptyState(container, message) {
     if (elB) elB.style.display = 'none';
     const memberSummaryContainer = document.getElementById('estimateMemberSummary');
     if (memberSummaryContainer) memberSummaryContainer.style.display = 'none';
+    const progressSummary = document.getElementById('estimateProgressSummary');
+    if (progressSummary) progressSummary.style.display = 'none';
 }
 
 /**
@@ -709,6 +842,9 @@ export function renderEstimateList() {
 
     // 担当者別表示
     renderEstimateMemberSummary(memberSummary, workingDaysPerMonth);
+
+    // Bug 4: 進捗サマリーバーを更新
+    updateEstimateProgressSummary(filtered, filterType, monthFilter, totalHours);
 
     // ビュータイプに応じて描画
     if (viewType === 'grouped') {

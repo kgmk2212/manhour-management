@@ -13,7 +13,7 @@ import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, s
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
-import { pushAction } from './history.js';
+import { pushAction, canUndo, canRedo } from './history.js';
 import { calculateVersionProgress } from './report.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
@@ -124,6 +124,16 @@ export function updateCurrentMonthDisplay() {
 }
 
 /**
+ * モバイル用Undo/Redoボタンの状態を更新
+ */
+export function updateScheduleUndoRedoButtons() {
+    const undoBtn = document.getElementById('scheduleUndoBtn');
+    const redoBtn = document.getElementById('scheduleRedoBtn');
+    if (undoBtn) undoBtn.disabled = !canUndo();
+    if (redoBtn) redoBtn.disabled = !canRedo();
+}
+
+/**
  * スケジュールビューを描画
  */
 export function renderScheduleView() {
@@ -138,6 +148,9 @@ export function renderScheduleView() {
 
     // 未スケジュールバッジを更新
     updateUnscheduledBadge();
+
+    // Undo/Redoボタン状態を更新
+    updateScheduleUndoRedoButtons();
     
     // フィルタされたスケジュールを取得
     const filteredSchedules = getFilteredSchedules();
@@ -189,10 +202,14 @@ export function renderScheduleView() {
                 });
             }
 
-            // 完了版数をレンダラーに設定してから描画
+            // ハイライトモード用のグレーアウトIDセットを取得
+            const grayedOutIds = getGrayedOutScheduleIds();
+
+            // 完了版数・グレーアウトIDをレンダラーに設定してから描画
             const preRenderer = getRenderer();
             if (preRenderer) {
                 preRenderer.completedVersions = completedVersions;
+                preRenderer.grayedOutIds = grayedOutIds;
             }
 
             renderGanttChart(year, month, filteredSchedules);
@@ -2024,29 +2041,60 @@ export function executeAutoGenerate() {
 
 /**
  * フィルタを適用してスケジュールを絞り込み
+ * ハイライトモード時はすべて返す（グレーアウトはレンダラー側で処理）
  * @returns {Array} フィルタされたスケジュール
  */
 export function getFilteredSchedules() {
-    const { filterVersion, filterMember, filterStatus } = scheduleSettings;
-    
+    const { filterVersion, filterMember, filterStatus, filterHighlightMode } = scheduleSettings;
+
+    // ハイライトモード時はフィルタで除外せず、全スケジュールを返す
+    if (filterHighlightMode) {
+        return [...schedules];
+    }
+
     return schedules.filter(schedule => {
         // 版数フィルタ
         if (filterVersion && schedule.version !== filterVersion) {
             return false;
         }
-        
+
         // 担当者フィルタ
         if (filterMember && schedule.member !== filterMember) {
             return false;
         }
-        
+
         // ステータスフィルタ
         if (filterStatus && schedule.status !== filterStatus) {
             return false;
         }
-        
+
         return true;
     });
+}
+
+/**
+ * ハイライトモード時にグレーアウトすべきスケジュールIDのセットを取得
+ * @returns {Set} グレーアウト対象のスケジュールIDセット
+ */
+export function getGrayedOutScheduleIds() {
+    const { filterVersion, filterMember, filterStatus, filterHighlightMode } = scheduleSettings;
+
+    if (!filterHighlightMode) return new Set();
+
+    const hasFilters = filterVersion || filterMember || filterStatus;
+    if (!hasFilters) return new Set();
+
+    const grayedOut = new Set();
+    schedules.forEach(schedule => {
+        let matches = true;
+        if (filterVersion && schedule.version !== filterVersion) matches = false;
+        if (filterMember && schedule.member !== filterMember) matches = false;
+        if (filterStatus && schedule.status !== filterStatus) matches = false;
+        if (!matches) {
+            grayedOut.add(schedule.id);
+        }
+    });
+    return grayedOut;
 }
 
 /**
@@ -2056,13 +2104,27 @@ export function applyScheduleFilters() {
     const version = document.getElementById('scheduleFilterVersion')?.value || '';
     const member = document.getElementById('scheduleFilterMember')?.value || '';
     const status = document.getElementById('scheduleFilterStatus')?.value || '';
-    
+    const highlightMode = document.getElementById('scheduleFilterHighlight')?.checked || false;
+
     setScheduleSettings({
         filterVersion: version,
         filterMember: member,
-        filterStatus: status
+        filterStatus: status,
+        filterHighlightMode: highlightMode
     });
-    
+
+    renderScheduleView();
+    updateFilterResultCount();
+}
+
+/**
+ * ハイライトモードの切替
+ */
+export function toggleFilterHighlightMode() {
+    const checkbox = document.getElementById('scheduleFilterHighlight');
+    if (!checkbox) return;
+
+    setScheduleSettings({ filterHighlightMode: checkbox.checked });
     renderScheduleView();
     updateFilterResultCount();
 }
@@ -2073,14 +2135,21 @@ export function applyScheduleFilters() {
 export function updateFilterResultCount() {
     const countElement = document.getElementById('scheduleFilterCount');
     if (!countElement) return;
-    
-    const filtered = getFilteredSchedules();
+
     const total = schedules.length;
-    
     const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
-    
+
     if (hasFilters) {
-        countElement.innerHTML = `<strong>${filtered.length}</strong> / ${total}件`;
+        // ハイライトモード時はマッチ件数を計算（getFilteredSchedulesは全件を返すため）
+        let matchCount;
+        if (scheduleSettings.filterHighlightMode) {
+            const grayedOut = getGrayedOutScheduleIds();
+            matchCount = total - grayedOut.size;
+        } else {
+            matchCount = getFilteredSchedules().length;
+        }
+        const modeLabel = scheduleSettings.filterHighlightMode ? ' (ハイライト)' : '';
+        countElement.innerHTML = `<strong>${matchCount}</strong> / ${total}件${modeLabel}`;
     } else {
         countElement.innerHTML = total > 0 ? `${total}件` : '';
     }
@@ -2093,36 +2162,47 @@ export function clearScheduleFilters() {
     setScheduleSettings({
         filterVersion: '',
         filterMember: '',
-        filterStatus: ''
+        filterStatus: '',
+        filterHighlightMode: false
     });
-    
+
     // UI更新
     const versionSelect = document.getElementById('scheduleFilterVersion');
     const memberSelect = document.getElementById('scheduleFilterMember');
     const statusSelect = document.getElementById('scheduleFilterStatus');
-    
+    const highlightCheckbox = document.getElementById('scheduleFilterHighlight');
+
     if (versionSelect) versionSelect.value = '';
     if (memberSelect) memberSelect.value = '';
     if (statusSelect) statusSelect.value = '';
-    
+    if (highlightCheckbox) highlightCheckbox.checked = false;
+
     renderScheduleView();
 }
 
 /**
  * フィルタされたスケジュールを一括削除
+ * ハイライトモード時はフィルタに一致するもの（グレーアウトされていないもの）のみ削除
  */
 export function deleteFilteredSchedules() {
-    const filteredSchedules = getFilteredSchedules();
-    
-    if (filteredSchedules.length === 0) {
+    let targetSchedules;
+    if (scheduleSettings.filterHighlightMode) {
+        // ハイライトモード: グレーアウトされていないスケジュール（マッチしたもの）を削除対象に
+        const grayedOut = getGrayedOutScheduleIds();
+        targetSchedules = schedules.filter(s => !grayedOut.has(s.id));
+    } else {
+        targetSchedules = getFilteredSchedules();
+    }
+
+    if (targetSchedules.length === 0) {
         showToast('削除するスケジュールがありません', 'info');
         return;
     }
-    
+
     const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
     const message = hasFilters
-        ? `フィルタに一致する${filteredSchedules.length}件のスケジュールを削除しますか？`
-        : `すべてのスケジュール（${filteredSchedules.length}件）を削除しますか？`;
+        ? `フィルタに一致する${targetSchedules.length}件のスケジュールを削除しますか？`
+        : `すべてのスケジュール（${targetSchedules.length}件）を削除しますか？`;
     
     if (!confirm(message)) {
         return;
@@ -2131,12 +2211,12 @@ export function deleteFilteredSchedules() {
     // Undo用にコピーを保存
     pushAction({
         type: 'schedule_batch_delete',
-        description: `スケジュール一括削除: ${filteredSchedules.length}件`,
-        data: { schedules: filteredSchedules.map(s => ({ ...s })) }
+        description: `スケジュール一括削除: ${targetSchedules.length}件`,
+        data: { schedules: targetSchedules.map(s => ({ ...s })) }
     });
 
     // 削除するIDのセット
-    const idsToDelete = new Set(filteredSchedules.map(s => s.id));
+    const idsToDelete = new Set(targetSchedules.map(s => s.id));
 
     // 削除を実行
     setSchedules(schedules.filter(s => !idsToDelete.has(s.id)));
@@ -2146,7 +2226,7 @@ export function deleteFilteredSchedules() {
     }
 
     renderScheduleView();
-    showToast(`${filteredSchedules.length}件のスケジュールを削除しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
+    showToast(`${targetSchedules.length}件のスケジュールを削除しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**

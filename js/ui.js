@@ -15,7 +15,7 @@ import {
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
 
 // タブの順序を定義
-const TAB_ORDER = ['quick', 'report', 'estimate', 'actual', 'schedule', 'settings'];
+const TAB_ORDER = ['report', 'estimate', 'actual', 'schedule', 'settings'];
 
 // ============================================
 // スクロール比率ユーティリティ（表内相対位置）
@@ -463,10 +463,10 @@ export function initTabIndicator() {
     lastIndicatorPosition = { width: 0, left: 0 };
 
     // 保存されたタブを取得（初期位置を正確に設定するため）
-    let savedTab = 'quick';
+    let savedTab = 'actual';
     try {
         const stored = localStorage.getItem('manhour_currentTab');
-        if (stored && ['quick', 'estimate', 'actual', 'report', 'settings'].includes(stored)) {
+        if (stored && ['estimate', 'actual', 'report', 'schedule', 'settings'].includes(stored)) {
             savedTab = stored;
         }
     } catch (e) {
@@ -1785,9 +1785,16 @@ export function initAllSegmentScrollIndicators() {
 // ============================================
 
 export function setEstimateViewType(type) {
+    // 設定ページのデフォルト表示形式セレクトを同期
     const viewTypeElement = document.getElementById('defaultEstimateViewType');
     if (viewTypeElement) {
         viewTypeElement.value = type;
+    }
+
+    // 見積タブ内のクイック切り替えセレクトを同期
+    const quickViewType = document.getElementById('estimateViewTypeQuick');
+    if (quickViewType) {
+        quickViewType.value = type;
     }
 
     const btnGrouped = document.getElementById('btnEstimateGrouped');
@@ -1824,6 +1831,11 @@ export function setEstimateViewType(type) {
         if (workMonthCheckbox2) workMonthCheckbox2.checked = false;
         const modePanel = document.getElementById('workMonthAssignmentMode');
         if (modePanel) modePanel.style.display = 'none';
+    }
+
+    // デフォルト表示形式を設定に保存
+    if (typeof window.saveDefaultViewTypeSetting === 'function') {
+        window.saveDefaultViewTypeSetting();
     }
 
     if (typeof window.renderEstimateList === 'function') {
@@ -2417,7 +2429,7 @@ export function updateFormNameOptions() {
             const select = document.getElementById(selectId);
             if (select) {
                 const currentValue = select.value;
-                select.innerHTML = '<option value="">-- 帳票名を選択 --</option>';
+                select.innerHTML = '<option value="">-- 処理名を選択 --</option>';
 
                 const newOption = document.createElement('option');
                 newOption.value = '__new__';
@@ -2426,7 +2438,7 @@ export function updateFormNameOptions() {
 
                 const editOption = document.createElement('option');
                 editOption.value = '__edit__';
-                editOption.textContent = '帳票名を編集...';
+                editOption.textContent = '処理名を編集...';
                 select.appendChild(editOption);
 
                 sortedFormNames.forEach(formName => {
@@ -4032,7 +4044,7 @@ export function restoreEstimateFilterState() {
 }
 
 // ============================================
-// 版数・帳票名変更ハンドラ
+// 版数・処理名変更ハンドラ
 // ============================================
 
 export function handleVersionChange(selectId) {
@@ -4157,7 +4169,7 @@ export function handleEditFormNameChange() {
 }
 
 /**
- * 帳票名テキスト入力からセレクトに戻す
+ * 処理名テキスト入力からセレクトに戻す
  */
 export function revertFormNameToSelect(type) {
     const ids = {
