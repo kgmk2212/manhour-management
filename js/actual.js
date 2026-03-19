@@ -121,12 +121,12 @@ export function renderTodayActuals() {
 export function renderActualList() {
     const container = document.getElementById('actualList');
     const viewType = document.getElementById('actualViewType').value;
-    const viewMode = document.getElementById('actualViewMode').value;
 
-    // 担当者別モード時は担当者選択を表示
+    // リスト表示時のみ担当者選択を表示（リストは常に担当者別）
+    // カレンダー/グリッドは常に全担当者
     const memberSelectGroup = document.getElementById('memberSelectGroup');
     const memberSelectGroup2 = document.getElementById('memberSelectGroup2');
-    if (viewMode === 'member') {
+    if (viewType === 'list') {
         memberSelectGroup.style.display = 'flex';
         if (memberSelectGroup2) memberSelectGroup2.style.display = 'flex';
         updateMemberSelectOptions();
@@ -158,14 +158,12 @@ export function renderActualList() {
         if (tlContainer) tlContainer.style.display = 'none';
 
         if (viewType === 'matrix') {
-            if (viewMode === 'member') {
-                renderMemberCalendar();
-            } else {
-                renderActualMatrix();
-            }
+            // カレンダーは常に全担当者表示
+            renderActualMatrix();
         } else if (viewType === 'grid') {
             renderCalendarGrid();
         } else {
+            // リストは常に担当者別表示
             renderActualListView();
         }
     }
@@ -712,16 +710,14 @@ export function renderActualMatrix() {
  */
 export function renderActualListView() {
     const container = document.getElementById('actualList');
-    const viewMode = document.getElementById('actualViewMode').value;
     const selectedMonth = document.getElementById('actualMonthFilter').value;
 
     let filteredActuals = actuals;
 
-    if (viewMode === 'member') {
-        const selectedMember = document.getElementById('actualMemberSelect').value;
-        if (selectedMember) {
-            filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
-        }
+    // リストは常に担当者別表示
+    const selectedMember = document.getElementById('actualMemberSelect').value;
+    if (selectedMember) {
+        filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
     }
 
     if (selectedMonth !== 'all') {
@@ -1362,6 +1358,25 @@ export function saveActualEdit() {
     if (!date || !task || (!isOtherWorkEdit && !process) || !member || !hours) {
         showAlert('すべての項目を入力してください');
         return;
+    }
+
+    // Bug 3: 実績時間の警告チェック
+    // 単一エントリが12hを超える場合の確認
+    if (hours > 12) {
+        if (!confirm(`入力された工数が ${hours}h です。1件で12時間を超えていますが、この値で保存しますか？`)) {
+            return;
+        }
+    }
+
+    // その日のメンバーの合計が16hを超える場合の警告
+    const existingHoursForDay = actuals
+        .filter(a => a.member === member && a.date === date && a.id !== id)
+        .reduce((sum, a) => sum + a.hours, 0);
+    const totalDayHours = existingHoursForDay + hours;
+    if (totalDayHours > 16) {
+        if (!confirm(`${member} の ${date} の合計工数が ${totalDayHours.toFixed(1)}h になります（16時間超）。この値で保存しますか？`)) {
+            return;
+        }
     }
 
     if (id && !isNaN(id)) {
@@ -2037,7 +2052,6 @@ export function handleActualProcessChange() {
 export function renderCalendarGrid() {
     const container = document.getElementById('actualList');
     const selectedMonth = document.getElementById('actualMonthFilter').value;
-    const viewMode = document.getElementById('actualViewMode').value;
 
     // 表示する月を決定
     let year, month;
@@ -2053,19 +2067,12 @@ export function renderCalendarGrid() {
         month = now.getMonth() + 1;
     }
 
-    // フィルタ: 担当者
+    // グリッドは常に全担当者表示
     let filteredActuals = actuals.filter(a => {
         if (!a.date) return false;
         const d = new Date(a.date);
         return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
-
-    if (viewMode === 'member') {
-        const selectedMember = document.getElementById('actualMemberSelect').value;
-        if (selectedMember) {
-            filteredActuals = filteredActuals.filter(a => a.member === selectedMember);
-        }
-    }
 
     // 日付別に集計
     const dailyData = {};
@@ -2130,19 +2137,10 @@ export function renderCalendarGrid() {
 
         const data = dailyData[dateStr];
 
-        // クリックハンドラ: データがある場合は詳細表示
+        // クリックハンドラ: データがある場合は詳細表示（常に全担当者モード）
         let cellOnclick = '';
         if (data) {
-            if (viewMode === 'member') {
-                const selectedMember = document.getElementById('actualMemberSelect').value;
-                if (selectedMember) {
-                    cellOnclick = ` onclick="showWorkDetail('${escapeForHandler(selectedMember)}', '${escapeForHandler(dateStr)}')"`;
-                } else {
-                    cellOnclick = ` onclick="showGridDayDetail('${escapeForHandler(dateStr)}')"`;
-                }
-            } else {
-                cellOnclick = ` onclick="showGridDayDetail('${escapeForHandler(dateStr)}')"`;
-            }
+            cellOnclick = ` onclick="showGridDayDetail('${escapeForHandler(dateStr)}')"`;
         }
 
         html += `<div class="${cellClass}"${cellOnclick}>`;
@@ -2160,9 +2158,8 @@ export function renderCalendarGrid() {
             // 最大3件まで表示
             const maxEntries = 3;
             data.entries.slice(0, maxEntries).forEach(entry => {
-                const label = viewMode === 'member'
-                    ? `${entry.task}-${entry.process}`
-                    : `${entry.task}-${entry.process} (${entry.member})`;
+                // 常に全担当者表示なのでメンバー名を含める
+                const label = `${entry.task}-${entry.process} (${entry.member})`;
                 html += `<div class="calendar-entry">${label}</div>`;
             });
             if (data.entries.length > maxEntries) {
@@ -2183,6 +2180,512 @@ export function renderCalendarGrid() {
     html += '</div>';
 
     container.innerHTML = html;
+}
+
+// ============================================
+// クイック入力モーダル（実績一覧タブ内）
+// ============================================
+
+/** モーダル内タスク検索用の状態 */
+let qmAllTasks = [];
+let qmSelectedTask = null;
+let qmBatchRowId = 0;
+
+/**
+ * クイック入力モーダルを開く
+ */
+export function openQuickInputModal() {
+    // タスク一覧を構築
+    qmBuildTaskList();
+
+    // 担当者セレクトを構築
+    qmBuildMemberSelect('qmMemberSelect');
+
+    // 日付を今日に設定
+    const dateInput = document.getElementById('qmWorkDate');
+    if (dateInput) dateInput.value = new Date().toLocaleDateString('sv-SE');
+
+    // 単一入力フォームをリセット
+    const searchInput = document.getElementById('qmTaskSearch');
+    if (searchInput) searchInput.value = '';
+    const clearBtn = document.getElementById('qmTaskClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const hoursInput = document.getElementById('qmHours');
+    if (hoursInput) hoursInput.value = '8';
+    const memberSelect = document.getElementById('qmMemberSelect');
+    if (memberSelect) memberSelect.value = '';
+    qmSelectedTask = null;
+
+    // 一括入力を初期化（3行）
+    const tbody = document.getElementById('qmBatchBody');
+    if (tbody) tbody.innerHTML = '';
+    qmBatchRowId = 0;
+    qmAddBatchRow();
+    qmAddBatchRow();
+    qmAddBatchRow();
+
+    // ドロップダウンを閉じるイベントを設定
+    qmInitDropdownHandler();
+
+    // 単一入力の検索入力イベントを設定
+    const qmSearch = document.getElementById('qmTaskSearch');
+    if (qmSearch) {
+        qmSearch.onfocus = function() { qmFilterTaskList(); };
+        qmSearch.oninput = function() { qmFilterTaskList(); };
+    }
+
+    document.getElementById('quickInputModal').style.display = 'flex';
+}
+
+/**
+ * クイック入力モーダルを閉じる
+ */
+export function closeQuickInputModal() {
+    document.getElementById('quickInputModal').style.display = 'none';
+}
+
+/**
+ * タスク一覧を見積データから構築
+ */
+function qmBuildTaskList() {
+    const taskMap = new Map();
+    estimates.forEach(e => {
+        const key = `${e.version}|${e.task}|${e.process}|${e.member}`;
+        if (!taskMap.has(key)) {
+            taskMap.set(key, {
+                version: e.version,
+                task: e.task,
+                process: e.process,
+                member: e.member,
+                display: `${e.version} - ${e.task} [${e.process}] (${e.member})`
+            });
+        }
+    });
+    qmAllTasks = Array.from(taskMap.values());
+}
+
+/**
+ * 担当者セレクトを構築
+ */
+function qmBuildMemberSelect(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    const members = new Set();
+    estimates.forEach(e => members.add(e.member));
+
+    const memberOrderInput = document.getElementById('memberOrder');
+    const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
+    const sortedMembers = sortMembers(members, memberOrderValue);
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">（自動）</option>';
+    sortedMembers.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member;
+        option.textContent = member;
+        select.appendChild(option);
+    });
+
+    if (currentValue && sortedMembers.includes(currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+// ============================================
+// 単一入力フォーム（モーダル内）
+// ============================================
+
+/**
+ * 単一入力フォームのタスクドロップダウンを表示/フィルタ
+ */
+export function qmFilterTaskList() {
+    const searchInput = document.getElementById('qmTaskSearch');
+    const dropdown = document.getElementById('qmTaskDropdown');
+    if (!searchInput || !dropdown) return;
+
+    const searchText = searchInput.value.toLowerCase();
+    const memberSelect = document.getElementById('qmMemberSelect');
+    const selectedMember = memberSelect ? memberSelect.value : '';
+
+    let filtered = qmAllTasks;
+    if (selectedMember) {
+        filtered = filtered.filter(t => t.member === selectedMember);
+    }
+    if (searchText) {
+        filtered = filtered.filter(t => t.display.toLowerCase().includes(searchText));
+    }
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="custom-dropdown-empty">該当する対応が見つかりません</div>';
+    } else {
+        dropdown.innerHTML = filtered.map(t => {
+            const value = `${t.version}|${t.task}|${t.process}|${t.member}`;
+            return `<div class="custom-dropdown-item" onmousedown="qmSelectTask('${escapeForHandler(value)}', '${escapeForHandler(t.display)}')">${escapeHtml(t.display)}</div>`;
+        }).join('');
+    }
+
+    dropdown.style.display = 'block';
+}
+
+/**
+ * 単一入力フォームのタスクを選択
+ */
+export function qmSelectTask(value, display) {
+    qmSelectedTask = value;
+    const [version, task, process, member] = value.split('|');
+
+    const searchInput = document.getElementById('qmTaskSearch');
+    const clearBtn = document.getElementById('qmTaskClearBtn');
+    const memberSelect = document.getElementById('qmMemberSelect');
+    const dropdown = document.getElementById('qmTaskDropdown');
+
+    if (searchInput) searchInput.value = `${version} - ${task} [${process}]`;
+    if (clearBtn) clearBtn.style.display = 'block';
+    if (memberSelect && !memberSelect.value) memberSelect.value = member;
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+/**
+ * 単一入力フォームのタスク選択をクリア
+ */
+export function qmClearTaskSelection() {
+    const searchInput = document.getElementById('qmTaskSearch');
+    const clearBtn = document.getElementById('qmTaskClearBtn');
+    const memberSelect = document.getElementById('qmMemberSelect');
+
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    qmSelectedTask = null;
+    if (memberSelect) memberSelect.value = '';
+    qmHideDropdown('qmTaskDropdown');
+}
+
+function qmHideDropdown(id) {
+    const dropdown = document.getElementById(id);
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+/**
+ * 単一入力フォームから実績を追加
+ */
+export function qmAddActual() {
+    const hoursInput = document.getElementById('qmHours');
+    const memberSelect = document.getElementById('qmMemberSelect');
+    const workDateInput = document.getElementById('qmWorkDate');
+
+    const hours = hoursInput ? parseFloat(hoursInput.value) : 0;
+    const memberOverride = memberSelect ? memberSelect.value : '';
+    const workDate = workDateInput ? workDateInput.value : '';
+
+    if (!qmSelectedTask || !hours) {
+        showAlert('対応と実績工数を入力してください');
+        return;
+    }
+
+    const [version, task, process, originalMember] = qmSelectedTask.split('|');
+    const finalMember = memberOverride || originalMember;
+    const finalDate = workDate || new Date().toISOString().split('T')[0];
+
+    const newActual = {
+        id: Date.now(),
+        date: finalDate,
+        version: version,
+        task: task,
+        process: process,
+        member: finalMember,
+        hours: hours,
+        createdAt: new Date().toISOString()
+    };
+    actuals.push(newActual);
+
+    pushAction({
+        type: 'actual_add',
+        description: `実績追加: ${task} (${process}) ${hours}h`,
+        data: { added: { ...newActual } }
+    });
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    // 工数をリセット
+    if (hoursInput) hoursInput.value = '8';
+
+    // UI更新
+    qmRefreshUI();
+    showAlert('実績を追加しました', true);
+}
+
+/**
+ * UI更新ヘルパー
+ */
+function qmRefreshUI() {
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.renderActualList === 'function') window.renderActualList();
+    if (typeof window.updateReport === 'function') window.updateReport();
+}
+
+// ============================================
+// 一括入力（バッチ入力）
+// ============================================
+
+/**
+ * 一括入力テーブルに行を追加
+ */
+export function qmAddBatchRow() {
+    const tbody = document.getElementById('qmBatchBody');
+    if (!tbody) return;
+
+    const rowId = qmBatchRowId++;
+    const today = new Date().toLocaleDateString('sv-SE');
+
+    // 担当者リストを構築
+    const members = new Set();
+    estimates.forEach(e => members.add(e.member));
+    const memberOrderInput = document.getElementById('memberOrder');
+    const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
+    const sortedMembers = sortMembers(members, memberOrderValue);
+    const memberOptions = '<option value="">（自動）</option>' + sortedMembers.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+
+    const tr = document.createElement('tr');
+    tr.id = `qmBatchRow_${rowId}`;
+    tr.innerHTML = `
+        <td><input type="date" value="${today}" style="font-size: 12px; padding: 4px; width: 100%;"></td>
+        <td style="position: relative;">
+            <input type="text" placeholder="検索..." autocomplete="off" style="font-size: 12px; padding: 4px; width: 100%; padding-right: 24px;"
+                onfocus="qmBatchFilterTask(${rowId})" oninput="qmBatchFilterTask(${rowId})">
+            <button style="display: none; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1;"
+                onclick="qmBatchClearTask(${rowId})" title="クリア">&times;</button>
+            <div class="custom-dropdown" style="display: none; max-height: 200px;"></div>
+            <input type="hidden" class="qm-batch-task-data" value="">
+        </td>
+        <td><select style="font-size: 12px; padding: 4px; width: 100%;">${memberOptions}</select></td>
+        <td><input type="number" step="0.25" min="0" value="8" style="font-size: 12px; padding: 4px; width: 100%; text-align: right;"></td>
+        <td style="text-align: center;">
+            <button onclick="qmRemoveBatchRow(${rowId})" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px 6px;" title="行を削除">&times;</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    qmUpdateBatchCount();
+}
+
+/**
+ * 一括入力テーブルの行を削除
+ */
+export function qmRemoveBatchRow(rowId) {
+    const row = document.getElementById(`qmBatchRow_${rowId}`);
+    if (row) row.remove();
+    qmUpdateBatchCount();
+}
+
+/**
+ * 一括入力テーブルの行数を更新
+ */
+function qmUpdateBatchCount() {
+    const tbody = document.getElementById('qmBatchBody');
+    const countEl = document.getElementById('qmBatchRowCount');
+    if (tbody && countEl) {
+        countEl.textContent = tbody.children.length;
+    }
+}
+
+/**
+ * 一括入力行のタスク検索ドロップダウンを表示/フィルタ
+ */
+export function qmBatchFilterTask(rowId) {
+    const row = document.getElementById(`qmBatchRow_${rowId}`);
+    if (!row) return;
+
+    const searchInput = row.querySelector('td:nth-child(2) input[type="text"]');
+    const dropdown = row.querySelector('td:nth-child(2) .custom-dropdown');
+    const memberSelect = row.querySelector('td:nth-child(3) select');
+    if (!searchInput || !dropdown) return;
+
+    const searchText = searchInput.value.toLowerCase();
+    const selectedMember = memberSelect ? memberSelect.value : '';
+
+    let filtered = qmAllTasks;
+    if (selectedMember) {
+        filtered = filtered.filter(t => t.member === selectedMember);
+    }
+    if (searchText) {
+        filtered = filtered.filter(t => t.display.toLowerCase().includes(searchText));
+    }
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="custom-dropdown-empty">該当なし</div>';
+    } else {
+        dropdown.innerHTML = filtered.map(t => {
+            const value = `${t.version}|${t.task}|${t.process}|${t.member}`;
+            return `<div class="custom-dropdown-item" onmousedown="qmBatchSelectTask(${rowId}, '${escapeForHandler(value)}', '${escapeForHandler(t.display)}')">${escapeHtml(t.display)}</div>`;
+        }).join('');
+    }
+
+    dropdown.style.display = 'block';
+}
+
+/**
+ * 一括入力行のタスクを選択
+ */
+export function qmBatchSelectTask(rowId, value, display) {
+    const row = document.getElementById(`qmBatchRow_${rowId}`);
+    if (!row) return;
+
+    const [version, task, process, member] = value.split('|');
+    const searchInput = row.querySelector('td:nth-child(2) input[type="text"]');
+    const clearBtn = row.querySelector('td:nth-child(2) button');
+    const hiddenInput = row.querySelector('td:nth-child(2) .qm-batch-task-data');
+    const dropdown = row.querySelector('td:nth-child(2) .custom-dropdown');
+    const memberSelect = row.querySelector('td:nth-child(3) select');
+
+    if (searchInput) searchInput.value = `${version} - ${task} [${process}]`;
+    if (clearBtn) clearBtn.style.display = 'block';
+    if (hiddenInput) hiddenInput.value = value;
+    if (dropdown) dropdown.style.display = 'none';
+    if (memberSelect && !memberSelect.value) memberSelect.value = member;
+}
+
+/**
+ * 一括入力行のタスク選択をクリア
+ */
+export function qmBatchClearTask(rowId) {
+    const row = document.getElementById(`qmBatchRow_${rowId}`);
+    if (!row) return;
+
+    const searchInput = row.querySelector('td:nth-child(2) input[type="text"]');
+    const clearBtn = row.querySelector('td:nth-child(2) button');
+    const hiddenInput = row.querySelector('td:nth-child(2) .qm-batch-task-data');
+    const dropdown = row.querySelector('td:nth-child(2) .custom-dropdown');
+
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (hiddenInput) hiddenInput.value = '';
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+/**
+ * 一括登録を実行
+ */
+export function qmBatchSave() {
+    const tbody = document.getElementById('qmBatchBody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    const newActuals = [];
+    const errors = [];
+
+    rows.forEach((row, index) => {
+        const dateInput = row.querySelector('td:nth-child(1) input[type="date"]');
+        const hiddenInput = row.querySelector('td:nth-child(2) .qm-batch-task-data');
+        const memberSelect = row.querySelector('td:nth-child(3) select');
+        const hoursInput = row.querySelector('td:nth-child(4) input[type="number"]');
+
+        const searchTextInput = row.querySelector('td:nth-child(2) input[type="text"]');
+        const date = dateInput ? dateInput.value : '';
+        const taskData = hiddenInput ? hiddenInput.value : '';
+        const searchText = searchTextInput ? searchTextInput.value.trim() : '';
+        const memberOverride = memberSelect ? memberSelect.value : '';
+        const hours = hoursInput ? parseFloat(hoursInput.value) : 0;
+
+        // 対応が未入力の行はスキップ（ユーザーが触っていない行）
+        if (!taskData && !searchText) return;
+
+        if (!taskData) {
+            errors.push(`行 ${index + 1}: 対応が選択されていません（候補から選択してください）`);
+            return;
+        }
+        if (!hours || hours <= 0) {
+            errors.push(`行 ${index + 1}: 工数が入力されていません`);
+            return;
+        }
+        if (!date) {
+            errors.push(`行 ${index + 1}: 作業日が入力されていません`);
+            return;
+        }
+
+        const [version, task, process, originalMember] = taskData.split('|');
+        const finalMember = memberOverride || originalMember;
+
+        newActuals.push({
+            id: Date.now() + Math.random(),
+            date: date,
+            version: version,
+            task: task,
+            process: process,
+            member: finalMember,
+            hours: hours,
+            createdAt: new Date().toISOString()
+        });
+    });
+
+    if (errors.length > 0) {
+        showAlert(errors.join('\n'));
+        return;
+    }
+
+    if (newActuals.length === 0) {
+        showAlert('登録する実績がありません');
+        return;
+    }
+
+    // 全て追加
+    newActuals.forEach(a => actuals.push(a));
+
+    pushAction({
+        type: 'actual_add',
+        description: `一括実績追加: ${newActuals.length}件`,
+        data: { added: newActuals.map(a => ({ ...a })) }
+    });
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    // 一括入力エリアをリセット
+    const batchBody = document.getElementById('qmBatchBody');
+    if (batchBody) batchBody.innerHTML = '';
+    qmBatchRowId = 0;
+    qmAddBatchRow();
+    qmAddBatchRow();
+    qmAddBatchRow();
+
+    // UI更新
+    qmRefreshUI();
+    showAlert(`${newActuals.length}件の実績を一括登録しました`, true);
+}
+
+/**
+ * ドロップダウンの外部クリックハンドラを初期化
+ */
+function qmInitDropdownHandler() {
+    // 重複登録防止
+    if (qmInitDropdownHandler._initialized) return;
+    qmInitDropdownHandler._initialized = true;
+
+    document.addEventListener('click', function(event) {
+        // 単一入力のドロップダウン
+        const dropdown = document.getElementById('qmTaskDropdown');
+        const searchInput = document.getElementById('qmTaskSearch');
+        if (dropdown && searchInput) {
+            if (!dropdown.contains(event.target) && event.target !== searchInput) {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // 一括入力のドロップダウン
+        const batchBody = document.getElementById('qmBatchBody');
+        if (batchBody) {
+            batchBody.querySelectorAll('.custom-dropdown').forEach(dd => {
+                const row = dd.closest('tr');
+                if (row) {
+                    const input = row.querySelector('td:nth-child(2) input[type="text"]');
+                    if (!dd.contains(event.target) && event.target !== input) {
+                        dd.style.display = 'none';
+                    }
+                }
+            });
+        }
+    });
 }
 
 console.log('✅ モジュール actual.js loaded');

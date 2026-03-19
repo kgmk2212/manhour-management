@@ -23,7 +23,7 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
     }
 
     // タイトルを設定
-    title.textContent = `${version} - ${task} [${process}] の内訳`;
+    title.textContent = `担当者別内訳`;
 
     // 担当者別にデータを集計
     const memberData = {};
@@ -71,33 +71,19 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
         totalAct += data.actual;
     });
 
-    // HTMLを生成（グラフとテーブル）
-    let html = '<div style="display: flex; flex-direction: column; gap: 30px;">';
+    // HTMLを生成（情報ヘッダー + テーブル）
+    let html = '<div style="display: flex; flex-direction: column; gap: 16px;">';
 
-    // グラフコンテナ
-    html += '<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">';
+    // 工程情報ヘッダー
+    html += `<div style="background: var(--surface-elevated, #f8f9fa); padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #555;">`;
+    html += `<span style="font-weight: 600;">${escapeHtml(version)}</span>`;
+    html += ` / ${escapeHtml(task)}`;
+    html += ` / <span style="color: #1976d2;">${escapeHtml(process)}</span>`;
+    html += `</div>`;
 
-    // 見積グラフ
-    if (totalEst > 0) {
-        html += '<div style="flex: 1; min-width: 250px; max-width: 350px;">';
-        html += '<h4 style="text-align: center; margin: 0 0 10px 0; color: #495057; font-size: 14px;">見積内訳</h4>';
-        html += '<canvas id="breakdownEstimateChart" class="donut-chart-canvas"></canvas>';
-        html += '</div>';
-    }
-
-    // 実績グラフ
-    if (totalAct > 0) {
-        html += '<div style="flex: 1; min-width: 250px; max-width: 350px;">';
-        html += '<h4 style="text-align: center; margin: 0 0 10px 0; color: #495057; font-size: 14px;">実績内訳</h4>';
-        html += '<canvas id="breakdownActualChart" class="donut-chart-canvas"></canvas>';
-        html += '</div>';
-    }
-
-    html += '</div>';
-
-    // テーブルを生成
+    // テーブルを生成（時間ベースの表示）
     html += '<div class="table-wrapper"><table>';
-    html += '<tr><th>担当者</th><th>見積</th><th>実績</th><th>差異</th></tr>';
+    html += '<tr><th>担当者</th><th style="text-align: right;">見積</th><th style="text-align: right;">実績</th><th style="text-align: right;">差異</th></tr>';
 
     members.sort().forEach(member => {
         const data = memberData[member];
@@ -113,7 +99,7 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
 
     // 合計行
     const totalDiff = totalAct - totalEst;
-    html += '<tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">';
+    html += '<tr style="background: var(--surface-elevated, #f5f5f5); font-weight: bold; border-top: 2px solid #ddd;">';
     html += '<td>合計</td>';
     html += `<td style="text-align: right;">${formatHours(totalEst)}h</td>`;
     html += `<td style="text-align: right;">${formatHours(totalAct)}h</td>`;
@@ -121,113 +107,78 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
     html += '</tr>';
 
     html += '</table></div>';
+
+    // 横棒グラフ（見積と実績の内訳をバーで表示）
+    if (totalEst > 0 || totalAct > 0) {
+        const maxHours = Math.max(totalEst, totalAct, 1);
+        html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+
+        // 見積バー
+        if (totalEst > 0) {
+            html += '<div>';
+            html += `<div style="font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 4px;">見積 ${formatHours(totalEst)}h</div>`;
+            html += '<div style="display: flex; height: 24px; border-radius: 4px; overflow: hidden; background: #eee;">';
+            members.sort().forEach((member, index) => {
+                const value = memberData[member].estimate;
+                if (value === 0) return;
+                const widthPct = (value / maxHours) * 100;
+                const color = getBreakdownMemberColor(index);
+                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; min-width: 0; overflow: hidden;" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
+            });
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // 実績バー
+        if (totalAct > 0) {
+            html += '<div>';
+            html += `<div style="font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 4px;">実績 ${formatHours(totalAct)}h</div>`;
+            html += '<div style="display: flex; height: 24px; border-radius: 4px; overflow: hidden; background: #eee;">';
+            members.sort().forEach((member, index) => {
+                const value = memberData[member].actual;
+                if (value === 0) return;
+                const widthPct = (value / maxHours) * 100;
+                const color = getBreakdownMemberColor(index);
+                html += `<div style="width: ${widthPct}%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; min-width: 0; overflow: hidden;" title="${escapeHtml(member)}: ${formatHours(value)}h">${value >= maxHours * 0.08 ? formatHours(value) + 'h' : ''}</div>`;
+            });
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // 凡例
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px;">';
+        members.sort().forEach((member, index) => {
+            const color = getBreakdownMemberColor(index);
+            html += `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #555;">`;
+            html += `<span style="width: 10px; height: 10px; background: ${color}; border-radius: 2px; flex-shrink: 0;"></span>`;
+            html += `${escapeHtml(member)}`;
+            html += `</span>`;
+        });
+        html += '</div>';
+
+        html += '</div>';
+    }
+
     html += '</div>';
 
     content.innerHTML = html;
-
-    // グラフを描画
-    setTimeout(() => {
-        if (totalEst > 0) {
-            drawBreakdownDonutChart('breakdownEstimateChart', memberData, 'estimate', members, totalEst);
-        }
-        if (totalAct > 0) {
-            drawBreakdownDonutChart('breakdownActualChart', memberData, 'actual', members, totalAct);
-        }
-    }, 100);
-
     modal.style.display = 'flex';
 }
 
-// 工程内訳ドーナツグラフを描画
-export function drawBreakdownDonutChart(canvasId, memberData, dataType, members, total) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-
-    // キャンバスのサイズを設定
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const width = rect.width;
-    const height = rect.height;
-
-    const isMobile = width < 768;
-    const legendHeight = members.length * 16 + 20;
-    const centerX = width / 2;
-    const centerY = isMobile ? (height - legendHeight) / 2 : height / 2 - 10;
-    const radius = isMobile
-        ? Math.min(width, height - legendHeight - 40) / 2.5
-        : Math.min(width, height - 40) / 2.2;
-    const innerRadius = radius * 0.5;
-
-    // 担当者の色を取得（パステルカラー）
-    const memberColors = [
-        '#667eea', '#f093fb', '#4facfe', '#43e97b',
-        '#fa709a', '#30cfd0', '#a8edea', '#fbc2eb',
-        '#96e6a1', '#d4fc79', '#84fab0', '#8fd3f4'
+// 内訳モーダル用の担当者カラーパレット
+function getBreakdownMemberColor(index) {
+    const colors = [
+        '#5B7FD3', '#D4789C', '#4BA0C9', '#5BB88A',
+        '#C4724D', '#6AAFAB', '#9B8EC4', '#C9A055',
+        '#7CAA6E', '#B08DAA', '#6D9FBF', '#C48E6A'
     ];
+    return colors[index % colors.length];
+}
 
-    const getMemberColor = (index) => {
-        return memberColors[index % memberColors.length];
-    };
-
-    // ドーナツを描画
-    let startAngle = -Math.PI / 2;
-    members.forEach((member, index) => {
-        const value = memberData[member][dataType];
-        if (value === 0) return;
-
-        const angle = (value / total) * 2 * Math.PI;
-        const endAngle = startAngle + angle;
-
-        ctx.fillStyle = getMemberColor(index);
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-        ctx.closePath();
-        ctx.fill();
-
-        startAngle = endAngle;
-    });
-
-    // 中央に合計を表示
-    ctx.fillStyle = '#495057';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(formatHours(total) + 'h', centerX, centerY - 5);
-    ctx.font = '11px sans-serif';
-    ctx.fillText(dataType === 'estimate' ? '合計見積' : '合計実績', centerX, centerY + 12);
-
-    // 凡例を描画
-    const legendX = 10;
-    const legendStartY = isMobile
-        ? centerY + radius + 20
-        : height - 10 - (members.length * 16);
-    let legendY = legendStartY;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.font = isMobile ? '10px sans-serif' : '11px sans-serif';
-
-    members.forEach((member, index) => {
-        const value = memberData[member][dataType];
-        if (value === 0) return;
-
-        const percentage = (value / total * 100).toFixed(1);
-
-        ctx.fillStyle = getMemberColor(index);
-        ctx.fillRect(legendX, legendY, 10, 10);
-
-        ctx.fillStyle = '#495057';
-        const label = `${member} (${percentage}%)`;
-        ctx.fillText(label, legendX + 15, legendY + 5);
-
-        legendY += isMobile ? 14 : 16;
-    });
+// 工程内訳ドーナツグラフを描画（レガシー互換: window公開用）
+export function drawBreakdownDonutChart(canvasId, memberData, dataType, members, total) {
+    // ドーナツグラフは横棒グラフに置き換え済みのため、このメソッドは互換性のために残す
+    return;
 }
 
 // 工程内訳モーダルを開く（IDベースのラッパー）

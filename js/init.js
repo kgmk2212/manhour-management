@@ -201,6 +201,7 @@ window.editTaskFromTaskModal = Estimate.editTaskFromTaskModal;
 window.openEditAllProcessesFromTaskModal = Estimate.openEditAllProcessesFromTaskModal;
 window.updateTaskSortOrder = Estimate.updateTaskSortOrder;
 window.sortTaskKeysByOrder = Estimate.sortTaskKeysByOrder;
+window.startInlineEditEstimate = Estimate.startInlineEditEstimate;
 
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
@@ -269,6 +270,20 @@ window.openOtherWorkFromCalendar = Actual.openOtherWorkFromCalendar;
 window.openVacationFromCalendar = Actual.openVacationFromCalendar;
 window.openOtherWorkModalWithContext = Actual.openOtherWorkModalWithContext;
 window.handleActualTaskSelect = Actual.handleActualTaskSelect;
+
+// actual.js - クイック入力モーダル
+window.openQuickInputModal = Actual.openQuickInputModal;
+window.closeQuickInputModal = Actual.closeQuickInputModal;
+window.qmFilterTaskList = Actual.qmFilterTaskList;
+window.qmSelectTask = Actual.qmSelectTask;
+window.qmClearTaskSelection = Actual.qmClearTaskSelection;
+window.qmAddActual = Actual.qmAddActual;
+window.qmAddBatchRow = Actual.qmAddBatchRow;
+window.qmRemoveBatchRow = Actual.qmRemoveBatchRow;
+window.qmBatchFilterTask = Actual.qmBatchFilterTask;
+window.qmBatchSelectTask = Actual.qmBatchSelectTask;
+window.qmBatchClearTask = Actual.qmBatchClearTask;
+window.qmBatchSave = Actual.qmBatchSave;
 
 // state.js の追加エクスポート（テーマ・レイアウト関連）
 

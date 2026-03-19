@@ -4423,11 +4423,15 @@ export function initSmartStickyFilters() {
         hideFixedBar();
 
         const leftOffset = mc ? mc.getBoundingClientRect().left : 0;
+        // モバイルヘッダーの下に配置する
+        const mobileHeader = document.getElementById('mobileHeader');
+        const topOffset = (mobileHeader && mobileHeader.offsetParent !== null)
+            ? mobileHeader.offsetHeight : 0;
         fixedBar = document.createElement('div');
         fixedBar.className = 'smart-sticky-bar';
         fixedBar.innerHTML = bar.innerHTML;
         fixedBar.style.cssText =
-            'position:fixed;top:0;right:0;z-index:9999;' +
+            'position:fixed;top:' + topOffset + 'px;right:0;z-index:9999;' +
             'background:var(--surface,#fff);' +
             'padding:10px 40px;' +
             'border-bottom:1px solid var(--border,#e7e5e0);' +

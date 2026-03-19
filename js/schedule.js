@@ -1426,10 +1426,12 @@ export function generateSchedulesFromEstimates(options) {
         // 着手順が同じかどちらもない場合はタスク名
         const taskCmp = a.task.localeCompare(b.task);
         if (taskCmp !== 0) return taskCmp;
-        // 同じタスク内は工程順
+        // 同じタスク内は工程順（未知の工程は末尾に配置）
         const orderA = processOrder.indexOf(a.process);
         const orderB = processOrder.indexOf(b.process);
-        if (orderA !== orderB) return orderA - orderB;
+        const safeOrderA = orderA === -1 ? processOrder.length : orderA;
+        const safeOrderB = orderB === -1 ? processOrder.length : orderB;
+        if (safeOrderA !== safeOrderB) return safeOrderA - safeOrderB;
         return a.member.localeCompare(b.member);
     });
 
@@ -2448,9 +2450,12 @@ export function registerCheckedSchedules() {
             if (sortA === undefined && sortB !== undefined) return 1;
             const taskCmp = a.task.localeCompare(b.task);
             if (taskCmp !== 0) return taskCmp;
+            // 同じタスク内は工程順（未知の工程は末尾に配置）
             const orderA = processOrder.indexOf(a.process);
             const orderB = processOrder.indexOf(b.process);
-            if (orderA !== orderB) return orderA - orderB;
+            const safeOrderA = orderA === -1 ? processOrder.length : orderA;
+            const safeOrderB = orderB === -1 ? processOrder.length : orderB;
+            if (safeOrderA !== safeOrderB) return safeOrderA - safeOrderB;
             return a.member.localeCompare(b.member);
         });
 

@@ -621,18 +621,19 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
     // フィルタリング
     const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
 
+    const isMobile = window.innerWidth <= 768;
     let html = '<div class="table-wrapper"><table style="width: 100%; border-collapse: collapse;">';
     html += `
         <thead>
             <tr style="background: #f8f9fa;">
-                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">版数</th>
-                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">対応名</th>
-                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">見積</th>
-                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">実績</th>
-                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">残存</th>
-                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">予測総工数</th>
-                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd; width: 150px;">進捗</th>
-                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">状態</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: left; border-bottom: 2px solid #ddd;">${isMobile ? '版' : '版数'}</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: left; border-bottom: 2px solid #ddd;">${isMobile ? '対応' : '対応名'}</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: right; border-bottom: 2px solid #ddd;">見積</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: right; border-bottom: 2px solid #ddd;">実績</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: right; border-bottom: 2px solid #ddd;">${isMobile ? '残' : '残存'}</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: right; border-bottom: 2px solid #ddd;">${isMobile ? 'EAC' : '予測総工数'}</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: center; border-bottom: 2px solid #ddd; width: ${isMobile ? '80px' : '150px'};">進捗</th>
+                <th style="padding: ${isMobile ? '8px 6px' : '10px'}; text-align: center; border-bottom: 2px solid #ddd;">${isMobile ? '' : '状態'}</th>
             </tr>
         </thead>
         <tbody>
@@ -1200,11 +1201,47 @@ function formatHoursWithManpower(hours, workingDaysPerMonth) {
     return `${hours.toFixed(1)}h (${manDays}人日 / ${manMonths}人月)`;
 }
 
+/**
+ * 残業時間を計算する
+ * メンバーごと・日ごとの実績合計が標準時間を超えた分を残業とする
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @param {number} standardHoursPerDay - 1日の標準労働時間（デフォルト8h）
+ * @returns {Object} { totalOvertime, overtimeDayCount, memberOvertime: { member: hours } }
+ */
+function calculateOvertime(filteredActuals, standardHoursPerDay = 8) {
+    // メンバー×日ごとの合計時間を集計
+    const memberDayHours = {};
+    filteredActuals.forEach(a => {
+        const key = `${a.member}__${a.date}`;
+        memberDayHours[key] = (memberDayHours[key] || 0) + a.hours;
+    });
+
+    let totalOvertime = 0;
+    let overtimeDayCount = 0;
+    const memberOvertime = {};
+
+    Object.entries(memberDayHours).forEach(([key, hours]) => {
+        const [member] = key.split('__');
+        const overtime = Math.max(0, hours - standardHoursPerDay);
+        if (overtime > 0) {
+            totalOvertime += overtime;
+            overtimeDayCount++;
+            memberOvertime[member] = (memberOvertime[member] || 0) + overtime;
+        }
+    });
+
+    return { totalOvertime, overtimeDayCount, memberOvertime };
+}
+
 function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPerMonth) {
     const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
     const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
     const diff = totalAct - totalEst;
     const rate = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : 0;
+
+    // 残業時間を計算: メンバーごと・日ごとの合計が8hを超えた分
+    const STANDARD_HOURS_PER_DAY = 8; // CALCULATIONS.HOURS_PER_DAY
+    const overtimeData = calculateOvertime(filteredActuals, STANDARD_HOURS_PER_DAY);
 
     const estManDays = hoursToManDays(totalEst).toFixed(1);
     const estManMonths = hoursToManMonths(totalEst, workingDaysPerMonth * 8).toFixed(2);
@@ -1225,6 +1262,26 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
     const diffManpowerEl = document.getElementById('totalDiffManpower');
     if (diffManpowerEl) {
         diffManpowerEl.textContent = `${diffManDays}人日 / ${diffManMonths}人月`;
+    }
+
+    // 残業時間カードを更新
+    const overtimeCard = document.getElementById('overtimeCard');
+    const totalOvertimeEl = document.getElementById('totalOvertime');
+    const totalOvertimeDetailEl = document.getElementById('totalOvertimeDetail');
+    if (overtimeCard && totalOvertimeEl) {
+        if (overtimeData.totalOvertime > 0) {
+            overtimeCard.style.display = '';
+            totalOvertimeEl.textContent = overtimeData.totalOvertime.toFixed(1) + 'h';
+            if (totalOvertimeDetailEl) {
+                const overtimeDays = overtimeData.overtimeDayCount;
+                const memberCount = Object.keys(overtimeData.memberOvertime).filter(
+                    m => overtimeData.memberOvertime[m] > 0
+                ).length;
+                totalOvertimeDetailEl.textContent = `${memberCount}名 / ${overtimeDays}日分`;
+            }
+        } else {
+            overtimeCard.style.display = 'none';
+        }
     }
 
     // 月平均を計算・表示
@@ -1261,13 +1318,13 @@ function displayReportSummary(filteredActuals, filteredEstimates, workingDaysPer
     }
 
     // 担当者別集計を表示
-    displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth);
+    displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth, overtimeData);
 }
 
 /**
  * レポートサマリー内の担当者別集計を表示
  */
-function displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth) {
+function displayReportMemberSummary(filteredActuals, filteredEstimates, workingDaysPerMonth, overtimeData) {
     const container = document.getElementById('reportMemberSummary');
     if (!container) return;
 
@@ -1300,6 +1357,11 @@ function displayReportMemberSummary(filteredActuals, filteredEstimates, workingD
         const actDays = hoursToManDays(act).toFixed(1);
         const actMonths = hoursToManMonths(act, workingDaysPerMonth * 8).toFixed(2);
         const estDays = hoursToManDays(est).toFixed(1);
+        const memberOT = overtimeData ? (overtimeData.memberOvertime[member] || 0) : 0;
+
+        const overtimeHtml = memberOT > 0
+            ? `<div style="font-size: 11px; color: #e67e22; margin-top: 2px;">残業: ${memberOT.toFixed(1)}h</div>`
+            : '';
 
         html += `
             <div style="background: var(--surface); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); border-left: 4px solid var(--accent); min-width: 160px; flex: 1; max-width: 240px;">
@@ -1316,6 +1378,7 @@ function displayReportMemberSummary(filteredActuals, filteredEstimates, workingD
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">${actDays}人日 / ${actMonths}人月</div>
                 <div style="font-size: 11px; color: ${diff > 0 ? '#e74c3c' : diff < 0 ? '#27ae60' : 'var(--text-secondary)'}; margin-top: 2px;">差異: ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}h</div>
+                ${overtimeHtml}
             </div>
         `;
     });
@@ -2239,14 +2302,20 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         });
     });
 
+    // 残業時間を計算
+    const STANDARD_HOURS_PER_DAY = 8;
+    const overtimeData = calculateOvertime(filteredActuals, STANDARD_HOURS_PER_DAY);
+    const hasOvertime = overtimeData.totalOvertime > 0;
+
     const isMobile = window.innerWidth <= 768;
     const headers = isMobile
-        ? '<tr><th>担当</th><th>見積</th><th>実績</th><th>差</th><th>率</th></tr>'
-        : '<tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th></tr>';
+        ? `<tr><th>担当</th><th>見積</th><th>実績</th><th>差</th><th>率</th>${hasOvertime ? '<th>残業</th>' : ''}</tr>`
+        : `<tr><th>担当者</th><th>見積工数</th><th>実績工数</th><th>差異</th><th>差異率</th>${hasOvertime ? '<th>残業</th>' : ''}</tr>`;
 
     let html = `<div class="table-wrapper"><table class="simple-table">${headers}`;
 
     let grandTotalEst = 0, grandTotalAct = 0;
+    let grandTotalOT = 0;
 
     members.forEach(member => {
         const est = adjustedEstimates[member] || 0;
@@ -2256,13 +2325,19 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         const estDays = hoursToManDays(est).toFixed(1);
         const actDays = hoursToManDays(act).toFixed(1);
         const actMonths = hoursToManMonths(act).toFixed(2);
+        const memberOT = overtimeData.memberOvertime[member] || 0;
 
         grandTotalEst += est;
         grandTotalAct += act;
+        grandTotalOT += memberOT;
 
         const manpowerSub = isMobile
             ? `<div style="font-size: 11px; color: #888;">${actDays}人日</div>`
             : `<div style="font-size: 11px; color: #888;">${actDays}人日 / ${actMonths}人月</div>`;
+
+        const overtimeCell = hasOvertime
+            ? `<td style="color: ${memberOT > 0 ? '#e67e22' : '#888'}">${memberOT.toFixed(1)}h</td>`
+            : '';
 
         html += `
             <tr>
@@ -2271,6 +2346,7 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
                 <td>${act.toFixed(1)}h${manpowerSub}</td>
                 <td style="color: ${diff >= 0 ? '#e74c3c' : '#27ae60'}">${(diff >= 0 ? '+' : '')}${diff.toFixed(1)}h</td>
                 <td>${rate}%</td>
+                ${overtimeCell}
             </tr>
         `;
     });
@@ -2282,6 +2358,10 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
     const grandActDays = hoursToManDays(grandTotalAct).toFixed(1);
     const grandActMonths = hoursToManMonths(grandTotalAct).toFixed(2);
 
+    const grandOvertimeCell = hasOvertime
+        ? `<td style="color: #e67e22">${grandTotalOT.toFixed(1)}h</td>`
+        : '';
+
     html += `
         <tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ddd;">
             <td>合計</td>
@@ -2289,6 +2369,7 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
             <td>${grandTotalAct.toFixed(1)}h<div style="font-size: 11px; color: #888;">${grandActDays}人日 / ${grandActMonths}人月</div></td>
             <td style="color: ${grandDiff >= 0 ? '#e74c3c' : '#27ae60'}">${grandDiff >= 0 ? '+' : ''}${grandDiff.toFixed(1)}h</td>
             <td>${grandRate}%</td>
+            ${grandOvertimeCell}
         </tr>
     `;
 
@@ -2318,7 +2399,7 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
 
     let grandTotalEst = 0, grandTotalAct = 0;
 
-    versions.forEach(version => {
+    versions.forEach((version, vIdx) => {
         const versionDisplay = (version && version.trim() !== '') ? version : 'その他工数';
         const est = filteredEstimates.filter(e => e.version === version).reduce((sum, e) => sum + e.hours, 0);
         const act = filteredActuals.filter(a => a.version === version).reduce((sum, a) => sum + a.hours, 0);
@@ -2330,14 +2411,57 @@ export function renderVersionReport(filteredActuals, filteredEstimates) {
         grandTotalEst += est;
         grandTotalAct += act;
 
+        const toggleId = `versionTaskBreakdown_${vIdx}`;
         html += `
-            <tr>
-                <td><strong>${escapeHtml(versionDisplay)}</strong></td>
+            <tr style="cursor: pointer;" onclick="(function(){var el=document.getElementById('${toggleId}');if(el){el.style.display=el.style.display==='none'?'':'none';var arrow=document.getElementById('${toggleId}_arrow');if(arrow)arrow.textContent=el.style.display==='none'?'\\u25B6':'\\u25BC';}})()">
+                <td><strong><span id="${toggleId}_arrow" style="font-size: 11px; margin-right: 4px;">&#x25B6;</span>${escapeHtml(versionDisplay)}</strong></td>
                 <td>${est.toFixed(1)}h<div style="font-size: 11px; color: #888;">${estDays}人日</div></td>
                 <td>${act.toFixed(1)}h<div style="font-size: 11px; color: #888;">${actDays}人日 / ${actMonths}人月</div></td>
                 <td>${progress}%</td>
             </tr>
         `;
+
+        // 対応別内訳行（折りたたみ、デフォルト非表示）
+        const versionEstimates = filteredEstimates.filter(e => e.version === version);
+        const versionActuals = filteredActuals.filter(a => a.version === version);
+
+        // 対応名でグループ化
+        const taskNames = [...new Set(versionEstimates.map(e => e.task))].sort();
+        // 実績のみ存在する対応名も追加
+        const actualOnlyTasks = [...new Set(versionActuals.map(a => a.task))].filter(t => !taskNames.includes(t)).sort();
+        const allTasks = [...taskNames, ...actualOnlyTasks];
+
+        if (allTasks.length > 0) {
+            html += `<tr id="${toggleId}" style="display: none;"><td colspan="4" style="padding: 0;">`;
+            html += `<table style="width: 100%; border-collapse: collapse; margin: 0;">`;
+            html += isMobile
+                ? '<tr style="background: #f9f9f9;"><th style="padding: 6px 8px 6px 24px; font-size: 12px; text-align: left;">対応名</th><th style="padding: 6px 8px; font-size: 12px;">見積</th><th style="padding: 6px 8px; font-size: 12px;">実績</th><th style="padding: 6px 8px; font-size: 12px;">差異</th><th style="padding: 6px 8px; font-size: 12px;">進捗</th></tr>'
+                : '<tr style="background: #f9f9f9;"><th style="padding: 6px 8px 6px 24px; font-size: 12px; text-align: left;">対応名</th><th style="padding: 6px 8px; font-size: 12px;">見積工数</th><th style="padding: 6px 8px; font-size: 12px;">実績工数</th><th style="padding: 6px 8px; font-size: 12px;">差異</th><th style="padding: 6px 8px; font-size: 12px;">進捗率</th></tr>';
+
+            allTasks.forEach(task => {
+                const taskEst = versionEstimates.filter(e => e.task === task).reduce((sum, e) => sum + e.hours, 0);
+                const taskAct = versionActuals.filter(a => a.task === task).reduce((sum, a) => sum + a.hours, 0);
+                const taskDiff = taskAct - taskEst;
+                const taskProgress = taskEst > 0 ? (taskAct / taskEst * 100).toFixed(1) : (taskAct > 0 ? '-' : '0.0');
+                const diffColor = taskDiff > 0 ? '#e74c3c' : taskDiff < 0 ? '#27ae60' : '#666';
+                const diffText = taskDiff !== 0 ? (taskDiff > 0 ? '+' : '') + taskDiff.toFixed(1) + 'h' : '-';
+
+                let taskDisplay = task || '(未設定)';
+                if (taskDisplay.length > 30 && isMobile) {
+                    taskDisplay = taskDisplay.substring(0, 28) + '...';
+                }
+
+                html += `<tr style="border-bottom: 1px solid #eee;">`;
+                html += `<td style="padding: 5px 8px 5px 24px; font-size: 12px; color: #555;">${escapeHtml(taskDisplay)}</td>`;
+                html += `<td style="padding: 5px 8px; font-size: 12px; text-align: right;">${taskEst > 0 ? taskEst.toFixed(1) + 'h' : '-'}</td>`;
+                html += `<td style="padding: 5px 8px; font-size: 12px; text-align: right;">${taskAct > 0 ? taskAct.toFixed(1) + 'h' : '-'}</td>`;
+                html += `<td style="padding: 5px 8px; font-size: 12px; text-align: right; color: ${diffColor};">${diffText}</td>`;
+                html += `<td style="padding: 5px 8px; font-size: 12px; text-align: right;">${taskProgress}%</td>`;
+                html += `</tr>`;
+            });
+
+            html += `</table></td></tr>`;
+        }
     });
 
     // 合計行

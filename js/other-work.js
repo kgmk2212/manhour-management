@@ -44,10 +44,29 @@ export function addMeeting() {
         return;
     }
 
-    // 全担当者分の実績を追加
+    // Bug 4: 8h有休のメンバーを除外する
+    const skippedMembers = [];
+    const eligibleMembers = [];
+    members.forEach(member => {
+        // その日の休暇データを確認
+        const memberVacations = State.vacations.filter(v => v.member === member && v.date === date);
+        const totalVacationHours = memberVacations.reduce((sum, v) => sum + v.hours, 0);
+        if (totalVacationHours >= 8) {
+            skippedMembers.push(member);
+        } else {
+            eligibleMembers.push(member);
+        }
+    });
+
+    if (eligibleMembers.length === 0) {
+        showAlert('全メンバーが終日休暇のため、打ち合わせを登録できません。');
+        return;
+    }
+
+    // 対象メンバー分の実績を追加
     let count = 0;
     const addedActuals = [];
-    members.forEach(member => {
+    eligibleMembers.forEach(member => {
         const actual = {
             id: Date.now() + count,
             date: date,
@@ -65,7 +84,7 @@ export function addMeeting() {
 
     pushAction({
         type: 'actual_add',
-        description: `打ち合わせ追加: ${members.size}名分 ${hours}h`,
+        description: `打ち合わせ追加: ${eligibleMembers.length}名分 ${hours}h`,
         data: { added: addedActuals[0], addedAll: addedActuals }
     });
 
@@ -78,7 +97,12 @@ export function addMeeting() {
     document.getElementById('meetingHours').value = '';
     closeOtherWorkModal();
 
-    showAlert(`打ち合わせを${members.size}名分登録しました（${date}）`);
+    // スキップされたメンバーがいる場合はメッセージに含める
+    let message = `打ち合わせを${eligibleMembers.length}名分登録しました（${date}）`;
+    if (skippedMembers.length > 0) {
+        message += `\n※終日休暇のため除外: ${skippedMembers.join('、')}`;
+    }
+    showAlert(message);
 }
 
 // その他作業を追加

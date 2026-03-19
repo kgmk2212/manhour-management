@@ -1192,12 +1192,14 @@ export function renderEstimateMatrix() {
                     const monthColor = showMonthColors ? getMonthColor(p.workMonths) : { bg: '', tooltip: '' };
                     const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
-                    html += `<td class="clickable-cell" style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
-                        onclick="showEstimateDetail(${p.id})"
+                    html += `<td class="clickable-cell estimate-inline-editable" style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
+                        data-estimate-id="${p.id}"
+                        data-original-hours="${p.hours}"
+                        onclick="startInlineEditEstimate(this, ${p.id}, ${p.hours})"
                         ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
-                        onmouseover="this.style.background='#e3f2fd'"
-                        onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
-                        <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
+                        onmouseover="if(!this.classList.contains('inline-editing'))this.style.background='#e3f2fd'"
+                        onmouseout="if(!this.classList.contains('inline-editing'))this.style.background='${showMonthColors ? monthColor.bg : ''}'">
+                        <div class="inline-hours-display" style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
                         <div style="font-size: 12px; color: #666;">(${escapeHtml(p.member)})</div>
                     </td>`;
                 } else {
@@ -1990,6 +1992,102 @@ export function deleteEstimateFromModal(id) {
     if (estimates.length < beforeCount) {
         closeEstimateDetailModal();
     }
+}
+
+// ============================================
+// マトリクスビュー インライン編集
+// ============================================
+
+/**
+ * マトリクスビューの工数セルをインライン編集開始
+ * @param {HTMLElement} cell - クリックされたセル要素
+ * @param {number} estimateId - 見積ID
+ * @param {number} currentHours - 現在の工数
+ */
+export function startInlineEditEstimate(cell, estimateId, currentHours) {
+    // 既に編集中なら何もしない
+    if (cell.classList.contains('inline-editing')) return;
+
+    cell.classList.add('inline-editing');
+
+    const hoursDisplay = cell.querySelector('.inline-hours-display');
+    if (!hoursDisplay) return;
+
+    const originalText = hoursDisplay.textContent;
+
+    // 入力フィールドに置き換え
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentHours;
+    input.step = '0.5';
+    input.min = '0';
+    input.style.cssText = 'width: 60px; text-align: center; font-weight: 600; font-size: 14px; padding: 2px 4px; border: 2px solid var(--theme-color, #1976d2); border-radius: 4px; outline: none;';
+
+    hoursDisplay.textContent = '';
+    hoursDisplay.appendChild(input);
+    input.focus();
+    input.select();
+
+    const finishEdit = (save) => {
+        if (!cell.classList.contains('inline-editing')) return; // 二重呼出し防止
+        cell.classList.remove('inline-editing');
+
+        const newValue = parseFloat(input.value);
+
+        if (save && !isNaN(newValue) && newValue >= 0 && newValue !== currentHours) {
+            // 見積を更新
+            const estimate = estimates.find(e => e.id === estimateId);
+            if (estimate) {
+                const oldHours = estimate.hours;
+                estimate.hours = newValue;
+
+                // monthlyHours も更新（単月の場合）
+                const est = normalizeEstimate(estimate);
+                if (est.workMonths && est.workMonths.length === 1 && estimate.monthlyHours) {
+                    estimate.monthlyHours[est.workMonths[0]] = newValue;
+                }
+
+                // Undo履歴に記録
+                if (typeof pushAction === 'function') {
+                    pushAction({ type: 'editEstimate', id: estimateId, before: { hours: oldHours }, after: { hours: newValue } });
+                }
+
+                if (typeof window.saveData === 'function') window.saveData();
+
+                // マトリクスビューを再描画
+                renderEstimateList();
+                return; // 再描画するので以降のDOM操作は不要
+            }
+        }
+
+        // キャンセル時またはエラー時: 元のテキストに戻す
+        hoursDisplay.textContent = originalText;
+    };
+
+    input.addEventListener('blur', () => finishEdit(true));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finishEdit(false);
+        } else if (e.key === 'Tab') {
+            // Tab: 保存して次のセルに移動
+            e.preventDefault();
+            finishEdit(true);
+            // 次の編集可能セルを探す
+            const allCells = [...document.querySelectorAll('.estimate-inline-editable')];
+            const currentIndex = allCells.indexOf(cell);
+            const nextCell = e.shiftKey
+                ? allCells[currentIndex - 1]
+                : allCells[currentIndex + 1];
+            if (nextCell) {
+                // 少し待ってから次のセルをクリック（再描画待ち）
+                setTimeout(() => nextCell.click(), 100);
+            }
+        }
+    });
 }
 
 // ============================================

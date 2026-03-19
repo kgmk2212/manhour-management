@@ -242,16 +242,16 @@ export function generateMonthColorLegend(usedMonths, hasMultipleMonths = false, 
     return html;
 }
 
-// 乖離率から背景色を取得
+// 乖離率から背景色を取得（スムーズグラデーション版）
 export function getDeviationColor(estimate, actual) {
     if (estimate === 0 && actual === 0) {
         return '#ffffff'; // 両方0は白
     }
     if (estimate === 0 && actual > 0) {
-        return '#fffef0'; // 見積なし実績あり：薄い黄
+        return '#fdfbf3'; // 見積なし実績あり：薄いウォームベージュ
     }
     if (estimate > 0 && actual === 0) {
-        return '#f0f8ff'; // 見積のみ：薄い青
+        return '#f4f8fc'; // 見積のみ：薄いクールブルー
     }
 
     const deviation = ((actual - estimate) / estimate) * 100;
@@ -260,31 +260,26 @@ export function getDeviationColor(estimate, actual) {
         return '#ffffff'; // ±3%以内は白
     }
 
+    // スムーズグラデーション: 乖離率を0〜1の強度に変換（最大100%で飽和）
+    const absDeviation = Math.abs(deviation);
+    // イージング関数で自然なカーブ（低い乖離は薄く、高い乖離で濃く）
+    const t = Math.min(absDeviation / 100, 1);
+    const intensity = t * t * (3 - 2 * t); // smoothstep
+
     if (deviation > 0) {
-        // 実績 > 見積：赤系（10段階）
-        if (deviation < 5) return '#fff8f8';
-        if (deviation < 8) return '#fff0f0';
-        if (deviation < 12) return '#ffe8e8';
-        if (deviation < 18) return '#ffe0e0';
-        if (deviation < 25) return '#ffd0d0';
-        if (deviation < 35) return '#ffc0c0';
-        if (deviation < 50) return '#ffb0b0';
-        if (deviation < 70) return '#ffa0a0';
-        if (deviation < 100) return '#ff9090';
-        return '#ff8080';
+        // 実績 > 見積：ウォームコーラル系（彩度を抑えた暖色）
+        // rgb(255, 255, 255) → rgb(245, 208, 195) の補間
+        const r = Math.round(255 - intensity * 10);
+        const g = Math.round(255 - intensity * 47);
+        const b = Math.round(255 - intensity * 60);
+        return `rgb(${r}, ${g}, ${b})`;
     } else {
-        // 実績 < 見積：緑系（10段階）
-        const absDeviation = Math.abs(deviation);
-        if (absDeviation < 5) return '#f8fff8';
-        if (absDeviation < 8) return '#f0fff0';
-        if (absDeviation < 12) return '#e8ffe8';
-        if (absDeviation < 18) return '#e0ffe0';
-        if (absDeviation < 25) return '#d0ffd0';
-        if (absDeviation < 35) return '#c0ffc0';
-        if (absDeviation < 50) return '#b0ffb0';
-        if (absDeviation < 70) return '#a0ffa0';
-        if (absDeviation < 100) return '#90ff90';
-        return '#80ff80';
+        // 実績 < 見積：クールティール系（彩度を抑えた寒色）
+        // rgb(255, 255, 255) → rgb(200, 230, 220) の補間
+        const r = Math.round(255 - intensity * 55);
+        const g = Math.round(255 - intensity * 25);
+        const b = Math.round(255 - intensity * 35);
+        return `rgb(${r}, ${g}, ${b})`;
     }
 }
 
