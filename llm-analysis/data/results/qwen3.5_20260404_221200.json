@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "generated_at": "2026-04-04T22:13:07.591109",
+    "model": "qwen3.5:9b",
+    "source_summary": "data/summaries/test_summary.json",
+    "analysis_period": "2025-10 ~ 2026-03"
+  },
+  "team_evaluation": {
+    "headline": "PT工程に課題",
+    "summary": "全体精度84.9%でB級だが、PT工程の精度63%がボトルネック。V1.0の超過タスク4件が影響し、改善余地あり。",
+    "score": "B",
+    "strengths": [
+      "UI精度96.2%で安定",
+      "佐藤・田中精度95%"
+    ],
+    "weaknesses": [
+      "PT精度63%で悪化",
+      "超過タスク4件"
+    ],
+    "trend": "declining"
+  },
+  "outlook": {
+    "version_forecasts": [
+      {
+        "version": "V2.0",
+        "optimistic": "残工数110時間（超過なし）",
+        "realistic": "残工数110時間×全体平均超過率15.1%＝約127時間",
+        "pessimistic": "残工数110時間×最悪工程PT超過率83.3%＝約182時間",
+        "key_risk": "PT工程の超過がV2.0にも波及する可能性"
+      }
+    ],
+    "accuracy_forecast": "PT工程の精度改善がなければ、全体精度は75%台に低下する見込み。",
+    "resource_risks": [
+      "鈴木氏のPT工程で精度65%がリスク"
+    ]
+  },
+  "recommended_actions": [
+    {
+      "priority": 1,
+      "category": "見積プロセス",
+      "title": "PT見積見直し",
+      "rationale": "PT工程の精度63.0%が全体のボトルネック",
+      "action": "PTタスクの見積もりを1.5倍に修正し、レビューを厳格化",
+      "expected_effect": "PT精度63%→80%に改善"
+    },
+    {
+      "priority": 2,
+      "category": "レビュー・品質",
+      "title": "PTレビュー強化",
+      "rationale": "V1.0のログイン機能でPT超過83.3%発生",
+      "action": "PTレビューを2回実施し、見積と実績の差異を可視化",
+      "expected_effect": "超過タスクを2件以下に削減"
+    },
+    {
+      "priority": 3,
+      "category": "リソース配分",
+      "title": "鈴木氏PT支援",
+      "rationale": "鈴木氏のPT精度65.0%がチーム平均より低く",
+      "action": "鈴木氏のPTタスクを佐藤氏に一部割り当て",
+      "expected_effect": "鈴木氏PT精度95%へ向上"
+    }
+  ],
+  "next_review_focus": "PT工程の見積もり精度向上と鈴木氏のPTタスク配分"
+}

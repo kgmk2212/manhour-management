@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "generated_at": "2026-04-05T02:46:32.333915",
+    "model": "qwen3.5:9b",
+    "source_summary": "data/summaries/test_summary_v2.json",
+    "analysis_period": "2025-10 ~ 2026-04"
+  },
+  "name": "田中",
+  "total_estimate": 256.0,
+  "total_actual": 181.0,
+  "months": [
+    {
+      "month": "2025-10",
+      "estimate": 40.0,
+      "actual": 44.0
+    },
+    {
+      "month": "2025-11",
+      "estimate": 12.0,
+      "actual": 22.0
+    },
+    {
+      "month": "2026-01",
+      "estimate": 24.0,
+      "actual": 28.0
+    },
+    {
+      "month": "2026-02",
+      "estimate": 40.0,
+      "actual": 55.0
+    },
+    {
+      "month": "2026-03",
+      "estimate": 60.0,
+      "actual": 32.0
+    },
+    {
+      "month": "2026-04",
+      "estimate": 80.0,
+      "actual": 0
+    }
+  ]
+}

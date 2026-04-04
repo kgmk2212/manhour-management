@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - モックアップ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           AI Analysis Section Mockup
+           Design System: Ink & Amber (extended)
+           ============================================ */
+
+        :root {
+            --bg: #F7F6F3;
+            --surface: #FFFFFF;
+            --surface-elevated: #FAFAF8;
+            --border: #E7E5E0;
+            --border-light: #EEEDEA;
+            --text-primary: #1A1814;
+            --text-secondary: #6B6560;
+            --text-muted: #9C9690;
+            --accent: #2D5A27;
+            --accent-hover: #3A7232;
+            --accent-light: #EBF5EA;
+            --accent-secondary: #C4841D;
+            --accent-secondary-light: #FFF8ED;
+            --danger: #B91C1C;
+            --warning: #C4841D;
+            --info: #1D6FA5;
+            --radius-xs: 4px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(26, 24, 20, 0.04);
+            --shadow-md: 0 2px 8px rgba(26, 24, 20, 0.06);
+            --shadow-lg: 0 4px 16px rgba(26, 24, 20, 0.08);
+            --transition: 180ms ease;
+
+            /* AI Analysis specific */
+            --ai-accent: #1D6FA5;
+            --ai-accent-light: #EFF6FF;
+            --ai-accent-muted: rgba(29, 111, 165, 0.08);
+            --ai-border: rgba(29, 111, 165, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        /* ---- Context label ---- */
+        .mockup-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        /* ============================================
+           AI Analysis Section
+           ============================================ */
+
+        .ai-section {
+            margin-bottom: 32px;
+        }
+
+        /* ---- Section Header ---- */
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .ai-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ai-header-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            background: var(--ai-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+        }
+        .ai-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        .ai-header-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ai-header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ai-model-tag {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: var(--ai-accent-muted);
+            color: var(--ai-accent);
+            letter-spacing: 0.02em;
+        }
+
+        /* ---- Score Card (Hero) ---- */
+        .ai-score-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ai-score-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--ai-accent);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .ai-score-ring {
+            width: 64px;
+            height: 64px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .ai-score-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        .ai-score-ring-bg {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 4;
+        }
+        .ai-score-ring-fill {
+            fill: none;
+            stroke: var(--ai-accent);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 163.36;
+            stroke-dashoffset: 32.67;
+            transition: stroke-dashoffset 1s ease;
+        }
+        .ai-score-letter {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--ai-accent);
+            letter-spacing: -0.03em;
+        }
+
+        .ai-score-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .ai-score-summary {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.65;
+        }
+        .ai-score-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .ai-score-trend.improving {
+            background: rgba(45, 90, 39, 0.08);
+            color: var(--accent);
+        }
+        .ai-score-trend.declining {
+            background: rgba(185, 28, 28, 0.08);
+            color: var(--danger);
+        }
+        .ai-score-trend.stable {
+            background: rgba(107, 101, 96, 0.08);
+            color: var(--text-secondary);
+        }
+
+        /* ---- Strengths/Weaknesses Pills ---- */
+        .ai-pills-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .ai-pill {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.4;
+        }
+        .ai-pill.strength {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .ai-pill.weakness {
+            background: rgba(185, 28, 28, 0.06);
+            color: #9B2C2C;
+        }
+        .ai-pill-icon {
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        /* ---- Expandable Sections ---- */
+        .ai-expand-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: box-shadow var(--transition);
+        }
+        .ai-expand-section:hover {
+            box-shadow: var(--shadow-sm);
+        }
+        .ai-expand-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            cursor: pointer;
+            user-select: none;
+            transition: background var(--transition);
+        }
+        .ai-expand-header:hover {
+            background: var(--surface-elevated);
+        }
+        .ai-expand-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ai-expand-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 200ms ease;
+        }
+        .ai-expand-section.open .ai-expand-icon {
+            transform: rotate(90deg);
+        }
+        .ai-expand-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .ai-expand-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--ai-accent-muted);
+            color: var(--ai-accent);
+        }
+        .ai-expand-body {
+            display: none;
+            padding: 0 18px 18px;
+            animation: ai-slideDown 200ms ease;
+        }
+        .ai-expand-section.open .ai-expand-body {
+            display: block;
+        }
+        @keyframes ai-slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- Forecast Card ---- */
+        .ai-forecast {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .ai-forecast-item {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+        }
+        .ai-forecast-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .ai-forecast-value {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .ai-forecast-label.optimistic { color: var(--accent); }
+        .ai-forecast-label.pessimistic { color: var(--danger); }
+
+        .ai-risk-tag {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(185, 28, 28, 0.04);
+            border: 1px solid rgba(185, 28, 28, 0.08);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .ai-risk-tag-icon {
+            color: var(--danger);
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .ai-text-block {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            padding: 10px 0;
+        }
+
+        /* ---- Action Cards ---- */
+        .ai-action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ai-action-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .ai-action-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .ai-action-card-header:hover {
+            background: rgba(0,0,0,0.015);
+        }
+        .ai-action-priority {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .ai-action-priority.p1 {
+            background: var(--ai-accent);
+            color: #fff;
+        }
+        .ai-action-priority.p2 {
+            background: var(--accent);
+            color: #fff;
+        }
+        .ai-action-priority.p3 {
+            background: var(--text-muted);
+            color: #fff;
+        }
+        .ai-action-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .ai-action-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .ai-action-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .ai-action-category {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background: var(--border);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .ai-action-rationale {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .ai-action-expand-icon {
+            font-size: 10px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            margin-top: 5px;
+            transition: transform 200ms ease;
+        }
+        .ai-action-card.open .ai-action-expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .ai-action-detail {
+            display: none;
+            padding: 0 16px 14px 52px;
+            animation: ai-slideDown 200ms ease;
+        }
+        .ai-action-card.open .ai-action-detail {
+            display: block;
+        }
+        .ai-action-detail-item {
+            margin-bottom: 10px;
+        }
+        .ai-action-detail-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+        .ai-action-detail-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+        }
+
+        /* ---- Review Focus ---- */
+        .ai-review-focus {
+            background: var(--ai-accent-light);
+            border: 1px solid var(--ai-border);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            display: flex;
+            gap: 10px;
+        }
+        .ai-review-focus-icon {
+            flex-shrink: 0;
+            color: var(--ai-accent);
+            font-size: 14px;
+            margin-top: 1px;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            .container { padding: 0 16px; margin: 20px auto; }
+            .ai-score-card { flex-direction: column; align-items: flex-start; gap: 14px; }
+            .ai-forecast { grid-template-columns: 1fr; }
+            .ai-pills-row { gap: 6px; }
+            .ai-pill { font-size: 11px; padding: 4px 10px; }
+            .ai-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mockup-label">AI分析セクション モックアップ — レポート分析タブ内に配置</div>
+
+        <div class="ai-section">
+            <!-- Section Header -->
+            <div class="ai-header">
+                <div class="ai-header-left">
+                    <div class="ai-header-icon">&#9670;</div>
+                    <h2>AI分析</h2>
+                </div>
+                <div class="ai-header-meta">
+                    <span class="ai-model-tag">gemma4</span>
+                    <span>分析日: 2026-04-04</span>
+                    <span>対象: 2025-10 ~ 2026-03</span>
+                </div>
+            </div>
+
+            <!-- Score Card (Always visible) -->
+            <div class="ai-score-card">
+                <div class="ai-score-ring">
+                    <svg viewBox="0 0 56 56">
+                        <circle class="ai-score-ring-bg" cx="28" cy="28" r="26" />
+                        <circle class="ai-score-ring-fill" cx="28" cy="28" r="26" />
+                    </svg>
+                    <div class="ai-score-letter">B</div>
+                </div>
+                <div class="ai-score-body">
+                    <div class="ai-score-summary">
+                        全体として、V1.0での大きな見積もりオーバーランが課題として残っていますが、V2.0の進捗は順調であり、プロセス改善の余地が大きい状態です。
+                    </div>
+                    <div class="ai-score-trend improving">
+                        <span>&#9650;</span> 改善傾向
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths & Weaknesses Pills -->
+            <div class="ai-pills-row">
+                <div class="ai-pill strength">
+                    <span class="ai-pill-icon">&#10003;</span>
+                    UI・PG工程の精度が高い（UI: 96.2%, PG: 91.2%）
+                </div>
+                <div class="ai-pill strength">
+                    <span class="ai-pill-icon">&#10003;</span>
+                    佐藤・田中の稼働バランスが安定（94%以上）
+                </div>
+            </div>
+            <div class="ai-pills-row">
+                <div class="ai-pill weakness">
+                    <span class="ai-pill-icon">&#9679;</span>
+                    PT工程の見積精度が極めて低い（63.0%）
+                </div>
+                <div class="ai-pill weakness">
+                    <span class="ai-pill-icon">&#9679;</span>
+                    ログイン機能PT工程で83.3%オーバーラン
+                </div>
+            </div>
+
+            <!-- Expandable: 展望・予測 -->
+            <div class="ai-expand-section">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">展望・予測</div>
+                    </div>
+                    <div class="ai-expand-badge">V2.0</div>
+                </div>
+                <div class="ai-expand-body">
+                    <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">V2.0 完了見込み</div>
+                    <div class="ai-forecast">
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label optimistic">楽観</div>
+                            <div class="ai-forecast-value">順調に完了する可能性が高い</div>
+                        </div>
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label">現実的</div>
+                            <div class="ai-forecast-value">進捗率51.8%、残工数110hから計画通りに完了する見込み</div>
+                        </div>
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label pessimistic">悲観</div>
+                            <div class="ai-forecast-value">PT工程の未計画な工数増大により遅延する可能性</div>
+                        </div>
+                    </div>
+                    <div class="ai-risk-tag">
+                        <span class="ai-risk-tag-icon">&#9888;</span>
+                        <span>PT（テストプロセス）における工数見積もりの信頼性が最も低い。この工程での予期せぬ手戻りや工数増大が最大のボトルネックとなる。</span>
+                    </div>
+                    <div class="ai-text-block">
+                        <strong style="color:var(--text-primary)">精度予測:</strong>
+                        PT工程の改善がなければ、今後の見積もり精度は不安定なままであると予測される。他の工程の精度は維持可能。
+                    </div>
+                    <div class="ai-risk-tag" style="margin-top: 8px;">
+                        <span class="ai-risk-tag-icon">&#9888;</span>
+                        <span>PT工程の工数見積もり不足による、最終リリース直前の工数逼迫リスク。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expandable: 推奨アクション -->
+            <div class="ai-expand-section open">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">推奨アクション</div>
+                    </div>
+                    <div class="ai-expand-badge">3件</div>
+                </div>
+                <div class="ai-expand-body">
+                    <div class="ai-action-list">
+                        <!-- Action 1 -->
+                        <div class="ai-action-card open">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p1">1</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">PT工程の工数見積もりプロセス強化</div>
+                                        <div class="ai-action-category">見積プロセス</div>
+                                    </div>
+                                    <div class="ai-action-rationale">PT工程の見積もり精度が63.0%と著しく低く、V1.0の「ログイン機能」が83.3%のオーバーランを起こしている</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">PT工程のタスク洗い出し時に、単なるテストケース数ではなく、「テスト環境構築工数」「手戻り対応工数」「結合テストの回数」など、具体的な工数発生源をチェックリスト化し、見積もりプロセスに組み込む。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">PT工程の工数見積もり信頼性が向上し、予期せぬオーバーランによるスケジュール遅延リスクを大幅に低減できる。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action 2 -->
+                        <div class="ai-action-card">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p2">2</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">完了定義（DoD）の明確化とレビューの徹底</div>
+                                        <div class="ai-action-category">レビュー・品質</div>
+                                    </div>
+                                    <div class="ai-action-rationale">ログイン機能のオーバーランは、テストやレビュー段階での品質問題が原因である可能性が高い。完了基準が曖昧であることを示唆</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">すべてのタスク（特にV2.0の残タスク）について、「完了」の定義（例：コードレビュー完了、単体テスト合格、ドキュメント更新、結合テスト計画作成など）をチーム全体で合意し、タスクチケットに明記する。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">タスクの完了基準が明確になることで、手戻りや「終わったつもり」による工数ロスを防ぎ、見積もりと実績の乖離を縮小できる。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action 3 -->
+                        <div class="ai-action-card">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p3">3</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">タスクの分割粒度の見直しとWIP制限の導入</div>
+                                        <div class="ai-action-category">タスク管理</div>
+                                    </div>
+                                    <div class="ai-action-rationale">ログイン機能のように単一タスクが巨大化し、工数オーバーランのリスクを集中させている。V2.0の進捗率51.8%からタスクが大きな塊になっている可能性</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">現在進行中のタスクを、最大工数見積もりを2〜3日分に分割する（例：ログイン機能全体→認証ロジック実装、UI連携、テストケース作成）。また、同時に進行するタスク（WIP）の数を制限し、完了させることに集中する。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">リスクの分散化が実現し、特定のタスクに依存した遅延を防ぐ。また、小さな成功体験を積み重ねることでチームのモチベーション維持にも繋がる。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expandable: 次回の注視ポイント -->
+            <div class="ai-expand-section">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">次回の注視ポイント</div>
+                    </div>
+                </div>
+                <div class="ai-expand-body">
+                    <div class="ai-review-focus">
+                        <span class="ai-review-focus-icon">&#9678;</span>
+                        <span>次回の分析では、提案したPT工程の改善アクションが適用された後の工数実績（特に手戻り工数）と、タスク分割による進捗の粒度の変化に注目し、見積もり精度の改善傾向を定量的に追跡してください。</span>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.ai-section -->
+    </div>
+
+</body>
+</html>

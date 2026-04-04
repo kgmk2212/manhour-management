@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - モックアップ (qwen3.5:9b)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+    <div class="container">
+        <div class="mockup-label">AI分析セクション モックアップ — qwen3.5:9b</div>
+
+        <div class="ai-section">
+            <!-- Section Header -->
+            <div class="ai-header">
+                <div class="ai-header-left">
+                    <div class="ai-header-icon">&#9670;</div>
+                    <h2>AI分析</h2>
+                </div>
+                <div class="ai-header-meta">
+                    <span class="ai-model-tag">qwen3.5:9b</span>
+                    <span>分析日: 2026-04-04</span>
+                    <span>対象: 2025-10 ~ 2026-03</span>
+                </div>
+            </div>
+
+            <!-- Score Card (Always visible) -->
+            <div class="ai-score-card">
+                <div class="ai-score-ring">
+                    <svg viewBox="0 0 56 56">
+                        <circle class="ai-score-ring-bg" cx="28" cy="28" r="26" />
+                        <circle class="ai-score-ring-fill" cx="28" cy="28" r="26" />
+                    </svg>
+                    <div class="ai-score-letter">B</div>
+                </div>
+                <div class="ai-score-body">
+                    <div class="ai-score-summary">
+                        全体的な見積精度は84.9%と概ね安定しているが、工程別・メンバー別で見積もりが不足している傾向が顕著である。特にPT工程と鈴木メンバーの稼働が他メンバーに比べて大きく乖離しており、キャパシティ管理の課題がある。
+                    </div>
+                    <div class="ai-score-trend declining">
+                        <span>&#9660;</span> 悪化傾向
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths & Weaknesses Pills -->
+            <div class="ai-pills-row">
+                <div class="ai-pill strength">
+                    <span class="ai-pill-icon">&#10003;</span>
+                    UI・PG工程の見積もり精度が90%以上と高い
+                </div>
+                <div class="ai-pill strength">
+                    <span class="ai-pill-icon">&#10003;</span>
+                    メンバーの稼働バランスは概ね良好（佐藤・田中が安定）
+                </div>
+            </div>
+            <div class="ai-pills-row">
+                <div class="ai-pill weakness">
+                    <span class="ai-pill-icon">&#9679;</span>
+                    PT工程の見積もり精度が63%と著しく低い
+                </div>
+                <div class="ai-pill weakness">
+                    <span class="ai-pill-icon">&#9679;</span>
+                    V1.0のログイン機能でPT工程が83%オーバーラン
+                </div>
+                <div class="ai-pill weakness">
+                    <span class="ai-pill-icon">&#9679;</span>
+                    鈴木メンバーのPT工程での見積もりが大幅に不足（65%）
+                </div>
+            </div>
+
+            <!-- Expandable: 展望・予測 -->
+            <div class="ai-expand-section">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">展望・予測</div>
+                    </div>
+                    <div class="ai-expand-badge">V2.0</div>
+                </div>
+                <div class="ai-expand-body">
+                    <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">V2.0 完了見込み</div>
+                    <div class="ai-forecast">
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label optimistic">楽観</div>
+                            <div class="ai-forecast-value">228工数（EAC）で完了</div>
+                        </div>
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label">現実的</div>
+                            <div class="ai-forecast-value">228工数（EAC）で完了</div>
+                        </div>
+                        <div class="ai-forecast-item">
+                            <div class="ai-forecast-label pessimistic">悲観</div>
+                            <div class="ai-forecast-value">228工数（EAC）で完了</div>
+                        </div>
+                    </div>
+                    <div class="ai-risk-tag">
+                        <span class="ai-risk-tag-icon">&#9888;</span>
+                        <span>V2.0の残り工数110に対し、EACが228と倍以上のリスクあり。PT工程のオーバーランが継続すれば延期リスク大。</span>
+                    </div>
+                    <div class="ai-text-block">
+                        <strong style="color:var(--text-primary)">精度予測:</strong>
+                        PT工程のオーバーラン傾向が続けば、全体的な見積精度は低下する可能性が高い。
+                    </div>
+                    <div class="ai-risk-tag" style="margin-top: 8px;">
+                        <span class="ai-risk-tag-icon">&#9888;</span>
+                        <span>鈴木メンバーのPT工程での生産性低下。</span>
+                    </div>
+                    <div class="ai-risk-tag" style="margin-top: 8px;">
+                        <span class="ai-risk-tag-icon">&#9888;</span>
+                        <span>PT工程のボトルネック化による全体の進捗遅延。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expandable: 推奨アクション -->
+            <div class="ai-expand-section open">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">推奨アクション</div>
+                    </div>
+                    <div class="ai-expand-badge">3件</div>
+                </div>
+                <div class="ai-expand-body">
+                    <div class="ai-action-list">
+                        <!-- Action 1 -->
+                        <div class="ai-action-card open">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p1">1</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">PT工程の見積もりバッファ設定の見直し</div>
+                                        <div class="ai-action-category">見積プロセス</div>
+                                    </div>
+                                    <div class="ai-action-rationale">PT工程の全体的な見積もり精度は63%で、V1.0のログイン機能では83.3%オーバーラン。工数見積もりを1.5〜2倍のバッファを標準的に設定する</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">PT工程のタスク見積もり時に、過去実績（V1.0の83.3%オーバーラン）を考慮し、標準バッファ率を20〜30%設定するチェックリストを導入。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">PT工程のオーバーランを抑制し、全体的な見積精度を85%以上へ改善。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action 2 -->
+                        <div class="ai-action-card">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p2">2</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">鈴木メンバーのPT工程タスクの再配分</div>
+                                        <div class="ai-action-category">リソース配分</div>
+                                    </div>
+                                    <div class="ai-action-rationale">鈴木メンバーのPT工程見積もり精度は65%で、他メンバー（佐藤・田中）は95%以上。PT工程は鈴木メンバーの弱み</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">PT工程のタスクを鈴木メンバーから佐藤・田中メンバーへ優先的に振り替える。鈴木メンバーはIT工程に集中させる。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">PT工程の生産性向上と、鈴木メンバーの得意分野（IT）での工数削減による全体の効率化。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action 3 -->
+                        <div class="ai-action-card">
+                            <div class="ai-action-card-header" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="ai-action-priority p3">3</div>
+                                <div class="ai-action-body">
+                                    <div class="ai-action-title-row">
+                                        <div class="ai-action-title">PT工程タスクの分割粒度の細分化</div>
+                                        <div class="ai-action-category">タスク管理</div>
+                                    </div>
+                                    <div class="ai-action-rationale">V1.0のログイン機能でPT工程が12工数見積もりで22工数（83.3%オーバーラン）。単一タスクが大きすぎるため、見積もり誤差が拡大</div>
+                                </div>
+                                <div class="ai-action-expand-icon">&#9654;</div>
+                            </div>
+                            <div class="ai-action-detail">
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">具体的なアクション</div>
+                                    <div class="ai-action-detail-text">PT工程のタスクを「認証」「セッション管理」「ログ出力」などサブタスクに分割し、各タスクの見積もり精度を上げる。</div>
+                                </div>
+                                <div class="ai-action-detail-item">
+                                    <div class="ai-action-detail-label">期待される効果</div>
+                                    <div class="ai-action-detail-text">見積もり誤差の低減と、進捗管理の精度向上。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expandable: 次回の注視ポイント -->
+            <div class="ai-expand-section">
+                <div class="ai-expand-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="ai-expand-header-left">
+                        <div class="ai-expand-icon">&#9654;</div>
+                        <div class="ai-expand-title">次回の注視ポイント</div>
+                    </div>
+                </div>
+                <div class="ai-expand-body">
+                    <div class="ai-review-focus">
+                        <span class="ai-review-focus-icon">&#9678;</span>
+                        <span>V2.0の残り工数110に対し、EACが228と乖離しているため、PT工程のオーバーランが止まるか、タスク分割と再配分が機能したかを次回のレビューで注視する。</span>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.ai-section -->
+    </div>
+
+</body>
+</html>

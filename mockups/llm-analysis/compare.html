@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - モデル比較</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #E7E5E0;
+        }
+        .compare-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #1A1814;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .compare-header span {
+            opacity: 0.5;
+        }
+        .compare-label {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .compare-label.gemma { background: #1D6FA5; }
+        .compare-label.qwen { background: #7C3AED; }
+        .compare-frames {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            height: calc(100vh - 44px);
+        }
+        .compare-frames iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #F7F6F3;
+        }
+        .divider {
+            width: 2px;
+            background: #1A1814;
+            position: fixed;
+            top: 44px;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-1px);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div class="compare-header">
+        <span class="compare-label gemma">gemma4</span>
+        <span>vs</span>
+        <span class="compare-label qwen">qwen3.5:9b</span>
+    </div>
+    <div class="divider"></div>
+    <div class="compare-frames">
+        <iframe src="gemma4.html"></iframe>
+        <iframe src="qwen.html"></iframe>
+    </div>
+</body>
+</html>

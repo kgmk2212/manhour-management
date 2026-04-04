@@ -1,0 +1,379 @@
+{
+  "generated_at": "2026-04-05T00:28:20.313251",
+  "source_version": "1.1",
+  "overall": {
+    "total_estimate_hours": 626,
+    "total_actual_hours": 400,
+    "accuracy_percent": 63.9,
+    "total_tasks": 22,
+    "overrun_tasks": 3,
+    "underrun_tasks": 9
+  },
+  "by_version": [
+    {
+      "version": "V1.0",
+      "status": "completed",
+      "estimate_hours": 200,
+      "actual_hours": 212,
+      "accuracy_percent": 106.0,
+      "tasks": 10,
+      "completed_tasks": 10,
+      "overrun_tasks_count": 2,
+      "worst_overrun": {
+        "task": "ログイン機能",
+        "process": "PT",
+        "overrun_percent": 83.3
+      }
+    },
+    {
+      "version": "V2.0",
+      "status": "in_progress",
+      "estimate_hours": 426,
+      "actual_hours": 188,
+      "accuracy_percent": 44.1,
+      "tasks": 12,
+      "completed_tasks": 3,
+      "overrun_tasks_count": 1,
+      "remaining_hours": 265,
+      "eac": 453,
+      "progress_rate": 41.5,
+      "worst_overrun": {
+        "task": "ダッシュボード",
+        "process": "PG",
+        "overrun_percent": 37.5
+      }
+    }
+  ],
+  "by_process": [
+    {
+      "process": "UI",
+      "estimate": 80,
+      "actual": 77,
+      "accuracy": 96.2
+    },
+    {
+      "process": "PG",
+      "estimate": 356,
+      "actual": 253,
+      "accuracy": 71.1
+    },
+    {
+      "process": "PT",
+      "estimate": 178,
+      "actual": 59,
+      "accuracy": 33.1
+    },
+    {
+      "process": "IT",
+      "estimate": 12,
+      "actual": 11,
+      "accuracy": 91.7
+    }
+  ],
+  "by_member": [
+    {
+      "name": "佐藤",
+      "estimate": 230,
+      "actual": 128,
+      "accuracy": 55.7,
+      "task_count": 8,
+      "strong_process": "UI",
+      "weak_process": "PT"
+    },
+    {
+      "name": "田中",
+      "estimate": 256,
+      "actual": 181,
+      "accuracy": 70.7,
+      "task_count": 8,
+      "strong_process": "UI",
+      "weak_process": "PT"
+    },
+    {
+      "name": "鈴木",
+      "estimate": 140,
+      "actual": 91,
+      "accuracy": 65.0,
+      "task_count": 6,
+      "strong_process": "IT",
+      "weak_process": "PT"
+    }
+  ],
+  "member_monthly": [
+    {
+      "name": "佐藤",
+      "total_estimate": 230.0,
+      "total_actual": 128.0,
+      "months": [
+        {
+          "month": "2025-10",
+          "estimate": 20.0,
+          "actual": 18.0
+        },
+        {
+          "month": "2025-11",
+          "estimate": 40.0,
+          "actual": 38.0
+        },
+        {
+          "month": "2025-12",
+          "estimate": 20.0,
+          "actual": 19.0
+        },
+        {
+          "month": "2026-01",
+          "estimate": 12.0,
+          "actual": 10.0
+        },
+        {
+          "month": "2026-02",
+          "estimate": 32.0,
+          "actual": 25.0
+        },
+        {
+          "month": "2026-03",
+          "estimate": 46.0,
+          "actual": 18.0
+        },
+        {
+          "month": "2026-04",
+          "estimate": 60.0,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "name": "田中",
+      "total_estimate": 256.0,
+      "total_actual": 181.0,
+      "months": [
+        {
+          "month": "2025-10",
+          "estimate": 40.0,
+          "actual": 44.0
+        },
+        {
+          "month": "2025-11",
+          "estimate": 12.0,
+          "actual": 22.0
+        },
+        {
+          "month": "2026-01",
+          "estimate": 24.0,
+          "actual": 28.0
+        },
+        {
+          "month": "2026-02",
+          "estimate": 40.0,
+          "actual": 55.0
+        },
+        {
+          "month": "2026-03",
+          "estimate": 60.0,
+          "actual": 32.0
+        },
+        {
+          "month": "2026-04",
+          "estimate": 80.0,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "name": "鈴木",
+      "total_estimate": 140.0,
+      "total_actual": 91.0,
+      "months": [
+        {
+          "month": "2025-11",
+          "estimate": 24.0,
+          "actual": 7.0
+        },
+        {
+          "month": "2025-12",
+          "estimate": 32.0,
+          "actual": 53.0
+        },
+        {
+          "month": "2026-01",
+          "estimate": 12.0,
+          "actual": 11.0
+        },
+        {
+          "month": "2026-02",
+          "estimate": 24.0,
+          "actual": 20.0
+        },
+        {
+          "month": "2026-03",
+          "estimate": 48.0,
+          "actual": 0
+        }
+      ]
+    }
+  ],
+  "task_sizes": [
+    {
+      "version": "V2.0",
+      "task": "バッチ処理基盤",
+      "total_estimate": 120.0,
+      "primary_member": "田中"
+    },
+    {
+      "version": "V2.0",
+      "task": "外部API連携",
+      "total_estimate": 90.0,
+      "primary_member": "佐藤"
+    },
+    {
+      "version": "V2.0",
+      "task": "ダッシュボード",
+      "total_estimate": 84.0,
+      "primary_member": "田中"
+    },
+    {
+      "version": "V1.0",
+      "task": "検索機能",
+      "total_estimate": 80.0,
+      "primary_member": "佐藤"
+    },
+    {
+      "version": "V2.0",
+      "task": "権限管理",
+      "total_estimate": 72.0,
+      "primary_member": "鈴木"
+    },
+    {
+      "version": "V1.0",
+      "task": "帳票出力",
+      "total_estimate": 68.0,
+      "primary_member": "鈴木"
+    },
+    {
+      "version": "V2.0",
+      "task": "通知機能",
+      "total_estimate": 60.0,
+      "primary_member": "佐藤"
+    },
+    {
+      "version": "V1.0",
+      "task": "ログイン機能",
+      "total_estimate": 52.0,
+      "primary_member": "田中"
+    }
+  ],
+  "monthly_trend": [
+    {
+      "month": "2025-10",
+      "estimate": 60.0,
+      "actual": 62.0,
+      "accuracy": 103.3
+    },
+    {
+      "month": "2025-11",
+      "estimate": 76.0,
+      "actual": 67.0,
+      "accuracy": 88.2
+    },
+    {
+      "month": "2025-12",
+      "estimate": 52.0,
+      "actual": 72.0,
+      "accuracy": 138.5
+    },
+    {
+      "month": "2026-01",
+      "estimate": 48.0,
+      "actual": 49.0,
+      "accuracy": 102.1
+    },
+    {
+      "month": "2026-02",
+      "estimate": 96.0,
+      "actual": 100.0,
+      "accuracy": 104.2
+    },
+    {
+      "month": "2026-03",
+      "estimate": 154.0,
+      "actual": 50.0,
+      "accuracy": 32.5
+    },
+    {
+      "month": "2026-04",
+      "estimate": 140.0,
+      "actual": 0,
+      "accuracy": 0.0,
+      "in_progress": true
+    }
+  ],
+  "capacity": {
+    "working_days_per_month": 20,
+    "hours_per_day": 8,
+    "headcount": 3,
+    "standard_hours_per_month": 480,
+    "monthly": [
+      {
+        "month": "2025-10",
+        "estimate": 60.0,
+        "utilization_percent": 12.5
+      },
+      {
+        "month": "2025-11",
+        "estimate": 76.0,
+        "utilization_percent": 15.8
+      },
+      {
+        "month": "2025-12",
+        "estimate": 52.0,
+        "utilization_percent": 10.8
+      },
+      {
+        "month": "2026-01",
+        "estimate": 48.0,
+        "utilization_percent": 10.0
+      },
+      {
+        "month": "2026-02",
+        "estimate": 96.0,
+        "utilization_percent": 20.0
+      },
+      {
+        "month": "2026-03",
+        "estimate": 154.0,
+        "utilization_percent": 32.1
+      },
+      {
+        "month": "2026-04",
+        "estimate": 140.0,
+        "utilization_percent": 29.2
+      }
+    ]
+  },
+  "anomalies": [
+    {
+      "version": "V1.0",
+      "task": "ログイン機能",
+      "process": "PT",
+      "estimate": 12.0,
+      "actual": 22.0,
+      "overrun_percent": 83.3
+    },
+    {
+      "version": "V2.0",
+      "task": "ダッシュボード",
+      "process": "PG",
+      "estimate": 40.0,
+      "actual": 55.0,
+      "overrun_percent": 37.5
+    },
+    {
+      "version": "V1.0",
+      "task": "ログイン機能",
+      "process": "PG",
+      "estimate": 24.0,
+      "actual": 30.0,
+      "overrun_percent": 25.0
+    }
+  ]
+}

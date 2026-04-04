@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "generated_at": "2026-04-05T02:37:39.288059",
+    "model": "qwen3.5:9b",
+    "source_summary": "data/summaries/test_summary_v2.json",
+    "analysis_period": "2025-10 ~ 2026-04"
+  },
+  "team_evaluation": {
+    "headline": "PT工程に課題",
+    "summary": "PT工程の超過が継続しており、チーム全体の精度は78%とCランク。UI工程は92%と安定しているが、PT工程の改善が急務です。",
+    "score": "C",
+    "strengths": [
+      "UI精度92%で安定",
+      "PT超過率15%",
+      "キャパ充足率98%"
+    ],
+    "weaknesses": [
+      "PT超過率15%",
+      "PT精度73%",
+      "メンバーAの負荷集中"
+    ],
+    "trend": "declining",
+    "analysis": "PT工程の超過率が15%と高く、精度は73%と悪化傾向にあります。UI工程は92%と安定しており、キャパ充足率は98%で良好です。しかし、メンバーAへの負荷が集中しており、PT工程の超過が継続しています。"
+  },
+  "outlook": {
+    "version_forecasts": [
+      {
+        "version": "v2.3",
+        "optimistic": "残工数110h × 1.0 ＝ 約110h",
+        "realistic": "残工数110h × 1.15 ＝ 約127h",
+        "pessimistic": "残工数110h × 1.3 ＝ 約143h",
+        "key_risk": "PT工程の超過が継続するリスク"
+      }
+    ],
+    "accuracy_forecast": "PT工程の精度は73%で悪化傾向ですが、UI工程は92%で安定しています。PT工程の改善が急務です。",
+    "resource_risks": [
+      "メンバーA: 負荷集中率40%",
+      "メンバーB: 超過率20%"
+    ]
+  },
+  "recommended_actions": [
+    {
+      "priority": 1,
+      "category": "見積プロセス",
+      "title": "PT工程の見積見直し",
+      "rationale": "PT工程の超過率が15%で、精度は73%と悪化傾向にあります。",
+      "action_summary": "PT工程の見積もりを再検討し、超過率を10%以下に改善します。",
+      "action_steps": [
+        "PT工程のタスクを細分化する",
+        "メンバーBがPT工程の見積もりを再検討する",
+        "PT工程の超過原因を分析する"
+      ],
+      "expected_effect": "PT精度73%→85%に改善"
+    },
+    {
+      "priority": 2,
+      "category": "タスク管理",
+      "title": "タスク粒度の最適化",
+      "rationale": "PT工程の超過率が15%で、タスク粒度が粗い可能性があります。",
+      "action_summary": "PT工程のタスクを細分化し、超過率を10%以下に改善します。",
+      "action_steps": [
+        "PT工程のタスクを細分化する",
+        "メンバーBがPT工程のタスクを再設計する",
+        "PT工程のタスクをレビューする"
+      ],
+      "expected_effect": "PT超過率15%→10%に改善"
+    },
+    {
+      "priority": 3,
+      "category": "リソース配分",
+      "title": "メンバーAの負荷分散",
+      "rationale": "メンバーAへの負荷集中率40%で、負荷バランスが崩れています。",
+      "action_summary": "メンバーAの負荷を分散し、キャパ充足率を95%以上に維持します。",
+      "action_steps": [
+        "メンバーBがメンバーAのタスクを引き継ぐ",
+        "メンバーAのタスクを再配分する",
+        "メンバーAの負荷を監視する"
+      ],
+      "expected_effect": "メンバーAの負荷集中率40%→25%に改善"
+    }
+  ],
+  "next_review_focus": "PT工程の超過率とメンバーAの負荷集中率"
+}

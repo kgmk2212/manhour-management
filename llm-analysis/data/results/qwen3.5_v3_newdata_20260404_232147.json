@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "generated_at": "2026-04-04T23:23:37.716086",
+    "model": "qwen3.5:9b",
+    "source_summary": "data/summaries/test_summary_v2.json",
+    "analysis_period": "2025-10 ~ 2026-04"
+  },
+  "team_evaluation": {
+    "headline": "PT工程が深刻な課題",
+    "summary": "全体見積精度は63.9%とDランクに陥っており、PT工程の精度低下が主因です。メンバー全員がPTで弱く、特に佐藤と田中が著しく精度が悪化しています。",
+    "score": "D",
+    "strengths": [
+      "UI精度96%で安定",
+      "IT工程精度92%"
+    ],
+    "weaknesses": [
+      "PT精度33%で悪化",
+      "メンバー間負荷偏り"
+    ],
+    "trend": "declining",
+    "analysis": "全体見積精度は63.9%でDランクに該当し、特にPT工程の精度が33.1%と極めて低く、全体の精度を大きく下げています。UI工程は96.2%と安定していますが、PG工程も71.1%と課題を抱えています。メンバー別では、佐藤と田中がPTで弱く、鈴木もPTで弱く、全員がPTで弱さを持っています。"
+  },
+  "outlook": {
+    "version_forecasts": [
+      {
+        "version": "V2.0",
+        "optimistic": "残工数265h × 1.0 ＝ 265h",
+        "realistic": "残工数265h × 1.15 ＝ 305h",
+        "pessimistic": "残工数265h × 1.83 ＝ 485h",
+        "key_risk": "PT工程の超過率83%が再発するリスク"
+      }
+    ],
+    "accuracy_forecast": "PT工程の精度は33%と極端に低く、V2.0でも同様の超過が繰り返される可能性が高いです。UI工程は96%と安定しており、精度は維持できる見込みです。",
+    "resource_risks": [
+      "佐藤：PT弱さで精度56%、田中：PT弱さで精度71%"
+    ]
+  },
+  "recommended_actions": [
+    {
+      "priority": 1,
+      "category": "見積プロセス",
+      "title": "PT工程見積見直し",
+      "rationale": "PT工程の精度が33%と極端に低く、佐藤と田中がPTで弱いため、見積もりを2倍程度に上げる必要があります。",
+      "action_summary": "PT工程の見積もりを2倍に引き上げ、PT担当メンバーのスキル向上を促す。",
+      "action_steps": [
+        "PT工程の見積もりを2倍に引き上げる",
+        "PT担当メンバーにPTのトレーニングを実施する",
+        "PT工程のレビューを強化する"
+      ],
+      "expected_effect": "PT精度33%→60%に改善"
+    },
+    {
+      "priority": 2,
+      "category": "リソース配分",
+      "title": "メンバー負荷分散",
+      "rationale": "メンバー全員がPTで弱く、特定のメンバーにPTタスクが集中しているため、PTタスクをUI担当者に割り当てる。",
+      "action_summary": "PTタスクをUI担当者に割り当て、PTの負荷を分散する。",
+      "action_steps": [
+        "PTタスクをUI担当者に割り当てる",
+        "UI担当者にPTのトレーニングを実施する",
+        "PTタスクのレビューを強化する"
+      ],
+      "expected_effect": "PT負荷を30%減らす"
+    },
+    {
+      "priority": 3,
+      "category": "タスク管理",
+      "title": "タスク粒度細分化",
+      "rationale": "PT工程の超過率が83%と大きく、タスク粒度が粗いため、タスクを細分化して見積もりを精度化する。",
+      "action_summary": "PT工程のタスクを細分化して見積もりを精度化する。",
+      "action_steps": [
+        "PT工程のタスクを細分化する",
+        "細分化したタスクの見積もりを再行する",
+        "細分化したタスクのレビューを強化する"
+      ],
+      "expected_effect": "PT超過率83%→30%に改善"
+    }
+  ],
+  "next_review_focus": "PT工程の見積もり精度とメンバーのPTスキル向上"
+}

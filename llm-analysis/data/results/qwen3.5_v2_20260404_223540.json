@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "generated_at": "2026-04-04T22:37:02.915406",
+    "model": "qwen3.5:9b",
+    "source_summary": "data/summaries/test_summary.json",
+    "analysis_period": "2025-10 ~ 2026-03"
+  },
+  "team_evaluation": {
+    "headline": "PT工程精度低下",
+    "summary": "全体精度84.9%でB判定。UI・PGは安定だがPT工程が精度63%と大きく低下。メンバー間でも鈴木氏のPT精度が65%と低め。",
+    "score": "B",
+    "strengths": [
+      "UI精度96.2%安定",
+      "PG精度91.2%安定",
+      "佐藤・田中精度95%以上"
+    ],
+    "weaknesses": [
+      "PT精度63%悪化",
+      "鈴木精度65%低下",
+      "超過タスク4件発生"
+    ],
+    "trend": "declining",
+    "analysis": "全体精度84.9%だが、PT工程63.0%とUI96.2%・PG91.2%との差が顕著。メンバー別では佐藤95.0%・田中94.9%と安定だが、鈴木65.0%と大きく乖離。前月2月比でPT工程の超過が累積しており、V1.0のログイン機能で83.3%超過の異常が継続。"
+  },
+  "outlook": {
+    "version_forecasts": [
+      {
+        "version": "V2.0",
+        "optimistic": "残工数110h×1.0＝110h",
+        "realistic": "残工数110h×1.15＝127h",
+        "pessimistic": "残工数110h×1.83＝201h",
+        "key_risk": "PT工程の超過率83.3%が継続するリスク"
+      },
+      {
+        "version": "V1.0",
+        "optimistic": "完了済み、超過4件で83.3%の異常あり",
+        "realistic": "完了済み、超過4件で83.3%の異常あり",
+        "pessimistic": "完了済み、超過4件で83.3%の異常あり",
+        "key_risk": "完了済みだがPT工程の超過が深刻"
+      }
+    ],
+    "accuracy_forecast": "PT工程の精度63%は改善せず、V2.0の完了まで精度70%程度で推移。UI・PGは90%以上を維持する見込み。鈴木氏のPT担当を減らすと精度が向上。",
+    "resource_risks": [
+      "鈴木氏PT精度65%で超過リスク高",
+      "鈴木氏IT精度100%でIT担当可"
+    ]
+  },
+  "recommended_actions": [
+    {
+      "priority": 1,
+      "category": "見積プロセス",
+      "title": "PT見積見直し",
+      "rationale": "PT工程精度63.0%で超過率83.3%",
+      "action_summary": "PT工程の見積もりを20%増額し、超過を吸収",
+      "action_steps": [
+        "PT見積もりを20%増額する",
+        "鈴木氏以外のメンバーでPT見積もりを再確認する",
+        "PT工程の過去実績を基準に見積もりを修正する"
+      ],
+      "expected_effect": "PT精度63%→80%に改善"
+    },
+    {
+      "priority": 2,
+      "category": "リソース配分",
+      "title": "鈴木氏PT減らす",
+      "rationale": "鈴木氏PT精度65.0%で超過リスク",
+      "action_summary": "鈴木氏のPTタスクを佐藤氏・田中氏へ再配分",
+      "action_steps": [
+        "鈴木氏のPTタスクを佐藤氏へ移管する",
+        "鈴木氏のIT強みを生かしてITタスクを増やす",
+        "鈴木氏へのPTタスク割り当てをゼロにする"
+      ],
+      "expected_effect": "鈴木氏PT超過率83.3%→0%に改善"
+    },
+    {
+      "priority": 3,
+      "category": "レビュー・品質",
+      "title": "PTレビュー強化",
+      "rationale": "PT工程超過率83.3%で品質低下",
+      "action_summary": "PT工程のレビュー頻度を2回増やす",
+      "action_steps": [
+        "PTレビューを2回実施する",
+        "レビューチェックリストに超過要因を明記する",
+        "レビュー結果を次の見積もり反映させる"
+      ],
+      "expected_effect": "PT超過率83.3%→50%に改善"
+    }
+  ],
+  "next_review_focus": "PT工程の超過要因を特定し、鈴木氏のリソース配分を再検討"
+}

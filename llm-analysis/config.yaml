@@ -1,0 +1,12 @@
+ollama:
+  url: http://localhost:11434
+  model: qwen3.5:9b
+  options:
+    temperature: 0.3
+    num_predict: 4096
+
+paths:
+  backups: ./data/backups
+  summaries: ./data/summaries
+  results: ./data/results
+  prompts: ./prompts

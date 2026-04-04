@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<title>LLM分析結果 比較</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Noto Sans JP', sans-serif; background:#f5f5f0; padding:20px; color:#1a1a1a; }
+h1 { font-size:18px; margin-bottom:16px; }
+.card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px; margin-bottom:16px; }
+.card-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:8px; }
+.label { font-size:16px; font-weight:700; }
+.note { font-size:11px; color:#888; }
+.section { margin-bottom:12px; }
+.section-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#888; margin-bottom:4px; }
+.hero { display:flex; gap:16px; align-items:flex-start; margin-bottom:12px; }
+.score { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; flex-shrink:0; }
+.score-A,.score-B { background:#ebf5ea; color:#2d5a27; border:2px solid #2d5a27; }
+.score-C { background:#fff8e1; color:#b8860b; border:2px solid #b8860b; }
+.score-D,.score-E { background:#fde8e8; color:#b91c1c; border:2px solid #b91c1c; }
+.hero-body { flex:1; }
+.headline { font-size:14px; font-weight:700; margin-bottom:4px; }
+.summary { font-size:13px; line-height:1.6; color:#333; }
+.trend { font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px; display:inline-block; margin-top:4px; }
+.trend-improving { background:#ebf5ea; color:#2d5a27; }
+.trend-stable { background:#f0f0ea; color:#666; }
+.trend-declining { background:#fde8e8; color:#b91c1c; }
+.tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.tag { font-size:11px; padding:2px 8px; border-radius:12px; }
+.tag-good { background:#ebf5ea; color:#2d5a27; }
+.tag-bad { background:#fde8e8; color:#9b2c2c; }
+.analysis { font-size:12px; line-height:1.7; color:#444; padding:8px 12px; background:#fafaf8; border-radius:6px; border-left:3px solid #ddd; }
+.forecast { font-size:12px; line-height:1.6; color:#444; }
+.forecast-row { display:flex; gap:8px; margin-bottom:2px; }
+.forecast-label { width:30px; font-weight:600; font-size:10px; flex-shrink:0; }
+.forecast-label.opt { color:#2d5a27; }
+.forecast-label.pes { color:#b91c1c; }
+.action { padding:8px 10px; background:#fafaf8; border-radius:6px; margin-bottom:6px; border-left:3px solid #1d6fa5; }
+.action-header { font-size:12px; font-weight:600; color:#1a1a1a; }
+.action-rationale { font-size:11px; color:#666; margin:2px 0; }
+.action-body { font-size:12px; color:#333; }
+.action-step { font-size:11px; color:#555; padding-left:12px; }
+.action-effect { font-size:11px; color:#1d6fa5; font-weight:500; margin-top:2px; }
+.broken { padding:12px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:12px; color:#856404; }
+.review { font-size:11px; color:#666; padding:8px 12px; background:#fafaf8; border-radius:6px; border-left:3px solid #aaa; }
+</style></head><body>
+<h1>LLM工数分析 — 出力比較</h1>
+
+<div class="card">
+<div class="card-header"><span class="label">v1 qwen3.5</span><span class="note">初版プロンプト / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-B">B</div>
+  <div class="hero-body">
+    <div class="headline">PT工程に課題</div>
+    <div class="summary">全体精度84.9%でB級だが、PT工程の精度63%がボトルネック。V1.0の超過タスク4件が影響し、改善余地あり。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI精度96.2%で安定</span><span class="tag tag-good">佐藤・田中精度95%</span>
+  <span class="tag tag-bad">PT精度63%で悪化</span><span class="tag tag-bad">超過タスク4件</span>
+</div>
+
+
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数110時間（超過なし）</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数110時間×全体平均超過率15.1%＝約127時間</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数110時間×最悪工程PT超過率83.3%＝約182時間</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過がV2.0にも波及する可能性</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の精度改善がなければ、全体精度は75%台に低下する見込み。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・鈴木氏のPT工程で精度65%がリスク</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT見積見直し</div>
+<div class="action-rationale">PT工程の精度63.0%が全体のボトルネック</div>
+<div class="action-body">PTタスクの見積もりを1.5倍に修正し、レビューを厳格化</div>
+
+<div class="action-effect">効果: PT精度63%→80%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [レビュー・品質] PTレビュー強化</div>
+<div class="action-rationale">V1.0のログイン機能でPT超過83.3%発生</div>
+<div class="action-body">PTレビューを2回実施し、見積と実績の差異を可視化</div>
+
+<div class="action-effect">効果: 超過タスクを2件以下に削減</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [リソース配分] 鈴木氏PT支援</div>
+<div class="action-rationale">鈴木氏のPT精度65.0%がチーム平均より低く</div>
+<div class="action-body">鈴木氏のPTタスクを佐藤氏に一部割り当て</div>
+
+<div class="action-effect">効果: 鈴木氏PT精度95%へ向上</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> PT工程の見積もり精度向上と鈴木氏のPTタスク配分</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v1 gemma4</span><span class="note">初版プロンプト / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-C">C</div>
+  <div class="hero-body">
+    <div class="headline">PT工程の工数超過</div>
+    <div class="summary">全体精度は84.9%とB評価ラインに近く、安定的な管理が求められます。特にPT工程の精度が63.0%と著しく低く、工数予測に大きな偏りが見られます。V1.0での大きな超過が、現在の信頼性を低下させています。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI工程の精度96.2%で安定</span><span class="tag tag-good">PG工程の精度91.2%で安定</span>
+  <span class="tag tag-bad">PT工程の精度63.0%と低迷</span><span class="tag tag-bad">V1.0で超過タスクが多発</span>
+</div>
+
+
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>110時間（超過なし）</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>145時間（平均超過率1.3超過）</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>220時間（最悪工程超過率2.0超過）</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の予測精度が低いため、現実シナリオの工数超過が最も懸念されます。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">全体精度は、PT工程の改善がなければ80%台前半に留まる見込みです。V2.0の進捗率（51.8%）から、残りの工数見積もりも慎重な調整が必要です。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・PT工程の工数超過が、V2.0のスケジュール遅延の主要因となる可能性が高いです。<br>・メンバー全員がPT工程で弱点を示しており、この領域のスキル補強が急務です。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程の工数再見積もり</div>
+<div class="action-rationale">PT工程の精度が63.0%と、全工程の中で最も低い水準にあります。</div>
+<div class="action-body">PT工程の残タスクについて、経験豊富なメンバー（佐藤氏、田中氏）が参加するレビュー会を実施し、工数を再算定する。</div>
+
+<div class="action-effect">効果: PT工程の予測精度を63.0%→80%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [レビュー・品質] 超過タスクの深掘り分析</div>
+<div class="action-rationale">V1.0では4件の超過タスクがあり、特にログイン機能（PT）で83.3%の超過が発生しています。</div>
+<div class="action-body">超過が発生したタスク（特にPT関連）について、超過の根本原因（要件不明確、技術的難易度など）を特定する定例会議を設ける。</div>
+
+<div class="action-effect">効果: 超過タスクの再発率を20%以上低減</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [リソース配分] PT工程の担当者ローテーション</div>
+<div class="action-rationale">佐藤氏、田中氏、鈴木氏の全員がPT工程を弱点として示しています。</div>
+<div class="action-body">PT工程のタスクを、得意なPG/UI工程のメンバーがサポートするペアプログラミング形式で分担する。</div>
+
+<div class="action-effect">効果: PT工程におけるメンバーごとの平均精度を10ポイント改善</div>
+</div>
+<div class="action">
+<div class="action-header">#4 [計画・スケジューリング] V2.0のマイルストーン再設定</div>
+<div class="action-rationale">V2.0の進捗率が51.8%であり、残工数（110時間）を考慮すると、当初の完了予定日での達成が困難です。</div>
+<div class="action-body">PT工程の工数再見積もり結果に基づき、V2.0の主要マイルストーンを再設定し、ステークホルダーに共有する。</div>
+
+<div class="action-effect">効果: プロジェクト全体のスケジュール遅延リスクを可視化し、対応策を策定する</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次回は、PT工程の再見積もり結果と、それに基づくV2.0の具体的なスケジュール調整案を最優先で確認してください。</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v2 qwen3.5</span><span class="note">summary+detail分離 / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-B">B</div>
+  <div class="hero-body">
+    <div class="headline">PT工程精度低下</div>
+    <div class="summary">全体精度84.9%でB判定。UI・PGは安定だがPT工程が精度63%と大きく低下。メンバー間でも鈴木氏のPT精度が65%と低め。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI精度96.2%安定</span><span class="tag tag-good">PG精度91.2%安定</span><span class="tag tag-good">佐藤・田中精度95%以上</span>
+  <span class="tag tag-bad">PT精度63%悪化</span><span class="tag tag-bad">鈴木精度65%低下</span><span class="tag tag-bad">超過タスク4件発生</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体精度84.9%だが、PT工程63.0%とUI96.2%・PG91.2%との差が顕著。メンバー別では佐藤95.0%・田中94.9%と安定だが、鈴木65.0%と大きく乖離。前月2月比でPT工程の超過が累積しており、V1.0のログイン機能で83.3%超過の異常が継続。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数110h×1.0＝110h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数110h×1.15＝127h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数110h×1.83＝201h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過率83.3%が継続するリスク</div></div><div style="margin-bottom:6px"><strong>V1.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>完了済み、超過4件で83.3%の異常あり</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>完了済み、超過4件で83.3%の異常あり</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>完了済み、超過4件で83.3%の異常あり</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ 完了済みだがPT工程の超過が深刻</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の精度63%は改善せず、V2.0の完了まで精度70%程度で推移。UI・PGは90%以上を維持する見込み。鈴木氏のPT担当を減らすと精度が向上。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・鈴木氏PT精度65%で超過リスク高<br>・鈴木氏IT精度100%でIT担当可</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT見積見直し</div>
+<div class="action-rationale">PT工程精度63.0%で超過率83.3%</div>
+<div class="action-body">PT工程の見積もりを20%増額し、超過を吸収</div>
+<div class="action-step">→ PT見積もりを20%増額する</div><div class="action-step">→ 鈴木氏以外のメンバーでPT見積もりを再確認する</div><div class="action-step">→ PT工程の過去実績を基準に見積もりを修正する</div>
+<div class="action-effect">効果: PT精度63%→80%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [リソース配分] 鈴木氏PT減らす</div>
+<div class="action-rationale">鈴木氏PT精度65.0%で超過リスク</div>
+<div class="action-body">鈴木氏のPTタスクを佐藤氏・田中氏へ再配分</div>
+<div class="action-step">→ 鈴木氏のPTタスクを佐藤氏へ移管する</div><div class="action-step">→ 鈴木氏のIT強みを生かしてITタスクを増やす</div><div class="action-step">→ 鈴木氏へのPTタスク割り当てをゼロにする</div>
+<div class="action-effect">効果: 鈴木氏PT超過率83.3%→0%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [レビュー・品質] PTレビュー強化</div>
+<div class="action-rationale">PT工程超過率83.3%で品質低下</div>
+<div class="action-body">PT工程のレビュー頻度を2回増やす</div>
+<div class="action-step">→ PTレビューを2回実施する</div><div class="action-step">→ レビューチェックリストに超過要因を明記する</div><div class="action-step">→ レビュー結果を次の見積もり反映させる</div>
+<div class="action-effect">効果: PT超過率83.3%→50%に改善</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> PT工程の超過要因を特定し、鈴木氏のリソース配分を再検討</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v2 gemma4</span><span class="note">summary+detail分離 / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-C">C</div>
+  <div class="hero-body">
+    <div class="headline">見積精度に課題</div>
+    <div class="summary">全体的な見積精度は84.9%と、目標の90%を下回っています。特にV1.0での超過タスクが大きく、計画の信頼性に懸念があります。プロセス全体での改善が必要です。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI工程の精度96.2%と高水準</span><span class="tag tag-good">佐藤・田中氏の精度95%超え</span>
+  <span class="tag tag-bad">PT工程の精度63.0%と低すぎる</span><span class="tag tag-bad">V1.0で超過タスクが多発</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体精度は84.9%でC評価ですが、V1.0での超過が大きく影響しています。プロセス別では、PT工程の精度が63.0%と最も低く、見積の信頼性が低いことが目立ちます。メンバー別では、鈴木氏の精度が65.0%と低く、特にPT工程での課題が共通しています。直近の月次トレンドは、2026年3月データが欠損しているため判断が難しいものの、過去の大きな乖離（155.8%など）が散見され、安定性に欠けます。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数110h × 1.0 ＝ 110h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数110h × 1.1 ＝ 121h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数110h × 1.3 ＝ 143h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ V2.0の進捗率が51.8%と遅く、残りの工数見積もり（EAC）の信頼性が最大の懸念点です。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の超過傾向が継続する限り、全体の精度は改善が難しいと予測されます。UIやPG工程の精度は維持される見込みですが、PT工程の課題が全体の精度を大きく引き下げ続けるでしょう。早急なプロセス改善がなければ、精度は低水準で推移する可能性があります。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・鈴木氏（精度65.0%）はPT工程での見積精度が低く、タスクの再配分または教育が必要です。<br>・PT工程全体（精度63.0%）がボトルネックであり、どのメンバーが担当してもリスクが残ります。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程の見積プロセス見直し</div>
+<div class="action-rationale">PT工程の精度が63.0%と、全プロセスの中で最も低く、プロジェクト全体のリスク源となっています。</div>
+<div class="action-body">PT工程に特化した詳細なタスク分解と、見積もり基準の再定義を行います。</div>
+<div class="action-step">→ PT工程のタスクリストを洗い出し、作業粒度を細分化する。</div><div class="action-step">→ 過去の超過事例（例：ログイン機能）を分析し、超過原因を特定する。</div><div class="action-step">→ 見積もり担当者全員で、PT工程の難易度と工数配分に関する共通理解を確立する。</div>
+<div class="action-effect">効果: PT工程の精度を最低80%に引き上げ、全体精度を84.9%から最低90%に改善させる。</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [リソース配分] 鈴木氏のタスク再配分検討</div>
+<div class="action-rationale">鈴木氏は精度65.0%であり、特にPT工程での課題が目立ち、チームの平均精度を下げています。</div>
+<div class="action-body">鈴木氏のPT工程タスクを、精度が高く安定している佐藤氏または田中氏に一時的に移管することを検討します。</div>
+<div class="action-step">→ 鈴木氏が担当するPT工程タスクを特定し、工数と難易度を評価する。</div><div class="action-step">→ 佐藤氏または田中氏の負荷状況を確認し、タスク移管の可否を判断する。</div><div class="action-step">→ タスク移管後、鈴木氏にUIやPG工程など得意な分野のタスクを割り当てる。</div>
+<div class="action-effect">効果: チーム全体の平均精度を最低1%向上させ、リソースのボトルネック解消に繋げる。</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [計画・スケジューリング] 超過タスクの早期アラート導入</div>
+<div class="action-rationale">V1.0で「ログイン機能」が83.3%の超過を見せており、超過タスクの早期発見が重要です。</div>
+<div class="action-body">タスクの進捗が計画から一定割合（例：15%）乖離した場合に、自動でアラートを出す仕組みを導入します。</div>
+<div class="action-step">→ 進捗管理ツールに、見積工数と実績工数の乖離率を自動計算するロジックを組み込む。</div><div class="action-step">→ 乖離率が閾値を超えた場合、チームリーダーと担当者に即時通知するフローを確立する。</div><div class="action-step">→ アラート発生時の原因分析とリカバリー計画策定を義務付ける。</div>
+<div class="action-effect">効果: 超過タスクの発見サイクルを短縮し、プロジェクト遅延リスクを最低10%低減させる。</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次回は、PT工程の改善策が実際に工数見積精度に反映されているか、特にV2.0の残工数見積もり（EAC）の根拠を重点的に確認してください。</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v3 qwen3.5</span><span class="note">多角的観点プロンプト / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-B">B</div>
+  <div class="hero-body">
+    <div class="headline">PT工程に課題</div>
+    <div class="summary">全体精度84.9%でBランクだが、PT工程の63.0%という低精度がチーム全体の足を引っ張っている。メンバー間でも鈴木さんのPT精度65.0%が突出して低い。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI精度96.2%で安定</span><span class="tag tag-good">メンバー間工数配分偏りなし</span><span class="tag tag-good">V2.0進捗率51.8%で計画通り</span>
+  <span class="tag tag-bad">PT精度63.0%で悪化</span><span class="tag tag-bad">鈴木PT精度65.0%の低さ</span><span class="tag tag-bad">月次変動が大きい</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体精度は84.9%でBランクだが、PT工程の63.0%という低精度がチーム全体の足を引っ張っている。メンバー間でも鈴木さんのPT精度65.0%が突出して低く、佐藤・田中さんは95%前後と安定している。V2.0は進捗率51.8%で計画通りだが、PT工程の超過率が過去バージョンで改善されていない。月次トレンドでは2026年2月以降に精度が低下傾向にある。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数110h × 1.0 ＝ 110h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数110h × 1.15 ＝ 126.5h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数110h × 1.83 ＝ 201.3h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過率が83.3%と過去バージョンで顕著であり、V2.0でも同様の超過が発生するリスクが高い。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の精度は63.0%と低く、改善が見込めない限りV2.0の完了精度は75%台に留まる可能性が高い。UI・PG・ITは90%台と安定しており、PT以外の工程は問題ない。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・鈴木：PT工程の精度65.0%でキャパシティ不足のリスクあり<br>・鈴木：PT工程の弱みで他のメンバーへの負荷集中が必要</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程の見積り見直し</div>
+<div class="action-rationale">PT工程の精度63.0%で超過率が83.3%と過去バージョンで顕著であり、見積もりを1.5倍程度上乗せする必要がある。</div>
+<div class="action-body">PT工程の見積もり基準を再定義し、過去の超過率を反映させる。</div>
+<div class="action-step">→ PT工程の過去超過率83.3%を分析し、見積もり係数1.5を適用する。</div><div class="action-step">→ 鈴木さんのPT弱みを考慮し、他のメンバーとタスクを分担する。</div><div class="action-step">→ PT見積もりレビュー時に必ず超過リスクを確認する。</div>
+<div class="action-effect">効果: PT精度63.0%→85%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [リソース配分] 鈴木さんのPTタスク分担</div>
+<div class="action-rationale">鈴木さんのPT精度65.0%で他のメンバーが95%前後であり、PTタスクを鈴木以外に割り振ることで精度を上げる。</div>
+<div class="action-body">鈴木さんのPTタスクを佐藤・田中さんに分担する。</div>
+<div class="action-step">→ V2.0の残PTタスクを鈴木以外に割り当てる。</div><div class="action-step">→ 鈴木さんはIT工程に集中させる。</div><div class="action-step">→ PTタスクの完了前に鈴木さんに進捗確認を依頼する。</div>
+<div class="action-effect">効果: 鈴木PT精度65.0%→80%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [タスク管理] 月次進捗の安定化</div>
+<div class="action-rationale">月次トレンドで2026年2月以降に精度が低下傾向（155.8%→83.3%）であり、タスク粒度の調整が必要。</div>
+<div class="action-body">タスク粒度を細かくし、月次進捗の安定化を図る。</div>
+<div class="action-step">→ PT工程のタスクを2分割して見積もりする。</div><div class="action-step">→ 月次進捗管理で超過リスクを早期に検知する。</div><div class="action-step">→ タスク完了後に超過原因を記録する。</div>
+<div class="action-effect">効果: 月次変動幅を20%以内にする</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> PT工程の見積もり精度改善と鈴木さんのPTタスク分担状況</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v3 gemma4</span><span class="note">多角的観点プロンプト / 旧テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-C">C</div>
+  <div class="hero-body">
+    <div class="headline">見積精度に課題あり</div>
+    <div class="summary">全体的な見積精度は84.9%と、目標水準に達していません。特にPT工程の超過が目立ち、V1.0での大きな失敗が影響しています。リソース配分は概ね安定していますが、PT工程の工数管理が急務です。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI工程の精度96.2%と高水準</span><span class="tag tag-good">佐藤・田中氏の精度94.9%維持</span><span class="tag tag-good">リソース負荷は平均的</span>
+  <span class="tag tag-bad">PT工程の精度63.0%が低い</span><span class="tag tag-bad">V1.0の超過タスクが影響</span><span class="tag tag-bad">鈴木氏のPT工程が課題</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体精度は84.9%でC評価のラインに留まっています。特にPT工程の精度が63.0%と極端に低く、これが全体の足を引っ張っています。V1.0では「ログイン機能」が83.3%の超過を記録するなど、特定のタスクでの見積失敗が目立ちます。メンバー別では、鈴木氏のPT工程での精度65.0%が懸念され、工数見積の属人化とプロセス理解の不足が課題です。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数110h × 1.0 = 110h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数110h × 1.1 = 121h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数110h × 1.3 = 143h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過傾向が継続した場合、現実シナリオでは計画工数（EAC 228h）を上回るリスクがあります。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の超過傾向が続く限り、全体の精度は改善が難しいと予測されます。UIやPG工程は安定していますが、PT工程の工数見積プロセスに抜本的な改善が必要です。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・鈴木氏のPT工程での精度65.0%が懸念され、負荷分散が必要です。<br>・PT工程の超過タスクが多いため、チーム全体で工数バッファの確保が必須です。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程の再見積もり実施</div>
+<div class="action-rationale">PT工程の精度が63.0%と最も低く、これが全体の精度低下の主因です。</div>
+<div class="action-body">PT工程のタスクについて、専門家レビューを交えた再見積もりセッションを設ける。</div>
+<div class="action-step">→ PT工程の全タスクリストを抽出する。</div><div class="action-step">→ 過去の超過タスク（例：ログイン機能）の要因を分析し、見積もりガイドラインを更新する。</div><div class="action-step">→ チームメンバー全員で再見積もりを実施し、根拠を明確化する。</div>
+<div class="action-effect">効果: PT工程の精度を最低でも80%に引き上げ、全体精度を85%以上に回復させる。</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [タスク管理] タスクの粒度見直しと分割</div>
+<div class="action-rationale">V1.0の「ログイン機能」のように、単一タスクで83.3%もの超過が発生しており、タスクが大きすぎます。</div>
+<div class="action-body">工数が大きいタスクを、より小さく、独立したサブタスクに分割する。</div>
+<div class="action-step">→ 工数見積が100時間を超えるタスクを特定する。</div><div class="action-step">→ そのタスクを機能単位や作業単位で分割し、見積もりを再配分する。</div><div class="action-step">→ 分割された各サブタスクごとに、担当者と完了基準を明確にする。</div>
+<div class="action-effect">効果: 単一タスクの超過リスクを分散させ、最大超過率を30%以下に抑える。</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [リソース配分] メンバー別負荷の平準化</div>
+<div class="action-rationale">鈴木氏のPT工程での精度65.0%が低く、特定のメンバーに知識や負荷が集中しています。</div>
+<div class="action-body">PT工程の知識共有を目的としたペアプログラミングやペアレビューを導入する。</div>
+<div class="action-step">→ PT工程の主要タスクを特定し、担当者とレビューアをペアでアサインする。</div><div class="action-step">→ 知識共有のための時間を週に最低2時間確保する。</div><div class="action-step">→ ペアでの作業を通じて、見積もり根拠の透明性を高める。</div>
+<div class="action-effect">効果: 鈴木氏のPT工程の精度を75%以上に引き上げ、チーム全体の属人化リスクを低減させる。</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次月は、PT工程の再見積もり結果と、タスク分割によるリスク分散の効果を最重要視して進捗を追跡してください。</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v3+新データ qwen3.5</span><span class="note">多角的観点 / 新テストデータ(summarize未強化)</span></div>
+
+<div class="hero">
+  <div class="score score-D">D</div>
+  <div class="hero-body">
+    <div class="headline">PT工程が深刻な課題</div>
+    <div class="summary">全体見積精度は63.9%とDランクに陥っており、PT工程の精度低下が主因です。メンバー全員がPTで弱く、特に佐藤と田中が著しく精度が悪化しています。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI精度96%で安定</span><span class="tag tag-good">IT工程精度92%</span>
+  <span class="tag tag-bad">PT精度33%で悪化</span><span class="tag tag-bad">メンバー間負荷偏り</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体見積精度は63.9%でDランクに該当し、特にPT工程の精度が33.1%と極めて低く、全体の精度を大きく下げています。UI工程は96.2%と安定していますが、PG工程も71.1%と課題を抱えています。メンバー別では、佐藤と田中がPTで弱く、鈴木もPTで弱く、全員がPTで弱さを持っています。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数265h × 1.0 ＝ 265h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数265h × 1.15 ＝ 305h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数265h × 1.83 ＝ 485h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過率83%が再発するリスク</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の精度は33%と極端に低く、V2.0でも同様の超過が繰り返される可能性が高いです。UI工程は96%と安定しており、精度は維持できる見込みです。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・佐藤：PT弱さで精度56%、田中：PT弱さで精度71%</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程見積見直し</div>
+<div class="action-rationale">PT工程の精度が33%と極端に低く、佐藤と田中がPTで弱いため、見積もりを2倍程度に上げる必要があります。</div>
+<div class="action-body">PT工程の見積もりを2倍に引き上げ、PT担当メンバーのスキル向上を促す。</div>
+<div class="action-step">→ PT工程の見積もりを2倍に引き上げる</div><div class="action-step">→ PT担当メンバーにPTのトレーニングを実施する</div><div class="action-step">→ PT工程のレビューを強化する</div>
+<div class="action-effect">効果: PT精度33%→60%に改善</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [リソース配分] メンバー負荷分散</div>
+<div class="action-rationale">メンバー全員がPTで弱く、特定のメンバーにPTタスクが集中しているため、PTタスクをUI担当者に割り当てる。</div>
+<div class="action-body">PTタスクをUI担当者に割り当て、PTの負荷を分散する。</div>
+<div class="action-step">→ PTタスクをUI担当者に割り当てる</div><div class="action-step">→ UI担当者にPTのトレーニングを実施する</div><div class="action-step">→ PTタスクのレビューを強化する</div>
+<div class="action-effect">効果: PT負荷を30%減らす</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [タスク管理] タスク粒度細分化</div>
+<div class="action-rationale">PT工程の超過率が83%と大きく、タスク粒度が粗いため、タスクを細分化して見積もりを精度化する。</div>
+<div class="action-body">PT工程のタスクを細分化して見積もりを精度化する。</div>
+<div class="action-step">→ PT工程のタスクを細分化する</div><div class="action-step">→ 細分化したタスクの見積もりを再行する</div><div class="action-step">→ 細分化したタスクのレビューを強化する</div>
+<div class="action-effect">効果: PT超過率83%→30%に改善</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> PT工程の見積もり精度とメンバーのPTスキル向上</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v3+新データ gemma4</span><span class="note">多角的観点 / 新テストデータ(summarize未強化)</span></div>
+
+<div class="hero">
+  <div class="score score-D">D</div>
+  <div class="hero-body">
+    <div class="headline">見積精度に課題あり</div>
+    <div class="summary">全体的な見積精度は63.9%と低く、特にPT（テスト）工程での超過が深刻です。V2.0の進捗率は41.5%に留まっており、計画達成に向けた工数管理の強化が必要です。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">UI工程の精度は96.2%と高い</span><span class="tag tag-good">IT工程の精度は91.7%と安定</span>
+  <span class="tag tag-bad">PT工程の精度は33.1%と極めて低い</span><span class="tag tag-bad">佐藤氏の精度は55.7%と改善必須</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>全体的な見積精度は63.9%と低水準であり、特にPT工程（33.1%）での大幅な超過が全体の足を引っ張っています。メンバー別では、佐藤氏（55.7%）と田中氏（70.7%）が平均を下回っており、個別の見積レビューが求められます。月次トレンドを見ると、直近の2026年3月（32.5%）の精度が著しく悪化しており、見積プロセス全体の見直しが急務です。V2.0の進捗率も計画の41.5%に留まっており、工数消化ペースの安定化が課題です。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数265h × 1.0 = 265h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数265h × 1.2 = 318h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数265h × 1.5 = 398h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ PT工程の超過傾向が継続した場合、最終的なリリース工数が大幅に膨らむリスクがあります。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の課題が継続すると、全体の精度は低水準（70%前後）で推移する見込みです。UIやIT工程は安定していますが、PT工程の改善が全体の精度回復の鍵となります。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・佐藤氏の見積精度が55.7%と低く、負荷分散と見積支援が必要です。<br>・PT工程の超過がメンバー全員に影響しており、工数配分の見直しが必要です。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [見積プロセス] PT工程の見積レビュー強化</div>
+<div class="action-rationale">PT工程の精度は33.1%と最も低く、これが全体の精度（63.9%）を大きく引き下げています。</div>
+<div class="action-body">PTタスクについては、必ずレビューアをアサインし、見積根拠（テストケース数、環境構築工数など）を明確化する。</div>
+<div class="action-step">→ PTタスクの洗い出しと、担当者以外のレビューアを必須とする。</div><div class="action-step">→ レビューアは、過去の超過タスク（例：ログイン機能）の失敗要因を考慮に入れる。</div><div class="action-step">→ 見積もり時に、テスト環境構築やデータ準備の工数を別途見積もる。</div>
+<div class="action-effect">効果: PT工程の精度を最低でも50%以上に改善させる。</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [タスク管理] タスク粒度の細分化実施</div>
+<div class="action-rationale">V1.0の「ログイン機能」が12h見積に対し22hの実績と、大きな超過タスクが確認されています。</div>
+<div class="action-body">工数が大きいタスクは、機能単位ではなく、具体的な作業単位（例：API連携、UI実装、単体テスト）に分解する。</div>
+<div class="action-step">→ 工数見積もり対象のタスクリストを再精査し、粒度が粗いものを特定する。</div><div class="action-step">→ 特定されたタスクを、最大工数20h以下のサブタスクに分解する。</div><div class="action-step">→ 分解されたサブタスクごとに、担当者と見積工数を再設定する。</div>
+<div class="action-effect">効果: 超過タスクによるリスクを分散し、見積の信頼性を向上させる。</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [リソース配分] メンバー別負荷とキャパ調整</div>
+<div class="action-rationale">佐藤氏（55.7%）の精度が低く、かつPT工程の弱点であるため、負荷調整が必要です。</div>
+<div class="action-body">佐藤氏の負荷を一時的に軽減し、PT工程のタスクは田中氏や鈴木氏がサポートする。</div>
+<div class="action-step">→ 佐藤氏に割り当てられたPT関連タスクを特定し、一時的に他のメンバーに再配分する。</div><div class="action-step">→ メンバーの得意分野（例：佐藤氏のUI）に集中させ、弱点分野（PT）の負荷を減らす。</div><div class="action-step">→ 再配分されたタスクについて、見積もりを再度実施し、工数調整を行う。</div>
+<div class="action-effect">効果: 佐藤氏の工数負荷を10%軽減し、見積精度の改善を促す。</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次回は、V2.0の残工数（265h）に対する具体的な消化計画と、PT（テスト）工程の進捗とリスク管理に焦点を当てること。</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v4 qwen3.5</span><span class="note">summarize強化 / 新テストデータ</span></div>
+
+<div class="hero">
+  <div class="score score-C">C</div>
+  <div class="hero-body">
+    <div class="headline">精度低下と工程偏重</div>
+    <div class="summary">月次見積もり精度が著しく低下しており、特にダッシュボード開発で大幅な超過が発生しています。メンバー間の作業負荷偏重が顕著で、田中と佐藤の過負荷が懸念されます。</div>
+    <span class="trend trend-declining">▼ 悪化</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">バッチ処理基盤の安定性</span><span class="tag tag-good">外部API連携の効率化</span><span class="tag tag-good">権限管理の進捗</span>
+  <span class="tag tag-bad">ダッシュボードの超過</span><span class="tag tag-bad">ログイン機能の遅延</span><span class="tag tag-bad">2026年3月実績の大幅未達</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>PT工程のログイン機能で83.3%の超過があり、PG工程のダッシュボードでも37.5%の超過が発生しています。2026年3月の見積もり154時間に対し実績が50時間と大きく乖離しており、工程全体の見積もり精度が低下しています。田中と佐藤が多数のタスクを担っており、メンバー間の負荷偏重が顕著です。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V1.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数×0.8＝予想工数</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数×1.0＝予想工数</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数×1.2＝予想工数</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ ログイン機能の超過傾向が継続するリスク</div></div><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数×0.9＝予想工数</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数×1.1＝予想工数</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数×1.3＝予想工数</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ ダッシュボードの超過が他のタスクに波及するリスク</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">PT工程の超過傾向が継続し、PG工程でもダッシュボードの超過が影響を及ぼす可能性があります。2026年4月の見積もりが140時間に対し、前月の32.5%の精度低下を踏まえ、精度はさらに低下する見込みです。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・田中：84+52=136時間の過負荷<br>・佐藤：90+80+60=230時間の過負荷</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [リソース配分] メンバー負荷の再配分</div>
+<div class="action-rationale">田中と佐藤が136時間と230時間の過負荷を抱えているため、他のメンバーにタスクを割り当てる必要があります。</div>
+<div class="action-body">田中と佐藤の過負荷タスクを鈴木に再配分する。</div>
+<div class="action-step">→ ダッシュボードタスクを鈴木に割り当てる</div><div class="action-step">→ ログイン機能タスクを鈴木に割り当てる</div><div class="action-step">→ 鈴木に追加のタスクを割り当てる</div>
+<div class="action-effect">効果: メンバー負荷を均等化し、超過率を20%以内にする</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [見積もり精度向上] 超過要因の特定と対策</div>
+<div class="action-rationale">PT工程のログイン機能で83.3%の超過があり、PG工程のダッシュボードでも37.5%の超過が発生しているため、超過要因を特定する必要があります。</div>
+<div class="action-body">超過要因を特定し、見積もり精度を向上させる。</div>
+<div class="action-step">→ 超過タスクの要因を分析する</div><div class="action-step">→ 見積もり基準を再定義する</div><div class="action-step">→ メンバーに超過要因を共有する</div>
+<div class="action-effect">効果: 超過率を30%以内にする</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 2026年4月の実績値とメンバー負荷の均等化</div>
+</div>
+<div class="card"><div class="card-header"><span class="label">v4 gemma4</span><span class="note">summarize強化→フォーマット崩壊</span></div><div class="broken">フォーマット崩壊 — 独自構造で出力<pre style="font-size:10px;max-height:200px;overflow:auto;margin-top:8px">{
+  "meta": {
+    "generated_at": "2026-04-05T00:31:57.725237",
+    "model": "gemma4",
+    "source_summary": "data/summaries/test_summary_v2.json",
+    "analysis_period": "2025-10 ~ 2026-04"
+  },
+  "team_evaluation": {
+    "overall_assessment": "プロジェクトは一部の機能で遅延が見られ、特に過去の経験に基づいた見積もりと実績の乖離が課題です。主要な遅延要因は、複雑な要件定義と、過去の経験不足による工数見積もりの甘さにあると分析されます。今後は、より詳細なタスク分割と、定期的な進捗レビューによるリスク早期発見が求められます。",
+    "key_strengths": [
+      "チームメンバー間のコミュニケーションは活発であり、問題発生時の報告は迅速に行われています。",
+      "技術的な問題に対する解決能力は高く、過去の障害対応からノウハウが蓄積されています。"
+    ],
+    "areas_for_improvement": [
+      "工数見積もりの精度向上：特に新規機能や複雑な連携部分での見積もり根拠の強化が必要です。",
+      "リスク管理の強化：潜在的な技術的負債や、外部依存要素に関するリスク洗い出しを計画的に行うべきです。",
+      "進捗の可視化：タスクレベルでの進捗状況をより詳細に追跡し、ボトルネックを早期に特定する仕組みが必要です。"
+    ]
+  },
+  "project_summary": {
+    "current_status": "一部機能の遅延が発生しており、全体的なスケジュール遵守には注意が必要です。",
+    "risks": [
+      "見積もり超過によるスケジュール遅延（高）",
+      "要件のスコープクリープによる工数増加（中）",
+      "外部システム連携の仕様変更リスク（中）"
+    ],
+    "recommendations": [
+      "遅延しているタスクについて、工数再見積もりとリカバリープランの策定を直ちに行う。",
+      "スコープ変更が発生した場合は、必ず影響範囲とスケジュールへの影響度を評価するプロセスを義務付ける。"
+    ]
+  }
+}</pre></div></div>
+<div class="card">
+<div class="card-header"><span class="label">v4f gemma4</span><span class="note">assistant prefill→フォーマット復活、数値捏造</span></div>
+
+<div class="hero">
+  <div class="score score-B">B</div>
+  <div class="hero-body">
+    <div class="headline">安定した進捗ペース</div>
+    <div class="summary">全体的な工数消化ペースは安定しており、計画に対する進捗率は概ね順調です。特にテスト工程での工数見積が安定している点が評価できます。一方で、設計フェーズでの工数超過が散見され、見積精度のばらつきが課題です。</div>
+    <span class="trend trend-stable">● 安定</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">テスト工程の精度90%超</span><span class="tag tag-good">ベロシティは計画通り</span><span class="tag tag-good">負荷分散は概ね良好</span>
+  <span class="tag tag-bad">設計工数超過が目立つ</span><span class="tag tag-bad">見積精度にばらつきあり</span><span class="tag tag-bad">タスク粒度が粗い案件あり</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>直近3ヶ月のデータから、テスト工程の工数消化は安定しており、計画との乖離は小さいです。しかし、設計フェーズにおいて、当初見積もりより平均15%の超過が発生しており、これが全体の精度を押し下げています。また、タスクが大きすぎる案件が散見され、工数見積の粒度が粗いことがリスク要因となっています。リソース配分は偏りなく行われていますが、設計タスクの工数見積の質向上が急務です。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V2.1</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数120h × 1.0 = 120h</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数120h × 1.15 = 138h</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数120h × 1.30 = 156h</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ 設計フェーズの未定義要件が残存し、工数超過の主要因となる可能性があります。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">設計フェーズの超過傾向が継続する場合、全体精度はB評価を維持する見込みです。特に要件定義の曖昧さが残っているため、現実シナリオでの工数超過リスクが高いと予測されます。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・佐藤さん：設計タスクで平均15%の超過が集中しており、キャパシティ超過の兆候が見られます。<br>・田中さん：テスト工数は安定していますが、予期せぬバグ対応で負荷が一時的に高まる可能性があります。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [タスク管理] 設計タスクの分割実施</div>
+<div class="action-rationale">設計フェーズで平均15%の超過が発生しており、タスクの粒度が粗いことが原因と考えられます。</div>
+<div class="action-body">大きな設計タスクを、具体的な成果物（例：API仕様書、画面遷移図）単位で分割し、工数を見積もる。</div>
+<div class="action-step">→ 現在進行中の大タスクを洗い出し、成果物単位で分割する。</div><div class="action-step">→ 各サブタスクごとに担当者と見積工数を再設定する。</div><div class="action-step">→ 分割後のタスクリストをチームレビューにかけ、合意を得る。</div>
+<div class="action-effect">効果: 設計フェーズの工数超過率を15%から5%以下に抑制する。</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [見積プロセス] 要件定義の早期レビュー</div>
+<div class="action-rationale">設計工数超過の主要因が要件の曖昧さ（15%超過）にあるため、早期のレビューが必須です。</div>
+<div class="action-body">設計に着手する前に、ステークホルダーを交えた要件定義のレビュー会を必須化する。</div>
+<div class="action-step">→ レビュー対象の要件定義書を事前に作成する。</div><div class="action-step">→ 開発チームとビジネスサイドの代表者を交え、レビュー会を招集する。</div><div class="action-step">→ レビューで出た不明点や決定事項を議事録として工数見積に反映させる。</div>
+<div class="action-effect">効果: 設計フェーズでの手戻り工数を20%削減し、見積精度を改善する。</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [リソース配分] 負荷平準化の実施</div>
+<div class="action-rationale">佐藤さんが設計タスクで負荷集中（15%超過）が見られるため、タスクの再配分が必要です。</div>
+<div class="action-body">佐藤さんの負荷が高い設計タスクの一部を、キャパシティに余裕のあるメンバーに一時的に移管する。</div>
+<div class="action-step">→ 佐藤さんのタスクリストと現在の負荷状況を可視化する。</div><div class="action-step">→ 工数見積が安定しているメンバー（例：田中さん）に、一部の軽微な設計タスクを割り当てる。</div><div class="action-step">→ 週次で負荷状況をモニタリングし、再配分が機能しているか確認する。</div>
+<div class="action-effect">効果: 特定メンバーの負荷集中度を平均10%以下に抑え、燃え尽き症候群のリスクを低減する。</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次回のレビューでは、設計タスクの分割と早期レビューの実施による、設計フェーズの工数超過率の具体的な改善数値を確認することが最重要となります。</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="label">v5 gemma4</span><span class="note">データ引用強化プロンプト</span></div>
+
+<div class="hero">
+  <div class="score score-C">C</div>
+  <div class="hero-body">
+    <div class="headline">見積精度に課題</div>
+    <div class="summary">全体的に見積精度はB〜Cの範囲に留まっており、特にV1.0での超過が目立ちます。リソース配分は特定のメンバーに負荷が偏る傾向が見られます。V2.0に向けては、過去の超過パターンを考慮した計画調整が必要です。</div>
+    <span class="trend trend-stable">● 安定</span>
+  </div>
+</div>
+
+<div class="tags">
+  <span class="tag tag-good">V2.0の進捗は順調</span><span class="tag tag-good">V2.0の進捗率は高い</span>
+  <span class="tag tag-bad">V1.0で工数超過</span><span class="tag tag-bad">メンバー負荷の偏りあり</span>
+</div>
+
+<div class='section'><div class='section-title'>詳細分析</div><div class='analysis'>V1.0では、見積工数100に対し実績工数130となり、超過率が目立ちました。V2.0の進捗率は80%と高い水準を維持していますが、メンバーの負荷を見ると、佐藤さんが月間工数200で最も高負荷です。また、V1.0とV2.0で「設計」フェーズの工数超過パターンが繰り返されています。タスクサイズから、機能Xの設計が大きなリスク源となっています。</div></div>
+
+<div class="section"><div class="section-title">展望</div>
+<div class="forecast"><div style="margin-bottom:6px"><strong>V1.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数50×0.8＝40</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数50×1.0＝50</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数50×1.2＝60</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ V1.0は既に工数超過傾向が強く、残りの工数見積もりも慎重な調整が必要です。</div></div><div style="margin-bottom:6px"><strong>V2.0</strong>
+<div class="forecast-row"><div class="forecast-label opt">楽観</div><div>残工数100×0.9＝90</div></div>
+<div class="forecast-row"><div class="forecast-label">現実</div><div>残工数100×1.0＝100</div></div>
+<div class="forecast-row"><div class="forecast-label pes">悲観</div><div>残工数100×1.1＝110</div></div>
+<div style="font-size:11px;color:#b91c1c">⚠ V2.0は進捗率が高いため、残りの工数見積もりは比較的信頼性が高いと見込まれます。</div></div></div>
+<div style="font-size:12px;color:#444;margin-top:6px">V1.0の設計フェーズでの超過傾向が継続するリスクがあり、見積精度はCレベルに留まる可能性があります。V2.0は進捗率が高いため、見積精度はBレベルを維持できると予測されます。</div>
+<div style="font-size:11px;color:#666;margin-top:4px">・佐藤さん：月間工数200で最も負荷が高く、疲労によるパフォーマンス低下が懸念されます。<br>・田中さん：月間工数150であり、佐藤さんとの負荷差が大きく、業務の平準化が必要です。</div>
+</div>
+
+<div class="section"><div class="section-title">推奨アクション</div>
+<div class="action">
+<div class="action-header">#1 [工数見積もり] V1.0の設計工数見直し</div>
+<div class="action-rationale">V1.0の設計フェーズは、見積工数100に対し実績工数130と超過しています。</div>
+<div class="action-body">V1.0の設計タスクについて、詳細な作業分解を行い、見積工数を再算出してください。</div>
+<div class="action-step">→ 設計タスクを機能単位で分割する</div><div class="action-step">→ 各機能単位の作業工数を再見積もりする</div><div class="action-step">→ 再見積もり結果をチームリーダーに提出する</div>
+<div class="action-effect">効果: 超過率を100%に近づけ、工数超過リスクを低減させること。</div>
+</div>
+<div class="action">
+<div class="action-header">#2 [リソース負荷平準化] 佐藤さんのタスク分散</div>
+<div class="action-rationale">佐藤さんは月間工数200で、チーム内で最も高い負荷を抱えています。</div>
+<div class="action-body">佐藤さんが担当するタスクの一部を、田中さんや他のメンバーに割り振ることを検討してください。</div>
+<div class="action-step">→ 佐藤さんのタスクリストを洗い出す</div><div class="action-step">→ 工数見積もりが近いタスクを特定する</div><div class="action-step">→ 担当者を変更し、負荷を分散させる</div>
+<div class="action-effect">効果: 佐藤さんの負荷を軽減し、チーム全体の安定稼働を確保すること。</div>
+</div>
+<div class="action">
+<div class="action-header">#3 [タスク粒度改善] 大タスクの分割実施</div>
+<div class="action-rationale">タスクサイズから、機能Xの設計が最も大きな単一タスクとなっています。</div>
+<div class="action-body">機能Xの設計タスクを、より小さく、独立した複数のタスクに分割してください。</div>
+<div class="action-step">→ 機能Xの設計範囲を洗い出す</div><div class="action-step">→ 設計フェーズを複数のマイルストーンに分割する</div><div class="action-step">→ 分割した各タスクの工数を再見積もりする</div>
+<div class="action-effect">効果: 進捗の可視性を高め、リスクの局所化を可能にすること。</div>
+</div>
+</div>
+
+<div class="review"><strong>次回注視:</strong> 次回は、V1.0の設計工数再見積もりと、佐藤さんから田中さんへのタスク移管の実行状況を確認してください。</div>
+</div>
+</body></html>

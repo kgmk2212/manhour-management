@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - 要約優先UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F7F6F3;
+            --surface: #FFFFFF;
+            --surface-elevated: #FAFAF8;
+            --surface-sunken: #F0EEEA;
+            --border: #E7E5E0;
+            --border-light: #EEEDEA;
+            --text-primary: #1A1814;
+            --text-secondary: #6B6560;
+            --text-muted: #9C9690;
+            --accent: #2D5A27;
+            --accent-light: #EBF5EA;
+            --danger: #B91C1C;
+            --info: #1D6FA5;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(26, 24, 20, 0.04);
+            --shadow-md: 0 2px 8px rgba(26, 24, 20, 0.06);
+            --transition: 180ms ease;
+            --ai-accent: #1D6FA5;
+            --ai-accent-light: #EFF6FF;
+            --ai-accent-muted: rgba(29, 111, 165, 0.08);
+            --ai-border: rgba(29, 111, 165, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+        .mockup-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        /* ============================================
+           HERO: Summary Card
+           The part everyone sees first
+           ============================================ */
+
+        .ai-hero {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px 24px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .ai-hero::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--ai-accent);
+        }
+
+        /* Top row: title + meta */
+        .ai-hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .ai-hero-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-hero-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            background: var(--ai-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #fff;
+        }
+        .ai-hero-title h2 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .ai-hero-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .ai-model-tag {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: var(--ai-accent-muted);
+            color: var(--ai-accent);
+        }
+
+        /* Score + Summary: the main attraction */
+        .ai-hero-main {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .ai-score-block {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .ai-score-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--ai-accent);
+            background: var(--ai-accent-light);
+            border: 3px solid var(--ai-accent);
+            letter-spacing: -0.03em;
+        }
+        .ai-score-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .ai-score-trend.improving {
+            background: rgba(45, 90, 39, 0.08);
+            color: var(--accent);
+        }
+        .ai-score-trend.declining {
+            background: rgba(185, 28, 28, 0.08);
+            color: var(--danger);
+        }
+
+        .ai-hero-summary {
+            flex: 1;
+        }
+        .ai-hero-summary-text {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.75;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        /* Inline strengths/weaknesses */
+        .ai-hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .ai-tag {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 20px;
+            line-height: 1.4;
+        }
+        .ai-tag.good {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .ai-tag.bad {
+            background: rgba(185, 28, 28, 0.06);
+            color: #9B2C2C;
+        }
+
+        /* Top action callout */
+        .ai-hero-action {
+            background: var(--ai-accent-light);
+            border: 1px solid var(--ai-border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .ai-hero-action-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--ai-accent);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .ai-hero-action-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .ai-hero-action-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .ai-hero-action-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           DETAIL: Recessed secondary area
+           Visually quieter, always visible
+           ============================================ */
+
+        .ai-detail-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .ai-detail-divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .ai-detail-divider-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .ai-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Detail cards: muted, compact */
+        .ai-detail-card {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+        .ai-detail-card-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* Forecast mini */
+        .ai-forecast-mini {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ai-forecast-mini-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .ai-forecast-mini-label {
+            font-size: 10px;
+            font-weight: 600;
+            width: 32px;
+            flex-shrink: 0;
+            color: var(--text-muted);
+        }
+        .ai-forecast-mini-label.opt { color: var(--accent); }
+        .ai-forecast-mini-label.pes { color: var(--danger); }
+        .ai-forecast-mini-value {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Risk compact */
+        .ai-risk-compact {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding: 8px 0 0;
+            border-top: 1px solid var(--border-light);
+            margin-top: 8px;
+        }
+        .ai-risk-compact-icon {
+            color: var(--danger);
+            font-size: 11px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Remaining actions */
+        .ai-other-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ai-other-action {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface-elevated);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .ai-other-action:hover {
+            background: var(--surface-sunken);
+        }
+        .ai-other-action-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .ai-other-action-num.n2 { background: var(--accent); color: #fff; }
+        .ai-other-action-num.n3 { background: var(--text-muted); color: #fff; }
+        .ai-other-action-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .ai-other-action-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1px;
+        }
+        .ai-other-action-cat {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .ai-other-action-chevron {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            transition: transform 200ms ease;
+        }
+        .ai-other-action.open .ai-other-action-chevron {
+            transform: rotate(90deg);
+        }
+        .ai-other-action-detail {
+            display: none;
+            padding: 8px 12px 10px 42px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            background: var(--surface-elevated);
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+            margin-top: -4px;
+            animation: slideDown 200ms ease;
+        }
+        .ai-other-action.open + .ai-other-action-detail {
+            display: block;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ai-other-action-detail p {
+            margin-bottom: 6px;
+        }
+        .ai-other-action-detail strong {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-muted);
+        }
+
+        /* Review focus: subtle */
+        .ai-review-quiet {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            padding: 10px 14px;
+            background: var(--surface-elevated);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--border);
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            .container { padding: 0 16px; margin: 20px auto; }
+            .ai-hero { padding: 20px; }
+            .ai-hero-main { flex-direction: column; }
+            .ai-hero-top { flex-direction: column; gap: 6px; align-items: flex-start; }
+            .ai-detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mockup-label">要約優先UI — gemma4 出力</div>
+
+        <!-- ============================
+             HERO: Summary (always visible, prominent)
+             ============================ -->
+        <div class="ai-hero">
+            <div class="ai-hero-top">
+                <div class="ai-hero-title">
+                    <div class="ai-hero-icon">&#9670;</div>
+                    <h2>AI分析</h2>
+                </div>
+                <div class="ai-hero-meta">
+                    <span class="ai-model-tag">gemma4</span>
+                    <span>2026-04-04</span>
+                    <span>2025-10 ~ 2026-03</span>
+                </div>
+            </div>
+
+            <div class="ai-hero-main">
+                <div class="ai-score-block">
+                    <div class="ai-score-circle">B</div>
+                    <div class="ai-score-trend improving">
+                        <span>&#9650;</span> 改善傾向
+                    </div>
+                </div>
+                <div class="ai-hero-summary">
+                    <div class="ai-hero-summary-text">
+                        全体として、V1.0での大きな見積もりオーバーランが課題として残っていますが、V2.0の進捗は順調であり、プロセス改善の余地が大きい状態です。
+                    </div>
+                    <div class="ai-hero-tags">
+                        <span class="ai-tag good">UI精度 96.2%</span>
+                        <span class="ai-tag good">PG精度 91.2%</span>
+                        <span class="ai-tag good">佐藤・田中 安定</span>
+                        <span class="ai-tag bad">PT精度 63.0%</span>
+                        <span class="ai-tag bad">ログインPT +83%超過</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top priority action: elevated in hero -->
+            <div class="ai-hero-action">
+                <div class="ai-hero-action-badge">1</div>
+                <div class="ai-hero-action-body">
+                    <div class="ai-hero-action-title">PT工程の工数見積もりプロセス強化</div>
+                    <div class="ai-hero-action-desc">「テスト環境構築工数」「手戻り対応工数」「結合テストの回数」など、工数発生源をチェックリスト化し見積もりプロセスに組み込む</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================
+             DETAIL: Quieter area below
+             Always visible, but visually recessed
+             ============================ -->
+        <div class="ai-detail-divider">
+            <div class="ai-detail-divider-line"></div>
+            <div class="ai-detail-divider-label">分析詳細</div>
+            <div class="ai-detail-divider-line"></div>
+        </div>
+
+        <div class="ai-detail-grid">
+            <!-- Forecast -->
+            <div class="ai-detail-card">
+                <div class="ai-detail-card-title">V2.0 完了見込み</div>
+                <div class="ai-forecast-mini">
+                    <div class="ai-forecast-mini-row">
+                        <div class="ai-forecast-mini-label opt">楽観</div>
+                        <div class="ai-forecast-mini-value">順調に完了する可能性が高い</div>
+                    </div>
+                    <div class="ai-forecast-mini-row">
+                        <div class="ai-forecast-mini-label">現実</div>
+                        <div class="ai-forecast-mini-value">進捗率51.8%、残工数110hから計画通りに完了する見込み</div>
+                    </div>
+                    <div class="ai-forecast-mini-row">
+                        <div class="ai-forecast-mini-label pes">悲観</div>
+                        <div class="ai-forecast-mini-value">PT工程の未計画な工数増大により遅延する可能性</div>
+                    </div>
+                </div>
+                <div class="ai-risk-compact">
+                    <span class="ai-risk-compact-icon">&#9888;</span>
+                    <span>PT工程での予期せぬ手戻りや工数増大が最大のボトルネック</span>
+                </div>
+            </div>
+
+            <!-- Other actions -->
+            <div class="ai-detail-card">
+                <div class="ai-detail-card-title">その他の推奨アクション</div>
+                <div class="ai-other-actions">
+                    <div class="ai-other-action" onclick="this.classList.toggle('open')">
+                        <div class="ai-other-action-num n2">2</div>
+                        <div class="ai-other-action-body">
+                            <div class="ai-other-action-title">完了定義（DoD）の明確化とレビューの徹底</div>
+                            <div class="ai-other-action-cat">レビュー・品質プロセス</div>
+                        </div>
+                        <div class="ai-other-action-chevron">&#9654;</div>
+                    </div>
+                    <div class="ai-other-action-detail">
+                        <p><strong>アクション:</strong></p>
+                        <p>すべてのタスクについて「完了」の定義（コードレビュー完了、単体テスト合格、ドキュメント更新など）をチーム全体で合意し、タスクチケットに明記する。</p>
+                        <p><strong>効果:</strong></p>
+                        <p>手戻りや「終わったつもり」による工数ロスを防ぎ、見積もりと実績の乖離を縮小。</p>
+                    </div>
+
+                    <div class="ai-other-action" onclick="this.classList.toggle('open')">
+                        <div class="ai-other-action-num n3">3</div>
+                        <div class="ai-other-action-body">
+                            <div class="ai-other-action-title">タスクの分割粒度の見直しとWIP制限の導入</div>
+                            <div class="ai-other-action-cat">タスク管理</div>
+                        </div>
+                        <div class="ai-other-action-chevron">&#9654;</div>
+                    </div>
+                    <div class="ai-other-action-detail">
+                        <p><strong>アクション:</strong></p>
+                        <p>タスクを最大2〜3日分に分割し、同時進行タスク（WIP）の数を制限して完了に集中する。</p>
+                        <p><strong>効果:</strong></p>
+                        <p>リスク分散と、小さな成功体験によるモチベーション維持。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review focus: very quiet -->
+        <div class="ai-review-quiet">
+            <strong>次回の注視ポイント:</strong>
+            PT工程の改善アクション適用後の工数実績（特に手戻り工数）と、タスク分割による進捗粒度の変化を定量的に追跡。
+        </div>
+
+    </div>
+</body>
+</html>

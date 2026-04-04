@@ -1,0 +1,39 @@
+以下のJSON形式で回答してください。JSON以外のテキストは含めないでください。
+すべてのフィールドに実質的な内容を記入してください。空文字列や省略は不可です。
+
+{
+  "team_evaluation": {
+    "headline": "10文字以内の一言評価",
+    "summary": "2〜3文の総合評価",
+    "score": "A〜Eの1文字",
+    "strengths": ["15文字以内×1〜3個"],
+    "weaknesses": ["15文字以内×1〜3個"],
+    "trend": "improving / stable / declining",
+    "analysis": "工程別・メンバー別の数値に基づく詳細分析（3〜5文。どの工程が良くてどこが悪いか、メンバー間の差異、前月比の変化など）"
+  },
+  "outlook": {
+    "version_forecasts": [
+      {
+        "version": "バージョン名",
+        "optimistic": "楽観シナリオ（計算式: 残工数×係数＝予想工数）",
+        "realistic": "現実シナリオ（計算式: 残工数×係数＝予想工数）",
+        "pessimistic": "悲観シナリオ（計算式: 残工数×係数＝予想工数）",
+        "key_risk": "このバージョン固有の最大リスク1文"
+      }
+    ],
+    "accuracy_forecast": "精度見通し（2〜3文。工程別の傾向と改善/悪化の見込みを含む）",
+    "resource_risks": ["メンバー名と数値を含むリソースリスク×1〜2個"]
+  },
+  "recommended_actions": [
+    {
+      "priority": 1,
+      "category": "カテゴリ名",
+      "title": "15文字以内",
+      "rationale": "数値引用の根拠1文",
+      "action_summary": "やること1文の要約",
+      "action_steps": ["具体的ステップ1", "ステップ2", "ステップ3"],
+      "expected_effect": "数値目標を含む効果"
+    }
+  ],
+  "next_review_focus": "次回注視ポイント1文"
+}
