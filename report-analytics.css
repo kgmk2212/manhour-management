@@ -565,15 +565,152 @@
     flex-shrink: 0;
 }
 
+/* ---- Layout Toggle (inline) ---- */
+#analytics .ra-layout-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-sunken);
+    border-radius: 6px;
+    padding: 2px;
+}
+#analytics .ra-layout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+#analytics .ra-layout-btn:hover {
+    color: var(--text-secondary);
+}
+#analytics .ra-layout-btn.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* ---- Version Selector Pills ---- */
+#analytics .ra-version-selector {
+    display: flex;
+    gap: 6px;
+    padding: 10px 18px 4px;
+    flex-wrap: wrap;
+}
+#analytics .ra-version-btn {
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+#analytics .ra-version-btn:hover {
+    background: var(--surface-sunken);
+    border-color: var(--border);
+}
+#analytics .ra-version-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* ---- Focus Donut Layout ---- */
+#analytics .ra-focus-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+}
+#analytics .ra-focus-donut-wrap {
+    flex-shrink: 0;
+    width: 200px;
+    height: 200px;
+}
+#analytics .ra-focus-donut-wrap canvas {
+    display: block;
+    width: 200px !important;
+    height: 200px !important;
+}
+#analytics .ra-focus-legend {
+    flex: 1;
+    min-width: 0;
+}
+#analytics .ra-focus-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+#analytics .ra-focus-legend-item:last-child {
+    border-bottom: none;
+}
+#analytics .ra-focus-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+#analytics .ra-focus-legend-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#analytics .ra-focus-legend-hours {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+#analytics .ra-focus-legend-pct {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    width: 36px;
+    text-align: right;
+}
+#analytics .ra-focus-legend-bar-wrap {
+    width: 48px;
+    flex-shrink: 0;
+}
+#analytics .ra-focus-legend-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-sunken);
+    overflow: hidden;
+}
+#analytics .ra-focus-legend-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
     #analytics .ra-kpi-row { grid-template-columns: repeat(2, 1fr); }
     #analytics .ra-analytics-grid { grid-template-columns: 1fr; }
 }
+@media (max-width: 680px) {
+    #analytics .ra-focus-layout { flex-direction: column; align-items: center; }
+    #analytics .ra-focus-legend { width: 100%; }
+    #analytics .ra-multiples-grid { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 480px) {
     #analytics .ra-kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
     #analytics .ra-kpi-value { font-size: 22px; }
     #analytics .ra-alert-bar-content { flex-direction: column; gap: 4px; }
+    #analytics .ra-multiples-grid { grid-template-columns: 1fr; }
 }
 
 /* ============================================
