@@ -18,6 +18,13 @@ RESULTS = [
     ("v4 gemma4", "gemma4_v4_20260405_002833.json", "summarize強化→フォーマット崩壊"),
     ("v4f gemma4", "gemma4_v4f_20260405_012542.json", "assistant prefill→フォーマット復活、数値捏造"),
     ("v5 gemma4", "gemma4_v5_20260405_015817.json", "データ引用強化プロンプト"),
+    ("v5 qwen3.5", "qwen3.5_v5_20260405_023342.json", "chat API+key findings（退化）"),
+    ("v6 gemma4", "gemma4_v6_20260405_023343.json", "key findings抽出+chat API"),
+    ("v5b qwen3.5", "qwen3.5_v5b_20260405_023826.json", "chat API, prefillなし（退化）"),
+    ("v6b gemma4", "gemma4_v6b_20260405_023828.json", "key findings抽出（再確認）"),
+    ("v6 qwen3.5", "qwen3.5_v6_20260405_024210.json", "generate API+key findings（退化）"),
+    ("v7 gemma4", "gemma4_v7_20260405_024211.json", "key findings+generate/chat分離"),
+    ("v6b qwen3.5", "qwen3.5_v6b_20260405_024705.json", "generate API, v4方式に復帰"),
 ]
 
 results_dir = Path(__file__).parent
