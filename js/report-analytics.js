@@ -938,6 +938,196 @@ function renderVersionTaskMultiples(versionTaskData) {
     }
 }
 
+// ---- 9A. Version Task Distribution (Focus Donut) ----
+
+let currentFocusVersion = null;
+let cachedVersionTaskData = null;
+
+function drawFocusDonut(slices, total, versionLabel) {
+    const canvas = document.getElementById('ra-focus-donut');
+    if (!canvas) return;
+    const size = 200;
+    canvas.width = size * DPR;
+    canvas.height = size * DPR;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = 90, innerR = 52;
+    const gap = slices.length > 1 ? 0.02 : 0;
+
+    if (total === 0) return;
+
+    let angle = -Math.PI / 2;
+    slices.forEach((s, i) => {
+        const sliceAngle = (s.hours / total) * Math.PI * 2 - gap;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+        ctx.arc(cx, cy, outerR, angle, angle + sliceAngle);
+        ctx.arc(cx, cy, innerR, angle + sliceAngle, angle, true);
+        ctx.closePath();
+        ctx.fillStyle = TASK_PALETTE[i % TASK_PALETTE.length];
+        ctx.fill();
+
+        // Show % on slices >= 10%
+        const pct = Math.round((s.hours / total) * 100);
+        if (pct >= 10) {
+            const midAngle = angle + sliceAngle / 2;
+            const labelR = (outerR + innerR) / 2;
+            ctx.fillStyle = '#fff';
+            ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(pct + '%', cx + Math.cos(midAngle) * labelR, cy + Math.sin(midAngle) * labelR);
+        }
+        angle += sliceAngle + gap;
+    });
+
+    // Center text
+    ctx.fillStyle = COLORS.textDark;
+    ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(total) + 'h', cx, cy - 6);
+    ctx.font = '500 10px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+    ctx.fillStyle = COLORS.text;
+    ctx.fillText(versionLabel + ' 実績', cx, cy + 12);
+    ctx.textBaseline = 'alphabetic';
+}
+
+function renderFocusVersion(versionTaskData, version) {
+    const data = versionTaskData.find(v => v.version === version);
+    if (!data) return;
+
+    const { slices, total } = data;
+    drawFocusDonut(slices, total, version);
+
+    // Legend
+    const legend = document.getElementById('ra-focus-legend');
+    if (legend) {
+        legend.innerHTML = slices.map((s, i) => {
+            const pct = total > 0 ? Math.round((s.hours / total) * 100) : 0;
+            const color = TASK_PALETTE[i % TASK_PALETTE.length];
+            return `<div class="ra-focus-legend-item">
+                <div class="ra-focus-legend-dot" style="background:${color}"></div>
+                <div class="ra-focus-legend-name">${escapeHtml(s.task)}</div>
+                <div class="ra-focus-legend-hours">${Math.round(s.hours)}h</div>
+                <div class="ra-focus-legend-pct">${pct}%</div>
+                <div class="ra-focus-legend-bar-wrap"><div class="ra-focus-legend-bar"><div class="ra-focus-legend-bar-fill" style="width:${Math.min(pct, 100)}%;background:${color}"></div></div></div>
+            </div>`;
+        }).join('');
+    }
+
+    // Insight
+    const insight = document.getElementById('ra-insight-focus');
+    if (insight && slices.length >= 2) {
+        const top = slices[0];
+        const topPct = total > 0 ? Math.round((top.hours / total) * 100) : 0;
+        const top2Sum = slices.slice(0, 2).reduce((s, d) => s + d.hours, 0);
+        const top2Pct = total > 0 ? Math.round((top2Sum / total) * 100) : 0;
+        insight.innerHTML = `<strong>${escapeHtml(top.task)}</strong>が${topPct}%で最大。上位2タスクで全体の<strong>${top2Pct}%</strong>を占める。`;
+    } else if (insight && slices.length === 1) {
+        insight.innerHTML = `<strong>${escapeHtml(slices[0].task)}</strong>のみ。`;
+    } else if (insight) {
+        insight.innerHTML = 'データなし';
+    }
+}
+
+function renderVersionSelector(versionTaskData) {
+    const el = document.getElementById('ra-version-selector');
+    if (!el || versionTaskData.length === 0) return;
+
+    // Default to first version if current isn't in data
+    if (!currentFocusVersion || !versionTaskData.find(v => v.version === currentFocusVersion)) {
+        currentFocusVersion = versionTaskData[0].version;
+    }
+
+    el.innerHTML = versionTaskData.map(v =>
+        `<button class="ra-version-btn ${v.version === currentFocusVersion ? 'active' : ''}" data-version="${escapeHtml(v.version)}">${escapeHtml(v.version)}</button>`
+    ).join('');
+
+    el.querySelectorAll('.ra-version-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFocusVersion = btn.dataset.version;
+            el.querySelectorAll('.ra-version-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFocusVersion(cachedVersionTaskData, currentFocusVersion);
+        });
+    });
+}
+
+function renderVersionTaskFocus(versionTaskData) {
+    cachedVersionTaskData = versionTaskData;
+    if (versionTaskData.length === 0) {
+        const legend = document.getElementById('ra-focus-legend');
+        if (legend) legend.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">データなし</div>';
+        return;
+    }
+    renderVersionSelector(versionTaskData);
+    renderFocusVersion(versionTaskData, currentFocusVersion);
+}
+
+// ---- Layout Toggle ----
+
+function getVersionChartLayout() {
+    return localStorage.getItem('analyticsVersionChartLayout') || 'multiples';
+}
+
+function setVersionChartLayout(layout) {
+    localStorage.setItem('analyticsVersionChartLayout', layout);
+    applyVersionChartLayout(layout);
+
+    // Sync settings radio buttons
+    const radio = document.querySelector(`input[name="versionChartLayout"][value="${layout}"]`);
+    if (radio) radio.checked = true;
+}
+
+function applyVersionChartLayout(layout) {
+    const focusEl = document.getElementById('ra-layout-focus');
+    const multiplesEl = document.getElementById('ra-layout-multiples');
+    if (!focusEl || !multiplesEl) return;
+
+    focusEl.style.display = layout === 'focus' ? '' : 'none';
+    multiplesEl.style.display = layout === 'multiples' ? '' : 'none';
+
+    // Update toggle buttons
+    document.querySelectorAll('#ra-layout-toggle .ra-layout-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.layout === layout);
+    });
+}
+
+function initLayoutToggle() {
+    const layout = getVersionChartLayout();
+    applyVersionChartLayout(layout);
+
+    // Inline toggle buttons
+    document.querySelectorAll('#ra-layout-toggle .ra-layout-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setVersionChartLayout(btn.dataset.layout);
+            // Re-render the newly visible layout
+            if (btn.dataset.layout === 'focus' && cachedVersionTaskData) {
+                renderVersionTaskFocus(cachedVersionTaskData);
+            }
+        });
+    });
+
+    // Settings radio buttons
+    document.querySelectorAll('input[name="versionChartLayout"]').forEach(radio => {
+        // Set initial state
+        radio.checked = radio.value === layout;
+        radio.addEventListener('change', () => {
+            if (radio.checked) {
+                setVersionChartLayout(radio.value);
+                if (radio.value === 'focus' && cachedVersionTaskData) {
+                    renderVersionTaskFocus(cachedVersionTaskData);
+                }
+            }
+        });
+    });
+}
+
 function drawSparkline(id, data, color) {
     const canvas = document.getElementById(id);
     if (!canvas || !data || data.length < 2) return;
@@ -997,6 +1187,7 @@ function renderAll(monthFilter) {
     setupCanvas('ra-chartAccuracyTrend', (ctx, w, h) => drawAccuracyTrend(ctx, w, h, d.accuracyVersions, d.accuracyData));
     setupCanvas('ra-chartDonut', (ctx, w, h) => drawDonut(ctx, w, h, d.statusCounts));
     renderVersionTaskMultiples(d.versionTaskData);
+    renderVersionTaskFocus(d.versionTaskData);
     drawSparkline('ra-sparkline1', d.monthlyEst, 'rgba(255,255,255,0.5)');
     drawSparkline('ra-sparkline2', d.monthlyAct, 'rgba(255,255,255,0.5)');
 
@@ -1012,6 +1203,9 @@ export function initReportAnalytics() {
     const getMonthFilter = () => monthSelect ? monthSelect.value || null : null;
 
     if (!initialized) {
+        // Layout toggle for version task chart
+        initLayoutToggle();
+
         // Alert bar toggle
         const alertBar = document.getElementById('ra-alertBar');
         if (alertBar) alertBar.addEventListener('click', toggleAlertDetail);

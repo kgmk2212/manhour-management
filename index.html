@@ -1306,19 +1306,44 @@
                         <div class="ra-chart-card-insight" id="ra-insight-donut"></div>
                     </div>
 
-                    <!-- 9. Version Task Distribution (Small Multiples) -->
-                    <div class="ra-chart-card full-width">
+                    <!-- 9. Version Task Distribution -->
+                    <div class="ra-chart-card full-width" id="ra-version-task-card">
                         <div class="ra-chart-card-header">
                             <div>
                                 <div class="ra-chart-card-title">版数別タスク構成比</div>
                                 <div class="ra-chart-card-subtitle">各版数内のタスク別工数配分</div>
                             </div>
-                            <div class="ra-chart-card-badge" style="background: var(--accent-secondary-light); color: var(--accent-secondary);">新規</div>
+                            <div class="ra-layout-toggle" id="ra-layout-toggle">
+                                <button class="ra-layout-btn" data-layout="focus" title="フォーカス表示">
+                                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12"/></svg>
+                                </button>
+                                <button class="ra-layout-btn" data-layout="multiples" title="一覧比較">
+                                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+                                </button>
+                            </div>
                         </div>
-                        <div class="ra-chart-card-body">
-                            <div class="ra-multiples-grid" id="ra-multiples-grid"></div>
+
+                        <!-- Layout A: Focus Donut with Version Selector -->
+                        <div id="ra-layout-focus" style="display:none;">
+                            <div class="ra-version-selector" id="ra-version-selector"></div>
+                            <div class="ra-chart-card-body">
+                                <div class="ra-focus-layout">
+                                    <div class="ra-focus-donut-wrap">
+                                        <canvas id="ra-focus-donut" width="200" height="200"></canvas>
+                                    </div>
+                                    <div class="ra-focus-legend" id="ra-focus-legend"></div>
+                                </div>
+                            </div>
+                            <div class="ra-chart-card-insight" id="ra-insight-focus"></div>
                         </div>
-                        <div class="ra-chart-card-insight" id="ra-insight-multiples"></div>
+
+                        <!-- Layout B: Small Multiples -->
+                        <div id="ra-layout-multiples">
+                            <div class="ra-chart-card-body">
+                                <div class="ra-multiples-grid" id="ra-multiples-grid"></div>
+                            </div>
+                            <div class="ra-chart-card-insight" id="ra-insight-multiples"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1917,6 +1942,24 @@
                         ・設定は自動的に保存されます<br>
                         ・不要な機能をオフにすることで、シンプルなレポート表示にできます
                     </small>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">分析タブ</label>
+
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 4px;">
+                            <span style="font-size: 13px; color: var(--text-secondary);">版数別タスク構成比の表示形式:</span>
+                        </label>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: 13px;">
+                                <input type="radio" name="versionChartLayout" value="focus" style="width: auto;">
+                                <span>フォーカス表示（版数切替）</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: 13px;">
+                                <input type="radio" name="versionChartLayout" value="multiples" style="width: auto;" checked>
+                                <span>一覧比較（全版数）</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="setting-section">
