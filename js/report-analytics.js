@@ -488,7 +488,11 @@ function setupCanvas(id, drawFn) {
     canvas.style.width = '0px';
     canvas.style.height = '0px';
     const w = canvas.parentElement.clientWidth;
-    const h = parseInt(canvas.getAttribute('height')) || 200;
+    let h = parseInt(canvas.getAttribute('height')) || 200;
+    // 正方形チャート（ドーナツ等）はdata-aspect="square"で幅に合わせる
+    if (canvas.dataset.aspect === 'square') {
+        h = Math.min(w, h);
+    }
     canvas.width = w * DPR;
     canvas.height = h * DPR;
     canvas.style.width = w + 'px';

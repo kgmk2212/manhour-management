@@ -25,6 +25,7 @@ import * as Schedule from './schedule.js';
 import * as History from './history.js';
 import * as ActualTimeline from './actual-timeline.js';
 import { initReportAnalytics } from './report-analytics.js';
+import { initAiAnalysis } from './ai-analysis.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -371,6 +372,7 @@ window.toggleProgressSection = Report.toggleProgressSection;
 // schedule.js の関数
 // report-analytics.js の関数
 window.initReportAnalytics = initReportAnalytics;
+window.initAiAnalysis = initAiAnalysis;
 
 window.initScheduleModule = Schedule.initScheduleModule;
 window.renderScheduleView = Schedule.renderScheduleView;

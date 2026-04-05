@@ -283,6 +283,10 @@ export function showTab(tabName, options = {}) {
         if (typeof window.initReportAnalytics === 'function') {
             window.initReportAnalytics();
         }
+        // AI分析セクションを読み込み
+        if (typeof window.initAiAnalysis === 'function') {
+            window.initAiAnalysis();
+        }
     } else if (tabName === 'schedule') {
         // スケジュールタブを再描画（Canvas内容がクリアされている場合に備えて）
         if (typeof window.renderScheduleView === 'function') {
