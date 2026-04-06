@@ -1052,12 +1052,15 @@ export function renderEstimateMatrix() {
 
                 // 工程が空の場合はIDをキーにして上書きを防止（その他工数は同じ空工程の複数アイテムがある）
         const processKey = e.process || `_${e.id}`;
-        versionGroups[e.version][taskKey].processes[processKey] = {
+        if (!versionGroups[e.version][taskKey].processes[processKey]) {
+            versionGroups[e.version][taskKey].processes[processKey] = [];
+        }
+        versionGroups[e.version][taskKey].processes[processKey].push({
             member: e.member,
             hours: displayHours,
             id: e.id,
             workMonths: est.workMonths || []
-        };
+        });
     });
 
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
@@ -1092,9 +1095,11 @@ export function renderEstimateMatrix() {
 
                 let total = 0;
                 const members = new Set();
-                Object.values(group.processes).forEach(p => {
-                    total += p.hours;
-                    members.add(p.member);
+                Object.values(group.processes).forEach(entries => {
+                    entries.forEach(p => {
+                        total += p.hours;
+                        members.add(p.member);
+                    });
                 });
 
                 const totalDays = total / 8;
@@ -1150,19 +1155,30 @@ export function renderEstimateMatrix() {
             let total = 0;
             processOrder.forEach(proc => {
                 if (group.processes[proc]) {
-                    const p = group.processes[proc];
-                    total += p.hours;
+                    const entries = group.processes[proc];
+                    const procTotal = entries.reduce((sum, p) => sum + p.hours, 0);
+                    total += procTotal;
 
-                    const monthColor = showMonthColors ? getMonthColor(p.workMonths) : { bg: '', tooltip: '' };
+                    const allWorkMonths = entries.flatMap(p => p.workMonths);
+                    const monthColor = showMonthColors ? getMonthColor(allWorkMonths) : { bg: '', tooltip: '' };
                     const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
+                    // 複数担当者の場合はタスク詳細、1人の場合は見積詳細を表示
+                    const clickHandler = entries.length === 1
+                        ? `showEstimateDetail(${entries[0].id})`
+                        : `showTaskDetail('${escapedVer}', '${escapedTsk}')`;
+
+                    const membersHtml = entries.map(p =>
+                        `<div style="font-size: 12px; color: #666;">${escapeHtml(p.member)} ${p.hours.toFixed(1)}h</div>`
+                    ).join('');
+
                     html += `<td class="clickable-cell" style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
-                        onclick="showEstimateDetail(${p.id})"
+                        onclick="${clickHandler}"
                         ${showMonthColors ? `title="${monthColor.tooltip}"` : ''}
                         onmouseover="this.style.background='#e3f2fd'"
                         onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
-                        <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                        <div style="font-size: 12px; color: #666;">(${escapeHtml(p.member)})</div>
+                        <div style="font-weight: 600;">${procTotal.toFixed(1)}h</div>
+                        ${membersHtml}
                     </td>`;
                 } else {
                     html += `<td style="text-align: center; color: #ccc;">-</td>`;
