@@ -488,7 +488,10 @@ function setupCanvas(id, drawFn) {
     canvas.style.width = '0px';
     canvas.style.height = '0px';
     const w = canvas.parentElement.clientWidth;
-    const h = parseInt(canvas.getAttribute('height')) || 200;
+    let h = parseInt(canvas.getAttribute('height')) || 200;
+    if (canvas.dataset.aspect === 'square') {
+        h = Math.min(w, h);
+    }
     canvas.width = w * DPR;
     canvas.height = h * DPR;
     canvas.style.width = w + 'px';
