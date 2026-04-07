@@ -15,6 +15,7 @@ import { formatHours, escapeHtml } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
+import { calculateConsumedHoursAtDate, addInterruption, removeInterruption, analyzeImpact, calculateSegments } from './schedule-interruption.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -879,6 +880,7 @@ export function openScheduleDetailModal(scheduleId) {
 
     // 関連する実績一覧を表示
     renderDetailActualList(schedule);
+    renderDetailInterruptionHistory(schedule);
 
     // モーダルを表示
     const modal = document.getElementById('scheduleDetailModal');
@@ -937,6 +939,313 @@ export function closeScheduleDetailModal() {
     if (modal) modal.style.display = 'none';
     currentEditingScheduleId = null;
     modalOriginalState = null;
+}
+
+// ============================================
+// 中断モーダル
+// ============================================
+
+let interruptionTargetScheduleId = null;
+
+/**
+ * 中断モーダルを開く
+ */
+export function openInterruptionModal(scheduleId, presetDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    interruptionTargetScheduleId = scheduleId;
+
+    const title = document.getElementById('interruptionModalTitle');
+    if (title) title.textContent = `✂ 作業中断 — ${schedule.version} / ${schedule.task} / ${schedule.process} (${schedule.member})`;
+
+    const splitDateInput = document.getElementById('interruptionSplitDate');
+    if (splitDateInput) {
+        splitDateInput.value = presetDate || schedule.startDate;
+        splitDateInput.min = schedule.startDate;
+        splitDateInput.max = schedule.endDate;
+    }
+
+    updateConsumedHoursDisplay();
+
+    const reasonInput = document.getElementById('interruptionReason');
+    if (reasonInput) reasonInput.value = '';
+
+    const createInsert = document.getElementById('interruptionCreateInsert');
+    if (createInsert) createInsert.checked = false;
+    const insertSection = document.getElementById('interruptionInsertSection');
+    if (insertSection) insertSection.style.display = 'none';
+
+    updateInterruptionVersionOptions();
+
+    const modal = document.getElementById('interruptionModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+export function closeInterruptionModal() {
+    const modal = document.getElementById('interruptionModal');
+    if (modal) modal.style.display = 'none';
+    interruptionTargetScheduleId = null;
+}
+
+export function onInterruptionSplitDateChange() {
+    updateConsumedHoursDisplay();
+}
+
+function updateConsumedHoursDisplay() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    if (!schedule) return;
+
+    const splitDate = document.getElementById('interruptionSplitDate')?.value;
+    if (!splitDate) return;
+
+    const hoursPerDay = scheduleSettings.hoursPerDay || 8;
+    const consumed = calculateConsumedHoursAtDate(schedule, splitDate);
+
+    const input = document.getElementById('interruptionConsumedHours');
+    if (input) input.value = consumed;
+
+    const autoLabel = document.getElementById('interruptionConsumedAuto');
+    if (autoLabel) {
+        const days = countBusinessDays(schedule.startDate, splitDate, schedule.member);
+        autoLabel.textContent = `/ ${schedule.estimatedHours}h  (自動: ${days}営業日×${hoursPerDay}h)`;
+    }
+}
+
+export function toggleInsertSection() {
+    const checked = document.getElementById('interruptionCreateInsert')?.checked;
+    const section = document.getElementById('interruptionInsertSection');
+    if (section) section.style.display = checked ? 'block' : 'none';
+}
+
+function updateInterruptionVersionOptions() {
+    const select = document.getElementById('interruptionInsertVersion');
+    if (!select) return;
+    const versions = [...new Set(estimates.map(e => e.version).filter(Boolean))];
+    select.innerHTML = '<option value="">選択してください</option>' +
+        versions.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+}
+
+export function updateInterruptionInsertTaskOptions() {
+    const version = document.getElementById('interruptionInsertVersion')?.value;
+    const datalist = document.getElementById('interruptionTaskList');
+    if (!datalist) return;
+    const tasks = [...new Set(estimates.filter(e => e.version === version).map(e => e.task).filter(Boolean))];
+    datalist.innerHTML = tasks.map(t => `<option value="${escapeHtml(t)}">`).join('');
+}
+
+export function showImpactPreview() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    if (!schedule) return;
+
+    const splitDate = document.getElementById('interruptionSplitDate')?.value;
+    const consumedHours = parseFloat(document.getElementById('interruptionConsumedHours')?.value) || 0;
+
+    if (!splitDate || consumedHours <= 0) {
+        alert('中断日と消化工数を入力してください');
+        return;
+    }
+
+    if (consumedHours >= schedule.estimatedHours) {
+        alert('消化工数が見積工数以上です');
+        return;
+    }
+
+    const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
+    let insertHours = 0;
+    if (createInsert) {
+        insertHours = parseFloat(document.getElementById('interruptionInsertHours')?.value) || 0;
+        if (insertHours <= 0) {
+            alert('差し込み作業の工数を入力してください');
+            return;
+        }
+    }
+
+    const result = analyzeImpact(interruptionTargetScheduleId, splitDate, consumedHours, insertHours);
+    if (!result) return;
+
+    const content = document.getElementById('impactPreviewContent');
+    if (!content) return;
+
+    let html = '';
+
+    // 分割情報
+    html += '<div class="impact-section">';
+    html += '<div class="impact-section-title">✂ バー分割</div>';
+    result.segments.forEach(seg => {
+        html += `<div class="impact-item">
+            <strong>${escapeHtml(seg.label)}</strong>: ${seg.startDate} 〜 ${seg.endDate} (${seg.hours}h)
+        </div>`;
+    });
+    html += '</div>';
+
+    // 差し込み作業
+    if (result.insertPeriod) {
+        const task = document.getElementById('interruptionInsertTask')?.value || '(未設定)';
+        const process = document.getElementById('interruptionInsertProcess')?.value || '';
+        html += '<div class="impact-section">';
+        html += '<div class="impact-section-title">📌 差し込み作業（新規作成）</div>';
+        html += `<div class="impact-item impact-item-new">
+            ${escapeHtml(task)} ${escapeHtml(process)} (${escapeHtml(schedule.member)})<br>
+            ${result.insertPeriod.startDate} 〜 ${result.insertPeriod.endDate} (${result.insertPeriod.hours}h)
+        </div>`;
+        html += '</div>';
+    }
+
+    // 影響を受けるスケジュール
+    if (result.impacts.length > 0) {
+        html += '<div class="impact-section">';
+        html += '<div class="impact-section-title">⚠ 影響を受けるスケジュール</div>';
+        result.impacts.forEach(imp => {
+            html += `<div class="impact-item impact-item-shift">
+                ${escapeHtml(imp.task)} ${escapeHtml(imp.process)} (${escapeHtml(imp.member)})<br>
+                <span class="impact-date-change">${imp.oldStart} → ${imp.newStart}</span> 〜
+                <span class="impact-date-change">${imp.oldEnd} → ${imp.newEnd}</span>
+            </div>`;
+        });
+        html += '</div>';
+    } else {
+        html += '<div class="impact-section">';
+        html += '<div style="color: #888; font-size: 13px;">他のスケジュールへの影響はありません</div>';
+        html += '</div>';
+    }
+
+    content.innerHTML = html;
+
+    const intModal = document.getElementById('interruptionModal');
+    if (intModal) intModal.style.display = 'none';
+    const previewModal = document.getElementById('impactPreviewModal');
+    if (previewModal) previewModal.style.display = 'flex';
+}
+
+export function closeImpactPreview() {
+    const modal = document.getElementById('impactPreviewModal');
+    if (modal) modal.style.display = 'none';
+}
+
+export function backToInterruptionModal() {
+    closeImpactPreview();
+    const modal = document.getElementById('interruptionModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+export function applyInterruption() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    if (!schedule) return;
+
+    const splitDate = document.getElementById('interruptionSplitDate')?.value;
+    const consumedHours = parseFloat(document.getElementById('interruptionConsumedHours')?.value) || 0;
+    const reason = document.getElementById('interruptionReason')?.value || '';
+
+    const params = { splitDate, consumedHours, reason };
+
+    const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
+    if (createInsert) {
+        const version = document.getElementById('interruptionInsertVersion')?.value;
+        const task = document.getElementById('interruptionInsertTask')?.value;
+        const process = document.getElementById('interruptionInsertProcess')?.value;
+        const hours = parseFloat(document.getElementById('interruptionInsertHours')?.value) || 0;
+
+        if (version && task && process && hours > 0) {
+            params.insertOptions = { version, task, process, hours };
+        }
+    }
+
+    const result = addInterruption(interruptionTargetScheduleId, params);
+
+    closeImpactPreview();
+    closeInterruptionModal();
+    renderScheduleView();
+
+    if (result) {
+        const msg = result.cascadeResults.length > 0
+            ? `中断を追加しました（${result.cascadeResults.length}件のスケジュールがずれました）`
+            : '中断を追加しました';
+        if (typeof window.showToast === 'function') window.showToast(msg);
+    }
+}
+
+// ============================================
+// 中断履歴（詳細モーダル内）
+// ============================================
+
+function renderDetailInterruptionHistory(schedule) {
+    const container = document.getElementById('detailInterruptionHistory');
+    const list = document.getElementById('detailInterruptionList');
+    if (!container || !list) return;
+
+    const interruptions = schedule.interruptions || [];
+    if (interruptions.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    let html = '';
+
+    interruptions.forEach(int => {
+        const insertedInfo = int.insertedScheduleId
+            ? (() => {
+                const ins = schedules.find(s => s.id === int.insertedScheduleId);
+                return ins ? ` → 差し込み: ${escapeHtml(ins.task)} ${ins.process} ${ins.estimatedHours}h` : '';
+            })()
+            : '';
+
+        html += `<div class="interruption-history-item">
+            <div class="int-info">
+                <div><strong>✂ ${escapeHtml(int.splitDate)} 中断</strong> — ${escapeHtml(int.reason || '(理由なし)')}</div>
+                <div style="color: #666; font-size: 12px;">消化: ${int.consumedHours}h${insertedInfo}</div>
+            </div>
+            <div class="int-actions">
+                <button onclick="editInterruptionFromDetail('${int.id}')">編集</button>
+                <button onclick="removeInterruptionFromDetail('${int.id}')">取り消し</button>
+            </div>
+        </div>`;
+    });
+
+    list.innerHTML = html;
+}
+
+export function openInterruptionFromDetail() {
+    if (!currentEditingScheduleId) return;
+    closeScheduleDetailModal();
+    openInterruptionModal(currentEditingScheduleId);
+}
+
+export function editInterruptionFromDetail(interruptionId) {
+    if (!currentEditingScheduleId) return;
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (!schedule) return;
+    const int = (schedule.interruptions || []).find(i => i.id === interruptionId);
+    if (!int) return;
+
+    closeScheduleDetailModal();
+    openInterruptionModal(currentEditingScheduleId, int.splitDate);
+}
+
+export function removeInterruptionFromDetail(interruptionId) {
+    if (!currentEditingScheduleId) return;
+    const schedule = schedules.find(s => s.id === currentEditingScheduleId);
+    if (!schedule) return;
+    const int = (schedule.interruptions || []).find(i => i.id === interruptionId);
+    if (!int) return;
+
+    let deleteInserted = false;
+    if (int.insertedScheduleId) {
+        deleteInserted = confirm('差し込みスケジュールも削除しますか？');
+    } else {
+        if (!confirm('この中断を取り消しますか？')) return;
+    }
+
+    const result = removeInterruption(currentEditingScheduleId, interruptionId, deleteInserted);
+    if (result) {
+        renderScheduleView();
+        openScheduleDetailModal(currentEditingScheduleId);
+        const msg = result.cascadeResults.length > 0
+            ? `中断を取り消しました（${result.cascadeResults.length}件のスケジュールが変更されました）`
+            : '中断を取り消しました';
+        if (typeof window.showToast === 'function') window.showToast(msg);
+    }
 }
 
 /**

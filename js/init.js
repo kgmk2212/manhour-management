@@ -434,6 +434,20 @@ window.registerCheckedSchedules = Schedule.registerCheckedSchedules;
 window.calculateEndDate = Schedule.calculateEndDate;
 window.getTaskColor = Schedule.getTaskColor;
 
+// 中断モーダル
+window.openInterruptionModal = Schedule.openInterruptionModal;
+window.closeInterruptionModal = Schedule.closeInterruptionModal;
+window.onInterruptionSplitDateChange = Schedule.onInterruptionSplitDateChange;
+window.toggleInsertSection = Schedule.toggleInsertSection;
+window.updateInterruptionInsertTaskOptions = Schedule.updateInterruptionInsertTaskOptions;
+window.showImpactPreview = Schedule.showImpactPreview;
+window.closeImpactPreview = Schedule.closeImpactPreview;
+window.backToInterruptionModal = Schedule.backToInterruptionModal;
+window.applyInterruption = Schedule.applyInterruption;
+window.openInterruptionFromDetail = Schedule.openInterruptionFromDetail;
+window.editInterruptionFromDetail = Schedule.editInterruptionFromDetail;
+window.removeInterruptionFromDetail = Schedule.removeInterruptionFromDetail;
+
 // actual-timeline.js の関数
 window.initActualTimeline = ActualTimeline.initActualTimeline;
 window.renderActualTimeline = ActualTimeline.renderActualTimeline;
