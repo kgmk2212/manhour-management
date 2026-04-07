@@ -1208,8 +1208,9 @@ function renderDetailInterruptionHistory(schedule) {
 
 export function openInterruptionFromDetail() {
     if (!currentEditingScheduleId) return;
+    const scheduleId = currentEditingScheduleId;
     closeScheduleDetailModal();
-    openInterruptionModal(currentEditingScheduleId);
+    openInterruptionModal(scheduleId);
 }
 
 export function editInterruptionFromDetail(interruptionId) {
