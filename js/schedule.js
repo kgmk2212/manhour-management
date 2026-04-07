@@ -702,7 +702,7 @@ export function isBusinessDay(date, member) {
 /**
  * 日付をYYYY-MM-DD形式に変換
  */
-function formatDateForCheck(date) {
+export function formatDateForCheck(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
