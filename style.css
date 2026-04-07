@@ -7718,3 +7718,139 @@ li.drop-below {
     justify-content: center;
     flex-shrink: 0;
 }
+
+/* ============================================
+   スケジュール コンテキストメニュー
+   ============================================ */
+.schedule-context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    padding: 4px 0;
+    min-width: 180px;
+    animation: contextMenuFadeIn 0.12s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.schedule-context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: background 0.15s;
+}
+
+.schedule-context-menu-item:hover {
+    background: #f0f4ff;
+}
+
+.schedule-context-menu-item .menu-icon {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+}
+
+.schedule-context-menu-separator {
+    height: 1px;
+    background: #e8e8e8;
+    margin: 4px 0;
+}
+
+/* ============================================
+   影響プレビュー
+   ============================================ */
+.impact-section {
+    margin-bottom: 16px;
+}
+
+.impact-section-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.impact-item {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.impact-item-new {
+    background: #e8f5e9;
+    border-left: 3px solid #4caf50;
+}
+
+.impact-item-shift {
+    background: #fff3e0;
+    border-left: 3px solid #ff9800;
+}
+
+.impact-date-change {
+    color: #e65100;
+    font-weight: 600;
+}
+
+/* ============================================
+   中断履歴（詳細モーダル内）
+   ============================================ */
+.interruption-history {
+    margin-top: 16px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 12px;
+}
+
+.interruption-history-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.interruption-history-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: #fafafa;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.interruption-history-item .int-info {
+    flex: 1;
+}
+
+.interruption-history-item .int-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 8px;
+}
+
+.interruption-history-item .int-actions button {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+}
+
+.interruption-history-item .int-actions button:hover {
+    background: #f0f0f0;
+}
