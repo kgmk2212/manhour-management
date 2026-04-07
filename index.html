@@ -2463,6 +2463,12 @@
                     <!-- 動的に生成 -->
                 </div>
 
+                <!-- 中断履歴 -->
+                <div id="detailInterruptionHistory" class="interruption-history" style="display: none;">
+                    <div class="interruption-history-title">中断履歴</div>
+                    <div id="detailInterruptionList"></div>
+                </div>
+
                 <!-- 編集フォーム -->
                 <div class="schedule-edit-section">
                     <div class="form-group">
@@ -2484,10 +2490,98 @@
             </div>
             <div class="modal-footer">
                 <button onclick="openEstimateFromSchedule()" class="btn btn-outline" title="対応する見積データを編集">見積を編集</button>
+                <button onclick="openInterruptionFromDetail()" class="btn btn-outline">✂ 中断を追加</button>
                 <div style="flex: 1;"></div>
                 <button onclick="deleteScheduleFromModal()" class="btn btn-danger">削除</button>
                 <button onclick="closeScheduleDetailModal()" class="btn btn-secondary">閉じる</button>
                 <button onclick="saveScheduleDetailChanges()" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 中断モーダル -->
+    <div id="interruptionModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 id="interruptionModalTitle">作業中断</h3>
+                <span class="close" onclick="closeInterruptionModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>中断日</label>
+                    <input type="date" id="interruptionSplitDate" onchange="onInterruptionSplitDateChange()">
+                </div>
+                <div class="form-group">
+                    <label>中断時点の消化工数</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" id="interruptionConsumedHours" step="0.5" min="0" style="width: 100px;">
+                        <span>h</span>
+                        <span id="interruptionConsumedAuto" style="color: #888; font-size: 13px;"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>中断理由</label>
+                    <input type="text" id="interruptionReason" placeholder="例: 緊急修正対応">
+                </div>
+
+                <div style="margin-top: 16px; border-top: 1px solid #e0e0e0; padding-top: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="interruptionCreateInsert" onchange="toggleInsertSection()">
+                        <span>差し込み作業を同時に作成する</span>
+                    </label>
+                    <div id="interruptionInsertSection" style="display: none; margin-top: 12px; padding: 12px; background: #f8f8f8; border-radius: 8px;">
+                        <div class="form-group">
+                            <label>版数</label>
+                            <select id="interruptionInsertVersion" onchange="updateInterruptionInsertTaskOptions()">
+                                <option value="">選択してください</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>対応名</label>
+                            <input type="text" id="interruptionInsertTask" list="interruptionTaskList" placeholder="選択 or 新規入力">
+                            <datalist id="interruptionTaskList"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>工程</label>
+                            <select id="interruptionInsertProcess">
+                                <option value="UI">UI</option>
+                                <option value="PG">PG</option>
+                                <option value="PT">PT</option>
+                                <option value="IT">IT</option>
+                                <option value="ST">ST</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>工数</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="number" id="interruptionInsertHours" step="0.5" min="0.5" style="width: 100px;">
+                                <span>h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeInterruptionModal()" class="btn btn-secondary">キャンセル</button>
+                <button onclick="showImpactPreview()" class="btn btn-primary">影響を確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 影響プレビューダイアログ -->
+    <div id="impactPreviewModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3>影響プレビュー</h3>
+                <span class="close" onclick="closeImpactPreview()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="impactPreviewContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="backToInterruptionModal()" class="btn btn-secondary">戻る</button>
+                <button onclick="closeImpactPreview()" class="btn btn-outline">キャンセル</button>
+                <button onclick="applyInterruption()" class="btn btn-primary">適用する</button>
             </div>
         </div>
     </div>
