@@ -139,3 +139,134 @@ export function recalculateEndDateWithInterruptions(schedule) {
     if (segments.length === 0) return schedule.startDate;
     return segments[segments.length - 1].endDate;
 }
+
+/**
+ * スケジュールに中断を追加
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {Object} params - 中断パラメータ
+ * @param {string} params.splitDate - 中断日（YYYY-MM-DD）
+ * @param {number} params.consumedHours - 中断時点の消化工数
+ * @param {string} params.reason - 中断理由
+ * @param {Object} [params.insertOptions] - 差し込み作業（任意）
+ * @param {string} params.insertOptions.version - 版数
+ * @param {string} params.insertOptions.task - 対応名
+ * @param {string} params.insertOptions.process - 工程
+ * @param {number} params.insertOptions.hours - 工数
+ * @param {string} params.insertOptions.member - 担当者（省略時は元スケジュールの担当者）
+ * @returns {{ schedule: Object, insertedSchedule: Object|null, cascadeResults: Array }}
+ */
+export function addInterruption(scheduleId, params) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const oldEndDate = schedule.endDate;
+
+    // 中断レコード作成
+    const interruption = {
+        id: `int_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        splitDate: params.splitDate,
+        consumedHours: params.consumedHours,
+        reason: params.reason || '',
+        insertedScheduleId: null
+    };
+
+    // 差し込みスケジュール作成（オプション）
+    let insertedSchedule = null;
+    if (params.insertOptions) {
+        const opts = params.insertOptions;
+        const segEndDate = calculateEndDate(schedule.startDate, params.consumedHours, schedule.member);
+        const insertMember = opts.member || schedule.member;
+        const insertStartDate = getNextBusinessDay(segEndDate, insertMember);
+        const insertEndDate = calculateEndDate(insertStartDate, opts.hours, insertMember);
+
+        const insertId = `sch_${nextScheduleId}`;
+        setNextScheduleId(nextScheduleId + 1);
+
+        insertedSchedule = {
+            id: insertId,
+            version: opts.version,
+            task: opts.task,
+            process: opts.process,
+            member: insertMember,
+            startDate: insertStartDate,
+            estimatedHours: opts.hours,
+            endDate: insertEndDate,
+            status: SCHEDULE.STATUS.PENDING,
+            color: '',
+            note: `${schedule.version}/${schedule.task}/${schedule.process} の差し込み作業`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        interruption.insertedScheduleId = insertId;
+        setSchedules([...schedules, insertedSchedule]);
+    }
+
+    // 中断をスケジュールに追加
+    const interruptions = [...(schedule.interruptions || []), interruption];
+    const updatedSchedule = {
+        ...schedule,
+        interruptions,
+        updatedAt: new Date().toISOString()
+    };
+
+    // endDate再計算
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    // スケジュール配列を更新
+    const newSchedules = schedules.map(s => s.id === scheduleId ? updatedSchedule : s);
+    setSchedules(newSchedules);
+
+    // 連鎖ずらし
+    const cascadeResults = cascadeShift(updatedSchedule, oldEndDate);
+
+    // 保存
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return { schedule: updatedSchedule, insertedSchedule, cascadeResults };
+}
+
+/**
+ * スケジュールから中断を取り消し
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {string} interruptionId - 中断ID
+ * @param {boolean} deleteInserted - 差し込みスケジュールも削除するか
+ * @returns {{ schedule: Object, cascadeResults: Array }}
+ */
+export function removeInterruption(scheduleId, interruptionId, deleteInserted = false) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const oldEndDate = schedule.endDate;
+    const interruption = (schedule.interruptions || []).find(i => i.id === interruptionId);
+    if (!interruption) return null;
+
+    // 中断を削除
+    const interruptions = (schedule.interruptions || []).filter(i => i.id !== interruptionId);
+    const updatedSchedule = {
+        ...schedule,
+        interruptions,
+        updatedAt: new Date().toISOString()
+    };
+
+    // endDate再計算
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    // スケジュール配列を更新
+    let newSchedules = schedules.map(s => s.id === scheduleId ? updatedSchedule : s);
+
+    // 差し込みスケジュールの削除（オプション）
+    if (deleteInserted && interruption.insertedScheduleId) {
+        newSchedules = newSchedules.filter(s => s.id !== interruption.insertedScheduleId);
+    }
+
+    setSchedules(newSchedules);
+
+    // 逆方向の連鎖ずらし（endDateが早まった場合）
+    const cascadeResults = cascadeShift(updatedSchedule, oldEndDate);
+
+    // 保存
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return { schedule: updatedSchedule, cascadeResults };
+}
