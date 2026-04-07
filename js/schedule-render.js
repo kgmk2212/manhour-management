@@ -5,7 +5,8 @@
 
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
-import { getTaskColor, isBusinessDay } from './schedule.js';
+import { getTaskColor, isBusinessDay, formatDateForCheck } from './schedule.js';
+import { calculateSegments } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
 
 // ============================================
@@ -1019,6 +1020,12 @@ export class GanttChartRenderer {
     drawScheduleBar(schedule, rowY) {
         const ctx = this.timelineCtx;
 
+        // 中断がある場合は分割描画
+        if (schedule.interruptions && schedule.interruptions.length > 0) {
+            this.drawSplitScheduleBar(schedule, rowY);
+            return;
+        }
+
         const startDate = new Date(schedule.startDate);
         const endDate = new Date(schedule.endDate);
 
@@ -1224,6 +1231,126 @@ export class GanttChartRenderer {
             y: barY,
             width: barWidth,
             height: BAR_HEIGHT
+        });
+    }
+
+    /**
+     * 中断のあるスケジュールを分割描画
+     */
+    drawSplitScheduleBar(schedule, rowY) {
+        const ctx = this.timelineCtx;
+        const segments = calculateSegments(schedule);
+        if (segments.length === 0) return;
+
+        const isCompletedVersion = this.completedVersions.has(schedule.version);
+        const taskColor = isCompletedVersion
+            ? this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.7)
+            : getTaskColor(schedule.version, schedule.task);
+        const lightColor = this.lightenColor(taskColor, 0.6);
+
+        if (isCompletedVersion) {
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+        }
+
+        const barY = rowY + ROW_PADDING;
+        const segmentRects = [];
+
+        segments.forEach((seg, i) => {
+            const segStart = new Date(seg.startDate);
+            const segEnd = new Date(seg.endDate);
+
+            // 描画範囲にクリップ
+            const visStart = segStart < this.rangeStart ? this.rangeStart : segStart;
+            const visEnd = segEnd > this.rangeEnd ? this.rangeEnd : segEnd;
+            if (visStart > visEnd) return;
+
+            const barX = this.dateToX(visStart);
+            const barEndX = this.dateToX(visEnd) + DAY_WIDTH;
+            const barWidth = barEndX - barX;
+
+            // バー描画
+            ctx.save();
+            clipRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+
+            // ベース色（最初のセグメントは進捗色、それ以降はライト色）
+            ctx.fillStyle = (i === 0) ? taskColor : lightColor;
+            ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
+
+            // 休日オーバーレイ
+            const current = new Date(visStart);
+            while (current <= visEnd) {
+                if (!isBusinessDay(current, schedule.member)) {
+                    const hx = this.dateToX(current);
+                    this.drawHolidayOverlay(ctx, hx, barY, DAY_WIDTH, BAR_HEIGHT);
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            ctx.restore();
+
+            // ✂マーク描画
+            ctx.save();
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = taskColor;
+            ctx.globalAlpha = 0.7;
+            if (i < segments.length - 1) {
+                ctx.textAlign = 'right';
+                ctx.fillText('✂', barX + barWidth - 2, barY + BAR_HEIGHT - 3);
+            }
+            if (i > 0) {
+                ctx.textAlign = 'left';
+                ctx.fillText('✂', barX + 2, barY + BAR_HEIGHT - 3);
+            }
+            ctx.restore();
+
+            // 工程名テキスト
+            if (barWidth > 30) {
+                ctx.save();
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                const barCenterY = barY + BAR_HEIGHT / 2;
+                const label = i === 0 ? schedule.process : `${schedule.process}(続)`;
+                ctx.fillText(label, barX + 6, barCenterY);
+                ctx.restore();
+            }
+
+            segmentRects.push({ barX, barY, barWidth });
+        });
+
+        // セグメント間の点線接続
+        for (let i = 0; i < segmentRects.length - 1; i++) {
+            const r1 = segmentRects[i];
+            const r2 = segmentRects[i + 1];
+            const lineY = barY + BAR_HEIGHT / 2;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = taskColor;
+            ctx.globalAlpha = 0.4;
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(r1.barX + r1.barWidth, lineY);
+            ctx.lineTo(r2.barX, lineY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (isCompletedVersion) {
+            ctx.restore();
+        }
+
+        // クリック判定用矩形（各セグメントを個別登録）
+        segmentRects.forEach((r) => {
+            this.scheduleRects.push({
+                schedule,
+                x: r.barX,
+                y: r.barY,
+                width: r.barWidth,
+                height: BAR_HEIGHT
+            });
         });
     }
 
