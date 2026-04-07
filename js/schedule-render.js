@@ -1702,6 +1702,73 @@ export function renderGanttChart(year, month, filteredSchedules = null) {
 }
 
 // ============================================
+// コンテキストメニュー
+// ============================================
+
+let activeContextMenu = null;
+
+function closeContextMenu() {
+    if (activeContextMenu) {
+        activeContextMenu.remove();
+        activeContextMenu = null;
+    }
+}
+
+document.addEventListener('click', closeContextMenu);
+
+function showScheduleContextMenu(event, schedule, clickDate) {
+    closeContextMenu();
+
+    const menu = document.createElement('div');
+    menu.className = 'schedule-context-menu';
+
+    const items = [
+        {
+            icon: '📋',
+            label: '詳細を表示',
+            action: () => { closeContextMenu(); window.openScheduleDetailModal(schedule.id); }
+        },
+        {
+            icon: '✂',
+            label: `ここで中断 (${clickDate})`,
+            action: () => { closeContextMenu(); window.openInterruptionModal(schedule.id, clickDate); }
+        },
+        { separator: true },
+        {
+            icon: '🗑',
+            label: '削除',
+            action: () => { closeContextMenu(); if (confirm('このスケジュールを削除しますか？')) window.deleteSchedule(schedule.id); }
+        }
+    ];
+
+    items.forEach(item => {
+        if (item.separator) {
+            const sep = document.createElement('div');
+            sep.className = 'schedule-context-menu-separator';
+            menu.appendChild(sep);
+            return;
+        }
+        const el = document.createElement('div');
+        el.className = 'schedule-context-menu-item';
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'menu-icon';
+        iconSpan.textContent = item.icon;
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = item.label;
+        el.appendChild(iconSpan);
+        el.appendChild(labelSpan);
+        el.addEventListener('click', (e) => { e.stopPropagation(); item.action(); });
+        menu.appendChild(el);
+    });
+
+    menu.style.left = `${Math.min(event.clientX, window.innerWidth - 200)}px`;
+    menu.style.top = `${Math.min(event.clientY, window.innerHeight - 200)}px`;
+
+    document.body.appendChild(menu);
+    activeContextMenu = menu;
+}
+
+// ============================================
 // クリックイベントハンドラ
 // ============================================
 
@@ -1730,6 +1797,23 @@ export function setupCanvasClickHandler(onScheduleClick) {
             const schedule = renderer.getScheduleAtPosition(x, y);
             if (schedule && onScheduleClick) {
                 onScheduleClick(schedule);
+            }
+        });
+
+        canvas.addEventListener('contextmenu', (event) => {
+            const renderer = getRenderer();
+            if (!renderer) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const schedule = renderer.getScheduleAtPosition(x, y);
+            if (schedule) {
+                event.preventDefault();
+                const clickDate = renderer.xToDate(x);
+                const dateStr = clickDate ? formatDateForCheck(clickDate) : '';
+                showScheduleContextMenu(event, schedule, dateStr);
             }
         });
 
