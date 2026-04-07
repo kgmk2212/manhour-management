@@ -20,8 +20,10 @@ import { SCHEDULE } from './constants.js';
 export function getNextBusinessDay(dateStr, member) {
     const date = new Date(dateStr);
     date.setDate(date.getDate() + 1);
+    let guard = 0;
     while (!isBusinessDay(date, member)) {
         date.setDate(date.getDate() + 1);
+        if (++guard > 365) return formatDateForCheck(date);
     }
     return formatDateForCheck(date);
 }
@@ -84,7 +86,10 @@ export function calculateSegments(schedule) {
 
     sorted.forEach((int, i) => {
         const segHours = int.consumedHours - prevConsumed;
-        if (segHours <= 0) return;
+        if (segHours <= 0) {
+            console.warn('calculateSegments: skipping interruption with non-positive segment hours', int);
+            return;
+        }
 
         const segEndDate = calculateEndDate(segStartDate, segHours, schedule.member);
         segments.push({
