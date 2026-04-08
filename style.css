@@ -3288,6 +3288,17 @@ table tr[style*="1565c0"] th:first-child {
     margin-right: auto;
 }
 
+/* スケジュール詳細モーダルのフッター — モバイル対応 */
+@media (max-width: 480px) {
+    .schedule-detail-footer {
+        gap: 6px;
+    }
+    .schedule-detail-footer .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
 /* Modal theme colors - Ink & Amber palette */
 .modal-theme-forest {
     background: #2D5A27;
