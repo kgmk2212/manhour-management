@@ -2519,17 +2519,19 @@
                         <span id="interruptionConsumedAuto" style="color: #888; font-size: 13px;"></span>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>中断理由</label>
-                    <input type="text" id="interruptionReason" placeholder="例: 緊急修正対応">
-                </div>
+                <details style="margin-top: 8px;">
+                    <summary style="cursor: pointer; font-size: 13px; color: #888;">中断理由を入力...</summary>
+                    <div class="form-group" style="margin-top: 8px;">
+                        <input type="text" id="interruptionReason" placeholder="例: 緊急修正対応">
+                    </div>
+                </details>
 
                 <div style="margin-top: 16px; border-top: 1px solid #e0e0e0; padding-top: 16px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="interruptionCreateInsert" onchange="toggleInsertSection()">
+                        <input type="checkbox" id="interruptionCreateInsert" checked onchange="toggleInsertSection()">
                         <span>差し込み作業を同時に作成する</span>
                     </label>
-                    <div id="interruptionInsertSection" style="display: none; margin-top: 12px; padding: 12px; background: #f8f8f8; border-radius: 8px;">
+                    <div id="interruptionInsertSection" style="margin-top: 12px; padding: 12px; background: #f8f8f8; border-radius: 8px;">
                         <div class="form-group">
                             <label>版数</label>
                             <select id="interruptionInsertVersion" onchange="updateInterruptionInsertTaskOptions()">

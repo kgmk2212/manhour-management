@@ -972,9 +972,9 @@ export function openInterruptionModal(scheduleId, presetDate) {
     if (reasonInput) reasonInput.value = '';
 
     const createInsert = document.getElementById('interruptionCreateInsert');
-    if (createInsert) createInsert.checked = false;
+    if (createInsert) createInsert.checked = true;
     const insertSection = document.getElementById('interruptionInsertSection');
-    if (insertSection) insertSection.style.display = 'none';
+    if (insertSection) insertSection.style.display = 'block';
 
     updateInterruptionVersionOptions();
 
