@@ -38,6 +38,7 @@ import {
     addQuickEstimate,
     saveQuickInputModeSetting
 } from './quick.js';
+import { openCopyPreviousModal } from './copy-previous.js';
 import { openOtherWorkModal } from './other-work.js';
 import {
     handleVacationTypeChange,
@@ -195,6 +196,12 @@ export function initEventHandlers() {
     const btnOpenOtherWork = document.getElementById('btnOpenOtherWork');
     if (btnOpenOtherWork) {
         btnOpenOtherWork.addEventListener('click', openOtherWorkModal);
+    }
+
+    // [A-2] 前日コピー
+    const btnOpenCopyPrevious = document.getElementById('btnOpenCopyPrevious');
+    if (btnOpenCopyPrevious) {
+        btnOpenCopyPrevious.addEventListener('click', openCopyPreviousModal);
     }
 
     // ============================================

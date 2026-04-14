@@ -4080,6 +4080,194 @@ table tr[style*="1565c0"] th:first-child {
 
 .cell-mandays { }
 
+/* ---- [A-2] 前日コピー ---- */
+.quick-secondary-actions {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.btn-ghost-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 160ms ease;
+    font-family: inherit;
+}
+.btn-ghost-action:hover {
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light, rgba(45, 90, 39, 0.04));
+}
+
+.copy-prev-modal-content { max-width: 640px; width: 92vw; }
+
+.copy-prev-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+}
+.copy-prev-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.copy-prev-field label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+.copy-prev-field select {
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text-primary);
+}
+.copy-prev-value {
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--surface-elevated, #FAFAF9);
+    border-radius: 5px;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+}
+.copy-prev-list-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.copy-prev-bulk {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.copy-prev-bulk-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+}
+.copy-prev-bulk-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.copy-prev-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 50vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+.copy-prev-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light, #F0EEEA);
+    background: var(--surface);
+    transition: background 150ms ease;
+}
+.copy-prev-item:last-child { border-bottom: none; }
+.copy-prev-item:not(.is-selected) {
+    opacity: 0.55;
+    background: var(--surface-elevated, #FAFAF9);
+}
+.copy-prev-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+}
+.copy-prev-item-label {
+    flex: 1;
+    min-width: 0;
+}
+.copy-prev-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.copy-prev-item-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.copy-prev-item-hours {
+    width: 72px;
+    padding: 5px 8px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-variant-numeric: tabular-nums;
+}
+.copy-prev-item-unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.copy-prev-summary {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--accent-light, rgba(45, 90, 39, 0.06));
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.copy-prev-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-elevated, #FAFAF9);
+}
+
+@media (max-width: 768px) {
+    .copy-prev-controls {
+        grid-template-columns: 1fr;
+    }
+    .copy-prev-item-hours {
+        width: 64px;
+    }
+    .copy-prev-item-title {
+        font-size: 12px;
+    }
+}
+
 /* ---- [G-20] 未入力日ハイライト ---- */
 .missing-days-banner {
     display: flex;

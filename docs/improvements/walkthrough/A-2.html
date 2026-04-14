@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A-2 前日コピー機能 — 動作確認ガイド</title>
+<style>
+:root {
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F2EC;
+  --border: #E5DFD2;
+  --text-primary: #2A2520;
+  --text-secondary: #6B6258;
+  --text-muted: #9B9286;
+  --accent: #2D5A27;
+  --accent-soft: #E8F0E6;
+  --accent-light: #F2F7F0;
+  --success: #2D5A27;
+  --success-light: #E8F0E6;
+  --warning: #C2410C;
+  --warning-light: #FEF3E2;
+  --info: #1E3A5F;
+  --info-light: #DDE4EE;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, sans-serif;
+  background: var(--bg); color: var(--text-primary); line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.hero {
+  padding: 56px 24px 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+}
+.hero-inner { max-width: 980px; margin: 0 auto; }
+.hero-meta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 12px; background: var(--accent-soft); color: var(--accent);
+  border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.05em; margin-bottom: 16px;
+}
+.hero-meta::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.2; }
+.hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 720px; }
+.hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
+.hero-stat { display: flex; flex-direction: column; gap: 2px; }
+.hero-stat-label {
+  font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 600;
+}
+.hero-stat-value { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+.container { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+.section { margin-bottom: 56px; }
+.section-title {
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+}
+.section-title::before {
+  content: ""; width: 4px; height: 24px; background: var(--accent); border-radius: 2px;
+}
+.section-desc { color: var(--text-secondary); margin-bottom: 24px; margin-left: 16px; }
+
+.tldr {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 48px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+.tldr-block h3 {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
+}
+.tldr-block p { font-size: 0.95rem; color: var(--text-primary); }
+.tldr-block ul { list-style: none; padding: 0; }
+.tldr-block li {
+  font-size: 0.9rem; padding: 4px 0 4px 18px; position: relative; color: var(--text-primary);
+}
+.tldr-block li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+
+.step {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 24px; overflow: hidden;
+}
+.step-header {
+  padding: 20px 24px; display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--border); background: var(--surface-alt);
+}
+.step-number {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.95rem; flex-shrink: 0;
+}
+.step-title-group h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+.step-title-group p { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
+.step-body { padding: 24px; }
+
+.ops {
+  list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+}
+.ops li { display: flex; gap: 12px; font-size: 0.95rem; align-items: baseline; }
+.ops .ops-marker {
+  flex-shrink: 0; font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: var(--accent); background: var(--accent-soft);
+  padding: 1px 8px; border-radius: 4px; min-width: 28px; text-align: center;
+}
+.ops kbd {
+  display: inline-block; padding: 2px 8px; background: var(--surface);
+  border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+}
+
+/* ===== UI Mockup ===== */
+.mockup-frame {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  margin: 20px 0;
+}
+.mockup-label {
+  font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 600; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.mockup-label::before {
+  content: ""; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent);
+}
+.mockup-tab-hint {
+  font-size: 11px; color: var(--text-muted); margin-bottom: 16px;
+  padding: 8px 12px; background: var(--surface-alt); border-radius: 6px;
+  border-left: 3px solid var(--info);
+}
+
+.mock-quick-form {
+  display: grid;
+  grid-template-columns: 120px 1fr 110px 110px 110px;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  background: var(--surface-alt);
+  border-radius: 8px;
+}
+.mock-field label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.mock-field .mock-input {
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.mock-btn-primary {
+  padding: 7px 14px;
+  background: var(--accent);
+  color: white;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.mock-copy-link {
+  margin-top: 14px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.mock-copy-link.highlight {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 4px rgba(45, 90, 39, 0.1);
+}
+.mock-copy-link::before {
+  content: "◇";
+  font-size: 10px;
+}
+
+/* Modal mockup */
+.mock-modal {
+  max-width: 620px;
+  margin: 20px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+.mock-modal-head {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.mock-modal-head h4 { font-size: 1.05rem; font-weight: 700; }
+.mock-modal-close {
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.mock-modal-body { padding: 20px; }
+
+.mock-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.mock-control-field label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+.mock-control-value {
+  padding: 7px 10px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.mock-control-select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12.5px;
+  background: var(--surface);
+  font-family: inherit;
+  cursor: default;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mock-control-select::after {
+  content: "▾";
+  color: var(--text-muted);
+  margin-left: 8px;
+  font-size: 10px;
+}
+
+.mock-list-head {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mock-bulk {
+  display: flex; gap: 8px; margin-bottom: 8px;
+}
+.mock-bulk-btn {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.mock-list {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.mock-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.mock-item:last-child { border-bottom: none; }
+.mock-item.deselected {
+  opacity: 0.5;
+  background: var(--surface-alt);
+}
+.mock-check {
+  width: 16px; height: 16px;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.mock-item.deselected .mock-check {
+  background: var(--surface);
+  color: transparent;
+}
+.mock-item-info { flex: 1; min-width: 0; }
+.mock-item-title { font-size: 13px; font-weight: 500; }
+.mock-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.mock-item-hours {
+  width: 70px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: monospace;
+  background: var(--surface);
+}
+.mock-unit { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+.mock-summary {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.mock-modal-foot {
+  padding: 14px 20px;
+  background: var(--surface-alt);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.mock-btn-secondary {
+  padding: 7px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.verify {
+  background: var(--success-light);
+  border-left: 3px solid var(--success);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+}
+.verify-title {
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--success); margin-bottom: 8px;
+}
+.verify ul { list-style: none; padding: 0; }
+.verify li {
+  font-size: 0.92rem; padding: 4px 0 4px 26px; position: relative; color: var(--text-primary);
+}
+.verify li::before {
+  content: ""; position: absolute; left: 0; top: 9px;
+  width: 16px; height: 16px; border: 2px solid var(--success);
+  border-radius: 3px; background: var(--surface);
+}
+
+.note {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  background: var(--info-light);
+  border-left: 3px solid var(--info);
+  border-radius: 6px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.note-icon { flex-shrink: 0; color: var(--info); font-weight: bold; }
+
+.setup-block {
+  background: #1A1814;
+  color: #E8E6E3;
+  border-radius: 10px;
+  padding: 20px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.setup-block .comment { color: #6B6258; font-style: italic; }
+
+.footer-nav {
+  margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.footer-nav a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; text-decoration: none; color: var(--text-primary);
+  font-size: 0.9rem; font-weight: 500; transition: all 200ms;
+}
+.footer-nav a:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+
+@media (max-width: 768px) {
+  h1 { font-size: 1.75rem; }
+  .container { padding: 32px 16px 64px; }
+  .tldr { grid-template-columns: 1fr; }
+  .step-body { padding: 16px; }
+  .mock-quick-form { grid-template-columns: 1fr 1fr; }
+  .mock-controls { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-meta">A-2 · UX · 最高優先度</span>
+    <h1>前日の実績をまとめてコピー</h1>
+    <p class="hero-sub">
+      前営業日の実績をコピーして、必要な箇所だけ編集して登録できる機能。
+      「昨日と同じ作業」「週末明けにまとめ入力」の場面で入力時間を大幅に削減します。
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-label">実装日</span>
+        <span class="hero-stat-value">2026-04-14</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">削減効果</span>
+        <span class="hero-stat-value">1日の入力: 5タスク×5クリック → 1クリック</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">対応範囲</span>
+        <span class="hero-stat-value">クイック入力タブ</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">関連ファイル</span>
+        <span class="hero-stat-value">js/copy-previous.js (新規) · index.html · style.css</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tldr">
+    <div class="tldr-block">
+      <h3>このページの目的</h3>
+      <p>
+        前日コピー機能のUIと動作を、UIモックアップと実際の操作ステップで確認します。
+        特に「コピー元の自動選択」「バリデーション連動」に注目してください。
+      </p>
+    </div>
+    <div class="tldr-block">
+      <h3>確認するシナリオ</h3>
+      <ul>
+        <li>基本: 前営業日をそのままコピー</li>
+        <li>選択: 一部だけ選んでコピー + 時間調整</li>
+        <li>日付変更: 別の日からコピー</li>
+        <li>バリデーション: 重複警告と連動</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- UI Placement -->
+  <section class="section">
+    <h2 class="section-title">UIの配置</h2>
+    <p class="section-desc">起動ボタンはクイック入力フォームの直下に配置</p>
+
+    <div class="step">
+      <div class="step-body">
+        <div class="mockup-frame">
+          <div class="mockup-label">クイック入力タブ → 実績入力モード</div>
+          <div class="mock-tab-hint">
+            サイドバー「クイック入力」→ セグメント「実績入力」を選択した画面の抜粋
+          </div>
+
+          <div class="mock-quick-form">
+            <div class="mock-field">
+              <label>作業日</label>
+              <div class="mock-input">2026-04-14</div>
+            </div>
+            <div class="mock-field">
+              <label>対応</label>
+              <div class="mock-input" style="font-family: inherit;">v2.0 - ログイン画面 [PG]</div>
+            </div>
+            <div class="mock-field">
+              <label>担当</label>
+              <div class="mock-input" style="font-family: inherit;">森</div>
+            </div>
+            <div class="mock-field">
+              <label>時間 (h)</label>
+              <div class="mock-input">8</div>
+            </div>
+            <div class="mock-btn-primary">記録する</div>
+          </div>
+
+          <div class="mock-copy-link highlight">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            前日の実績をまとめてコピー
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>
+            新規ボタンは<strong>dashed border</strong>で控えめにデザインし、通常の入力フローを邪魔しないようにしています。
+            ホバーすると色が濃くなり、フォーカスを受けることが分かります。
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 1: Basic flow -->
+  <section class="section">
+    <h2 class="section-title">シナリオ1: 基本フロー</h2>
+    <p class="section-desc">前営業日の実績を全部コピーして今日に登録する</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title-group">
+          <h3>「前日の実績をまとめてコピー」をクリック</h3>
+          <p>モーダルが開き、前営業日の実績が一覧表示される</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup-frame">
+          <div class="mockup-label">モーダル画面</div>
+
+          <div class="mock-modal">
+            <div class="mock-modal-head">
+              <h4>前日の実績をコピー</h4>
+              <div class="mock-modal-close">×</div>
+            </div>
+            <div class="mock-modal-body">
+              <div class="mock-controls">
+                <div class="mock-control-field">
+                  <label>コピー先（今回登録する日）</label>
+                  <div class="mock-control-value">2026-04-14 (火)</div>
+                </div>
+                <div class="mock-control-field">
+                  <label>メンバー</label>
+                  <div class="mock-control-select">森</div>
+                </div>
+                <div class="mock-control-field">
+                  <label>コピー元の日付</label>
+                  <div class="mock-control-select">2026-04-11 (金) — 3件</div>
+                </div>
+              </div>
+
+              <div class="mock-list-head">コピーする実績を選択（2026-04-11 から 2026-04-14 へ）</div>
+              <div class="mock-bulk">
+                <div class="mock-bulk-btn">すべて選択</div>
+                <div class="mock-bulk-btn">すべて解除</div>
+              </div>
+
+              <div class="mock-list">
+                <div class="mock-item">
+                  <div class="mock-check">✓</div>
+                  <div class="mock-item-info">
+                    <div class="mock-item-title">v2.0 / ログイン画面 / PG</div>
+                    <div class="mock-item-meta">森</div>
+                  </div>
+                  <div class="mock-item-hours">3.0</div>
+                  <span class="mock-unit">h</span>
+                </div>
+                <div class="mock-item">
+                  <div class="mock-check">✓</div>
+                  <div class="mock-item-info">
+                    <div class="mock-item-title">v2.0 / API設計 / UI</div>
+                    <div class="mock-item-meta">森</div>
+                  </div>
+                  <div class="mock-item-hours">4.0</div>
+                  <span class="mock-unit">h</span>
+                </div>
+                <div class="mock-item">
+                  <div class="mock-check">✓</div>
+                  <div class="mock-item-info">
+                    <div class="mock-item-title">v2.0 / 会議 / その他</div>
+                    <div class="mock-item-meta">森</div>
+                  </div>
+                  <div class="mock-item-hours">1.0</div>
+                  <span class="mock-unit">h</span>
+                </div>
+              </div>
+
+              <div class="mock-summary">選択中: 3件 / 合計 8.0h</div>
+            </div>
+            <div class="mock-modal-foot">
+              <div class="mock-btn-secondary">キャンセル</div>
+              <div class="mock-btn-primary" style="padding: 7px 16px;">コピーして登録</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>モーダルが開き、コピー元の日付が前営業日（土日スキップ）になっている</li>
+            <li>前日の実績が全件デフォルトで選択済み（チェックON）</li>
+            <li>選択件数と合計時間が下部に表示</li>
+            <li>メンバーはクイック入力で選択中のメンバー or 最も最近のメンバー</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title-group">
+          <h3>「コピーして登録」で3件まとめて登録</h3>
+          <p>選択した全件が今日の日付で作成される</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>モーダルが閉じる</li>
+            <li>「3件をコピー作成しました」のトースト通知</li>
+            <li>「今日の入力済み実績」セクションに3件追加されている</li>
+            <li>Ctrl+Zで3件まとめてundoできる</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 2: Partial selection -->
+  <section class="section">
+    <h2 class="section-title">シナリオ2: 一部だけ選んでコピー</h2>
+    <p class="section-desc">不要なタスクを除外し、時間を調整してから登録</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title-group">
+          <h3>会議の行のチェックを外す + ログインの時間を 5h に変更</h3>
+        </div>
+      </div>
+      <div class="step-body">
+
+        <div class="mockup-frame">
+          <div class="mockup-label">選択後の状態</div>
+
+          <div class="mock-list">
+            <div class="mock-item">
+              <div class="mock-check">✓</div>
+              <div class="mock-item-info">
+                <div class="mock-item-title">v2.0 / ログイン画面 / PG</div>
+                <div class="mock-item-meta">森</div>
+              </div>
+              <div class="mock-item-hours" style="border-color: var(--accent); background: var(--accent-light);">5.0</div>
+              <span class="mock-unit">h</span>
+            </div>
+            <div class="mock-item">
+              <div class="mock-check">✓</div>
+              <div class="mock-item-info">
+                <div class="mock-item-title">v2.0 / API設計 / UI</div>
+                <div class="mock-item-meta">森</div>
+              </div>
+              <div class="mock-item-hours">4.0</div>
+              <span class="mock-unit">h</span>
+            </div>
+            <div class="mock-item deselected">
+              <div class="mock-check">✓</div>
+              <div class="mock-item-info">
+                <div class="mock-item-title">v2.0 / 会議 / その他</div>
+                <div class="mock-item-meta">森</div>
+              </div>
+              <div class="mock-item-hours">1.0</div>
+              <span class="mock-unit">h</span>
+            </div>
+          </div>
+
+          <div class="mock-summary">選択中: 2件 / 合計 9.0h</div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>チェックを外した行は半透明になる</li>
+            <li>時間を直接編集できる（0.25h単位）</li>
+            <li>合計時間が自動再計算される</li>
+            <li>「コピーして登録」で選択された2件のみ登録される</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 3: Date switching -->
+  <section class="section">
+    <h2 class="section-title">シナリオ3: 別の日からコピー</h2>
+    <p class="section-desc">「コピー元の日付」ドロップダウンで過去30日から選択</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title-group">
+          <h3>ドロップダウンで別の日付を選択</h3>
+          <p>実績がある日だけが表示される（件数付き）</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="ops">
+          <li><span class="ops-marker">4.1</span><span>「コピー元の日付」ドロップダウンを開く</span></li>
+          <li><span class="ops-marker">4.2</span><span>過去30日で実績がある日の一覧が表示（件数付き）</span></li>
+          <li><span class="ops-marker">4.3</span><span>別の日（例: 2026-04-07 の実績）を選択</span></li>
+          <li><span class="ops-marker">4.4</span><span>リストが更新される</span></li>
+        </ul>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>ドロップダウンに実績がある日だけ表示される</li>
+            <li>選択した日の実績がリストに表示される</li>
+            <li>日付切替時に選択状態はリセットされる（全件デフォルト選択）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 4: Validation integration -->
+  <section class="section">
+    <h2 class="section-title">シナリオ4: バリデーション連動</h2>
+    <p class="section-desc">H-24で作ったバリデーションが、コピー時にも働く</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title-group">
+          <h3>今日に既に実績がある状態でコピーを実行</h3>
+          <p>重複警告が1つのダイアログに集約される</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="ops">
+          <li><span class="ops-marker">5.1</span><span>今日に「ログイン画面/PG」で実績を1件入力しておく</span></li>
+          <li><span class="ops-marker">5.2</span><span>前日コピーでログイン画面/PGが含まれる日を選択</span></li>
+          <li><span class="ops-marker">5.3</span><span>「コピーして登録」 → 重複警告ダイアログ</span></li>
+        </ul>
+
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>
+            複数件の警告は1つのダイアログに集約されるため、ダイアログの連鎖でユーザーを疲弊させません。
+            「OK」で全件登録、「キャンセル」で全件登録せず。個別選択はできません（モーダルに戻って個別にチェックを外す想定）。
+          </span>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>重複がある件について「既にN件登録されています」の警告</li>
+            <li>24時間超過などのエラーがあれば中止され、該当件がリストアップされる</li>
+            <li>エラーがある場合は警告も表示されない（エラー優先）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Setup -->
+  <section class="section">
+    <h2 class="section-title">テスト用データの準備</h2>
+    <p class="section-desc">前営業日に実績がある状態をセットアップ</p>
+
+    <div class="step">
+      <div class="step-body">
+        <div class="setup-block"><span class="comment">// 前営業日に3件の実績を作成</span>
+const today = new Date();
+const prev = new Date(today);
+do { prev.setDate(prev.getDate() - 1); }
+while (prev.getDay() === 0 || prev.getDay() === 6);
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const prevStr = ymd(prev);
+
+localStorage.setItem('manhour_estimates', JSON.stringify([
+  { id: 'e1', version: 'v2.0', task: 'ログイン画面', process: 'PG',
+    member: '森', hours: 40,
+    workMonths: [`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`] },
+  { id: 'e2', version: 'v2.0', task: 'API設計', process: 'UI',
+    member: '森', hours: 30,
+    workMonths: [`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`] },
+]));
+localStorage.setItem('manhour_actuals', JSON.stringify([
+  { id: 1, date: prevStr, version: 'v2.0', task: 'ログイン画面',
+    process: 'PG', member: '森', hours: 3.0, createdAt: new Date().toISOString() },
+  { id: 2, date: prevStr, version: 'v2.0', task: 'API設計',
+    process: 'UI', member: '森', hours: 4.0, createdAt: new Date().toISOString() },
+  { id: 3, date: prevStr, version: '', task: '会議',
+    process: '', member: '森', hours: 1.0, createdAt: new Date().toISOString() }
+]));
+location.reload();</div>
+
+        <p style="margin: 16px 0 8px;">確認の流れ:</p>
+        <ul class="ops">
+          <li><span class="ops-marker">1</span><span>クイック入力タブ → 実績入力モード</span></li>
+          <li><span class="ops-marker">2</span><span>「前日の実績をまとめてコピー」をクリック</span></li>
+          <li><span class="ops-marker">3</span><span>モーダル内で各シナリオを試す</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feedback -->
+  <section class="section">
+    <h2 class="section-title">フィードバック</h2>
+    <p class="section-desc">特に気になる判断ポイント</p>
+
+    <div class="step">
+      <div class="step-body">
+        <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q1</strong>: 起動ボタンの位置（フォーム下）は適切ですか？<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">候補: フォーム上, 作業日の隣, サイドバーのショートカット</span>
+          </li>
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q2</strong>: デフォルトの「全件選択済み」は使いやすいですか？<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">逆に「全件未選択」も検討対象。実際のユースケースに合わせて</span>
+          </li>
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q3</strong>: 「1クリックで前日丸ごとコピー」ボタンも欲しいですか？<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">モーダルを開かずに即コピー完了する超時短機能</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <nav class="footer-nav">
+    <a href="./H-24.html">← 前: H-24 バリデーション</a>
+    <a href="./index.html">一覧に戻る</a>
+  </nav>
+
+</div>
+
+</body>
+</html>

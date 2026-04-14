@@ -15,6 +15,7 @@ import * as Quick from './quick.js';
 import * as Report from './report.js';
 import * as EstimateAdd from './estimate-add.js';
 import * as OtherWork from './other-work.js';
+import * as CopyPrevious from './copy-previous.js';
 import * as TabFilter from './tab-filter.js';
 import * as Modal from './modal.js';
 import * as EstimateEdit from './estimate-edit.js';
@@ -321,6 +322,10 @@ window.addOtherWork = OtherWork.addOtherWork;
 window.openOtherWorkModal = OtherWork.openOtherWorkModal;
 window.closeOtherWorkModal = OtherWork.closeOtherWorkModal;
 window.switchOtherWorkTab = OtherWork.switchOtherWorkTab;
+
+// [A-2] copy-previous.js の関数
+window.openCopyPreviousModal = CopyPrevious.openCopyPreviousModal;
+window.closeCopyPreviousModal = CopyPrevious.closeCopyPreviousModal;
 
 
 // modal.js の関数
