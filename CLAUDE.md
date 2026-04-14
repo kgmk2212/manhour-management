@@ -13,6 +13,7 @@
 |----------|------|----------|
 | `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
 | `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須） |
+| `experiment/redesign-impl` | 改善提案の実装 | `docs/improvements/` に基づく段階的実装 |
 | `experiment/fixes` | 一括修正 | redesignベースの各種修正をまとめて試験 |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
 
@@ -26,6 +27,7 @@
 |-------------|---------|------|
 | `manhour-management` | `main` | 安定版（メイン） |
 | `manhour-redesign` | `experiment/redesign` | リデザイン実験 |
+| `manhour-impl` | `experiment/redesign-impl` | 改善提案の実装 |
 | `manhour-fixes` | `experiment/fixes` | 一括修正 |
 | `manhour-experiment` | `experiment/sandbox` | 実験用 |
 
@@ -42,7 +44,8 @@ git branch
 |-------------------|--------------|
 | バグ修正、表示の微調整 | `main` |
 | 既存機能（見積・実績・レポート・スケジュール）の改善 | `main` |
-| UI/UXのリデザイン | `experiment/redesign` |
+| UI/UXのリデザイン（設計書作成） | `experiment/redesign` |
+| 改善提案書（`docs/improvements/`）の実装 | `experiment/redesign-impl` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
 
 **判断に迷う場合**: ユーザーに確認してください。
@@ -60,6 +63,28 @@ git branch
 - **破壊的変更OK**: 大胆なリファクタリングや設計変更を試せる
 - **自動デプロイ**: コミット・プッシュ完了時は、mainに空コミット＆プッシュしてGitHub Pagesデプロイを発火させる（`cd ../manhour-management && git commit --allow-empty -m "deploy: trigger Pages rebuild" && git push origin main`）
 - **mainへのマージ禁止**: ユーザーの明示的な指示がない限り、redesignの変更をmainにマージしない
+
+---
+
+## experiment/redesign-impl ブランチでの開発
+
+`experiment/redesign-impl` ブランチは、`docs/improvements/` に記載された改善提案（113件、10カテゴリ）を段階的に実装するためのブランチです。
+
+### 実装ブランチのルール
+
+- **1改善項目 = 1コミット**: コミットメッセージは `feat(<ID>): <説明>` 形式（ID例: `A-1`, `B-6-1`）
+- **設計メモ必須**: 実装前に `docs/improvements/memos/<ID>.md` を作成（`_template.md` を利用）
+- **進捗ログ更新**: 実装後に `docs/improvements/progress.md` を更新
+- **Before/Afterスクショ**: `docs/improvements/screenshots/<ID>-*.png` に保存（Playwright活用）
+- **frontend-designスキル必須**: UI変更を伴う作業では必ず `frontend-design` スキルを使用
+- **保留判断**: ユーザー確認が必要な判断は `decisions-pending.md` に記録して仮実装で進行
+- **デプロイ**: `./scripts/deploy.sh "commit message"` で一括（impl push + main空コミット push）
+- **詳細な運用**: `docs/improvements/WORKFLOW.md` を参照
+
+### 設計書との関係
+
+- `docs/improvements/01-10.md`: 設計書の正本（`experiment/redesign` ブランチで管理）
+- このブランチでは設計書を**参照のみ**。設計書の修正は `experiment/redesign` で行い、このブランチにmergeして取り込む
 
 ---
 
