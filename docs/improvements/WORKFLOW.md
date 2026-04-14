@@ -146,6 +146,18 @@ docs/improvements/
 3. `experiment/redesign-impl` をpush
 4. `main` に空コミット + push（GitHub Pages再ビルド発火）
 
+### ライブ環境のURL
+
+| 環境 | URL | ソースブランチ |
+|------|-----|---------------|
+| **本番** | https://kgmk2212.github.io/manhour-management/ | `main` |
+| **実装プレビュー** | https://kgmk2212.github.io/manhour-management/preview/redesign-impl/ | `experiment/redesign-impl` |
+| **リデザインプレビュー** | https://kgmk2212.github.io/manhour-management/preview/redesign/ | `experiment/redesign` |
+| **サンドボックス** | https://kgmk2212.github.io/manhour-management/preview/sandbox/ | `experiment/sandbox` |
+
+デプロイは main ブランチへのpush時（または空コミット）にGitHub Actionsが発火。
+各ブランチの最新版が対応する `/preview/*/` 配下に自動配信される。
+
 ### 手動デプロイ（既存コミットを再デプロイしたい時）
 ```bash
 ./scripts/deploy.sh --redeploy-only

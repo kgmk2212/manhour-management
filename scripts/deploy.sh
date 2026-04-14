@@ -139,6 +139,7 @@ deploy_to_pages() {
   cd "$REPO_DIR"
   ok "Pagesデプロイを発火しました"
   info "デプロイ状況: https://github.com/kgmk2212/manhour-management/actions"
+  info "プレビューURL: https://kgmk2212.github.io/manhour-management/preview/redesign-impl/"
 }
 
 case $MODE in
