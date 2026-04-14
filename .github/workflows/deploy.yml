@@ -61,6 +61,13 @@ jobs:
           path: experiment-analytics
         continue-on-error: true
 
+      - name: Checkout experiment/redesign-impl branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/redesign-impl
+          path: experiment-redesign-impl
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -101,6 +108,15 @@ jobs:
             echo "✅ experiment/analytics をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/analytics ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/redesign-implブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-redesign-impl" ]; then
+            mkdir -p deploy/preview/redesign-impl
+            cp -r experiment-redesign-impl/* deploy/preview/redesign-impl/
+            echo "✅ experiment/redesign-impl をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/redesign-impl ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
