@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工数管理システム 改善提案書</title>
+<style>
+:root {
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --surface-elevated: #F5F4F0;
+  --border: #E5E3DE;
+  --text-primary: #1A1814;
+  --text-secondary: #5C5852;
+  --text-muted: #8E8A84;
+  --accent: #2D5A27;
+  --accent-light: #E8F0E6;
+  --accent-hover: #1F4019;
+
+  --priority-highest: #B91C1C;
+  --priority-high: #C2410C;
+  --priority-medium: #A16207;
+  --priority-low: #4B5563;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+
+  --radius: 8px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* === Hero Section === */
+.hero {
+  text-align: center;
+  padding: 80px 24px 60px;
+  background: linear-gradient(180deg, var(--accent-light) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--accent);
+  color: white;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.hero h1 {
+  font-size: 2.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+  margin: 0 auto 40px;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.hero-stat-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* === Section === */
+.section {
+  margin-bottom: 72px;
+}
+
+.section-header {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.section-description {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-left: 16px;
+}
+
+/* === Evaluation Grid === */
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.eval-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 200ms ease;
+}
+
+.eval-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.eval-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.eval-rating {
+  font-size: 1.2rem;
+  color: #D97706;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.eval-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* === Category Cards === */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.category-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  transition: all 250ms ease;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.category-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--card-accent, var(--accent));
+}
+
+.category-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--card-accent, var(--accent));
+}
+
+.category-letter {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card-accent-bg, var(--accent-light));
+  color: var(--card-accent, var(--accent));
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.category-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.category-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.category-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.category-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.category-count strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
+.priority-tag {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.priority-highest { background: #FEE2E2; color: var(--priority-highest); }
+.priority-high    { background: #FFEDD5; color: var(--priority-high); }
+.priority-medium  { background: #FEF3C7; color: var(--priority-medium); }
+.priority-low     { background: #F3F4F6; color: var(--priority-low); }
+
+/* Category color variants */
+.cat-a { --card-accent: #2D5A27; --card-accent-bg: #E8F0E6; }
+.cat-b { --card-accent: #1D6FA5; --card-accent-bg: #E1EEF7; }
+.cat-c { --card-accent: #7C3AED; --card-accent-bg: #EDE4FE; }
+.cat-d { --card-accent: #C4841D; --card-accent-bg: #FDF2DD; }
+.cat-e { --card-accent: #BE185D; --card-accent-bg: #FCE7F0; }
+.cat-f { --card-accent: #0F766E; --card-accent-bg: #D9F2F0; }
+.cat-g { --card-accent: #475569; --card-accent-bg: #E3E8ED; }
+.cat-h { --card-accent: #1E3A5F; --card-accent-bg: #DDE4EE; }
+.cat-i { --card-accent: #92400E; --card-accent-bg: #FBE8D4; }
+.cat-j { --card-accent: #4338CA; --card-accent-bg: #E0E0FA; }
+
+/* === Phase Timeline === */
+.phase-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.phase-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.phase-number {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.phase-number::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: calc(100% - 8px);
+  background: var(--border);
+  margin-top: 4px;
+}
+
+.phase-row:last-child .phase-number::after {
+  display: none;
+}
+
+.phase-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  flex: 1;
+}
+
+.phase-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.phase-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.phase-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.phase-item {
+  background: var(--surface-elevated);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.phase-item-name {
+  font-weight: 500;
+}
+
+.phase-item-cost {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* === Top Improvements === */
+.top-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.top-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  transition: all 200ms ease;
+}
+
+.top-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.top-rank {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: var(--accent);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.top-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+
+.top-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.top-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.top-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.top-tag {
+  padding: 2px 8px;
+  background: var(--surface-elevated);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* === Stats Bar === */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+
+.stat-cell {
+  background: var(--surface);
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* === Footer === */
+.footer {
+  text-align: center;
+  padding: 48px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 72px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 150ms;
+}
+
+.footer-link:hover {
+  color: var(--accent);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+  .container { padding: 24px 16px; }
+  .hero h1 { font-size: 2rem; }
+  .hero-stats { gap: 24px; }
+  .hero-stat-value { font-size: 2rem; }
+  .phase-row { grid-template-columns: 56px 1fr; gap: 16px; }
+  .phase-number { width: 56px; height: 56px; font-size: 1.1rem; }
+  .category-grid { grid-template-columns: 1fr; }
+}
+
+/* === Navigation Anchor === */
+.nav-sticky {
+  position: sticky;
+  top: 0;
+  background: rgba(250, 250, 248, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  z-index: 10;
+  margin-bottom: 32px;
+}
+
+.nav-sticky-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.nav-link {
+  padding: 6px 14px;
+  border-radius: 100px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 150ms;
+}
+
+.nav-link:hover {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<section class="hero">
+  <span class="hero-badge">Proposal · 2026-04-14</span>
+  <h1>工数管理システム 改善提案</h1>
+  <p class="hero-subtitle">
+    現行システムの詳細分析に基づき、ユーザー体験・機能性・保守性の観点から<br>
+    113件の改善提案をまとめた総合ドキュメント
+  </p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <span class="hero-stat-value">113</span>
+      <span class="hero-stat-label">改善提案</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value">10</span>
+      <span class="hero-stat-label">カテゴリ</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value">4</span>
+      <span class="hero-stat-label">実装フェーズ</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value">~6,800</span>
+      <span class="hero-stat-label">設計書行数</span>
+    </div>
+  </div>
+</section>
+
+<!-- Sticky Navigation -->
+<nav class="nav-sticky">
+  <div class="nav-sticky-inner">
+    <a href="#evaluation" class="nav-link">現状評価</a>
+    <a href="#categories" class="nav-link">カテゴリ一覧</a>
+    <a href="#top" class="nav-link">優先改善</a>
+    <a href="#roadmap" class="nav-link">ロードマップ</a>
+    <a href="#docs" class="nav-link">設計書</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Current Evaluation -->
+  <section class="section" id="evaluation">
+    <div class="section-header">
+      <h2 class="section-title">現状のシステム評価</h2>
+      <p class="section-description">8つの観点から現行システムを評価</p>
+    </div>
+    <div class="eval-grid">
+      <div class="eval-card">
+        <div class="eval-label">機能性</div>
+        <div class="eval-rating">★★★★☆</div>
+        <div class="eval-note">見積・実績・スケジュール・レポートの基本機能が充実</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">使いやすさ</div>
+        <div class="eval-rating">★★★☆☆</div>
+        <div class="eval-note">データ入力の負担が大きい、ナビゲーションに改善余地</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">保守性</div>
+        <div class="eval-rating">★★☆☆☆</div>
+        <div class="eval-note">ui.js 4,269行など巨大ファイル、テストがゼロ</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">アクセシビリティ</div>
+        <div class="eval-rating">★☆☆☆☆</div>
+        <div class="eval-note">ARIA属性2箇所のみ、キーボード操作未対応</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">パフォーマンス</div>
+        <div class="eval-rating">★★★☆☆</div>
+        <div class="eval-note">大量データ時のDOM全再構築が課題</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">デザイン</div>
+        <div class="eval-rating">★★★★☆</div>
+        <div class="eval-note">9テーマ対応、ただしダークモード未実装</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">モバイル</div>
+        <div class="eval-rating">★★★★☆</div>
+        <div class="eval-note">レスポンシブ対応済み、入力体験に改善余地</div>
+      </div>
+      <div class="eval-card">
+        <div class="eval-label">データ管理</div>
+        <div class="eval-rating">★★★☆☆</div>
+        <div class="eval-note">localStorage制限、バリデーション不足</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-cell">
+      <div class="stat-value">31K</div>
+      <div class="stat-label">JS総行数</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">7.8K</div>
+      <div class="stat-label">CSS総行数</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">19</div>
+      <div class="stat-label">JSモジュール</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">6</div>
+      <div class="stat-label">メインタブ</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">9</div>
+      <div class="stat-label">テーマカラー</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">0</div>
+      <div class="stat-label">テスト</div>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <section class="section" id="categories">
+    <div class="section-header">
+      <h2 class="section-title">改善カテゴリ一覧</h2>
+      <p class="section-description">10カテゴリ、合計113件の改善提案</p>
+    </div>
+    <div class="category-grid">
+
+      <a class="category-card cat-a" href="01-ux-improvements.md">
+        <div class="category-letter">A</div>
+        <div class="category-name">UX改善</div>
+        <div class="category-desc">データ入力の負担軽減、ナビゲーション改善、フィードバックの強化でユーザー体験を向上</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>12件</strong>の提案</span>
+          <span class="priority-tag priority-highest">最高</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-b" href="02-feature-enhancements.md">
+        <div class="category-letter">B</div>
+        <div class="category-name">機能拡張</div>
+        <div class="category-desc">コラボレーション、レポート強化、スケジュール管理、データ堅牢化など機能面の拡充</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>16件</strong>の提案</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-c" href="03-visual-design.md">
+        <div class="category-letter">C</div>
+        <div class="category-name">ビジュアル・デザイン</div>
+        <div class="category-desc">ダークモード、情報密度の最適化、ヒートマップなどの高度なデータ可視化</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>9件</strong>の提案</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-d" href="04-accessibility.md">
+        <div class="category-letter">D</div>
+        <div class="category-name">アクセシビリティ</div>
+        <div class="category-desc">ARIA対応、キーボード操作、色に頼らない表示でWCAG AA準拠を目指す</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>11件</strong>の提案</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-e" href="05-performance.md">
+        <div class="category-letter">E</div>
+        <div class="category-name">パフォーマンス</div>
+        <div class="category-desc">仮想スクロール、差分更新、Web Workerで大量データでも快適な動作を実現</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>7件</strong>の提案</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-f" href="06-code-quality.md">
+        <div class="category-letter">F</div>
+        <div class="category-name">コード品質</div>
+        <div class="category-desc">巨大ファイルの分割、テスト導入、エラーハンドリングで保守性を改善</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>9件</strong>の提案</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-g" href="07-operations.md">
+        <div class="category-letter">G</div>
+        <div class="category-name">運用・業務フロー</div>
+        <div class="category-desc">入力率向上、振り返り支援、多プロジェクト対応で実運用を強化</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>10件</strong>の提案</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-h" href="08-security.md">
+        <div class="category-letter">H</div>
+        <div class="category-name">セキュリティ・信頼性</div>
+        <div class="category-desc">暗号化バックアップ、重複検出、バリデーション強化でデータ保護</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>6件</strong>の提案</span>
+          <span class="priority-tag priority-low">低〜中</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-i" href="09-extensibility.md">
+        <div class="category-letter">I</div>
+        <div class="category-name">国際化・拡張性</div>
+        <div class="category-desc">多言語対応、工程カスタマイズ、外部ツール連携で柔軟性を確保</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>7件</strong>の提案</span>
+          <span class="priority-tag priority-low">低</span>
+        </div>
+      </a>
+
+      <a class="category-card cat-j" href="10-mobile.md">
+        <div class="category-letter">J</div>
+        <div class="category-name">モバイル体験</div>
+        <div class="category-desc">スワイプ操作、タイムトラッカー、オフライン対応でモバイル体験を向上</div>
+        <div class="category-meta">
+          <span class="category-count"><strong>5件</strong>の提案</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Top Priority Improvements -->
+  <section class="section" id="top">
+    <div class="section-header">
+      <h2 class="section-title">特に投資対効果が高い改善（Top 8）</h2>
+      <p class="section-description">効果とコストのバランスで優先度の高い改善</p>
+    </div>
+    <div class="top-grid">
+
+      <div class="top-card">
+        <div class="top-rank">1</div>
+        <div class="top-icon">📋</div>
+        <div class="top-title">テンプレート / 前日コピー</div>
+        <div class="top-desc">毎日の工数入力負担を50%削減。定型作業の繰り返し入力を解消</div>
+        <div class="top-tags">
+          <span class="top-tag">A-1</span>
+          <span class="top-tag">工数: 中</span>
+          <span class="top-tag">効果: 最大</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">2</div>
+        <div class="top-icon">🔴</div>
+        <div class="top-title">未入力日ハイライト</div>
+        <div class="top-desc">カレンダー上で入力忘れを視覚化。データ品質を大きく改善</div>
+        <div class="top-tags">
+          <span class="top-tag">G-20</span>
+          <span class="top-tag">工数: 小</span>
+          <span class="top-tag">効果: 大</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">3</div>
+        <div class="top-icon">🌙</div>
+        <div class="top-title">ダークモード</div>
+        <div class="top-desc">長時間作業の目の疲労を軽減。OSダークモード連動に対応</div>
+        <div class="top-tags">
+          <span class="top-tag">C-9</span>
+          <span class="top-tag">工数: 大</span>
+          <span class="top-tag">効果: 大</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">4</div>
+        <div class="top-icon">⚠️</div>
+        <div class="top-title">見積 vs 実績の乖離アラート</div>
+        <div class="top-desc">リアルタイムで見積超過を通知。PM本来の価値を引き出す</div>
+        <div class="top-tags">
+          <span class="top-tag">A-4</span>
+          <span class="top-tag">工数: 中</span>
+          <span class="top-tag">効果: 大</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">5</div>
+        <div class="top-icon">⌨️</div>
+        <div class="top-title">キーボード操作の完全対応</div>
+        <div class="top-desc">アクセシビリティの基盤。パワーユーザーの生産性も向上</div>
+        <div class="top-tags">
+          <span class="top-tag">D-13</span>
+          <span class="top-tag">工数: 大</span>
+          <span class="top-tag">効果: 大</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">6</div>
+        <div class="top-icon">📈</div>
+        <div class="top-title">時系列トレンドグラフ</div>
+        <div class="top-desc">週次/月次の工数推移で振り返りの質を向上</div>
+        <div class="top-tags">
+          <span class="top-tag">B-6-1</span>
+          <span class="top-tag">工数: 大</span>
+          <span class="top-tag">効果: 中</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">7</div>
+        <div class="top-icon">🔍</div>
+        <div class="top-title">グローバル検索</div>
+        <div class="top-desc">⌘Kでタスク・メンバーを横断検索。情報アクセス効率化</div>
+        <div class="top-tags">
+          <span class="top-tag">A-7</span>
+          <span class="top-tag">工数: 中</span>
+          <span class="top-tag">効果: 中</span>
+        </div>
+      </div>
+
+      <div class="top-card">
+        <div class="top-rank">8</div>
+        <div class="top-icon">📱</div>
+        <div class="top-title">PWA化 + タイムトラッカー</div>
+        <div class="top-desc">オフライン対応、プッシュ通知、ストップウォッチ機能</div>
+        <div class="top-tags">
+          <span class="top-tag">B-8-3, J-28-2</span>
+          <span class="top-tag">工数: 大</span>
+          <span class="top-tag">効果: 大</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section class="section" id="roadmap">
+    <div class="section-header">
+      <h2 class="section-title">実装ロードマップ</h2>
+      <p class="section-description">4フェーズに分けた段階的な改善計画</p>
+    </div>
+    <div class="phase-timeline">
+
+      <div class="phase-row">
+        <div class="phase-number">1</div>
+        <div class="phase-content">
+          <div class="phase-title">基盤整備</div>
+          <div class="phase-subtitle">技術的負債の解消とユーザー体験の基本改善 — 即座に着手可能</div>
+          <div class="phase-items">
+            <div class="phase-item">
+              <span class="phase-item-name">テンプレート / 前日コピー</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">未入力日ハイライト</span>
+              <span class="phase-item-cost">小</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">エラーハンドリング強化</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">重複データ検出</span>
+              <span class="phase-item-cost">小</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">バリデーション強化</span>
+              <span class="phase-item-cost">小</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">自動保存</span>
+              <span class="phase-item-cost">小</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-number">2</div>
+        <div class="phase-content">
+          <div class="phase-title">体験向上</div>
+          <div class="phase-subtitle">ユーザビリティとアクセシビリティの大幅改善 — Phase 1完了後</div>
+          <div class="phase-items">
+            <div class="phase-item">
+              <span class="phase-item-name">ダークモード</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">キーボード操作対応</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">見積乖離アラート</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">グローバル検索</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">ARIA対応</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">スワイプ操作拡充</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-number">3</div>
+        <div class="phase-content">
+          <div class="phase-title">分析力強化</div>
+          <div class="phase-subtitle">レポーティングとデータ可視化の充実 — Phase 2完了後</div>
+          <div class="phase-items">
+            <div class="phase-item">
+              <span class="phase-item-name">時系列トレンドグラフ</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">ヒートマップ表示</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">バーンダウンチャート</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">負荷バランス表示</span>
+              <span class="phase-item-cost">中</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">仮想スクロール</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">コード分割</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-number">4</div>
+        <div class="phase-content">
+          <div class="phase-title">拡張</div>
+          <div class="phase-subtitle">プラットフォーム化と外部連携 — Phase 3完了後</div>
+          <div class="phase-items">
+            <div class="phase-item">
+              <span class="phase-item-name">PWA化</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">IndexedDB移行</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">タイムトラッカー</span>
+              <span class="phase-item-cost">中〜大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">クリティカルパス</span>
+              <span class="phase-item-cost">大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">多プロジェクト対応</span>
+              <span class="phase-item-cost">特大</span>
+            </div>
+            <div class="phase-item">
+              <span class="phase-item-name">多言語対応</span>
+              <span class="phase-item-cost">特大</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Docs -->
+  <section class="section" id="docs">
+    <div class="section-header">
+      <h2 class="section-title">詳細設計書</h2>
+      <p class="section-description">各カテゴリの具体的な実装方針、データモデル、UIモックアップを含む設計書</p>
+    </div>
+    <div class="category-grid">
+      <a class="category-card cat-a" href="README.md">
+        <div class="category-letter">📄</div>
+        <div class="category-name">総合ガイド (README)</div>
+        <div class="category-desc">全体のロードマップ、評価サマリー、設計書の読み方など</div>
+        <div class="category-meta">
+          <span class="category-count">概要</span>
+          <span class="priority-tag priority-high">必読</span>
+        </div>
+      </a>
+      <a class="category-card cat-a" href="01-ux-improvements.md">
+        <div class="category-letter">01</div>
+        <div class="category-name">UX改善設計書</div>
+        <div class="category-desc">テンプレート、前日コピー、ショートカット、デフォルト値学習など</div>
+        <div class="category-meta">
+          <span class="category-count">29 KB</span>
+          <span class="priority-tag priority-highest">最高</span>
+        </div>
+      </a>
+      <a class="category-card cat-b" href="02-feature-enhancements.md">
+        <div class="category-letter">02</div>
+        <div class="category-name">機能拡張設計書</div>
+        <div class="category-desc">レポート強化、スケジュール管理、PWA、IndexedDB移行</div>
+        <div class="category-meta">
+          <span class="category-count">33 KB</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+      <a class="category-card cat-c" href="03-visual-design.md">
+        <div class="category-letter">03</div>
+        <div class="category-name">ビジュアル設計書</div>
+        <div class="category-desc">ダークモード、ヒートマップ、バーンダウンなどの可視化</div>
+        <div class="category-meta">
+          <span class="category-count">21 KB</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+      <a class="category-card cat-d" href="04-accessibility.md">
+        <div class="category-letter">04</div>
+        <div class="category-name">アクセシビリティ設計書</div>
+        <div class="category-desc">ARIA、フォーカストラップ、キーボード操作の完全対応</div>
+        <div class="category-meta">
+          <span class="category-count">19 KB</span>
+          <span class="priority-tag priority-high">高</span>
+        </div>
+      </a>
+      <a class="category-card cat-e" href="05-performance.md">
+        <div class="category-letter">05</div>
+        <div class="category-name">パフォーマンス設計書</div>
+        <div class="category-desc">仮想スクロール、差分更新、Web Worker、インデックス</div>
+        <div class="category-meta">
+          <span class="category-count">19 KB</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+      <a class="category-card cat-f" href="06-code-quality.md">
+        <div class="category-letter">06</div>
+        <div class="category-name">コード品質設計書</div>
+        <div class="category-desc">ファイル分割、テスト導入、依存性注入、エラーハンドリング</div>
+        <div class="category-meta">
+          <span class="category-count">23 KB</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+      <a class="category-card cat-g" href="07-operations.md">
+        <div class="category-letter">07</div>
+        <div class="category-name">運用・業務フロー設計書</div>
+        <div class="category-desc">入力率向上、週次/月次サマリー、多プロジェクト対応</div>
+        <div class="category-meta">
+          <span class="category-count">22 KB</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+      <a class="category-card cat-h" href="08-security.md">
+        <div class="category-letter">08</div>
+        <div class="category-name">セキュリティ設計書</div>
+        <div class="category-desc">暗号化バックアップ、重複検出、バリデーション強化</div>
+        <div class="category-meta">
+          <span class="category-count">16 KB</span>
+          <span class="priority-tag priority-low">低〜中</span>
+        </div>
+      </a>
+      <a class="category-card cat-i" href="09-extensibility.md">
+        <div class="category-letter">09</div>
+        <div class="category-name">国際化・拡張性設計書</div>
+        <div class="category-desc">i18n、工程カスタマイズ、CSV連携、外部システム連携</div>
+        <div class="category-meta">
+          <span class="category-count">19 KB</span>
+          <span class="priority-tag priority-low">低</span>
+        </div>
+      </a>
+      <a class="category-card cat-j" href="10-mobile.md">
+        <div class="category-letter">10</div>
+        <div class="category-name">モバイル体験設計書</div>
+        <div class="category-desc">スワイプ、タイムトラッカー、プルトゥリフレッシュ</div>
+        <div class="category-meta">
+          <span class="category-count">17 KB</span>
+          <span class="priority-tag priority-medium">中</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-links">
+    <a class="footer-link" href="../../CLAUDE.md">CLAUDE.md</a>
+    <a class="footer-link" href="../../ARCHITECTURE.md">ARCHITECTURE.md</a>
+    <a class="footer-link" href="../../CODEBASE_STRUCTURE.md">CODEBASE_STRUCTURE.md</a>
+    <a class="footer-link" href="../GANTT_CHART_SPEC.md">ガントチャート仕様書</a>
+  </div>
+  <p>作成日: 2026-04-14 · ブランチ: experiment/redesign · 合計: 11ファイル / 6,819行</p>
+</footer>
+
+</body>
+</html>
