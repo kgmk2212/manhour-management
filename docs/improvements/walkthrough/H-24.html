@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-24 入力バリデーション強化 + 重複検出 — 動作確認ガイド</title>
+<style>
+:root {
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F2EC;
+  --border: #E5DFD2;
+  --text-primary: #2A2520;
+  --text-secondary: #6B6258;
+  --text-muted: #9B9286;
+  --accent: #1E3A5F;
+  --accent-soft: #DDE4EE;
+  --accent-light: #EFF3F8;
+  --success: #2D5A27;
+  --success-light: #E8F0E6;
+  --warning: #C2410C;
+  --warning-light: #FEF3E2;
+  --danger: #B91C1C;
+  --danger-light: #FEE2E2;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hero {
+  padding: 56px 24px 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+}
+.hero-inner { max-width: 980px; margin: 0 auto; }
+.hero-meta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 12px; background: var(--accent-soft); color: var(--accent);
+  border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.05em; margin-bottom: 16px;
+}
+.hero-meta::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.2; }
+.hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 720px; }
+
+.hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
+.hero-stat { display: flex; flex-direction: column; gap: 2px; }
+.hero-stat-label {
+  font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 600;
+}
+.hero-stat-value { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+.container { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+.section { margin-bottom: 56px; }
+.section-title {
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+}
+.section-title::before {
+  content: ""; width: 4px; height: 24px; background: var(--accent); border-radius: 2px;
+}
+.section-desc { color: var(--text-secondary); margin-bottom: 24px; margin-left: 16px; }
+
+.tldr {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 48px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+.tldr-block h3 {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
+}
+.tldr-block p { font-size: 0.95rem; color: var(--text-primary); }
+.tldr-block ul { list-style: none; padding: 0; }
+.tldr-block li {
+  font-size: 0.9rem; padding: 4px 0 4px 18px; position: relative; color: var(--text-primary);
+}
+.tldr-block li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+
+.step {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 24px; overflow: hidden;
+}
+.step-header {
+  padding: 20px 24px; display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--border); background: var(--surface-alt);
+}
+.step-number {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.95rem; flex-shrink: 0;
+}
+.step-title-group h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+.step-title-group p { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
+.step-body { padding: 24px; }
+
+.ops {
+  list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+}
+.ops li { display: flex; gap: 12px; font-size: 0.95rem; align-items: baseline; }
+.ops .ops-marker {
+  flex-shrink: 0; font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: var(--accent); background: var(--accent-soft);
+  padding: 1px 8px; border-radius: 4px; min-width: 28px; text-align: center;
+}
+.ops kbd {
+  display: inline-block; padding: 2px 8px; background: var(--surface);
+  border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+}
+
+/* === Dialog Mockup === */
+.dialog-mock {
+  max-width: 480px;
+  margin: 16px auto;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+.dialog-mock-head {
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.dialog-mock-head.error { background: var(--danger-light); color: var(--danger); }
+.dialog-mock-head.warning { background: var(--warning-light); color: var(--warning); }
+.dialog-mock-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 0.85rem; flex-shrink: 0;
+}
+.dialog-mock-head.error .dialog-mock-icon { background: var(--danger); color: white; }
+.dialog-mock-head.warning .dialog-mock-icon { background: var(--warning); color: white; }
+.dialog-mock-body {
+  padding: 18px;
+  font-size: 0.9rem;
+}
+.dialog-mock-body ul { list-style: none; padding: 0; margin-bottom: 12px; }
+.dialog-mock-body li {
+  padding: 4px 0 4px 20px;
+  position: relative;
+  color: var(--text-primary);
+}
+.dialog-mock-body li::before {
+  content: "•";
+  position: absolute; left: 4px;
+  color: var(--warning);
+  font-weight: bold;
+}
+.dialog-mock-prompt { margin-top: 10px; font-weight: 600; color: var(--text-primary); }
+.dialog-mock-actions {
+  padding: 12px 18px;
+  background: var(--surface-alt);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+.dialog-mock-btn {
+  padding: 6px 16px; border-radius: 5px; font-size: 0.85rem; font-weight: 500;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-primary);
+  cursor: default;
+}
+.dialog-mock-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.dialog-mock-btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+
+/* === Scenario Card === */
+.scenario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.scenario-input {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.scenario-input h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.input-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.input-row:last-child { border-bottom: none; }
+.input-row .label { color: var(--text-secondary); }
+.input-row .value {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.input-row.flag .value {
+  color: var(--warning);
+}
+
+.scenario-output h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.arrow-down {
+  text-align: center;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  margin: 8px 0;
+  display: none;
+}
+
+.verify {
+  background: var(--success-light);
+  border-left: 3px solid var(--success);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+}
+.verify-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--success);
+  margin-bottom: 8px;
+}
+.verify ul { list-style: none; padding: 0; }
+.verify li {
+  font-size: 0.92rem; padding: 4px 0 4px 26px; position: relative; color: var(--text-primary);
+}
+.verify li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 9px;
+  width: 16px; height: 16px;
+  border: 2px solid var(--success);
+  border-radius: 3px;
+  background: var(--surface);
+}
+
+.note {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.note-icon { flex-shrink: 0; color: var(--accent); font-weight: bold; }
+
+.setup-block {
+  background: #1A1814;
+  color: #E8E6E3;
+  border-radius: 10px;
+  padding: 20px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.setup-block .comment { color: #6B6258; font-style: italic; }
+
+.footer-nav {
+  margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.footer-nav a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; text-decoration: none; color: var(--text-primary);
+  font-size: 0.9rem; font-weight: 500; transition: all 200ms;
+}
+.footer-nav a:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+
+@media (max-width: 768px) {
+  h1 { font-size: 1.75rem; }
+  .container { padding: 32px 16px 64px; }
+  .tldr { grid-template-columns: 1fr; }
+  .scenario { grid-template-columns: 1fr; }
+  .arrow-down { display: block; }
+  .step-body { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-meta">H-24 · データ品質</span>
+    <h1>入力バリデーション + 重複検出</h1>
+    <p class="hero-sub">
+      実績入力時に「時間の異常値」「同日合計の超過」「未来日」「重複」を検出し、
+      保存前にユーザーに確認する仕組み。入力ミスによるデータ汚染を防ぎます。
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-label">実装日</span>
+        <span class="hero-stat-value">2026-04-14</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">統合項目</span>
+        <span class="hero-stat-value">H-24-1 + H-24-3</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">対応範囲</span>
+        <span class="hero-stat-value">クイック入力 · 編集 · その他作業</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">関連ファイル</span>
+        <span class="hero-stat-value">js/validation.js (新規) · quick.js · actual.js</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tldr">
+    <div class="tldr-block">
+      <h3>このページの目的</h3>
+      <p>
+        入力バリデーション機能がケースごとに期待通り動作するかを、
+        具体的な入力例とそれに対するダイアログのモックアップで確認します。
+      </p>
+    </div>
+    <div class="tldr-block">
+      <h3>検証するケース</h3>
+      <ul>
+        <li>エラー: 0時間、25時間、合計25時間超過</li>
+        <li>警告: 15時間、未来日、同日合計11時間</li>
+        <li>重複: 同じタスクの二重入力</li>
+        <li>通常: 問題ない入力は素通り</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Thresholds reference -->
+  <section class="section">
+    <h2 class="section-title">判定の閾値</h2>
+    <p class="section-desc">どのような入力が「エラー」「警告」となるか</p>
+
+    <div class="step">
+      <div class="step-body" style="padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="background: var(--surface-alt); border-bottom: 2px solid var(--border);">
+              <th style="text-align: left; padding: 14px 20px; font-weight: 600;">項目</th>
+              <th style="text-align: center; padding: 14px 20px; font-weight: 600; color: var(--danger);">エラー（阻止）</th>
+              <th style="text-align: center; padding: 14px 20px; font-weight: 600; color: var(--warning);">警告（確認）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 14px 20px;">1件の時間</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">≤ 0 / > 24h</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">> 12h</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 14px 20px;">1日の合計</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">> 24h</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">> 10h</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 14px 20px;">日付</td>
+              <td style="padding: 14px 20px; text-align: center; color: var(--text-muted);">—</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">未来日</td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 20px;">重複</td>
+              <td style="padding: 14px 20px; text-align: center; color: var(--text-muted);">—</td>
+              <td style="padding: 14px 20px; text-align: center; font-family: monospace;">同日·同タスク·同工程·同メンバー</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 1: Error -->
+  <section class="section">
+    <h2 class="section-title">シナリオ1: エラー（保存を阻止）</h2>
+    <p class="section-desc">明らかに不正な入力は保存されず、エラー内容を通知します</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title-group">
+          <h3>時間が 25h の入力</h3>
+          <p>1日は24時間しかないため、保存を阻止</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>入力内容</h4>
+            <div class="input-row"><span class="label">日付</span><span class="value">2026-04-14</span></div>
+            <div class="input-row"><span class="label">バージョン</span><span class="value">v2.0</span></div>
+            <div class="input-row"><span class="label">タスク</span><span class="value">ログイン画面</span></div>
+            <div class="input-row"><span class="label">工程</span><span class="value">PG</span></div>
+            <div class="input-row"><span class="label">メンバー</span><span class="value">森</span></div>
+            <div class="input-row flag"><span class="label">時間</span><span class="value">25 h ⚠</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>表示されるダイアログ</h4>
+            <div class="dialog-mock">
+              <div class="dialog-mock-head error">
+                <span class="dialog-mock-icon">!</span>
+                <span>入力内容に問題があります</span>
+              </div>
+              <div class="dialog-mock-body">
+                <ul>
+                  <li>1件で24時間を超える入力はできません (25h)</li>
+                </ul>
+              </div>
+              <div class="dialog-mock-actions">
+                <div class="dialog-mock-btn primary">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>時間に25を入力して登録ボタン押下 → エラーダイアログ表示</li>
+            <li>OKを押してもデータは追加されない</li>
+            <li>フォームの値はリセットされない（修正可能）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title-group">
+          <h3>同日の合計が24時間を超える入力</h3>
+          <p>既に10h登録済みの日に15hを追加しようとした場合</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>既存データ + 新規入力</h4>
+            <div class="input-row"><span class="label">既存（同日・森）</span><span class="value">10 h</span></div>
+            <div class="input-row"><span class="label">今回の入力</span><span class="value">15 h</span></div>
+            <div class="input-row flag"><span class="label">合計見込</span><span class="value">25 h ⚠</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>表示されるダイアログ</h4>
+            <div class="dialog-mock">
+              <div class="dialog-mock-head error">
+                <span class="dialog-mock-icon">!</span>
+                <span>入力内容に問題があります</span>
+              </div>
+              <div class="dialog-mock-body">
+                <ul>
+                  <li>この入力で2026-04-14の合計が25.0hになり、1日の上限(24h)を超えます</li>
+                  <li>1件で15時間は長めです。入力値に間違いはありませんか？</li>
+                </ul>
+              </div>
+              <div class="dialog-mock-actions">
+                <div class="dialog-mock-btn primary">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>エラーと警告が同時に発生した場合、エラー扱いとなり保存は阻止されます（警告は参考情報として表示）。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 2: Warning -->
+  <section class="section">
+    <h2 class="section-title">シナリオ2: 警告（確認して続行可）</h2>
+    <p class="section-desc">不正とまでは言えないが、確認したい入力</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title-group">
+          <h3>1件で15時間の入力</h3>
+          <p>長時間だが、研修や終日イベントで正当な場合もある</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>入力内容</h4>
+            <div class="input-row"><span class="label">日付</span><span class="value">2026-04-14</span></div>
+            <div class="input-row"><span class="label">タスク</span><span class="value">研修</span></div>
+            <div class="input-row flag"><span class="label">時間</span><span class="value">15 h ⚠</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>表示されるダイアログ</h4>
+            <div class="dialog-mock">
+              <div class="dialog-mock-head warning">
+                <span class="dialog-mock-icon">?</span>
+                <span>以下の点をご確認ください</span>
+              </div>
+              <div class="dialog-mock-body">
+                <ul>
+                  <li>1件で15時間は長めです。入力値に間違いはありませんか？</li>
+                </ul>
+                <div class="dialog-mock-prompt">このまま登録しますか？</div>
+              </div>
+              <div class="dialog-mock-actions">
+                <div class="dialog-mock-btn">キャンセル</div>
+                <div class="dialog-mock-btn primary">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>OKを押すと保存される</li>
+            <li>キャンセルを押すとデータは追加されない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title-group">
+          <h3>未来の日付に入力</h3>
+          <p>入力ミスの可能性があるが、明日の予定を先に記録したいケースも</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>入力内容</h4>
+            <div class="input-row flag"><span class="label">日付</span><span class="value">2030-01-01 ⚠</span></div>
+            <div class="input-row"><span class="label">時間</span><span class="value">8 h</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>表示されるダイアログ</h4>
+            <div class="dialog-mock">
+              <div class="dialog-mock-head warning">
+                <span class="dialog-mock-icon">?</span>
+                <span>以下の点をご確認ください</span>
+              </div>
+              <div class="dialog-mock-body">
+                <ul>
+                  <li>未来の日付 (2030-01-01) です。入力を続けますか？</li>
+                </ul>
+                <div class="dialog-mock-prompt">このまま登録しますか？</div>
+              </div>
+              <div class="dialog-mock-actions">
+                <div class="dialog-mock-btn">キャンセル</div>
+                <div class="dialog-mock-btn primary">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 3: Duplicate -->
+  <section class="section">
+    <h2 class="section-title">シナリオ3: 重複の検出</h2>
+    <p class="section-desc">[H-24-1] 同じ日・同じタスクの二重入力を検出</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title-group">
+          <h3>既に登録済みのタスクに追加入力</h3>
+          <p>同日・同バージョン・同タスク・同工程・同メンバーで重複判定</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>既存データと新規入力</h4>
+            <div class="input-row"><span class="label">既存: 4/14/v2.0/ログイン/PG/森</span><span class="value">3.0 h</span></div>
+            <div class="input-row"><span class="label">既存: 4/14/v2.0/ログイン/PG/森</span><span class="value">2.0 h</span></div>
+            <div class="input-row flag"><span class="label">新規: 4/14/v2.0/ログイン/PG/森</span><span class="value">2.0 h ⚠</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>表示されるダイアログ</h4>
+            <div class="dialog-mock">
+              <div class="dialog-mock-head warning">
+                <span class="dialog-mock-icon">?</span>
+                <span>以下の点をご確認ください</span>
+              </div>
+              <div class="dialog-mock-body">
+                <ul>
+                  <li>同日・同タスク・同メンバーに既に2件 (計5h) 登録されています: v2.0 / ログイン画面 / PG</li>
+                </ul>
+                <div class="dialog-mock-prompt">このまま登録しますか？</div>
+              </div>
+              <div class="dialog-mock-actions">
+                <div class="dialog-mock-btn">キャンセル</div>
+                <div class="dialog-mock-btn primary">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>同じ組み合わせで登録しようとすると警告が出る</li>
+            <li>OKを押すと2件目が追加される（意図的な分割入力も可能）</li>
+            <li>既存を編集する場合、自身を重複として検出しない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 4: Normal -->
+  <section class="section">
+    <h2 class="section-title">シナリオ4: 通常入力（ダイアログなし）</h2>
+    <p class="section-desc">問題のない入力は今まで通り素通り</p>
+
+    <div class="step">
+      <div class="step-body">
+        <div class="scenario">
+          <div class="scenario-input">
+            <h4>入力内容</h4>
+            <div class="input-row"><span class="label">日付</span><span class="value">今日</span></div>
+            <div class="input-row"><span class="label">時間</span><span class="value">8 h</span></div>
+            <div class="input-row"><span class="label">同日合計見込</span><span class="value">8 h</span></div>
+            <div class="input-row"><span class="label">重複</span><span class="value">なし</span></div>
+          </div>
+          <div class="scenario-output">
+            <h4>動作</h4>
+            <div style="padding: 24px; text-align: center; background: var(--success-light); border-radius: 8px; border: 1px solid var(--success);">
+              <div style="font-size: 2.5rem; color: var(--success); margin-bottom: 8px;">✓</div>
+              <div style="font-weight: 600; color: var(--success);">ダイアログなしで保存</div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">「実績を追加しました」のトースト通知のみ</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>通常の入力は従来通り1クリックで保存できる</li>
+            <li>既存の「実績を追加しました」トーストは出る</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Entry points -->
+  <section class="section">
+    <h2 class="section-title">対応箇所</h2>
+    <p class="section-desc">バリデーションが動作する3つの入力経路</p>
+
+    <div class="step">
+      <div class="step-body">
+        <ul class="ops">
+          <li>
+            <span class="ops-marker">A</span>
+            <div>
+              <strong>クイック入力タブ</strong> → 実績入力モード → 「追加」ボタン<br>
+              <span style="color: var(--text-secondary); font-size: 0.85em;">
+                サイドバー「クイック入力」から。日常的な入力経路。
+              </span>
+            </div>
+          </li>
+          <li>
+            <span class="ops-marker">B</span>
+            <div>
+              <strong>実績編集モーダル</strong> → 保存ボタン<br>
+              <span style="color: var(--text-secondary); font-size: 0.85em;">
+                実績一覧から行をクリック or 鉛筆アイコン。編集時も自身以外で重複判定。
+              </span>
+            </div>
+          </li>
+          <li>
+            <span class="ops-marker">C</span>
+            <div>
+              <strong>その他作業モーダル</strong> → 追加ボタン<br>
+              <span style="color: var(--text-secondary); font-size: 0.85em;">
+                カレンダーから「その他」を追加する経路。
+              </span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>
+            「打ち合わせ全員分一括追加」機能は今回は対象外です。一括追加のUXを壊さない設計にするため、個別の確認ダイアログが必要か検討が必要です。
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Setup for Testing -->
+  <section class="section">
+    <h2 class="section-title">テスト用データの準備</h2>
+    <p class="section-desc">確認時に使う既存データ</p>
+
+    <div class="step">
+      <div class="step-body">
+        <p style="margin-bottom: 12px;">重複や合計超過のテストには、ある程度の既存データが必要です。ブラウザのコンソールに以下を貼り付け:</p>
+        <div class="setup-block"><span class="comment">// テスト用データ: 今日の実績を10h分登録</span>
+const today = new Date();
+const ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+localStorage.setItem('manhour_actuals', JSON.stringify([
+  { id: 1, date: ymd, version: 'v2.0', task: 'ログイン画面',
+    process: 'PG', member: '森', hours: 3.0,
+    createdAt: new Date().toISOString() },
+  { id: 2, date: ymd, version: 'v2.0', task: 'ログイン画面',
+    process: 'PG', member: '森', hours: 7.0,
+    createdAt: new Date().toISOString() }
+]));
+localStorage.setItem('manhour_estimates', JSON.stringify([
+  { id: 'e1', version: 'v2.0', task: 'ログイン画面', process: 'PG',
+    member: '森', hours: 40,
+    workMonths: [`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`] }
+]));
+location.reload();</div>
+
+        <p style="margin: 20px 0 8px;">各シナリオの試し方:</p>
+        <ul class="ops">
+          <li><span class="ops-marker">1</span><span>25h入力: クイック入力で時間を「25」→ 追加 → エラー確認</span></li>
+          <li><span class="ops-marker">2</span><span>合計超過: 時間を「15」→ 追加 → エラー確認（既存10h + 15h = 25h）</span></li>
+          <li><span class="ops-marker">3</span><span>15h警告: 既存データを削除してから時間「15」→ 警告確認</span></li>
+          <li><span class="ops-marker">4</span><span>未来日: 作業日を「2030-01-01」→ 警告確認</span></li>
+          <li><span class="ops-marker">5</span><span>重複: 同じタスクを再度 時間「1」→ 重複警告確認</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feedback -->
+  <section class="section">
+    <h2 class="section-title">フィードバック</h2>
+    <p class="section-desc">特に判断が必要なポイント</p>
+
+    <div class="step">
+      <div class="step-body">
+        <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q1</strong>: 閾値は妥当ですか？（12h警告、10h合計警告、24h上限）<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">緩すぎる or 厳しすぎる場合は `js/validation.js` の `VALIDATION_THRESHOLDS` で調整可能</span>
+          </li>
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q2</strong>: 重複時のダイアログは2択（OK/キャンセル）で十分ですか？<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">設計書では「追加/上書き/キャンセル」の3択も検討されていました</span>
+          </li>
+          <li style="padding: 10px 14px; background: var(--surface-alt); border-radius: 6px;">
+            <strong>Q3</strong>: 標準`alert`/`confirm`のUIを、カスタムダイアログで置き換えたほうが良いですか？<br>
+            <span style="color: var(--text-secondary); font-size: 0.88em;">今はOS標準。モバイルでも見やすいがデザイン統一感はない</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <nav class="footer-nav">
+    <a href="./G-20.html">← 前: G-20 未入力日ハイライト</a>
+    <a href="../progress.md">進捗ログ</a>
+    <a href="./index.html">一覧に戻る →</a>
+  </nav>
+
+</div>
+
+</body>
+</html>

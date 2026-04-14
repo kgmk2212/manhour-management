@@ -12,6 +12,7 @@ import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
 import { pushAction } from './history.js';
+import { validateActualInput, confirmValidationResult } from './validation.js';
 
 // クイック入力用の状態変数
 let allQuickTasks = [];
@@ -224,6 +225,13 @@ export function quickAddActual() {
         hours: hours,
         createdAt: new Date().toISOString()
     };
+
+    // [H-24-1, H-24-3] バリデーション: エラーなら中止、警告なら確認
+    const validationResult = validateActualInput(newActual);
+    if (!confirmValidationResult(validationResult)) {
+        return;
+    }
+
     actuals.push(newActual);
 
     pushAction({

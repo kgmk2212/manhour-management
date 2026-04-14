@@ -10,6 +10,7 @@ import {
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
+import { validateActualInput, confirmValidationResult } from './validation.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -1227,6 +1228,14 @@ export function saveActualEdit() {
     const isOtherWorkEdit = !version;
     if (!date || !task || (!isOtherWorkEdit && !process) || !member || !hours) {
         alert('すべての項目を入力してください');
+        return;
+    }
+
+    // [H-24-1, H-24-3] バリデーション: エラーなら中止、警告なら確認
+    const candidateActual = { date, version, task, process, member, hours };
+    const excludeId = (id && !isNaN(id)) ? id : null;
+    const validationResult = validateActualInput(candidateActual, { excludeId });
+    if (!confirmValidationResult(validationResult)) {
         return;
     }
 

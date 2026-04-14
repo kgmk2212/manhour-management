@@ -4,6 +4,7 @@
 
 import * as State from './state.js';
 import { pushAction } from './history.js';
+import { validateActualInput, confirmValidationResult } from './validation.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -125,6 +126,13 @@ export function addOtherWork() {
         hours: hours,
         createdAt: new Date().toISOString()
     };
+
+    // [H-24-1, H-24-3] バリデーション
+    const validationResult = validateActualInput(newActual);
+    if (!confirmValidationResult(validationResult)) {
+        return;
+    }
+
     State.actuals.push(newActual);
 
     pushAction({
