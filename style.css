@@ -4080,6 +4080,97 @@ table tr[style*="1565c0"] th:first-child {
 
 .cell-mandays { }
 
+/* ---- [G-20] 未入力日ハイライト ---- */
+.missing-days-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    margin: 0 0 16px 0;
+    background:
+        repeating-linear-gradient(
+            45deg,
+            rgba(196, 132, 29, 0.04) 0,
+            rgba(196, 132, 29, 0.04) 6px,
+            transparent 6px,
+            transparent 12px
+        ),
+        #FFF8EE;
+    border-left: 3px solid #C2410C;
+    border-radius: 4px;
+    color: #7C2D12;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.missing-days-banner .missing-days-icon {
+    font-size: 16px;
+    color: #C2410C;
+    flex-shrink: 0;
+}
+.missing-days-banner .missing-days-text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+}
+.missing-days-banner strong {
+    color: #C2410C;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+.missing-days-banner .missing-days-sample {
+    color: #92400E;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+tr.missing-day {
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            rgba(196, 132, 29, 0.06) 0,
+            rgba(196, 132, 29, 0.06) 8px,
+            transparent 8px,
+            transparent 16px
+        ),
+        #FFFCF5 !important;
+    box-shadow: inset 3px 0 0 0 #C2410C;
+}
+tr.missing-day td {
+    color: #78716C;
+}
+tr.missing-day td:first-child {
+    color: #92400E;
+    font-weight: 600;
+}
+
+.missing-day-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    background: #C2410C;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border-radius: 3px;
+    vertical-align: 1px;
+    text-transform: none;
+}
+
+@media (max-width: 768px) {
+    .missing-days-banner {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+    .missing-day-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+        margin-left: 4px;
+    }
+}
+
 /* ---- 33. Inline Filters ---- */
 .inline-filter {
     display: none;

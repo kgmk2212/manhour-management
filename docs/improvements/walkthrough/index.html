@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>動作確認ガイド一覧 — 工数管理システム</title>
+<style>
+:root {
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F2EC;
+  --border: #E5DFD2;
+  --text-primary: #2A2520;
+  --text-secondary: #6B6258;
+  --text-muted: #9B9286;
+  --accent: #2D5A27;
+  --accent-soft: #E8F0E6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.hero {
+  padding: 56px 24px 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.hero-inner { max-width: 980px; margin: 0 auto; }
+h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.hero-sub { color: var(--text-secondary); }
+.container { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+.section { margin-bottom: 48px; }
+.section-title {
+  font-size: 1.25rem; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-title::before {
+  content: ""; width: 4px; height: 22px; background: var(--accent); border-radius: 2px;
+}
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.guide-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 200ms;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.guide-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 90, 39, 0.08);
+}
+.guide-card .id-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 100px;
+  align-self: flex-start;
+  letter-spacing: 0.05em;
+}
+.guide-card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.guide-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  flex-grow: 1;
+}
+.guide-card .meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.intro {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 32px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.intro h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 32px;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+.nav-back:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>動作確認ガイド</h1>
+    <p class="hero-sub">実装した改善項目の操作手順と確認ポイントをまとめたウォークスルー集</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="intro">
+    <h3>このページについて</h3>
+    <p>
+      改善実装が進むたびに、動作確認用のガイドページを追加していきます。
+      各ガイドは独立しており、確認したい機能だけを試せます。
+    </p>
+    <p style="margin-top: 12px;">
+      <strong>使い方</strong>: 確認したい項目をクリック → 事前準備（テストデータ注入）→ シナリオ通りに操作 → 各ステップのチェック項目を確認。
+      気になった点があれば <code style="background: var(--surface-alt); padding: 2px 6px; border-radius: 3px;">decisions-pending.md</code> に記録するか、直接フィードバックいただけます。
+    </p>
+  </div>
+
+  <section class="section">
+    <h2 class="section-title">実装済みの改善</h2>
+    <div class="guide-grid">
+      <a class="guide-card" href="G-20.html">
+        <span class="id-tag">G-20</span>
+        <h3>未入力日ハイライト</h3>
+        <p>実績入力を忘れている営業日を、カレンダー上で視覚的に明示。月末に気づく事態を防ぎます。</p>
+        <div class="meta">
+          <span>2026-04-14</span>
+          <span>所要 5分</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">次に予定している改善</h2>
+    <div class="guide-grid">
+      <div class="guide-card" style="opacity: 0.55; cursor: default;">
+        <span class="id-tag" style="background: #F3F4F6; color: var(--text-muted);">A-1</span>
+        <h3>テンプレート機能</h3>
+        <p>頻出する入力パターンをテンプレートとして保存・呼び出し。毎日の入力負担を大幅削減。</p>
+        <div class="meta">
+          <span>未着手</span>
+          <span>見積 2-3日</span>
+        </div>
+      </div>
+      <div class="guide-card" style="opacity: 0.55; cursor: default;">
+        <span class="id-tag" style="background: #F3F4F6; color: var(--text-muted);">A-2</span>
+        <h3>前日コピー機能</h3>
+        <p>前営業日の実績をコピーして時間だけ調整。繰り返し作業の入力を効率化。</p>
+        <div class="meta">
+          <span>未着手</span>
+          <span>見積 1-2日</span>
+        </div>
+      </div>
+      <div class="guide-card" style="opacity: 0.55; cursor: default;">
+        <span class="id-tag" style="background: #F3F4F6; color: var(--text-muted);">H-24-1</span>
+        <h3>重複データ検出</h3>
+        <p>同じ日・同じタスクに二重入力した場合の警告とスキャン機能。</p>
+        <div class="meta">
+          <span>未着手</span>
+          <span>見積 2日</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a class="nav-back" href="../index.html">← 改善提案書 サマリーに戻る</a>
+
+</div>
+
+</body>
+</html>

@@ -313,6 +313,26 @@ export function renderMemberCalendar() {
         return !isWeekend && !isHoliday;
     }).length;
 
+    // [G-20] 未入力日の検出: 営業日 - 休暇 - 会社休日 - 入力済 - 今日/未来
+    const todayStr = (() => {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    })();
+    const actualDatesSet = new Set(filteredActuals.map(a => a.date));
+    const missingDates = new Set(allDates.filter(date => {
+        if (date >= todayStr) return false; // 今日以前のみ対象
+        const dayOfWeek = getDayOfWeek(date);
+        if (dayOfWeek === '土' || dayOfWeek === '日') return false;
+        if (getHoliday(date)) return false;
+        const companyHoliday = typeof window.getCompanyHolidayName === 'function'
+            ? window.getCompanyHolidayName(date) : null;
+        if (companyHoliday) return false;
+        const memberVacations = typeof window.getVacation === 'function'
+            ? window.getVacation(selectedMember, date) : [];
+        if (memberVacations && memberVacations.length > 0) return false;
+        return !actualDatesSet.has(date);
+    }));
+
     let html = `<h3 style="margin-bottom: 10px;">${escapeHtml(selectedMember)}の実績カレンダー</h3>`;
 
     if (selectedMonth !== 'all') {
@@ -321,6 +341,22 @@ export function renderMemberCalendar() {
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
             <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
         </div>`;
+
+        // [G-20] 未入力日サマリーバッジ
+        if (missingDates.size > 0) {
+            const sample = [...missingDates].slice(0, 5).map(d => {
+                const [, m, day] = d.split('-');
+                return `${parseInt(m)}/${parseInt(day)}`;
+            }).join(', ');
+            const more = missingDates.size > 5 ? ` ほか${missingDates.size - 5}日` : '';
+            html += `<div class="missing-days-banner" role="status" aria-live="polite">
+                <span class="missing-days-icon" aria-hidden="true">⚠</span>
+                <span class="missing-days-text">
+                    <strong>未入力: ${missingDates.size}日</strong>
+                    <span class="missing-days-sample">${sample}${more}</span>
+                </span>
+            </div>`;
+        }
     }
 
     html += '<div id="calendarTableWrapper" class="table-wrapper" style="overflow-x: auto;"><table style="min-width: 100%;">';
@@ -333,17 +369,22 @@ export function renderMemberCalendar() {
         const isHoliday = holiday !== null;
 
         const dayActuals = filteredActuals.filter(a => a.date === date);
+        const isMissing = missingDates.has(date); // [G-20]
 
         const bgColor = (isWeekend || isHoliday) ? '#ffebee' : 'white';
         const dateColor = (isWeekend || isHoliday) ? 'color: #c62828;' : '';
+        const rowClass = isMissing ? ' class="missing-day"' : '';
 
         const [year, m, day] = date.split('-');
+        const missingBadge = isMissing
+            ? '<span class="missing-day-badge" title="営業日ですが実績が入力されていません">未入力</span>'
+            : '';
         const dateDisplay = isHoliday
             ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${escapeHtml(holiday)}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${escapeHtml(holiday)}</span></span>`
-            : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
+            : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})${missingBadge}`;
 
         if (dayActuals.length === 0) {
-            html += `<tr style="background: ${bgColor};">`;
+            html += `<tr${rowClass} style="background: ${bgColor};">`;
             html += `<td style="font-weight: 500; ${dateColor}">${dateDisplay}</td>`;
             html += `<td style="color: #999;">-</td>`;
             html += `<td style="text-align: center; color: #999;">-</td>`;
@@ -351,10 +392,10 @@ export function renderMemberCalendar() {
         } else {
             dayActuals.forEach((actual, index) => {
                 if (index === 0) {
-                    html += `<tr style="background: ${bgColor};">`;
+                    html += `<tr${rowClass} style="background: ${bgColor};">`;
                     html += `<td rowspan="${dayActuals.length}" style="font-weight: 500; ${dateColor} vertical-align: top; padding-top: 12px;">${dateDisplay}</td>`;
                 } else {
-                    html += `<tr style="background: ${bgColor};">`;
+                    html += `<tr${rowClass} style="background: ${bgColor};">`;
                 }
                 html += `<td style="font-size: 14px;">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${escapeHtml(actual.process)}]</td>`;
                 html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;

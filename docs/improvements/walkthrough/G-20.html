@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G-20 未入力日ハイライト — 動作確認ガイド</title>
+<style>
+:root {
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F2EC;
+  --border: #E5DFD2;
+  --text-primary: #2A2520;
+  --text-secondary: #6B6258;
+  --text-muted: #9B9286;
+  --accent: #C2410C;
+  --accent-soft: #FEF3E2;
+  --accent-light: #FFF8EE;
+  --success: #2D5A27;
+  --success-light: #E8F0E6;
+  --warning: #C2410C;
+  --highlight: #FCD34D;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.005em;
+}
+
+/* === Hero === */
+.hero {
+  padding: 56px 24px 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+}
+.hero-inner {
+  max-width: 980px;
+  margin: 0 auto;
+}
+.hero-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+.hero-meta::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 720px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hero-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.hero-stat-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Container === */
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+/* === Section === */
+.section {
+  margin-bottom: 56px;
+}
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title::before {
+  content: "";
+  width: 4px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.section-desc {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  margin-left: 16px;
+}
+
+/* === TLDR Card === */
+.tldr {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.tldr-block h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.tldr-block p {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.tldr-block ul {
+  list-style: none;
+  padding: 0;
+}
+.tldr-block li {
+  font-size: 0.9rem;
+  padding: 4px 0 4px 18px;
+  position: relative;
+  color: var(--text-primary);
+}
+.tldr-block li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* === Step Card === */
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+.step-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.step-title-group h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.step-title-group p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.step-body {
+  padding: 24px;
+}
+
+/* === Operation List === */
+.ops {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.ops li {
+  display: flex;
+  gap: 12px;
+  font-size: 0.95rem;
+  align-items: baseline;
+}
+.ops .ops-marker {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 1px 8px;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+}
+.ops kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* === Screenshot Container === */
+.shot {
+  margin: 16px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  position: relative;
+}
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.shot-caption {
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.shot-caption .shot-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Comparison side-by-side */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.compare > div {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare img { display: block; width: 100%; }
+.compare .label {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.compare .label-before { background: #F3F4F6; color: var(--text-muted); }
+.compare .label-after  { background: var(--accent-soft); color: var(--accent); }
+
+/* === Verification Checklist === */
+.verify {
+  background: var(--success-light);
+  border-left: 3px solid var(--success);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+}
+.verify-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--success);
+  margin-bottom: 8px;
+}
+.verify ul { list-style: none; padding: 0; }
+.verify li {
+  font-size: 0.92rem;
+  padding: 4px 0 4px 26px;
+  position: relative;
+  color: var(--text-primary);
+}
+.verify li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--success);
+  border-radius: 3px;
+  background: var(--surface);
+}
+
+/* === Note === */
+.note {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.note-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* === Annotation Overlay === */
+.annotated {
+  position: relative;
+  display: block;
+}
+.annotated img { display: block; width: 100%; }
+.annotated .pin {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.4);
+  z-index: 2;
+}
+.annotated .pin-line {
+  position: absolute;
+  height: 2px;
+  background: var(--accent);
+  z-index: 1;
+  opacity: 0.6;
+}
+.annotated .frame {
+  position: absolute;
+  border: 2px dashed var(--accent);
+  border-radius: 4px;
+  background: rgba(194, 65, 12, 0.08);
+  z-index: 1;
+}
+
+.pin-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pin-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.pin-list .pin-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+/* === Setup Code === */
+.setup-block {
+  background: #1A1814;
+  color: #E8E6E3;
+  border-radius: 10px;
+  padding: 20px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.setup-block .comment { color: #6B6258; font-style: italic; }
+.setup-block .key { color: #F59E0B; }
+.setup-block .string { color: #84CC16; }
+
+/* === Footer Nav === */
+.footer-nav {
+  margin-top: 80px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.footer-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 200ms;
+}
+.footer-nav a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  h1 { font-size: 1.75rem; }
+  .container { padding: 32px 16px 64px; }
+  .tldr { grid-template-columns: 1fr; }
+  .compare { grid-template-columns: 1fr; }
+  .step-body { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-meta">G-20 · UX</span>
+    <h1>未入力日ハイライト</h1>
+    <p class="hero-sub">
+      実績入力を忘れている営業日を、カレンダー上で視覚的に明示する機能。
+      月末になって気づく事態を防ぎ、データの抜けに早期に対処できるようになります。
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-label">実装日</span>
+        <span class="hero-stat-value">2026-04-14</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">所要時間</span>
+        <span class="hero-stat-value">5分</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">影響範囲</span>
+        <span class="hero-stat-value">実績一覧（カレンダー表示）</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">関連ファイル</span>
+        <span class="hero-stat-value">js/actual.js · style.css</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TL;DR -->
+  <div class="tldr">
+    <div class="tldr-block">
+      <h3>このページの目的</h3>
+      <p>
+        実装した「未入力日ハイライト」機能が意図通りに動くかを、操作手順に沿って確認するためのガイドです。
+        各ステップは独立しているので、気になる動作だけを確認することもできます。
+      </p>
+    </div>
+    <div class="tldr-block">
+      <h3>確認するシナリオ</h3>
+      <ul>
+        <li>通常: 未入力営業日が強調表示される</li>
+        <li>休暇: 個人休暇日は対象外になる</li>
+        <li>全担当者モード: 強調表示が無効になる</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Setup -->
+  <section class="section">
+    <h2 class="section-title">事前準備</h2>
+    <p class="section-desc">確認の前に、テストデータを用意します</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">0</div>
+        <div class="step-title-group">
+          <h3>テストデータの注入</h3>
+          <p>ブラウザのコンソールで実行（DevTools → Console）</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <p style="margin-bottom: 12px;">
+          以下のコードをコンソールに貼り付けて実行すると、当月のテストデータが投入されます。
+          月の途中に意図的に「未入力日」を作るデータです。
+        </p>
+        <div class="setup-block"><span class="comment">// 当月のテストデータを注入</span>
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth();
+const monthStr = String(month + 1).padStart(2, '0');
+
+const estimates = [
+  { id: 'e1', version: 'v2.0', task: 'ログイン画面',
+    process: 'PG', member: '森', hours: 40,
+    workMonths: [`${year}-${monthStr}`] },
+];
+
+const inputDays = [1, 2, 3, 6, 7, 8, 13, 14];  <span class="comment">// 9, 10は意図的に未入力</span>
+const actuals = inputDays.map((d, i) => ({
+  id: `a${i}`,
+  date: `${year}-${monthStr}-${String(d).padStart(2, '0')}`,
+  version: 'v2.0', task: 'ログイン画面',
+  process: 'PG', member: '森', hours: 8.0,
+  createdAt: new Date().toISOString()
+}));
+
+localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
+localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+localStorage.setItem('manhour_vacations', JSON.stringify([]));
+location.reload();</div>
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>既存のデータをクリアします。残しておきたいデータがある場合は、先に「設定 → バックアップ」を実行してください。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 1 -->
+  <section class="section">
+    <h2 class="section-title">シナリオ1: 基本動作</h2>
+    <p class="section-desc">未入力営業日が強調表示されることを確認します</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title-group">
+          <h3>実績一覧 → 個人別カレンダーを開く</h3>
+          <p>このシナリオで一番見たい画面に到達します</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="ops">
+          <li>
+            <span class="ops-marker">1.1</span>
+            <span>サイドバーの <kbd>実績一覧</kbd> をクリック</span>
+          </li>
+          <li>
+            <span class="ops-marker">1.2</span>
+            <span>表示モードを <kbd>個人別</kbd> に変更</span>
+          </li>
+          <li>
+            <span class="ops-marker">1.3</span>
+            <span>担当者から <kbd>森</kbd> を選択</span>
+          </li>
+          <li>
+            <span class="ops-marker">1.4</span>
+            <span>表示形式が <kbd>カレンダー</kbd> になっていることを確認</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title-group">
+          <h3>未入力日のハイライトを確認</h3>
+          <p>このスクリーンショットで強調表示されている要素を実画面と見比べる</p>
+        </div>
+      </div>
+      <div class="step-body">
+
+        <div class="annotated">
+          <img src="../screenshots/G-20-after-desktop.png" alt="デスクトップ表示">
+          <!-- Pin 1: banner -->
+          <div class="frame" style="top: 31%; left: 19%; width: 50%; height: 6%;"></div>
+          <div class="pin" style="top: 30%; left: 14%;">1</div>
+          <!-- Pin 2: missing day rows -->
+          <div class="frame" style="top: 76.5%; left: 19%; width: 78%; height: 8.6%;"></div>
+          <div class="pin" style="top: 78%; left: 14%;">2</div>
+          <!-- Pin 3: badge -->
+          <div class="frame" style="top: 78.6%; left: 22.5%; width: 4.5%; height: 4%;"></div>
+          <div class="pin" style="top: 90%; left: 14%;">3</div>
+        </div>
+
+        <ul class="pin-list">
+          <li>
+            <span class="pin-num">1</span>
+            <div>
+              <strong>サマリーバナー</strong>: 「未入力: 2日 4/9, 4/10」がオレンジの斜線パターン背景で表示。
+              一目で「何日抜けているか」「どの日か」が分かります。
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">2</span>
+            <div>
+              <strong>未入力行のハイライト</strong>: 4/9と4/10の行に左側のオレンジバーと斜線パターンが付与。
+              土日の赤系とは色相が異なるため一目で区別できます。
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">3</span>
+            <div>
+              <strong>「未入力」バッジ</strong>: 日付の隣に小さな色付きラベルで明示。
+              スクリーンリーダーでも「未入力」と読み上げ可能です。
+            </div>
+          </li>
+        </ul>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>4/9（木）と 4/10（金）にオレンジ系の強調表示がある</li>
+            <li>4/4（土）と 4/5（日）の赤系背景は変わっていない（既存仕様の維持）</li>
+            <li>「未入力: 2日」のバナーが表示される</li>
+            <li>未来日（今日より後）はハイライトされていない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: Vacation -->
+  <section class="section">
+    <h2 class="section-title">シナリオ2: 休暇日の除外</h2>
+    <p class="section-desc">個人休暇を登録した日が「未入力扱いされない」ことを確認</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title-group">
+          <h3>休暇を1件追加</h3>
+          <p>4/9 を森の休暇日として登録</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <p style="margin-bottom: 12px;">通常はクイック入力 → 休暇登録から行いますが、確認用に簡易コマンドも提供:</p>
+        <div class="setup-block"><span class="comment">// 4/9 を森の休暇日として登録</span>
+const today = new Date();
+const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+localStorage.setItem('manhour_vacations', JSON.stringify([
+  { id: 'v1', member: '森',
+    date: `${today.getFullYear()}-${monthStr}-09`,
+    type: '有給', hours: 8, description: 'テスト休暇' }
+]));
+location.reload();</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title-group">
+          <h3>カレンダーを再表示して確認</h3>
+          <p>休暇登録された4/9が未入力扱いから外れる</p>
+        </div>
+      </div>
+      <div class="step-body">
+
+        <div class="compare">
+          <div>
+            <div class="label label-before">休暇追加前</div>
+            <img src="../screenshots/G-20-after-desktop.png" alt="休暇追加前">
+          </div>
+          <div>
+            <div class="label label-after">休暇追加後</div>
+            <img src="../screenshots/G-20-vacation-test.png" alt="休暇追加後">
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>バナーが「未入力: 2日」→「未入力: 1日」に減っている</li>
+            <li>4/9（木）の行のオレンジハイライトが消えている</li>
+            <li>4/10（金）の行は引き続きハイライトされている</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: All Members -->
+  <section class="section">
+    <h2 class="section-title">シナリオ3: 全担当者モードで非表示</h2>
+    <p class="section-desc">「誰の未入力か」が曖昧になる全体表示では機能をオフにする仕様</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title-group">
+          <h3>表示モードを「全担当者」に切替</h3>
+          <p>切替後、ハイライトが消えることを確認</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="ops">
+          <li>
+            <span class="ops-marker">5.1</span>
+            <span>表示モードを <kbd>全担当者</kbd> に変更</span>
+          </li>
+          <li>
+            <span class="ops-marker">5.2</span>
+            <span>表示形式は <kbd>カレンダー</kbd> のまま</span>
+          </li>
+        </ul>
+
+        <div class="shot">
+          <img src="../screenshots/G-20-all-members-test.png" alt="全担当者モード">
+          <div class="shot-caption">
+            <span class="shot-label">全担当者モード時の表示</span>
+            <span>サマリーバナー・行ハイライトともに非表示</span>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>「未入力: N日」のバナーが表示されていない</li>
+            <li>未入力日のオレンジ強調がない</li>
+            <li>土日の赤背景は通常通り表示されている</li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>仕様上の判断: 全担当者モードでは「誰が未入力か」が曖昧になるため、機能を意図的にオフにしています。
+          管理者向けの「入力率ダッシュボード」(G-20-3) を別途実装予定です。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mobile -->
+  <section class="section">
+    <h2 class="section-title">モバイルでの表示</h2>
+    <p class="section-desc">スマートフォン（iPhone 12 Pro / 390px）での表示確認</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number">6</div>
+        <div class="step-title-group">
+          <h3>レスポンシブ対応の確認</h3>
+          <p>狭い画面でも崩れず、視認性が保たれる</p>
+        </div>
+      </div>
+      <div class="step-body">
+        <div style="max-width: 390px; margin: 0 auto;">
+          <div class="shot">
+            <img src="../screenshots/G-20-after-mobile.png" alt="モバイル表示">
+            <div class="shot-caption">
+              <span class="shot-label">390px 幅</span>
+              <span>iPhone 12 Pro</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="verify">
+          <div class="verify-title">確認チェック</div>
+          <ul>
+            <li>バナーがコンパクトに表示されている</li>
+            <li>「未入力」バッジが日付に被らず読める</li>
+            <li>テーブルレイアウトが崩れていない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Edge Cases -->
+  <section class="section">
+    <h2 class="section-title">追加で試したいエッジケース</h2>
+    <p class="section-desc">余裕があれば確認してほしいケース</p>
+
+    <div class="step">
+      <div class="step-body">
+        <ul class="pin-list">
+          <li>
+            <span class="pin-num">A</span>
+            <div>
+              <strong>祝日</strong>: japanese-holidays.js が認識する祝日（例: 5/3）には未入力ハイライトがつかないか
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">B</span>
+            <div>
+              <strong>会社休日</strong>: 設定で会社休日を追加した日にハイライトがつかないか
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">C</span>
+            <div>
+              <strong>今日</strong>: 今日の日付（実績未入力）が「未入力扱いされない」こと（途中の日を強調すると不快なため）
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">D</span>
+            <div>
+              <strong>未来日</strong>: 今月の未来日（例: 4/20）に実績がなくても、ハイライトされない
+            </div>
+          </li>
+          <li>
+            <span class="pin-num">E</span>
+            <div>
+              <strong>過去月</strong>: 「表示期間」を先月に切り替えて、過去のデータでも正しく動作するか
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feedback -->
+  <section class="section">
+    <h2 class="section-title">フィードバック</h2>
+    <p class="section-desc">気になった点があればお知らせください</p>
+
+    <div class="step">
+      <div class="step-body">
+        <p style="margin-bottom: 16px;">特に確認してほしいポイント:</p>
+        <ul class="pin-list">
+          <li>
+            <span class="pin-num">?</span>
+            <div>ハイライトの<strong>視覚的な強さ</strong>は適切ですか？（強すぎ/弱すぎ）</div>
+          </li>
+          <li>
+            <span class="pin-num">?</span>
+            <div>「未入力: N日」バッジの<strong>位置・文言</strong>は適切ですか？</div>
+          </li>
+          <li>
+            <span class="pin-num">?</span>
+            <div>ビューモードによる<strong>自動切替</strong>（個人別時のみ）は妥当ですか？</div>
+          </li>
+        </ul>
+
+        <div class="note">
+          <span class="note-icon">i</span>
+          <span>
+            これらの判断ポイントは
+            <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; padding: 2px 6px; background: var(--surface-alt); border-radius: 3px;">
+              docs/improvements/decisions-pending.md
+            </code>
+            に記録するか、直接フィードバックいただければ次のコミットで反映します。
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Nav -->
+  <nav class="footer-nav">
+    <a href="../progress.md">← 進捗ログ</a>
+    <a href="../memos/G-20.md">設計メモ →</a>
+  </nav>
+
+</div>
+
+</body>
+</html>
