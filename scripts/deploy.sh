@@ -86,10 +86,34 @@ deploy_to_pages() {
   info "GitHub Pagesデプロイを発火中 (main空コミット)..."
   cd "$MAIN_WORKTREE"
 
-  # main branchの最新を取得
-  git fetch origin main --quiet
+  # 未コミットの変更がある場合は一時退避
+  local stashed=false
+  if [ -n "$(git status --porcelain)" ]; then
+    warn "main worktreeに未コミットの変更があります。一時退避します..."
+    git stash push -u -m "deploy.sh auto-stash $(date +%s)"
+    stashed=true
+  fi
+
+  # mainブランチの最新を取得（fast-forwardのみ）
+  if ! git fetch origin main --quiet; then
+    error "git fetch に失敗しました"
+    [ "$stashed" = true ] && git stash pop
+    cd "$REPO_DIR"
+    exit 1
+  fi
+
   git checkout main --quiet 2>/dev/null || true
-  git pull origin main --quiet --rebase
+
+  # ローカルのmainが進んでいるかチェック
+  local local_head=$(git rev-parse HEAD)
+  local remote_head=$(git rev-parse origin/main)
+
+  if [ "$local_head" != "$remote_head" ]; then
+    # fast-forwardでmerge（履歴書き換えなし）
+    if ! git merge --ff-only origin/main --quiet 2>/dev/null; then
+      warn "mainがリモートとdivergeしています。fetchだけ行い、ローカルmainはそのままにします"
+    fi
+  fi
 
   # 空コミット + プッシュ
   local deploy_msg="deploy: trigger Pages rebuild"
@@ -98,7 +122,19 @@ deploy_to_pages() {
   fi
 
   git commit --allow-empty -m "$deploy_msg"
-  git push origin main
+
+  if ! git push origin main; then
+    error "git push に失敗しました"
+    [ "$stashed" = true ] && git stash pop
+    cd "$REPO_DIR"
+    exit 1
+  fi
+
+  # 退避した変更を戻す
+  if [ "$stashed" = true ]; then
+    info "一時退避していた変更を復元中..."
+    git stash pop
+  fi
 
   cd "$REPO_DIR"
   ok "Pagesデプロイを発火しました"
