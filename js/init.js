@@ -679,6 +679,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // グローバル Undo/Redo キーボードショートカットを設定
     History.setupGlobalKeyboardShortcuts();
 
+    // [PREVIEW ONLY] 改善ガイドビューアの起動ボタンを表示
+    // (experiment/redesign-impl 専用、main にマージする場合は削除)
+    import('./walkthrough-viewer.js').then(m => {
+        m.initWalkthroughViewerButton();
+        window.openWalkthroughViewer = m.openWalkthroughViewer;
+        window.closeWalkthroughViewer = m.closeWalkthroughViewer;
+    }).catch(err => {
+        console.warn('[walkthrough-viewer] 読み込みに失敗しました:', err);
+    });
+
     console.log('✅ init.js: 初期化処理完了');
 });
 
