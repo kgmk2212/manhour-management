@@ -68,6 +68,13 @@ jobs:
           path: experiment-redesign-impl
         continue-on-error: true
 
+      - name: Checkout experiment/llm-analysis branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/llm-analysis
+          path: experiment-llm-analysis
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -117,6 +124,15 @@ jobs:
             echo "✅ experiment/redesign-impl をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/redesign-impl ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/llm-analysisブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-llm-analysis" ]; then
+            mkdir -p deploy/preview/llm-analysis
+            cp -r experiment-llm-analysis/* deploy/preview/llm-analysis/
+            echo "✅ experiment/llm-analysis をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/llm-analysis ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
