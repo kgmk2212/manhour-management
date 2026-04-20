@@ -138,8 +138,20 @@ export function validateAnalysisOutput(output) {
     }
 
     const actions = output.recommended_actions || [];
-    if (actions.length < 1) errors.push('推奨アクションが0件です');
-    else if (actions.length > 7) errors.push(`推奨アクションが多すぎます: ${actions.length}件`);
+    if (actions.length < 3) errors.push(`推奨アクションが ${actions.length} 件（3件以上必要）`);
+    else if (actions.length > 5) errors.push(`推奨アクションが多すぎます: ${actions.length}件（5件以下）`);
+
+    // version_forecasts の計算式が記号のままなら警告
+    const forecasts = (output.outlook && output.outlook.version_forecasts) || [];
+    for (const vf of forecasts) {
+        for (const key of ['optimistic', 'realistic', 'pessimistic']) {
+            const val = vf[key] || '';
+            // 「残工数×係数」「残工数x0.9」など記号が残っているパターン
+            if (/残工数[×xX\*]/.test(val) || /×\s*係数/.test(val) || /予想工数$/.test(val)) {
+                errors.push(`${vf.version || '?'} ${key}: 計算式に記号が残っています (${val})`);
+            }
+        }
+    }
 
     return errors;
 }
@@ -206,11 +218,13 @@ ${OUTPUT_FORMAT}`;
  * @returns {Promise<{text: string, elapsedMs: number, tokens: number|null}>}
  */
 async function callOllama({ endpoint, model, useChat, payloadInput, options, signal, onProgress }) {
-    const opts = { temperature: DEFAULT_TEMPERATURE, num_predict: DEFAULT_NUM_PREDICT, think: false, ...(options || {}) };
+    const opts = { temperature: DEFAULT_TEMPERATURE, num_predict: DEFAULT_NUM_PREDICT, ...(options || {}) };
 
+    // think は options ではなくリクエスト直下のパラメータ（Ollama 0.20+ の reasoning model 向け）
+    // stream:true で NDJSON を受信してトークンごとに進捗通知する
     const payload = useChat
-        ? { model, messages: payloadInput, format: OUTPUT_SCHEMA, stream: false, options: opts }
-        : { model, prompt: payloadInput, format: 'json', stream: false, options: opts };
+        ? { model, messages: payloadInput, format: OUTPUT_SCHEMA, stream: true, think: false, options: opts }
+        : { model, prompt: payloadInput, format: 'json', stream: true, think: false, options: opts };
 
     const url = `${endpoint.replace(/\/$/, '')}/api/${useChat ? 'chat' : 'generate'}`;
     onProgress?.({ phase: 'request', model, useChat });
@@ -241,20 +255,85 @@ async function callOllama({ endpoint, model, useChat, payloadInput, options, sig
         throw err;
     }
 
-    const result = await response.json();
+    // NDJSON をストリームで読み取り
+    const { text, tokens } = await readNdjsonStream(response, {
+        useChat,
+        onProgress,
+        startMs: start,
+    });
     const elapsedMs = Date.now() - start;
 
-    let text;
-    if (useChat) {
-        const msg = result.message || {};
-        text = msg.content || msg.thinking || '';
-    } else {
-        text = result.response || result.thinking || '';
+    onProgress?.({ phase: 'complete', elapsedMs, tokens });
+
+    return { text, elapsedMs, tokens };
+}
+
+/**
+ * Ollama のストリーミング NDJSON を読み取り、チャンクを結合して返す
+ */
+async function readNdjsonStream(response, { useChat, onProgress, startMs }) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    let tokens = 0;
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // 改行区切りの NDJSON を1行ずつ処理
+        let newlineIdx;
+        while ((newlineIdx = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newlineIdx).trim();
+            buffer = buffer.slice(newlineIdx + 1);
+            if (!line) continue;
+
+            let chunk;
+            try { chunk = JSON.parse(line); }
+            catch { continue; /* 不完全な行はスキップ */ }
+
+            // chat API と generate API で差分吸収
+            // qwen3.5:9b 等は thinking フェーズで response が空になるため、
+            // thinking デルタもプログレス表示のためにカウント。ただし text には加えない
+            // （最終出力は response/content のみ）
+            let outputDelta = '';
+            let thinkingDelta = '';
+            if (useChat) {
+                const msg = chunk.message || {};
+                outputDelta = msg.content || '';
+                thinkingDelta = msg.thinking || '';
+            } else {
+                outputDelta = chunk.response || '';
+                thinkingDelta = chunk.thinking || '';
+            }
+
+            if (outputDelta) text += outputDelta;
+            if (outputDelta || thinkingDelta) {
+                tokens++;
+                onProgress?.({
+                    phase: 'streaming',
+                    tokens,
+                    chars: text.length,
+                    thinking: !!thinkingDelta && !outputDelta,
+                    elapsedMs: Date.now() - startMs,
+                });
+            }
+
+            if (chunk.done) {
+                tokens = chunk.eval_count ?? tokens;
+                // thinking しか無かった場合のフォールバック
+                if (!text) {
+                    text = useChat
+                        ? (chunk.message?.thinking || '')
+                        : (chunk.thinking || '');
+                }
+            }
+        }
     }
 
-    onProgress?.({ phase: 'complete', elapsedMs, tokens: result.eval_count ?? null });
-
-    return { text, elapsedMs, tokens: result.eval_count ?? null };
+    return { text, tokens };
 }
 
 /** ネットワーク系エラーを人間向けメッセージに変換 */

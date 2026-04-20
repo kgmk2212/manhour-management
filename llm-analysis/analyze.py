@@ -184,6 +184,8 @@ OUTPUT_SCHEMA = {
         },
         "recommended_actions": {
             "type": "array",
+            "minItems": 3,
+            "maxItems": 5,
             "items": {
                 "type": "object",
                 "properties": {
@@ -192,7 +194,7 @@ OUTPUT_SCHEMA = {
                     "title": {"type": "string"},
                     "rationale": {"type": "string"},
                     "action_summary": {"type": "string"},
-                    "action_steps": {"type": "array", "items": {"type": "string"}},
+                    "action_steps": {"type": "array", "minItems": 2, "items": {"type": "string"}},
                     "expected_effect": {"type": "string"},
                 },
                 "required": ["priority", "category", "title", "rationale", "action_summary", "action_steps", "expected_effect"],
@@ -211,8 +213,9 @@ def call_ollama(messages_or_prompt, config: dict, use_chat: bool = True) -> str:
     model = ollama_config.get("model", "qwen3.5:9b")
     options = ollama_config.get("options", {})
 
-    if "think" not in options:
-        options["think"] = False
+    # think はリクエスト直下パラメータ（Ollama 0.20+ の reasoning model 向け）。
+    # options に入れても "invalid option" 警告が出て無視される
+    options.pop("think", None)
 
     if use_chat:
         # chat API（gemma4向け: プレフィル対応）
@@ -221,6 +224,7 @@ def call_ollama(messages_or_prompt, config: dict, use_chat: bool = True) -> str:
             "messages": messages_or_prompt,
             "format": OUTPUT_SCHEMA,
             "stream": False,
+            "think": False,
             "options": options,
         }
         endpoint = f"{url}/api/chat"
@@ -231,6 +235,7 @@ def call_ollama(messages_or_prompt, config: dict, use_chat: bool = True) -> str:
             "prompt": messages_or_prompt,
             "format": "json",
             "stream": False,
+            "think": False,
             "options": options,
         }
         endpoint = f"{url}/api/generate"
@@ -288,10 +293,19 @@ def validate_output(output: dict) -> list[str]:
             errors.append(f"トレンドが不正です: {eval_data['trend']}")
 
     actions = output.get("recommended_actions", [])
-    if len(actions) < 1:
-        errors.append("推奨アクションが0件です")
-    elif len(actions) > 7:
-        errors.append(f"推奨アクションが多すぎます: {len(actions)}件 (3〜5件推奨)")
+    if len(actions) < 3:
+        errors.append(f"推奨アクションが{len(actions)}件（3件以上必要）")
+    elif len(actions) > 5:
+        errors.append(f"推奨アクションが多すぎます: {len(actions)}件 (5件以下)")
+
+    # version_forecasts の計算式が記号のままなら警告
+    import re
+    forecasts = (output.get("outlook") or {}).get("version_forecasts", [])
+    for vf in forecasts:
+        for key in ("optimistic", "realistic", "pessimistic"):
+            val = vf.get(key, "") or ""
+            if re.search(r"残工数[×xX*]", val) or "×係数" in val or val.endswith("予想工数"):
+                errors.append(f"{vf.get('version','?')} {key}: 計算式に記号が残っています ({val})")
 
     return errors
 
