@@ -60,3 +60,13 @@ archive/
 # Temporary style/script files
 temp_*.css
 temp_*.js
+
+# Playwright MCP intermediate artifacts
+.playwright-mcp/
+
+# Ad-hoc verification screenshots at repo root
+# (intentional screenshots should live under docs/ or mockups/)
+/analytics-*.png
+/mobile-ai-*.png
+/mobile-analytics-*.png
+/donut-fixed.png
