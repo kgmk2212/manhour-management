@@ -344,8 +344,27 @@ export function autoBackup() {
         taskColorMap: { ...taskColorMap },
         settings: settings,
         timestamp: new Date().toISOString(),
-        version: '1.1'
+        version: '1.2'
     };
+
+    // AI 分析履歴を含める（設定で OFF にされていない場合）
+    try {
+        const aiSettingsRaw = localStorage.getItem('llmAnalysisSettings_v1');
+        const aiSettings = aiSettingsRaw ? JSON.parse(aiSettingsRaw) : {};
+        if (aiSettings.backupIncludeHistory !== false) {
+            const historyRaw = localStorage.getItem('llmAnalysisHistory_v1');
+            if (historyRaw) {
+                const history = JSON.parse(historyRaw);
+                if (Array.isArray(history) && history.length > 0) {
+                    data.llmAnalysisHistory = history;
+                }
+            }
+        }
+        // 設定そのものも入れておく（モデル名・エンドポイント保持）
+        if (aiSettingsRaw) data.llmAnalysisSettings = aiSettings;
+    } catch {
+        /* ignore */
+    }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -418,6 +437,14 @@ export function handleFileImport(event) {
                     setCompanyHolidays(data.companyHolidays || []);
                     setVacations(data.vacations || []);
                     setRemainingEstimates(data.remainingEstimates || []);
+
+                    // AI 分析履歴と設定を復元（バックアップに含まれていた場合のみ）
+                    if (Array.isArray(data.llmAnalysisHistory) && data.llmAnalysisHistory.length > 0) {
+                        localStorage.setItem('llmAnalysisHistory_v1', JSON.stringify(data.llmAnalysisHistory));
+                    }
+                    if (data.llmAnalysisSettings && typeof data.llmAnalysisSettings === 'object') {
+                        localStorage.setItem('llmAnalysisSettings_v1', JSON.stringify(data.llmAnalysisSettings));
+                    }
 
                     // スケジュールデータの復元
                     if (data.schedules) {

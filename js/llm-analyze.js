@@ -318,6 +318,7 @@ async function readNdjsonStream(response, { useChat, onProgress, startMs }) {
                     chars: text.length,
                     thinking: !!thinkingDelta && !outputDelta,
                     elapsedMs: Date.now() - startMs,
+                    text, // 逐次描画用（partial-JSON パーサに渡す）
                 });
             }
 

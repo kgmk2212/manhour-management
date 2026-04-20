@@ -7,18 +7,27 @@
 
 import { summarizeFromAppState } from './llm-summarize.js';
 import { analyze as runAnalyze, probeOllama } from './llm-analyze.js';
+import { parsePartialJson } from './partial-json.js';
 
 const ANALYSIS_PATH = 'analysis/latest.json';
-const RESULT_STORAGE_KEY = 'llmAnalysisResult_v1';
+const HISTORY_STORAGE_KEY = 'llmAnalysisHistory_v1';
+const LEGACY_RESULT_KEY = 'llmAnalysisResult_v1';
 const SETTINGS_STORAGE_KEY = 'llmAnalysisSettings_v1';
+const MAX_HISTORY = 10;
 const DEFAULT_SETTINGS = Object.freeze({
     endpoint: 'http://localhost:11434',
     model: 'qwen3.5:9b',
+    backupIncludeHistory: true,
 });
 
 const state = {
     phase: 'idle',           // idle | summarizing | analyzing | done | error
-    result: null,            // 結果 JSON
+    result: null,            // 現在表示中の結果 JSON
+    partial: null,           // 推論中の部分 JSON（逐次描画用）
+    partialTokens: 0,
+    partialThinking: false,
+    history: [],             // 結果履歴（新しい順）
+    selectedIndex: 0,        // history 上の選択位置（0 = 最新）
     error: null,             // { message, code, hint }
     controller: null,        // AbortController
     elapsedMs: 0,
@@ -55,24 +64,56 @@ function saveSettings(settings) {
     }
 }
 
-function loadCachedResult() {
+/**
+ * 履歴を読み込む。旧 RESULT_STORAGE_KEY があれば自動マイグレーション
+ * @returns {Array<object>} 新しい順の配列（先頭が最新）
+ */
+export function loadHistory() {
     try {
-        const raw = localStorage.getItem(RESULT_STORAGE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.team_evaluation) return null;
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-function saveCachedResult(result) {
-    try {
-        localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result));
+        const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.filter(r => r && r.team_evaluation);
+        }
+        // 旧フォーマット (単一結果) から移行
+        const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
+        if (legacy) {
+            const parsed = JSON.parse(legacy);
+            if (parsed && parsed.team_evaluation) {
+                const migrated = [parsed];
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(migrated));
+                localStorage.removeItem(LEGACY_RESULT_KEY);
+                return migrated;
+            }
+        }
     } catch {
         /* ignore */
     }
+    return [];
+}
+
+function saveHistory(arr) {
+    try {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(arr));
+    } catch {
+        /* ignore */
+    }
+}
+
+/**
+ * 新しい結果を履歴先頭に追加。MAX_HISTORY を超えたら古い順に破棄
+ */
+export function appendHistory(result) {
+    const history = loadHistory();
+    history.unshift(result);
+    while (history.length > MAX_HISTORY) history.pop();
+    saveHistory(history);
+    return history;
+}
+
+function clearHistory() {
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_RESULT_KEY);
 }
 
 /* -------------------- 初期化 -------------------- */
@@ -85,11 +126,12 @@ export async function initAiAnalysis() {
     // セクションは常に表示する（空状態でも実行ボタンを出すため）
     section.style.display = '';
 
-    // 1. ローカルキャッシュを最優先
-    const cached = loadCachedResult();
-    if (cached) {
+    // 1. 履歴（旧キーからの自動マイグレーション含む）を最優先
+    state.history = loadHistory();
+    if (state.history.length > 0) {
         state.phase = 'done';
-        state.result = cached;
+        state.selectedIndex = 0;
+        state.result = state.history[0];
         state.lastSource = 'cache';
         render(content);
         return;
@@ -126,14 +168,22 @@ function render(content) {
     // アクションバー（常設）
     content.appendChild(renderActionBar());
 
-    if (state.phase === 'summarizing' || state.phase === 'analyzing') {
+    if (state.phase === 'summarizing') {
         content.appendChild(renderLoading());
+        return;
+    }
+
+    if (state.phase === 'analyzing') {
+        // ヘッダ（経過時間・トークン数）は常設、partial があれば結果カードを部分描画
+        content.appendChild(renderStreamingStatus());
+        if (state.partial) {
+            content.appendChild(renderResult(state.partial, { partial: true }));
+        }
         return;
     }
 
     if (state.phase === 'error') {
         content.appendChild(renderError());
-        // 直近の結果があれば参考表示
         if (state.result) content.appendChild(renderResult(state.result, { dimmed: true }));
         return;
     }
@@ -143,7 +193,6 @@ function render(content) {
         return;
     }
 
-    // idle
     content.appendChild(renderEmpty());
 }
 
@@ -230,25 +279,63 @@ function renderSettingsPanel() {
         }
     });
 
-    const clearBtn = el('button', 'ai-clear-btn', 'キャッシュを削除');
+    const clearBtn = el('button', 'ai-clear-btn', '履歴をすべて削除');
     const clearStatus = el('span', 'ai-clear-status');
     clearBtn.addEventListener('click', async () => {
-        if (!confirm('保存されている AI 分析結果を削除します。よろしいですか？')) return;
-        localStorage.removeItem(RESULT_STORAGE_KEY);
+        const n = loadHistory().length;
+        if (!confirm(`保存されている AI 分析履歴 ${n} 件をすべて削除します。よろしいですか？`)) return;
+        clearHistory();
         clearStatus.textContent = '✓ 削除しました';
         clearStatus.className = 'ai-clear-status ai-clear-ok';
-        // 再初期化（fallback があれば表示）
         state.result = null;
+        state.history = [];
+        state.selectedIndex = 0;
         state.phase = 'idle';
         state.lastSource = null;
         await initAiAnalysis();
     });
 
+    const exportBtn = el('button', 'ai-export-btn', '履歴をエクスポート');
+    exportBtn.addEventListener('click', () => {
+        const history = loadHistory();
+        if (history.length === 0) {
+            alert('エクスポートする履歴がありません');
+            return;
+        }
+        const blob = new Blob([JSON.stringify({
+            exportedAt: new Date().toISOString(),
+            count: history.length,
+            history,
+        }, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `ai-analysis-history_${timestamp}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
     actionsRow.appendChild(probeBtn);
     actionsRow.appendChild(clearBtn);
+    actionsRow.appendChild(exportBtn);
     actionsRow.appendChild(probeStatus);
     actionsRow.appendChild(clearStatus);
     panel.appendChild(actionsRow);
+
+    // バックアップ含有トグル
+    const toggleRow = el('div', 'ai-settings-row');
+    toggleRow.appendChild(el('label', null, 'バックアップに履歴を含める'));
+    const toggle = el('input');
+    toggle.type = 'checkbox';
+    toggle.checked = settings.backupIncludeHistory !== false;
+    toggle.addEventListener('change', () => {
+        const current = loadSettings();
+        current.backupIncludeHistory = toggle.checked;
+        saveSettings(current);
+    });
+    toggleRow.appendChild(toggle);
+    panel.appendChild(toggleRow);
 
     return panel;
 }
@@ -272,17 +359,25 @@ function renderEmpty() {
 function renderLoading() {
     const box = el('div', 'ai-loading');
     box.appendChild(el('div', 'ai-loading-spinner'));
-    const label = state.phase === 'summarizing' ? 'データを要約しています…' : 'Ollama で推論しています…';
-    box.appendChild(el('div', 'ai-loading-label', label));
+    box.appendChild(el('div', 'ai-loading-label', 'データを要約しています…'));
     const timer = el('div', 'ai-loading-timer', `${(state.elapsedMs / 1000).toFixed(1)} 秒経過`);
     timer.id = 'ai-loading-timer';
     box.appendChild(timer);
-    const stream = el('div', 'ai-loading-stream', '');
-    stream.id = 'ai-loading-stream';
-    box.appendChild(stream);
-    const hint = el('div', 'ai-loading-hint',
-        '数十秒〜数分かかることがあります。「キャンセル」で中止できます。');
-    box.appendChild(hint);
+    return box;
+}
+
+/** 推論中の進捗を上部にコンパクト表示（partial 結果は別に描画） */
+function renderStreamingStatus() {
+    const box = el('div', 'ai-streaming-status');
+    const spinner = el('div', 'ai-streaming-spinner');
+    box.appendChild(spinner);
+    const label = state.partialThinking ? '思考中' : '生成中';
+    const left = el('div', 'ai-streaming-label', label);
+    box.appendChild(left);
+    const timer = el('div', 'ai-streaming-timer',
+        `${(state.elapsedMs / 1000).toFixed(1)}秒 / ${state.partialTokens} トークン`);
+    timer.id = 'ai-loading-timer';
+    box.appendChild(timer);
     return box;
 }
 
@@ -310,8 +405,11 @@ launchctl stop ollama && launchctl start ollama
     return box;
 }
 
-function renderResult(data, { dimmed = false } = {}) {
-    const root = el('div', dimmed ? 'ai-result-dimmed' : null);
+function renderResult(data, { dimmed = false, partial = false } = {}) {
+    const cls = [];
+    if (dimmed) cls.push('ai-result-dimmed');
+    if (partial) cls.push('ai-result-partial');
+    const root = el('div', cls.join(' ') || null);
 
     const te = data.team_evaluation || {};
     const ol = data.outlook || {};
@@ -329,14 +427,36 @@ function renderResult(data, { dimmed = false } = {}) {
     const heroTop = el('div', 'ai-hero-top');
     const titleWrap = el('div', 'ai-hero-title');
     titleWrap.appendChild(el('div', 'ai-hero-icon', '\u25C6'));
-    titleWrap.appendChild(el('h2', null, te.headline ? te.headline : 'AI分析'));
+    titleWrap.appendChild(el('h2', null, te.headline || (partial ? '生成中…' : 'AI分析')));
     heroTop.appendChild(titleWrap);
     const metaWrap = el('div', 'ai-hero-meta');
     if (meta.model) metaWrap.appendChild(el('span', 'ai-model-tag', meta.model));
     if (meta.generated_at) metaWrap.appendChild(el('span', null, formatDate(meta.generated_at)));
     if (meta.analysis_period) metaWrap.appendChild(el('span', null, meta.analysis_period));
-    if (state.lastSource === 'cache') metaWrap.appendChild(el('span', 'ai-source-tag', 'キャッシュ'));
     if (state.lastSource === 'file') metaWrap.appendChild(el('span', 'ai-source-tag', 'ファイル'));
+    // 履歴セレクタ（2件以上ある時のみ）
+    if (state.history.length >= 2) {
+        const sel = el('select', 'ai-history-select');
+        state.history.forEach((h, i) => {
+            const opt = el('option');
+            opt.value = String(i);
+            const when = formatDate(h.meta?.generated_at || '');
+            const model = h.meta?.model || '?';
+            opt.textContent = `${i + 1}/${state.history.length}: ${model} (${when})`;
+            if (i === state.selectedIndex) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', () => {
+            const idx = parseInt(sel.value, 10);
+            if (idx >= 0 && idx < state.history.length) {
+                state.selectedIndex = idx;
+                state.result = state.history[idx];
+                state.lastSource = 'cache';
+                render(document.getElementById('ai-analysis-content'));
+            }
+        });
+        metaWrap.appendChild(sel);
+    }
     heroTop.appendChild(metaWrap);
     hero.appendChild(heroTop);
 
@@ -532,32 +652,45 @@ async function executeAnalysis() {
 
     // 推論フェーズ
     state.phase = 'analyzing';
+    state.partial = null;
+    state.partialTokens = 0;
+    state.partialThinking = false;
     render(content);
 
     try {
+        let lastRenderAt = 0;
         const result = await runAnalyze(summary, {
             endpoint: settings.endpoint,
             model: settings.model,
             signal: controller.signal,
             onProgress: (ev) => {
-                if (ev.phase === 'streaming') {
-                    const el = document.getElementById('ai-loading-stream');
-                    if (el) {
-                        const label = ev.thinking ? '思考中' : '生成中';
-                        el.textContent = `${label}: ${ev.tokens} トークン / 出力 ${ev.chars} 文字`;
-                    }
+                if (ev.phase !== 'streaming') return;
+                state.partialTokens = ev.tokens;
+                state.partialThinking = !!ev.thinking;
+                if (ev.text) {
+                    const parsed = parsePartialJson(ev.text);
+                    if (parsed) state.partial = parsed;
+                }
+                // 200ms ごとに再描画（頻繁すぎる再描画を抑制）
+                const now = Date.now();
+                if (now - lastRenderAt > 200) {
+                    lastRenderAt = now;
+                    render(content);
                 }
             },
         });
         stopTimer();
         state.phase = 'done';
         state.result = result;
+        state.history = appendHistory(result);
+        state.selectedIndex = 0;
         state.lastSource = 'fresh';
         state.error = null;
-        saveCachedResult(result);
+        state.partial = null;
         render(content);
     } catch (err) {
         stopTimer();
+        state.partial = null;
         if (err.name === 'AbortError') {
             state.phase = state.result ? 'done' : 'idle';
             render(content);
@@ -619,8 +752,14 @@ function startTimer() {
     const start = Date.now();
     state.elapsedTimer = setInterval(() => {
         state.elapsedMs = Date.now() - start;
-        const el = document.getElementById('ai-loading-timer');
-        if (el) el.textContent = `${(state.elapsedMs / 1000).toFixed(1)} 秒経過`;
+        const timerEl = document.getElementById('ai-loading-timer');
+        if (!timerEl) return;
+        if (state.phase === 'analyzing') {
+            timerEl.textContent =
+                `${(state.elapsedMs / 1000).toFixed(1)}秒 / ${state.partialTokens} トークン`;
+        } else {
+            timerEl.textContent = `${(state.elapsedMs / 1000).toFixed(1)} 秒経過`;
+        }
     }, 200);
 }
 
