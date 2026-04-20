@@ -13,11 +13,13 @@ const ANALYSIS_PATH = 'analysis/latest.json';
 const HISTORY_STORAGE_KEY = 'llmAnalysisHistory_v1';
 const LEGACY_RESULT_KEY = 'llmAnalysisResult_v1';
 const SETTINGS_STORAGE_KEY = 'llmAnalysisSettings_v1';
-const MAX_HISTORY = 10;
+const DEFAULT_HISTORY_MAX = 50;
+const HISTORY_MAX_HARD_LIMIT = 500; // 暴走防止の上限
 const DEFAULT_SETTINGS = Object.freeze({
     endpoint: 'http://localhost:11434',
     model: 'qwen3.5:9b',
     backupIncludeHistory: true,
+    historyMax: DEFAULT_HISTORY_MAX,
 });
 
 const state = {
@@ -101,14 +103,22 @@ function saveHistory(arr) {
 }
 
 /**
- * 新しい結果を履歴先頭に追加。MAX_HISTORY を超えたら古い順に破棄
+ * 新しい結果を履歴先頭に追加。設定の historyMax を超えたら古い順に破棄
  */
 export function appendHistory(result) {
     const history = loadHistory();
     history.unshift(result);
-    while (history.length > MAX_HISTORY) history.pop();
+    const max = getHistoryMax();
+    while (history.length > max) history.pop();
     saveHistory(history);
     return history;
+}
+
+/** 設定から履歴保持上限を取得（安全範囲にクランプ） */
+function getHistoryMax() {
+    const n = parseInt(loadSettings().historyMax, 10);
+    if (!Number.isFinite(n) || n < 1) return DEFAULT_HISTORY_MAX;
+    return Math.min(n, HISTORY_MAX_HARD_LIMIT);
 }
 
 function clearHistory() {
@@ -322,6 +332,28 @@ function renderSettingsPanel() {
     actionsRow.appendChild(probeStatus);
     actionsRow.appendChild(clearStatus);
     panel.appendChild(actionsRow);
+
+    // 履歴保持件数
+    const historyMaxRow = el('div', 'ai-settings-row');
+    historyMaxRow.appendChild(el('label', null, '履歴の保持件数'));
+    const maxInput = el('input', 'ai-history-max-input');
+    maxInput.type = 'number';
+    maxInput.min = '1';
+    maxInput.max = String(HISTORY_MAX_HARD_LIMIT);
+    maxInput.step = '1';
+    maxInput.value = String(settings.historyMax ?? DEFAULT_HISTORY_MAX);
+    maxInput.addEventListener('change', () => {
+        const current = loadSettings();
+        let n = parseInt(maxInput.value, 10);
+        if (!Number.isFinite(n) || n < 1) n = DEFAULT_HISTORY_MAX;
+        n = Math.min(n, HISTORY_MAX_HARD_LIMIT);
+        maxInput.value = String(n);
+        current.historyMax = n;
+        saveSettings(current);
+    });
+    historyMaxRow.appendChild(maxInput);
+    historyMaxRow.appendChild(el('span', 'ai-settings-hint', `（1〜${HISTORY_MAX_HARD_LIMIT}件、デフォルト${DEFAULT_HISTORY_MAX}）`));
+    panel.appendChild(historyMaxRow);
 
     // バックアップ含有トグル
     const toggleRow = el('div', 'ai-settings-row');
