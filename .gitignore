@@ -70,3 +70,4 @@ temp_*.js
 /mobile-ai-*.png
 /mobile-analytics-*.png
 /donut-fixed.png
+llm-analysis/__pycache__/

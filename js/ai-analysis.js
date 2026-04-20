@@ -178,13 +178,14 @@ function renderSettingsPanel() {
 
     const settings = loadSettings();
 
-    const makeField = (label, key, placeholder) => {
+    const makeField = (label, key, placeholder, { listId } = {}) => {
         const row = el('div', 'ai-settings-row');
         row.appendChild(el('label', null, label));
         const input = el('input');
         input.type = 'text';
         input.value = settings[key];
         input.placeholder = placeholder;
+        if (listId) input.setAttribute('list', listId);
         input.addEventListener('change', () => {
             const current = loadSettings();
             current[key] = input.value.trim() || DEFAULT_SETTINGS[key];
@@ -195,9 +196,24 @@ function renderSettingsPanel() {
     };
 
     panel.appendChild(makeField('Ollama エンドポイント', 'endpoint', DEFAULT_SETTINGS.endpoint));
-    panel.appendChild(makeField('モデル名', 'model', DEFAULT_SETTINGS.model));
 
-    const probeRow = el('div', 'ai-settings-row ai-settings-probe');
+    // モデル一覧の datalist（開封時に probeOllama で取得して埋める）
+    const modelList = el('datalist');
+    modelList.id = 'ai-model-list';
+    panel.appendChild(modelList);
+    panel.appendChild(makeField('モデル名', 'model', DEFAULT_SETTINGS.model, { listId: 'ai-model-list' }));
+
+    // パネルを開いた瞬間にモデル一覧を非同期で取得（失敗しても UX は壊れない）
+    probeOllama(settings.endpoint, { timeoutMs: 1500 }).then(result => {
+        if (!result.ok || !result.models) return;
+        for (const name of result.models) {
+            const opt = el('option');
+            opt.value = name;
+            modelList.appendChild(opt);
+        }
+    }).catch(() => {/* ignore */});
+
+    const actionsRow = el('div', 'ai-settings-row ai-settings-actions');
     const probeBtn = el('button', 'ai-probe-btn', '疎通確認');
     const probeStatus = el('span', 'ai-probe-status');
     probeBtn.addEventListener('click', async () => {
@@ -213,9 +229,26 @@ function renderSettingsPanel() {
             probeStatus.classList.add('ai-probe-error');
         }
     });
-    probeRow.appendChild(probeBtn);
-    probeRow.appendChild(probeStatus);
-    panel.appendChild(probeRow);
+
+    const clearBtn = el('button', 'ai-clear-btn', 'キャッシュを削除');
+    const clearStatus = el('span', 'ai-clear-status');
+    clearBtn.addEventListener('click', async () => {
+        if (!confirm('保存されている AI 分析結果を削除します。よろしいですか？')) return;
+        localStorage.removeItem(RESULT_STORAGE_KEY);
+        clearStatus.textContent = '✓ 削除しました';
+        clearStatus.className = 'ai-clear-status ai-clear-ok';
+        // 再初期化（fallback があれば表示）
+        state.result = null;
+        state.phase = 'idle';
+        state.lastSource = null;
+        await initAiAnalysis();
+    });
+
+    actionsRow.appendChild(probeBtn);
+    actionsRow.appendChild(clearBtn);
+    actionsRow.appendChild(probeStatus);
+    actionsRow.appendChild(clearStatus);
+    panel.appendChild(actionsRow);
 
     return panel;
 }
@@ -244,6 +277,9 @@ function renderLoading() {
     const timer = el('div', 'ai-loading-timer', `${(state.elapsedMs / 1000).toFixed(1)} 秒経過`);
     timer.id = 'ai-loading-timer';
     box.appendChild(timer);
+    const stream = el('div', 'ai-loading-stream', '');
+    stream.id = 'ai-loading-stream';
+    box.appendChild(stream);
     const hint = el('div', 'ai-loading-hint',
         '数十秒〜数分かかることがあります。「キャンセル」で中止できます。');
     box.appendChild(hint);
@@ -503,7 +539,15 @@ async function executeAnalysis() {
             endpoint: settings.endpoint,
             model: settings.model,
             signal: controller.signal,
-            onProgress: () => {/* 現状はタイマ更新のみなのでノーオペ */},
+            onProgress: (ev) => {
+                if (ev.phase === 'streaming') {
+                    const el = document.getElementById('ai-loading-stream');
+                    if (el) {
+                        const label = ev.thinking ? '思考中' : '生成中';
+                        el.textContent = `${label}: ${ev.tokens} トークン / 出力 ${ev.chars} 文字`;
+                    }
+                }
+            },
         });
         stopTimer();
         state.phase = 'done';
