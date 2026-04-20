@@ -1,7 +1,17 @@
 # ローカルLLM分析機能 - 作業分担ワークフロー
 
 > **作成日**: 2026-03-15
-> **関連**: [実装計画](./LLM_IMPLEMENTATION_PLAN.md) / [構想メモ](./LLM_ANALYSIS_CONCEPT.md)
+> **最終更新**: 2026-04-20（ブラウザ直叩き方式に合わせて書き換え）
+> **関連**: [実装計画](./LLM_IMPLEMENTATION_PLAN.md) / [構想メモ](./LLM_ANALYSIS_CONCEPT.md) / [アーキテクチャ](./LLM_ANALYSIS_ARCHITECTURE.md)
+
+---
+
+## 更新履歴
+
+| 日付 | 更新内容 |
+|------|---------|
+| 2026-03-15 | 初版（社内 GPU サーバー運用前提のワークフロー） |
+| **2026-04-20** | **方針転換に合わせて全面改訂。ブラウザ直叩き方式の新 Phase 2/3 に差し替え** |
 
 ---
 
@@ -9,300 +19,218 @@
 
 | マーク | 意味 |
 |--------|------|
-| **あなた** | ユーザーが行う作業（物理操作・サーバー管理・判断） |
-| **Claude** | Claudeが行う作業（コード作成・ドキュメント作成） |
+| **あなた** | ユーザーが行う作業（操作・判断・実機確認） |
+| **Claude** | Claude が行う作業（コード作成・ドキュメント作成） |
 | **確認** | 両者で確認・レビュー |
 
 ---
 
-## Phase 1: LLM出力の品質検証
+## 全体の進行状況
 
-### Step 1: 環境準備
+| Phase | 状況 | 次のアクション |
+|-------|------|--------------|
+| Phase 1: LLM 出力の品質検証 | ✅ 完了 | — |
+| Phase 2: 要約器の JS 移植 | 🔜 未着手 | Claude: `js/llm-summarize.js` の実装 |
+| Phase 3: ブラウザから Ollama 直叩き | 🔜 未着手 | Claude: `js/llm-analyze.js` + UI 拡張 / あなた: CORS 設定 |
+| Phase 4: フロントエンド統合 | ✅ 完了 | Phase 3 完了後に動線調整 |
 
-```
-あなた ─── LLMサーバーのセットアップ
-  │
-  ├── 1. GPU搭載サーバーを確保（社内の既存マシン or 新規）
-  │      必要スペック: VRAM 8GB以上（7Bモデル）/ 12GB以上（14Bモデル）
-  │
-  ├── 2. Ollamaをインストール
-  │      curl -fsSL https://ollama.com/install.sh | sh
-  │
-  ├── 3. モデルをダウンロード（まず1つ）
-  │      ollama pull qwen2.5:7b
-  │      # または
-  │      ollama pull gemma2:9b
-  │
-  └── 4. 動作確認
-         ollama run qwen2.5:7b "こんにちは、テストです"
-         # 日本語で応答が返ればOK
-```
+---
+
+## Phase 1: LLM 出力の品質検証 ✅ 完了
+
+完了済み。成果物は [実装計画 Phase 1](./LLM_IMPLEMENTATION_PLAN.md#phase-1-llm-出力の品質検証--完了) 参照。
+
+---
+
+## Phase 2: 要約器の JS 移植
+
+### Step 1: 実装
 
 ```
-あなた ─── テスト用データの準備
+Claude ─── js/llm-summarize.js を新規作成
   │
-  └── 工数管理アプリから1人分のバックアップJSONをエクスポート
-      （実データ or ダミーデータどちらでも可）
-      → ファイルをClaude Codeに共有
+  ├── summarize.py のロジックを JavaScript に移植
+  │   (overall / by_version / by_process / by_member /
+  │    member_monthly / monthly_trend / task_sizes /
+  │    capacity / anomalies)
+  │
+  ├── 既存の js/report.js / js/utils.js の集計関数を流用できる部分は流用
+  │
+  └── ES Module として export（他モジュールから import 可能に）
 ```
 
-### Step 2: スクリプト作成
+### Step 2: 単体検証（Python 版との一致確認）
 
 ```
-Claude ─── 以下のファイルを作成
+Claude ─── 検証ユーティリティを作成
   │
-  ├── summarize.py        バックアップJSON → 要約JSON変換
-  ├── analyze.py           要約JSON → Ollama API → 結果JSON
-  ├── prompts/
-  │   ├── system_prompt.txt
-  │   ├── output_format.txt
-  │   └── few_shot_example.json
-  ├── config.yaml          設定テンプレート
-  ├── requirements.txt     Python依存パッケージ
-  └── tests/
-      └── sample_backup.json   テスト用サンプルデータ
-```
-
-### Step 3: 検証実行
-
-```
-あなた ─── LLMサーバーでスクリプトを実行
-  │
-  ├── 1. スクリプト一式をLLMサーバーに配置
-  │      scp -r manhour-analysis/ llm-server:/opt/
-  │
-  ├── 2. Python環境セットアップ
-  │      cd /opt/manhour-analysis
-  │      pip install -r requirements.txt
-  │
-  ├── 3. 要約スクリプト実行
-  │      python summarize.py --input backup.json --output summary.json
-  │      # → summary.json を確認
-  │
-  ├── 4. 推論スクリプト実行
-  │      python analyze.py --input summary.json --output result.json
-  │      # → result.json を確認
-  │
-  └── 5. 結果をClaude Codeに共有（コピペ or ファイル共有）
-```
-
-### Step 4: 品質レビュー
-
-```
-確認 ─── 出力結果を一緒にレビュー
-  │
-  ├── JSON構造は正しいか
-  ├── 数値の引用は正確か
-  ├── 提案は具体的で実用的か
-  ├── 日本語は自然か
-  └── ハルシネーションはないか
+  ├── tests/sample_backup.json を JS で読み込み
+  ├── Python 版 summarize.py の出力と diff
+  └── 一致しなければ実装を修正
 ```
 
 ```
-Claude ─── フィードバックに基づいてプロンプト調整
+あなた ─── ブラウザで検証ページを開いて確認
   │
-  └── プロンプト修正 → 再検証（Step 3-4 を繰り返し）
+  └── コンソールに出力される「JS 版 == Python 版」を確認
 ```
 
-### Step 5: モデル選定
+### Step 3: 実データ検証
 
 ```
-あなた ─── 複数モデルで比較実行
+あなた ─── 自分の実 localStorage 状態を JS 版に流して動作確認
   │
-  ├── ollama pull qwen2.5:7b && python analyze.py --model qwen2.5:7b
-  ├── ollama pull gemma2:9b   && python analyze.py --model gemma2:9b
-  └── (VRAM余裕あれば) ollama pull qwen2.5:14b && python analyze.py --model qwen2.5:14b
+  └── ランタイムエラーや未定義値が無いこと
+      要約 JSON の内容が妥当であること
+```
+
+### 完了条件
+- `sample_backup.json` と `sample_backup_v2.json` の両方で JS 版と Python 版の出力が一致
+- 実データでもランタイムエラーなく動作
+
+---
+
+## Phase 3: ブラウザから Ollama 直叩き
+
+### Step 4: Ollama 側のセットアップ（あなた）
+
+```
+あなた ─── ローカル Ollama の CORS 設定
+  │
+  ├── 1. OLLAMA_ORIGINS を設定
+  │      # macOS
+  │      launchctl setenv OLLAMA_ORIGINS "https://kgmk2212.github.io"
+  │      launchctl stop ollama && launchctl start ollama
+  │
+  │      # 手動起動で試すなら
+  │      OLLAMA_ORIGINS="https://kgmk2212.github.io" ollama serve
+  │
+  ├── 2. 使用モデルが入っていることを確認
+  │      ollama list
+  │      # qwen3.5:9b もしくは gemma4 があること
+  │
+  └── 3. 疎通確認
+         curl -H "Origin: https://kgmk2212.github.io" \
+              http://localhost:11434/api/tags
+         # Access-Control-Allow-Origin が返っていればOK
+```
+
+### Step 5: 実装（Claude）
+
+```
+Claude ─── 以下を作成・変更
+  │
+  ├── 新規: js/llm-prompts.js
+  │       llm-analysis/prompts/*.txt の内容を template literal で埋め込み
+  │
+  ├── 新規: js/llm-analyze.js
+  │       analyze.py 相当の fetch + JSON 検証 + リトライロジック
+  │       ストリーミング対応で進捗コールバック
+  │
+  ├── 変更: js/ai-analysis.js
+  │       「分析を実行」ボタン、ローディング/エラー UI、
+  │       localStorage キャッシュの読み書き
+  │
+  ├── 変更: index.html
+  │       AI 分析セクションに実行ボタンとステータス表示を追加
+  │
+  ├── 変更: style.css
+  │       ローディング/エラー/再実行ボタンのスタイル
+  │
+  └── 変更: README.md
+         AI 分析機能の使い方と OLLAMA_ORIGINS 設定手順を追記
+```
+
+### Step 6: 動作確認（両者）
+
+```
+あなた ─── ブラウザで実機確認
+  │
+  ├── 1. GitHub Pages 上のアプリを開く
+  │      https://kgmk2212.github.io/manhour-management/
+  │      （または実験ブランチのプレビュー URL）
+  │
+  ├── 2. 分析タブ → 「分析を実行」をクリック
+  │      ローディングが表示されること
+  │
+  ├── 3. 結果が描画されること
+  │      生成日時・モデル名が表示されること
+  │
+  ├── 4. リロード後にキャッシュから即時描画されること
+  │
+  ├── 5. エラーケースの確認
+  │      a. Ollama を停止して「分析を実行」→ 適切なエラー表示
+  │      b. OLLAMA_ORIGINS を外して「分析を実行」→ CORS エラー表示
+  │
+  └── 6. Chrome / Edge / Firefox の 3 ブラウザで同様に確認
 ```
 
 ```
-確認 ─── 比較結果を見て採用モデルを決定
+確認 ─── 結果のレビュー
+  │
+  ├── 分析内容が実データに即しているか
+  ├── Python 版と同等以上の品質か
+  ├── UI のレスポンスが許容範囲か（ローディング時間、キャンセル可能性）
+  └── エラー時の案内がわかりやすいか
+```
+
+```
+Claude ─── フィードバックに基づいて調整
+  │
+  └── プロンプト / UI / エラーメッセージを修正
+```
+
+### 完了条件
+- 3 ブラウザで正常実行を確認済み
+- 主要エラーパターン（Ollama 停止、CORS、モデル未ダウンロード、タイムアウト）のハンドリング動作確認済み
+- キャッシュ復元が動作
+- README に利用手順を追記済み
+
+---
+
+## Phase 4: フロントエンド統合 ✅ 完了
+
+Phase 4 は既に完了済み。Phase 3 完了後に「初回は `analysis/latest.json` を fetch、以降はキャッシュ優先」の動線調整のみを追加する。
+
+```
+Claude ─── 動線調整
+  └── js/ai-analysis.js の初期化処理を調整
+     1. localStorage キャッシュがあればそれを表示
+     2. なければ analysis/latest.json を fetch
+     3. それも無ければ「分析を実行」ボタンのみ表示
 ```
 
 ---
 
-## Phase 2: バックエンドパイプライン構築
-
-### Step 6: パイプライン作成
+## 全体タイムライン（新）
 
 ```
-Claude ─── パイプラインスクリプト作成
-  │
-  ├── run_pipeline.sh      全体実行スクリプト
-  ├── config.yaml          本番用設定（チーム一覧等）
-  └── エラーハンドリング・ログ出力の実装
+Day 1       Phase 2: 要約器の JS 移植
+            ├─ Claude: js/llm-summarize.js 実装                 (0.5〜1日)
+            └─ 確認:   Python 版との一致確認 + 実データ検証       (0.5日)
+
+Day 2-3     Phase 3: ブラウザ直叩き実装
+            ├─ あなた: Ollama の CORS 設定                       (0.5時間)
+            ├─ Claude: js/llm-analyze.js + UI 拡張              (1〜1.5日)
+            ├─ 確認:   3 ブラウザでの動作確認                     (0.5日)
+            └─ Claude: フィードバックに基づく調整                  (適宜)
+
+Day 3-4     Phase 4: 動線調整（小）
+            └─ Claude: ai-analysis.js の初期化動線を調整          (0.5日)
 ```
 
-### Step 7: サーバー設定
-
-```
-あなた ─── ネットワーク・共有フォルダのセットアップ
-  │
-  ├── 1. 共有フォルダ（NAS等）の設定
-  │      backups/
-  │      ├── team-a/
-  │      ├── team-b/
-  │      └── team-c/
-  │
-  ├── 2. LLMサーバーからのアクセス確認
-  │      # LLMサーバーから共有フォルダにアクセスできること
-  │      ls /mnt/shared/backups/
-  │
-  ├── 3. アプリサーバーへの配信経路確認
-  │      # LLMサーバーからアプリサーバーにrsync可能なこと
-  │      rsync -n /data/results/ app-server:/var/www/manhour/analysis/
-  │
-  └── 4. config.yaml のパスを実環境に合わせて編集
-```
-
-### Step 8: cron設定
-
-```
-あなた ─── 定期実行の設定
-  │
-  ├── 1. パイプラインの手動実行テスト
-  │      /opt/manhour-analysis/run_pipeline.sh
-  │
-  ├── 2. cronに登録
-  │      crontab -e
-  │      # 毎週月曜 2:00 に実行
-  │      0 2 * * 1 /opt/manhour-analysis/run_pipeline.sh >> /var/log/manhour-analysis.log 2>&1
-  │
-  └── 3. 翌日にログを確認
-         cat /var/log/manhour-analysis.log
-```
-
----
-
-## Phase 3: データ連携整備
-
-### Step 9: 運用フロー確立
-
-```
-あなた ─── チームリーダーへの周知・運用開始
-  │
-  ├── 1. バックアップの保存先を共有フォルダに案内
-  │      「バックアップを以下のフォルダに保存してください」
-  │      \\nas\backups\team-a\
-  │
-  └── 2. 初回の全チームデータを共有フォルダに配置
-```
-
-### Step 10:（オプション）データ送信の自動化
-
-```
-Claude ─── フロントエンドに「分析用データ送信」機能を追加
-  │
-  ├── 設定画面に「チーム名」入力欄を追加
-  ├── 「分析用データを送信」ボタンを追加
-  └── fetch POST でLLMサーバー（or 中継サーバー）に送信
-      ※ サーバー側にAPIエンドポイントが必要 → Step 10b
-```
-
-```
-あなた ─── APIエンドポイントの用意（Step 10 を実施する場合）
-  │
-  └── LLMサーバーまたは中継サーバーでPOST受付
-      （簡易HTTPサーバー or nginx + CGI等）
-```
-
----
-
-## Phase 4: フロントエンド統合
-
-### Step 11: フロントエンド実装
-
-```
-Claude ─── AI分析表示機能を実装
-  │
-  ├── js/llm-analysis.js   新規モジュール作成
-  │   ├── fetch でanalysis JSONを取得
-  │   ├── チーム評価カード描画
-  │   ├── 展望・予測セクション描画
-  │   ├── 推奨アクションカード描画
-  │   └── graceful degradation（404時は非表示）
-  │
-  ├── index.html            AI分析セクションを追加
-  │   └── #reportDetailView の後に配置
-  │
-  ├── style.css             スタイル追加
-  │
-  └── js/report.js          統合コード追加
-      └── updateReport() にLLM分析の読み込みを追加
-```
-
-### Step 12: 表示確認
-
-```
-あなた ─── テスト用の結果JSONをアプリサーバーに配置
-  │
-  └── analysis/team-a.json を /var/www/manhour/analysis/ に配置
-      （Phase 1 の検証で生成したJSONをそのまま使用可）
-```
-
-```
-確認 ─── 表示内容のレビュー
-  │
-  ├── レポート画面にAI分析セクションが表示されるか
-  ├── 表示がデザインに馴染んでいるか
-  ├── JSONがない場合にセクションが非表示になるか
-  └── モバイル表示は問題ないか
-```
-
-### Step 13: デプロイ
-
-```
-あなた ─── アプリサーバーにデプロイ
-  │
-  ├── 1. 更新されたフロントエンドファイルをアプリサーバーに配置
-  └── 2. analysis/ ディレクトリが存在することを確認
-```
-
----
-
-## 全体タイムライン
-
-```
-週1     Phase 1: 品質検証
-        ├─ あなた: サーバー準備 + Ollama + モデル        (1〜2日)
-        ├─ Claude: スクリプト + プロンプト作成            (1日)
-        ├─ あなた: スクリプト実行                         (30分)
-        └─ 確認:   結果レビュー + プロンプト調整           (2〜3回)
-
-週2     Phase 2: パイプライン
-        ├─ Claude: パイプラインスクリプト作成              (1日)
-        ├─ あなた: 共有フォルダ + ネットワーク設定         (1〜2日)
-        └─ あなた: cron設定 + 動作確認                    (1日)
-
-週3     Phase 3: データ連携
-        ├─ あなた: チームリーダーへ周知                    (1日)
-        └─ (任意) Claude + あなた: 自動送信機能           (2〜3日)
-
-週4     Phase 4: フロントエンド
-        ├─ Claude: AI分析表示モジュール実装               (1日)
-        ├─ 確認:   表示レビュー + 調整                    (1〜2日)
-        └─ あなた: デプロイ                               (1日)
-```
+合計: **約 3〜4 日**（旧計画は約 4 週間だったので、1 桁短縮）。
 
 ---
 
 ## 今すぐ始められること
 
-Phase 1 を並行して進められます:
-
-| 並行作業 | 担当 |
-|---------|------|
-| LLMサーバーにOllamaをインストール + モデルダウンロード | あなた |
-| summarize.py + analyze.py + プロンプト作成 | Claude |
-
 **あなたの最初のアクション**:
-1. GPU搭載サーバーを確保する
-2. Ollamaをインストールする
-3. `ollama pull qwen2.5:7b` でモデルをダウンロードする
-4. テスト用のバックアップJSONを1つ用意する
+1. Ollama が手元で動いていることを確認（`ollama list` で qwen3.5:9b / gemma4 が見えること）
+2. Phase 3 着手前に `OLLAMA_ORIGINS` の設定方法を試しておく（疎通確認）
 
-**Claudeの最初のアクション**:
-1. サンプルデータでsummarize.pyを作成
-2. analyze.py + プロンプトテンプレートを作成
-3. テスト用のモックデータを生成
+**Claude の最初のアクション**:
+1. Phase 2 の `js/llm-summarize.js` を実装
+2. 単体検証スクリプトを作成（ブラウザで読み込むと Python 版と diff を出す）
 
-あなたの準備ができたら、スクリプトをLLMサーバーに置いて実行 → 結果を一緒にレビュー、という流れです。
+GO が出たら Phase 2 から着手します。
