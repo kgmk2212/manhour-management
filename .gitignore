@@ -51,6 +51,14 @@ logs/
 # Claude Code local settings
 .claude/
 
+# AI tool internals (Serena MCP cache, MCP config)
+.serena/
+.mcp.json
+
+# Scratch / orphan design assets
+sample-modal-designs.html
+design-*.png
+
 # Personal notes and task lists
 修正案リスト.md
 
@@ -60,3 +68,6 @@ archive/
 # Temporary style/script files
 temp_*.css
 temp_*.js
+
+# Chat exports (会話ログのHTML/TXT出力)
+tools/exports/
