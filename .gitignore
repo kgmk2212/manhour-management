@@ -71,3 +71,5 @@ temp_*.js
 /mobile-analytics-*.png
 /donut-fixed.png
 llm-analysis/__pycache__/
+# Claude Code chat exports (auto-added)
+session-log/
