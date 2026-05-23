@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案B: シンプル二択ダイアログ</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="proposal-meta">
+    <span class="proposal-label">Mockup B</span>
+    <h1 class="proposal-title">シンプル二択ダイアログ</h1>
+    <p class="proposal-desc">
+        個別選択を捨て、「全部上書き」か「全部スキップ」かの 2 択のみ。最小限の判断で済むため学習コストが低く、
+        実装も最も軽い。ただし「3 件は上書き、1 件はスキップ」のような細やかな運用には対応できない。
+    </p>
+</div>
+
+<div class="app-backdrop">
+    <div class="app-context">設定 / データ管理</div>
+    <div class="app-context-sub">Excel ファイルを読み込んで追加</div>
+
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <div class="modal-header-icon" style="background: var(--warning-bg); color: var(--accent-secondary-strong);">⚠</div>
+            <div class="modal-header-body">
+                <div class="modal-title">取り込み内容の確認</div>
+                <div class="modal-subtitle">
+                    <span class="file">工数管理_エクスポート_2026-05-20.xlsx</span>
+                </div>
+            </div>
+            <button class="modal-close" aria-label="閉じる">×</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="sheet-summary">
+                <div class="sheet-chip">
+                    <div class="sheet-chip-icon">📋</div>
+                    <div class="sheet-chip-body">
+                        <div class="sheet-chip-name">見積シート</div>
+                        <div class="sheet-chip-counts">
+                            <span class="tag-add">+8 追加</span>
+                            <span class="tag-conflict">⚠ 4 競合</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sheet-chip">
+                    <div class="sheet-chip-icon">⏱</div>
+                    <div class="sheet-chip-body">
+                        <div class="sheet-chip-name">実績シート</div>
+                        <div class="sheet-chip-counts">
+                            <span class="tag-add">+28 追加</span>
+                            <span class="tag-skip">2 重複スキップ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <div class="alert-icon">⚠</div>
+                <div class="alert-body">
+                    <div class="alert-title">既存データと競合する見積行が 4 件あります</div>
+                    <div class="alert-text">
+                        版数 / 対応名 / 工程 / 担当 が既存と一致する行が見つかりました。
+                        既存値を上書きするか、すべてスキップするかを選んでください。
+                    </div>
+                </div>
+            </div>
+
+            <div class="big-choice-grid">
+                <button class="big-choice overwrite">
+                    <div class="big-choice-tag">推奨</div>
+                    <div class="big-choice-title">上書きして取り込む</div>
+                    <div class="big-choice-desc">
+                        競合 4 件を Excel の値で更新し、新規 8 件を追加します。<br>
+                        実績は 28 件追加（重複 2 件は自動スキップ）。
+                    </div>
+                </button>
+                <button class="big-choice skip">
+                    <div class="big-choice-tag">安全</div>
+                    <div class="big-choice-title">スキップして取り込む</div>
+                    <div class="big-choice-desc">
+                        競合 4 件は既存を維持し、新規 8 件のみ追加します。<br>
+                        実績は 28 件追加（重複 2 件は自動スキップ）。
+                    </div>
+                </button>
+            </div>
+
+            <p style="font-size:12px; color: var(--text-muted); text-align:center; line-height:1.6;">
+                どちらの場合も実績シートの新規 28 件は追加されます。<br>
+                取り込みをやめる場合は「キャンセル」を押してください。
+            </p>
+
+        </div>
+
+        <div class="modal-footer">
+            <div class="modal-footer-info">
+                操作を選択してください
+            </div>
+            <div class="modal-footer-actions">
+                <button class="btn btn-ghost">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:18px;">
+        ✔ 最小UIで判断が早い／✘ 行ごとの細かい選択ができない
+    </p>
+</div>
+
+</body>
+</html>

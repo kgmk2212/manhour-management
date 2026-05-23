@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel ファイルを読み込んで追加 — 競合UI 比較</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="proposal-meta">
+    <span class="proposal-label">Design Mockups · 2026-05-23</span>
+    <h1 class="proposal-title">Excel ファイルを読み込んで追加 — 競合解決UI 4 案</h1>
+    <p class="proposal-desc">
+        Excel から見積・実績を「追加」で取り込む際に、既存データと競合する見積行をどう扱うかの UI 案。
+        共通シナリオ：見積 12 行（追加 8 / 競合 4）+ 実績 30 行（追加 28 / 完全重複 2）。
+        最終的に <strong>案 D を採用予定</strong>。他 3 案は設計判断の記録として保持する。
+    </p>
+</div>
+
+<div class="index-grid">
+
+    <a href="mockup-a-row-radio.html" class="index-card">
+        <div class="index-card-tag">案 A</div>
+        <div class="index-card-title">コンパクト一覧 + 行ラジオ</div>
+        <div class="index-card-desc">
+            競合行を 1 行ずつ詰めて表示。上部の一括トグルで全選択／個別判断を切替。
+            判断を素早く済ませたい運用向け。
+        </div>
+        <div class="index-card-meta">
+            <span>📐 一覧重視</span>
+            <span>⚡ 実装中</span>
+        </div>
+    </a>
+
+    <a href="mockup-b-simple-dialog.html" class="index-card">
+        <div class="index-card-tag">案 B</div>
+        <div class="index-card-title">シンプル二択ダイアログ</div>
+        <div class="index-card-desc">
+            個別選択を捨て「全部上書き / 全部スキップ」のみ。最も学習コストが低く実装も最軽量。
+            細かい運用には不向き。
+        </div>
+        <div class="index-card-meta">
+            <span>🪶 最小</span>
+            <span>⚡ 実装軽</span>
+        </div>
+    </a>
+
+    <a href="mockup-c-side-by-side.html" class="index-card">
+        <div class="index-card-tag">案 C</div>
+        <div class="index-card-title">既存 vs 読み込み 並列比較</div>
+        <div class="index-card-desc">
+            各競合行で左右に並べて差分強調。行ごとに上書き / スキップ選択。
+            視認性は最高だが、件数が多いとスクロール量が増える。
+        </div>
+        <div class="index-card-meta">
+            <span>🔍 差分明確</span>
+            <span>⚡ 実装中</span>
+        </div>
+    </a>
+
+    <a href="mockup-d-summary-compare.html" class="index-card recommended">
+        <div class="index-card-tag recommended">案 D</div>
+        <div class="index-card-title">サマリ + 並列比較 + 一括トグル</div>
+        <div class="index-card-desc">
+            上部に「追加 / 競合 / 上書き / スキップ」の全体サマリ、続いて一括トグル、
+            各競合行は並列比較しつつ行単位で選択可。誤操作リスク最小。
+        </div>
+        <div class="index-card-meta">
+            <span>✓ 全部入り</span>
+            <span>⚡ 実装重</span>
+        </div>
+    </a>
+
+</div>
+
+<p style="text-align:center; font-size:12px; color: var(--text-muted); margin-top:32px;">
+    各カードをクリックして個別モックアップを参照
+</p>
+
+</body>
+</html>
