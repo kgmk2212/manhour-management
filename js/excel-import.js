@@ -28,12 +28,6 @@ function el(tag, attrs = {}, children = []) {
     return e;
 }
 
-/** 子要素群を空にして新規ノードで置き換える（textContent でクリア） */
-function replaceChildren(parent, ...nodes) {
-    parent.textContent = '';
-    for (const n of nodes) if (n != null) parent.appendChild(n);
-}
-
 const SHEET_ALIASES = {
     estimate: ['見積', '見積シート', 'estimate', 'estimates'],
     actual: ['実績', '実績シート', 'actual', 'actuals']
