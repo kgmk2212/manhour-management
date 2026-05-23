@@ -523,6 +523,93 @@ function closePreviewModal() {
     previewState = null;
 }
 
+function applyImport() {
+    if (!previewState) return;
+
+    const added = { estimates: [], actuals: [] };
+    const overwritten = [];
+
+    // 見積: チェック ON のみ
+    if (previewState.sheets.estimate) {
+        for (const row of previewState.estimateNew) {
+            const newEst = {
+                id: Date.now() + Math.random(),
+                version: row.version,
+                task: row.task,
+                process: row.process,
+                member: row.member,
+                hours: row.hours,
+                workMonths: row.workMonths
+            };
+            estimates.push(newEst);
+            added.estimates.push(newEst);
+        }
+        for (let i = 0; i < previewState.estimateConflicts.length; i++) {
+            if (previewState.decisions[i] !== 'overwrite') continue;
+            const { existing, incoming } = previewState.estimateConflicts[i];
+            const idx = estimates.findIndex(e => e.id === existing.id);
+            if (idx === -1) continue;
+            const before = { ...estimates[idx] };
+            estimates[idx] = {
+                ...existing,
+                hours: incoming.hours,
+                workMonths: incoming.workMonths
+            };
+            overwritten.push({ before, after: { ...estimates[idx] } });
+        }
+    }
+
+    // 実績: チェック ON のみ、追加のみ
+    if (previewState.sheets.actual) {
+        for (const row of previewState.actualNew) {
+            const newAct = {
+                id: Date.now() + Math.random(),
+                date: row.date,
+                version: row.version,
+                task: row.task,
+                process: row.process,
+                member: row.member,
+                hours: row.hours
+            };
+            actuals.push(newAct);
+            added.actuals.push(newAct);
+        }
+    }
+
+    // 保存
+    if (typeof window.saveData === 'function') window.saveData();
+
+    // history 登録（Task 8 で本実装される pushExcelImportAction を呼ぶ）
+    if (typeof window.pushExcelImportAction === 'function') {
+        window.pushExcelImportAction({ added, overwritten });
+    }
+
+    const total = added.estimates.length + added.actuals.length + overwritten.length;
+
+    closePreviewModal();
+    refreshAllViews();
+
+    if (typeof window.showAlert === 'function') {
+        window.showAlert(`${total} 件を取り込みました`, true);
+    } else {
+        alert(`${total} 件を取り込みました`);
+    }
+}
+
+function refreshAllViews() {
+    const fns = [
+        'updateMonthOptions', 'updateEstimateMonthOptions', 'updateEstimateVersionOptions',
+        'updateActualMonthOptions', 'updateMemberOptions', 'updateQuickTaskList',
+        'renderEstimateList', 'renderActualList', 'renderTodayActuals', 'updateReport',
+        'renderScheduleView'
+    ];
+    for (const name of fns) {
+        if (typeof window[name] === 'function') {
+            try { window[name](); } catch (e) { /* ignore */ }
+        }
+    }
+}
+
 function attachPreviewEventHandlers() {
     const modal = document.getElementById('excelImportPreviewModal');
 
@@ -586,6 +673,10 @@ function attachPreviewEventHandlers() {
         };
     });
 
+    // 確定ボタン
+    const confirmBtn = document.getElementById('btnConfirmExcelImport');
+    if (confirmBtn) confirmBtn.onclick = applyImport;
+
     modal.tabIndex = -1;
     modal.focus();
 }
@@ -614,6 +705,10 @@ export async function handleExcelImport(file) {
         console.error('Excel パースエラー:', err);
         alert('Excel ファイルの読み込みに失敗しました: ' + err.message);
     }
+}
+
+if (!window.pushExcelImportAction) {
+    window.pushExcelImportAction = () => {};
 }
 
 console.log('✅ モジュール excel-import.js loaded');
