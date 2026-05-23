@@ -55,13 +55,18 @@
    解像度に応じた UI 自動スケーリングは、zoom ではなく CSS 変数 --ui-scale
    を介して font-size / 余白に calc() で乗算する方式に統一する。
    zoom 方式は canvas/SVG のラスタ拡大によるぼやけを引き起こすため廃止。 */
+/* --ui-scale を viewport 幅で連続的に算出する fluid scaling。
+   ・≤1920px (FHD 以下)        : 1.0   … FHD 全画面で文字が大きすぎる問題への対応
+   ・2560px (QHD)              : 約 1.26
+   ・≥2855px (4K 相当〜)       : 1.38 (上限)
+   傾き: (1.38 - 1.0) / (2855 - 1920) ≒ 0.000406 /px */
 :root {
-    --ui-scale: 1;
+    --ui-scale: clamp(
+        1,
+        calc(1 + (100vw - 1920px) / 1px * 0.000406),
+        1.38
+    );
 }
-@media (min-width: 1600px) { :root { --ui-scale: 1.06; } }
-@media (min-width: 1920px) { :root { --ui-scale: 1.14; } }
-@media (min-width: 2560px) { :root { --ui-scale: 1.26; } }
-@media (min-width: 3200px) { :root { --ui-scale: 1.38; } }
 
 html {
     font-size: calc(16px * var(--ui-scale));
