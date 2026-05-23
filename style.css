@@ -74,7 +74,7 @@ h2 { font-size: calc(18px * var(--ui-scale)); }
 h3 { font-size: calc(15px * var(--ui-scale)); }
 h4 { font-size: calc(14px * var(--ui-scale)); }
 h5 { font-size: calc(13px * var(--ui-scale)); }
-h6 { font-size: calc(12px * var(--ui-scale)); }
+h6 { font-size: calc(13px * var(--ui-scale)); }
 
 body {
     font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -455,7 +455,7 @@ img {
 }
 
 .mobile-tab-bar .mobile-tab-item span {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     letter-spacing: -0.02em;
 }
@@ -620,12 +620,12 @@ img {
 
 .btn-small {
     padding: 5px 10px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .btn-sm {
     padding: 5px 12px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .btn-accent {
@@ -710,7 +710,7 @@ input[type="checkbox"] {
 }
 
 .form-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -1056,7 +1056,7 @@ th {
     text-align: center;
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
@@ -1110,7 +1110,7 @@ table.simple-table tr th:first-child {
 .estimate-table th {
     background: var(--accent-light);
     color: var(--text-primary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     padding: 8px;
     border-bottom: 2px solid var(--border);
@@ -1234,7 +1234,7 @@ tr.est-extra-member-row td:first-child {
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     pointer-events: none;
 }
 
@@ -1291,7 +1291,7 @@ tr.est-extra-member-row td:first-child {
     border: 1.5px dashed var(--border);
     border-radius: 6px;
     color: var(--text-muted);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     padding: 4px 10px;
     cursor: pointer;
     transition: all var(--transition);
@@ -1361,7 +1361,7 @@ table td[rowspan] {
 .table-group-header td {
     background: #F5F4F1;
     font-weight: 600;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-secondary);
     padding: 7px 14px;
 }
@@ -1419,7 +1419,7 @@ table td[rowspan] {
 
 .quick-input .form-group > label:first-child {
     color: var(--text-secondary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
 }
 
@@ -1483,7 +1483,7 @@ table td[rowspan] {
 }
 
 .entry-task-detail {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -1532,7 +1532,7 @@ table td[rowspan] {
 }
 
 .stat-card h3 {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     margin-bottom: 6px;
     font-weight: 500;
     color: var(--text-muted);
@@ -1540,7 +1540,7 @@ table td[rowspan] {
 }
 
 .stat-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-muted);
     margin-bottom: 6px;
@@ -1558,7 +1558,7 @@ table td[rowspan] {
 }
 
 .stat-sub {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -1607,7 +1607,7 @@ table td[rowspan] {
 .capacity-bar-label {
     display: flex;
     justify-content: space-between;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 6px;
@@ -1775,7 +1775,7 @@ table td[rowspan] {
     bottom: -48px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: #64748b;
     white-space: nowrap;
 }
@@ -1845,7 +1845,7 @@ table td[rowspan] {
 .calendar-header-cell {
     padding: 8px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     background: var(--surface-elevated);
@@ -1869,7 +1869,7 @@ table td[rowspan] {
 }
 
 .calendar-date {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 4px;
@@ -1911,7 +1911,7 @@ table td[rowspan] {
 }
 
 .cm-summary-meta {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -1949,7 +1949,7 @@ table td[rowspan] {
 .cm-cell {
     padding: 4px 6px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .cm-cell-work {
@@ -1970,7 +1970,7 @@ table td[rowspan] {
 }
 
 .cm-vacation-label {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
 }
 
 .cm-vacation-hours {
@@ -2015,7 +2015,7 @@ table td[rowspan] {
 }
 
 .cm-holiday-sub {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     display: block;
     color: var(--text-muted);
 }
@@ -2187,7 +2187,7 @@ table tr[style*="1565c0"] th:first-child {
     width: 180px;
     min-width: 180px;
     padding: 8px 14px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     border-right: 1px solid var(--border);
@@ -2401,7 +2401,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .tooltip-warning {
     color: var(--danger);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     margin-top: 8px;
 }
 
@@ -2411,7 +2411,7 @@ table tr[style*="1565c0"] th:first-child {
     background: #fff3cd;
     color: #856404;
     border-radius: var(--radius-xs);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     text-align: center;
 }
 
@@ -2561,7 +2561,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-summary-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -2711,7 +2711,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .version-filter-arrow {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2834,7 +2834,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .schedule-change-hint {
     color: var(--warning, #e65100);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     padding: 6px 10px;
     margin-top: 4px;
     background: var(--warning-light, #fff3e0);
@@ -3031,7 +3031,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .unscheduled-date-row label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -3170,7 +3170,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .setting-desc {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -3699,7 +3699,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-version {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-bottom: 4px;
 }
@@ -3729,7 +3729,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-hours-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -3747,7 +3747,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-meta-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     min-width: 80px;
@@ -3758,7 +3758,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-section-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
@@ -3777,7 +3777,7 @@ table tr[style*="1565c0"] th:first-child {
     background: var(--accent-light);
     color: var(--accent);
     border-radius: 99px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .ed-actions {
@@ -3804,7 +3804,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .estimate-detail-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -3851,7 +3851,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-meta {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -3862,7 +3862,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-edit-link {
     color: var(--info);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     cursor: pointer;
 }
 
@@ -3872,7 +3872,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-delete-link {
     color: var(--danger);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     cursor: pointer;
 }
 
@@ -3897,7 +3897,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-hero-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -3906,7 +3906,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-section-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
@@ -4487,14 +4487,14 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .estimate-table td:nth-child(2) select {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
         padding: 4px 6px;
         width: 100%;
         box-sizing: border-box;
     }
 
     .estimate-table td:nth-child(3) input {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
         padding: 4px 6px;
         width: 100%;
         box-sizing: border-box;
@@ -4592,7 +4592,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     table.estimate-grouped td[rowspan] > div:last-child {
-        font-size: calc(12px * var(--ui-scale)) !important;
+        font-size: calc(13px * var(--ui-scale)) !important;
     }
 
     #estimateList .manpower-display {
@@ -4769,7 +4769,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .capacity-gauge-label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
         bottom: -30px;
     }
 
@@ -4988,7 +4988,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 .calendar-header-cell {
     padding: 8px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     background: var(--surface-elevated);
@@ -5046,7 +5046,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .calendar-date {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 4px;
@@ -5108,7 +5108,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .schedule-summary-card .schedule-summary-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -5215,7 +5215,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .smart-sticky-bar .segment-buttons button {
-        font-size: calc(12px * var(--ui-scale)) !important;
+        font-size: calc(13px * var(--ui-scale)) !important;
         padding: 6px 10px !important;
         flex-shrink: 0;
     }
@@ -5361,7 +5361,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 .history-latest-badge {
     flex-shrink: 0;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent);
     background: var(--surface);
@@ -5417,7 +5417,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 .history-shortcut-hint kbd {
     display: inline-block;
     padding: 1px 5px;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-family: inherit;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
@@ -5580,7 +5580,7 @@ li.drop-below {
 
 .actual-tl-holiday-badge {
     display: inline-block;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent-secondary, #C4841D);
     background: rgba(196, 132, 29, 0.1);
@@ -5611,7 +5611,7 @@ li.drop-below {
     background: transparent;
     cursor: pointer;
     font: inherit;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     transition: all var(--transition);
@@ -5665,7 +5665,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     padding: 0 12px;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -5724,7 +5724,7 @@ li.drop-below {
 }
 
 .actual-tl-label-name {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -5733,7 +5733,7 @@ li.drop-below {
 }
 
 .actual-tl-label-meta {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -5779,7 +5779,7 @@ li.drop-below {
 }
 
 .actual-tl-day-label {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     line-height: 1;
@@ -5815,7 +5815,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-secondary);
     border-right: 1px solid var(--border-light);
@@ -5954,7 +5954,7 @@ li.drop-below {
 
 .actual-tl-dv-lunch-badge {
     display: block;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 500;
     color: rgba(120, 120, 120, 0.5);
     margin-top: 0;
@@ -5990,7 +5990,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-member-name {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -5999,7 +5999,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-member-hours {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -6064,7 +6064,7 @@ li.drop-below {
 .actual-tl-dv-time-label.end-label .actual-tl-dv-time-text {
     position: absolute;
     top: -6px;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: rgba(196, 132, 29, 0.6);
     font-weight: 600;
 }
@@ -6126,7 +6126,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-sch-label {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     padding: 6px 6px 0;
     display: block;
@@ -6206,7 +6206,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-block-hours {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.2;
@@ -6232,7 +6232,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-text {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6241,7 +6241,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-hours {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
     margin-left: auto;
@@ -6304,7 +6304,7 @@ li.drop-below {
 
 /* マージされた実績バー（連続日表示） */
 .actual-tl-bar.actual.merged .actual-tl-bar-text {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6348,7 +6348,7 @@ li.drop-below {
     right: -4px;
     min-width: 14px;
     height: 14px;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     background: var(--text-secondary);
@@ -6426,7 +6426,7 @@ li.drop-below {
 }
 
 .actual-tl-ds-label {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     background: rgba(255, 255, 255, 0.92);
@@ -6546,7 +6546,7 @@ li.drop-below {
 }
 
 .actual-tl-pane-header h3 {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 700;
     letter-spacing: 0.02em;
 }
@@ -6605,7 +6605,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -6616,7 +6616,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-count {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     background: var(--surface-elevated);
     border: 1px solid var(--border-light);
@@ -6626,7 +6626,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-arrow {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     transition: transform var(--transition);
 }
@@ -6689,7 +6689,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-detail {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 4px;
@@ -6708,7 +6708,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-hours {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-secondary);
     flex-shrink: 0;
@@ -6741,7 +6741,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: 3px;
     font: inherit;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 700;
     text-align: center;
 }
@@ -6874,7 +6874,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-detail {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 3px;
@@ -6891,7 +6891,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-hours {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     flex-shrink: 0;
@@ -6965,7 +6965,7 @@ li.drop-below {
 .actual-tl-tp-hint {
     padding: 6px 14px;
     border-top: 1px solid var(--border-light);
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     text-align: center;
     letter-spacing: 0.02em;
@@ -7001,7 +7001,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-footer label {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
 }
@@ -7023,7 +7023,7 @@ li.drop-below {
 }
 
 .actual-tl-tpf-unit {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-right: auto;
 }
@@ -7131,7 +7131,7 @@ li.drop-below {
 
 .actual-tl-dp-field label {
     display: block;
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -7206,7 +7206,7 @@ li.drop-below {
 }
 
 .actual-tl-dp-item-meta {
-    font-size: calc(11.5px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -7281,7 +7281,7 @@ li.drop-below {
 
     .actual-tl-holiday-badge {
         display: block;
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
         padding: 0 4px;
         margin: 2px auto 0;
         width: fit-content;
@@ -7329,7 +7329,7 @@ li.drop-below {
     .actual-tl-labels-header {
         height: 40px;
         padding: 0 6px;
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-label-row {
@@ -7340,15 +7340,15 @@ li.drop-below {
     .actual-tl-avatar {
         width: 22px;
         height: 22px;
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-label-name {
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-label-meta {
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     /* ヘッダー高さ調整 */
@@ -7377,7 +7377,7 @@ li.drop-below {
     .actual-tl-bar.actual {
         min-height: 20px;
         border-radius: 4px;
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-bar.daily-bar {
@@ -7440,16 +7440,16 @@ li.drop-below {
     }
 
     .actual-tl-tc-detail {
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-tc-badge {
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
         padding: 2px 6px;
     }
 
     .actual-tl-tc-hours {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
     }
 
     .actual-tl-pane-section-header {
@@ -7461,7 +7461,7 @@ li.drop-below {
     .actual-tl-sec-avatar {
         width: 26px;
         height: 26px;
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     /* インラインエディタ: モバイルで中央固定 */
@@ -7543,7 +7543,7 @@ li.drop-below {
     }
 
     .actual-tl-tpi-detail {
-        font-size: calc(11.5px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-tp-header-top {
@@ -7570,7 +7570,7 @@ li.drop-below {
 
     .actual-tl-tp-hint {
         padding: 10px 16px;
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
     }
 
     .actual-tl-tp-footer {
@@ -7579,7 +7579,7 @@ li.drop-below {
     }
 
     .actual-tl-tp-footer label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
     }
 
     .actual-tl-tp-footer input {
@@ -7636,7 +7636,7 @@ li.drop-below {
 
     /* ドラッグ選択矩形: モバイルで大きめ表示 */
     .actual-tl-ds-label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(13px * var(--ui-scale));
         padding: 2px 8px;
     }
 }

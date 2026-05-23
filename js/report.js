@@ -500,7 +500,7 @@ export function createStatusBadge(status, statusLabel) {
             gap: 4px;
             padding: 4px 10px;
             border-radius: 12px;
-            font-size: calc(12px * var(--ui-scale));
+            font-size: calc(13px * var(--ui-scale));
             font-weight: 600;
             background: ${style.bg};
             color: ${style.color};
@@ -627,16 +627,16 @@ export function renderProgressSummaryCards(versionFilter) {
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>状態別</h3>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(12px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
                     ${String.fromCharCode(10003)} ${statusCounts.completed}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(12px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
                     ${String.fromCharCode(8594)} ${statusCounts.ontrack}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(12px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
                     ${String.fromCharCode(9888)} ${statusCounts.warning}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(12px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
                     ! ${statusCounts.exceeded}
                 </span>
             </div>
@@ -1064,7 +1064,7 @@ export function generateProgressBar(version, task, process) {
     } else {
         // セル内に表示するスタイル（デフォルト）
         const percentageHtml = showProgressPercentageSetting
-            ? `<div style="font-size: calc(11.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+            ? `<div style="font-size: calc(12.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
             : '';
 
         progressBarHtml = `
@@ -1506,7 +1506,7 @@ function renderWarningTasks(filteredEstimates, filteredActuals) {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${escapeHtml(warning.version)} - ${escapeHtml(warning.task)}</div>`;
         html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
-        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #6c757d;">工程数: ${warning.processCount}</div>`;
+        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d;">工程数: ${warning.processCount}</div>`;
         html += '</div>';
     });
 
@@ -1594,12 +1594,12 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         html += '<div style="text-align: right; font-size: calc(13px * var(--ui-scale)); color: #6c757d;">見積</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: calc(12px * var(--ui-scale)); font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
         html += '</div></div>';
         html += '<div style="text-align: right; font-size: calc(13px * var(--ui-scale)); color: #6c757d;">実績</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: calc(12px * var(--ui-scale)); font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
         html += '</div></div>';
         html += '</div></div>';
     });
@@ -1661,18 +1661,18 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
         html += '<div style="display: flex; gap: 10px;">';
         html += '<div style="flex: 1;">';
         html += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
-        html += '<span style="font-size: calc(12px * var(--ui-scale)); color: #6c757d; min-width: 40px;">見積</span>';
+        html += '<span style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; min-width: 40px;">見積</span>';
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: calc(12px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(13px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
         html += '</div>';
         html += '<div style="display: flex; align-items: center; gap: 5px;">';
-        html += '<span style="font-size: calc(12px * var(--ui-scale)); color: #6c757d; min-width: 40px;">実績</span>';
+        html += '<span style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; min-width: 40px;">実績</span>';
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: calc(12px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(13px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
         html += '</div>';
         html += '</div>';
         html += `<div style="min-width: 60px; text-align: right; font-size: calc(13px * var(--ui-scale)); color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
@@ -1813,12 +1813,12 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
         html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${escapeHtml(member)}</div>`;
         html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
-        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
+        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
         html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
-        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
+        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
         html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
         html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
-        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
+        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
         html += '</div>';
     });
 
@@ -2627,7 +2627,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             } else {
                 // セル内に表示するスタイル（デフォルト）
                 const percentageHtml = showProgressPercentageSetting
-                    ? `<div style="font-size: calc(11.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+                    ? `<div style="font-size: calc(12.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
                     : '';
 
                 progressBarHtml = `
@@ -2669,7 +2669,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     const estDays = est.hours / 8;
     const actDays = act.hours / 8;
     const manDaysHtml = (est.hours > 0 || act.hours > 0)
-        ? `<div class="cell-mandays" style="font-size: calc(12px * var(--ui-scale)); color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
+        ? `<div class="cell-mandays" style="font-size: calc(13px * var(--ui-scale)); color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
         : '';
 
     // bottomスタイルの場合、セルにposition: relativeが必要
@@ -2681,8 +2681,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
             ${memberDisplay ? (isMultiMember
-                ? `<div style="font-size: calc(12px * var(--ui-scale)); color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')" title="クリックで担当者別内訳を表示">(${escapeHtml(memberDisplay)})</div>`
-                : `<div style="font-size: calc(12px * var(--ui-scale)); color: #666; white-space: nowrap;">(${escapeHtml(memberDisplay)})</div>`) : ''}
+                ? `<div style="font-size: calc(13px * var(--ui-scale)); color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')" title="クリックで担当者別内訳を表示">(${escapeHtml(memberDisplay)})</div>`
+                : `<div style="font-size: calc(13px * var(--ui-scale)); color: #666; white-space: nowrap;">(${escapeHtml(memberDisplay)})</div>`) : ''}
             ${progressBarHtml}
         </div>
     `;

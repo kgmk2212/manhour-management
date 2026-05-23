@@ -541,10 +541,10 @@ function updateEstimateStandardDisplay(totalHours, workingDays, headcount, month
     } else if (mode === 'bar') {
         elB.style.display = '';
         const diffLabel = diff >= 0
-            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">余裕 ${absDiff}h</span>`
-            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">超過 ${absDiff}h</span>`;
+            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: calc(13px * var(--ui-scale)); font-weight: 600;">余裕 ${absDiff}h</span>`
+            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: calc(13px * var(--ui-scale)); font-weight: 600;">超過 ${absDiff}h</span>`;
         elB.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: calc(15px * var(--ui-scale));">${standardHours}h</strong> <span style="opacity: 0.7; font-size: calc(12px * var(--ui-scale));">（${workingDays}日×8h×${headcount}人）</span></span>
+            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: calc(15px * var(--ui-scale));">${standardHours}h</strong> <span style="opacity: 0.7; font-size: calc(13px * var(--ui-scale));">（${workingDays}日×8h×${headcount}人）</span></span>
             ${diffLabel}
         </div>`;
     }
@@ -624,7 +624,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
             <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
                 <div style="font-size: calc(13px * var(--ui-scale)); color: #666; margin-bottom: 3px;">${escapeHtml(member)}</div>
                 <div style="font-size: calc(18px * var(--ui-scale)); font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
-                <div style="font-size: calc(12px * var(--ui-scale)); color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
+                <div style="font-size: calc(13px * var(--ui-scale)); color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
             </div>
         `;
     });
@@ -911,17 +911,17 @@ export function renderEstimateGrouped() {
                 if (est.workMonths.length > 0) {
                     if (est.workMonths.length === 1) {
                         const [y, m] = est.workMonths[0].split('-');
-                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
-                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
+                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
+                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
                     } else {
                         const [y1, m1] = est.workMonths[0].split('-');
                         const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
-                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
-                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
+                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
                     }
                 } else {
-                    processWorkMonthInline = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">未設定</span>`;
-                    processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">未設定</span></div>`;
+                    processWorkMonthInline = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">未設定</span>`;
+                    processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(13px * var(--ui-scale)); white-space: nowrap;">未設定</span></div>`;
                 }
 
                 html += `<tr${index === 0 ? ` data-drag-task="${escapeHtml(taskGroup.task)}" data-drag-version="${escapeHtml(version)}"` : ''}>`;
@@ -1162,7 +1162,7 @@ export function renderEstimateMatrix() {
                         onmouseover="this.style.background='#e3f2fd'"
                         onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
                         <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                        <div style="font-size: calc(12px * var(--ui-scale)); color: #666;">(${escapeHtml(p.member)})</div>
+                        <div style="font-size: calc(13px * var(--ui-scale)); color: #666;">(${escapeHtml(p.member)})</div>
                     </td>`;
                 } else {
                     html += `<td style="text-align: center; color: #ccc;">-</td>`;
@@ -1611,26 +1611,26 @@ export function showTaskDetail(version, task) {
                     html += `<span style="font-weight: 700; color: #1976d2;">${est.hours.toFixed(1)}h</span>`;
                     html += `</div>`;
                     if (workMonthDisplay) {
-                        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
+                        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
                     }
                     html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">編集</button>`;
-                    html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">削除</button>`;
+                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale));">編集</button>`;
+                    html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale));">削除</button>`;
                     html += `</div></div>`;
                 });
             } else {
                 html += `<div style="background: #fafafa; border-radius: 8px; padding: 12px; border: 1px dashed #ccc; opacity: 0.6;">`;
                 html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
                 html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span><span style="color: #999;">未登録</span></span>`;
-                html += `<button onclick="addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" style="padding: 4px 12px; background: #198754; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">追加</button>`;
+                html += `<button onclick="addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" style="padding: 4px 12px; background: #198754; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale));">追加</button>`;
                 html += `</div></div>`;
             }
         });
 
         html += '</div>';
         html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">`;
-        html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">全工程を編集</button>`;
-        html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">対応を全削除</button>`;
+        html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale));">全工程を編集</button>`;
+        html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale));">対応を全削除</button>`;
         html += `</div>`;
     } else {
         // モダン: Quiet Depth デザイン
@@ -1819,13 +1819,13 @@ export function showOtherWorkTaskDetail(version, task) {
             html += `<span style="font-weight: 600;">${escapeHtml(est.member)}</span>`;
             html += `<span style="font-weight: 700; color: #1976d2; font-size: calc(16px * var(--ui-scale));">${est.hours.toFixed(1)}h</span>`;
             html += `</div>`;
-            html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
+            html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
             html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
             html += `<button onclick="editEstimateFromModal(${est.id})"
-                        style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">
+                        style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale)); font-weight: 600;">
                         編集</button>`;
             html += `<button onclick="deleteEstimateFromModal(${est.id})"
-                        style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">
+                        style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(13px * var(--ui-scale)); font-weight: 600;">
                         削除</button>`;
             html += `</div></div>`;
         });

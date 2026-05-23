@@ -793,7 +793,7 @@ export function showWorkDetail(member, date) {
                                 <strong>${escapeHtml(vacation.vacationType)}</strong>
                                 <span style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-left: 10px;">${vacation.hours}h</span>
                             </div>
-                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
+                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(13px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                         </div>
                     </div>
                 `;
@@ -813,8 +813,8 @@ export function showWorkDetail(member, date) {
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
-                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
-                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
+                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(13px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
+                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(13px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
             `;
@@ -1731,10 +1731,10 @@ export function renderCalendarGrid() {
         html += `<div class="calendar-date">${day}</div>`;
 
         if (holiday) {
-            html += `<div class="calendar-entry" style="color:var(--danger);font-size: calc(12px * var(--ui-scale));">${holiday}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--danger);font-size: calc(13px * var(--ui-scale));">${holiday}</div>`;
         }
         if (companyHolidayName && !holiday) {
-            html += `<div class="calendar-entry" style="color:var(--warning);font-size: calc(12px * var(--ui-scale));">${companyHolidayName}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--warning);font-size: calc(13px * var(--ui-scale));">${companyHolidayName}</div>`;
         }
 
         if (data) {
