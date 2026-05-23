@@ -46,9 +46,11 @@ const HEADER_ALIASES = {
     date: ['日付', 'date', '実績日']
 };
 
-const ESTIMATE_REQUIRED = ['version', 'task', 'process', 'member', 'hours_estimate'];
-const ESTIMATE_OPTIONAL = ['workMonth'];
-const ACTUAL_REQUIRED = ['date', 'version', 'task', 'process', 'member', 'hours_actual'];
+// 版数 / 工程 は空欄 OK（任意項目）
+const ESTIMATE_REQUIRED = ['task', 'member', 'hours_estimate'];
+const ESTIMATE_OPTIONAL = ['version', 'process', 'workMonth'];
+const ACTUAL_REQUIRED = ['date', 'task', 'member', 'hours_actual'];
+const ACTUAL_OPTIONAL = ['version', 'process'];
 
 function normalizeHeader(raw) {
     if (raw == null) return '';
@@ -107,7 +109,7 @@ function extractEstimateRows(sheet, XLSX) {
 
     const missing = ESTIMATE_REQUIRED.filter(k => colMap[k] === -1);
     if (missing.length > 0) {
-        const jp = { version: '版数', task: '対応名', process: '工程', member: '担当', hours_estimate: '見積工数' };
+        const jp = { task: '対応名', member: '担当', hours_estimate: '見積工数' };
         return {
             rows: [], invalid: [],
             error: `見積シートの必須列が不足しています: ${missing.map(k => `「${jp[k]}」`).join(', ')}`
@@ -131,9 +133,7 @@ function extractEstimateRows(sheet, XLSX) {
         };
 
         const problems = [];
-        if (!row.version) problems.push('版数が空');
         if (!row.task) problems.push('対応名が空');
-        if (!row.process) problems.push('工程が空');
         if (!row.member) problems.push('担当が空');
         if (!Number.isFinite(row.hours)) problems.push('見積工数が数値でない');
 
@@ -154,13 +154,13 @@ function extractActualRows(sheet, XLSX) {
 
     const headers = aoa[0];
     const colMap = {};
-    for (const key of ACTUAL_REQUIRED) {
+    for (const key of [...ACTUAL_REQUIRED, ...ACTUAL_OPTIONAL]) {
         colMap[key] = findHeaderIndex(headers, key);
     }
 
     const missing = ACTUAL_REQUIRED.filter(k => colMap[k] === -1);
     if (missing.length > 0) {
-        const jp = { date: '日付', version: '版数', task: '対応名', process: '工程', member: '担当', hours_actual: '工数' };
+        const jp = { date: '日付', task: '対応名', member: '担当', hours_actual: '工数' };
         return {
             rows: [], invalid: [],
             error: `実績シートの必須列が不足しています: ${missing.map(k => `「${jp[k]}」`).join(', ')}`
@@ -187,7 +187,6 @@ function extractActualRows(sheet, XLSX) {
         if (!row.date) problems.push('日付が不正');
         if (!row.member) problems.push('担当が空');
         if (!row.task) problems.push('対応名が空');
-        if (!row.process) problems.push('工程が空');
         if (!Number.isFinite(row.hours)) problems.push('工数が数値でない');
 
         if (problems.length > 0) {
