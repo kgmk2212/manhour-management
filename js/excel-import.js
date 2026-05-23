@@ -530,7 +530,70 @@ function closePreviewModal() {
 }
 
 function attachPreviewEventHandlers() {
-    // 次タスクで実装
+    const modal = document.getElementById('excelImportPreviewModal');
+
+    // 閉じるボタン
+    const closeBtn = document.getElementById('btnCloseExcelImportPreview');
+    if (closeBtn) closeBtn.onclick = closePreviewModal;
+    const cancelBtn = document.getElementById('btnCancelExcelImport');
+    if (cancelBtn) cancelBtn.onclick = closePreviewModal;
+
+    // Esc で閉じる
+    modal.onkeydown = (e) => { if (e.key === 'Escape') closePreviewModal(); };
+
+    // 一括トグル
+    modal.querySelectorAll('input[name="excelBulk"]').forEach(input => {
+        input.onchange = (e) => {
+            previewState.bulkMode = e.target.value;
+            if (e.target.value !== 'individual') {
+                for (let i = 0; i < previewState.decisions.length; i++) {
+                    previewState.decisions[i] = e.target.value;
+                }
+                modal.querySelectorAll('.excel-import-compare-card').forEach(card => {
+                    const idx = Number(card.dataset.index);
+                    card.dataset.state = previewState.decisions[idx];
+                    const rb = card.querySelector(`input[value="${previewState.decisions[idx]}"]`);
+                    if (rb) rb.checked = true;
+                });
+            }
+            refreshSummaryUI();
+        };
+    });
+
+    // 個別トグル
+    modal.querySelectorAll('.excel-import-compare-card').forEach(card => {
+        const idx = Number(card.dataset.index);
+        card.querySelectorAll(`input[name="excelConflict_${idx}"]`).forEach(input => {
+            input.onchange = (e) => {
+                previewState.decisions[idx] = e.target.value;
+                card.dataset.state = e.target.value;
+                if (previewState.bulkMode !== 'individual') {
+                    previewState.bulkMode = 'individual';
+                    const indRb = modal.querySelector('input[name="excelBulk"][value="individual"]');
+                    if (indRb) indRb.checked = true;
+                }
+                refreshSummaryUI();
+            };
+        });
+    });
+
+    // シートチェックボックス
+    modal.querySelectorAll('input[data-sheet-checkbox]').forEach(input => {
+        input.onchange = (e) => {
+            const sheet = e.target.dataset.sheetCheckbox;
+            previewState.sheets[sheet] = e.target.checked;
+            const chip = e.target.closest('.excel-import-sheet-chip');
+            if (chip) chip.classList.toggle('disabled', !e.target.checked);
+            const conflictSection = document.getElementById('excelImportConflictSection');
+            if (sheet === 'estimate') {
+                conflictSection.style.display = e.target.checked ? '' : 'none';
+            }
+            refreshSummaryUI();
+        };
+    });
+
+    modal.tabIndex = -1;
+    modal.focus();
 }
 
 /**
