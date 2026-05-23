@@ -70,6 +70,11 @@ temp_*.js
 /mobile-ai-*.png
 /mobile-analytics-*.png
 /donut-fixed.png
+/ui-review-*.png
+/audit-*.png
+/modal-option-*.png
+/option-*.png
+/review-hero-*.png
 llm-analysis/__pycache__/
 # Claude Code chat exports (auto-added)
 session-log/
