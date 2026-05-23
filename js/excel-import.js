@@ -1,6 +1,8 @@
 // Excel ファイルから見積・実績を追加読み込みする機能
 // 仕様書: docs/superpowers/specs/2026-05-23-excel-append-import-design.md
 
+import { estimates, actuals } from './state.js';
+
 const SHEET_ALIASES = {
     estimate: ['見積', '見積シート', 'estimate', 'estimates'],
     actual: ['実績', '実績シート', 'actual', 'actuals']
@@ -200,19 +202,66 @@ async function parseWorkbook(file) {
 }
 
 /**
+ * 見積の競合を検出: (version, task, process, member) 一致
+ * @returns {{ newRows, conflicts: [{ existing, incoming }] }}
+ */
+function detectEstimateConflicts(rows, existing) {
+    const newRows = [];
+    const conflicts = [];
+    for (const incoming of rows) {
+        const match = existing.find(e =>
+            e.version === incoming.version &&
+            e.task === incoming.task &&
+            e.process === incoming.process &&
+            e.member === incoming.member
+        );
+        if (match) conflicts.push({ existing: match, incoming });
+        else newRows.push(incoming);
+    }
+    return { newRows, conflicts };
+}
+
+/**
+ * 実績の重複検出: (date, member, version, task, process, hours) の完全一致のみ
+ * @returns {{ newRows, duplicates: [{ existing, incoming }] }}
+ */
+function detectActualConflicts(rows, existing) {
+    const newRows = [];
+    const duplicates = [];
+    for (const incoming of rows) {
+        const exact = existing.find(a =>
+            a.date === incoming.date &&
+            a.member === incoming.member &&
+            a.version === incoming.version &&
+            a.task === incoming.task &&
+            a.process === incoming.process &&
+            Number(a.hours) === Number(incoming.hours)
+        );
+        if (exact) duplicates.push({ existing: exact, incoming });
+        else newRows.push(incoming);
+    }
+    return { newRows, duplicates };
+}
+
+/**
  * Excel ファイル取り込みのエントリポイント
  * @param {File} file - ユーザーが選択した xlsx/xls ファイル
  */
 export async function handleExcelImport(file) {
     try {
         const result = await parseWorkbook(file);
-        console.log('parseWorkbook result:', result);
-        const msg = [
-            `見積行: ${result.estimateRows.length} 件（無効 ${result.estimateInvalid.length}）`,
-            `実績行: ${result.actualRows.length} 件（無効 ${result.actualInvalid.length}）`,
-            result.errors.length > 0 ? `エラー: ${result.errors.join(' / ')}` : ''
-        ].filter(Boolean).join('\n');
-        alert(msg);
+        if (result.errors.length > 0 && result.estimateRows.length === 0 && result.actualRows.length === 0) {
+            alert('Excel ファイルを確認してください\n\n' + result.errors.join('\n'));
+            return;
+        }
+        const estConflict = detectEstimateConflicts(result.estimateRows, estimates);
+        const actConflict = detectActualConflicts(result.actualRows, actuals);
+        console.log('estimate conflicts:', estConflict);
+        console.log('actual conflicts:', actConflict);
+        alert([
+            `見積: 追加 ${estConflict.newRows.length} / 競合 ${estConflict.conflicts.length} / 無効 ${result.estimateInvalid.length}`,
+            `実績: 追加 ${actConflict.newRows.length} / 重複スキップ ${actConflict.duplicates.length} / 無効 ${result.actualInvalid.length}`
+        ].join('\n'));
     } catch (err) {
         console.error('Excel パースエラー:', err);
         alert('Excel ファイルの読み込みに失敗しました: ' + err.message);
