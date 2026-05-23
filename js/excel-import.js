@@ -229,11 +229,15 @@ async function parseWorkbook(file) {
 
 /**
  * 見積の競合を検出: (version, task, process, member) 一致
- * @returns {{ newRows, conflicts: [{ existing, incoming }] }}
+ * - 値（hours / workMonths）も完全一致 → duplicates（自動スキップ）
+ * - 値が違う → conflicts（プレビューで上書き/スキップ判断）
+ * - キー不一致 → newRows
+ * @returns {{ newRows, conflicts: [{ existing, incoming }], duplicates: [{ existing, incoming }] }}
  */
 function detectEstimateConflicts(rows, existing) {
     const newRows = [];
     const conflicts = [];
+    const duplicates = [];
     for (const incoming of rows) {
         const match = existing.find(e =>
             e.version === incoming.version &&
@@ -241,10 +245,25 @@ function detectEstimateConflicts(rows, existing) {
             e.process === incoming.process &&
             e.member === incoming.member
         );
-        if (match) conflicts.push({ existing: match, incoming });
-        else newRows.push(incoming);
+        if (match) {
+            if (isEstimateValuesIdentical(match, incoming)) {
+                duplicates.push({ existing: match, incoming });
+            } else {
+                conflicts.push({ existing: match, incoming });
+            }
+        } else {
+            newRows.push(incoming);
+        }
     }
-    return { newRows, conflicts };
+    return { newRows, conflicts, duplicates };
+}
+
+function isEstimateValuesIdentical(existing, incoming) {
+    if (Number(existing.hours) !== Number(incoming.hours)) return false;
+    const existingMonths = (existing.workMonths || (existing.workMonth ? [existing.workMonth] : []))
+        .slice().sort().join(',');
+    const incomingMonths = (incoming.workMonths || []).slice().sort().join(',');
+    return existingMonths === incomingMonths;
 }
 
 /**
@@ -335,19 +354,21 @@ function buildChoiceGroup(name, currentValue, options) {
     return group;
 }
 
-function buildSheetChip(kind, name, icon, newCount, conflictOrDupCount, invalidCount, conflictLabel) {
+function buildSheetChip(kind, name, icon, counts) {
     const checkbox = el('input', { type: 'checkbox', 'data-sheet-checkbox': kind });
     checkbox.checked = true;
 
-    const counts = el('div', { class: 'excel-import-sheet-chip-counts' }, [
-        el('span', { class: 'excel-import-tag-add', text: `+${newCount} 追加` })
+    const tags = el('div', { class: 'excel-import-sheet-chip-counts' }, [
+        el('span', { class: 'excel-import-tag-add', text: `+${counts.newCount} 追加` })
     ]);
-    if (conflictOrDupCount > 0) {
-        const cls = kind === 'estimate' ? 'excel-import-tag-conflict' : 'excel-import-tag-skip';
-        counts.appendChild(el('span', { class: cls, text: `${conflictLabel} ${conflictOrDupCount} 件` }));
+    if (counts.conflictCount > 0) {
+        tags.appendChild(el('span', { class: 'excel-import-tag-conflict', text: `⚠ 競合 ${counts.conflictCount} 件` }));
     }
-    if (invalidCount > 0) {
-        counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `⚠ 無効 ${invalidCount} 件` }));
+    if (counts.duplicateCount > 0) {
+        tags.appendChild(el('span', { class: 'excel-import-tag-skip', text: `重複スキップ ${counts.duplicateCount} 件` }));
+    }
+    if (counts.invalidCount > 0) {
+        tags.appendChild(el('span', { class: 'excel-import-tag-skip', text: `⚠ 無効 ${counts.invalidCount} 件` }));
     }
 
     return el('label', { class: 'excel-import-sheet-chip', 'data-sheet': kind }, [
@@ -355,7 +376,7 @@ function buildSheetChip(kind, name, icon, newCount, conflictOrDupCount, invalidC
         el('div', { class: 'excel-import-sheet-chip-icon', text: icon }),
         el('div', { class: 'excel-import-sheet-chip-body' }, [
             el('div', { class: 'excel-import-sheet-chip-name', text: name }),
-            counts
+            tags
         ])
     ]);
 }
@@ -432,14 +453,15 @@ function computeSummary() {
             if (d === 'overwrite') overwrite++; else conflictSkip++;
         }
     }
-    const dupSkip = actOn ? previewState.actualDuplicates.length : 0;
+    const estDup = estOn ? previewState.estimateDuplicates.length : 0;
+    const actDup = actOn ? previewState.actualDuplicates.length : 0;
     const add = estNew + actNew;
     const total = add + overwrite;
-    const skip = conflictSkip + dupSkip;
+    const skip = conflictSkip + estDup + actDup;
     return {
         total, add, overwrite, skip,
         addDetail: `見積 +${estNew} ・ 実績 +${actNew}`,
-        skipDetail: `競合 ${conflictSkip} ・ 完全重複 ${dupSkip}`,
+        skipDetail: `競合 ${conflictSkip} ・ 完全重複 ${estDup + actDup}`,
         totalDetail: `見積 ${estOn ? estNew + overwrite : 0} ・ 実績 ${actNew}`
     };
 }
@@ -472,6 +494,7 @@ function openPreviewModal(fileName, parseResult) {
         fileName,
         estimateNew: estConflict.newRows,
         estimateConflicts: estConflict.conflicts,
+        estimateDuplicates: estConflict.duplicates,
         actualNew: actConflict.newRows,
         actualDuplicates: actConflict.duplicates,
         estimateInvalid: parseResult.estimateInvalid,
@@ -491,10 +514,20 @@ function openPreviewModal(fileName, parseResult) {
     const sheetsEl = document.getElementById('excelImportSheets');
     sheetsEl.textContent = '';
     if (previewState.sheets.estimate) {
-        sheetsEl.appendChild(buildSheetChip('estimate', '見積シート', '📋', estConflict.newRows.length, estConflict.conflicts.length, parseResult.estimateInvalid.length, '⚠ 競合'));
+        sheetsEl.appendChild(buildSheetChip('estimate', '見積シート', '📋', {
+            newCount: estConflict.newRows.length,
+            conflictCount: estConflict.conflicts.length,
+            duplicateCount: estConflict.duplicates.length,
+            invalidCount: parseResult.estimateInvalid.length
+        }));
     }
     if (previewState.sheets.actual) {
-        sheetsEl.appendChild(buildSheetChip('actual', '実績シート', '⏱', actConflict.newRows.length, actConflict.duplicates.length, parseResult.actualInvalid.length, '重複スキップ'));
+        sheetsEl.appendChild(buildSheetChip('actual', '実績シート', '⏱', {
+            newCount: actConflict.newRows.length,
+            conflictCount: 0,
+            duplicateCount: actConflict.duplicates.length,
+            invalidCount: parseResult.actualInvalid.length
+        }));
     }
 
     // 競合プレビュー
