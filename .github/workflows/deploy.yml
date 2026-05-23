@@ -75,6 +75,13 @@ jobs:
           path: experiment-llm-analysis
         continue-on-error: true
 
+      - name: Checkout experiment/ui-scaling branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling
+          path: experiment-ui-scaling
+        continue-on-error: true
+
       - name: Prepare deployment directory
         run: |
           # mainブランチの内容をデプロイディレクトリのルートにコピー
@@ -133,6 +140,15 @@ jobs:
             echo "✅ experiment/llm-analysis をプレビューディレクトリに追加しました"
           else
             echo "⚠️ experiment/llm-analysis ブランチが見つかりません（スキップ）"
+          fi
+
+          # experiment/ui-scalingブランチが存在する場合、プレビューディレクトリにコピー
+          if [ -d "experiment-ui-scaling" ]; then
+            mkdir -p deploy/preview/ui-scaling
+            cp -r experiment-ui-scaling/* deploy/preview/ui-scaling/
+            echo "✅ experiment/ui-scaling をプレビューディレクトリに追加しました"
+          else
+            echo "⚠️ experiment/ui-scaling ブランチが見つかりません（スキップ）"
           fi
 
       - name: Setup Pages
