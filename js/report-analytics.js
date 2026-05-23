@@ -484,11 +484,16 @@ function updateFilterOptions(allMonths) {
 function setupCanvas(id, drawFn) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
+    // canvas.height = h*DPR は HTML の height 属性を書き換えるため、初回の値を保存しておく
+    // （保存しないと再描画のたびに高さが DPR 倍ずつ膨張する）
+    if (!canvas.dataset.baseHeight) {
+        canvas.dataset.baseHeight = canvas.getAttribute('height') || '200';
+    }
     // Collapse canvas before measuring parent to avoid feedback loop
     canvas.style.width = '0px';
     canvas.style.height = '0px';
     const w = canvas.parentElement.clientWidth;
-    let h = parseInt(canvas.getAttribute('height')) || 200;
+    let h = parseInt(canvas.dataset.baseHeight, 10) || 200;
     // 正方形チャート（ドーナツ等）はdata-aspect="square"で幅に合わせる
     if (canvas.dataset.aspect === 'square') {
         h = Math.min(w, h);
