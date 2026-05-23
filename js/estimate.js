@@ -1682,8 +1682,10 @@ export function showTaskDetail(version, task) {
                     html += `
                         <div class="wd-row">
                             <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                            <span class="wd-row-name">${escapeHtml(est.member)}</span>
-                            <span class="wd-row-month">${monthText}</span>
+                            <span class="wd-row-center">
+                                <span class="wd-row-name">${escapeHtml(est.member)}</span>
+                                <span class="wd-row-month">${monthText}</span>
+                            </span>
                             <span class="wd-row-hours">${est.hours.toFixed(1)}h</span>
                             <button class="wd-row-delete" title="削除" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" aria-label="削除">×</button>
                         </div>`;
@@ -1692,8 +1694,9 @@ export function showTaskDetail(version, task) {
                 html += `
                     <div class="wd-row wd-row-empty">
                         <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                        <span class="wd-row-name wd-row-name--muted">未登録</span>
-                        <span class="wd-row-month"></span>
+                        <span class="wd-row-center">
+                            <span class="wd-row-name wd-row-name--muted">未登録</span>
+                        </span>
                         <span class="wd-row-hours wd-row-hours--muted">--</span>
                         <button class="wd-row-add" title="追加" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" aria-label="追加">＋</button>
                     </div>`;
