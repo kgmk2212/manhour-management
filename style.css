@@ -1153,19 +1153,13 @@ table.simple-table tr th:first-child {
 }
 
 .estimate-table select {
-    /* グローバル設定で width: 100% が当たっているのを打ち消し、
-       内容に応じた幅にして td 内で中央寄せ */
-    width: auto;
-    min-width: calc(140px * var(--ui-scale));
     display: inline-block;
+    /* selectは内容左寄せが自然なので中央配置はセル側でやる */
 }
 
 .estimate-table input[type="number"] {
-    /* 時間入力は数値らしく右寄せに（縦揃いが綺麗） */
     text-align: right;
-    width: auto;
-    max-width: calc(100px * var(--ui-scale));
-    display: inline-block;
+    /* 数値入力は右寄せが自然（縦揃いが綺麗） */
 }
 
 /* Multi-member add button */
@@ -3907,7 +3901,6 @@ table tr[style*="1565c0"] th:first-child {
 
 /* ---- 新: 工程別内訳の 1 行レイアウト wd-row ---- */
 .wd-row {
-    position: relative;
     display: flex;
     align-items: center;
     gap: calc(14px * var(--ui-scale));
@@ -3916,16 +3909,6 @@ table tr[style*="1565c0"] th:first-child {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     margin-bottom: calc(8px * var(--ui-scale));
-}
-
-/* 担当者名 + 月タグを行の中央に absolute 配置 */
-.wd-row-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: inline-flex;
-    align-items: baseline;
-    gap: calc(10px * var(--ui-scale));
 }
 
 .wd-row-empty {
