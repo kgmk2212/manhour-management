@@ -59,7 +59,7 @@
     <script src="lib/japanese-holidays.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="style.css?v=20260310-8">
+    <link rel="stylesheet" href="style.css?v=20260523-1">
     <link rel="stylesheet" href="report-analytics.css?v=20260405-1">
     <style>
         /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
@@ -2442,13 +2442,18 @@
                     </div>
                     <div class="form-group">
                         <label>帳票名</label>
-                        <select id="addEstFormNameSelect" onchange="handleAddFormNameChange()">
-                            <option value="">-- 帳票名を選択 --</option>
-                            <option value="__new__">新規入力</option>
-                        </select>
-                        <div style="display: none; align-items: center; gap: 4px;" id="addEstFormNameInputWrap">
-                            <input type="text" id="addEstFormName" placeholder="帳票A" style="flex: 1;">
-                            <button type="button" onclick="revertFormNameToSelect('add')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
+                        <div class="combobox" id="addEstFormNameCombo">
+                            <div class="combobox-input-wrap">
+                                <input type="text" id="addEstFormName" class="combobox-input"
+                                    placeholder="入力または右のボタンで候補表示"
+                                    autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text">
+                                <button type="button" class="combobox-toggle" id="addEstFormNameToggle" aria-label="候補を表示" tabindex="-1">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="combobox-list" id="addEstFormNameList" role="listbox"></div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -2909,7 +2914,7 @@
     </div>
 
     <!-- モジュールスクリプト -->
-    <script type="module" src="js/init.js?v=20260405-1"></script>
+    <script type="module" src="js/init.js?v=20260523-1"></script>
 
     <!-- フィルタバー（スマートスティッキー / ホバーモード） -->
     <script>

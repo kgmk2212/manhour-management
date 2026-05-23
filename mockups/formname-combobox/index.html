@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>帳票名 Combobox モックアップ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --border: #E7E5E0;
+    --border-light: #F0EEEA;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #9C9690;
+    --accent: #2D5A27;
+    --accent-hover: #3A7232;
+    --accent-light: #EBF5EA;
+    --accent-secondary: #C4841D;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --shadow-md: 0 2px 8px rgba(26, 24, 20, 0.06);
+    --shadow-lg: 0 10px 30px rgba(26, 24, 20, 0.12);
+    --transition: 200ms ease;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+}
+
+.intro {
+    max-width: 480px;
+    margin: 0 auto 24px;
+}
+
+.intro h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.intro p {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.demo-card {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 20px;
+}
+
+.card-header {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    font-size: 16px; /* iOS 自動ズーム回避 */
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text-primary);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    line-height: 1.5;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.08);
+}
+
+.combobox { position: relative; }
+.combobox-input-wrap { position: relative; }
+.combobox-input { padding-right: 36px; }
+
+.combobox-toggle {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+    transition: background var(--transition);
+}
+
+.combobox-toggle:hover {
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+}
+
+.combobox-toggle svg {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--transition);
+}
+
+.combobox.open .combobox-toggle svg {
+    transform: rotate(180deg);
+}
+
+.combobox-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    max-height: 280px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    padding: 4px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    display: none;
+}
+
+.combobox.open .combobox-list { display: block; }
+
+.combobox.open.up .combobox-list {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
+.combobox-item {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: background-color 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.combobox-item:hover,
+.combobox-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.combobox-item mark {
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.combobox-item.create-new {
+    border-top: 1px solid var(--border-light);
+    margin-top: 4px;
+    padding-top: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.combobox-item.create-new .plus-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.combobox-empty {
+    padding: 14px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.combobox-section {
+    padding: 6px 12px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.output {
+    max-width: 480px;
+    margin: 16px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.output strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.notes {
+    max-width: 480px;
+    margin: 24px auto 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.notes h2 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.notes ul { padding-left: 18px; }
+.notes li { margin-bottom: 4px; }
+
+.kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-primary);
+}
+</style>
+</head>
+<body>
+
+<div class="intro">
+    <h1>帳票名 Combobox（モック）</h1>
+    <p>入力で絞り込み、選択も新規入力も同じフィールドで完結。iPhone / PC 両対応。</p>
+</div>
+
+<div class="demo-card">
+    <div class="card-header">📝 見積登録</div>
+
+    <div class="form-group">
+        <label class="form-label">版数</label>
+        <select>
+            <option>v1.2.3</option>
+            <option>v1.2.4</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="formName">帳票名</label>
+        <div class="combobox" id="formNameCombo">
+            <div class="combobox-input-wrap">
+                <input
+                    type="text"
+                    id="formName"
+                    class="combobox-input"
+                    placeholder="入力または右のボタンで候補表示"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    inputmode="text"
+                >
+                <button type="button" class="combobox-toggle" aria-label="候補を表示" tabindex="-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="combobox-list" id="formNameList" role="listbox"></div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">対応名</label>
+        <input type="text" placeholder="例: 単価マスタ追加対応">
+    </div>
+</div>
+
+<div class="output">
+    現在の値: <strong id="output">（未入力）</strong> <span id="outputKind"></span>
+</div>
+
+<div class="notes">
+    <h2>操作</h2>
+    <ul>
+        <li><span class="kbd">タップ / フォーカス</span> 候補一覧を表示</li>
+        <li><span class="kbd">文字入力</span> 部分一致でインクリメント絞り込み（一致箇所をハイライト）</li>
+        <li><span class="kbd">▼</span> ボタン 全候補を再表示</li>
+        <li><span class="kbd">↑</span> <span class="kbd">↓</span> 移動 / <span class="kbd">Enter</span> 確定 / <span class="kbd">Esc</span> 閉じる（PC）</li>
+        <li>候補にない文字列を入力した場合は「＋ 新規として登録」が末尾に出現 → タップで確定</li>
+    </ul>
+    <h2 style="margin-top:14px;">iOS / モバイル対策</h2>
+    <ul>
+        <li>input の font-size: 16px 以上で自動ズーム回避</li>
+        <li>候補は pointerdown で確定（blur より先に発火させて「タップが効かない」問題を回避）</li>
+        <li>仮想キーボードが候補を覆う場合、自動で input の上側に展開</li>
+        <li>候補リストは max-height: 280px + スクロール（iOS datalist で候補が少ししか出ない問題を回避）</li>
+    </ul>
+</div>
+
+<script>
+const FORM_NAMES = [
+    "売上集計表","売上明細票","請求書","請求一覧","入金明細","得意先元帳",
+    "仕入伝票","仕入明細表","在庫一覧表","在庫推移表","発注伝票","納品書",
+    "受領書","月次決算表","年次決算表","勘定科目元帳","現預金出納帳",
+    "経費精算書","給与明細","源泉徴収票","見積書","工程表"
+];
+
+(function initCombobox() {
+    const combo = document.getElementById('formNameCombo');
+    const input = document.getElementById('formName');
+    const list = document.getElementById('formNameList');
+    const toggle = combo.querySelector('.combobox-toggle');
+    const output = document.getElementById('output');
+    const outputKind = document.getElementById('outputKind');
+
+    let activeIndex = -1;
+    let currentItems = [];
+
+    function buildItems(query) {
+        const q = query.trim();
+        const matched = !q
+            ? FORM_NAMES.slice()
+            : FORM_NAMES.filter(n => n.toLowerCase().includes(q.toLowerCase()));
+        const exact = matched.some(n => n === q);
+        const items = matched.map(name => ({ kind: 'existing', value: name }));
+        if (q && !exact) items.push({ kind: 'create', value: q });
+        return items;
+    }
+
+    function appendHighlighted(parent, text, query) {
+        if (!query) {
+            parent.appendChild(document.createTextNode(text));
+            return;
+        }
+        const lowerText = text.toLowerCase();
+        const lowerQ = query.toLowerCase();
+        let pos = 0;
+        while (pos < text.length) {
+            const idx = lowerText.indexOf(lowerQ, pos);
+            if (idx === -1) {
+                parent.appendChild(document.createTextNode(text.slice(pos)));
+                break;
+            }
+            if (idx > pos) parent.appendChild(document.createTextNode(text.slice(pos, idx)));
+            const mark = document.createElement('mark');
+            mark.textContent = text.slice(idx, idx + query.length);
+            parent.appendChild(mark);
+            pos = idx + query.length;
+        }
+    }
+
+    function render(query) {
+        currentItems = buildItems(query);
+        activeIndex = currentItems.length > 0 ? 0 : -1;
+        list.textContent = '';
+
+        if (currentItems.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'combobox-empty';
+            empty.textContent = '候補なし — 入力した文字列がそのまま登録されます';
+            list.appendChild(empty);
+            return;
+        }
+
+        const existingCount = currentItems.filter(i => i.kind === 'existing').length;
+        if (existingCount > 0) {
+            const section = document.createElement('div');
+            section.className = 'combobox-section';
+            section.textContent = `既存の帳票名（${existingCount}件）`;
+            list.appendChild(section);
+        }
+
+        currentItems.forEach((item, i) => {
+            const el = document.createElement('div');
+            el.className = 'combobox-item' + (item.kind === 'create' ? ' create-new' : '') + (i === activeIndex ? ' active' : '');
+            el.dataset.index = String(i);
+            el.setAttribute('role', 'option');
+
+            if (item.kind === 'create') {
+                const icon = document.createElement('span');
+                icon.className = 'plus-icon';
+                icon.textContent = '+';
+                el.appendChild(icon);
+                const txt = document.createElement('span');
+                txt.appendChild(document.createTextNode('「'));
+                const strong = document.createElement('strong');
+                strong.textContent = item.value;
+                strong.style.fontWeight = '700';
+                txt.appendChild(strong);
+                txt.appendChild(document.createTextNode('」を新規として登録'));
+                el.appendChild(txt);
+            } else {
+                appendHighlighted(el, item.value, query);
+            }
+            list.appendChild(el);
+        });
+    }
+
+    function setActive(i) {
+        activeIndex = i;
+        list.querySelectorAll('.combobox-item').forEach((el, idx) => {
+            el.classList.toggle('active', idx === i);
+            if (idx === i) el.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
+    function decideDirection() {
+        const rect = combo.getBoundingClientRect();
+        const viewportH = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+        const spaceBelow = viewportH - rect.bottom;
+        const spaceAbove = rect.top;
+        const needed = 280;
+        combo.classList.toggle('up', spaceBelow < needed && spaceAbove > spaceBelow);
+    }
+
+    function open() {
+        render(input.value);
+        decideDirection();
+        combo.classList.add('open');
+    }
+
+    function close() {
+        combo.classList.remove('open');
+        activeIndex = -1;
+    }
+
+    function commit(value, kind) {
+        input.value = value;
+        output.textContent = value;
+        outputKind.textContent = kind === 'create' ? '（新規）' : '（既存）';
+        outputKind.style.color = kind === 'create' ? 'var(--accent-secondary)' : 'var(--accent)';
+        close();
+    }
+
+    input.addEventListener('focus', open);
+
+    input.addEventListener('input', () => {
+        render(input.value);
+        decideDirection();
+        if (!combo.classList.contains('open')) combo.classList.add('open');
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (!combo.classList.contains('open') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            open();
+            e.preventDefault();
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActive(Math.min(activeIndex + 1, currentItems.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActive(Math.max(activeIndex - 1, 0));
+        } else if (e.key === 'Enter') {
+            if (activeIndex >= 0 && currentItems[activeIndex]) {
+                e.preventDefault();
+                const it = currentItems[activeIndex];
+                commit(it.value, it.kind);
+            }
+        } else if (e.key === 'Escape') {
+            close();
+        }
+    });
+
+    list.addEventListener('pointerdown', (e) => {
+        const target = e.target.closest('.combobox-item');
+        if (!target) return;
+        e.preventDefault();
+        const idx = parseInt(target.dataset.index, 10);
+        const it = currentItems[idx];
+        if (it) commit(it.value, it.kind);
+    });
+
+    toggle.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (combo.classList.contains('open')) {
+            close();
+            input.blur();
+        } else {
+            input.focus();
+            open();
+        }
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+        if (!combo.contains(e.target)) close();
+    });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (combo.classList.contains('open')) decideDirection();
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

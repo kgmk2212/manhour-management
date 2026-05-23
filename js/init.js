@@ -546,6 +546,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // クイック入力の見積登録フォームを初期化
     Quick.initQuickEstimateForm();
 
+    // 見積登録モーダルの帳票名 combobox を初期化
+    EstimateAdd.initFormNameCombobox();
+
     // 各タブのデフォルト月を設定（localStorageから復元された場合はスキップ）
     // 見積タブはupdateEstimateMonthOptionsで既に設定済みなのでスキップ
     UI.setDefaultActualMonth();

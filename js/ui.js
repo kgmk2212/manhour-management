@@ -2250,7 +2250,8 @@ export function updateFormNameOptions() {
 
         const sortedFormNames = Array.from(formNames).sort();
 
-        const selectIds = ['quickEstFormNameSelect', 'addEstFormNameSelect', 'editTaskFormNameSelect'];
+        // 注: addEstFormNameSelect は combobox 化により削除済み（候補は combobox 側で都度収集）
+        const selectIds = ['quickEstFormNameSelect', 'editTaskFormNameSelect'];
         selectIds.forEach(selectId => {
             const select = document.getElementById(selectId);
             if (select) {
@@ -3865,6 +3866,8 @@ export function handleAddFormNameChange() {
     const select = document.getElementById('addEstFormNameSelect');
     const input = document.getElementById('addEstFormName');
     const wrap = document.getElementById('addEstFormNameInputWrap');
+    // 見積登録モーダルの帳票名は combobox 化により select/wrap が無いため早期 return
+    if (!select || !wrap) return;
 
     if (select.value === '__edit__') {
         const currentFormName = input.value || '';

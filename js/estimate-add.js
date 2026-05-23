@@ -9,6 +9,49 @@ import { PROCESS } from './constants.js';
 import { renderEstimateList } from './estimate.js';
 import { updateSchedule, calculateEndDate } from './schedule.js';
 import { pushAction } from './history.js';
+import { createCombobox } from './combobox.js';
+
+// 見積登録モーダル: 帳票名 combobox インスタンス
+let formNameCombobox = null;
+
+/**
+ * 帳票名 combobox を初期化（起動時に1回だけ呼ぶ）
+ */
+export function initFormNameCombobox() {
+    if (formNameCombobox) return formNameCombobox;
+    const root = document.getElementById('addEstFormNameCombo');
+    const input = document.getElementById('addEstFormName');
+    const list = document.getElementById('addEstFormNameList');
+    const toggle = document.getElementById('addEstFormNameToggle');
+    if (!root || !input || !list || !toggle) return null;
+
+    formNameCombobox = createCombobox({
+        root, input, list, toggle,
+        getOptions: () => collectFormNameOptions(),
+        sectionLabel: '既存の帳票名',
+        placeholderEmpty: '候補なし — 入力した文字列が新規帳票名になります',
+        createLabel: (q) => `「${q}」を新規として登録`,
+    });
+    return formNameCombobox;
+}
+
+/**
+ * 既存の見積から帳票名候補を抽出
+ */
+function collectFormNameOptions() {
+    const names = new Set();
+    State.estimates.forEach(e => {
+        if (!e.task) return;
+        if (e.task.includes('：')) {
+            const n = e.task.split('：')[0].trim();
+            if (n) names.add(n);
+        } else if (e.task.includes('_')) {
+            const n = e.task.split('_')[0].trim();
+            if (n) names.add(n);
+        }
+    });
+    return Array.from(names).sort();
+}
 
 // ============================================
 // 見積追加モーダル関連
@@ -68,36 +111,21 @@ export function openAddEstimateSingleProcess(version, task, process) {
     }
 
     // 帳票名・対応名をpre-fill＋読み取り専用
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
     const taskInput = document.getElementById('addEstTask');
 
     if (task.includes('：')) {
         const parts = task.split('：');
-        if (formNameSelect) {
-            let found = false;
-            for (let i = 0; i < formNameSelect.options.length; i++) {
-                if (formNameSelect.options[i].value === parts[0]) { found = true; break; }
-            }
-            if (found) {
-                formNameSelect.value = parts[0];
-                formNameSelect.style.display = 'block';
-                formNameSelect.disabled = true;
-                const fnWrap = document.getElementById('addEstFormNameInputWrap');
-                if (fnWrap) fnWrap.style.display = 'none';
-            } else {
-                formNameSelect.style.display = 'none';
-                const fnWrap2 = document.getElementById('addEstFormNameInputWrap');
-                if (fnWrap2) {
-                    fnWrap2.style.display = 'flex';
-                    formNameInput.value = parts[0];
-                    formNameInput.readOnly = true;
-                }
-            }
+        if (formNameInput) {
+            formNameInput.value = parts[0];
+            formNameInput.readOnly = true;
         }
         if (taskInput) { taskInput.value = parts.slice(1).join('：'); taskInput.readOnly = true; }
     } else {
-        if (formNameSelect) { formNameSelect.value = ''; formNameSelect.disabled = true; }
+        if (formNameInput) {
+            formNameInput.value = '';
+            formNameInput.readOnly = true;
+        }
         if (taskInput) { taskInput.value = task; taskInput.readOnly = true; }
     }
 
@@ -170,30 +198,8 @@ export function openEditAllProcesses(version, task) {
         taskName = task;
     }
 
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
-
-    if (formNameSelect) {
-        let formNameExists = false;
-        for (let i = 0; i < formNameSelect.options.length; i++) {
-            if (formNameSelect.options[i].value === formName) {
-                formNameExists = true;
-                break;
-            }
-        }
-        const formNameWrap = document.getElementById('addEstFormNameInputWrap');
-        if (formNameExists) {
-            formNameSelect.value = formName;
-            formNameSelect.style.display = 'block';
-            if (formNameWrap) formNameWrap.style.display = 'none';
-            if (formNameInput) formNameInput.value = formName;
-        } else if (formName) {
-            formNameSelect.value = '__new__';
-            formNameSelect.style.display = 'none';
-            if (formNameWrap) formNameWrap.style.display = 'flex';
-            if (formNameInput) formNameInput.value = formName;
-        }
-    }
+    if (formNameInput) formNameInput.value = formName || '';
 
     const taskInput = document.getElementById('addEstTask');
     if (taskInput) taskInput.value = taskName;
@@ -290,9 +296,8 @@ function saveEditAllProcesses() {
 
     // フォームから値を取得
     const version = document.getElementById('addEstVersion').value;
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
-    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameInput?.value || '').trim();
     const taskName = document.getElementById('addEstTask').value.trim();
 
     if (!version) { alert('版数を選択してください'); return; }
@@ -538,9 +543,6 @@ function exitSingleProcessMode() {
     const versionSelect = document.getElementById('addEstVersion');
     if (versionSelect) versionSelect.disabled = false;
 
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
-    if (formNameSelect) formNameSelect.disabled = false;
-
     const formNameInput = document.getElementById('addEstFormName');
     if (formNameInput) formNameInput.readOnly = false;
 
@@ -635,7 +637,6 @@ export function closeAddEstimateModal() {
  */
 function checkHasFormData() {
     if (document.getElementById('addEstVersion')?.value) return true;
-    if (document.getElementById('addEstFormNameSelect')?.value) return true;
     if (document.getElementById('addEstFormName')?.value) return true;
     if (document.getElementById('addEstTask')?.value) return true;
     for (const proc of PROCESS.TYPES) {
@@ -659,13 +660,8 @@ export function resetAddEstimateForm() {
     // 通常モードのフォームをリセット
     document.getElementById('addEstVersion').value = '';
 
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
     const formNameInput = document.getElementById('addEstFormName');
-    formNameSelect.value = '';
-    formNameSelect.style.display = 'block';
-    formNameInput.value = '';
-    const formNameWrap = document.getElementById('addEstFormNameInputWrap');
-    if (formNameWrap) formNameWrap.style.display = 'none';
+    if (formNameInput) formNameInput.value = '';
 
     const addEstTask = document.getElementById('addEstTask');
     if (addEstTask) addEstTask.value = '';
@@ -1258,10 +1254,9 @@ function addNormalEstimate() {
     // 通常モード: 版数・帳票名・対応名を検証
     const version = document.getElementById('addEstVersion').value;
 
-    // 帳票名を取得（selectまたはinputから）
-    const formNameSelect = document.getElementById('addEstFormNameSelect');
+    // 帳票名を取得（combobox の入力値）
     const formNameInput = document.getElementById('addEstFormName');
-    const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
+    const formName = (formNameInput?.value || '').trim();
 
     if (!version || version === '新規追加') {
         alert('版数を選択してください');
