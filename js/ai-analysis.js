@@ -255,6 +255,8 @@ function renderSettingsPanel() {
     };
 
     panel.appendChild(makeField('Ollama エンドポイント', 'endpoint', DEFAULT_SETTINGS.endpoint));
+    const endpointHint = el('div', 'ai-settings-hint', 'CSP により localhost:11434 / 127.0.0.1:11434 のみ接続可能です。別ポートを使う場合は index.html の CSP メタタグを編集してください。');
+    panel.appendChild(endpointHint);
 
     // モデル一覧の datalist（開封時に probeOllama で取得して埋める）
     const modelList = el('datalist');
