@@ -2,6 +2,7 @@
 // 仕様書: docs/superpowers/specs/2026-05-23-excel-append-import-design.md
 
 import { estimates, actuals } from './state.js';
+import { pushAction } from './history.js';
 
 // プレビュー中の状態（モーダルが閉じられたらクリア）
 let previewState = null;
@@ -707,8 +708,20 @@ export async function handleExcelImport(file) {
     }
 }
 
-if (!window.pushExcelImportAction) {
-    window.pushExcelImportAction = () => {};
-}
+window.pushExcelImportAction = function(data) {
+    pushAction({
+        type: 'excel_import',
+        data: {
+            added: {
+                estimates: data.added.estimates.map(e => ({ ...e })),
+                actuals: data.added.actuals.map(a => ({ ...a }))
+            },
+            overwritten: data.overwritten.map(o => ({
+                before: { ...o.before },
+                after: { ...o.after }
+            }))
+        }
+    });
+};
 
 console.log('✅ モジュール excel-import.js loaded');
