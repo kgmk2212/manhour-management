@@ -2555,10 +2555,7 @@ export function updateEstimateMonthOptions(selectedVersion = 'all') {
         const est = normalizeEstimate(e);
         est.workMonths.forEach(month => {
             if (month && month !== 'unassigned') {
-                // 時間が0より大きい月のみを追加
-                if (est.monthlyHours && est.monthlyHours[month] > 0) {
-                    months.add(month);
-                }
+                months.add(month);
             }
         });
     });
