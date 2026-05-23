@@ -1669,8 +1669,8 @@ export function showTaskDetail(version, task) {
                     html += `
                         <div class="wd-card">
                             <div class="wd-card-header">
-                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                <span class="wd-card-name-group">
+                                <span class="wd-card-cluster">
+                                    <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
                                     <span class="wd-card-title">${escapeHtml(est.member)}</span>
                                     ${monthTag}
                                 </span>
@@ -1686,8 +1686,8 @@ export function showTaskDetail(version, task) {
                 html += `
                     <div class="wd-card wd-card-empty">
                         <div class="wd-card-header">
-                            <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                            <span class="wd-card-name-group">
+                            <span class="wd-card-cluster">
+                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
                                 <span style="color: #999;">未登録</span>
                             </span>
                             <span class="wd-card-hours" style="color: #ccc;">--</span>

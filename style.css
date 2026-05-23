@@ -3768,24 +3768,22 @@ table tr[style*="1565c0"] th:first-child {
     border-bottom: 1px solid var(--border-light);
 }
 
-/* ヒーローやラベルが中央寄せなので meta も中央に揃える。
-   ただし「ラベル + 値」のペアではラベルが少し左、値が exact center に
-   くるように 3 列 grid (1fr auto 1fr) を使う。 */
+/* 「ラベル + 値」をペアとしてコンテナ中央に配置。
+   ラベルは小さく muted にして視覚的重みを下げ、左右の重さのバランスを取る。 */
 .ed-meta-item {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    justify-content: center;
     align-items: baseline;
+    gap: calc(8px * var(--ui-scale));
     margin-bottom: 4px;
 }
 
 .ed-meta-item .ed-meta-label {
-    justify-self: end;
-    padding-right: calc(10px * var(--ui-scale));
-}
-
-.ed-meta-item .ed-meta-value {
-    justify-self: start;
-    /* col 2 (auto, exact center between両側の 1fr) */
+    /* label は小さく muted にして「値」が主役と分かるように */
+    font-size: calc(14px * var(--ui-scale));
+    font-weight: 500;
+    color: var(--text-muted);
+    min-width: 0;
 }
 
 .ed-meta-label {
@@ -3876,25 +3874,27 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-header {
-    /* 名前(+月タグ)を exact center に配置するため、name-group を絶対配置
-       badge と hours は flex の左右端に並べる */
+    /* [badge 名前 月タグ] を1グループとして中央に配置し、hours を右端に分離
+       badge と月タグの幅が近いので、名前はほぼ card 中央に来る */
     position: relative;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    min-height: calc(28px * var(--ui-scale));
 }
 
-.wd-card-name-group {
+.wd-card-cluster {
+    /* badge / 名前 / 月タグ をひとまとめにして中央配置 */
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     gap: calc(10px * var(--ui-scale));
-    /* badge / hours と被らないよう、両端から一定の余白を確保 */
-    max-width: calc(100% - calc(160px * var(--ui-scale)));
-    pointer-events: auto;
+}
+
+.wd-card-hours {
+    margin-left: auto;
 }
 
 .wd-card-title {
