@@ -3,6 +3,37 @@
 
 import { estimates, actuals } from './state.js';
 
+// プレビュー中の状態（モーダルが閉じられたらクリア）
+let previewState = null;
+
+/**
+ * 軽量 DOM 構築ヘルパー。
+ * - `attrs.class` はクラス名、`data-*` は data 属性、それ以外はプロパティ
+ * - text プロパティを指定すると textContent を設定（安全に文字列を入れる用）
+ * - children は配列で子ノードを渡す（null は無視）
+ */
+function el(tag, attrs = {}, children = []) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        if (v == null) continue;
+        if (k === 'class') e.className = v;
+        else if (k === 'text') e.textContent = v;
+        else if (k.startsWith('data-') || k.startsWith('aria-')) e.setAttribute(k, v);
+        else e[k] = v;
+    }
+    for (const c of children) {
+        if (c == null) continue;
+        e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return e;
+}
+
+/** 子要素群を空にして新規ノードで置き換える（textContent でクリア） */
+function replaceChildren(parent, ...nodes) {
+    parent.textContent = '';
+    for (const n of nodes) if (n != null) parent.appendChild(n);
+}
+
 const SHEET_ALIASES = {
     estimate: ['見積', '見積シート', 'estimate', 'estimates'],
     actual: ['実績', '実績シート', 'actual', 'actuals']
@@ -243,6 +274,265 @@ function detectActualConflicts(rows, existing) {
     return { newRows, duplicates };
 }
 
+function buildRowIdentity(row) {
+    return el('div', { class: 'excel-import-row-id' }, [
+        el('span', { class: 'version', text: row.version }),
+        el('span', { class: 'task', text: row.task }),
+        el('span', { class: 'process', text: row.process }),
+        el('span', { class: 'member', text: row.member })
+    ]);
+}
+
+function buildCompareSide(label, hours, workMonths, sideClass, hoursChanged, monthsChanged) {
+    const monthsStr = Array.isArray(workMonths) ? workMonths.join(', ') : (workMonths || '');
+    return el('div', { class: `excel-import-compare-side ${sideClass}` }, [
+        el('div', { class: 'excel-import-compare-side-label', text: label }),
+        el('div', { class: `excel-import-field-row ${hoursChanged ? 'changed' : ''}` }, [
+            el('span', { class: 'name', text: '工数' }),
+            el('span', { class: 'val', text: `${hours} h` })
+        ]),
+        el('div', { class: `excel-import-field-row ${monthsChanged ? 'changed' : ''}` }, [
+            el('span', { class: 'name', text: '作業月' }),
+            el('span', { class: 'val', text: monthsStr || '—' })
+        ])
+    ]);
+}
+
+function buildConflictCard(conflict, index, defaultDecision) {
+    const { existing, incoming } = conflict;
+    const hoursChanged = Number(existing.hours) !== Number(incoming.hours);
+    const existingMonths = (existing.workMonths || (existing.workMonth ? [existing.workMonth] : []));
+    const incomingMonths = incoming.workMonths || [];
+    const monthsChanged = existingMonths.join(',') !== incomingMonths.join(',');
+    const decision = defaultDecision || 'overwrite';
+
+    const card = el('div', {
+        class: 'excel-import-compare-card',
+        'data-state': decision,
+        'data-index': String(index)
+    }, [
+        el('div', { class: 'excel-import-compare-header' }, [
+            buildRowIdentity(incoming),
+            buildChoiceGroup(`excelConflict_${index}`, decision, [
+                { value: 'overwrite', label: '上書き', className: 'is-overwrite' },
+                { value: 'skip', label: 'スキップ', className: 'is-skip' }
+            ])
+        ]),
+        el('div', { class: 'excel-import-compare-body' }, [
+            buildCompareSide('既存', existing.hours, existingMonths, 'existing', hoursChanged, monthsChanged),
+            el('div', { class: 'excel-import-compare-arrow', text: '→' }),
+            buildCompareSide('読み込み', incoming.hours, incomingMonths, 'incoming', hoursChanged, monthsChanged)
+        ])
+    ]);
+    return card;
+}
+
+function buildChoiceGroup(name, currentValue, options) {
+    const group = el('div', { class: 'excel-import-choice-group' });
+    for (const opt of options) {
+        const id = `${name}_${opt.value}`;
+        const input = el('input', { type: 'radio', name, id, value: opt.value });
+        if (currentValue === opt.value) input.checked = true;
+        const label = el('label', { htmlFor: id, class: opt.className || '', text: opt.label });
+        group.appendChild(input);
+        group.appendChild(label);
+    }
+    return group;
+}
+
+function buildSheetChip(kind, name, icon, newCount, conflictOrDupCount, invalidCount, conflictLabel) {
+    const checkbox = el('input', { type: 'checkbox', 'data-sheet-checkbox': kind });
+    checkbox.checked = true;
+
+    const counts = el('div', { class: 'excel-import-sheet-chip-counts' }, [
+        el('span', { class: 'excel-import-tag-add', text: `+${newCount} 追加` })
+    ]);
+    if (conflictOrDupCount > 0) {
+        const cls = kind === 'estimate' ? 'excel-import-tag-conflict' : 'excel-import-tag-skip';
+        counts.appendChild(el('span', { class: cls, text: `${conflictLabel} ${conflictOrDupCount} 件` }));
+    }
+    if (invalidCount > 0) {
+        counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `⚠ 無効 ${invalidCount} 件` }));
+    }
+
+    return el('label', { class: 'excel-import-sheet-chip', 'data-sheet': kind }, [
+        checkbox,
+        el('div', { class: 'excel-import-sheet-chip-icon', text: icon }),
+        el('div', { class: 'excel-import-sheet-chip-body' }, [
+            el('div', { class: 'excel-import-sheet-chip-name', text: name }),
+            counts
+        ])
+    ]);
+}
+
+function buildWarnings() {
+    if (!previewState) return null;
+    const blocks = [];
+
+    if (previewState.parseErrors.length > 0) {
+        const ul = el('ul', { class: 'excel-import-warning-list' });
+        for (const e of previewState.parseErrors) ul.appendChild(el('li', { text: e }));
+        blocks.push(el('div', {}, [
+            el('div', { class: 'excel-import-warning-title', text: 'パースに関する警告' }),
+            ul
+        ]));
+    }
+
+    const buildInvalidList = (label, invalids) => {
+        if (invalids.length === 0) return null;
+        const ul = el('ul', { class: 'excel-import-warning-list' });
+        for (const inv of invalids.slice(0, 5)) {
+            ul.appendChild(el('li', { text: `${inv.rowNum} 行目: ${inv.reason}` }));
+        }
+        if (invalids.length > 5) ul.appendChild(el('li', { text: `ほか ${invalids.length - 5} 件` }));
+        return el('div', {}, [
+            el('div', { class: 'excel-import-warning-title', text: `${label}: 取り込めない行が ${invalids.length} 件あります` }),
+            ul
+        ]);
+    };
+    const est = buildInvalidList('見積シート', previewState.estimateInvalid);
+    const act = buildInvalidList('実績シート', previewState.actualInvalid);
+    if (est) blocks.push(est);
+    if (act) blocks.push(act);
+
+    if (blocks.length === 0) return null;
+    return el('div', { class: 'excel-import-warning' }, [
+        el('div', { text: '⚠' }),
+        el('div', { class: 'excel-import-warning-body' }, blocks)
+    ]);
+}
+
+function buildConflictSection() {
+    if (!previewState || previewState.estimateConflicts.length === 0 || !previewState.sheets.estimate) {
+        return null;
+    }
+    const wrap = document.createDocumentFragment();
+    wrap.appendChild(el('div', { class: 'excel-import-section-title', text: `見積シート: 競合 ${previewState.estimateConflicts.length} 件の処理を選択` }));
+
+    const bulkBar = el('div', { class: 'excel-import-bulk-bar' }, [
+        el('div', { class: 'excel-import-bulk-label', text: '⚡ 一括設定' }),
+        buildChoiceGroup('excelBulk', previewState.bulkMode, [
+            { value: 'overwrite', label: '全て上書き', className: 'is-overwrite' },
+            { value: 'skip', label: '全てスキップ', className: 'is-skip' },
+            { value: 'individual', label: '個別判断' }
+        ])
+    ]);
+    wrap.appendChild(bulkBar);
+
+    for (let i = 0; i < previewState.estimateConflicts.length; i++) {
+        wrap.appendChild(buildConflictCard(previewState.estimateConflicts[i], i, previewState.decisions[i]));
+    }
+    return wrap;
+}
+
+function computeSummary() {
+    if (!previewState) return { total: 0, add: 0, overwrite: 0, skip: 0, addDetail: '', skipDetail: '', totalDetail: '' };
+    const estOn = previewState.sheets.estimate;
+    const actOn = previewState.sheets.actual;
+    const estNew = estOn ? previewState.estimateNew.length : 0;
+    const actNew = actOn ? previewState.actualNew.length : 0;
+    let overwrite = 0, conflictSkip = 0;
+    if (estOn) {
+        for (const d of previewState.decisions) {
+            if (d === 'overwrite') overwrite++; else conflictSkip++;
+        }
+    }
+    const dupSkip = actOn ? previewState.actualDuplicates.length : 0;
+    const add = estNew + actNew;
+    const total = add + overwrite;
+    const skip = conflictSkip + dupSkip;
+    return {
+        total, add, overwrite, skip,
+        addDetail: `見積 +${estNew} ・ 実績 +${actNew}`,
+        skipDetail: `競合 ${conflictSkip} ・ 完全重複 ${dupSkip}`,
+        totalDetail: `見積 ${estOn ? estNew + overwrite : 0} ・ 実績 ${actNew}`
+    };
+}
+
+function refreshSummaryUI() {
+    const s = computeSummary();
+    const summary = document.getElementById('excelImportSummary');
+    if (!summary) return;
+    summary.querySelector('[data-field="total"]').textContent = s.total;
+    summary.querySelector('[data-field="add"]').textContent = s.add;
+    summary.querySelector('[data-field="overwrite"]').textContent = s.overwrite;
+    summary.querySelector('[data-field="skip"]').textContent = s.skip;
+    summary.querySelector('[data-field="addDetail"]').textContent = s.addDetail;
+    summary.querySelector('[data-field="skipDetail"]').textContent = s.skipDetail;
+    summary.querySelector('[data-field="totalDetail"]').textContent = s.totalDetail;
+    const footerCount = document.getElementById('excelImportFooterCount');
+    if (footerCount) footerCount.textContent = s.total;
+    const confirmBtn = document.getElementById('btnConfirmExcelImport');
+    if (confirmBtn) {
+        confirmBtn.textContent = `取り込む（${s.total}件）`;
+        confirmBtn.disabled = s.total === 0;
+    }
+}
+
+function openPreviewModal(fileName, parseResult) {
+    const estConflict = detectEstimateConflicts(parseResult.estimateRows, estimates);
+    const actConflict = detectActualConflicts(parseResult.actualRows, actuals);
+
+    previewState = {
+        fileName,
+        estimateNew: estConflict.newRows,
+        estimateConflicts: estConflict.conflicts,
+        actualNew: actConflict.newRows,
+        actualDuplicates: actConflict.duplicates,
+        estimateInvalid: parseResult.estimateInvalid,
+        actualInvalid: parseResult.actualInvalid,
+        parseErrors: parseResult.errors,
+        sheets: {
+            estimate: parseResult.estimateRows.length > 0 || parseResult.estimateInvalid.length > 0,
+            actual: parseResult.actualRows.length > 0 || parseResult.actualInvalid.length > 0
+        },
+        bulkMode: 'overwrite',
+        decisions: estConflict.conflicts.map(() => 'overwrite')
+    };
+
+    document.getElementById('excelImportFileName').textContent = fileName;
+
+    // シートチップを構築
+    const sheetsEl = document.getElementById('excelImportSheets');
+    sheetsEl.textContent = '';
+    if (previewState.sheets.estimate) {
+        sheetsEl.appendChild(buildSheetChip('estimate', '見積シート', '📋', estConflict.newRows.length, estConflict.conflicts.length, parseResult.estimateInvalid.length, '⚠ 競合'));
+    }
+    if (previewState.sheets.actual) {
+        sheetsEl.appendChild(buildSheetChip('actual', '実績シート', '⏱', actConflict.newRows.length, actConflict.duplicates.length, parseResult.actualInvalid.length, '重複スキップ'));
+    }
+
+    // 競合プレビュー
+    const conflictEl = document.getElementById('excelImportConflictSection');
+    conflictEl.textContent = '';
+    const conflictFrag = buildConflictSection();
+    if (conflictFrag) conflictEl.appendChild(conflictFrag);
+
+    // 警告
+    const warnEl = document.getElementById('excelImportWarnings');
+    warnEl.textContent = '';
+    const warnNode = buildWarnings();
+    if (warnNode) {
+        warnEl.appendChild(warnNode);
+        warnEl.style.display = '';
+    } else {
+        warnEl.style.display = 'none';
+    }
+
+    refreshSummaryUI();
+    attachPreviewEventHandlers();
+    document.getElementById('excelImportPreviewModal').style.display = 'flex';
+}
+
+function closePreviewModal() {
+    document.getElementById('excelImportPreviewModal').style.display = 'none';
+    previewState = null;
+}
+
+function attachPreviewEventHandlers() {
+    // 次タスクで実装
+}
+
 /**
  * Excel ファイル取り込みのエントリポイント
  * @param {File} file - ユーザーが選択した xlsx/xls ファイル
@@ -250,18 +540,19 @@ function detectActualConflicts(rows, existing) {
 export async function handleExcelImport(file) {
     try {
         const result = await parseWorkbook(file);
-        if (result.errors.length > 0 && result.estimateRows.length === 0 && result.actualRows.length === 0) {
+        const fatal = result.errors.length > 0 &&
+                      result.estimateRows.length === 0 && result.actualRows.length === 0 &&
+                      result.estimateInvalid.length === 0 && result.actualInvalid.length === 0;
+        if (fatal) {
             alert('Excel ファイルを確認してください\n\n' + result.errors.join('\n'));
             return;
         }
-        const estConflict = detectEstimateConflicts(result.estimateRows, estimates);
-        const actConflict = detectActualConflicts(result.actualRows, actuals);
-        console.log('estimate conflicts:', estConflict);
-        console.log('actual conflicts:', actConflict);
-        alert([
-            `見積: 追加 ${estConflict.newRows.length} / 競合 ${estConflict.conflicts.length} / 無効 ${result.estimateInvalid.length}`,
-            `実績: 追加 ${actConflict.newRows.length} / 重複スキップ ${actConflict.duplicates.length} / 無効 ${result.actualInvalid.length}`
-        ].join('\n'));
+        if (result.estimateRows.length === 0 && result.actualRows.length === 0 &&
+            result.estimateInvalid.length === 0 && result.actualInvalid.length === 0) {
+            alert('取り込めるデータがありません');
+            return;
+        }
+        openPreviewModal(file.name, result);
     } catch (err) {
         console.error('Excel パースエラー:', err);
         alert('Excel ファイルの読み込みに失敗しました: ' + err.message);
