@@ -226,6 +226,9 @@ async function parseWorkbook(file) {
     };
 }
 
+// 比較用の文字列正規化: null/undefined は ''、文字列は trim
+function s(v) { return v == null ? '' : String(v).trim(); }
+
 /**
  * 見積の競合を検出: (version, task, process, member) 一致
  * - 値（hours / workMonths）も完全一致 → duplicates（自動スキップ）
@@ -239,10 +242,10 @@ function detectEstimateConflicts(rows, existing) {
     const duplicates = [];
     for (const incoming of rows) {
         const match = existing.find(e =>
-            e.version === incoming.version &&
-            e.task === incoming.task &&
-            e.process === incoming.process &&
-            e.member === incoming.member
+            s(e.version) === s(incoming.version) &&
+            s(e.task) === s(incoming.task) &&
+            s(e.process) === s(incoming.process) &&
+            s(e.member) === s(incoming.member)
         );
         if (match) {
             if (isEstimateValuesIdentical(match, incoming)) {
@@ -274,11 +277,11 @@ function detectActualConflicts(rows, existing) {
     const duplicates = [];
     for (const incoming of rows) {
         const exact = existing.find(a =>
-            a.date === incoming.date &&
-            a.member === incoming.member &&
-            a.version === incoming.version &&
-            a.task === incoming.task &&
-            a.process === incoming.process &&
+            s(a.date) === s(incoming.date) &&
+            s(a.member) === s(incoming.member) &&
+            s(a.version) === s(incoming.version) &&
+            s(a.task) === s(incoming.task) &&
+            s(a.process) === s(incoming.process) &&
             Number(a.hours) === Number(incoming.hours)
         );
         if (exact) duplicates.push({ existing: exact, incoming });
