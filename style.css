@@ -52,31 +52,38 @@
 }
 
 html {
-    /* ビューポート幅に応じてベースフォントサイズを連続スケール
-       320px → 13px / 1440px → 14px / 1920px → 16px / 2560px → 19px / 3840px → 22px 程度 */
-    font-size: clamp(13px, 0.55vw + 9.5px, 22px);
+    /* ルートは抑えめに伸ばす（見出し既定値の暴走を防ぐ）
+       1440px → 14px / 1920px → 15px / 2560px → 16px 程度 */
+    font-size: clamp(13.5px, 0.15vw + 12.5px, 16px);
     -webkit-text-size-adjust: 100%;
 }
 
-/* 解像度に応じた UI 全体の自動スケーリング
-   ほとんどのスタイルが px ベースのため、body へ zoom を適用して
-   余白・コントロール・モーダルまで含めて比例拡大する。 */
+/* 解像度に応じた UI 全体の自動スケーリング（控えめ）
+   小さすぎる文字と大きすぎる見出しの差を広げないよう倍率は抑制。 */
 body {
     zoom: var(--ui-zoom, 1);
 }
 
 @media (min-width: 1600px) {
-    body { --ui-zoom: 1.08; }
+    body { --ui-zoom: 1.05; }
 }
 @media (min-width: 1920px) {
-    body { --ui-zoom: 1.18; }
+    body { --ui-zoom: 1.12; }
 }
 @media (min-width: 2560px) {
-    body { --ui-zoom: 1.35; }
+    body { --ui-zoom: 1.22; }
 }
 @media (min-width: 3200px) {
-    body { --ui-zoom: 1.55; }
+    body { --ui-zoom: 1.32; }
 }
+
+/* 無印の見出しが root font-size を倍率で増幅して肥大化するのを防ぐため、
+   明示的なサイズを与えて落ち着かせる（class 付きの見出しは個別に上書き済み） */
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+h4 { font-size: 14px; }
+h5 { font-size: 13px; }
+h6 { font-size: 12px; }
 
 body {
     font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -186,7 +193,7 @@ img {
 }
 
 .nav-section-label {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -457,7 +464,7 @@ img {
 }
 
 .mobile-tab-bar .mobile-tab-item span {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
     letter-spacing: -0.02em;
 }
@@ -787,7 +794,7 @@ label {
     gap: 4px;
     padding: 2px 8px;
     border-radius: 99px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     line-height: 1.4;
 }
@@ -1167,7 +1174,7 @@ tr.est-extra-member-row td {
 tr.est-extra-member-row td:first-child {
     text-align: center;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12.5px;
 }
 
 .est-remove-member-btn {
@@ -1629,7 +1636,7 @@ table td[rowspan] {
     display: flex;
     align-items: center;
     padding-left: 10px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: #FFFFFF;
 }
@@ -1884,7 +1891,7 @@ table td[rowspan] {
 }
 
 .calendar-entry {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     margin-top: 2px;
     text-align: center;
@@ -1971,7 +1978,7 @@ table td[rowspan] {
 }
 
 .cm-vacation-label {
-    font-size: 10px;
+    font-size: 11.5px;
 }
 
 .cm-vacation-hours {
@@ -2016,7 +2023,7 @@ table td[rowspan] {
 }
 
 .cm-holiday-sub {
-    font-size: 10px;
+    font-size: 11.5px;
     display: block;
     color: var(--text-muted);
 }
@@ -2205,7 +2212,7 @@ table tr[style*="1565c0"] th:first-child {
     flex: 1;
     text-align: center;
     padding: 6px 0;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-muted);
     border-right: 1px solid var(--border-light);
@@ -2264,7 +2271,7 @@ table tr[style*="1565c0"] th:first-child {
     display: flex;
     align-items: center;
     padding: 0 8px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: #FFFFFF;
     white-space: nowrap;
@@ -2339,7 +2346,7 @@ table tr[style*="1565c0"] th:first-child {
 .tooltip-status { }
 
 .gantt-tooltip .tooltip-status {
-    font-size: 11px;
+    font-size: 12.5px;
     padding: 2px 8px;
     border-radius: 10px;
     font-weight: 500;
@@ -2712,7 +2719,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .version-filter-arrow {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
 }
 
@@ -2899,7 +2906,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: 50%;
     min-width: 18px;
     height: 18px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -2967,7 +2974,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .unscheduled-task-detail {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
 }
 
@@ -4124,12 +4131,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
 /* ---- 35. Manpower Display ---- */
 .manpower-display {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
 }
 
 .total-manpower {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
 }
 
@@ -4201,7 +4208,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     border: 1px solid var(--border);
     border-radius: 16px;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12.5px;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -4390,7 +4397,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .stat-card h3 {
-        font-size: 11px;
+        font-size: 12.5px;
     }
 
     /* Quick input */
@@ -5065,7 +5072,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .calendar-entry {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     margin-top: 2px;
     text-align: center;
@@ -5079,7 +5086,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     padding: 2px 6px;
     background: var(--accent-light);
     border-radius: 3px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--accent);
     margin-top: 4px;
@@ -5126,8 +5133,8 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
         min-height: 60px;
         padding: 4px;
     }
-    .calendar-date { font-size: 11px; }
-    .calendar-hours { font-size: 11px; }
+    .calendar-date { font-size: 12.5px; }
+    .calendar-hours { font-size: 12.5px; }
     .calendar-entry { display: none; }
 }
 
@@ -5324,7 +5331,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     line-height: 1.4;
 }
 .history-time {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     margin-top: 3px;
     letter-spacing: 0.02em;
@@ -5336,7 +5343,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: var(--text-secondary);
     border-radius: var(--radius-sm);
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
@@ -5362,7 +5369,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 .history-latest-badge {
     flex-shrink: 0;
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--accent);
     background: var(--surface);
@@ -5376,7 +5383,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--accent);
     padding: 8px 20px;
     background: var(--accent-light);
@@ -5411,14 +5418,14 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     margin-bottom: 12px;
 }
 .history-shortcut-hint {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     letter-spacing: 0.02em;
 }
 .history-shortcut-hint kbd {
     display: inline-block;
     padding: 1px 5px;
-    font-size: 10px;
+    font-size: 11.5px;
     font-family: inherit;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
@@ -5581,7 +5588,7 @@ li.drop-below {
 
 .actual-tl-holiday-badge {
     display: inline-block;
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--accent-secondary, #C4841D);
     background: rgba(196, 132, 29, 0.1);
@@ -5666,7 +5673,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     padding: 0 12px;
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -5714,7 +5721,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -5734,7 +5741,7 @@ li.drop-below {
 }
 
 .actual-tl-label-meta {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -5932,7 +5939,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-time-label.lunch-zone .actual-tl-dv-time-text {
-    font-size: 11px;
+    font-size: 12.5px;
     color: rgba(120, 120, 120, 0.55);
     font-weight: 600;
 }
@@ -5943,7 +5950,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-time-text {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-muted);
     line-height: 1;
@@ -5980,7 +5987,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -6000,7 +6007,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-member-hours {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -6065,7 +6072,7 @@ li.drop-below {
 .actual-tl-dv-time-label.end-label .actual-tl-dv-time-text {
     position: absolute;
     top: -6px;
-    font-size: 10px;
+    font-size: 11.5px;
     color: rgba(196, 132, 29, 0.6);
     font-weight: 600;
 }
@@ -6197,7 +6204,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-block-task {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6207,7 +6214,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-block-hours {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.2;
@@ -6233,7 +6240,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-text {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6242,7 +6249,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-hours {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
     margin-left: auto;
@@ -6262,7 +6269,7 @@ li.drop-below {
 }
 
 .actual-tl-bar.daily-bar .actual-tl-bar-text {
-    font-size: 11px;
+    font-size: 12.5px;
 }
 
 .actual-tl-bar.daily-bar .actual-tl-bar-hours {
@@ -6305,7 +6312,7 @@ li.drop-below {
 
 /* マージされた実績バー（連続日表示） */
 .actual-tl-bar.actual.merged .actual-tl-bar-text {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6427,7 +6434,7 @@ li.drop-below {
 }
 
 .actual-tl-ds-label {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--accent);
     background: rgba(255, 255, 255, 0.92);
@@ -6451,7 +6458,7 @@ li.drop-below {
     border: 2px solid var(--accent);
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 32px rgba(26, 24, 20, 0.12);
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--accent);
     display: flex;
@@ -6482,7 +6489,7 @@ li.drop-below {
     padding: 6px 14px;
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 24px rgba(26, 24, 20, 0.18), 0 2px 8px rgba(26, 24, 20, 0.08);
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: #fff;
     display: flex;
@@ -6590,7 +6597,7 @@ li.drop-below {
     gap: 8px;
     cursor: pointer;
     transition: background var(--transition);
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--text-secondary);
 }
@@ -6617,7 +6624,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-count {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     background: var(--surface-elevated);
     border: 1px solid var(--border-light);
@@ -6627,7 +6634,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-arrow {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     transition: transform var(--transition);
 }
@@ -6682,7 +6689,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-name {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
@@ -6709,7 +6716,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-hours {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-secondary);
     flex-shrink: 0;
@@ -6753,7 +6760,7 @@ li.drop-below {
 }
 
 .actual-tl-ie-unit {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     font-weight: 600;
 }
@@ -6820,7 +6827,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-time {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--accent);
     font-weight: 600;
     margin-top: 2px;
@@ -6833,7 +6840,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: 11px;
+    font-size: 12.5px;
     background: var(--surface);
 }
 
@@ -6870,7 +6877,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-name {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
 }
 
@@ -6892,7 +6899,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-hours {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-muted);
     flex-shrink: 0;
@@ -6933,7 +6940,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-hours-unit {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-muted);
     margin-right: 2px;
@@ -6966,7 +6973,7 @@ li.drop-below {
 .actual-tl-tp-hint {
     padding: 6px 14px;
     border-top: 1px solid var(--border-light);
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     text-align: center;
     letter-spacing: 0.02em;
@@ -7002,7 +7009,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-footer label {
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--text-muted);
 }
@@ -7013,7 +7020,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     text-align: center;
 }
@@ -7024,7 +7031,7 @@ li.drop-below {
 }
 
 .actual-tl-tpf-unit {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     margin-right: auto;
 }
@@ -7033,7 +7040,7 @@ li.drop-below {
     padding: 6px 14px;
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
@@ -7132,7 +7139,7 @@ li.drop-below {
 
 .actual-tl-dp-field label {
     display: block;
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -7207,7 +7214,7 @@ li.drop-below {
 }
 
 .actual-tl-dp-item-meta {
-    font-size: 10px;
+    font-size: 11.5px;
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -7295,7 +7302,7 @@ li.drop-below {
 
     .actual-tl-view-btn {
         padding: 4px 10px;
-        font-size: 11px;
+        font-size: 12.5px;
         min-height: 28px;
     }
 
@@ -7303,7 +7310,7 @@ li.drop-below {
         min-height: 28px;
         flex-shrink: 0;
         padding: 4px 8px;
-        font-size: 11px;
+        font-size: 12.5px;
     }
 
     /* パネルボタンのテキストを非表示、アイコンのみ */
@@ -7345,7 +7352,7 @@ li.drop-below {
     }
 
     .actual-tl-label-name {
-        font-size: 10px;
+        font-size: 11.5px;
     }
 
     .actual-tl-label-meta {
@@ -7362,7 +7369,7 @@ li.drop-below {
     }
 
     .actual-tl-day-num {
-        font-size: 11px;
+        font-size: 12.5px;
     }
 
     .actual-tl-day-label {
@@ -7371,7 +7378,7 @@ li.drop-below {
 
     .actual-tl-hour-header {
         height: 40px;
-        font-size: 11px;
+        font-size: 12.5px;
     }
 
     /* バー: タッチしやすいサイズ（実績バーのみ、予定バーは小さいまま） */
@@ -7441,7 +7448,7 @@ li.drop-below {
     }
 
     .actual-tl-tc-detail {
-        font-size: 10px;
+        font-size: 11.5px;
     }
 
     .actual-tl-tc-badge {
@@ -7462,7 +7469,7 @@ li.drop-below {
     .actual-tl-sec-avatar {
         width: 26px;
         height: 26px;
-        font-size: 10px;
+        font-size: 11.5px;
     }
 
     /* インラインエディタ: モバイルで中央固定 */
@@ -7544,7 +7551,7 @@ li.drop-below {
     }
 
     .actual-tl-tpi-detail {
-        font-size: 10px;
+        font-size: 11.5px;
     }
 
     .actual-tl-tp-header-top {
@@ -7618,7 +7625,7 @@ li.drop-below {
     }
 
     .actual-tl-dp-field label {
-        font-size: 11px;
+        font-size: 12.5px;
     }
 
     .actual-tl-dp-field span {
@@ -7711,7 +7718,7 @@ li.drop-below {
 }
 
 .actual-tl-si-hint {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--text-muted);
     white-space: nowrap;
 }
