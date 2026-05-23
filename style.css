@@ -2716,7 +2716,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(15.5px * var(--ui-scale));
+    font-size: calc(14.5px * var(--ui-scale));
     background: var(--surface);
     min-width: 100px;
     cursor: pointer;
@@ -2732,7 +2732,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .version-filter-arrow {
-    font-size: calc(15.5px * var(--ui-scale));
+    font-size: calc(14.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2757,7 +2757,7 @@ table tr[style*="1565c0"] th:first-child {
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    font-size: calc(15.5px * var(--ui-scale));
+    font-size: calc(14.5px * var(--ui-scale));
     cursor: pointer;
     white-space: nowrap;
 }
