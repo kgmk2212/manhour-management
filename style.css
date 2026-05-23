@@ -56,12 +56,12 @@
    を介して font-size / 余白に calc() で乗算する方式に統一する。
    zoom 方式は canvas/SVG のラスタ拡大によるぼやけを引き起こすため廃止。 */
 :root {
-    --ui-scale: 1;
+    --ui-scale: 1.06;
 }
-@media (min-width: 1600px) { :root { --ui-scale: 1.06; } }
-@media (min-width: 1920px) { :root { --ui-scale: 1.14; } }
-@media (min-width: 2560px) { :root { --ui-scale: 1.26; } }
-@media (min-width: 3200px) { :root { --ui-scale: 1.38; } }
+@media (min-width: 1600px) { :root { --ui-scale: 1.12; } }
+@media (min-width: 1920px) { :root { --ui-scale: 1.20; } }
+@media (min-width: 2560px) { :root { --ui-scale: 1.32; } }
+@media (min-width: 3200px) { :root { --ui-scale: 1.44; } }
 
 html {
     font-size: calc(15px * var(--ui-scale));
