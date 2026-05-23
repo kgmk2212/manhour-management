@@ -1666,35 +1666,36 @@ export function showTaskDetail(version, task) {
                         }
                     }
 
+                    // 月テキスト（pill 廃止 → muted text）
+                    let monthText = '';
+                    if (est.workMonths && est.workMonths.length > 0) {
+                        if (est.workMonths.length === 1) {
+                            const [, m] = est.workMonths[0].split('-');
+                            monthText = `${parseInt(m)}月`;
+                        } else {
+                            const [, m1] = est.workMonths[0].split('-');
+                            const [, m2] = est.workMonths[est.workMonths.length - 1].split('-');
+                            monthText = `${parseInt(m1)}月〜${parseInt(m2)}月`;
+                        }
+                    }
+
                     html += `
-                        <div class="wd-card">
-                            <div class="wd-card-header">
-                                <span class="wd-card-cluster">
-                                    <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                    <span class="wd-card-title">${escapeHtml(est.member)}</span>
-                                    ${monthTag}
-                                </span>
-                                <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
-                                <span class="wd-card-actions">
-                                    <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editEstimateFromModal(${est.id})">編集</a>
-                                    <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})">削除</a>
-                                </span>
-                            </div>
+                        <div class="wd-row">
+                            <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                            <span class="wd-row-name">${escapeHtml(est.member)}</span>
+                            <span class="wd-row-month">${monthText}</span>
+                            <span class="wd-row-hours">${est.hours.toFixed(1)}h</span>
+                            <button class="wd-row-delete" title="削除" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" aria-label="削除">×</button>
                         </div>`;
                 });
             } else {
                 html += `
-                    <div class="wd-card wd-card-empty">
-                        <div class="wd-card-header">
-                            <span class="wd-card-cluster">
-                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                <span style="color: #999;">未登録</span>
-                            </span>
-                            <span class="wd-card-hours" style="color: #ccc;">--</span>
-                            <span class="wd-card-actions">
-                                <a href="#" class="wd-edit-link" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')">追加</a>
-                            </span>
-                        </div>
+                    <div class="wd-row wd-row-empty">
+                        <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                        <span class="wd-row-name wd-row-name--muted">未登録</span>
+                        <span class="wd-row-month"></span>
+                        <span class="wd-row-hours wd-row-hours--muted">--</span>
+                        <button class="wd-row-add" title="追加" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" aria-label="追加">＋</button>
                     </div>`;
             }
         });

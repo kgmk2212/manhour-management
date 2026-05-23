@@ -3879,32 +3879,88 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-header {
-    /* 1 行化: [badge 名前 月タグ] (absolute centered) + hours + 編集/削除 を
-       右端にまとめて配置 */
-    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* ---- 新: 工程別内訳の 1 行レイアウト wd-row ---- */
+.wd-row {
     display: flex;
     align-items: center;
-    gap: calc(16px * var(--ui-scale));
-    min-height: calc(28px * var(--ui-scale));
-    margin-bottom: 0;
+    gap: calc(14px * var(--ui-scale));
+    padding: calc(10px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: calc(8px * var(--ui-scale));
 }
 
-.wd-card-cluster {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+.wd-row-empty {
+    border-style: dashed;
+    background: transparent;
+}
+
+.wd-row-name {
+    font-size: calc(15.5px * var(--ui-scale));
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.wd-row-name--muted {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.wd-row-month {
+    font-size: calc(14px * var(--ui-scale));
+    color: var(--text-muted);
+    /* 名前と月の間は gap で 14px、その後 hours まではフレキシブル */
+}
+
+.wd-row-hours {
+    margin-left: auto;
+    font-size: calc(17px * var(--ui-scale));
+    font-weight: 700;
+    color: var(--accent);
+    /* 桁数違いでも縦が揃うように右寄せの固定幅カラム */
+    min-width: calc(70px * var(--ui-scale));
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.wd-row-hours--muted {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.wd-row-delete,
+.wd-row-add {
+    width: calc(28px * var(--ui-scale));
+    height: calc(28px * var(--ui-scale));
     display: inline-flex;
     align-items: center;
-    gap: calc(10px * var(--ui-scale));
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: calc(20px * var(--ui-scale));
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    padding: 0;
 }
 
-.wd-card-header > .wd-card-hours {
-    margin-left: auto;
+.wd-row-delete:hover {
+    color: var(--danger);
+    background: var(--danger-light);
 }
 
-.wd-card-header > .wd-card-actions {
-    display: inline-flex;
-    gap: calc(12px * var(--ui-scale));
+.wd-row-add:hover {
+    color: var(--accent);
+    background: var(--accent-light);
 }
 
 .wd-card-title {
