@@ -52,8 +52,30 @@
 }
 
 html {
-    font-size: 14px;
+    /* ビューポート幅に応じてベースフォントサイズを連続スケール
+       320px → 13px / 1440px → 14px / 1920px → 16px / 2560px → 19px / 3840px → 22px 程度 */
+    font-size: clamp(13px, 0.55vw + 9.5px, 22px);
     -webkit-text-size-adjust: 100%;
+}
+
+/* 解像度に応じた UI 全体の自動スケーリング
+   ほとんどのスタイルが px ベースのため、body へ zoom を適用して
+   余白・コントロール・モーダルまで含めて比例拡大する。 */
+body {
+    zoom: var(--ui-zoom, 1);
+}
+
+@media (min-width: 1600px) {
+    body { --ui-zoom: 1.08; }
+}
+@media (min-width: 1920px) {
+    body { --ui-zoom: 1.18; }
+}
+@media (min-width: 2560px) {
+    body { --ui-zoom: 1.35; }
+}
+@media (min-width: 3200px) {
+    body { --ui-zoom: 1.55; }
 }
 
 body {
@@ -458,7 +480,8 @@ img {
 .tab-content {
     display: none;
     padding: 32px 40px;
-    max-width: 1400px;
+    /* 高解像度で余白が暴れないように、ビューポートに連動した上限を採用 */
+    max-width: min(1700px, 94vw);
     margin: 0 auto;
 }
 
