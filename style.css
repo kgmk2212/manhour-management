@@ -1134,8 +1134,8 @@ table.simple-table tr th:first-child {
 }
 
 .est-add-member-btn {
-    width: 22px;
-    height: 22px;
+    width: calc(22px * var(--ui-scale));
+    height: calc(22px * var(--ui-scale));
     border-radius: 50%;
     border: 1.5px solid var(--border);
     background: var(--surface);
