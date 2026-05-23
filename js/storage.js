@@ -658,12 +658,7 @@ export function handleFileImport(event) {
         };
         reader.readAsText(file);
     } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        // Excelファイルの処理（window経由で呼び出し）
-        if (typeof window.handleExcelImport === 'function') {
-            window.handleExcelImport(file);
-        } else {
-            alert('対応していないファイル形式です。JSON ファイルを選択してください。');
-        }
+        alert('Excel ファイルは「設定」タブの「📂 Excel ファイルを読み込んで追加」から取り込んでください。\n（バックアップ復元は JSON ファイル専用です）');
     } else {
         alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
     }

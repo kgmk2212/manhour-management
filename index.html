@@ -653,10 +653,10 @@
                     </div>
                 </div>
 
-                <!-- Excel出力セクション -->
+                <!-- Excel 入出力セクション -->
                 <div style="background: var(--surface-elevated); padding: 20px; border-radius: 8px; margin: 30px 0;">
-                    <h3>📊 Excel出力</h3>
-                    <p style="color: var(--text-muted); margin-bottom: 15px;">実績データと見積データをExcel形式で出力します。</p>
+                    <h3>📊 Excel の入出力</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">実績データと見積データを Excel ファイルでやり取りします。</p>
 
                     <div style="margin-bottom: 15px;">
                         <h4 style="margin-bottom: 8px; font-size: 14px;">出力内容:</h4>
@@ -666,9 +666,18 @@
                         </ul>
                     </div>
 
-                    <button class="btn btn-success" id="btnExportExcel" style="font-weight: 600;">
-                        📥 Excelファイルをダウンロード
-                    </button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-success" id="btnExportExcel" style="font-weight: 600;">
+                            📥 Excel ファイルをダウンロード
+                        </button>
+                        <button class="btn btn-primary" id="btnImportExcel" style="font-weight: 600;">
+                            📂 Excel ファイルを読み込んで追加
+                        </button>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-top: 10px;">
+                        「読み込んで追加」は現在のデータを残したまま Excel の見積・実績を追加します。
+                        既存データと競合する行は次の画面で個別に確認できます。
+                    </p>
                 </div>
             </div>
 
@@ -2007,6 +2016,7 @@
     </div><!-- /.app-layout -->
 
     <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;">
+    <input type="file" id="excelImportInput" accept=".xlsx,.xls" style="display: none;">
 
     <!-- 作業詳細モーダル -->
     <div id="workModal" class="modal">

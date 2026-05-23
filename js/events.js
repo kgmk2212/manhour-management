@@ -607,6 +607,30 @@ export function initEventHandlers() {
     const btnExportExcel = document.getElementById('btnExportExcel');
     if (btnExportExcel) btnExportExcel.addEventListener('click', exportToExcel);
 
+    const btnImportExcel = document.getElementById('btnImportExcel');
+    if (btnImportExcel) {
+        btnImportExcel.addEventListener('click', () => {
+            const input = document.getElementById('excelImportInput');
+            if (input) input.click();
+        });
+    }
+
+    const excelImportInput = document.getElementById('excelImportInput');
+    if (excelImportInput) {
+        excelImportInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const mod = await import('./excel-import.js');
+                await mod.handleExcelImport(file);
+            } catch (err) {
+                console.error('Excel 読み込みモジュールの読み込みに失敗:', err);
+                alert('Excel 読み込み機能の読み込みに失敗しました');
+            }
+            event.target.value = '';
+        });
+    }
+
     const fileInput = document.getElementById('fileInput');
     if (fileInput) fileInput.addEventListener('change', handleFileImport);
 
