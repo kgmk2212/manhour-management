@@ -3768,10 +3768,12 @@ table tr[style*="1565c0"] th:first-child {
     border-bottom: 1px solid var(--border-light);
 }
 
+/* ヒーローやラベルが中央寄せなので meta も中央に揃えて視覚的整合 */
 .ed-meta-item {
     display: flex;
     gap: 8px;
     margin-bottom: 4px;
+    justify-content: center;
 }
 
 .ed-meta-label {
