@@ -621,7 +621,8 @@ export function initEventHandlers() {
             const file = event.target.files[0];
             if (!file) return;
             try {
-                const mod = await import('./excel-import.js');
+                // dynamic import のキャッシュバスト（excel-import.js を変更したら版数を更新）
+                const mod = await import('./excel-import.js?v=20260524-2');
                 await mod.handleExcelImport(file);
             } catch (err) {
                 console.error('Excel 読み込みモジュールの読み込みに失敗:', err);
