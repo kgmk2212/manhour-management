@@ -4592,7 +4592,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     table.estimate-grouped td[rowspan] > div:last-child {
-        font-size: calc(10px * var(--ui-scale)) !important;
+        font-size: calc(12px * var(--ui-scale)) !important;
     }
 
     #estimateList .manpower-display {
@@ -5779,7 +5779,7 @@ li.drop-below {
 }
 
 .actual-tl-day-label {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     line-height: 1;
@@ -5954,7 +5954,7 @@ li.drop-below {
 
 .actual-tl-dv-lunch-badge {
     display: block;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     font-weight: 500;
     color: rgba(120, 120, 120, 0.5);
     margin-top: 0;
@@ -6126,7 +6126,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-sch-label {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     font-weight: 600;
     padding: 6px 6px 0;
     display: block;
@@ -6284,7 +6284,7 @@ li.drop-below {
 
 .actual-tl-bar.scheduled .actual-tl-bar-text {
     font-weight: 600;
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     color: var(--text-secondary);
 }
 
@@ -6348,7 +6348,7 @@ li.drop-below {
     right: -4px;
     min-width: 14px;
     height: 14px;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     background: var(--text-secondary);
@@ -6605,7 +6605,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -6689,7 +6689,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-detail {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 4px;
@@ -6698,7 +6698,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-badge {
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 3px;
@@ -6874,7 +6874,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-detail {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(11.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 3px;
@@ -6882,7 +6882,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-badge {
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(12.5px * var(--ui-scale));
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 3px;
@@ -7281,7 +7281,7 @@ li.drop-below {
 
     .actual-tl-holiday-badge {
         display: block;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
         padding: 0 4px;
         margin: 2px auto 0;
         width: fit-content;
@@ -7329,7 +7329,7 @@ li.drop-below {
     .actual-tl-labels-header {
         height: 40px;
         padding: 0 6px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
     }
 
     .actual-tl-label-row {
@@ -7340,7 +7340,7 @@ li.drop-below {
     .actual-tl-avatar {
         width: 22px;
         height: 22px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
     }
 
     .actual-tl-label-name {
@@ -7348,7 +7348,7 @@ li.drop-below {
     }
 
     .actual-tl-label-meta {
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
     }
 
     /* ヘッダー高さ調整 */
@@ -7365,7 +7365,7 @@ li.drop-below {
     }
 
     .actual-tl-day-label {
-        font-size: calc(8px * var(--ui-scale));
+        font-size: calc(12.5px * var(--ui-scale));
     }
 
     .actual-tl-hour-header {
@@ -7377,7 +7377,7 @@ li.drop-below {
     .actual-tl-bar.actual {
         min-height: 20px;
         border-radius: 4px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
     }
 
     .actual-tl-bar.daily-bar {
@@ -7444,7 +7444,7 @@ li.drop-below {
     }
 
     .actual-tl-tc-badge {
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(11.5px * var(--ui-scale));
         padding: 2px 6px;
     }
 

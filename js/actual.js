@@ -319,7 +319,7 @@ export function renderMemberCalendar() {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: 14px;">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
+            <p style="margin: 0; color: #666; font-size: calc(14px * var(--ui-scale));">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
         </div>`;
     }
 
@@ -339,7 +339,7 @@ export function renderMemberCalendar() {
 
         const [year, m, day] = date.split('-');
         const dateDisplay = isHoliday
-            ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${escapeHtml(holiday)}</span><span class="holiday-break"><br><span style="font-size: 11px; font-weight: normal;">${escapeHtml(holiday)}</span></span>`
+            ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${escapeHtml(holiday)}</span><span class="holiday-break"><br><span style="font-size: calc(12.5px * var(--ui-scale)); font-weight: normal;">${escapeHtml(holiday)}</span></span>`
             : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
 
         if (dayActuals.length === 0) {
@@ -356,7 +356,7 @@ export function renderMemberCalendar() {
                 } else {
                     html += `<tr style="background: ${bgColor};">`;
                 }
-                html += `<td style="font-size: 14px;">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${escapeHtml(actual.process)}]</td>`;
+                html += `<td style="font-size: calc(14px * var(--ui-scale));">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${escapeHtml(actual.process)}]</td>`;
                 html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
                 html += `</tr>`;
             });
@@ -791,9 +791,9 @@ export function showWorkDetail(member, date) {
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong>${escapeHtml(vacation.vacationType)}</strong>
-                                <span style="color: #666; font-size: 14px; margin-left: 10px;">${vacation.hours}h</span>
+                                <span style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-left: 10px;">${vacation.hours}h</span>
                             </div>
-                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                         </div>
                     </div>
                 `;
@@ -813,8 +813,8 @@ export function showWorkDetail(member, date) {
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
-                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">編集</button>
-                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 12px; padding: 4px 8px; text-decoration: underline;">削除</button>
+                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
+                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
             `;
@@ -822,16 +822,16 @@ export function showWorkDetail(member, date) {
 
         html += `
             <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-                <strong style="font-size: 16px;">合計: ${formatHours(totalHours)}時間</strong>
-                <span style="color: #666; font-size: 14px; margin-left: 10px;">(${dayActuals.length}件)</span>
+                <strong style="font-size: calc(16px * var(--ui-scale));">合計: ${formatHours(totalHours)}時間</strong>
+                <span style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-left: 10px;">(${dayActuals.length}件)</span>
             </div>
             <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button onclick="addActualFromCalendar('${escapeForHandler(member)}', '${escapeForHandler(date)}'); closeWorkModal();"
-                        style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     + 新しい実績を追加
                 </button>
                 <button onclick="addVacationFromCalendar('${escapeForHandler(member)}', '${escapeForHandler(date)}'); closeWorkModal();"
-                        style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     + 休暇を追加
                 </button>
             </div>
@@ -1731,10 +1731,10 @@ export function renderCalendarGrid() {
         html += `<div class="calendar-date">${day}</div>`;
 
         if (holiday) {
-            html += `<div class="calendar-entry" style="color:var(--danger);font-size:10px;">${holiday}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--danger);font-size: calc(12px * var(--ui-scale));">${holiday}</div>`;
         }
         if (companyHolidayName && !holiday) {
-            html += `<div class="calendar-entry" style="color:var(--warning);font-size:10px;">${companyHolidayName}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--warning);font-size: calc(12px * var(--ui-scale));">${companyHolidayName}</div>`;
         }
 
         if (data) {

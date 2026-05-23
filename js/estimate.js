@@ -541,10 +541,10 @@ function updateEstimateStandardDisplay(totalHours, workingDays, headcount, month
     } else if (mode === 'bar') {
         elB.style.display = '';
         const diffLabel = diff >= 0
-            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">余裕 ${absDiff}h</span>`
-            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">超過 ${absDiff}h</span>`;
+            ? `<span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 12px; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">余裕 ${absDiff}h</span>`
+            : `<span style="background: rgba(239,68,68,0.3); padding: 2px 10px; border-radius: 12px; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">超過 ${absDiff}h</span>`;
         elB.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: 15px;">${standardHours}h</strong> <span style="opacity: 0.7; font-size: 12px;">（${workingDays}日×8h×${headcount}人）</span></span>
+            <span style="opacity: 0.85;">月標準工数: <strong style="font-size: calc(15px * var(--ui-scale));">${standardHours}h</strong> <span style="opacity: 0.7; font-size: calc(12px * var(--ui-scale));">（${workingDays}日×8h×${headcount}人）</span></span>
             ${diffLabel}
         </div>`;
     }
@@ -622,9 +622,9 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
         const months = (hours / 8 / workingDaysPerMonth).toFixed(2);
         memberHtml += `
             <div style="background: white; padding: 10px 15px; border-radius: 6px; border-left: 4px solid ${borderColor}; min-width: 150px;">
-                <div style="font-size: 13px; color: #666; margin-bottom: 3px;">${escapeHtml(member)}</div>
-                <div style="font-size: 18px; font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
-                <div style="font-size: 12px; color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
+                <div style="font-size: calc(13px * var(--ui-scale)); color: #666; margin-bottom: 3px;">${escapeHtml(member)}</div>
+                <div style="font-size: calc(18px * var(--ui-scale)); font-weight: 700; color: #333;">${hours.toFixed(1)}h</div>
+                <div style="font-size: calc(12px * var(--ui-scale)); color: #666; font-weight: 500;">${days}人日 / ${months}人月</div>
             </div>
         `;
     });
@@ -797,7 +797,7 @@ export function renderEstimateGrouped() {
             const versionMonths = versionTotal / 8 / workingDaysPerMonth;
 
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: calc(18px * var(--ui-scale));">${versionDisplay}</h3>`;
             html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
             // 対応名ごとに1行で表示（工程列なし）
@@ -817,7 +817,7 @@ export function renderEstimateGrouped() {
                 html += `<td>${members}</td>`;
                 html += `<td style="text-align: right;">
                     <div style="font-weight: 700; color: #1976d2;">${formatNumber(total, 1)}h</div>
-                    <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                    <div class="manpower-display" style="font-size: calc(13px * var(--ui-scale)); color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
                 </td>`;
                 html += '</tr>';
             });
@@ -827,7 +827,7 @@ export function renderEstimateGrouped() {
             html += `<td></td>`;
             html += `<td style="text-align: right;">
                 <div>${formatNumber(versionTotal, 1)}h</div>
-                <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
+                <div style="font-size: calc(15px * var(--ui-scale)); margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
             </td>`;
             html += `</tr>`;
 
@@ -837,7 +837,7 @@ export function renderEstimateGrouped() {
         }
 
         html += `<div style="margin-bottom: 30px;">`;
-        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: calc(18px * var(--ui-scale));">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-grouped">';
 
         if (workMonthSelectionMode) {
@@ -866,17 +866,17 @@ export function renderEstimateGrouped() {
             let workMonthBadgeBlock = '';
 
             if (taskWorkMonths.length === 0) {
-                workMonthBadgeInline = ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">未設定</span>';
-                workMonthBadgeBlock = '<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">未設定</span></div>';
+                workMonthBadgeInline = ' <span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">未設定</span>';
+                workMonthBadgeBlock = '<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">未設定</span></div>';
             } else if (taskWorkMonths.length === 1) {
                 const [y, m] = taskWorkMonths[0].split('-');
-                workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
-                workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
+                workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
+                workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
             } else {
                 const [y1, m1] = taskWorkMonths[0].split('-');
                 const [y2, m2] = taskWorkMonths[taskWorkMonths.length - 1].split('-');
-                workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
-                workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: normal; white-space: nowrap;">〜${y2}年${parseInt(m2)}月</span></div>`;
+                workMonthBadgeInline = ` <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                workMonthBadgeBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">${y1}年${parseInt(m1)}月</span> <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12.5px * var(--ui-scale)); font-weight: normal; white-space: nowrap;">〜${y2}年${parseInt(m2)}月</span></div>`;
             }
 
             let taskDisplayHtml = escapeHtml(taskGroup.task);
@@ -890,7 +890,7 @@ export function renderEstimateGrouped() {
                     parts = taskGroup.task.split('：');
                 }
                 const restPart = escapeHtml(parts.slice(1).join(separator));
-                taskDisplayHtml = `${escapeHtml(parts[0])}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: 13px; font-weight: normal;">${restPart}</span></span>`;
+                taskDisplayHtml = `${escapeHtml(parts[0])}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: calc(13px * var(--ui-scale)); font-weight: normal;">${restPart}</span></span>`;
             }
 
             taskDisplayHtml += `<span class="work-month-inline">${workMonthBadgeInline}</span><span class="work-month-block">${workMonthBadgeBlock}</span>`;
@@ -911,17 +911,17 @@ export function renderEstimateGrouped() {
                 if (est.workMonths.length > 0) {
                     if (est.workMonths.length === 1) {
                         const [y, m] = est.workMonths[0].split('-');
-                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
-                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
+                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y}年${parseInt(m)}月</span>`;
+                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">${y}年${parseInt(m)}月</span></div>`;
                     } else {
                         const [y1, m1] = est.workMonths[0].split('-');
                         const [y2, m2] = est.workMonths[est.workMonths.length - 1].split('-');
-                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
-                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
+                        processWorkMonthInline = `<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span>`;
+                        processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">${y1}年${parseInt(m1)}月〜${y2}年${parseInt(m2)}月</span></div>`;
                     }
                 } else {
-                    processWorkMonthInline = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px; white-space: nowrap;">未設定</span>`;
-                    processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; white-space: nowrap;">未設定</span></div>`;
+                    processWorkMonthInline = `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); margin-left: 5px; white-space: nowrap;">未設定</span>`;
+                    processWorkMonthBlock = `<div style="margin-top: 4px;"><span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: calc(12px * var(--ui-scale)); white-space: nowrap;">未設定</span></div>`;
                 }
 
                 html += `<tr${index === 0 ? ` data-drag-task="${escapeHtml(taskGroup.task)}" data-drag-version="${escapeHtml(version)}"` : ''}>`;
@@ -957,8 +957,8 @@ export function renderEstimateGrouped() {
 
                 if (index === 0) {
                     html += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
-                        <div style="font-weight: 700; color: #1976d2; font-size: 16px; margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
-                        <div class="manpower-display" style="font-size: 13px; color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
+                        <div style="font-weight: 700; color: #1976d2; font-size: calc(16px * var(--ui-scale)); margin-bottom: 4px;">${formatNumber(total, 1)}h</div>
+                        <div class="manpower-display" style="font-size: calc(13px * var(--ui-scale)); color: #666;">${formatNumber(days, 1)}人日 / ${formatNumber(months, 2)}人月</div>
                     </td>`;
                 }
 
@@ -980,7 +980,7 @@ export function renderEstimateGrouped() {
         html += `<td colspan="2"></td>`;
         html += `<td style="text-align: right;">${formatNumber(versionTotal, 1)}h</td>`;
         html += `<td style="text-align: right;">
-            <div style="font-size: 15px; margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
+            <div style="font-size: calc(15px * var(--ui-scale)); margin-bottom: 3px;">${formatNumber(versionDays, 1)}人日 / ${formatNumber(versionMonths, 2)}人月</div>
         </td>`;
         html += `</tr>`;
 
@@ -1083,7 +1083,7 @@ export function renderEstimateMatrix() {
         // その他工数の場合、対応名と合計のみの簡略表示
         if (isOtherWorkVersion) {
             html += `<div style="margin-bottom: 30px;">`;
-            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+            html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: calc(18px * var(--ui-scale));">${versionDisplay}</h3>`;
             html += '<div class="table-wrapper"><table class="estimate-matrix">';
             html += '<tr><th style="min-width: 200px;">対応名</th><th style="min-width: 80px; text-align: center;">担当</th><th style="min-width: 80px; text-align: center;">合計</th></tr>';
 
@@ -1106,8 +1106,8 @@ export function renderEstimateMatrix() {
                 html += `<td style="text-align: center;">${escapeHtml([...members].join(', '))}</td>`;
                 html += `<td style="text-align: center;">
                     <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
-                    <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
-                    <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
+                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalDays.toFixed(1)}人日</div>
+                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalMonths.toFixed(2)}人月</div>
                 </td>`;
                 html += '</tr>';
             });
@@ -1118,7 +1118,7 @@ export function renderEstimateMatrix() {
         }
 
         html += `<div style="margin-bottom: 30px;">`;
-        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: 18px;">${versionDisplay}</h3>`;
+        html += `<h3 class="version-header theme-bg theme-${currentThemeColor}" style="color: white; padding: 12px 20px; border-radius: 8px; margin: 0 0 15px 0; font-size: calc(18px * var(--ui-scale));">${versionDisplay}</h3>`;
         html += '<div class="table-wrapper"><table class="estimate-matrix">';
         html += '<tr><th style="min-width: 200px;">対応名</th>';
         processOrder.forEach(proc => {
@@ -1135,7 +1135,7 @@ export function renderEstimateMatrix() {
             if (group.task.includes('：')) {
                 const parts = group.task.split('：');
                 const restPart = escapeHtml(parts.slice(1).join('：'));
-                taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: 13px; font-weight: normal;">${restPart}</span>`;
+                taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(13px * var(--ui-scale)); font-weight: normal;">${restPart}</span>`;
             }
 
             const escapedVer = escapeForHandler(version);
@@ -1162,7 +1162,7 @@ export function renderEstimateMatrix() {
                         onmouseover="this.style.background='#e3f2fd'"
                         onmouseout="this.style.background='${showMonthColors ? monthColor.bg : ''}'">
                         <div style="font-weight: 600;">${p.hours.toFixed(1)}h</div>
-                        <div style="font-size: 12px; color: #666;">(${escapeHtml(p.member)})</div>
+                        <div style="font-size: calc(12px * var(--ui-scale)); color: #666;">(${escapeHtml(p.member)})</div>
                     </td>`;
                 } else {
                     html += `<td style="text-align: center; color: #ccc;">-</td>`;
@@ -1174,8 +1174,8 @@ export function renderEstimateMatrix() {
 
             html += `<td style="text-align: center;">
                 <div style="font-weight: 700; color: #1976d2;">${total.toFixed(1)}h</div>
-                <div style="font-size: 11px; color: #666;">${totalDays.toFixed(1)}人日</div>
-                <div style="font-size: 11px; color: #666;">${totalMonths.toFixed(2)}人月</div>
+                <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalDays.toFixed(1)}人日</div>
+                <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalMonths.toFixed(2)}人月</div>
             </td>`;
             html += '</tr>';
         });
@@ -1490,7 +1490,7 @@ export function showEstimateDetail(estimateId) {
                 </div>
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">見積工数:</span>
-                    <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: 18px;">${est.hours.toFixed(1)}h</span>
+                    <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: calc(18px * var(--ui-scale));">${est.hours.toFixed(1)}h</span>
                 </div>
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">作業予定月:</span>
@@ -1499,11 +1499,11 @@ export function showEstimateDetail(estimateId) {
             </div>
             <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button onclick="editEstimateFromModal(${est.id})"
-                        style="padding: 10px 20px; background: var(--info); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        style="padding: 10px 20px; background: var(--info); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     編集
                 </button>
                 <button onclick="deleteEstimateFromModal(${est.id})"
-                        style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     削除
                 </button>
             </div>
@@ -1585,7 +1585,7 @@ export function showTaskDetail(version, task) {
     if (isClassic) {
         document.getElementById('estimateDetailModalTitle').textContent = `対応詳細 - ${task}`;
 
-        html = `<div style="margin-bottom: 12px; font-size: 14px; color: #666;">版数: ${escapeHtml(version)} | 合計: <strong style="color: #1976d2;">${totalHours.toFixed(1)}h</strong> (${totalDays.toFixed(1)}人日)</div>`;
+        html = `<div style="margin-bottom: 12px; font-size: calc(14px * var(--ui-scale)); color: #666;">版数: ${escapeHtml(version)} | 合計: <strong style="color: #1976d2;">${totalHours.toFixed(1)}h</strong> (${totalDays.toFixed(1)}人日)</div>`;
         html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
         processOrder.forEach(proc => {
@@ -1611,26 +1611,26 @@ export function showTaskDetail(version, task) {
                     html += `<span style="font-weight: 700; color: #1976d2;">${est.hours.toFixed(1)}h</span>`;
                     html += `</div>`;
                     if (workMonthDisplay) {
-                        html += `<div style="font-size: 12px; color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
+                        html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #666; margin-bottom: 6px;">作業月: ${workMonthDisplay}</div>`;
                     }
                     html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
-                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">編集</button>`;
-                    html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">削除</button>`;
+                    html += `<button onclick="editEstimateFromModal(${est.id})" style="padding: 4px 12px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">編集</button>`;
+                    html += `<button onclick="deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">削除</button>`;
                     html += `</div></div>`;
                 });
             } else {
                 html += `<div style="background: #fafafa; border-radius: 8px; padding: 12px; border: 1px dashed #ccc; opacity: 0.6;">`;
                 html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
                 html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span><span style="color: #999;">未登録</span></span>`;
-                html += `<button onclick="addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" style="padding: 4px 12px; background: #198754; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">追加</button>`;
+                html += `<button onclick="addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')" style="padding: 4px 12px; background: #198754; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">追加</button>`;
                 html += `</div></div>`;
             }
         });
 
         html += '</div>';
         html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">`;
-        html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">全工程を編集</button>`;
-        html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">対応を全削除</button>`;
+        html += `<button onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">全工程を編集</button>`;
+        html += `<button onclick="deleteTaskFromModal('${escapedVersion}', '${escapedTask}')" style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale));">対応を全削除</button>`;
         html += `</div>`;
     } else {
         // モダン: Quiet Depth デザイン
@@ -1688,7 +1688,7 @@ export function showTaskDetail(version, task) {
                         <div class="wd-card-header">
                             <div>
                                 <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                <span style="color: #999; font-size: 13px;">未登録</span>
+                                <span style="color: #999; font-size: calc(13px * var(--ui-scale));">未登録</span>
                             </div>
                             <span class="wd-card-hours" style="color: #ccc;">--</span>
                         </div>
@@ -1797,7 +1797,7 @@ export function showOtherWorkTaskDetail(version, task) {
     if (isClassic) {
         document.getElementById('estimateDetailModalTitle').textContent = `その他工数 - ${task || '(未設定)'}`;
 
-        html = '<div style="margin-bottom: 12px; font-size: 14px; color: #666;">このタスクには複数の見積があります</div>';
+        html = '<div style="margin-bottom: 12px; font-size: calc(14px * var(--ui-scale)); color: #666;">このタスクには複数の見積があります</div>';
         html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
 
         taskEstimates.forEach(estimate => {
@@ -1817,22 +1817,22 @@ export function showOtherWorkTaskDetail(version, task) {
             html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
             html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
             html += `<span style="font-weight: 600;">${escapeHtml(est.member)}</span>`;
-            html += `<span style="font-weight: 700; color: #1976d2; font-size: 16px;">${est.hours.toFixed(1)}h</span>`;
+            html += `<span style="font-weight: 700; color: #1976d2; font-size: calc(16px * var(--ui-scale));">${est.hours.toFixed(1)}h</span>`;
             html += `</div>`;
-            html += `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
+            html += `<div style="font-size: calc(12px * var(--ui-scale)); color: #666; margin-bottom: 8px;">作業月: ${workMonthDisplay}</div>`;
             html += `<div style="display: flex; gap: 8px; justify-content: flex-end;">`;
             html += `<button onclick="editEstimateFromModal(${est.id})"
-                        style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="padding: 6px 14px; background: var(--info); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">
                         編集</button>`;
             html += `<button onclick="deleteEstimateFromModal(${est.id})"
-                        style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="padding: 6px 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: calc(12px * var(--ui-scale)); font-weight: 600;">
                         削除</button>`;
             html += `</div></div>`;
         });
 
         html += '</div>';
         html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dee2e6; text-align: right;">`;
-        html += `<span style="font-weight: 700; font-size: 16px;">合計: <span style="color: #1976d2;">${totalHours.toFixed(1)}h</span></span>`;
+        html += `<span style="font-weight: 700; font-size: calc(16px * var(--ui-scale));">合計: <span style="color: #1976d2;">${totalHours.toFixed(1)}h</span></span>`;
         html += `</div>`;
     } else {
         // モダン: Quiet Depth デザイン
