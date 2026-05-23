@@ -74,7 +74,7 @@ h2 { font-size: calc(18px * var(--ui-scale)); }
 h3 { font-size: calc(16px * var(--ui-scale)); }
 h4 { font-size: calc(15px * var(--ui-scale)); }
 h5 { font-size: calc(14px * var(--ui-scale)); }
-h6 { font-size: calc(14px * var(--ui-scale)); }
+h6 { font-size: calc(13.5px * var(--ui-scale)); }
 
 body {
     font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
