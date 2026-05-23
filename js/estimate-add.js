@@ -963,7 +963,7 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
                 td.dataset.workMonthCol = 'true';
                 const processName = row.dataset.process;
                 const selStyle = isMobile
-                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(13px * var(--ui-scale));'
+                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(14px * var(--ui-scale));'
                     : 'margin: 0; flex: 1;';
 
                 if (isTwoMonths) {
@@ -1088,7 +1088,7 @@ export function addEstimateMemberRow(proc) {
     newRow.dataset.process = proc;
     newRow.dataset.extraIndex = idx;
     newRow.innerHTML = `
-        <td style="text-align: center; color: var(--text-muted); font-size: calc(12.5px * var(--ui-scale));">┗</td>
+        <td style="text-align: center; color: var(--text-muted); font-size: calc(13.5px * var(--ui-scale));">┗</td>
         <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
         <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
         <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>

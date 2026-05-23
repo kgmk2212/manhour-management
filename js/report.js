@@ -468,7 +468,7 @@ export function createProgressBar(progressRate, status, options = {}) {
                 left: 50%;
                 top: 50%;
                 transform: translate(-50%, -50%);
-                font-size: calc(13px * var(--ui-scale));
+                font-size: calc(14px * var(--ui-scale));
                 font-weight: 600;
                 color: ${clampedRate > 50 ? 'white' : '#333'};
                 text-shadow: ${clampedRate > 50 ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'};
@@ -500,7 +500,7 @@ export function createStatusBadge(status, statusLabel) {
             gap: 4px;
             padding: 4px 10px;
             border-radius: 12px;
-            font-size: calc(13px * var(--ui-scale));
+            font-size: calc(14px * var(--ui-scale));
             font-weight: 600;
             background: ${style.bg};
             color: ${style.color};
@@ -609,14 +609,14 @@ export function renderProgressSummaryCards(versionFilter) {
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>全体進捗率</h3>
             <div class="value">${overallProgress.toFixed(1)}%</div>
-            <div style="font-size: calc(14px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;">
+            <div style="font-size: calc(15px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;">
                 ${completedTasks}/${totalTasks} 対応完了
             </div>
         </div>
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>予測総工数</h3>
             <div class="value">${totalEac.toFixed(1)}h</div>
-            <div style="font-size: calc(14px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;">
+            <div style="font-size: calc(15px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;">
                 見積: ${totalEstimated.toFixed(1)}h / 差異: ${variance >= 0 ? '+' : ''}${variance.toFixed(1)}h
             </div>
         </div>
@@ -627,16 +627,16 @@ export function renderProgressSummaryCards(versionFilter) {
         <div class="stat-card theme-bg theme-${currentThemeColor}">
             <h3>状態別</h3>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(14px * var(--ui-scale));">
                     ${String.fromCharCode(10003)} ${statusCounts.completed}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(14px * var(--ui-scale));">
                     ${String.fromCharCode(8594)} ${statusCounts.ontrack}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(14px * var(--ui-scale));">
                     ${String.fromCharCode(9888)} ${statusCounts.warning}
                 </span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(13px * var(--ui-scale));">
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: calc(14px * var(--ui-scale));">
                     ! ${statusCounts.exceeded}
                 </span>
             </div>
@@ -705,7 +705,7 @@ export function renderProgressDetailTable(versionFilter, statusFilter) {
                     <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">
                         ${progress.eac.toFixed(1)}h
                         ${progress.variance !== 0
-                    ? `<span style="font-size: calc(13px * var(--ui-scale)); color: ${progress.variance > 0 ? '#e74c3c' : '#27ae60'};">
+                    ? `<span style="font-size: calc(14px * var(--ui-scale)); color: ${progress.variance > 0 ? '#e74c3c' : '#27ae60'};">
                                 (${progress.variance > 0 ? '+' : ''}${progress.variance.toFixed(1)})
                                </span>`
                     : ''}
@@ -1064,7 +1064,7 @@ export function generateProgressBar(version, task, process) {
     } else {
         // セル内に表示するスタイル（デフォルト）
         const percentageHtml = showProgressPercentageSetting
-            ? `<div style="font-size: calc(12.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+            ? `<div style="font-size: calc(13.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
             : '';
 
         progressBarHtml = `
@@ -1330,7 +1330,7 @@ function renderPhase1AccuracyAnalysis(filteredEstimates, filteredActuals) {
     let html = '';
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
     html += `<h3 onclick="togglePhaseCollapse('phase1')" style="margin: 0; color: #495057; font-size: calc(18px * var(--ui-scale)); cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase1-arrow" style="margin-right: 10px; font-size: calc(14px * var(--ui-scale));">${phaseCollapsed.phase1 ? '▶' : '▼'}</span>`;
+    html += `<span id="phase1-arrow" style="margin-right: 10px; font-size: calc(15px * var(--ui-scale));">${phaseCollapsed.phase1 ? '▶' : '▼'}</span>`;
     html += 'Phase 1: 見積精度分析</h3>';
     html += `<div id="phase1-content" style="display: ${phaseCollapsed.phase1 ? 'none' : 'block'}; margin-top: 15px;">`;
 
@@ -1396,7 +1396,7 @@ function renderProcessAccuracy(filteredEstimates, filteredActuals) {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
         html += `<div style="font-size: calc(22px * var(--ui-scale)); font-weight: bold; color: ${isOverrun ? '#dc3545' : isGood ? '#28a745' : '#ffc107'};">${accuracy}%</div>`;
-        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
+        html += `<div style="font-size: calc(15px * var(--ui-scale)); color: #6c757d;">${data.estimate.toFixed(1)}h → ${data.actual.toFixed(1)}h</div>`;
         html += '</div>';
     });
 
@@ -1442,11 +1442,11 @@ function renderAnomalyDetection(filteredEstimates, filteredActuals) {
 
     let html = '<div style="background: #fff5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c6cb;">';
     html += '<h4 style="margin: 0 0 10px 0; color: #721c24; font-size: calc(16px * var(--ui-scale));">異常値検出（50%以上超過）</h4>';
-    html += `<div style="color: #856404; font-size: calc(14px * var(--ui-scale)); margin-bottom: 10px;">検出数: ${anomalies.length}件</div>`;
+    html += `<div style="color: #856404; font-size: calc(15px * var(--ui-scale)); margin-bottom: 10px;">検出数: ${anomalies.length}件</div>`;
     html += '<div style="max-height: 200px; overflow-y: auto;">';
 
     anomalies.slice(0, 10).forEach(anomaly => {
-        html += '<div style="background: #ffffff; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: calc(13px * var(--ui-scale)); border: 1px solid #f5c6cb;">';
+        html += '<div style="background: #ffffff; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: calc(14px * var(--ui-scale)); border: 1px solid #f5c6cb;">';
         html += `<div style="font-weight: 600; color: #495057;">${escapeHtml(anomaly.version)} - ${escapeHtml(anomaly.task)} [${escapeHtml(anomaly.process)}]</div>`;
         html += `<div style="color: #495057;">見積: ${anomaly.estimate.toFixed(1)}h → 実績: ${anomaly.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${anomaly.overrun.toFixed(0)}%)</span></div>`;
         html += '</div>';
@@ -1505,8 +1505,8 @@ function renderWarningTasks(filteredEstimates, filteredActuals) {
     warnings.slice(0, 5).forEach((warning, idx) => {
         html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; color: #495057;">#${idx + 1} ${escapeHtml(warning.version)} - ${escapeHtml(warning.task)}</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d;">工程数: ${warning.processCount}</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #495057;">見積: ${warning.estimate.toFixed(1)}h → 実績: ${warning.actual.toFixed(1)}h <span style="color: #dc3545; font-weight: bold;">(+${warning.overrun.toFixed(0)}%)</span></div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #6c757d;">工程数: ${warning.processCount}</div>`;
         html += '</div>';
     });
 
@@ -1530,7 +1530,7 @@ function renderPhase2VisualAnalysis(filteredEstimates, filteredActuals, selected
     let html = '';
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
     html += `<h3 onclick="togglePhaseCollapse('phase2')" style="margin: 0; color: #495057; font-size: calc(18px * var(--ui-scale)); cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: calc(14px * var(--ui-scale));">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
+    html += `<span id="phase2-arrow" style="margin-right: 10px; font-size: calc(15px * var(--ui-scale));">${phaseCollapsed.phase2 ? '▶' : '▼'}</span>`;
     html += 'Phase 2: ビジュアル分析</h3>';
     html += `<div id="phase2-content" style="display: ${phaseCollapsed.phase2 ? 'none' : 'block'}; margin-top: 15px;">`;
 
@@ -1591,15 +1591,15 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         html += '<div style="margin-bottom: 15px;">';
         html += `<div style="font-weight: 600; margin-bottom: 5px; color: #495057;">${proc}</div>`;
         html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
-        html += '<div style="text-align: right; font-size: calc(13px * var(--ui-scale)); color: #6c757d;">見積</div>';
+        html += '<div style="text-align: right; font-size: calc(14px * var(--ui-scale)); color: #6c757d;">見積</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(14px * var(--ui-scale)); font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
         html += '</div></div>';
-        html += '<div style="text-align: right; font-size: calc(13px * var(--ui-scale)); color: #6c757d;">実績</div>';
+        html += '<div style="text-align: right; font-size: calc(14px * var(--ui-scale)); color: #6c757d;">実績</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 30px;">`;
-        html += `<span style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(14px * var(--ui-scale)); font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
         html += '</div></div>';
         html += '</div></div>';
     });
@@ -1661,21 +1661,21 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
         html += '<div style="display: flex; gap: 10px;">';
         html += '<div style="flex: 1;">';
         html += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
-        html += '<span style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; min-width: 40px;">見積</span>';
+        html += '<span style="font-size: calc(14px * var(--ui-scale)); color: #6c757d; min-width: 40px;">見積</span>';
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: #4dabf7; height: 100%; width: ${estWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: calc(13px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(14px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.estimate.toFixed(1)}h</span>`;
         html += '</div>';
         html += '<div style="display: flex; align-items: center; gap: 5px;">';
-        html += '<span style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; min-width: 40px;">実績</span>';
+        html += '<span style="font-size: calc(14px * var(--ui-scale)); color: #6c757d; min-width: 40px;">実績</span>';
         html += `<div style="flex: 1; background: #e9ecef; border-radius: 4px; height: 20px;">`;
         html += `<div style="background: ${data.actual > data.estimate ? '#dc3545' : '#28a745'}; height: 100%; width: ${actWidth}%; border-radius: 4px;"></div>`;
         html += '</div>';
-        html += `<span style="font-size: calc(13px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
+        html += `<span style="font-size: calc(14px * var(--ui-scale)); color: #495057; min-width: 50px; text-align: right;">${data.actual.toFixed(1)}h</span>`;
         html += '</div>';
         html += '</div>';
-        html += `<div style="min-width: 60px; text-align: right; font-size: calc(13px * var(--ui-scale)); color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
+        html += `<div style="min-width: 60px; text-align: right; font-size: calc(14px * var(--ui-scale)); color: ${diff > 0 ? '#dc3545' : '#28a745'}; font-weight: 600; display: flex; align-items: center; justify-content: flex-end;">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>`;
         html += '</div></div>';
     });
 
@@ -1701,7 +1701,7 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
 
     html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6;">`;
     html += `<h3 onclick="togglePhaseCollapse('phase3')" style="margin: 0; color: #495057; font-size: calc(18px * var(--ui-scale)); cursor: pointer; display: flex; align-items: center; user-select: none;">`;
-    html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: calc(14px * var(--ui-scale));">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
+    html += `<span id="phase3-arrow" style="margin-right: 10px; font-size: calc(15px * var(--ui-scale));">${phaseCollapsed.phase3 ? '▶' : '▼'}</span>`;
     html += 'Phase 3: 担当者分析とインサイト</h3>';
     html += `<div id="phase3-content" style="display: ${phaseCollapsed.phase3 ? 'none' : 'block'}; margin-top: 15px;">`;
 
@@ -1792,7 +1792,7 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 
     // グラフセクション
     html += '<div style="margin-bottom: 20px;">';
-    html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">見積 vs 実績 比較</h5>';
+    html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: calc(15px * var(--ui-scale)); font-weight: 600;">見積 vs 実績 比較</h5>';
     html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto;">';
     html += '<canvas id="memberComparisonChart" style="max-width: 100%; height: 300px;"></canvas>';
     html += '</div>';
@@ -1812,13 +1812,13 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 
         html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">';
         html += `<div style="font-weight: 600; margin-bottom: 8px; color: #495057;">${escapeHtml(member)}</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">見積: ${data.estimate.toFixed(1)}h</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${estManDays}人日 / ${estManMonths}人月</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #495057; margin-bottom: 2px;">実績: ${data.actual.toFixed(1)}h</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #6c757d; margin-left: 10px; margin-bottom: 6px;">${actManDays}人日 / ${actManMonths}人月</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #495057;">精度: <span style="font-weight: 600;">${accuracy}%</span></div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #495057;">差分: <span style="color: ${diff > 0 ? '#dc3545' : '#28a745'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</span></div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: #6c757d; margin-top: 5px;">担当タスク: ${taskCount}件</div>`;
         html += '</div>';
     });
 
@@ -1826,7 +1826,7 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 
     // 内訳ドーナツグラフセクション
     html += '<div style="margin-top: 20px;">';
-    html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">担当者別 工数内訳</h5>';
+    html += '<h5 style="margin: 0 0 10px 0; color: #495057; font-size: calc(15px * var(--ui-scale)); font-weight: 600;">担当者別 工数内訳</h5>';
     html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">';
 
     members.forEach((member, index) => {
@@ -1925,7 +1925,7 @@ function renderInsights(filteredEstimates, filteredActuals) {
 
         html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid ${borderColor};">`;
         html += `<div style="font-weight: 600; margin-bottom: 3px; color: ${textColor};">${insight.title}</div>`;
-        html += `<div style="font-size: calc(13px * var(--ui-scale)); color: ${textColor};">${insight.message}</div>`;
+        html += `<div style="font-size: calc(14px * var(--ui-scale)); color: ${textColor};">${insight.message}</div>`;
         html += '</div>';
     });
 
@@ -2204,7 +2204,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                     if (taskGroup.task.includes('：')) {
                         const parts = taskGroup.task.split('：');
                         const restPart = parts.slice(1).join('：');
-                        taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(13px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
+                        taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(14px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
                     }
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                 }
@@ -2216,7 +2216,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                 const progressCellStyle = progressBarHtml && progressBarStyle === 'bottom'
                     ? 'min-width: 100px; padding: 8px 8px 12px 8px; position: relative;'
                     : 'min-width: 100px; padding: 8px;';
-                tableBody += `<td style="${progressCellStyle}">${progressBarHtml || '<span style="color: #ccc; font-size: calc(13px * var(--ui-scale));">-</span>'}</td>`;
+                tableBody += `<td style="${progressCellStyle}">${progressBarHtml || '<span style="color: #ccc; font-size: calc(14px * var(--ui-scale));">-</span>'}</td>`;
                 if (index === 0) {
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; text-align: right;">
                         <div style="font-weight: 600;">見積: ${totalEst.toFixed(1)}h</div>
@@ -2389,7 +2389,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 if (taskGroup.task.includes('：')) {
                     const parts = taskGroup.task.split('：');
                     const restPart = parts.slice(1).join('：');
-                    taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(13px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
+                    taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(14px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
                 }
 
                 // その他付随作業: 工程列なしの簡略表示
@@ -2410,8 +2410,8 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         <div style="font-weight: 600;">${totalEst.toFixed(1)}h</div>
                         <div style="font-weight: 700; color: #1976d2;">${totalAct.toFixed(1)}h</div>
                         <div class="total-manpower">
-                            <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalEstDays}/${totalActDays}人日</div>
-                            <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${totalEstMonths}/${totalActMonths}人月</div>
+                            <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${totalEstDays}/${totalActDays}人日</div>
+                            <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${totalEstMonths}/${totalActMonths}人月</div>
                         </div>
                     </td>`;
                     contentHtml += '</tr>';
@@ -2528,8 +2528,8 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 <div style="font-weight: 600;">${versionTotalEst.toFixed(1)}h</div>
                 <div style="font-weight: 700; color: #1976d2;">${versionTotalAct.toFixed(1)}h</div>
                 <div class="total-manpower">
-                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${versionTotalEstDays.toFixed(1)}/${versionTotalActDays.toFixed(1)}人日</div>
-                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${versionTotalEstMonths.toFixed(2)}/${versionTotalActMonths.toFixed(2)}人月</div>
+                    <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${versionTotalEstDays.toFixed(1)}/${versionTotalActDays.toFixed(1)}人日</div>
+                    <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${versionTotalEstMonths.toFixed(2)}/${versionTotalActMonths.toFixed(2)}人月</div>
                 </div>
             </td></tr></table></div>`;
 
@@ -2627,7 +2627,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             } else {
                 // セル内に表示するスタイル（デフォルト）
                 const percentageHtml = showProgressPercentageSetting
-                    ? `<div style="font-size: calc(12.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
+                    ? `<div style="font-size: calc(13.5px * var(--ui-scale)); color: #888; margin-top: 2px; text-align: center;">${displayRate}%</div>`
                     : '';
 
                 progressBarHtml = `
@@ -2654,8 +2654,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
                 <div style="font-weight: 600;">${est.hours > 0 ? est.hours.toFixed(1) : '-'}h</div>
                 <div style="font-weight: 700; color: #1976d2;" class="act-color ${actColorClass}">${act.hours > 0 ? act.hours.toFixed(1) : '-'}h</div>
                 <div class="total-manpower">
-                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
-                    <div style="font-size: calc(12.5px * var(--ui-scale)); color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
+                    <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>
+                    <div style="font-size: calc(13.5px * var(--ui-scale)); color: #666;">${estMonths.toFixed(2)}/${actMonths.toFixed(2)}人月</div>
                 </div>
             </div>
         `;
@@ -2669,7 +2669,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     const estDays = est.hours / 8;
     const actDays = act.hours / 8;
     const manDaysHtml = (est.hours > 0 || act.hours > 0)
-        ? `<div class="cell-mandays" style="font-size: calc(13px * var(--ui-scale)); color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
+        ? `<div class="cell-mandays" style="font-size: calc(14px * var(--ui-scale)); color: #888;">${estDays.toFixed(1)}/${actDays.toFixed(1)}人日</div>`
         : '';
 
     // bottomスタイルの場合、セルにposition: relativeが必要
@@ -2681,8 +2681,8 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
             <div style="font-weight: 600; white-space: nowrap;" class="act-color ${actColorClass}">${actText}</div>
             ${manDaysHtml}
             ${memberDisplay ? (isMultiMember
-                ? `<div style="font-size: calc(13px * var(--ui-scale)); color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')" title="クリックで担当者別内訳を表示">(${escapeHtml(memberDisplay)})</div>`
-                : `<div style="font-size: calc(13px * var(--ui-scale)); color: #666; white-space: nowrap;">(${escapeHtml(memberDisplay)})</div>`) : ''}
+                ? `<div style="font-size: calc(14px * var(--ui-scale)); color: #1976d2; white-space: nowrap; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); openProcessBreakdown('${escapeForHandler(version)}', '${escapeForHandler(task)}', '${escapeForHandler(process)}')" title="クリックで担当者別内訳を表示">(${escapeHtml(memberDisplay)})</div>`
+                : `<div style="font-size: calc(14px * var(--ui-scale)); color: #666; white-space: nowrap;">(${escapeHtml(memberDisplay)})</div>`) : ''}
             ${progressBarHtml}
         </div>
     `;

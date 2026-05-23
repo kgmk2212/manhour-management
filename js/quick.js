@@ -551,7 +551,7 @@ export function updateQuickEstimateTableHeader(showWorkMonthColumn) {
                 td.dataset.workMonthCol = 'true';
                 const processName = processes[index];
                 const selStyle = isMobile
-                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(13px * var(--ui-scale));'
+                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(14px * var(--ui-scale));'
                     : 'margin: 0; flex: 1;';
 
                 if (isTwoMonths) {

@@ -312,7 +312,7 @@ function updateAlerts(data) {
         ...data.warningTasks.map(t => ({ ...t, type: 'warning' })),
     ];
     if (items.length === 0) {
-        detailGrid.innerHTML = '<div style="color:var(--text-muted);font-size: calc(13px * var(--ui-scale));">要対応タスクはありません</div>';
+        detailGrid.innerHTML = '<div style="color:var(--text-muted);font-size: calc(14px * var(--ui-scale));">要対応タスクはありません</div>';
         return;
     }
     detailGrid.innerHTML = items.map(t => `
@@ -898,7 +898,7 @@ function renderVersionTaskMultiples(versionTaskData) {
     const container = document.getElementById('ra-multiples-grid');
     if (!container) return;
     if (versionTaskData.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size: calc(13px * var(--ui-scale));">データなし</div>';
+        container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size: calc(14px * var(--ui-scale));">データなし</div>';
         return;
     }
 
@@ -1066,7 +1066,7 @@ function renderVersionTaskFocus(versionTaskData) {
     cachedVersionTaskData = versionTaskData;
     if (versionTaskData.length === 0) {
         const legend = document.getElementById('ra-focus-legend');
-        if (legend) legend.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size: calc(13px * var(--ui-scale));">データなし</div>';
+        if (legend) legend.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;font-size: calc(14px * var(--ui-scale));">データなし</div>';
         return;
     }
     renderVersionSelector(versionTaskData);
