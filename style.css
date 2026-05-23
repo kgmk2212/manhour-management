@@ -3805,10 +3805,10 @@ table tr[style*="1565c0"] th:first-child {
 .ed-actions {
     padding: 16px 20px;
     display: flex;
-    gap: calc(12px * var(--ui-scale));
+    gap: calc(40px * var(--ui-scale));
     align-items: center;
-    /* 破壊的アクション(削除)は左下に控えめ、主要アクション(編集)は右下に明示 */
-    justify-content: space-between;
+    /* 中央寄せ + 余白広めで、密集を避けつつ自然な視覚バランスを保つ */
+    justify-content: center;
 }
 
 .ed-delete-link {

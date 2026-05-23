@@ -1711,7 +1711,7 @@ export function showTaskDetail(version, task) {
 
         html += `
             <div class="ed-actions">
-                <button class="btn btn-secondary" onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')">全工程を編集</button>
+                <button class="btn btn-primary" onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')">全工程を編集</button>
                 <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
             </div>`;
     }
