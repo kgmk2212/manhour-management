@@ -784,11 +784,13 @@ label {
     display: inline-flex;
     align-items: center;
     gap: calc(4px * var(--ui-scale));
-    padding: calc(3px * var(--ui-scale)) calc(10px * var(--ui-scale));
+    padding: calc(5px * var(--ui-scale)) calc(10px * var(--ui-scale));
     border-radius: 99px;
     font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
-    line-height: 1.4;
+    /* line-height: 1 にして上下の余白をすべて padding で制御
+       → バッジ内テキストが完全に中央寄せに、周囲テキストとの中心揃えも安定 */
+    line-height: 1;
 }
 
 /* 工程バッジ (UI/PG/PT/IT/ST) は字幅が異なるため固定幅で揃えて
@@ -3862,9 +3864,9 @@ table tr[style*="1565c0"] th:first-child {
 .wd-card-header {
     display: flex;
     justify-content: space-between;
-    /* 工程バッジと工数値の文字基線を揃える（badge は padding 持ちなので
-       center だと視覚的に上下にズレる） */
-    align-items: baseline;
+    /* バッジは line-height: 1 + 均等 padding でコンパクト化し、
+       align-items: center で工数値と視覚的中心を揃える */
+    align-items: center;
     margin-bottom: 8px;
     gap: calc(12px * var(--ui-scale));
 }
