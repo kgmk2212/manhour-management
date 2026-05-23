@@ -206,7 +206,7 @@ export function getMonthColor(workMonths) {
 export function generateMonthColorLegend(usedMonths, hasMultipleMonths = false, hasUnassigned = false) {
     if (!usedMonths || usedMonths.size === 0) return '';
 
-    let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: calc(14px * var(--ui-scale));">';
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: calc(14.5px * var(--ui-scale));">';
     html += '<span style="font-weight: 600; color: #666; margin-right: 5px;">月別:</span>';
 
     // 使用されている月のみ表示（ソートして）

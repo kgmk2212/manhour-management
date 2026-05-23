@@ -362,7 +362,7 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
         actualsListDiv.style.display = 'block';
 
         // 実績リストのHTML生成（担当者名も表示）
-        let html = '<div style="font-size: calc(14px * var(--ui-scale));">';
+        let html = '<div style="font-size: calc(14.5px * var(--ui-scale));">';
 
         filteredActuals.forEach((actual, index) => {
             const dateStr = actual.date ? actual.date : '日付なし';
@@ -371,8 +371,8 @@ export function updateRemainingHoursActualsList(version, task, process, member) 
             html += `
                 <div style="padding: 8px; background: ${bgColor}; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div style="font-weight: 500; color: #333;">${dateStr} <span style="color: #888; font-size: calc(14px * var(--ui-scale));">${escapeHtml(actual.member)}</span></div>
-                        ${actual.memo ? `<div style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-top: 2px;">${escapeHtml(actual.memo)}</div>` : ''}
+                        <div style="font-weight: 500; color: #333;">${dateStr} <span style="color: #888; font-size: calc(14.5px * var(--ui-scale));">${escapeHtml(actual.member)}</span></div>
+                        ${actual.memo ? `<div style="color: #666; font-size: calc(14.5px * var(--ui-scale)); margin-top: 2px;">${escapeHtml(actual.memo)}</div>` : ''}
                     </div>
                     <div style="font-weight: 600; color: #495057; white-space: nowrap; margin-left: 12px;">${formatHours(actual.hours)}h</div>
                 </div>
