@@ -275,8 +275,12 @@ function isEstimateValuesIdentical(existing, incoming) {
 function detectActualConflicts(rows, existing) {
     const newRows = [];
     const duplicates = [];
+    // 既存側の消費追跡: 同一の (日付,担当,task,version,process,hours) が複数あっても
+    // greedy に 1 対 1 でマッチさせ、Excel 側に追加された分は newRows に積む
+    const consumed = new Set();
     for (const incoming of rows) {
-        const exact = existing.find(a =>
+        const exactIdx = existing.findIndex((a, idx) =>
+            !consumed.has(idx) &&
             normalizeDate(a.date) === normalizeDate(incoming.date) &&
             s(a.member) === s(incoming.member) &&
             s(a.version) === s(incoming.version) &&
@@ -284,45 +288,15 @@ function detectActualConflicts(rows, existing) {
             s(a.process) === s(incoming.process) &&
             Number(a.hours) === Number(incoming.hours)
         );
-        if (exact) {
-            duplicates.push({ existing: exact, incoming });
+        if (exactIdx >= 0) {
+            consumed.add(exactIdx);
+            duplicates.push({ existing: existing[exactIdx], incoming });
         } else {
-            // 診断: 似ているが完全一致しなかった既存行を見つけて差分を出力
-            const candidates = existing.filter(a =>
-                normalizeDate(a.date) === normalizeDate(incoming.date) &&
-                s(a.member) === s(incoming.member) &&
-                s(a.task) === s(incoming.task)
-            );
-            if (candidates.length > 0) {
-                console.log('[excel-import] 実績 重複未検出:', { incoming, candidates });
-                for (const c of candidates) {
-                    console.log('  diff:', {
-                        date: [a_(c.date), a_(incoming.date)],
-                        member: [a_(c.member), a_(incoming.member)],
-                        version: [a_(c.version), a_(incoming.version)],
-                        task: [a_(c.task), a_(incoming.task)],
-                        process: [a_(c.process), a_(incoming.process)],
-                        hours: [c.hours, incoming.hours],
-                        hoursNum: [Number(c.hours), Number(incoming.hours)],
-                        equal: {
-                            date: normalizeDate(c.date) === normalizeDate(incoming.date),
-                            member: s(c.member) === s(incoming.member),
-                            version: s(c.version) === s(incoming.version),
-                            task: s(c.task) === s(incoming.task),
-                            process: s(c.process) === s(incoming.process),
-                            hours: Number(c.hours) === Number(incoming.hours)
-                        }
-                    });
-                }
-            }
             newRows.push(incoming);
         }
     }
     return { newRows, duplicates };
 }
-
-// 診断ログ用: 値と JSON 表現を並べて型ゆらぎを見えるようにする
-function a_(v) { return { value: v, type: typeof v, json: JSON.stringify(v) }; }
 
 function buildRowIdentity(row) {
     return el('div', { class: 'excel-import-row-id' }, [
