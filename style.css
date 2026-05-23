@@ -1135,17 +1135,31 @@ table.simple-table tr th:first-child {
     font-weight: 600;
     padding: 8px;
     border-bottom: 2px solid var(--border);
+    text-align: center;
 }
 
 .estimate-table td {
     padding: 6px 8px;
     border-bottom: 1px solid var(--border-light);
+    text-align: center;
+    vertical-align: middle;
 }
 
+/* 担当(2列目)と時間(3列目)の入力を中央配置にし、列全体のバランスを取る */
 .estimate-table select,
 .estimate-table input {
     padding: 6px 8px;
     font-size: calc(15.5px * var(--ui-scale));
+}
+
+.estimate-table select {
+    display: inline-block;
+    /* selectは内容左寄せが自然なので中央配置はセル側でやる */
+}
+
+.estimate-table input[type="number"] {
+    text-align: right;
+    /* 数値入力は右寄せが自然（縦揃いが綺麗） */
 }
 
 /* Multi-member add button */
