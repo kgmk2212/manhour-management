@@ -3768,12 +3768,24 @@ table tr[style*="1565c0"] th:first-child {
     border-bottom: 1px solid var(--border-light);
 }
 
-/* ヒーローやラベルが中央寄せなので meta も中央に揃えて視覚的整合 */
+/* ヒーローやラベルが中央寄せなので meta も中央に揃える。
+   ただし「ラベル + 値」のペアではラベルが少し左、値が exact center に
+   くるように 3 列 grid (1fr auto 1fr) を使う。 */
 .ed-meta-item {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: baseline;
     margin-bottom: 4px;
-    justify-content: center;
+}
+
+.ed-meta-item .ed-meta-label {
+    justify-self: end;
+    padding-right: calc(10px * var(--ui-scale));
+}
+
+.ed-meta-item .ed-meta-value {
+    justify-self: start;
+    /* col 2 (auto, exact center between両側の 1fr) */
 }
 
 .ed-meta-label {
@@ -3864,22 +3876,25 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-header {
+    /* 名前(+月タグ)を exact center に配置するため、name-group を絶対配置
+       badge と hours は flex の左右端に並べる */
+    position: relative;
     display: flex;
     justify-content: space-between;
-    /* バッジは line-height: 1 + 均等 padding でコンパクト化し、
-       align-items: center で工数値と視覚的中心を揃える */
     align-items: center;
     margin-bottom: 8px;
-    gap: calc(12px * var(--ui-scale));
 }
 
-/* バッジ・担当者名・月タグの間に視覚的な余白を確保 */
-.wd-card-header > div {
+.wd-card-name-group {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     gap: calc(10px * var(--ui-scale));
-    min-width: 0;
-    flex: 1 1 auto;
+    /* badge / hours と被らないよう、両端から一定の余白を確保 */
+    max-width: calc(100% - calc(160px * var(--ui-scale)));
+    pointer-events: auto;
 }
 
 .wd-card-title {

@@ -1536,7 +1536,7 @@ export function showEstimateDetail(estimateId) {
                 <div class="ed-hours-label">見積工数</div>
             </div>
             <div class="ed-meta">
-                <span class="ed-meta-item"><span class="ed-meta-label">担当</span>${escapeHtml(est.member)}</span>
+                <span class="ed-meta-item"><span class="ed-meta-label">担当</span><span class="ed-meta-value">${escapeHtml(est.member)}</span></span>
             </div>
             ${workMonthCards ? `
             <div class="ed-section">
@@ -1669,11 +1669,11 @@ export function showTaskDetail(version, task) {
                     html += `
                         <div class="wd-card">
                             <div class="wd-card-header">
-                                <div>
-                                    <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                                <span class="wd-card-name-group">
                                     <span class="wd-card-title">${escapeHtml(est.member)}</span>
                                     ${monthTag}
-                                </div>
+                                </span>
                                 <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
                             </div>
                             <div class="wd-card-actions">
@@ -1686,10 +1686,10 @@ export function showTaskDetail(version, task) {
                 html += `
                     <div class="wd-card wd-card-empty">
                         <div class="wd-card-header">
-                            <div>
-                                <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
-                                <span style="color: #999; font-size: calc(15.5px * var(--ui-scale));">未登録</span>
-                            </div>
+                            <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                            <span class="wd-card-name-group">
+                                <span style="color: #999;">未登録</span>
+                            </span>
                             <span class="wd-card-hours" style="color: #ccc;">--</span>
                         </div>
                         <div class="wd-card-actions">
@@ -1704,8 +1704,8 @@ export function showTaskDetail(version, task) {
         // 合計の人日/人月
         html += `
             <div class="ed-meta">
-                <span class="ed-meta-item"><span class="ed-meta-label">人日</span>${totalDays.toFixed(1)}</span>
-                <span class="ed-meta-item"><span class="ed-meta-label">人月</span>${totalMonths.toFixed(2)}</span>
+                <span class="ed-meta-item"><span class="ed-meta-label">人日</span><span class="ed-meta-value">${totalDays.toFixed(1)}</span></span>
+                <span class="ed-meta-item"><span class="ed-meta-label">人月</span><span class="ed-meta-value">${totalMonths.toFixed(2)}</span></span>
             </div>
         `;
 
