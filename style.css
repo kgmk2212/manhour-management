@@ -798,7 +798,7 @@ label {
 .badge-pt,
 .badge-it,
 .badge-st {
-    width: calc(44px * var(--ui-scale));
+    width: calc(40px * var(--ui-scale));
     box-sizing: border-box;
     justify-content: center;
     text-align: center;
@@ -3714,7 +3714,7 @@ table tr[style*="1565c0"] th:first-child {
 
 /* Estimate detail (ed-*) classes */
 .ed-hero {
-    padding: calc(28px * var(--ui-scale)) calc(20px * var(--ui-scale)) calc(24px * var(--ui-scale));
+    padding: calc(24px * var(--ui-scale)) calc(20px * var(--ui-scale));
     text-align: center;
 }
 
