@@ -3730,7 +3730,6 @@ table tr[style*="1565c0"] th:first-child {
     color: var(--text-primary);
     letter-spacing: -0.01em;
     line-height: 1.35;
-    margin-bottom: calc(4px * var(--ui-scale));
 }
 
 .ed-hours-row {
@@ -3738,7 +3737,8 @@ table tr[style*="1565c0"] th:first-child {
     justify-content: center;
     align-items: baseline;
     gap: calc(12px * var(--ui-scale));
-    margin: calc(18px * var(--ui-scale)) 0 calc(8px * var(--ui-scale));
+    /* 108.0h を中心に上下対称な余白を確保 */
+    margin: calc(12px * var(--ui-scale)) 0;
 }
 
 .ed-hours {
@@ -3862,7 +3862,9 @@ table tr[style*="1565c0"] th:first-child {
 .wd-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    /* 工程バッジと工数値の文字基線を揃える（badge は padding 持ちなので
+       center だと視覚的に上下にズレる） */
+    align-items: baseline;
     margin-bottom: 8px;
     gap: calc(12px * var(--ui-scale));
 }
