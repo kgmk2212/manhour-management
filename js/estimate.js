@@ -1675,10 +1675,10 @@ export function showTaskDetail(version, task) {
                                     ${monthTag}
                                 </span>
                                 <span class="wd-card-hours">${est.hours.toFixed(1)}h</span>
-                            </div>
-                            <div class="wd-card-actions">
-                                <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editEstimateFromModal(${est.id})">編集</a>
-                                <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})">削除</a>
+                                <span class="wd-card-actions">
+                                    <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editEstimateFromModal(${est.id})">編集</a>
+                                    <a href="#" class="wd-delete-link" onclick="event.preventDefault(); deleteEstimateFromTaskModal('${escapedVersion}', '${escapedTask}', ${est.id})">削除</a>
+                                </span>
                             </div>
                         </div>`;
                 });
@@ -1691,9 +1691,9 @@ export function showTaskDetail(version, task) {
                                 <span style="color: #999;">未登録</span>
                             </span>
                             <span class="wd-card-hours" style="color: #ccc;">--</span>
-                        </div>
-                        <div class="wd-card-actions">
-                            <a href="#" class="wd-edit-link" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')">追加</a>
+                            <span class="wd-card-actions">
+                                <a href="#" class="wd-edit-link" onclick="event.preventDefault(); addProcessFromTaskModal('${escapedVersion}', '${escapedTask}', '${proc}')">追加</a>
+                            </span>
                         </div>
                     </div>`;
             }

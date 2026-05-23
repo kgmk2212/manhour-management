@@ -2716,7 +2716,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(14.5px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     background: var(--surface);
     min-width: 100px;
     cursor: pointer;
@@ -2732,7 +2732,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .version-filter-arrow {
-    font-size: calc(14.5px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2757,7 +2757,7 @@ table tr[style*="1565c0"] th:first-child {
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    font-size: calc(14.5px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     cursor: pointer;
     white-space: nowrap;
 }
@@ -3879,17 +3879,17 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-header {
-    /* [badge 名前 月タグ] をひとまとめにしてカード中央に配置し、
-       hours を右端に分離 */
+    /* 1 行化: [badge 名前 月タグ] (absolute centered) + hours + 編集/削除 を
+       右端にまとめて配置 */
     position: relative;
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
+    gap: calc(16px * var(--ui-scale));
     min-height: calc(28px * var(--ui-scale));
+    margin-bottom: 0;
 }
 
 .wd-card-cluster {
-    /* badge / 名前 / 月タグをひとまとめにして absolute centered */
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -3898,9 +3898,13 @@ table tr[style*="1565c0"] th:first-child {
     gap: calc(10px * var(--ui-scale));
 }
 
-/* 単独で flex フローに残る hours は margin-left:auto で右端へ */
 .wd-card-header > .wd-card-hours {
     margin-left: auto;
+}
+
+.wd-card-header > .wd-card-actions {
+    display: inline-flex;
+    gap: calc(12px * var(--ui-scale));
 }
 
 .wd-card-title {
