@@ -3879,27 +3879,20 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-header {
-    /* [badge 名前 月タグ] を1グループとして中央に配置し、hours を右端に分離
-       badge と月タグの幅が近いので、名前はほぼ card 中央に来る */
-    position: relative;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    min-height: calc(28px * var(--ui-scale));
+    gap: calc(12px * var(--ui-scale));
 }
 
+/* バッジ・担当者名・月タグの内訳を左詰めグループとして配置 */
 .wd-card-cluster {
-    /* badge / 名前 / 月タグ をひとまとめにして中央配置 */
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     gap: calc(10px * var(--ui-scale));
-}
-
-.wd-card-hours {
-    margin-left: auto;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .wd-card-title {
