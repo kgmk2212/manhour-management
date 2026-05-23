@@ -1545,8 +1545,8 @@ export function showEstimateDetail(estimateId) {
             </div>
             ` : ''}
             <div class="ed-actions">
-                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
                 <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
+                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
             </div>
         `;
     }
@@ -1711,8 +1711,8 @@ export function showTaskDetail(version, task) {
 
         html += `
             <div class="ed-actions">
-                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
                 <button class="btn btn-secondary" onclick="openEditAllProcessesFromTaskModal('${escapedVersion}', '${escapedTask}')">全工程を編集</button>
+                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteTaskFromModal('${escapedVersion}', '${escapedTask}')">対応を全削除</a>
             </div>`;
     }
 

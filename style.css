@@ -791,16 +791,18 @@ label {
     line-height: 1.4;
 }
 
-/* 工程バッジ (UI/PG/PT/IT/ST) は字幅が異なるため min-width を揃えて
+/* 工程バッジ (UI/PG/PT/IT/ST) は字幅が異なるため固定幅で揃えて
    テーブルやリスト内で縦のラインを揃える */
 .badge-ui,
 .badge-pg,
 .badge-pt,
 .badge-it,
 .badge-st {
-    min-width: calc(34px * var(--ui-scale));
+    width: calc(44px * var(--ui-scale));
+    box-sizing: border-box;
     justify-content: center;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .badge-ui {
