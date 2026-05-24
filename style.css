@@ -2151,7 +2151,7 @@ table tr[style*="1565c0"] th:first-child {
     background: var(--surface);
     display: flex;
     overflow-y: auto;
-    max-height: 600px;
+    max-height: calc(600px * var(--ui-scale));
 }
 
 .gantt-container {
@@ -2159,7 +2159,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--surface);
-    min-height: 400px;
+    min-height: calc(400px * var(--ui-scale));
 }
 
 #ganttCanvas,
@@ -2175,7 +2175,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .gantt-resize-handle {
-    width: 5px;
+    width: calc(5px * var(--ui-scale));
     flex-shrink: 0;
     cursor: col-resize;
     background: transparent;
@@ -2190,8 +2190,8 @@ table tr[style*="1565c0"] th:first-child {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 3px;
-    height: 28px;
+    width: calc(3px * var(--ui-scale));
+    height: calc(28px * var(--ui-scale));
     border-radius: 2px;
     background: var(--border);
     opacity: 0;

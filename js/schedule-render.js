@@ -135,12 +135,37 @@ export class GanttChartRenderer {
         this.rows = [];
         this.filteredSchedulesCache = null;
         this.dpr = window.devicePixelRatio || 1;
+        this.uiScale = 1;  // render() 時に CSS var --ui-scale から再取得
         this.highlightedScheduleId = null;
         this.newlyCreatedIds = new Set();
         this.newlyCreatedTimer = null;
         this.customLabelWidths = this.loadCustomLabelWidths();
         this.resizeHandle = null;
         this.completedVersions = new Set();  // 完了済み版数（グレーアウト対象）
+    }
+
+    /**
+     * 現在の --ui-scale 値を CSS 変数から取得。
+     * canvas 内描画は logical 座標、CSS 表示寸法は logical × uiScale で扱う。
+     */
+    getUiScale() {
+        const raw = getComputedStyle(document.documentElement)
+            .getPropertyValue('--ui-scale').trim();
+        const parsed = parseFloat(raw);
+        return (parsed > 0 && isFinite(parsed)) ? parsed : 1;
+    }
+
+    /**
+     * イベント座標を canvas 内の logical 座標に変換。
+     * uiScale 倍に拡大表示しているため、CSS px を uiScale で除算する。
+     */
+    eventToLogical(event, canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scale = this.uiScale || 1;
+        return {
+            x: (event.clientX - rect.left) / scale,
+            y: (event.clientY - rect.top) / scale
+        };
     }
 
     /**
@@ -231,11 +256,13 @@ export class GanttChartRenderer {
         const onMouseMove = (e) => {
             if (!isDragging) return;
             e.preventDefault();
-            const delta = e.clientX - startX;
-            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
-            // ドラッグ中はコンテナ幅のみ変更（軽量）
+            const scale = this.uiScale || 1;
+            // delta は CSS px、startWidth/MIN/MAX は logical px なので統一する
+            const deltaLogical = (e.clientX - startX) / scale;
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + deltaLogical));
+            // ドラッグ中はコンテナ幅のみ変更（軽量）。CSS px へ戻す
             if (this.labelScrollContainer) {
-                this.labelScrollContainer.style.width = newWidth + 'px';
+                this.labelScrollContainer.style.width = (newWidth * scale) + 'px';
             }
         };
 
@@ -246,9 +273,11 @@ export class GanttChartRenderer {
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
 
-            const delta = e.clientX - startX;
-            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
+            const scale = this.uiScale || 1;
+            const deltaLogical = (e.clientX - startX) / scale;
+            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + deltaLogical));
             const viewMode = scheduleSettings.viewMode;
+            // localStorage には logical 値で保存する
             this.customLabelWidths[viewMode] = newWidth;
             this.saveCustomLabelWidth(viewMode, newWidth);
             // 新しい幅で再描画
@@ -417,10 +446,12 @@ export class GanttChartRenderer {
         this.daysInMonth = getDaysInMonth(year, month);
 
         // スクロール位置を日付ベースで保存（expandRangeForSchedulesでキャンバス幅が変わるため、
-        // ピクセル値ではなく日付に変換して保持する）
+        // ピクセル値ではなく日付に変換して保持する）。scrollLeft は CSS px なので
+        // uiScale で除算して logical 座標に戻してから日付計算する。
         let savedScrollDate = null;
+        const prevUiScale = this.uiScale || 1;
         if (this.scrollContainer && this.scrollContainer.scrollLeft > 0 && this.rangeStart) {
-            const dayOffset = Math.floor(this.scrollContainer.scrollLeft / DAY_WIDTH);
+            const dayOffset = Math.floor((this.scrollContainer.scrollLeft / prevUiScale) / DAY_WIDTH);
             savedScrollDate = new Date(this.rangeStart);
             savedScrollDate.setDate(savedScrollDate.getDate() + dayOffset);
         }
@@ -459,26 +490,32 @@ export class GanttChartRenderer {
         this.totalHeight = Math.max(this.totalHeight, 300);
 
         this.dpr = window.devicePixelRatio || 1;
+        this.uiScale = this.getUiScale();
+        // raster は logical × dpr × uiScale、CSS は logical × uiScale、
+        // setTransform は dpr × uiScale で logical 座標を raster へ写像する。
+        const rasterScale = this.dpr * this.uiScale;
 
         // Timeline canvas サイズ設定
-        this.timelineCanvas.width = this.timelineWidth * this.dpr;
-        this.timelineCanvas.height = this.totalHeight * this.dpr;
-        this.timelineCanvas.style.width = this.timelineWidth + 'px';
-        this.timelineCanvas.style.height = this.totalHeight + 'px';
-        this.timelineCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        this.timelineCanvas.width = Math.round(this.timelineWidth * rasterScale);
+        this.timelineCanvas.height = Math.round(this.totalHeight * rasterScale);
+        this.timelineCanvas.style.width = (this.timelineWidth * this.uiScale) + 'px';
+        this.timelineCanvas.style.height = (this.totalHeight * this.uiScale) + 'px';
+        this.timelineCtx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
 
         // Label canvas サイズ設定
-        this.labelCanvas.width = this.labelWidth * this.dpr;
-        this.labelCanvas.height = this.totalHeight * this.dpr;
-        this.labelCanvas.style.width = this.labelWidth + 'px';
-        this.labelCanvas.style.height = this.totalHeight + 'px';
-        this.labelCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        this.labelCanvas.width = Math.round(this.labelWidth * rasterScale);
+        this.labelCanvas.height = Math.round(this.totalHeight * rasterScale);
+        this.labelCanvas.style.width = (this.labelWidth * this.uiScale) + 'px';
+        this.labelCanvas.style.height = (this.totalHeight * this.uiScale) + 'px';
+        this.labelCtx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
 
         // モバイル時のラベルスクロールコンテナ設定
         if (this.labelScrollContainer) {
             if (isMobile) {
                 // ラベルは画面幅の40%まで、超えた分は横スクロール可能
-                const maxVisible = Math.min(this.labelWidth, Math.floor(window.innerWidth * 0.4));
+                // labelWidth は logical なので CSS では uiScale 倍を上限とする
+                const labelCssWidth = this.labelWidth * this.uiScale;
+                const maxVisible = Math.min(labelCssWidth, Math.floor(window.innerWidth * 0.4));
                 this.labelScrollContainer.style.maxWidth = maxVisible + 'px';
                 this.labelScrollContainer.style.width = '';
             } else {
@@ -504,8 +541,9 @@ export class GanttChartRenderer {
         this.drawLabelColumn(rows);
 
         // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
+        // dateToX は logical 座標を返すので CSS px には uiScale を掛ける。
         if (this.scrollContainer && savedScrollDate !== null) {
-            this.scrollContainer.scrollLeft = this.dateToX(savedScrollDate);
+            this.scrollContainer.scrollLeft = this.dateToX(savedScrollDate) * this.uiScale;
         }
     }
 
@@ -1391,8 +1429,9 @@ export class GanttChartRenderer {
         const mb = this.monthBoundaries.find(m => m.year === year && m.month === month);
         if (mb) {
             // 月の1日の左端をラベル列の右端にぴったり合わせる
+            // logical px (startDayOffset * DAY_WIDTH) を CSS px に変換するため uiScale を掛ける
             this.scrollContainer.scrollTo({
-                left: mb.startDayOffset * DAY_WIDTH,
+                left: mb.startDayOffset * DAY_WIDTH * (this.uiScale || 1),
                 behavior: smooth ? 'smooth' : 'auto'
             });
         }
@@ -1516,8 +1555,9 @@ export function setupTooltipHandler() {
             if (!renderer) return;
 
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const _s = renderer.uiScale || 1;
+            const x = (event.clientX - rect.left) / _s;
+            const y = (event.clientY - rect.top) / _s;
 
             const rowIndex = renderer.getRowIndexAtPosition(y);
             renderer.setHoverRow(rowIndex);
@@ -1597,8 +1637,9 @@ export function setupCanvasClickHandler(onScheduleClick) {
             if (!renderer) return;
 
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const _s = renderer.uiScale || 1;
+            const x = (event.clientX - rect.left) / _s;
+            const y = (event.clientY - rect.top) / _s;
 
             const schedule = renderer.getScheduleAtPosition(x, y);
             if (schedule && onScheduleClick) {
@@ -1647,8 +1688,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             if (!renderer) return;
 
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const _s = renderer.uiScale || 1;
+            const x = (event.clientX - rect.left) / _s;
+            const y = (event.clientY - rect.top) / _s;
 
             const schedule = renderer.getScheduleAtPosition(x, y);
             if (schedule) {
@@ -1670,8 +1712,9 @@ export function setupDragAndDrop(onScheduleUpdate) {
             if (!renderer) return;
 
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const _s = renderer.uiScale || 1;
+            const x = (event.clientX - rect.left) / _s;
+            const y = (event.clientY - rect.top) / _s;
 
             if (dragState.isDragging && dragState.schedule) {
                 dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
@@ -1736,7 +1779,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
 
             const renderer = getRenderer();
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
+            const _s = (renderer && renderer.uiScale) || 1;
+            const x = (event.clientX - rect.left) / _s;
 
             const movedX = Math.abs(x - dragState.startX);
             const didMove = dragState.maxMovedX > 3 || dragState.maxMovedY > 3;
@@ -1919,8 +1963,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
             if (!renderer) return;
 
             const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
+            const _s = renderer.uiScale || 1;
+            const x = (touch.clientX - rect.left) / _s;
+            const y = (touch.clientY - rect.top) / _s;
 
             touchState.touchId = touch.identifier;
             touchState.startX = x;
@@ -1980,7 +2025,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 if (!renderer) return;
 
                 const rect = canvas.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
+                const _s = renderer.uiScale || 1;
+                const x = (touch.clientX - rect.left) / _s;
 
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
