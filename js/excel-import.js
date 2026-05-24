@@ -298,6 +298,21 @@ function detectActualConflicts(rows, existing) {
     return { newRows, duplicates };
 }
 
+/**
+ * workMonths から workMonth(先頭月) と monthlyHours(均等割り) を導出する。
+ * estimate-add.js の複数月モードと同じロジック。
+ * workMonths が空なら workMonth='', monthlyHours={} を返す（その他工数など）。
+ */
+function deriveMonthFields(workMonths, hours) {
+    if (!Array.isArray(workMonths) || workMonths.length === 0) {
+        return { workMonth: '', monthlyHours: {} };
+    }
+    const monthlyHours = {};
+    const per = hours / workMonths.length;
+    for (const m of workMonths) monthlyHours[m] = per;
+    return { workMonth: workMonths[0], monthlyHours };
+}
+
 function buildRowIdentity(row) {
     return el('div', { class: 'excel-import-row-id' }, [
         el('span', { class: 'version', text: row.version }),
@@ -576,6 +591,7 @@ function applyImport() {
     // 見積: チェック ON のみ
     if (previewState.sheets.estimate) {
         for (const row of previewState.estimateNew) {
+            const { workMonth, monthlyHours } = deriveMonthFields(row.workMonths, row.hours);
             const newEst = {
                 id: Date.now() + Math.random(),
                 version: row.version,
@@ -583,7 +599,10 @@ function applyImport() {
                 process: row.process,
                 member: row.member,
                 hours: row.hours,
-                workMonths: row.workMonths
+                workMonth,
+                workMonths: row.workMonths,
+                monthlyHours,
+                createdAt: new Date().toISOString()
             };
             estimates.push(newEst);
             added.estimates.push(newEst);
@@ -594,10 +613,13 @@ function applyImport() {
             const idx = estimates.findIndex(e => e.id === existing.id);
             if (idx === -1) continue;
             const before = { ...estimates[idx] };
+            const { workMonth, monthlyHours } = deriveMonthFields(incoming.workMonths, incoming.hours);
             estimates[idx] = {
                 ...existing,
                 hours: incoming.hours,
-                workMonths: incoming.workMonths
+                workMonth,
+                workMonths: incoming.workMonths,
+                monthlyHours
             };
             overwritten.push({ before, after: { ...estimates[idx] } });
         }

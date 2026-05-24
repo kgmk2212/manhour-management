@@ -100,6 +100,19 @@ export function normalizeEstimate(e) {
         };
     }
 
+    // workMonths はあるが monthlyHours が無い/空（Excel 取り込み直後など）→ 均等割りで補完
+    if (e.workMonths && e.workMonths.length > 0 &&
+        (!e.monthlyHours || Object.keys(e.monthlyHours).length === 0)) {
+        const per = (Number(e.hours) || 0) / e.workMonths.length;
+        const monthlyHours = {};
+        for (const m of e.workMonths) monthlyHours[m] = per;
+        return {
+            ...e,
+            workMonth: e.workMonth || e.workMonths[0],
+            monthlyHours
+        };
+    }
+
     return e;
 }
 
