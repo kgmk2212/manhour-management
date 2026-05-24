@@ -108,18 +108,34 @@ export function migrateEstimateMonthFormats(estimatesArr) {
     for (let i = 0; i < estimatesArr.length; i++) {
         const e = estimatesArr[i];
         if (!e) continue;
+
         const cleaned = sanitizeMonthFields(e);
+
+        // workMonths があるのに workMonth(単数) や monthlyHours が欠けている
+        // Excel 取り込み行を完全形に補完する（編集モーダル/レポート/LLM 等が workMonth を直接参照するため）
+        let workMonth = cleaned.workMonth;
+        let monthlyHours = cleaned.monthlyHours;
+        if (cleaned.workMonths.length > 0) {
+            if (!workMonth) workMonth = cleaned.workMonths[0];
+            if (Object.keys(monthlyHours).length === 0) {
+                const per = (Number(e.hours) || 0) / cleaned.workMonths.length;
+                monthlyHours = {};
+                for (const m of cleaned.workMonths) monthlyHours[m] = per;
+            }
+        }
+
         const oldWm = e.workMonth || '';
         const oldWms = Array.isArray(e.workMonths) ? e.workMonths.join(',') : '';
         const oldMh = e.monthlyHours ? JSON.stringify(e.monthlyHours) : '';
         const newWms = cleaned.workMonths.join(',');
-        const newMh = JSON.stringify(cleaned.monthlyHours);
-        if (oldWm !== cleaned.workMonth || oldWms !== newWms || oldMh !== newMh) {
+        const newMh = JSON.stringify(monthlyHours);
+
+        if (oldWm !== workMonth || oldWms !== newWms || oldMh !== newMh) {
             estimatesArr[i] = {
                 ...e,
-                workMonth: cleaned.workMonth,
+                workMonth,
                 workMonths: cleaned.workMonths,
-                monthlyHours: cleaned.monthlyHours
+                monthlyHours
             };
             changed = true;
         }
