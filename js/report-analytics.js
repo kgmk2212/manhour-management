@@ -5,7 +5,7 @@
 
 import { calculateProgress, calculateVersionProgress, clearProgressCache } from './report.js';
 import { PROCESS } from './constants.js';
-import { formatHours, hoursToManDays, hoursToManMonths } from './utils.js';
+import { formatHours, hoursToManDays, hoursToManMonths, scaledFont } from './utils.js';
 
 // Always read latest data from window to avoid stale references after loadData()
 function getEstimates() { return window.estimates || []; }
@@ -511,7 +511,7 @@ function drawGridLines(ctx, x0, y0, w, h, steps, maxVal) {
         ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
         const val = maxVal - (maxVal / steps) * i;
         ctx.fillStyle = COLORS.text;
-        ctx.font = '500 10px "Plus Jakarta Sans", sans-serif';
+        ctx.font = scaledFont('500', 10, '"Plus Jakarta Sans", sans-serif');
         ctx.textAlign = 'right';
         ctx.fillText(Math.round(val) + '', x0 - 6, y + 4);
     }
@@ -532,14 +532,14 @@ function drawProcessBar(ctx, w, h, data) {
     data.forEach((d, i) => {
         const y = pad.top + i * (groupH + groupGap);
         ctx.fillStyle = COLORS.textDark;
-        ctx.font = '600 12px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+        ctx.font = scaledFont('600', 12, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
         ctx.textAlign = 'right';
         ctx.fillText(d.label, pad.left - 8, y + groupH / 2 + 4);
 
         const estW = (d.est / maxVal) * chartW;
         ctx.fillStyle = COLORS.est;
         ctx.beginPath(); ctx.roundRect(pad.left, y, Math.max(estW, 0), barH, 3); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = '600 10px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'right';
+        ctx.fillStyle = '#fff'; ctx.font = scaledFont('600', 10, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'right';
         if (estW > 40) ctx.fillText(Math.round(d.est) + 'h', pad.left + estW - 6, y + barH - 3);
 
         const actW = (d.act / maxVal) * chartW;
@@ -562,16 +562,16 @@ function drawBias(ctx, w, h, data) {
     ctx.beginPath(); ctx.moveTo(centerX, pad.top - 4);
     ctx.lineTo(centerX, pad.top + data.length * (barH + gap) - gap + 4); ctx.stroke(); ctx.setLineDash([]);
 
-    ctx.fillStyle = COLORS.text; ctx.font = '500 10px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.text; ctx.font = scaledFont('500', 10, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'center';
     ctx.fillText('過大見積 ←', centerX - (w - pad.left - pad.right) / 4, pad.top - 4);
     ctx.fillText('→ 過小見積', centerX + (w - pad.left - pad.right) / 4, pad.top - 4);
-    ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
+    ctx.font = scaledFont('600', 10, '"Plus Jakarta Sans", sans-serif');
     ctx.fillText('0%', centerX, pad.top + data.length * (barH + gap) + 4);
 
     data.forEach((d, i) => {
         const y = pad.top + i * (barH + gap);
         ctx.fillStyle = COLORS.textDark;
-        ctx.font = '600 12px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+        ctx.font = scaledFont('600', 12, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
         ctx.textAlign = 'right';
         ctx.fillText(d.label, pad.left - 8, y + barH / 2 + 4);
 
@@ -582,7 +582,7 @@ function drawBias(ctx, w, h, data) {
         ctx.beginPath(); ctx.roundRect(x, y, barW, barH, 3); ctx.fill(); ctx.globalAlpha = 1;
 
         const labelX = d.bias >= 0 ? centerX + barW + 6 : centerX - barW - 6;
-        ctx.fillStyle = color; ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = color; ctx.font = scaledFont('700', 11, '"Plus Jakarta Sans", sans-serif');
         ctx.textAlign = d.bias >= 0 ? 'left' : 'right';
         ctx.fillText((d.bias > 0 ? '+' : '') + d.bias.toFixed(1) + '%', labelX, y + barH / 2 + 4);
 
@@ -601,7 +601,7 @@ function drawTrend(ctx, w, h, months, estData, actData) {
     drawGridLines(ctx, pad.left, pad.top, cw, ch, 4, maxVal);
 
     ctx.fillStyle = COLORS.text;
-    ctx.font = '500 11px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+    ctx.font = scaledFont('500', 11, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
     ctx.textAlign = 'center';
     months.forEach((m, i) => {
         const [, mo] = m.split('-');
@@ -641,7 +641,7 @@ function drawTrend(ctx, w, h, months, estData, actData) {
             const yE = pointY(estData[i]), yA = pointY(actData[i]);
             ctx.fillStyle = COLORS.danger; ctx.globalAlpha = 0.12;
             ctx.fillRect(x - 8, yA, 16, yE - yA); ctx.globalAlpha = 1;
-            ctx.fillStyle = COLORS.danger; ctx.font = '700 9px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = COLORS.danger; ctx.font = scaledFont('700', 9, '"Plus Jakarta Sans", sans-serif');
             ctx.textAlign = 'center'; ctx.fillText('+' + Math.round(actData[i] - estData[i]), x, yA - 6);
         }
     });
@@ -657,7 +657,7 @@ function drawPareto(ctx, w, h, tasks) {
 
     drawGridLines(ctx, pad.left, pad.top, cw, ch, 4, maxVal);
 
-    ctx.fillStyle = COLORS.text; ctx.font = '500 10px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'left';
+    ctx.fillStyle = COLORS.text; ctx.font = scaledFont('500', 10, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'left';
     for (let i = 0; i <= 4; i++) {
         const pct = 25 * i;
         ctx.fillText(pct + '%', pad.left + cw + 6, pad.top + ch * (1 - pct / 100) + 4);
@@ -672,7 +672,7 @@ function drawPareto(ctx, w, h, tasks) {
         ctx.globalAlpha = 1 - i * 0.07; ctx.fillStyle = COLORS.act;
         ctx.beginPath(); ctx.roundRect(x, y, barW, bh, [3, 3, 0, 0]); ctx.fill(); ctx.globalAlpha = 1;
 
-        ctx.fillStyle = COLORS.text; ctx.font = '500 9px "Plus Jakarta Sans", "Noto Sans JP", sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = COLORS.text; ctx.font = scaledFont('500', 9, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif'); ctx.textAlign = 'center';
         ctx.save(); ctx.translate(x + barW / 2, pad.top + ch + 8); ctx.rotate(-Math.PI / 6);
         ctx.fillText(t.label.substring(0, 5), 0, 0); ctx.restore();
 
@@ -686,7 +686,7 @@ function drawPareto(ctx, w, h, tasks) {
     linePoints.forEach((p, i) => {
         ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fillStyle = COLORS.warning; ctx.fill();
         if (i === 2 || i === linePoints.length - 1) {
-            ctx.font = '700 10px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'center';
+            ctx.font = scaledFont('700', 10, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'center';
             ctx.fillText(Math.round(p.pct * 100) + '%', p.x, p.y - 8);
         }
     });
@@ -702,7 +702,7 @@ function drawMemberWorkload(ctx, w, h, members) {
     members.forEach((m, i) => {
         const y = pad.top + i * (barH + gap);
         ctx.fillStyle = COLORS.textDark;
-        ctx.font = '600 12px "Plus Jakarta Sans", "Noto Sans JP", sans-serif'; ctx.textAlign = 'right';
+        ctx.font = scaledFont('600', 12, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif'); ctx.textAlign = 'right';
         ctx.fillText(m.name, pad.left - 8, y + barH / 2 + 4);
 
         let x = pad.left;
@@ -715,7 +715,7 @@ function drawMemberWorkload(ctx, w, h, members) {
         });
 
         const total = PROC_TYPES.reduce((s, p) => s + m[p], 0);
-        ctx.fillStyle = COLORS.textDark; ctx.font = '600 11px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'left';
+        ctx.fillStyle = COLORS.textDark; ctx.font = scaledFont('600', 11, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'left';
         ctx.fillText(total.toFixed(1) + 'h', x + 6, y + barH / 2 + 4);
     });
 }
@@ -785,7 +785,7 @@ function drawAccuracyTrend(ctx, w, h, versions, accuracy) {
         if (val < yMin || val > yMax) return;
         const y = pointY(val);
         ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
-        ctx.fillStyle = COLORS.text; ctx.font = '500 10px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'right';
+        ctx.fillStyle = COLORS.text; ctx.font = scaledFont('500', 10, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'right';
         ctx.fillText(Math.round(val) + '%', pad.left - 6, y + 4);
     });
     ctx.setLineDash([]);
@@ -793,7 +793,7 @@ function drawAccuracyTrend(ctx, w, h, versions, accuracy) {
     ctx.strokeStyle = COLORS.act; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
     ctx.beginPath(); ctx.moveTo(pad.left, pointY(100)); ctx.lineTo(pad.left + cw, pointY(100)); ctx.stroke(); ctx.globalAlpha = 1;
 
-    ctx.fillStyle = COLORS.text; ctx.font = '500 11px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.text; ctx.font = scaledFont('500', 11, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'center';
     versions.forEach((v, i) => ctx.fillText(v, pad.left + i * stepX, h - pad.bottom + 16));
 
     ctx.strokeStyle = COLORS.info; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.beginPath();
@@ -804,11 +804,11 @@ function drawAccuracyTrend(ctx, w, h, versions, accuracy) {
         const x = pad.left + i * stepX, y = pointY(v);
         ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = COLORS.info; ctx.lineWidth = 2.5; ctx.stroke();
-        ctx.fillStyle = COLORS.textDark; ctx.font = '700 11px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = COLORS.textDark; ctx.font = scaledFont('700', 11, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'center';
         ctx.fillText(v.toFixed(1) + '%', x, y - 10);
     });
 
-    ctx.fillStyle = COLORS.act; ctx.globalAlpha = 0.5; ctx.font = '500 9px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = 'left';
+    ctx.fillStyle = COLORS.act; ctx.globalAlpha = 0.5; ctx.font = scaledFont('500', 9, '"Plus Jakarta Sans", sans-serif'); ctx.textAlign = 'left';
     ctx.fillText('目標帯 (90-110%)', pad.left + 4, pointY(110) + 12); ctx.globalAlpha = 1;
 }
 
@@ -838,16 +838,16 @@ function drawDonut(ctx, w, h, statusCounts) {
         const lx = cx + Math.cos(midAngle) * (outerR + 14);
         const ly = cy + Math.sin(midAngle) * (outerR + 14);
         ctx.fillStyle = COLORS.textDark;
-        ctx.font = '600 11px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+        ctx.font = scaledFont('600', 11, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
         ctx.textAlign = midAngle > Math.PI / 2 && midAngle < Math.PI * 1.5 ? 'right' : 'left';
         if (Math.abs(midAngle + Math.PI / 2) < 0.3) ctx.textAlign = 'center';
         ctx.fillText(`${d.label} ${Math.round(d.value / total * 100)}%`, lx, ly + 4);
         startAngle += sliceAngle;
     });
 
-    ctx.fillStyle = COLORS.textDark; ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = COLORS.textDark; ctx.font = scaledFont('800', 28, '"Plus Jakarta Sans", sans-serif');
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(total, cx, cy - 4);
-    ctx.font = '500 11px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+    ctx.font = scaledFont('500', 11, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
     ctx.fillStyle = COLORS.text; ctx.fillText('タスク', cx, cy + 16);
     ctx.textBaseline = 'alphabetic';
 }
@@ -887,7 +887,7 @@ function drawMiniDonut(canvas, slices, total) {
 
     // Center total
     ctx.fillStyle = COLORS.textDark;
-    ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
+    ctx.font = scaledFont('700', 13, '"Plus Jakarta Sans", sans-serif');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(Math.round(total) + 'h', cx, cy);
@@ -981,7 +981,7 @@ function drawFocusDonut(slices, total, versionLabel) {
             const midAngle = angle + sliceAngle / 2;
             const labelR = (outerR + innerR) / 2;
             ctx.fillStyle = '#fff';
-            ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+            ctx.font = scaledFont('700', 11, '"Plus Jakarta Sans", sans-serif');
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(pct + '%', cx + Math.cos(midAngle) * labelR, cy + Math.sin(midAngle) * labelR);
@@ -991,11 +991,11 @@ function drawFocusDonut(slices, total, versionLabel) {
 
     // Center text
     ctx.fillStyle = COLORS.textDark;
-    ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+    ctx.font = scaledFont('800', 20, '"Plus Jakarta Sans", sans-serif');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(Math.round(total) + 'h', cx, cy - 6);
-    ctx.font = '500 10px "Plus Jakarta Sans", "Noto Sans JP", sans-serif';
+    ctx.font = scaledFont('500', 10, '"Plus Jakarta Sans", "Noto Sans JP", sans-serif');
     ctx.fillStyle = COLORS.text;
     ctx.fillText(versionLabel + ' 実績', cx, cy + 12);
     ctx.textBaseline = 'alphabetic';

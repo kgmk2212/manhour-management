@@ -722,3 +722,16 @@ export function getWorkingDays(year, month) {
 
     return workingDays;
 }
+
+// --ui-scale を取得（canvas の font-size に使うため）
+export function getUiScale() {
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--ui-scale');
+    const n = parseFloat(v);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+// canvas 用フォント文字列を --ui-scale でスケールして生成
+export function scaledFont(weight, sizePx, family) {
+    const s = Math.round(sizePx * getUiScale());
+    return `${weight} ${s}px ${family}`;
+}

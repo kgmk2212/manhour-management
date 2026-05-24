@@ -43,7 +43,8 @@ import {
     generateMonthColorLegend,
     sortMembers,
     escapeHtml,
-    escapeForHandler
+    escapeForHandler,
+    scaledFont
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 import { pushAction } from './history.js';
@@ -2755,7 +2756,7 @@ function drawMemberComparisonChart(members, memberSummary) {
         // Y軸ラベル
         const value = maxValue - (maxValue / 5) * i;
         ctx.fillStyle = '#495057';
-        ctx.font = isMobile ? '10px sans-serif' : '12px sans-serif';
+        ctx.font = scaledFont('', isMobile ? 10 : 12, 'sans-serif');
         ctx.textAlign = 'right';
         ctx.fillText(value.toFixed(0) + 'h', padding.left - 10, y + 4);
     }
@@ -2786,7 +2787,7 @@ function drawMemberComparisonChart(members, memberSummary) {
 
         // X軸ラベル（担当者名）
         ctx.fillStyle = '#495057';
-        ctx.font = isMobile ? '9px sans-serif' : '11px sans-serif';
+        ctx.font = scaledFont('', isMobile ? 9 : 11, 'sans-serif');
         ctx.textAlign = 'center';
         ctx.save();
         ctx.translate(x, padding.top + chartHeight + 15);
@@ -2803,7 +2804,7 @@ function drawMemberComparisonChart(members, memberSummary) {
         ctx.fillStyle = '#4dabf7';
         ctx.fillRect(legendX, legendY, 12, 12);
         ctx.fillStyle = '#495057';
-        ctx.font = '10px sans-serif';
+        ctx.font = scaledFont('', 10, 'sans-serif');
         ctx.textAlign = 'left';
         ctx.fillText('見積', legendX + 18, legendY + 10);
 
@@ -2815,7 +2816,7 @@ function drawMemberComparisonChart(members, memberSummary) {
         ctx.fillStyle = '#4dabf7';
         ctx.fillRect(padding.left + chartWidth + 10, padding.top, 15, 15);
         ctx.fillStyle = '#495057';
-        ctx.font = '12px sans-serif';
+        ctx.font = scaledFont('', 12, 'sans-serif');
         ctx.textAlign = 'left';
         ctx.fillText('見積', padding.left + chartWidth + 30, padding.top + 12);
 
@@ -2827,7 +2828,7 @@ function drawMemberComparisonChart(members, memberSummary) {
 
     // タイトル
     ctx.fillStyle = '#495057';
-    ctx.font = isMobile ? 'bold 12px sans-serif' : 'bold 14px sans-serif';
+    ctx.font = scaledFont('bold', isMobile ? 12 : 14, 'sans-serif');
     ctx.textAlign = 'center';
     ctx.fillText('担当者別 見積 vs 実績 (時間)', width / 2, isMobile ? 18 : 20);
 }
@@ -2868,7 +2869,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     // 半径計算が負または非常に小さい場合は早期リターン
     if (calculatedRadius <= 0 || width <= 0 || height <= 0) {
         ctx.fillStyle = '#6c757d';
-        ctx.font = '12px sans-serif';
+        ctx.font = scaledFont('', 12, 'sans-serif');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('表示領域不足', Math.max(centerX, 50), Math.max(centerY, 50));
@@ -2888,7 +2889,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     const processes = Object.keys(processHours);
     if (processes.length === 0) {
         ctx.fillStyle = '#6c757d';
-        ctx.font = '14px sans-serif';
+        ctx.font = scaledFont('', 14, 'sans-serif');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('実績データなし', centerX, centerY);
@@ -2924,7 +2925,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     });
 
     ctx.fillStyle = '#495057';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = scaledFont('bold', 14, 'sans-serif');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(total.toFixed(1) + 'h', centerX, centerY);
@@ -2932,7 +2933,7 @@ function drawMemberDonutChart(member, index, filteredEstimates, filteredActuals)
     // 凡例
     let legendY = isMobile ? centerY + radius + 20 : height - (processes.length * 15) - 10;
     ctx.textAlign = 'left';
-    ctx.font = '10px sans-serif';
+    ctx.font = scaledFont('', 10, 'sans-serif');
     processes.forEach(process => {
         ctx.fillStyle = processColors[process] || '#adb5bd';
         ctx.fillRect(10, legendY, 8, 8);
