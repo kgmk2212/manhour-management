@@ -1488,6 +1488,10 @@ table td[rowspan] {
     margin-bottom: 28px;
 }
 
+.quick-input-form > .form-group {
+    margin-bottom: 0;
+}
+
 .quick-form {
     display: grid;
     gap: 8px;
