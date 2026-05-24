@@ -145,12 +145,14 @@ export class GanttChartRenderer {
     }
 
     /**
-     * 現在の --ui-scale 値を CSS 変数から取得。
-     * canvas 内描画は logical 座標、CSS 表示寸法は logical × uiScale で扱う。
+     * canvas ガント専用のスケール値を CSS 変数 --gantt-scale から取得。
+     * UI テキスト用の --ui-scale とは独立した値を使い、解像度に応じて
+     * より積極的にガント全体を拡縮する。
+     * canvas 内描画は logical 座標、CSS 表示寸法は logical × scale で扱う。
      */
     getUiScale() {
         const raw = getComputedStyle(document.documentElement)
-            .getPropertyValue('--ui-scale').trim();
+            .getPropertyValue('--gantt-scale').trim();
         const parsed = parseFloat(raw);
         return (parsed > 0 && isFinite(parsed)) ? parsed : 1;
     }
