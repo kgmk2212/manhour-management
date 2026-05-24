@@ -1452,6 +1452,16 @@ table td[rowspan] {
     padding: 20px;
     border-radius: var(--radius-md);
     margin-bottom: 20px;
+    max-width: calc(1200px * var(--ui-scale));
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#quick > h3,
+#quick > #todayActuals {
+    max-width: calc(1200px * var(--ui-scale));
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .quick-input .form-group > label:first-child {
