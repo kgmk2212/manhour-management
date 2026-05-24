@@ -76,9 +76,42 @@ function findSheetByAlias(workbook, key) {
     return null;
 }
 
+/**
+ * 作業月の単一値を 'YYYY-MM' に正規化する。
+ * Date オブジェクト / 'YYYY-MM' / 'YYYY/MM' / 'YYYY-MM-DD' / 'YYYY/MM/DD' / 'YYYY年M月' に対応。
+ * 認識できない値は '' を返す。
+ */
+function normalizeMonthToken(v) {
+    if (v == null) return '';
+    if (v instanceof Date && !isNaN(v.getTime())) {
+        const y = v.getFullYear();
+        const m = String(v.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+    }
+    const s = String(v).trim();
+    if (!s) return '';
+    let m = s.match(/^(\d{4})[-/年\.](\d{1,2})/);
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+    // 'Mon Jun 01 2026 ...' のような Date.toString() 形式
+    const dateLike = new Date(s);
+    if (!isNaN(dateLike.getTime())) {
+        const y = dateLike.getFullYear();
+        const mm = String(dateLike.getMonth() + 1).padStart(2, '0');
+        return `${y}-${mm}`;
+    }
+    return '';
+}
+
 function parseWorkMonths(value) {
     if (value == null || value === '') return [];
-    return String(value).split(',').map(s => s.trim()).filter(Boolean);
+    if (value instanceof Date) {
+        const t = normalizeMonthToken(value);
+        return t ? [t] : [];
+    }
+    return String(value)
+        .split(',')
+        .map(s => normalizeMonthToken(s))
+        .filter(Boolean);
 }
 
 function normalizeDate(value) {

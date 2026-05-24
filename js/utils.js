@@ -76,7 +76,82 @@ export function closeCustomAlert() {
  * @param {Object} e - 見積オブジェクト
  * @returns {Object} 正規化された見積オブジェクト
  */
-export function normalizeEstimate(e) {
+/**
+ * 任意の値（Date / 'YYYY-MM' / 'YYYY-MM-DD' / 'YYYY/M' / 'YYYY年M月' / Date.toString() 形式 など）
+ * を 'YYYY-MM' に正規化する。認識不能なら '' を返す。
+ * Excel 取り込みで Date オブジェクトを文字列化してしまった壊れたデータを救済するためにも使う。
+ */
+function toYYYYMM(v) {
+    if (v == null) return '';
+    if (v instanceof Date && !isNaN(v.getTime())) {
+        return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}`;
+    }
+    const s = String(v).trim();
+    if (!s) return '';
+    const m = s.match(/^(\d{4})[-/年\.](\d{1,2})/);
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+    return '';
+}
+
+/**
+ * 見積配列を in-place で月フォーマット正規化する。
+ * Excel 取り込みで Date オブジェクトを文字列化してしまった旧データ（workMonth='Mon Jun 01 2026...'）を
+ * 'YYYY-MM' に修復する。1 件でも変更があったら true を返す（saveData 判断用）。
+ */
+export function migrateEstimateMonthFormats(estimatesArr) {
+    if (!Array.isArray(estimatesArr)) return false;
+    let changed = false;
+    for (let i = 0; i < estimatesArr.length; i++) {
+        const e = estimatesArr[i];
+        if (!e) continue;
+        const cleaned = sanitizeMonthFields(e);
+        const oldWm = e.workMonth || '';
+        const oldWms = Array.isArray(e.workMonths) ? e.workMonths.join(',') : '';
+        const oldMh = e.monthlyHours ? JSON.stringify(e.monthlyHours) : '';
+        const newWms = cleaned.workMonths.join(',');
+        const newMh = JSON.stringify(cleaned.monthlyHours);
+        if (oldWm !== cleaned.workMonth || oldWms !== newWms || oldMh !== newMh) {
+            estimatesArr[i] = {
+                ...e,
+                workMonth: cleaned.workMonth,
+                workMonths: cleaned.workMonths,
+                monthlyHours: cleaned.monthlyHours
+            };
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+function sanitizeMonthFields(e) {
+    const wm = toYYYYMM(e.workMonth);
+    const wms = Array.isArray(e.workMonths)
+        ? e.workMonths.map(toYYYYMM).filter(Boolean)
+        : [];
+    const monthlyHours = {};
+    if (e.monthlyHours && typeof e.monthlyHours === 'object') {
+        for (const [k, v] of Object.entries(e.monthlyHours)) {
+            const nk = toYYYYMM(k);
+            if (nk) monthlyHours[nk] = v;
+        }
+    }
+    return { workMonth: wm, workMonths: wms, monthlyHours };
+}
+
+export function normalizeEstimate(rawE) {
+    // まず壊れた月フォーマットを救済（Date.toString() 等を YYYY-MM に変換）
+    const cleaned = sanitizeMonthFields(rawE);
+    const e = {
+        ...rawE,
+        workMonth: cleaned.workMonth || '',
+        workMonths: cleaned.workMonths,
+        monthlyHours: cleaned.monthlyHours
+    };
+
     // 新形式がすでにある場合（workMonthsが空でない場合のみ）
     if (e.workMonths && e.workMonths.length > 0 && e.monthlyHours && Object.keys(e.monthlyHours).length > 0) {
         return e;

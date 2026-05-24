@@ -31,7 +31,7 @@ import {
     setWorkDetailStyle, setModalDesignStyle
 } from './state.js';
 
-import { showAlert } from './utils.js';
+import { showAlert, migrateEstimateMonthFormats } from './utils.js';
 import { clearProgressCache } from './report.js';
 import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { loadHistory } from './history.js';
@@ -153,7 +153,16 @@ export function loadData() {
     const savedSettings = localStorage.getItem('manhour_settings');
 
     try {
-        if (savedEstimates) setEstimates(JSON.parse(savedEstimates));
+        if (savedEstimates) {
+            const parsed = JSON.parse(savedEstimates);
+            // Excel 取り込みで壊れた workMonth(Date.toString() 形式) を 'YYYY-MM' に修復
+            const migrated = migrateEstimateMonthFormats(parsed);
+            setEstimates(parsed);
+            if (migrated) {
+                console.log('[Migration] 見積データの作業月フォーマットを正規化しました');
+                try { localStorage.setItem('manhour_estimates', JSON.stringify(parsed)); } catch (_) {}
+            }
+        }
         if (savedActuals) setActuals(JSON.parse(savedActuals));
         if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
         if (savedVacations) setVacations(JSON.parse(savedVacations));
