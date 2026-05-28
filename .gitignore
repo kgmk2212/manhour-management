@@ -71,3 +71,19 @@ temp_*.js
 
 # Chat exports (会話ログのHTML/TXT出力)
 tools/exports/
+
+# --- Claude Code ---
+.claude/session-start-baseline.json
+.claude/session-edit-flag
+.claude/skill-session.jsonl
+.claude/skill-session-reported-offset
+.claude/reminder-shown
+.claude/workflow-state.json
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+.claude/worktrees/
+.claude/dot-claude/
+session-log/
+export/
+import/
+*.bundle
