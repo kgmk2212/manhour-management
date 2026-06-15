@@ -2,10 +2,7 @@
 // 仕様書: docs/superpowers/specs/2026-05-23-excel-append-import-design.md
 
 import { estimates, actuals } from './state.js';
-import { pushAction } from './history.js';
-
-// プレビュー中の状態（モーダルが閉じられたらクリア）
-let previewState = null;
+import { detectDiff, openMergePreview, s as mcS, normalizeDate as mcND, roundNum } from './merge-core.js';
 
 /**
  * 軽量 DOM 構築ヘルパー。
@@ -259,567 +256,112 @@ async function parseWorkbook(file) {
     };
 }
 
-// 比較用の文字列正規化: null/undefined は ''、文字列は trim
-function s(v) { return v == null ? '' : String(v).trim(); }
+// ============================================
+//  差分マージ共通基盤(merge-core)を使ったアダプタ
+//  旧: 独自プレビューモーダル/競合検出/undo は merge-core に統合済み
+// ============================================
 
-/**
- * 見積の競合を検出: (version, task, process, member) 一致
- * - 値（hours / workMonths）も完全一致 → duplicates（自動スキップ）
- * - 値が違う → conflicts（プレビューで上書き/スキップ判断）
- * - キー不一致 → newRows
- * @returns {{ newRows, conflicts: [{ existing, incoming }], duplicates: [{ existing, incoming }] }}
- */
-function detectEstimateConflicts(rows, existing) {
-    const newRows = [];
-    const conflicts = [];
-    const duplicates = [];
-    for (const incoming of rows) {
-        const match = existing.find(e =>
-            s(e.version) === s(incoming.version) &&
-            s(e.task) === s(incoming.task) &&
-            s(e.process) === s(incoming.process) &&
-            s(e.member) === s(incoming.member)
-        );
-        if (match) {
-            if (isEstimateValuesIdentical(match, incoming)) {
-                duplicates.push({ existing: match, incoming });
-            } else {
-                conflicts.push({ existing: match, incoming });
-            }
-        } else {
-            newRows.push(incoming);
-        }
-    }
-    return { newRows, conflicts, duplicates };
-}
-
-function isEstimateValuesIdentical(existing, incoming) {
-    if (Number(existing.hours) !== Number(incoming.hours)) return false;
-    const existingMonths = (existing.workMonths || (existing.workMonth ? [existing.workMonth] : []))
-        .slice().sort().join(',');
-    const incomingMonths = (incoming.workMonths || []).slice().sort().join(',');
-    return existingMonths === incomingMonths;
-}
-
-/**
- * 実績の重複検出: (date, member, version, task, process, hours) の完全一致のみ
- * @returns {{ newRows, duplicates: [{ existing, incoming }] }}
- */
-function detectActualConflicts(rows, existing) {
-    const newRows = [];
-    const duplicates = [];
-    // 既存側の消費追跡: 同一の (日付,担当,task,version,process,hours) が複数あっても
-    // greedy に 1 対 1 でマッチさせ、Excel 側に追加された分は newRows に積む
-    const consumed = new Set();
-    for (const incoming of rows) {
-        const exactIdx = existing.findIndex((a, idx) =>
-            !consumed.has(idx) &&
-            normalizeDate(a.date) === normalizeDate(incoming.date) &&
-            s(a.member) === s(incoming.member) &&
-            s(a.version) === s(incoming.version) &&
-            s(a.task) === s(incoming.task) &&
-            s(a.process) === s(incoming.process) &&
-            Number(a.hours) === Number(incoming.hours)
-        );
-        if (exactIdx >= 0) {
-            consumed.add(exactIdx);
-            duplicates.push({ existing: existing[exactIdx], incoming });
-        } else {
-            newRows.push(incoming);
-        }
-    }
-    return { newRows, duplicates };
-}
-
-/**
- * workMonths から workMonth(先頭月) と monthlyHours(均等割り) を導出する。
- * estimate-add.js の複数月モードと同じロジック。
- * workMonths が空なら workMonth='', monthlyHours={} を返す（その他工数など）。
- */
+// 作業月配列→先頭月＋均等割り（追加時の付随フィールド）
 function deriveMonthFields(workMonths, hours) {
-    if (!Array.isArray(workMonths) || workMonths.length === 0) {
-        return { workMonth: '', monthlyHours: {} };
-    }
+    if (!Array.isArray(workMonths) || workMonths.length === 0) return { workMonth: '', monthlyHours: {} };
     const monthlyHours = {};
     const per = hours / workMonths.length;
     for (const m of workMonths) monthlyHours[m] = per;
     return { workMonth: workMonths[0], monthlyHours };
 }
 
-function buildRowIdentity(row) {
-    return el('div', { class: 'excel-import-row-id' }, [
-        el('span', { class: 'version', text: row.version }),
-        el('span', { class: 'task', text: row.task }),
-        el('span', { class: 'process', text: row.process }),
-        el('span', { class: 'member', text: row.member })
-    ]);
+function genId() { return Date.now() + Math.random(); }
+
+function monthsKey(rec) {
+    const arr = Array.isArray(rec.workMonths) ? rec.workMonths : (rec.workMonth ? [rec.workMonth] : []);
+    return arr.slice().sort().join(',');
 }
 
-function buildCompareSide(label, hours, workMonths, sideClass, hoursChanged, monthsChanged) {
-    const monthsStr = Array.isArray(workMonths) ? workMonths.join(', ') : (workMonths || '');
-    return el('div', { class: `excel-import-compare-side ${sideClass}` }, [
-        el('div', { class: 'excel-import-compare-side-label', text: label }),
-        el('div', { class: `excel-import-field-row ${hoursChanged ? 'changed' : ''}` }, [
-            el('span', { class: 'name', text: '工数' }),
-            el('span', { class: 'val', text: `${hours} h` })
-        ]),
-        el('div', { class: `excel-import-field-row ${monthsChanged ? 'changed' : ''}` }, [
-            el('span', { class: 'name', text: '作業月' }),
-            el('span', { class: 'val', text: monthsStr || '—' })
-        ])
-    ]);
-}
+// パース結果 → merge-core のセクション配列（Excel は追加インポートのため removed は無効）
+function buildSections(result) {
+    const sections = [];
 
-function buildConflictCard(conflict, index, defaultDecision) {
-    const { existing, incoming } = conflict;
-    const hoursChanged = Number(existing.hours) !== Number(incoming.hours);
-    const existingMonths = (existing.workMonths || (existing.workMonth ? [existing.workMonth] : []));
-    const incomingMonths = incoming.workMonths || [];
-    const monthsChanged = existingMonths.join(',') !== incomingMonths.join(',');
-    const decision = defaultDecision || 'overwrite';
-
-    const card = el('div', {
-        class: 'excel-import-compare-card',
-        'data-state': decision,
-        'data-index': String(index)
-    }, [
-        el('div', { class: 'excel-import-compare-header' }, [
-            buildRowIdentity(incoming),
-            buildChoiceGroup(`excelConflict_${index}`, decision, [
-                { value: 'overwrite', label: '上書き', className: 'is-overwrite' },
-                { value: 'skip', label: 'スキップ', className: 'is-skip' }
-            ])
-        ]),
-        el('div', { class: 'excel-import-compare-body' }, [
-            buildCompareSide('既存', existing.hours, existingMonths, 'existing', hoursChanged, monthsChanged),
-            el('div', { class: 'excel-import-compare-arrow', text: '→' }),
-            buildCompareSide('読み込み', incoming.hours, incomingMonths, 'incoming', hoursChanged, monthsChanged)
-        ])
-    ]);
-    return card;
-}
-
-function buildChoiceGroup(name, currentValue, options) {
-    const group = el('div', { class: 'excel-import-choice-group' });
-    for (const opt of options) {
-        const id = `${name}_${opt.value}`;
-        const input = el('input', { type: 'radio', name, id, value: opt.value });
-        if (currentValue === opt.value) input.checked = true;
-        const label = el('label', { htmlFor: id, class: opt.className || '', text: opt.label });
-        group.appendChild(input);
-        group.appendChild(label);
-    }
-    return group;
-}
-
-function buildSheetChip(kind, name, icon, counts) {
-    const checkbox = el('input', { type: 'checkbox', 'data-sheet-checkbox': kind });
-    checkbox.checked = true;
-
-    const tags = el('div', { class: 'excel-import-sheet-chip-counts' }, [
-        el('span', { class: 'excel-import-tag-add', text: `+${counts.newCount} 追加` })
-    ]);
-    if (counts.conflictCount > 0) {
-        tags.appendChild(el('span', { class: 'excel-import-tag-conflict', text: `⚠ 競合 ${counts.conflictCount} 件` }));
-    }
-    if (counts.duplicateCount > 0) {
-        tags.appendChild(el('span', { class: 'excel-import-tag-skip', text: `重複スキップ ${counts.duplicateCount} 件` }));
-    }
-    if (counts.invalidCount > 0) {
-        tags.appendChild(el('span', { class: 'excel-import-tag-skip', text: `⚠ 無効 ${counts.invalidCount} 件` }));
-    }
-
-    return el('label', { class: 'excel-import-sheet-chip', 'data-sheet': kind }, [
-        checkbox,
-        el('div', { class: 'excel-import-sheet-chip-icon', text: icon }),
-        el('div', { class: 'excel-import-sheet-chip-body' }, [
-            el('div', { class: 'excel-import-sheet-chip-name', text: name }),
-            tags
-        ])
-    ]);
-}
-
-function buildWarnings() {
-    if (!previewState) return null;
-    const blocks = [];
-
-    if (previewState.parseErrors.length > 0) {
-        const ul = el('ul', { class: 'excel-import-warning-list' });
-        for (const e of previewState.parseErrors) ul.appendChild(el('li', { text: e }));
-        blocks.push(el('div', {}, [
-            el('div', { class: 'excel-import-warning-title', text: 'パースに関する警告' }),
-            ul
-        ]));
-    }
-
-    const buildInvalidList = (label, invalids) => {
-        if (invalids.length === 0) return null;
-        const ul = el('ul', { class: 'excel-import-warning-list' });
-        for (const inv of invalids.slice(0, 5)) {
-            ul.appendChild(el('li', { text: `${inv.rowNum} 行目: ${inv.reason}` }));
-        }
-        if (invalids.length > 5) ul.appendChild(el('li', { text: `ほか ${invalids.length - 5} 件` }));
-        return el('div', {}, [
-            el('div', { class: 'excel-import-warning-title', text: `${label}: 取り込めない行が ${invalids.length} 件あります` }),
-            ul
-        ]);
+    const estSpec = {
+        keyOf: r => [mcS(r.version), mcS(r.task), mcS(r.process), mcS(r.member)].join('|'),
+        valueEq: (a, b) => roundNum(a.hours) === roundNum(b.hours) && monthsKey(a) === monthsKey(b),
+        emitChanged: true
     };
-    const est = buildInvalidList('見積シート', previewState.estimateInvalid);
-    const act = buildInvalidList('実績シート', previewState.actualInvalid);
-    if (est) blocks.push(est);
-    if (act) blocks.push(act);
-
-    if (blocks.length === 0) return null;
-    return el('div', { class: 'excel-import-warning' }, [
-        el('div', { text: '⚠' }),
-        el('div', { class: 'excel-import-warning-body' }, blocks)
-    ]);
-}
-
-function buildConflictSection() {
-    if (!previewState || previewState.estimateConflicts.length === 0 || !previewState.sheets.estimate) {
-        return null;
-    }
-    const wrap = document.createDocumentFragment();
-    wrap.appendChild(el('div', { class: 'excel-import-section-title', text: `見積シート: 競合 ${previewState.estimateConflicts.length} 件の処理を選択` }));
-
-    const bulkBar = el('div', { class: 'excel-import-bulk-bar' }, [
-        el('div', { class: 'excel-import-bulk-label', text: '⚡ 一括設定' }),
-        buildChoiceGroup('excelBulk', previewState.bulkMode, [
-            { value: 'overwrite', label: '全て上書き', className: 'is-overwrite' },
-            { value: 'skip', label: '全てスキップ', className: 'is-skip' },
-            { value: 'individual', label: '個別判断' }
-        ])
-    ]);
-    wrap.appendChild(bulkBar);
-
-    for (let i = 0; i < previewState.estimateConflicts.length; i++) {
-        wrap.appendChild(buildConflictCard(previewState.estimateConflicts[i], i, previewState.decisions[i]));
-    }
-    return wrap;
-}
-
-function computeSummary() {
-    if (!previewState) return { total: 0, add: 0, overwrite: 0, skip: 0, addDetail: '', skipDetail: '', totalDetail: '' };
-    const estOn = previewState.sheets.estimate;
-    const actOn = previewState.sheets.actual;
-    const estNew = estOn ? previewState.estimateNew.length : 0;
-    const actNew = actOn ? previewState.actualNew.length : 0;
-    let overwrite = 0, conflictSkip = 0;
-    if (estOn) {
-        for (const d of previewState.decisions) {
-            if (d === 'overwrite') overwrite++; else conflictSkip++;
-        }
-    }
-    const estDup = estOn ? previewState.estimateDuplicates.length : 0;
-    const actDup = actOn ? previewState.actualDuplicates.length : 0;
-    const add = estNew + actNew;
-    const total = add + overwrite;
-    const skip = conflictSkip + estDup + actDup;
-    return {
-        total, add, overwrite, skip,
-        addDetail: `見積 +${estNew} ・ 実績 +${actNew}`,
-        skipDetail: `競合 ${conflictSkip} ・ 完全重複 ${estDup + actDup}`,
-        totalDetail: `見積 ${estOn ? estNew + overwrite : 0} ・ 実績 ${actNew}`
-    };
-}
-
-function refreshSummaryUI() {
-    const s = computeSummary();
-    const summary = document.getElementById('excelImportSummary');
-    if (!summary) return;
-    summary.querySelector('[data-field="total"]').textContent = s.total;
-    summary.querySelector('[data-field="add"]').textContent = s.add;
-    summary.querySelector('[data-field="overwrite"]').textContent = s.overwrite;
-    summary.querySelector('[data-field="skip"]').textContent = s.skip;
-    summary.querySelector('[data-field="addDetail"]').textContent = s.addDetail;
-    summary.querySelector('[data-field="skipDetail"]').textContent = s.skipDetail;
-    summary.querySelector('[data-field="totalDetail"]').textContent = s.totalDetail;
-    const footerCount = document.getElementById('excelImportFooterCount');
-    if (footerCount) footerCount.textContent = s.total;
-    const confirmBtn = document.getElementById('btnConfirmExcelImport');
-    if (confirmBtn) {
-        confirmBtn.textContent = `取り込む（${s.total}件）`;
-        confirmBtn.disabled = s.total === 0;
-    }
-}
-
-function openPreviewModal(fileName, parseResult) {
-    const estConflict = detectEstimateConflicts(parseResult.estimateRows, estimates);
-    const actConflict = detectActualConflicts(parseResult.actualRows, actuals);
-
-    previewState = {
-        fileName,
-        estimateNew: estConflict.newRows,
-        estimateConflicts: estConflict.conflicts,
-        estimateDuplicates: estConflict.duplicates,
-        actualNew: actConflict.newRows,
-        actualDuplicates: actConflict.duplicates,
-        estimateInvalid: parseResult.estimateInvalid,
-        actualInvalid: parseResult.actualInvalid,
-        parseErrors: parseResult.errors,
-        sheets: {
-            estimate: parseResult.estimateRows.length > 0 || parseResult.estimateInvalid.length > 0,
-            actual: parseResult.actualRows.length > 0 || parseResult.actualInvalid.length > 0
-        },
-        bulkMode: 'overwrite',
-        decisions: estConflict.conflicts.map(() => 'overwrite')
-    };
-
-    document.getElementById('excelImportFileName').textContent = fileName;
-
-    // シートチップを構築
-    const sheetsEl = document.getElementById('excelImportSheets');
-    sheetsEl.textContent = '';
-    if (previewState.sheets.estimate) {
-        sheetsEl.appendChild(buildSheetChip('estimate', '見積シート', '📋', {
-            newCount: estConflict.newRows.length,
-            conflictCount: estConflict.conflicts.length,
-            duplicateCount: estConflict.duplicates.length,
-            invalidCount: parseResult.estimateInvalid.length
-        }));
-    }
-    if (previewState.sheets.actual) {
-        sheetsEl.appendChild(buildSheetChip('actual', '実績シート', '⏱', {
-            newCount: actConflict.newRows.length,
-            conflictCount: 0,
-            duplicateCount: actConflict.duplicates.length,
-            invalidCount: parseResult.actualInvalid.length
-        }));
-    }
-
-    // 競合プレビュー
-    const conflictEl = document.getElementById('excelImportConflictSection');
-    conflictEl.textContent = '';
-    const conflictFrag = buildConflictSection();
-    if (conflictFrag) conflictEl.appendChild(conflictFrag);
-
-    // 警告
-    const warnEl = document.getElementById('excelImportWarnings');
-    warnEl.textContent = '';
-    const warnNode = buildWarnings();
-    if (warnNode) {
-        warnEl.appendChild(warnNode);
-        warnEl.style.display = '';
-    } else {
-        warnEl.style.display = 'none';
-    }
-
-    refreshSummaryUI();
-    attachPreviewEventHandlers();
-    document.getElementById('excelImportPreviewModal').style.display = 'flex';
-}
-
-function closePreviewModal() {
-    document.getElementById('excelImportPreviewModal').style.display = 'none';
-    previewState = null;
-}
-
-function applyImport() {
-    if (!previewState) return;
-
-    const added = { estimates: [], actuals: [] };
-    const overwritten = [];
-
-    // 見積: チェック ON のみ
-    if (previewState.sheets.estimate) {
-        for (const row of previewState.estimateNew) {
-            const { workMonth, monthlyHours } = deriveMonthFields(row.workMonths, row.hours);
-            const newEst = {
-                id: Date.now() + Math.random(),
-                version: row.version,
-                task: row.task,
-                process: row.process,
-                member: row.member,
-                hours: row.hours,
-                workMonth,
-                workMonths: row.workMonths,
-                monthlyHours,
-                createdAt: new Date().toISOString()
-            };
-            estimates.push(newEst);
-            added.estimates.push(newEst);
-        }
-        for (let i = 0; i < previewState.estimateConflicts.length; i++) {
-            if (previewState.decisions[i] !== 'overwrite') continue;
-            const { existing, incoming } = previewState.estimateConflicts[i];
-            const idx = estimates.findIndex(e => e.id === existing.id);
-            if (idx === -1) continue;
-            const before = { ...estimates[idx] };
-            const { workMonth, monthlyHours } = deriveMonthFields(incoming.workMonths, incoming.hours);
-            estimates[idx] = {
-                ...existing,
-                hours: incoming.hours,
-                workMonth,
-                workMonths: incoming.workMonths,
-                monthlyHours
-            };
-            overwritten.push({ before, after: { ...estimates[idx] } });
-        }
-    }
-
-    // 実績: チェック ON のみ、追加のみ
-    if (previewState.sheets.actual) {
-        for (const row of previewState.actualNew) {
-            const newAct = {
-                id: Date.now() + Math.random(),
-                date: row.date,
-                version: row.version,
-                task: row.task,
-                process: row.process,
-                member: row.member,
-                hours: row.hours
-            };
-            actuals.push(newAct);
-            added.actuals.push(newAct);
-        }
-    }
-
-    // 保存
-    if (typeof window.saveData === 'function') window.saveData();
-
-    // history 登録（Task 8 で本実装される pushExcelImportAction を呼ぶ）
-    if (typeof window.pushExcelImportAction === 'function') {
-        window.pushExcelImportAction({ added, overwritten });
-    }
-
-    const total = added.estimates.length + added.actuals.length + overwritten.length;
-
-    closePreviewModal();
-    refreshAllViews();
-
-    if (typeof window.showAlert === 'function') {
-        window.showAlert(`${total} 件を取り込みました`, true);
-    } else {
-        alert(`${total} 件を取り込みました`);
-    }
-}
-
-function refreshAllViews() {
-    const fns = [
-        'updateMonthOptions', 'updateEstimateMonthOptions', 'updateEstimateVersionOptions',
-        'updateActualMonthOptions', 'updateMemberOptions', 'updateQuickTaskList',
-        'renderEstimateList', 'renderActualList', 'renderTodayActuals', 'updateReport',
-        'renderScheduleView'
-    ];
-    for (const name of fns) {
-        if (typeof window[name] === 'function') {
-            try { window[name](); } catch (e) { /* ignore */ }
-        }
-    }
-}
-
-function attachPreviewEventHandlers() {
-    const modal = document.getElementById('excelImportPreviewModal');
-
-    // 閉じるボタン
-    const closeBtn = document.getElementById('btnCloseExcelImportPreview');
-    if (closeBtn) closeBtn.onclick = closePreviewModal;
-    const cancelBtn = document.getElementById('btnCancelExcelImport');
-    if (cancelBtn) cancelBtn.onclick = closePreviewModal;
-
-    // Esc で閉じる
-    modal.onkeydown = (e) => { if (e.key === 'Escape') closePreviewModal(); };
-
-    // 一括トグル
-    modal.querySelectorAll('input[name="excelBulk"]').forEach(input => {
-        input.onchange = (e) => {
-            previewState.bulkMode = e.target.value;
-            if (e.target.value !== 'individual') {
-                for (let i = 0; i < previewState.decisions.length; i++) {
-                    previewState.decisions[i] = e.target.value;
-                }
-                modal.querySelectorAll('.excel-import-compare-card').forEach(card => {
-                    const idx = Number(card.dataset.index);
-                    card.dataset.state = previewState.decisions[idx];
-                    const rb = card.querySelector(`input[value="${previewState.decisions[idx]}"]`);
-                    if (rb) rb.checked = true;
-                });
+    const estDiff = detectDiff(result.estimateRows, estimates, estSpec);
+    estDiff.removed = [];
+    if (estDiff.added.length + estDiff.changed.length > 0) {
+        sections.push({
+            id: 'estimates', field: 'estimates', label: '見積', icon: '📋', kind: 'records', allowOverwrite: true,
+            keyFields: ['version', 'task', 'process', 'member'],
+            compareFields: [{ key: 'hours', label: '工数' }, { key: 'workMonths', label: '作業月' }],
+            diff: estDiff,
+            apply: {
+                add(rec) {
+                    const m = deriveMonthFields(rec.workMonths, rec.hours);
+                    const r = { ...rec, workMonth: m.workMonth, monthlyHours: m.monthlyHours, id: genId() };
+                    estimates.push(r);
+                    return r;
+                },
+                overwrite(existing, incoming) {
+                    const idx = estimates.findIndex(e => e.id === existing.id);
+                    if (idx < 0) return null;
+                    const before = { ...estimates[idx] };
+                    const m = deriveMonthFields(incoming.workMonths, incoming.hours);
+                    const after = { ...estimates[idx], hours: incoming.hours, workMonth: m.workMonth, workMonths: incoming.workMonths, monthlyHours: m.monthlyHours };
+                    estimates[idx] = after;
+                    return { before, after: { ...after } };
+                },
+                remove() { /* 追加インポートのため削除しない */ }
             }
-            refreshSummaryUI();
-        };
-    });
-
-    // 個別トグル
-    modal.querySelectorAll('.excel-import-compare-card').forEach(card => {
-        const idx = Number(card.dataset.index);
-        card.querySelectorAll(`input[name="excelConflict_${idx}"]`).forEach(input => {
-            input.onchange = (e) => {
-                previewState.decisions[idx] = e.target.value;
-                card.dataset.state = e.target.value;
-                if (previewState.bulkMode !== 'individual') {
-                    previewState.bulkMode = 'individual';
-                    const indRb = modal.querySelector('input[name="excelBulk"][value="individual"]');
-                    if (indRb) indRb.checked = true;
-                }
-                refreshSummaryUI();
-            };
         });
-    });
+    }
 
-    // シートチェックボックス
-    modal.querySelectorAll('input[data-sheet-checkbox]').forEach(input => {
-        input.onchange = (e) => {
-            const sheet = e.target.dataset.sheetCheckbox;
-            previewState.sheets[sheet] = e.target.checked;
-            const chip = e.target.closest('.excel-import-sheet-chip');
-            if (chip) chip.classList.toggle('disabled', !e.target.checked);
-            const conflictSection = document.getElementById('excelImportConflictSection');
-            if (sheet === 'estimate') {
-                conflictSection.style.display = e.target.checked ? '' : 'none';
+    const actSpec = {
+        keyOf: r => [mcND(r.date), mcS(r.member), mcS(r.version), mcS(r.task), mcS(r.process), roundNum(r.hours)].join('|'),
+        valueEq: () => true, emitChanged: false
+    };
+    const actDiff = detectDiff(result.actualRows, actuals, actSpec);
+    actDiff.removed = [];
+    if (actDiff.added.length > 0) {
+        sections.push({
+            id: 'actuals', field: 'actuals', label: '実績', icon: '⏱', kind: 'records', allowOverwrite: false,
+            keyFields: ['date', 'member', 'version', 'task', 'process'],
+            compareFields: [{ key: 'hours', label: '工数' }],
+            diff: actDiff,
+            apply: {
+                add(rec) { const r = { ...rec, id: genId() }; actuals.push(r); return r; },
+                overwrite() { return null; },
+                remove() { }
             }
-            refreshSummaryUI();
-        };
-    });
+        });
+    }
 
-    // 確定ボタン
-    const confirmBtn = document.getElementById('btnConfirmExcelImport');
-    if (confirmBtn) confirmBtn.onclick = applyImport;
-
-    modal.tabIndex = -1;
-    modal.focus();
+    return sections;
 }
 
 /**
- * Excel ファイル取り込みのエントリポイント
- * @param {File} file - ユーザーが選択した xlsx/xls ファイル
+ * Excel ファイル取り込みのエントリポイント（差分マージ UI を共有）
+ * @param {File} file - xlsx/xls ファイル
  */
 export async function handleExcelImport(file) {
+    let result;
     try {
-        const result = await parseWorkbook(file);
-        const fatal = result.errors.length > 0 &&
-                      result.estimateRows.length === 0 && result.actualRows.length === 0 &&
-                      result.estimateInvalid.length === 0 && result.actualInvalid.length === 0;
-        if (fatal) {
-            alert('Excel ファイルを確認してください\n\n' + result.errors.join('\n'));
-            return;
-        }
-        if (result.estimateRows.length === 0 && result.actualRows.length === 0 &&
-            result.estimateInvalid.length === 0 && result.actualInvalid.length === 0) {
-            alert('取り込めるデータがありません');
-            return;
-        }
-        openPreviewModal(file.name, result);
+        result = await parseWorkbook(file);
     } catch (err) {
         console.error('Excel パースエラー:', err);
-        alert('Excel ファイルの読み込みに失敗しました: ' + err.message);
+        (window.showAlert || alert)('Excel ファイルの読み込みに失敗しました: ' + err.message, false);
+        return;
     }
+    const fatal = result.errors.length > 0 && result.estimateRows.length === 0 && result.actualRows.length === 0;
+    if (fatal) {
+        (window.showAlert || alert)('Excel ファイルを確認してください\n\n' + result.errors.join('\n'), false);
+        return;
+    }
+    const sections = buildSections(result);
+    if (sections.length === 0) {
+        (window.showAlert || alert)('取り込める差分がありません（既存と重複、またはデータなし）', true);
+        return;
+    }
+    openMergePreview(sections, { fileName: file.name, sourceLabel: 'Excel' });
 }
 
-window.pushExcelImportAction = function(data) {
-    pushAction({
-        type: 'excel_import',
-        data: {
-            added: {
-                estimates: data.added.estimates.map(e => ({ ...e })),
-                actuals: data.added.actuals.map(a => ({ ...a }))
-            },
-            overwritten: data.overwritten.map(o => ({
-                before: { ...o.before },
-                after: { ...o.after }
-            }))
-        }
-    });
-};
-
-console.log('✅ モジュール excel-import.js loaded');
+console.log('✅ モジュール excel-import.js loaded (merge-core adapter)');
