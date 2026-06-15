@@ -244,25 +244,7 @@ function applyUndo(action) {
             }
         });
 
-    // --- Excel 追加読み込み ---
-    } else if (t === 'excel_import') {
-        const d = action.data;
-        if (d.added.estimates && d.added.estimates.length > 0) {
-            const ids = new Set(d.added.estimates.map(e => e.id));
-            State.estimates = State.estimates.filter(e => !ids.has(e.id));
-        }
-        if (d.added.actuals && d.added.actuals.length > 0) {
-            const ids = new Set(d.added.actuals.map(a => a.id));
-            State.setActuals(State.actuals.filter(a => !ids.has(a.id)));
-        }
-        if (d.overwritten && d.overwritten.length > 0) {
-            for (const ov of d.overwritten) {
-                const idx = State.estimates.findIndex(e => e.id === ov.before.id);
-                if (idx !== -1) State.estimates[idx] = { ...ov.before };
-            }
-        }
-
-    // --- バックアップ差分マージ ---
+    // --- バックアップ差分マージ（Excel追加読み込みもこの経路） ---
     } else if (t === 'data_merge') {
         const SETTERS = { estimates: 'setEstimates', actuals: 'setActuals', companyHolidays: 'setCompanyHolidays', vacations: 'setVacations', remainingEstimates: 'setRemainingEstimates', schedules: 'setSchedules' };
         const ents = (action.data && action.data.entities) || {};
@@ -353,23 +335,7 @@ function applyRedo(action) {
             else State.remainingEstimates.push({ ...ch.after });
         });
 
-    // --- Excel 追加読み込み ---
-    } else if (t === 'excel_import') {
-        const d = action.data;
-        if (d.added.estimates && d.added.estimates.length > 0) {
-            State.estimates.push(...d.added.estimates);
-        }
-        if (d.added.actuals && d.added.actuals.length > 0) {
-            State.actuals.push(...d.added.actuals);
-        }
-        if (d.overwritten && d.overwritten.length > 0) {
-            for (const ov of d.overwritten) {
-                const idx = State.estimates.findIndex(e => e.id === ov.before.id);
-                if (idx !== -1) State.estimates[idx] = { ...ov.after };
-            }
-        }
-
-    // --- バックアップ差分マージ ---
+    // --- バックアップ差分マージ（Excel追加読み込みもこの経路） ---
     } else if (t === 'data_merge') {
         const SETTERS = { estimates: 'setEstimates', actuals: 'setActuals', companyHolidays: 'setCompanyHolidays', vacations: 'setVacations', remainingEstimates: 'setRemainingEstimates', schedules: 'setSchedules' };
         const ents = (action.data && action.data.entities) || {};
@@ -577,6 +543,10 @@ function refreshUI(action) {
     if (t === 'remaining_edit' || t === 'remaining_bulk_edit') {
         if (typeof window.updateReport === 'function') window.updateReport();
         if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+    }
+    if (t === 'data_merge' || t === 'excel_import') {
+        // マージは複数エンティティに跨るため全体再描画
+        fullRefreshUI();
     }
 }
 
