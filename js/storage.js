@@ -7,6 +7,7 @@ import {
     actuals, setActuals,
     companyHolidays, setCompanyHolidays,
     vacations, setVacations,
+    nonProjectWork, setNonProjectWork, setNextNonProjectId,
     remainingEstimates, setRemainingEstimates,
     setNextCompanyHolidayId, setNextVacationId,
     showMonthColorsSetting, setShowMonthColorsSetting,
