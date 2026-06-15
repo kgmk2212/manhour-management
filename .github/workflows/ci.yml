@@ -1,10 +1,13 @@
-# レベル1 CI: 公開前の最小チェック（依存パッケージなし・Node 標準機能のみ）
+# CI: 公開前のチェック。「真っ白画面の公開」を PR / push の段階で弾く。
 #
-# 目的: 構文ミスや参照切れによる「真っ白画面の公開」を、PR の段階で弾く。
-# このプロジェクトは package.json を持たない方針のため、ESLint 等は使わず
-# Node の `node --check`（構文チェック）だけで完結させている。
+#   checks (レベル1): 依存パッケージなし・Node 標準機能のみ。
+#                     構文チェック(node --check) と index.html の参照実在チェック。
+#   lint   (レベル2): ESLint(no-undef 中心)。"構文は正しいが未定義参照" 型の事故
+#                     （例: storage.js が state.js に無い変数を参照して初期化が落ち
+#                     全画面が白紙化）を静的に検出する。開発用依存(eslint)を使う。
 #
-# レベル2・3 の拡張案は docs/CICD_ROADMAP.md を参照。
+# checks は依存ゼロを維持し、npm を使うのは lint ジョブだけに閉じている。
+# 拡張の全体像は docs/CICD_ROADMAP.md を参照。
 name: CI
 
 on:
@@ -12,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - experiment/ui-scaling
 
 permissions:
   contents: read
@@ -83,3 +87,23 @@ jobs:
             exit 1
           fi
           echo "参照切れなし"
+
+  # ESLint（レベル2）: "構文は正しいが未定義参照" 型を静的検出する。
+  # 既存の checks（依存ゼロ）とは分離し、開発用依存を使うのはこのジョブだけに閉じる。
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 依存インストール（eslint）
+        run: npm ci
+
+      - name: ESLint（no-undef 中心の静的検出）
+        run: npm run lint

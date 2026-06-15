@@ -1,0 +1,13 @@
+{
+  "name": "manhour-management",
+  "version": "1.0.0",
+  "description": "工数管理システム — アプリ本体はビルド不要の素の HTML/CSS/JS。この package.json は開発用 lint ツール(ESLint)の依存のみを管理し、配信物には影響しない。",
+  "private": true,
+  "scripts": {
+    "lint": "eslint \"js/**/*.js\""
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0",
+    "globals": "^16.0.0"
+  }
+}
