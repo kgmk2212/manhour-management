@@ -183,7 +183,7 @@ export function loadData() {
         }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
-        alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
+        showAlert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。', false);
         // データをリセット（オプション）
         // localStorage.clear();
     }
@@ -662,10 +662,10 @@ export function handleFileImport(event) {
         if (typeof window.handleExcelImport === 'function') {
             window.handleExcelImport(file);
         } else {
-            alert('対応していないファイル形式です。JSON ファイルを選択してください。');
+            showAlert('対応していないファイル形式です。JSON ファイルを選択してください。', false);
         }
     } else {
-        alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
+        showAlert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。', false);
     }
 
     event.target.value = '';
@@ -678,7 +678,7 @@ export async function exportToExcel() {
     try {
         XLSX = await import('../lib/xlsx.mjs');
     } catch {
-        alert('Excel出力ライブラリが読み込まれていません。');
+        showAlert('Excel出力ライブラリが読み込まれていません。', false);
         return;
     }
 
@@ -722,6 +722,6 @@ export async function exportToExcel() {
 
     } catch (error) {
         console.error('Excel出力エラー:', error);
-        alert('Excel出力中にエラーが発生しました: ' + error.message);
+        showAlert('Excel出力中にエラーが発生しました: ' + error.message, false);
     }
 }

@@ -1055,7 +1055,7 @@ export function addActualFromCalendar(member, date) {
 export function editActual(id) {
     const actual = actuals.find(a => a.id === id);
     if (!actual) {
-        alert('データが見つかりません');
+        showAlert('データが見つかりません', false);
         return;
     }
 
@@ -1185,7 +1185,7 @@ export function saveActualEdit() {
     // その他作業（version空）の場合、processは必須としない
     const isOtherWorkEdit = !version;
     if (!date || !task || (!isOtherWorkEdit && !process) || !member || !hours) {
-        alert('すべての項目を入力してください');
+        showAlert('すべての項目を入力してください', false);
         return;
     }
 

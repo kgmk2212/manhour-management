@@ -947,7 +947,7 @@ export function saveBulkRemaining() {
     closeBulkRemainingModal();
     if (typeof window.updateReport === 'function') window.updateReport();
 
-    alert(`${savedCount}件の見込残存時間を保存しました`);
+    if (typeof window.showAlert === 'function') window.showAlert(`${savedCount}件の見込残存時間を保存しました`, true);
 }
 
 // ============================================

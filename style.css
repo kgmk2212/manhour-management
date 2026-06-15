@@ -3521,6 +3521,7 @@ table tr[style*="1565c0"] th:first-child {
     color: var(--text-primary);
     line-height: 1.6;
     font-weight: 500;
+    white-space: pre-line;
 }
 
 .custom-alert-footer {
