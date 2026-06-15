@@ -82,7 +82,7 @@ function buildRecordDefs(counters) {
 
     return [
         {
-            id: 'actuals', field: 'actuals', label: '実績', icon: '⏱', kind: 'records', allowOverwrite: false,
+            id: 'actuals', field: 'actuals', label: '実績', kind: 'records', allowOverwrite: false,
             keyFields: ['date', 'member', 'version', 'task', 'process'],
             compareFields: [{ key: 'hours', label: '工数' }],
             spec: {
@@ -92,7 +92,7 @@ function buildRecordDefs(counters) {
             apply: makeApplier('actuals', [], genFloatId)
         },
         {
-            id: 'estimates', field: 'estimates', label: '見積', icon: '📋', kind: 'records', allowOverwrite: true,
+            id: 'estimates', field: 'estimates', label: '見積', kind: 'records', allowOverwrite: true,
             keyFields: ['version', 'task', 'process', 'member'],
             compareFields: [{ key: 'hours', label: '工数' }, { key: 'workMonths', label: '作業月' }],
             spec: {
@@ -103,7 +103,7 @@ function buildRecordDefs(counters) {
             apply: makeApplier('estimates', ['hours', 'workMonth', 'workMonths', 'monthlyHours'], genFloatId)
         },
         {
-            id: 'schedules', field: 'schedules', label: 'スケジュール', icon: '📅', kind: 'records', allowOverwrite: true,
+            id: 'schedules', field: 'schedules', label: 'スケジュール', kind: 'records', allowOverwrite: true,
             keyFields: ['version', 'task', 'process', 'member', 'startDate'],
             compareFields: [
                 { key: 'estimatedHours', label: '工数' }, { key: 'endDate', label: '終了日' },
@@ -119,7 +119,7 @@ function buildRecordDefs(counters) {
             apply: makeApplier('schedules', ['estimatedHours', 'endDate', 'status', 'note', 'updatedAt'], idSchedule)
         },
         {
-            id: 'companyHolidays', field: 'companyHolidays', label: '会社休日', icon: '🏖', kind: 'records', allowOverwrite: true,
+            id: 'companyHolidays', field: 'companyHolidays', label: '会社休日', kind: 'records', allowOverwrite: true,
             keyFields: ['name', 'startDate', 'endDate'],
             compareFields: [{ key: 'name', label: '名称' }],
             spec: {
@@ -129,7 +129,7 @@ function buildRecordDefs(counters) {
             apply: makeApplier('companyHolidays', ['name'], idHoliday)
         },
         {
-            id: 'vacations', field: 'vacations', label: '休暇', icon: '🌴', kind: 'records', allowOverwrite: true,
+            id: 'vacations', field: 'vacations', label: '休暇', kind: 'records', allowOverwrite: true,
             keyFields: ['member', 'date', 'vacationType'],
             compareFields: [{ key: 'hours', label: '時間' }],
             spec: {
@@ -139,7 +139,7 @@ function buildRecordDefs(counters) {
             apply: makeApplier('vacations', ['hours'], idVacation)
         },
         {
-            id: 'remainingEstimates', field: 'remainingEstimates', label: '残工数', icon: '📉', kind: 'records', allowOverwrite: true,
+            id: 'remainingEstimates', field: 'remainingEstimates', label: '見込残存時間', kind: 'records', allowOverwrite: true,
             keyFields: ['version', 'task', 'process'],
             compareFields: [
                 { key: 'remainingHours', label: '残工数' }, { key: 'member', label: '担当' }, { key: 'note', label: 'メモ' }
@@ -167,7 +167,7 @@ function buildToggleSections(data) {
     const out = [];
     if (data.taskColorMap && typeof data.taskColorMap === 'object' && Object.keys(data.taskColorMap).length > 0) {
         out.push({
-            id: 'taskColorMap', field: 'taskColorMap', label: 'タスク色マップ', icon: '🎨', kind: 'toggle', present: true,
+            id: 'taskColorMap', field: 'taskColorMap', label: 'タスクごとの表示色', kind: 'toggle', present: true,
             apply: {
                 toggle() {
                     const before = { ...State.taskColorMap };
@@ -180,7 +180,7 @@ function buildToggleSections(data) {
     }
     if (data.scheduleSettings && typeof data.scheduleSettings === 'object') {
         out.push({
-            id: 'scheduleSettings', field: 'scheduleSettings', label: 'スケジュール設定', icon: '⚙', kind: 'toggle', present: true,
+            id: 'scheduleSettings', field: 'scheduleSettings', label: 'スケジュール表示設定', kind: 'toggle', present: true,
             apply: {
                 toggle() {
                     const before = { ...State.scheduleSettings };
@@ -193,7 +193,7 @@ function buildToggleSections(data) {
     }
     if (data.llmAnalysisSettings && typeof data.llmAnalysisSettings === 'object') {
         out.push({
-            id: 'llmAnalysisSettings', field: 'llmAnalysisSettings', label: 'AI分析設定', icon: '🤖', kind: 'toggle', present: true,
+            id: 'llmAnalysisSettings', field: 'llmAnalysisSettings', label: 'AI分析の設定', kind: 'toggle', present: true,
             apply: {
                 toggle() {
                     const before = readJsonLS(LLM_SETTINGS_KEY);
@@ -213,7 +213,7 @@ function buildToggleSections(data) {
         });
         if (fresh.length > 0) {
             out.push({
-                id: 'llmAnalysisHistory', field: 'llmAnalysisHistory', label: 'AI分析履歴', icon: '🗂', kind: 'historyAppend',
+                id: 'llmAnalysisHistory', field: 'llmAnalysisHistory', label: 'AI分析の履歴', kind: 'historyAppend',
                 present: true, incomingNew: fresh.length,
                 apply: {
                     append() {

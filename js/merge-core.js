@@ -210,7 +210,7 @@ function buildSectionBody(section) {
         const cb = el('input', { type: 'checkbox', 'data-toggle-section': section.id });
         cb.checked = !!section.toggleOn;
         frag.appendChild(el('label', { class: 'excel-import-bulk-bar' }, [
-            cb, el('span', { class: 'excel-import-bulk-label', text: `${section.label} ${section.incomingNew} 件を追加マージ` })
+            cb, el('span', { class: 'excel-import-bulk-label', text: `${section.label} ${section.incomingNew} 件を追加で取り込む` })
         ]));
         return frag;
     }
@@ -221,7 +221,7 @@ function buildSectionBody(section) {
     if (section.allowOverwrite && d.changed.length > 0) {
         frag.appendChild(el('div', { class: 'excel-import-section-title', text: `変更 ${d.changed.length} 件の処理を選択` }));
         frag.appendChild(el('div', { class: 'excel-import-bulk-bar' }, [
-            el('div', { class: 'excel-import-bulk-label', text: '⚡ 一括設定' }),
+            el('div', { class: 'excel-import-bulk-label', text: '一括設定' }),
             buildChoiceGroup(`bulk_${section.id}`, section.bulk, [
                 { value: 'overwrite', label: '全て上書き', className: 'is-overwrite' },
                 { value: 'keep', label: '全て維持', className: 'is-skip' },
@@ -236,24 +236,24 @@ function buildSectionBody(section) {
     if (d.added.length > 0) {
         frag.appendChild(el('label', { class: 'excel-import-bulk-bar', 'data-added-bar': section.id }, [
             el('input', { type: 'checkbox', 'data-added-section': section.id, checked: section.addedOn }),
-            el('span', { class: 'excel-import-bulk-label', text: `＋ 追加 ${d.added.length} 件を取り込む` })
+            el('span', { class: 'excel-import-bulk-label', text: `追加する ${d.added.length} 件を取り込む` })
         ]));
         frag.appendChild(buildRecordListDetails(section, d.added, '追加'));
     }
     // removed: 件数＋一括（既定は保持）
     if (d.removed.length > 0) {
         frag.appendChild(el('div', { class: 'excel-import-bulk-bar' }, [
-            el('div', { class: 'excel-import-bulk-label', text: `− 現在のみ ${d.removed.length} 件` }),
+            el('div', { class: 'excel-import-bulk-label', text: `現在のデータにのみ存在 ${d.removed.length} 件（読み込むファイルには無い）` }),
             buildChoiceGroup(`rmv_${section.id}`, section.removedBulk, [
                 { value: 'keep', label: '保持', className: 'is-skip' },
                 { value: 'delete', label: '削除', className: 'is-overwrite' }
             ])
         ]));
-        frag.appendChild(buildRecordListDetails(section, d.removed, '現在のみ'));
+        frag.appendChild(buildRecordListDetails(section, d.removed, '現在のデータのみ'));
     }
     // unchanged: 件数のみ
     if (d.unchanged.length > 0) {
-        frag.appendChild(el('div', { class: 'excel-import-muted-note', text: `＝ 同一 ${d.unchanged.length} 件（変更なし）` }));
+        frag.appendChild(el('div', { class: 'excel-import-muted-note', text: `変更なし ${d.unchanged.length} 件` }));
     }
     return frag;
 }
@@ -264,10 +264,10 @@ function buildSectionChip(section) {
     const counts = el('div', { class: 'excel-import-sheet-chip-counts' });
     if (section.kind === 'records') {
         const d = section.diff;
-        if (d.added.length) counts.appendChild(el('span', { class: 'excel-import-tag-add', text: `+${d.added.length} 追加` }));
-        if (d.changed.length) counts.appendChild(el('span', { class: 'excel-import-tag-conflict', text: `~${d.changed.length} 変更` }));
-        if (d.removed.length) counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `-${d.removed.length} 現在のみ` }));
-        if (d.unchanged.length) counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `=${d.unchanged.length}` }));
+        if (d.added.length) counts.appendChild(el('span', { class: 'excel-import-tag-add', text: `追加 ${d.added.length}` }));
+        if (d.changed.length) counts.appendChild(el('span', { class: 'excel-import-tag-conflict', text: `変更 ${d.changed.length}` }));
+        if (d.removed.length) counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `現在のみ ${d.removed.length}` }));
+        if (d.unchanged.length) counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: `変更なし ${d.unchanged.length}` }));
         if (!d.added.length && !d.changed.length && !d.removed.length) {
             counts.appendChild(el('span', { class: 'excel-import-tag-skip', text: '差分なし' }));
         }
@@ -276,7 +276,6 @@ function buildSectionChip(section) {
     }
     return el('label', { class: `excel-import-sheet-chip ${section.on ? '' : 'disabled'}`, 'data-sheet': section.id }, [
         cb,
-        el('div', { class: 'excel-import-sheet-chip-icon', text: section.icon || '•' }),
         el('div', { class: 'excel-import-sheet-chip-body' }, [
             el('div', { class: 'excel-import-sheet-chip-name', text: section.label }),
             counts
@@ -366,7 +365,7 @@ export function openMergePreview(sections, opts = {}) {
     for (const sec of sections) {
         chips.appendChild(buildSectionChip(sec));
         const wrap = el('div', { class: 'merge-section-block', 'data-section-block': sec.id }, [
-            el('div', { class: 'excel-import-section-title', text: `${sec.icon || '•'} ${sec.label}` }),
+            el('div', { class: 'excel-import-section-title', text: sec.label }),
             el('div', { class: 'merge-section-content', 'data-section-content': sec.id }, [buildSectionBody(sec)])
         ]);
         if (!sec.on) wrap.style.display = 'none';
@@ -387,7 +386,6 @@ function getOrCreateModal() {
     root = el('div', { id: 'mergePreviewModal', class: 'modal excel-import-modal' }, [
         el('div', { class: 'modal-content excel-import-modal-content' }, [
             el('div', { class: 'modal-header excel-import-header' }, [
-                el('div', { class: 'excel-import-header-icon', text: '🔀' }),
                 el('div', { class: 'excel-import-header-body' }, [
                     el('h3', { class: 'excel-import-title', text: '取り込み内容の確認' }),
                     el('div', { class: 'excel-import-subtitle' }, [

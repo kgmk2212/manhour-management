@@ -290,7 +290,7 @@ function buildSections(result) {
     estDiff.removed = [];
     if (estDiff.added.length + estDiff.changed.length > 0) {
         sections.push({
-            id: 'estimates', field: 'estimates', label: '見積', icon: '📋', kind: 'records', allowOverwrite: true,
+            id: 'estimates', field: 'estimates', label: '見積', kind: 'records', allowOverwrite: true,
             keyFields: ['version', 'task', 'process', 'member'],
             compareFields: [{ key: 'hours', label: '工数' }, { key: 'workMonths', label: '作業月' }],
             diff: estDiff,
@@ -323,7 +323,7 @@ function buildSections(result) {
     actDiff.removed = [];
     if (actDiff.added.length > 0) {
         sections.push({
-            id: 'actuals', field: 'actuals', label: '実績', icon: '⏱', kind: 'records', allowOverwrite: false,
+            id: 'actuals', field: 'actuals', label: '実績', kind: 'records', allowOverwrite: false,
             keyFields: ['date', 'member', 'version', 'task', 'process'],
             compareFields: [{ key: 'hours', label: '工数' }],
             diff: actDiff,
