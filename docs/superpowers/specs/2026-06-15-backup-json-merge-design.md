@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |------|------|
 | 作成日 | 2026-06-15 |
-| ステータス | 設計レビュー中（実装前） |
+| ステータス | v1 実装済み（feature/backup-json-merge） |
 | ブランチ | `feature/backup-json-merge`（`experiment/ui-scaling` 起点） |
 | 関連実装（参照） | `origin/experiment/llm-analysis:js/excel-import.js`（既存 Excel 追加インポート） |
 | 関連設計書 | `docs/superpowers/specs/2026-05-23-excel-append-import-design.md`（Excel 版・参照元） |
@@ -452,3 +452,28 @@ pushAction({
 
 - 参照設計書 `2026-05-23-excel-append-import-design.md` の **§5.4 undo 形（`importExcel`/フラット）は実装と不一致**。本機能では実装側（ネスト→汎用 `data_merge`）を正とする。
 - Excel 版 `detectActualConflicts` の greedy 1-to-1 重複バグ（§12.2）は、本設計 §3.3 の正規化（NFKC・日付正規化・hours 丸め）で根治する方針。
+
+---
+
+## 13. 実装メモ（2026-06-15 v1）
+
+実装ブランチ `feature/backup-json-merge`。コミット: 設計書 → Excel復活 → merge-core → merge-json(レコード) → 設定系トグル → Excel統合 → レビュー修正。
+
+### 実装済み
+- レコード系6種（実績・見積・スケジュール・会社休日・休暇・残工数）の差分プレビュー＋マージ（changed は行単位、added は一括、removed は保持/削除の一括）。
+- 設定系トグル一括取込: `taskColorMap`（パレット整合ガード付き）/ `scheduleSettings` / `llmAnalysisSettings`。
+- `llmAnalysisHistory` は `meta.generated_at` で重複除外して追加マージ→`historyMax` で切詰。
+- マージ前 `autoBackup()` チェック（既定ON）、`data_merge` の undo/redo。
+- Excel 追加インポートを復活し、同一の `merge-core` プレビュー・差分エンジン・undo を共有（`excel-import.js` はパース＋アダプタに縮小）。
+
+### v1 未対応 / 既知の制限
+- **表示設定（`settings`: テーマ/レイアウト/各表示フラグ）の一括適用は未実装**。適用に多数の `setX`＋`applyTheme/applyLayoutSettings` 再現が必要で重いため v2 へ。差分一覧にも出さない。
+- `removed`（現在のみレコード）は**一括の保持/削除**のみ。行単位の個別選択は v2。
+- `scheduleSettings` の undo は固定スキーマ前提（取込側が未知の新規キーを導入した場合のみ完全復元されない端ケース）。
+- Excel パースの「無効行」警告 UI は merge-core 共有化に伴い簡略化（致命的エラーのみ通知）。
+
+### 検証
+- 差分エンジン純粋ロジック（`detectDiff`/`s`/`normalizeDate`/`roundNum`）の Node テスト 19 ケース全通過（greedy 1:1、打ち合わせの全角空白/null/日付time部の重複検出＝旧 Excel バグの根治、丸め誤差、日付正規化を含む）。
+- 全 JS モジュール `node --check` 構文検証。
+- 全 diff の独立レビュー（致命的バグなし。指摘の medium=undo後の再描画、low=デッドコードは修正済み）。
+- **未実施**: 実ブラウザでの手動スモーク（差分マージボタン→JSON選択→プレビュー→マージ→Undo の通し操作）は最終確認として推奨。
