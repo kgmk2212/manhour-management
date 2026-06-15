@@ -1,0 +1,85 @@
+# レベル1 CI: 公開前の最小チェック（依存パッケージなし・Node 標準機能のみ）
+#
+# 目的: 構文ミスや参照切れによる「真っ白画面の公開」を、PR の段階で弾く。
+# このプロジェクトは package.json を持たない方針のため、ESLint 等は使わず
+# Node の `node --check`（構文チェック）だけで完結させている。
+#
+# レベル2・3 の拡張案は docs/CICD_ROADMAP.md を参照。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# 同じ ref への新しい push が来たら、進行中の古い実行はキャンセルする
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # js/ 配下の自作 JS をすべて構文チェックする。
+      # ES Modules なので、CommonJS 誤判定を避けるため一時的に .mjs として検査する。
+      # （lib/ は外部同梱ライブラリのため対象外）
+      - name: JS 構文チェック
+        run: |
+          tmp="$(mktemp -d)"
+          fail=0
+          count=0
+          while IFS= read -r f; do
+            count=$((count + 1))
+            cp "$f" "$tmp/check.mjs"
+            if ! node --check "$tmp/check.mjs" 2> "$tmp/err"; then
+              echo "::error file=$f::構文エラー: $(head -1 "$tmp/err")"
+              fail=1
+            fi
+          done < <(find js -name '*.js')
+          rm -rf "$tmp"
+          echo "構文チェック: $count ファイル"
+          if [ "$fail" = "1" ]; then
+            echo "構文エラーが見つかりました。" >&2
+            exit 1
+          fi
+          echo "全ファイル OK"
+
+      # index.html がローカル参照する script/link のファイルが実在するか確認する。
+      # （http(s):// や // や #、data: で始まる外部参照は対象外）
+      - name: index.html 参照ファイルの実在チェック
+        run: |
+          fail=0
+          checked=0
+          while IFS= read -r ref; do
+            case "$ref" in
+              http://*|https://*|//*|"#"*|data:*|mailto:*) continue ;;
+            esac
+            # クエリ・アンカーを除去
+            path="${ref%%\?*}"
+            path="${path%%#*}"
+            [ -z "$path" ] && continue
+            checked=$((checked + 1))
+            if [ ! -f "$path" ]; then
+              echo "::error file=index.html::参照先が存在しません: $path"
+              fail=1
+            fi
+          done < <(grep -oE '(src|href)="[^"]+"' index.html | sed -E 's/^(src|href)="//; s/"$//' | sort -u)
+          echo "参照チェック: $checked 件"
+          if [ "$fail" = "1" ]; then
+            echo "参照切れが見つかりました。" >&2
+            exit 1
+          fi
+          echo "参照切れなし"
