@@ -249,6 +249,20 @@ function applyUndo(action) {
             }
         }
 
+    // --- バックアップ差分マージ ---
+    } else if (t === 'data_merge') {
+        const SETTERS = { estimates: 'setEstimates', actuals: 'setActuals', companyHolidays: 'setCompanyHolidays', vacations: 'setVacations', remainingEstimates: 'setRemainingEstimates', schedules: 'setSchedules' };
+        const ents = (action.data && action.data.entities) || {};
+        for (const [name, ch] of Object.entries(ents)) {
+            const setter = SETTERS[name];
+            if (!setter || typeof State[setter] !== 'function') continue;
+            let arr = State[name].slice();
+            if (ch.added && ch.added.length) { const ids = new Set(ch.added.map(r => r.id)); arr = arr.filter(r => !ids.has(r.id)); }
+            if (ch.overwritten) { for (const o of ch.overwritten) { const i = arr.findIndex(r => r.id === o.before.id); if (i !== -1) arr[i] = { ...o.before }; } }
+            if (ch.removed && ch.removed.length) { arr = arr.concat(ch.removed.map(r => ({ ...r }))); }
+            State[setter](arr);
+        }
+
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
         applyScheduleUndo(action);
@@ -338,6 +352,20 @@ function applyRedo(action) {
                 const idx = State.estimates.findIndex(e => e.id === ov.before.id);
                 if (idx !== -1) State.estimates[idx] = { ...ov.after };
             }
+        }
+
+    // --- バックアップ差分マージ ---
+    } else if (t === 'data_merge') {
+        const SETTERS = { estimates: 'setEstimates', actuals: 'setActuals', companyHolidays: 'setCompanyHolidays', vacations: 'setVacations', remainingEstimates: 'setRemainingEstimates', schedules: 'setSchedules' };
+        const ents = (action.data && action.data.entities) || {};
+        for (const [name, ch] of Object.entries(ents)) {
+            const setter = SETTERS[name];
+            if (!setter || typeof State[setter] !== 'function') continue;
+            let arr = State[name].slice();
+            if (ch.added && ch.added.length) { arr = arr.concat(ch.added.map(r => ({ ...r }))); }
+            if (ch.overwritten) { for (const o of ch.overwritten) { const i = arr.findIndex(r => r.id === o.after.id); if (i !== -1) arr[i] = { ...o.after }; } }
+            if (ch.removed && ch.removed.length) { const rid = new Set(ch.removed.map(r => r.id)); arr = arr.filter(r => !rid.has(r.id)); }
+            State[setter](arr);
         }
 
     // --- スケジュール ---

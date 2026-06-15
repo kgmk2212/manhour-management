@@ -135,6 +135,10 @@
                         復元
                     </button>
                 </div>
+                <button class="btn btn-sm" id="btnMergeBackup" style="width:100%;font-size: calc(15.5px * var(--ui-scale));margin-top:4px;" title="バックアップJSONを現在のデータと差分マージ">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+                    差分マージ
+                </button>
                 <button class="btn btn-sm" onclick="openHistoryModal()" style="width:100%;font-size: calc(15.5px * var(--ui-scale));margin-top:4px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     変更履歴
@@ -2008,6 +2012,7 @@
     </div><!-- /.app-layout -->
 
     <input type="file" id="fileInput" accept=".json,.xlsx,.xls" style="display: none;">
+    <input type="file" id="mergeFileInput" accept=".json" style="display: none;">
 
     <!-- 作業詳細モーダル -->
     <div id="workModal" class="modal">

@@ -117,6 +117,24 @@ export function initEventHandlers() {
         importBtn.addEventListener('click', importBackup);
     }
 
+    // バックアップJSON 差分マージ
+    const mergeBtn = document.getElementById('btnMergeBackup');
+    const mergeFileInput = document.getElementById('mergeFileInput');
+    if (mergeBtn && mergeFileInput) {
+        mergeBtn.addEventListener('click', () => mergeFileInput.click());
+        mergeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            import('./merge-json.js')
+                .then(m => m.handleBackupMerge(file))
+                .catch(err => {
+                    console.error('差分マージモジュールの読み込みに失敗:', err);
+                    if (typeof window.showAlert === 'function') window.showAlert('差分マージ機能の初期化に失敗しました', false);
+                });
+            e.target.value = '';
+        });
+    }
+
     // タブ切り替え
     // タブ切り替え（イベント委譲）
     function handleTabClick(e) {
