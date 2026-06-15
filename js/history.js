@@ -155,6 +155,19 @@ export function redoToAction(targetId) {
 // Undo/Redo の逆操作ロジック
 // ============================================
 
+// data_merge のトグル系（設定・AI履歴）を before/after の値へ復元
+function restoreMergeToggle(field, value) {
+    if (field === 'taskColorMap') State.setTaskColorMap(value || {});
+    else if (field === 'scheduleSettings') State.setScheduleSettings(value || {});
+    else if (field === 'llmAnalysisSettings') {
+        if (value == null) localStorage.removeItem('llmAnalysisSettings_v1');
+        else localStorage.setItem('llmAnalysisSettings_v1', JSON.stringify(value));
+    } else if (field === 'llmAnalysisHistory') {
+        if (value == null) localStorage.removeItem('llmAnalysisHistory_v1');
+        else localStorage.setItem('llmAnalysisHistory_v1', JSON.stringify(value));
+    }
+}
+
 function applyUndo(action) {
     const t = action.type;
 
@@ -262,6 +275,8 @@ function applyUndo(action) {
             if (ch.removed && ch.removed.length) { arr = arr.concat(ch.removed.map(r => ({ ...r }))); }
             State[setter](arr);
         }
+        const tg = (action.data && action.data.toggles) || {};
+        for (const [field, tv] of Object.entries(tg)) restoreMergeToggle(field, tv.before);
 
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
@@ -367,6 +382,8 @@ function applyRedo(action) {
             if (ch.removed && ch.removed.length) { const rid = new Set(ch.removed.map(r => r.id)); arr = arr.filter(r => !rid.has(r.id)); }
             State[setter](arr);
         }
+        const tg = (action.data && action.data.toggles) || {};
+        for (const [field, tv] of Object.entries(tg)) restoreMergeToggle(field, tv.after);
 
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {

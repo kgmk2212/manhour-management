@@ -535,7 +535,10 @@ function applyMerge() {
             const res = sec.apply.toggle();   // returns {field, before, after} or null
             if (res) toggles[res.field] = { before: res.before, after: res.after };
         } else if (sec.kind === 'historyAppend' && sec.toggleOn) {
-            if (typeof sec.apply.append === 'function') sec.apply.append();
+            if (typeof sec.apply.append === 'function') {
+                const res = sec.apply.append();
+                if (res && res.field) toggles[res.field] = { before: res.before, after: res.after };
+            }
         }
     }
 

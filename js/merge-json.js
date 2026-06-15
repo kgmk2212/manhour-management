@@ -6,6 +6,15 @@
 
 import * as State from './state.js';
 import { detectDiff, openMergePreview, s, normalizeDate, roundNum } from './merge-core.js';
+import { THEME_TASK_COLORS } from './constants.js';
+
+const LLM_HISTORY_KEY = 'llmAnalysisHistory_v1';
+const LLM_SETTINGS_KEY = 'llmAnalysisSettings_v1';
+const DEFAULT_HISTORY_MAX = 50;
+
+function readJsonLS(key) {
+    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch { return null; }
+}
 
 function alertMsg(msg, ok) {
     if (typeof window.showAlert === 'function') window.showAlert(msg, !!ok);
@@ -146,6 +155,84 @@ function buildRecordDefs(counters) {
     ];
 }
 
+// taskColorMap に現テーマパレット外の色が含まれるか（storage.js の復元ガードと同等）
+function taskColorMapHasInvalid(map) {
+    const allColors = new Set();
+    Object.values(THEME_TASK_COLORS).forEach(p => p.forEach(c => allColors.add(c)));
+    return Object.values(map || {}).some(c => !allColors.has(c));
+}
+
+// 設定系（単一オブジェクト）・AI 履歴のトグルセクションを生成
+function buildToggleSections(data) {
+    const out = [];
+    if (data.taskColorMap && typeof data.taskColorMap === 'object' && Object.keys(data.taskColorMap).length > 0) {
+        out.push({
+            id: 'taskColorMap', field: 'taskColorMap', label: 'タスク色マップ', icon: '🎨', kind: 'toggle', present: true,
+            apply: {
+                toggle() {
+                    const before = { ...State.taskColorMap };
+                    const after = taskColorMapHasInvalid(data.taskColorMap) ? {} : { ...data.taskColorMap };
+                    State.setTaskColorMap(after);
+                    return { field: 'taskColorMap', before, after };
+                }
+            }
+        });
+    }
+    if (data.scheduleSettings && typeof data.scheduleSettings === 'object') {
+        out.push({
+            id: 'scheduleSettings', field: 'scheduleSettings', label: 'スケジュール設定', icon: '⚙', kind: 'toggle', present: true,
+            apply: {
+                toggle() {
+                    const before = { ...State.scheduleSettings };
+                    const after = { ...State.scheduleSettings, ...data.scheduleSettings };
+                    State.setScheduleSettings(after);
+                    return { field: 'scheduleSettings', before, after };
+                }
+            }
+        });
+    }
+    if (data.llmAnalysisSettings && typeof data.llmAnalysisSettings === 'object') {
+        out.push({
+            id: 'llmAnalysisSettings', field: 'llmAnalysisSettings', label: 'AI分析設定', icon: '🤖', kind: 'toggle', present: true,
+            apply: {
+                toggle() {
+                    const before = readJsonLS(LLM_SETTINGS_KEY);
+                    const after = data.llmAnalysisSettings;
+                    localStorage.setItem(LLM_SETTINGS_KEY, JSON.stringify(after));
+                    return { field: 'llmAnalysisSettings', before, after };
+                }
+            }
+        });
+    }
+    if (Array.isArray(data.llmAnalysisHistory) && data.llmAnalysisHistory.length > 0) {
+        const current = readJsonLS(LLM_HISTORY_KEY) || [];
+        const curKeys = new Set(current.map(h => h && h.meta && h.meta.generated_at).filter(Boolean));
+        const fresh = data.llmAnalysisHistory.filter(h => {
+            const k = h && h.meta && h.meta.generated_at;
+            return k && !curKeys.has(k);
+        });
+        if (fresh.length > 0) {
+            out.push({
+                id: 'llmAnalysisHistory', field: 'llmAnalysisHistory', label: 'AI分析履歴', icon: '🗂', kind: 'historyAppend',
+                present: true, incomingNew: fresh.length,
+                apply: {
+                    append() {
+                        const before = readJsonLS(LLM_HISTORY_KEY) || [];
+                        const settings = readJsonLS(LLM_SETTINGS_KEY) || {};
+                        const max = Number(settings.historyMax) > 0 ? Number(settings.historyMax) : DEFAULT_HISTORY_MAX;
+                        let merged = before.concat(fresh);
+                        merged.sort((a, b) => String((b.meta && b.meta.generated_at) || '').localeCompare(String((a.meta && a.meta.generated_at) || '')));
+                        if (merged.length > max) merged = merged.slice(0, max);
+                        localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(merged));
+                        return { field: 'llmAnalysisHistory', before, after: merged };
+                    }
+                }
+            });
+        }
+    }
+    return out;
+}
+
 /**
  * バックアップ JSON ファイルを読み込み、差分マージのプレビューを開く。
  * @param {File} file
@@ -186,6 +273,9 @@ export async function handleBackupMerge(file) {
         if (diff.added.length + diff.changed.length + diff.removed.length === 0) continue;
         sections.push({ ...def, diff });
     }
+
+    // 設定系・AI 履歴（トグル一括）
+    sections.push(...buildToggleSections(data));
 
     if (sections.length === 0) {
         alertMsg('現在のデータとの差分はありませんでした（全データが一致）', true);
