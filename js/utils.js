@@ -50,6 +50,11 @@ export function showAlert(message, dismissible = false) {
     } else {
         modal.onclick = null;
     }
+
+    // OKボタンに初期フォーカス（Enterキーだけで閉じられるように）
+    // 入場アニメーション中でも確実にフォーカスするため次フレームで実行
+    const okBtn = document.getElementById('customAlertOkBtn');
+    if (okBtn) requestAnimationFrame(() => okBtn.focus());
 }
 
 // カスタムアラートを閉じる

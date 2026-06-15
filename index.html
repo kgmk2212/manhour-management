@@ -2690,7 +2690,7 @@
             <div class="custom-alert-body" id="customAlertMessage">
             </div>
             <div class="custom-alert-footer">
-                <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+                <button id="customAlertOkBtn" class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
             </div>
         </div>
     </div>
@@ -3265,6 +3265,21 @@
                         hideHoverBar();
                     });
                     updateMobileFilterBtn(true);
+                    // 選択中のセグメントボタンを表示領域にスクロール（showFixedBar と同等）
+                    setTimeout(function() {
+                        if (!hoverBar) return;
+                        hoverBar.querySelectorAll('.segment-buttons').forEach(function(container) {
+                            var btn = container.querySelector('button.active');
+                            if (btn) {
+                                var cRect = container.getBoundingClientRect();
+                                var bRect = btn.getBoundingClientRect();
+                                if (bRect.left < cRect.left || bRect.right > cRect.right) {
+                                    var scrollLeft = container.scrollLeft + (bRect.left - cRect.left) - (container.clientWidth / 2) + (bRect.width / 2);
+                                    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+                                }
+                            }
+                        });
+                    }, 50);
                 }
 
                 function hideHoverBar() {
