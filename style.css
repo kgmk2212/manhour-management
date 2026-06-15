@@ -8078,3 +8078,13 @@ li.drop-below {
 .merge-section-content { margin-top: 6px; }
 .excel-import-muted-note { color: var(--text-muted); font-size: 0.9em; padding: 6px 2px; }
 .excel-import-row-id .key-part { margin-right: 8px; color: var(--text-secondary); }
+
+/* 差分マージ: 追加/削除レコードの内容リスト */
+.merge-record-details { margin: 4px 0 10px; }
+.merge-record-summary { cursor: pointer; color: var(--text-secondary); font-size: 0.9em; padding: 4px 2px; user-select: none; }
+.merge-record-summary:hover { color: var(--text-primary); }
+.merge-record-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm, 6px); padding: 4px 8px; margin-top: 4px; background: var(--surface, rgba(0,0,0,0.02)); }
+.merge-compact-row { display: flex; gap: 12px; align-items: baseline; padding: 3px 2px; border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.05)); font-size: 0.88em; }
+.merge-compact-row:last-child { border-bottom: none; }
+.merge-compact-id { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+.merge-compact-val { color: var(--text-secondary); }

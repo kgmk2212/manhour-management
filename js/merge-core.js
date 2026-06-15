@@ -170,6 +170,31 @@ function buildConflictCard(section, index, pair, decision) {
 }
 
 // セクション本体（チップ ON 時に表示）
+// 1レコードを「キー識別 + 値フィールド」の1行で表示
+function buildCompactRow(section, rec) {
+    const idParts = (section.keyFields || []).map(f => s(rec[f]) || '—').join(' / ');
+    const vals = (section.compareFields || []).map(fld => `${fld.label} ${fmtField(fld, rec)}`).join(' ・ ');
+    return el('div', { class: 'merge-compact-row' }, [
+        el('span', { class: 'merge-compact-id', text: idParts || '(キーなし)' }),
+        vals ? el('span', { class: 'merge-compact-val', text: vals }) : null
+    ]);
+}
+
+// 追加/削除レコードの内容を折りたたみ(<details>)で一覧表示。件数が多い場合は先頭のみ
+function buildRecordListDetails(section, records, labelText) {
+    const det = el('details', { class: 'merge-record-details' });
+    if (records.length <= 5) det.open = true;
+    det.appendChild(el('summary', { class: 'merge-record-summary', text: `${labelText} ${records.length} 件の内容を表示` }));
+    const box = el('div', { class: 'merge-record-list' });
+    const MAX = 200;
+    records.slice(0, MAX).forEach(r => box.appendChild(buildCompactRow(section, r)));
+    if (records.length > MAX) {
+        box.appendChild(el('div', { class: 'excel-import-muted-note', text: `…ほか ${records.length - MAX} 件（全 ${records.length} 件中先頭 ${MAX} 件を表示）` }));
+    }
+    det.appendChild(box);
+    return det;
+}
+
 function buildSectionBody(section) {
     const frag = document.createDocumentFragment();
 
@@ -213,6 +238,7 @@ function buildSectionBody(section) {
             el('input', { type: 'checkbox', 'data-added-section': section.id, checked: section.addedOn }),
             el('span', { class: 'excel-import-bulk-label', text: `＋ 追加 ${d.added.length} 件を取り込む` })
         ]));
+        frag.appendChild(buildRecordListDetails(section, d.added, '追加'));
     }
     // removed: 件数＋一括（既定は保持）
     if (d.removed.length > 0) {
@@ -223,6 +249,7 @@ function buildSectionBody(section) {
                 { value: 'delete', label: '削除', className: 'is-overwrite' }
             ])
         ]));
+        frag.appendChild(buildRecordListDetails(section, d.removed, '現在のみ'));
     }
     // unchanged: 件数のみ
     if (d.unchanged.length > 0) {
