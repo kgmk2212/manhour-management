@@ -28,55 +28,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           path: main
 
       - name: Checkout experiment/sandbox branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/sandbox
           path: experiment-sandbox
         continue-on-error: true
 
       - name: Checkout experiment/redesign branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/redesign
           path: experiment-redesign
         continue-on-error: true
 
       - name: Checkout experiment/fixes branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/fixes
           path: experiment-fixes
         continue-on-error: true
 
       - name: Checkout experiment/analytics branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/analytics
           path: experiment-analytics
         continue-on-error: true
 
       - name: Checkout experiment/redesign-impl branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/redesign-impl
           path: experiment-redesign-impl
         continue-on-error: true
 
       - name: Checkout experiment/llm-analysis branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/llm-analysis
           path: experiment-llm-analysis
         continue-on-error: true
 
       - name: Checkout experiment/ui-scaling branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: experiment/ui-scaling
           path: experiment-ui-scaling
@@ -152,13 +152,13 @@ jobs:
           fi
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: 'deploy'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
