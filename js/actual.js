@@ -10,6 +10,8 @@ import {
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
+import { CALCULATIONS } from './constants.js';
+import { applyOtherWorkDefaults } from './other-work.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -1027,7 +1029,8 @@ export function addActualFromCalendar(member, date) {
     memberDisplay.style.display = 'block';
     memberDisplay.textContent = member;
 
-    document.getElementById('editActualHours').value = '8';
+    // デフォルト工数: その日に登録済みの実績を標準工数(8h)から引いた残り工数
+    document.getElementById('editActualHours').value = String(getRemainingDayHours(member, date));
     document.getElementById('editActualRemainingHours').value = '';
 
     const modalTitle = document.querySelector('#editActualModal .modal-header h3');
@@ -1297,6 +1300,22 @@ export function getPreviousActual(member, beforeDate) {
 }
 
 /**
+ * 指定担当者・日付に既に登録済みの実績工数を、1日の標準工数から引いた残り工数を返す
+ * 新規実績入力時のデフォルト工数として使用する（標準工数を超過している場合は0を返す）
+ * @param {string} member - 担当者名
+ * @param {string} date - 'YYYY-MM-DD' 形式の日付
+ * @returns {number} 残り工数（0以上、小数第2位まで丸め）
+ */
+export function getRemainingDayHours(member, date) {
+    const registeredHours = actuals
+        .filter(a => a.member === member && a.date === date)
+        .reduce((sum, a) => sum + (a.hours || 0), 0);
+    const remaining = CALCULATIONS.HOURS_PER_DAY - registeredHours;
+    if (remaining <= 0) return 0;
+    return Math.round(remaining * 100) / 100;
+}
+
+/**
  * 全担当者の中から指定日付より前の最新実績を取得
  */
 export function getLatestActualBeforeDate(beforeDate) {
@@ -1520,6 +1539,9 @@ export function openOtherWorkModalWithContext(member, date) {
         `その他作業を登録 - ${member} (${year}/${parseInt(month)}/${parseInt(day)})`;
 
     document.getElementById('otherWorkModal').style.display = 'flex';
+
+    // 直近のその他作業を引き継いでデフォルト値を設定する(タブ選択も内部で行う)
+    applyOtherWorkDefaults(member, date);
 }
 
 /**

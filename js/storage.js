@@ -105,6 +105,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
     localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
     localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
+    localStorage.setItem('manhour_nonProjectWork', JSON.stringify(nonProjectWork));
     localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
     // [GANTT-CHART] スケジュールデータ保存
     localStorage.setItem('manhour_schedules', JSON.stringify(schedules));
@@ -149,6 +150,7 @@ export function loadData() {
     const savedActuals = localStorage.getItem('manhour_actuals');
     const savedCompanyHolidays = localStorage.getItem('manhour_companyHolidays');
     const savedVacations = localStorage.getItem('manhour_vacations');
+    const savedNonProjectWork = localStorage.getItem('manhour_nonProjectWork');
     const savedRemainingEstimates = localStorage.getItem('manhour_remainingEstimates');
     const savedSettings = localStorage.getItem('manhour_settings');
 
@@ -157,6 +159,7 @@ export function loadData() {
         if (savedActuals) setActuals(JSON.parse(savedActuals));
         if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
         if (savedVacations) setVacations(JSON.parse(savedVacations));
+        if (savedNonProjectWork) setNonProjectWork(JSON.parse(savedNonProjectWork));
         if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
         // [GANTT-CHART] スケジュールデータ読み込み
         const savedSchedules = localStorage.getItem('manhour_schedules');
@@ -199,6 +202,12 @@ export function loadData() {
         const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
         if (ids.length > 0) {
             setNextVacationId(Math.max(...ids) + 1);
+        }
+    }
+    if (nonProjectWork.length > 0) {
+        const ids = nonProjectWork.map(n => n.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) {
+            setNextNonProjectId(Math.max(...ids) + 1);
         }
     }
 

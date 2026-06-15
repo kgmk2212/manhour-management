@@ -193,8 +193,8 @@ export function openOtherWorkModal() {
     }
 
     document.getElementById('otherWorkModal').style.display = 'flex';
-    // 打ち合わせタブをアクティブにする
-    switchOtherWorkTab('meeting');
+    // 直近のその他作業を引き継いでデフォルト値を設定する(タブ選択も内部で行う)
+    applyOtherWorkDefaults(null, null);
 }
 
 // その他作業モーダルを閉じる
@@ -226,6 +226,65 @@ export function switchOtherWorkTab(tab) {
         customTab.classList.add('active');
         meetingForm.style.display = 'none';
         customForm.style.display = 'block';
+    }
+}
+
+// ============================================
+// その他作業のデフォルト値(前回コピー)
+// ============================================
+
+/**
+ * その他作業(version/process が空の実績)の中から、直近の1件を返す。
+ * 通常実績の getPreviousActual と同じソート思想(日付降順 → createdAt降順)。
+ * @param {string|null} member - 担当者で絞る場合に指定。null なら全担当者対象。
+ * @param {string|null} beforeDate - この日付(YYYY-MM-DD)より前に絞る場合に指定。null なら全期間。
+ * @returns {object|null} 直近のその他作業レコード。なければ null。
+ */
+export function getPreviousOtherWork(member, beforeDate) {
+    let list = State.actuals.filter(a => !a.version && !a.process && a.task);
+    if (member) list = list.filter(a => a.member === member);
+    if (beforeDate) list = list.filter(a => a.date < beforeDate);
+    if (list.length === 0) return null;
+
+    list.sort((a, b) => {
+        const dateDiff = b.date.localeCompare(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        const createdA = a.createdAt || '';
+        const createdB = b.createdAt || '';
+        return createdB.localeCompare(createdA);
+    });
+    return list[0];
+}
+
+/**
+ * その他作業モーダルを開いた際、直近のその他作業を引き継いでデフォルト値を設定する。
+ * 通常実績の「前回をコピー + 8h」に倣い、工数は常に 8h をデフォルトとする。
+ * 直近が「打ち合わせ」または履歴なしなら打ち合わせタブ、任意作業ならそのタブを初期表示する。
+ * @param {string|null} member - コンテキストの担当者(カレンダー経由)。null ならコンテキストなし。
+ * @param {string|null} beforeDate - コンテキストの日付。null なら全期間から直近を採用。
+ */
+export function applyOtherWorkDefaults(member, beforeDate) {
+    const DEFAULT_HOURS = 8;
+    const previous = getPreviousOtherWork(member, beforeDate);
+
+    const meetingHoursEl = document.getElementById('meetingHours');
+    const otherWorkNameEl = document.getElementById('otherWorkName');
+    const otherWorkMemberEl = document.getElementById('otherWorkMember');
+    const otherWorkHoursEl = document.getElementById('otherWorkHours');
+
+    // 両タブとも工数は 8h をデフォルトに(タブ切替後も空にならないように)
+    if (meetingHoursEl) meetingHoursEl.value = DEFAULT_HOURS;
+    if (otherWorkHoursEl) otherWorkHoursEl.value = DEFAULT_HOURS;
+
+    if (previous && previous.task !== '打ち合わせ') {
+        // 直近が任意作業 → 任意作業タブを初期表示し、作業名・担当を復元
+        if (otherWorkNameEl) otherWorkNameEl.value = previous.task;
+        if (otherWorkMemberEl) otherWorkMemberEl.value = member || previous.member;
+        switchOtherWorkTab('custom');
+    } else {
+        // 直近が打ち合わせ、または履歴なし → 打ち合わせタブを初期表示
+        if (member && otherWorkMemberEl) otherWorkMemberEl.value = member;
+        switchOtherWorkTab('meeting');
     }
 }
 
