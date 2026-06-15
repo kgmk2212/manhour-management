@@ -8049,3 +8049,12 @@ li.drop-below {
 .excel-import-footer-info { font-size: 13px; color: var(--text-secondary); }
 .excel-import-footer-info strong { color: var(--text-primary); font-weight: 700; }
 .excel-import-footer-actions { display: flex; gap: 10px; }
+
+/* ============================================
+   バックアップ差分マージ（merge-core）追加スタイル
+   ============================================ */
+#mergePreviewModal .excel-import-big-summary { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+.merge-section-block { margin-top: 14px; }
+.merge-section-content { margin-top: 6px; }
+.excel-import-muted-note { color: var(--text-muted); font-size: 0.9em; padding: 6px 2px; }
+.excel-import-row-id .key-part { margin-right: 8px; color: var(--text-secondary); }
