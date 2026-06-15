@@ -2695,7 +2695,7 @@
             <div class="custom-alert-body" id="customAlertMessage">
             </div>
             <div class="custom-alert-footer">
-                <button class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+                <button id="customAlertOkBtn" class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
             </div>
         </div>
     </div>
@@ -3258,31 +3258,88 @@
                 // --- ホバーモード ---
                 var HOVER_ZONE = 40;
 
+                var hoverHideTimer = null;
+                function cancelHoverHide() {
+                    if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null; }
+                }
+                function scheduleHoverHide() {
+                    cancelHoverHide();
+                    hoverHideTimer = setTimeout(hideHoverBar, 220);
+                }
+
                 function showHoverBar(bar) {
-                    if (hoverBar && hoverSourceBar === bar) return;
+                    if (hoverBar && hoverSourceBar === bar) { cancelHoverHide(); return; }
                     hideHoverBar();
                     hoverBar = createBarElement(bar);
                     document.body.appendChild(hoverBar);
                     hoverSourceBar = bar;
                     syncBar(hoverBar, hoverSourceBar);
                     attachBarEvents(hoverBar, hoverSourceBar);
-                    hoverBar.addEventListener('mouseleave', function() {
-                        hideHoverBar();
-                    });
+                    // チカチカ防止: バーから出ても即座には消さず猶予を持たせ、戻れば維持する
+                    hoverBar.addEventListener('mouseenter', cancelHoverHide);
+                    hoverBar.addEventListener('mouseleave', scheduleHoverHide);
                     updateMobileFilterBtn(true);
+                    updateHoverHint();
+                    // 選択中のセグメントボタンを表示領域にスクロール（showFixedBar と同等）
+                    setTimeout(function() {
+                        if (!hoverBar) return;
+                        hoverBar.querySelectorAll('.segment-buttons').forEach(function(container) {
+                            var btn = container.querySelector('button.active');
+                            if (btn) {
+                                var cRect = container.getBoundingClientRect();
+                                var bRect = btn.getBoundingClientRect();
+                                if (bRect.left < cRect.left || bRect.right > cRect.right) {
+                                    var scrollLeft = container.scrollLeft + (bRect.left - cRect.left) - (container.clientWidth / 2) + (bRect.width / 2);
+                                    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+                                }
+                            }
+                        });
+                    }, 50);
                 }
 
                 function hideHoverBar() {
+                    cancelHoverHide();
                     if (hoverBar) { hoverBar.remove(); hoverBar = null; hoverSourceBar = null; }
                     updateMobileFilterBtn(false);
+                    updateHoverHint();
+                }
+
+                // --- ホバーモードの気づき導線: 上端インジケータ帯（案B） ---
+                var hoverHint = null;
+                function ensureHoverHint() {
+                    if (hoverHint) return hoverHint;
+                    hoverHint = document.createElement('div');
+                    hoverHint.className = 'smart-hover-hint';
+                    hoverHint.setAttribute('aria-hidden', 'true');
+                    document.body.appendChild(hoverHint);
+                    return hoverHint;
+                }
+                function updateHoverHint() {
+                    // hover モード以外・モバイル・バー表示中は出さない
+                    if (currentMode !== 'hover' || isMobile() || hoverBar) {
+                        if (hoverHint) hoverHint.style.display = 'none';
+                        return;
+                    }
+                    var bar = findBar();
+                    var show = !!(bar && (bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden()));
+                    if (!show) { if (hoverHint) hoverHint.style.display = 'none'; return; }
+                    ensureHoverHint();
+                    hoverHint.style.left = (mc ? mc.getBoundingClientRect().left : 0) + 'px';
+                    hoverHint.style.display = 'block';
                 }
 
                 document.addEventListener('mousemove', function(e) {
                     if (currentMode !== 'hover') return;
-                    if (hoverBar) return; // 既に表示中
                     var mcRect = mc ? mc.getBoundingClientRect() : { top: 0, left: 0, right: window.innerWidth };
                     var inMcX = e.clientX >= mcRect.left && e.clientX <= (mcRect.right || window.innerWidth);
                     var nearTop = e.clientY <= HOVER_ZONE;
+                    // 表示中: バー領域内または上端ゾーンにいる限り維持（境界をまたぐチカチカを防止）
+                    if (hoverBar) {
+                        var br = hoverBar.getBoundingClientRect();
+                        var inBar = e.clientX >= br.left && e.clientX <= br.right && e.clientY >= br.top - 4 && e.clientY <= br.bottom + 4;
+                        if (inBar || (nearTop && inMcX)) cancelHoverHide();
+                        return;
+                    }
                     if (nearTop && inMcX) {
                         var bar = findBar();
                         if (bar && (bar.getBoundingClientRect().bottom < 0 || isSegmentButtonsHidden())) {
@@ -3347,8 +3404,8 @@
 
                 // スクロール時にフィルタボタン表示状態を更新
                 function onScrollUpdateBtn() {
-                    if (!isMobile()) return;
-                    updateFilterBtnVisibility();
+                    if (isMobile()) { updateFilterBtnVisibility(); return; }
+                    updateHoverHint();
                 }
                 if (mc) mc.addEventListener('scroll', onScrollUpdateBtn, { passive: true });
                 window.addEventListener('scroll', onScrollUpdateBtn, { passive: true });

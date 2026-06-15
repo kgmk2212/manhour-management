@@ -9,6 +9,7 @@ import {
 } from './state.js';
 
 import { getCurrentMonthWorkingDays, renderEstimateList, updateWorkMonthOptions } from './estimate.js';
+import { showAlert } from './utils.js';
 
 // ============================================
 // 作業月選択モード
@@ -112,7 +113,7 @@ export function updateSelectedWorkHours() {
  */
 export function executeWorkMonthAssignment() {
     if (selectedEstimateIds.size === 0) {
-        alert('作業を選択してください');
+        showAlert('作業を選択してください', false);
         return;
     }
 
@@ -136,7 +137,7 @@ export function executeWorkMonthAssignment() {
     renderEstimateList();
     if (typeof window.updateReport === 'function') window.updateReport();
 
-    alert('作業月を割り当てました');
+    showAlert('作業月を割り当てました', true);
 }
 
 /**

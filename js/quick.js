@@ -202,7 +202,7 @@ export function quickAddActual() {
     const workDate = workDateInput ? workDateInput.value : '';
 
     if (!selectedQuickTask || !hours) {
-        alert('対応と実績工数を入力してください');
+        showAlert('対応と実績工数を入力してください', false);
         return;
     }
 
@@ -633,7 +633,7 @@ export function addQuickEstimate() {
     const taskName = document.getElementById('quickEstTask').value.trim();
 
     if (!version || !formName || !taskName) {
-        alert('必須項目を入力してください');
+        showAlert('必須項目を入力してください', false);
         return;
     }
 
@@ -652,7 +652,7 @@ export function addQuickEstimate() {
     }
 
     if (!startMonth) {
-        alert('作業月を選択してください');
+        showAlert('作業月を選択してください', false);
         return;
     }
 

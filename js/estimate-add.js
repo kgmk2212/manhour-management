@@ -295,9 +295,9 @@ function saveEditAllProcesses() {
     const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
     const taskName = document.getElementById('addEstTask').value.trim();
 
-    if (!version) { alert('版数を選択してください'); return; }
-    if (!formName) { alert('帳票名を入力してください'); return; }
-    if (!taskName) { alert('対応名を入力してください'); return; }
+    if (!version) { Utils.showAlert('版数を選択してください', false); return; }
+    if (!formName) { Utils.showAlert('帳票名を入力してください', false); return; }
+    if (!taskName) { Utils.showAlert('対応名を入力してください', false); return; }
 
     const newTask = `${formName}：${taskName}`;
 
@@ -1171,22 +1171,22 @@ function addOtherWorkEstimate() {
     const hours = parseFloat(document.getElementById('addEstOtherHours').value) || 0;
 
     if (!taskName) {
-        alert('作業名を入力してください');
+        Utils.showAlert('作業名を入力してください', false);
         return;
     }
 
     if (!memberValue) {
-        alert('担当者を選択してください');
+        Utils.showAlert('担当者を選択してください', false);
         return;
     }
 
     if (!workMonth) {
-        alert('作業月を選択してください');
+        Utils.showAlert('作業月を選択してください', false);
         return;
     }
 
     if (hours <= 0) {
-        alert('見積工数を入力してください');
+        Utils.showAlert('見積工数を入力してください', false);
         return;
     }
 
@@ -1194,7 +1194,7 @@ function addOtherWorkEstimate() {
     const members = memberValue === '__all__' ? getAllMembers() : [memberValue];
 
     if (members.length === 0) {
-        alert('登録対象の担当者がいません');
+        Utils.showAlert('登録対象の担当者がいません', false);
         return;
     }
 
@@ -1264,17 +1264,17 @@ function addNormalEstimate() {
     const formName = (formNameSelect.style.display !== 'none' ? formNameSelect.value : formNameInput.value).trim();
 
     if (!version || version === '新規追加') {
-        alert('版数を選択してください');
+        Utils.showAlert('版数を選択してください', false);
         return;
     }
 
     if (!formName) {
-        alert('帳票名を入力してください');
+        Utils.showAlert('帳票名を入力してください', false);
         return;
     }
 
     if (!taskName) {
-        alert('対応名を入力してください');
+        Utils.showAlert('対応名を入力してください', false);
         return;
     }
 
@@ -1282,7 +1282,7 @@ function addNormalEstimate() {
     const task = `${formName}：${taskName}`;
 
     if (!startMonth) {
-        alert('作業月を選択してください');
+        Utils.showAlert('作業月を選択してください', false);
         return;
     }
 

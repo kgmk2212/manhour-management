@@ -8,6 +8,7 @@
 import { summarizeFromAppState } from './llm-summarize.js';
 import { analyze as runAnalyze, probeOllama } from './llm-analyze.js';
 import { parsePartialJson } from './partial-json.js';
+import { showAlert } from './utils.js';
 
 const ANALYSIS_PATH = 'analysis/latest.json';
 const HISTORY_STORAGE_KEY = 'llmAnalysisHistory_v1';
@@ -311,7 +312,7 @@ function renderSettingsPanel() {
     exportBtn.addEventListener('click', () => {
         const history = loadHistory();
         if (history.length === 0) {
-            alert('エクスポートする履歴がありません');
+            showAlert('エクスポートする履歴がありません', false);
             return;
         }
         const blob = new Blob([JSON.stringify({

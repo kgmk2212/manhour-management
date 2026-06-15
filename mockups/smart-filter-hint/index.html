@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フィルタバー 気づきやすさ 3案比較 — 工数管理</title>
+<style>
+    /* ===== 現在の実装から複製した Quiet Depth パレット ===== */
+    :root {
+        --bg: #F7F6F3;
+        --surface: #FFFFFF;
+        --surface-elevated: #FAFAF9;
+        --border: #E7E5E0;
+        --border-light: #F0EEEA;
+        --text-primary: #1A1814;
+        --text-secondary: #6B6560;
+        --text-muted: #9C9690;
+        --accent: #2D5A27;
+        --accent-hover: #3A7232;
+        --accent-light: #EBF5EA;
+        --accent-secondary: #C4841D;
+        --transition: 0.15s ease;
+        --ui-scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN",
+            "Hiragino Sans", Meiryo, sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+    .sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 28px; }
+
+    .legend {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 36px;
+    }
+    .legend b { color: var(--text-primary); }
+    .legend code {
+        background: var(--surface-elevated);
+        border: 1px solid var(--border-light);
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: 12px;
+        color: var(--accent);
+    }
+
+    /* ===== 案カード ===== */
+    .case { margin-bottom: 44px; }
+    .case-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    .case-tag {
+        font-size: 12px; font-weight: 700; color: #fff; background: var(--accent);
+        border-radius: 5px; padding: 2px 9px; letter-spacing: 0.04em;
+    }
+    .case-title { font-size: 17px; font-weight: 600; margin: 0; }
+    .case-desc { color: var(--text-secondary); font-size: 13px; margin: 0 0 14px; }
+    .case-note { font-size: 12px; color: var(--text-muted); margin: 10px 2px 0; }
+    .case-note .good { color: var(--accent); font-weight: 600; }
+    .case-note .bad  { color: var(--accent-secondary); font-weight: 600; }
+
+    /* ===== デバイス枠（ブラウザ画面の縮小模型） ===== */
+    .device {
+        position: relative;
+        height: 440px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg);
+        box-shadow: 0 6px 22px rgba(26, 24, 20, 0.07);
+    }
+    .screen {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+    .screen::-webkit-scrollbar { width: 9px; }
+    .screen::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+    .page-head { padding: 22px 24px 6px; }
+    .page-title { font-size: 19px; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 12.5px; color: var(--text-secondary); margin: 2px 0 0; }
+
+    /* 通常のフィルタバー（スクロールで上に隠れる） = .filter-bar-sticky 相当 */
+    .filterbar {
+        position: relative;
+        background: var(--bg);
+        padding: 12px 24px;
+        margin: 12px 0;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    /* リスト（実績一覧 list 表示の模型） */
+    .list { padding: 0 24px 28px; }
+    .row {
+        display: flex; align-items: center; gap: 14px;
+        padding: 11px 4px;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 13.5px;
+    }
+    .row .date { width: 96px; color: var(--text-secondary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .row .who  { width: 64px; font-weight: 500; flex-shrink: 0; }
+    .row .task { flex: 1; color: var(--text-secondary); }
+    .row .hrs  { width: 56px; text-align: right; font-weight: 600; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .row.is-month-head {
+        font-weight: 700; color: var(--accent); font-size: 12px; letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border); padding-top: 16px; background: transparent;
+    }
+
+    /* フィールド（ラベル + select） */
+    .field { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .field > label { font-size: calc(13.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap; color: var(--text-primary); }
+    .field select {
+        padding: 4px 8px; font-size: calc(13.5px * var(--ui-scale));
+        border: 1px solid var(--border); border-radius: 6px;
+        background: var(--surface); color: var(--text-primary); font-family: inherit;
+    }
+
+    /* セグメントボタン = .segment-buttons 相当（現在の実装に忠実） */
+    .seg { display: inline-flex; gap: 0; overflow-x: auto; max-width: 460px; }
+    .seg::-webkit-scrollbar { height: 4px; }
+    .seg::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .seg button {
+        flex-shrink: 0; padding: 7px 14px; font-size: calc(13.5px * var(--ui-scale));
+        border: 1px solid var(--border); background: var(--surface); color: var(--text-primary);
+        cursor: pointer; transition: all var(--transition); font-weight: 500; font-family: inherit;
+        white-space: nowrap;
+    }
+    .seg button:first-child { border-radius: 6px 0 0 6px; }
+    .seg button:last-child { border-radius: 0 6px 6px 0; }
+    .seg button:not(:first-child) { margin-left: -1px; }
+    .seg button.active { background: var(--accent); color: #fff; border-color: var(--accent); z-index: 1; position: relative; }
+    .seg button:hover:not(.active) { background: var(--surface-elevated); border-color: var(--text-muted); }
+
+    /* ===== 展開バー = smart-sticky-bar 相当（デバイス上端に固定） ===== */
+    .sticky {
+        position: absolute; top: 0; left: 0; right: 0; z-index: 60;
+        background: var(--surface-elevated);
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: 0 4px 12px rgba(26, 24, 20, 0.08);
+        padding: 10px 16px;
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        transform: translateY(-100%);
+        transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        visibility: hidden;
+    }
+    .sticky.open { transform: translateY(0); visibility: visible; }
+
+    /* ===== ヒント共通 ===== */
+    .hint { display: none; }            /* フィルタが隠れたらJSで表示 */
+    .hint.show { display: block; }
+
+    /* --- 案A: 上端中央ハンドル --- */
+    .handle {
+        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        z-index: 55; cursor: pointer;
+        background: var(--surface-elevated);
+        border: 1px solid var(--border-light); border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 5px 16px 6px;
+        font-size: 12px; font-weight: 600; color: var(--text-secondary);
+        box-shadow: 0 3px 8px rgba(26, 24, 20, 0.08);
+        display: flex; align-items: center; gap: 6px;
+        transition: color var(--transition), padding var(--transition);
+    }
+    .handle:hover { color: var(--accent); }
+    .handle .chev { transition: transform var(--transition); }
+
+    /* --- 案B: 上端インジケータ帯 + 透明ホバー領域 --- */
+    .indicator {
+        position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 55;
+        background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+        animation: indPulse 2.4s ease-in-out infinite;
+        pointer-events: none;
+    }
+    @keyframes indPulse { 0%,100% { opacity: 0.45; } 50% { opacity: 1; } }
+    .ind-hit { position: absolute; top: 0; left: 0; right: 0; height: 16px; z-index: 56; cursor: pointer; }
+
+    /* --- 案C: 右上フローティングボタン --- */
+    .fab {
+        position: absolute; top: 14px; right: 16px; z-index: 55;
+        width: 42px; height: 42px; border-radius: 50%;
+        background: var(--accent); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 14px rgba(45, 90, 39, 0.32);
+        cursor: pointer; transition: transform var(--transition), background var(--transition);
+    }
+    .fab:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .fab.is-open { background: var(--text-secondary); }
+
+    .pill-hint {
+        position: absolute; z-index: 54; font-size: 11px; color: var(--text-muted);
+        background: var(--surface); border: 1px solid var(--border-light); border-radius: 20px;
+        padding: 3px 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>フィルタバーの「気づきやすさ」3案</h1>
+    <p class="sub">実績一覧で下にスクロールしてフィルタが画面外へ出た状態を再現しています。現在の <code>smart-sticky-bar</code> / <code>segment-buttons</code> / Quiet Depth 配色に忠実です。</p>
+
+    <div class="legend">
+        各デバイス枠の中を<b>下にスクロール</b>すると、上部のフィルタが隠れて<b>ヒントUI</b>が現れます。
+        ヒントに<b>マウスを乗せる</b>（案Cは<b>クリック</b>）と、現在の実装と同じフィルタバーが上端に降りてきます。
+        降りてきたバーでは <b>選択中の月（2026-06）が中央に来るよう自動スクロール</b>します（=今回直す挙動）。
+    </div>
+
+    <!-- ===== 案A ===== -->
+    <div class="case">
+        <div class="case-head">
+            <span class="case-tag">案A</span>
+            <h2 class="case-title">上端に控えめなハンドル</h2>
+        </div>
+        <p class="case-desc">画面上端の中央に小さなつまみを常時表示。「ここに何かある」が一目で分かる。クリックでもホバーでも開く。</p>
+        <div class="device" data-mode="a">
+            <div class="screen"></div>
+            <div class="hint handle">
+                <span class="chev">⌄</span><span>フィルター</span>
+            </div>
+            <div class="sticky"></div>
+        </div>
+        <p class="case-note">
+            <span class="good">長所</span> アフォーダンスが明確／タッチでも押せる／Quiet Depth に馴染む。
+            <span class="bad">短所</span> 常時表示なので最上部でもわずかに見える（スクロール時のみ表示にする調整は可能）。
+        </p>
+    </div>
+
+    <!-- ===== 案B（推し） ===== -->
+    <div class="case">
+        <div class="case-head">
+            <span class="case-tag">案B</span>
+            <h2 class="case-title">上端インジケータ帯 ＋ ホバー</h2>
+        </div>
+        <p class="case-desc">フィルタが隠れている間だけ、上端に細いアクセント帯をやわらかく明滅表示。帯の付近にホバーでバーが降りる。最小限の主張。</p>
+        <div class="device" data-mode="b">
+            <div class="screen"></div>
+            <div class="hint indicator"></div>
+            <div class="hint ind-hit"></div>
+            <div class="sticky"></div>
+        </div>
+        <p class="case-note">
+            <span class="good">長所</span> 画面を一切塞がない／明滅で視線を引ける／既存ホバー操作と地続き。
+            <span class="bad">短所</span> 帯が細いのでタッチ環境では狙いにくい（モバイルは別途 FAB 併用が安全）。
+        </p>
+    </div>
+
+    <!-- ===== 案C ===== -->
+    <div class="case">
+        <div class="case-head">
+            <span class="case-tag">案C</span>
+            <h2 class="case-title">右上フローティングボタン</h2>
+        </div>
+        <p class="case-desc">画面右上に小さなフィルタアイコン。クリックで開閉。モバイルの <code>mobileFilterBtn</code> をデスクトップにも展開したイメージ。</p>
+        <div class="device" data-mode="c">
+            <div class="screen"></div>
+            <div class="fab hint" title="フィルター">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </div>
+            <div class="sticky"></div>
+        </div>
+        <p class="case-note">
+            <span class="good">長所</span> 明確に目に入る／タッチで押しやすい／開閉が分かりやすい。
+            <span class="bad">短所</span> 常に前面に出るためコンテンツに重なる／やや主張が強い。
+        </p>
+    </div>
+</div>
+
+<script>
+    // ===== 現在の実装に忠実なフィルタ内容を生成 =====
+    var MONTHS = [];
+    (function () {
+        for (var y = 2025; y <= 2026; y++) {
+            for (var m = 1; m <= 12; m++) {
+                if (y === 2026 && m > 6) break;
+                MONTHS.push(y + '-' + String(m).padStart(2, '0'));
+            }
+        }
+    })();
+    var ACTIVE_MONTH = '2026-06';
+
+    function buildFilterInner() {
+        var monthBtns = '<button data-v="all">全期間</button>';
+        MONTHS.forEach(function (mm) {
+            monthBtns += '<button data-v="' + mm + '"' + (mm === ACTIVE_MONTH ? ' class="active"' : '') + '>' + mm + '</button>';
+        });
+        return '' +
+            '<div class="field"><label>表示モード:</label>' +
+            '<select><option>全担当者</option><option>担当者別</option></select></div>' +
+            '<div class="field"><label>表示形式:</label>' +
+            '<div class="seg"><button>カレンダー</button><button>グリッド</button>' +
+            '<button class="active">リスト</button><button>タイムライン</button></div></div>' +
+            '<div class="field"><label>表示期間:</label>' +
+            '<div class="seg months">' + monthBtns + '</div></div>';
+    }
+
+    var WHO = ['田中', '佐藤', '鈴木', '高橋', '渡辺'];
+    var TASKS = ['基本設計', '詳細設計', 'コーディング', '単体テスト', 'コードレビュー', '結合テスト', '仕様調整', 'ドキュメント整備'];
+    var DOW = ['日', '月', '火', '水', '木', '金', '土'];
+
+    function buildList() {
+        // 2026-06 を中心に、複数月のダミー実績（list 表示の模型）
+        var html = '';
+        var defs = [
+            { m: '2026-06', label: '2026年6月', days: 14 },
+            { m: '2026-05', label: '2026年5月', days: 10 },
+            { m: '2026-04', label: '2026年4月', days: 8 }
+        ];
+        defs.forEach(function (d) {
+            html += '<div class="row is-month-head"><div>' + d.label + '</div></div>';
+            for (var i = 0; i < d.days; i++) {
+                var day = d.days - i;
+                var dateStr = d.m + '-' + String(day).padStart(2, '0');
+                var dow = DOW[(day + 2) % 7];
+                var who = WHO[(i + day) % WHO.length];
+                var task = TASKS[(i * 2 + day) % TASKS.length];
+                var hrs = (5 + ((i + day) % 4) + ((day % 2) ? 0.5 : 0)).toFixed(1);
+                html += '<div class="row">' +
+                    '<div class="date">' + dateStr.slice(5) + '（' + dow + '）</div>' +
+                    '<div class="who">' + who + '</div>' +
+                    '<div class="task">' + task + '</div>' +
+                    '<div class="hrs">' + hrs + 'h</div></div>';
+            }
+        });
+        return html;
+    }
+
+    function buildScreen() {
+        return '' +
+            '<div class="page-head"><h1 class="page-title">実績一覧</h1>' +
+            '<p class="page-subtitle">日々の実績データをカレンダーまたはリスト形式で表示します</p></div>' +
+            '<div class="filterbar">' + buildFilterInner() + '</div>' +
+            '<div class="list">' + buildList() + '</div>';
+    }
+
+    // 展開バーで選択中の月を中央へスクロール（= showFixedBar の処理を再現 / 今回 showHoverBar に足す挙動）
+    function centerActiveMonth(stickyEl) {
+        var segs = stickyEl.querySelectorAll('.seg');
+        segs.forEach(function (seg) {
+            var act = seg.querySelector('button.active');
+            if (!act) return;
+            var cRect = seg.getBoundingClientRect();
+            var bRect = act.getBoundingClientRect();
+            if (bRect.left < cRect.left || bRect.right > cRect.right) {
+                var sl = seg.scrollLeft + (bRect.left - cRect.left) - (seg.clientWidth / 2) + (bRect.width / 2);
+                seg.scrollLeft = Math.max(0, sl);
+            }
+        });
+    }
+
+    // ===== 各デバイスのセットアップ =====
+    document.querySelectorAll('.device').forEach(function (device) {
+        var mode = device.dataset.mode;
+        var screen = device.querySelector('.screen');
+        var sticky = device.querySelector('.sticky');
+        screen.innerHTML = buildScreen();
+        sticky.innerHTML = buildFilterInner();
+
+        var filterbar = screen.querySelector('.filterbar');
+        var hints = device.querySelectorAll('.hint');
+        var isOpen = false;
+
+        function showHints(show) {
+            hints.forEach(function (h) { h.classList.toggle('show', show); });
+        }
+        function open() {
+            if (isOpen) return;
+            isOpen = true;
+            sticky.classList.add('open');
+            showHints(false);
+            if (mode === 'c') device.querySelector('.fab').classList.add('is-open');
+            setTimeout(function () { centerActiveMonth(sticky); }, 30);
+        }
+        function close() {
+            if (!isOpen) return;
+            isOpen = false;
+            sticky.classList.remove('open');
+            if (mode === 'c') device.querySelector('.fab').classList.remove('is-open');
+            updateHintByScroll();
+        }
+        function isFilterHidden() {
+            // 通常フィルタバーの下端が画面外（上）に出たか
+            return (filterbar.offsetTop + filterbar.offsetHeight - screen.scrollTop) < 0;
+        }
+        function updateHintByScroll() {
+            if (isOpen) return;
+            showHints(isFilterHidden());
+        }
+
+        screen.addEventListener('scroll', function () {
+            if (!isOpen && !isFilterHidden()) { /* フィルタが見えている */ }
+            if (isFilterHidden()) {
+                updateHintByScroll();
+            } else {
+                showHints(false);
+                if (isOpen) close();
+            }
+        }, { passive: true });
+
+        // バーから外れたら閉じる（案A/B：ホバー方式）
+        sticky.addEventListener('mouseleave', function () {
+            if (mode !== 'c') close();
+        });
+
+        if (mode === 'a') {
+            var handle = device.querySelector('.handle');
+            handle.addEventListener('mouseenter', open);
+            handle.addEventListener('click', open);
+        } else if (mode === 'b') {
+            var hit = device.querySelector('.ind-hit');
+            hit.addEventListener('mouseenter', open);
+            hit.addEventListener('click', open);
+        } else if (mode === 'c') {
+            var fab = device.querySelector('.fab');
+            fab.addEventListener('click', function () { isOpen ? close() : open(); });
+        }
+
+        // スクショ/検証用の制御API（実挙動はホバー/クリックで動作）
+        (window.__mock = window.__mock || {})[mode] = { open: open, close: close };
+
+        // 初期状態: 少し下へスクロールしてフィルタを隠し、ヒントが見える状態で提示
+        setTimeout(function () {
+            screen.scrollTop = filterbar.offsetTop + filterbar.offsetHeight + 40;
+            updateHintByScroll();
+        }, 60);
+    });
+</script>
+</body>
+</html>

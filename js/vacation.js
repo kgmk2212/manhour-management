@@ -21,12 +21,12 @@ export function addCompanyHoliday() {
     const endDate = document.getElementById('companyHolidayEndDate').value;
 
     if (!name || !startDate || !endDate) {
-        alert('全ての項目を入力してください');
+        showAlert('全ての項目を入力してください', false);
         return;
     }
 
     if (startDate > endDate) {
-        alert('終了日は開始日以降の日付を指定してください');
+        showAlert('終了日は開始日以降の日付を指定してください', false);
         return;
     }
 
@@ -130,12 +130,12 @@ export function addQuickVacation() {
     const hours = parseFloat(document.getElementById('quickVacationHours').value);
 
     if (!member || !date || !vacationType || !hours) {
-        alert('全ての項目を入力してください');
+        showAlert('全ての項目を入力してください', false);
         return;
     }
 
     if (hours <= 0 || hours > 8) {
-        alert('時間数は1～8の範囲で入力してください');
+        showAlert('時間数は1～8の範囲で入力してください', false);
         return;
     }
 
@@ -232,12 +232,12 @@ export function saveVacationFromModal() {
     const hours = parseFloat(document.getElementById('vacationModalHours').value);
 
     if (!member || !date || !vacationType || !hours) {
-        alert('全ての項目を入力してください');
+        showAlert('全ての項目を入力してください', false);
         return;
     }
 
     if (hours <= 0 || hours > 8) {
-        alert('時間数は1～8の範囲で入力してください');
+        showAlert('時間数は1～8の範囲で入力してください', false);
         return;
     }
 

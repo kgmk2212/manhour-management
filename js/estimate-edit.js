@@ -27,7 +27,7 @@ import { updateSchedule, calculateEndDate, showToast } from './schedule.js';
 export function editEstimate(id) {
     const estimate = estimates.find(e => e.id === id);
     if (!estimate) {
-        alert('データが見つかりません');
+        showAlert('データが見つかりません', false);
         return;
     }
 
@@ -150,12 +150,12 @@ export function saveEstimateEdit() {
     const process = isOther ? (originalEstimate.process || '') : document.getElementById('editEstimateProcess').value;
 
     if (!task || !member || !hours) {
-        alert('すべての項目を入力してください');
+        showAlert('すべての項目を入力してください', false);
         return;
     }
 
     if (!isOther && (!version || !process)) {
-        alert('版数と工程を入力してください');
+        showAlert('版数と工程を入力してください', false);
         return;
     }
 
@@ -181,12 +181,12 @@ export function saveEstimateEdit() {
         const method = document.querySelector('input[name="editSplitMethod"]:checked').value;
 
         if (!startMonth || !endMonth) {
-            alert('作業期間を正しく設定してください');
+            showAlert('作業期間を正しく設定してください', false);
             return;
         }
 
         if (startMonth > endMonth) {
-            alert('開始月は終了月より前にしてください');
+            showAlert('開始月は終了月より前にしてください', false);
             return;
         }
 
@@ -209,7 +209,7 @@ export function saveEstimateEdit() {
             });
 
             if (Math.abs(total - hours) > 0.01) {
-                alert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${hours}h)と一致しません`);
+                showAlert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${hours}h)と一致しません`, false);
                 return;
             }
         }
@@ -680,14 +680,14 @@ export function saveTaskEdit() {
     const taskName = document.getElementById('editTaskName').value.trim();
 
     if (!newVersion || !formName || !taskName) {
-        alert('すべての項目を入力してください');
+        showAlert('すべての項目を入力してください', false);
         return;
     }
 
     const newTaskName = `${formName}：${taskName}`;
 
     if (oldVersion === newVersion && oldTaskName === newTaskName) {
-        alert('版数と対応名が変更されていません');
+        showAlert('版数と対応名が変更されていません', false);
         return;
     }
 
@@ -753,9 +753,9 @@ export function saveTaskEdit() {
         if (scheduleUpdateCount > 0) {
             message += `\n${scheduleUpdateCount}件のスケジュールデータも変更しました`;
         }
-        alert(message);
+        showAlert(message, true);
     } else {
-        alert('変更対象のデータが見つかりませんでした');
+        showAlert('変更対象のデータが見つかりませんでした', false);
     }
 }
 

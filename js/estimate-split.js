@@ -25,7 +25,7 @@ import { renderEstimateList } from './estimate.js';
 export function openSplitEstimateModal(id) {
     const estimate = estimates.find(e => e.id === id);
     if (!estimate) {
-        alert('データが見つかりません');
+        showAlert('データが見つかりません', false);
         return;
     }
 
@@ -192,12 +192,12 @@ export function executeSplitEstimate() {
     const method = document.querySelector('input[name="splitMethodModal"]:checked').value;
 
     if (!startMonth || !endMonth || totalHours <= 0) {
-        alert('作業期間を正しく設定してください');
+        showAlert('作業期間を正しく設定してください', false);
         return;
     }
 
     if (startMonth > endMonth) {
-        alert('開始月は終了月より前にしてください');
+        showAlert('開始月は終了月より前にしてください', false);
         return;
     }
 
@@ -219,7 +219,7 @@ export function executeSplitEstimate() {
         });
 
         if (Math.abs(total - totalHours) > 0.01) {
-            alert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${totalHours}h)と一致しません`);
+            showAlert(`月別工数の合計(${total.toFixed(1)}h)が総工数(${totalHours}h)と一致しません`, false);
             return;
         }
     }

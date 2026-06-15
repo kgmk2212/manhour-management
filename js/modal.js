@@ -4,7 +4,7 @@
 
 import * as State from './state.js';
 import * as Estimate from './estimate.js';
-import { formatHours, escapeHtml } from './utils.js';
+import { formatHours, escapeHtml, showAlert } from './utils.js';
 import { pushAction } from './history.js';
 
 // ============================================
@@ -403,7 +403,7 @@ export function saveRemainingHoursFromModal() {
     const hours = parseFloat(document.getElementById('remainingHoursInput').value);
 
     if (isNaN(hours) || hours < 0) {
-        alert('正しい時間を入力してください');
+        showAlert('正しい時間を入力してください', false);
         return;
     }
 

@@ -3521,6 +3521,7 @@ table tr[style*="1565c0"] th:first-child {
     color: var(--text-primary);
     line-height: 1.6;
     font-weight: 500;
+    white-space: pre-line;
 }
 
 .custom-alert-footer {
@@ -5300,6 +5301,25 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 @keyframes smartStickySlideIn {
     from { transform: translateY(-100%); opacity: 0; }
     to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ホバーモードの気づき導線: 上端インジケータ帯（案B） */
+.smart-hover-hint {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 3px;
+    z-index: 119;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+    animation: smartHoverHintPulse 2.4s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes smartHoverHintPulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+}
+@media (max-width: 768px) {
+    .smart-hover-hint { display: none !important; }
 }
 
 /* Mobile: subtle emerge from behind header */

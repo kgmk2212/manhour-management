@@ -7,6 +7,7 @@ import {
     actuals, setActuals,
     companyHolidays, setCompanyHolidays,
     vacations, setVacations,
+    nonProjectWork, setNonProjectWork, setNextNonProjectId,
     remainingEstimates, setRemainingEstimates,
     setNextCompanyHolidayId, setNextVacationId,
     showMonthColorsSetting, setShowMonthColorsSetting,
@@ -105,6 +106,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
     localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
     localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
+    localStorage.setItem('manhour_nonProjectWork', JSON.stringify(nonProjectWork));
     localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
     // [GANTT-CHART] スケジュールデータ保存
     localStorage.setItem('manhour_schedules', JSON.stringify(schedules));
@@ -149,6 +151,7 @@ export function loadData() {
     const savedActuals = localStorage.getItem('manhour_actuals');
     const savedCompanyHolidays = localStorage.getItem('manhour_companyHolidays');
     const savedVacations = localStorage.getItem('manhour_vacations');
+    const savedNonProjectWork = localStorage.getItem('manhour_nonProjectWork');
     const savedRemainingEstimates = localStorage.getItem('manhour_remainingEstimates');
     const savedSettings = localStorage.getItem('manhour_settings');
 
@@ -157,6 +160,7 @@ export function loadData() {
         if (savedActuals) setActuals(JSON.parse(savedActuals));
         if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
         if (savedVacations) setVacations(JSON.parse(savedVacations));
+        if (savedNonProjectWork) setNonProjectWork(JSON.parse(savedNonProjectWork));
         if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
         // [GANTT-CHART] スケジュールデータ読み込み
         const savedSchedules = localStorage.getItem('manhour_schedules');
@@ -183,7 +187,7 @@ export function loadData() {
         }
     } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
-        alert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。');
+        showAlert('保存されたデータの読み込みに失敗しました。データが破損している可能性があります。', false);
         // データをリセット（オプション）
         // localStorage.clear();
     }
@@ -199,6 +203,12 @@ export function loadData() {
         const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
         if (ids.length > 0) {
             setNextVacationId(Math.max(...ids) + 1);
+        }
+    }
+    if (nonProjectWork.length > 0) {
+        const ids = nonProjectWork.map(n => n.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) {
+            setNextNonProjectId(Math.max(...ids) + 1);
         }
     }
 
@@ -666,7 +676,7 @@ export function handleFileImport(event) {
                 showAlert('Excel 読み込み機能の初期化に失敗しました', false);
             });
     } else {
-        alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
+        showAlert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。', false);
     }
 
     event.target.value = '';
@@ -679,7 +689,7 @@ export async function exportToExcel() {
     try {
         XLSX = await import('../lib/xlsx.mjs');
     } catch {
-        alert('Excel出力ライブラリが読み込まれていません。');
+        showAlert('Excel出力ライブラリが読み込まれていません。', false);
         return;
     }
 
@@ -723,6 +733,6 @@ export async function exportToExcel() {
 
     } catch (error) {
         console.error('Excel出力エラー:', error);
-        alert('Excel出力中にエラーが発生しました: ' + error.message);
+        showAlert('Excel出力中にエラーが発生しました: ' + error.message, false);
     }
 }

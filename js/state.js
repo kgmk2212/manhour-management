@@ -11,10 +11,12 @@ export let actuals = [];
 export let companyHolidays = []; // 会社休日データ
 export let vacations = []; // 個人休暇データ
 export let remainingEstimates = []; // 見込残存時間データ
+export let nonProjectWork = []; // 非プロジェクト作業データ（storage で保存/読込、UI 本体は別途実装予定）
 
 // ID管理
 export let nextCompanyHolidayId = 1;
 export let nextVacationId = 1;
+export let nextNonProjectId = 1;
 
 // レポート分析機能の設定
 export let reportSettings = {
@@ -319,6 +321,16 @@ export function setNextCompanyHolidayId(value) {
 export function setNextVacationId(value) {
     nextVacationId = value;
     window.nextVacationId = value;
+}
+
+export function setNonProjectWork(value) {
+    nonProjectWork = value;
+    window.nonProjectWork = value;
+}
+
+export function setNextNonProjectId(value) {
+    nextNonProjectId = value;
+    window.nextNonProjectId = value;
 }
 
 export function setReportSettings(value) {
