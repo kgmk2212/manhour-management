@@ -658,12 +658,13 @@ export function handleFileImport(event) {
         };
         reader.readAsText(file);
     } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        // Excelファイルの処理（window経由で呼び出し）
-        if (typeof window.handleExcelImport === 'function') {
-            window.handleExcelImport(file);
-        } else {
-            alert('対応していないファイル形式です。JSON ファイルを選択してください。');
-        }
+        // Excelファイルの処理（excel-import.js を動的 import して追加読み込み）
+        import('./excel-import.js')
+            .then(m => m.handleExcelImport(file))
+            .catch(err => {
+                console.error('Excel インポートモジュールの読み込みに失敗:', err);
+                showAlert('Excel 読み込み機能の初期化に失敗しました', false);
+            });
     } else {
         alert('対応していないファイル形式です。JSON または Excel ファイルを選択してください。');
     }

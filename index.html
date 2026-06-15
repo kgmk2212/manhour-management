@@ -2910,6 +2910,62 @@
     </div>
 
     <!-- モジュールスクリプト -->
+    <!-- Excel 追加読み込み プレビューモーダル -->
+    <div id="excelImportPreviewModal" class="modal excel-import-modal">
+        <div class="modal-content excel-import-modal-content">
+            <div class="modal-header excel-import-header">
+                <div class="excel-import-header-icon">📥</div>
+                <div class="excel-import-header-body">
+                    <h3 class="excel-import-title">取り込み内容の確認</h3>
+                    <div class="excel-import-subtitle">
+                        取り込み元
+                        <span class="excel-import-filename" id="excelImportFileName"></span>
+                    </div>
+                </div>
+                <button class="modal-close" id="btnCloseExcelImportPreview">&times;</button>
+            </div>
+
+            <div class="modal-body excel-import-body">
+                <div class="excel-import-big-summary" id="excelImportSummary">
+                    <div class="excel-import-stat" data-kind="total">
+                        <div class="excel-import-stat-label">反映予定</div>
+                        <div class="excel-import-stat-value" data-field="total">0</div>
+                        <div class="excel-import-stat-detail" data-field="totalDetail">—</div>
+                    </div>
+                    <div class="excel-import-stat" data-kind="add">
+                        <div class="excel-import-stat-label">追加</div>
+                        <div class="excel-import-stat-value" data-field="add">0</div>
+                        <div class="excel-import-stat-detail" data-field="addDetail">—</div>
+                    </div>
+                    <div class="excel-import-stat" data-kind="overwrite">
+                        <div class="excel-import-stat-label">上書き</div>
+                        <div class="excel-import-stat-value" data-field="overwrite">0</div>
+                        <div class="excel-import-stat-detail">既存を更新</div>
+                    </div>
+                    <div class="excel-import-stat" data-kind="skip">
+                        <div class="excel-import-stat-label">スキップ</div>
+                        <div class="excel-import-stat-value" data-field="skip">0</div>
+                        <div class="excel-import-stat-detail" data-field="skipDetail">—</div>
+                    </div>
+                </div>
+
+                <div class="excel-import-sheets" id="excelImportSheets"></div>
+                <div id="excelImportConflictSection"></div>
+                <div id="excelImportWarnings" style="display: none;"></div>
+            </div>
+
+            <div class="modal-footer excel-import-footer">
+                <div class="excel-import-footer-info">
+                    この内容で <strong id="excelImportFooterCount">0</strong> 件を反映します
+                </div>
+                <div class="excel-import-footer-actions">
+                    <button class="btn" id="btnCancelExcelImport">キャンセル</button>
+                    <button class="btn btn-primary" id="btnConfirmExcelImport">取り込む</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="js/init.js?v=20260524-4"></script>
 
     <!-- フィルタバー（スマートスティッキー / ホバーモード） -->

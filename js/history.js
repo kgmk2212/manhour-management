@@ -231,6 +231,24 @@ function applyUndo(action) {
             }
         });
 
+    // --- Excel 追加読み込み ---
+    } else if (t === 'excel_import') {
+        const d = action.data;
+        if (d.added.estimates && d.added.estimates.length > 0) {
+            const ids = new Set(d.added.estimates.map(e => e.id));
+            State.estimates = State.estimates.filter(e => !ids.has(e.id));
+        }
+        if (d.added.actuals && d.added.actuals.length > 0) {
+            const ids = new Set(d.added.actuals.map(a => a.id));
+            State.setActuals(State.actuals.filter(a => !ids.has(a.id)));
+        }
+        if (d.overwritten && d.overwritten.length > 0) {
+            for (const ov of d.overwritten) {
+                const idx = State.estimates.findIndex(e => e.id === ov.before.id);
+                if (idx !== -1) State.estimates[idx] = { ...ov.before };
+            }
+        }
+
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
         applyScheduleUndo(action);
@@ -305,6 +323,22 @@ function applyRedo(action) {
             if (idx !== -1) State.remainingEstimates[idx] = { ...ch.after };
             else State.remainingEstimates.push({ ...ch.after });
         });
+
+    // --- Excel 追加読み込み ---
+    } else if (t === 'excel_import') {
+        const d = action.data;
+        if (d.added.estimates && d.added.estimates.length > 0) {
+            State.estimates.push(...d.added.estimates);
+        }
+        if (d.added.actuals && d.added.actuals.length > 0) {
+            State.actuals.push(...d.added.actuals);
+        }
+        if (d.overwritten && d.overwritten.length > 0) {
+            for (const ov of d.overwritten) {
+                const idx = State.estimates.findIndex(e => e.id === ov.before.id);
+                if (idx !== -1) State.estimates[idx] = { ...ov.after };
+            }
+        }
 
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
