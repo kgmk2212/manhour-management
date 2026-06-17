@@ -248,7 +248,10 @@ export async function handleBackupMerge(file) {
     const looksLikeBackup = data && typeof data === 'object' &&
         (Array.isArray(data.estimates) || Array.isArray(data.actuals) ||
          Array.isArray(data.schedules) || Array.isArray(data.companyHolidays) ||
-         Array.isArray(data.vacations) || Array.isArray(data.remainingEstimates));
+         Array.isArray(data.vacations) || Array.isArray(data.remainingEstimates) ||
+         // AI 分析の履歴/設定のみを含むエクスポート（ローカル LLM の無い環境への持ち込み用）も受理する
+         Array.isArray(data.llmAnalysisHistory) ||
+         (data.llmAnalysisSettings && typeof data.llmAnalysisSettings === 'object'));
     if (!looksLikeBackup) {
         alertMsg('バックアップ形式の JSON ではありません', false);
         return;
