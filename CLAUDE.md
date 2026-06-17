@@ -11,11 +11,14 @@
 
 | ブランチ | 用途 | 作業内容 |
 |----------|------|----------|
-| `main` | 安定版 | バグ修正、微調整、既存機能の改善 |
+| `experiment/ui-scaling` | **現行の正系開発ライン** | 機能開発・改善はここ。merge-core(差分/選択マージ)・CI・AI分析・Excel追加読み込み等の最新を含む。worktree: `manhour-ui-scaling` |
+| `main` | デプロイ起点 | 現状は `deploy: trigger Pages rebuild` の空コミット中心で、アプリ本体の開発実体は実験ライン側にある |
 | `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須） |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
+| `experiment/llm-analysis` | ui-scaling からの派生（2026-05-23〜） | Excel取り込みのデータ処理fix群。fixは ui-scaling に機能統合済みのため実質役目終了。worktree: `manhour-llm-analysis` |
 
 > **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
+> **注（2026-06）**: 現在アクティブに開発しているのは `experiment/ui-scaling`。詳細は memory の `project-branch-topology` を参照。退避タグ `backup/ui-scaling-before-resync-8366f0d` あり。
 
 ### Worktree構成
 
@@ -23,9 +26,14 @@
 
 | ディレクトリ | ブランチ | 用途 |
 |-------------|---------|------|
-| `manhour-management` | `main` | 安定版（メイン） |
+| `manhour-ui-scaling` | `experiment/ui-scaling` | **現行の正系開発ライン** |
+| `manhour-management` | `main` | デプロイ起点（メイン worktree） |
+| `manhour-llm-analysis` | `experiment/llm-analysis` | Excel取り込みfix派生（ui-scaling に統合済み） |
 | `manhour-redesign` | `experiment/redesign` | リデザイン実験 |
 | `manhour-experiment` | `experiment/sandbox` | 実験用 |
+| `manhour-impl` | `experiment/redesign-impl` | リデザイン実装 |
+| `manhour-analytics` | `experiment/analytics` | 分析系実験 |
+| `manhour-fixes` | `experiment/fixes` | 修正系実験 |
 
 ### 作業前の確認事項
 
@@ -38,10 +46,12 @@ git branch
 
 | ユーザーの依頼内容 | 作業ブランチ |
 |-------------------|--------------|
-| バグ修正、表示の微調整 | `main` |
-| 既存機能（見積・実績・レポート・スケジュール）の改善 | `main` |
+| バグ修正、表示の微調整 | `experiment/ui-scaling` |
+| 既存機能（見積・実績・レポート・スケジュール）の改善 | `experiment/ui-scaling` |
 | UI/UXのリデザイン | `experiment/redesign` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
+
+> **注（2026-06）**: 機能開発・改善は現行の正系 `experiment/ui-scaling` で行う（旧記載の `main` 起点から実態が移行済み）。`main` への取り込み方針はユーザー判断のため、マージ時は確認すること。
 
 **判断に迷う場合**: ユーザーに確認してください。
 
