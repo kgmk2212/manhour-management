@@ -315,10 +315,14 @@ function renderSettingsPanel() {
             showAlert('エクスポートする履歴がありません', false);
             return;
         }
+        // 差分マージ(バックアップJSON)互換のキーで出力する。
+        // ローカル LLM の無い環境では、このファイルを「バックアップ差分マージ」で取り込むと
+        // 見積・実績を上書きせずに分析履歴(と設定)だけを追加できる。
         const blob = new Blob([JSON.stringify({
             exportedAt: new Date().toISOString(),
             count: history.length,
-            history,
+            llmAnalysisHistory: history,
+            llmAnalysisSettings: loadSettings(),
         }, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
