@@ -915,11 +915,98 @@
     font-size: calc(15.5px * var(--ui-scale)); padding: 1px 6px; border-radius: 3px;
     background: var(--surface-sunken); color: var(--text-muted);
 }
-#analytics .ai-history-select {
-    font-size: calc(15.5px * var(--ui-scale)); padding: 2px 6px; border-radius: 3px;
+/* 履歴ドロップダウン（結果ヘッダー） */
+#analytics .ai-history-dd { position: relative; display: inline-flex; }
+#analytics .ai-history-dd-trigger {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: calc(15.5px * var(--ui-scale)); padding: 2px 7px; border-radius: var(--radius-sm);
     border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-secondary); max-width: 200px;
+    color: var(--text-secondary); cursor: pointer; font-variant-numeric: tabular-nums;
+    transition: background 160ms ease, border-color 160ms ease;
 }
+#analytics .ai-history-dd-trigger:hover { background: var(--surface-sunken); border-color: var(--text-muted); }
+#analytics .ai-history-dd-trigger.open {
+    background: var(--surface-sunken); border-color: var(--chart-3); color: var(--text-primary);
+}
+#analytics .ai-history-dd-caret { font-size: calc(12px * var(--ui-scale)); transition: transform 180ms ease; }
+#analytics .ai-history-dd-trigger.open .ai-history-dd-caret { transform: rotate(180deg); }
+#analytics .ai-history-dd-menu {
+    position: absolute; right: 0; top: calc(100% + 5px); z-index: 1000;
+    width: min(calc(380px * var(--ui-scale)), 86vw);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 10px 11px;
+    box-shadow: 0 10px 30px rgba(26, 24, 20, 0.16);
+    text-align: left;
+    animation: ai-history-dd-in 150ms ease;
+}
+@keyframes ai-history-dd-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+#analytics .ai-history-panel-title {
+    font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em; color: var(--text-muted); margin-bottom: 8px;
+}
+#analytics .ai-history-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: calc(280px * var(--ui-scale)); overflow-y: auto;
+}
+#analytics .ai-history-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    background: var(--surface-sunken); border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+/* ホバー（表示中の行以外）: 白面に浮かせ、ミュート色の左アクセントと微小な右シフトで反応を示す */
+#analytics .ai-history-row:hover:not(.ai-history-row-active) {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: inset 3px 0 0 var(--text-muted), var(--shadow-sm);
+    transform: translateX(2px);
+}
+#analytics .ai-history-row:hover:not(.ai-history-row-active) .ai-history-row-headline { color: var(--text-primary); }
+#analytics .ai-history-row:hover .ai-history-del { color: var(--text-secondary); }
+#analytics .ai-history-row-active {
+    border-color: var(--chart-3);
+    box-shadow: inset 3px 0 0 var(--chart-3);
+}
+/* 表示中の行のホバー: 青アクセントは保ちつつ、淡い青みと微小な右シフトで反応を示す */
+#analytics .ai-history-row-active:hover {
+    background: rgba(29, 111, 165, 0.06);
+    box-shadow: inset 3px 0 0 var(--chart-3), var(--shadow-sm);
+    transform: translateX(2px);
+}
+#analytics .ai-history-score {
+    width: calc(30px * var(--ui-scale)); height: calc(30px * var(--ui-scale)); flex-shrink: 0;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: calc(16px * var(--ui-scale)); font-weight: 800; letter-spacing: -0.02em;
+    border: 2px solid var(--border);
+}
+#analytics .ai-hscore-A, #analytics .ai-hscore-B { background: rgba(45,90,39,0.08); color: var(--chart-act); border-color: var(--chart-act); }
+#analytics .ai-hscore-C { background: #fff8e1; color: #b8860b; border-color: #b8860b; }
+#analytics .ai-hscore-D, #analytics .ai-hscore-E { background: rgba(185,28,28,0.06); color: var(--chart-5); border-color: var(--chart-5); }
+#analytics .ai-history-row-body { flex: 1; min-width: 0; }
+#analytics .ai-history-row-headline {
+    font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#analytics .ai-history-row-sub {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;
+    font-size: calc(14.5px * var(--ui-scale)); color: var(--text-muted);
+}
+#analytics .ai-history-row-model {
+    font-weight: 600; padding: 1px 5px; border-radius: 3px;
+    background: rgba(29,111,165,0.08); color: var(--chart-3);
+}
+#analytics .ai-history-del {
+    flex-shrink: 0; width: calc(26px * var(--ui-scale)); height: calc(26px * var(--ui-scale));
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent;
+    color: var(--text-muted); font-size: calc(18px * var(--ui-scale)); line-height: 1;
+    cursor: pointer; transition: background 160ms ease, color 160ms ease;
+}
+#analytics .ai-history-del:hover { background: var(--danger-light); color: var(--danger); border-color: rgba(185,28,28,0.2); }
 #analytics .ai-export-btn {
     font-size: calc(15.5px * var(--ui-scale)); padding: 5px 10px; border-radius: var(--radius-sm);
     border: 1px solid var(--border); background: var(--surface);

@@ -31,6 +31,7 @@ const state = {
     partialThinking: false,
     history: [],             // 結果履歴（新しい順）
     selectedIndex: 0,        // history 上の選択位置（0 = 最新）
+    historyPanelOpen: false, // 履歴パネルの開閉状態（再描画をまたいで保持）
     error: null,             // { message, code, hint }
     controller: null,        // AbortController
     elapsedMs: 0,
@@ -229,6 +230,152 @@ function renderActionBar() {
     bar.appendChild(settingsPanel);
 
     return bar;
+}
+
+/* -------------------- \u5c65\u6b74\u30c9\u30ed\u30c3\u30d7\u30c0\u30a6\u30f3\uff08\u7d50\u679c\u30d8\u30c3\u30c0\u30fc\u306b\u914d\u7f6e\uff09 -------------------- */
+
+/** \u5c65\u6b74\u30c8\u30ea\u30ac\u30fc\uff0b\u30ab\u30fc\u30c9\u578b\u30c9\u30ed\u30c3\u30d7\u30c0\u30a6\u30f3\u3092\u69cb\u7bc9\uff08hero meta \u306b\u5dee\u3057\u8fbc\u3080\uff09 */
+function renderHistoryDropdown() {
+    const wrap = el('div', 'ai-history-dd');
+
+    const trigger = el('button', 'ai-history-dd-trigger' + (state.historyPanelOpen ? ' open' : ''));
+    trigger.appendChild(el('span', null, `\u5c65\u6b74 ${state.selectedIndex + 1}/${state.history.length}`));
+    trigger.appendChild(el('span', 'ai-history-dd-caret', '\u25be'));
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', String(state.historyPanelOpen));
+    trigger.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        toggleHistoryPanel();
+    });
+    wrap.appendChild(trigger);
+
+    const menu = el('div', 'ai-history-dd-menu');
+    menu.id = 'ai-history-panel';
+    menu.style.display = state.historyPanelOpen ? 'block' : 'none';
+    menu.addEventListener('click', (ev) => ev.stopPropagation());
+    menu.appendChild(el('div', 'ai-history-panel-title', `\u5206\u6790\u5c65\u6b74\uff08${state.history.length}\u4ef6\uff09`));
+    const list = el('div', 'ai-history-list');
+    state.history.forEach((h, i) => list.appendChild(renderHistoryRow(h, i)));
+    menu.appendChild(list);
+    wrap.appendChild(menu);
+
+    return wrap;
+}
+
+/** \u30c9\u30ed\u30c3\u30d7\u30c0\u30a6\u30f3\u306e\u958b\u9589\u3002\u958b\u3044\u3066\u3044\u308b\u9593\u306f\u5916\u5074\u30af\u30ea\u30c3\u30af\u3067\u9589\u3058\u308b */
+function toggleHistoryPanel() {
+    if (state.historyPanelOpen) { closeHistoryDropdown(false); return; }
+    state.historyPanelOpen = true;
+    syncDropdownDom(true);
+    document.removeEventListener('click', onOutsideHistoryClick);
+    setTimeout(() => document.addEventListener('click', onOutsideHistoryClick), 0);
+}
+
+/** state \u3068\u306f\u72ec\u7acb\u306b DOM \u306e\u8868\u793a\u72b6\u614b\u3060\u3051\u66f4\u65b0\uff08\u518d\u63cf\u753b\u3092\u907f\u3051\u305f\u3044\u30b1\u30fc\u30b9\u7528\uff09 */
+function syncDropdownDom(open) {
+    const menu = document.getElementById('ai-history-panel');
+    if (menu) menu.style.display = open ? 'block' : 'none';
+    const trigger = document.querySelector('#analytics .ai-history-dd-trigger');
+    if (trigger) {
+        trigger.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', String(open));
+    }
+}
+
+function closeHistoryDropdown(rerender) {
+    state.historyPanelOpen = false;
+    document.removeEventListener('click', onOutsideHistoryClick);
+    if (rerender) render(document.getElementById('ai-analysis-content'));
+    else syncDropdownDom(false);
+}
+
+function onOutsideHistoryClick(ev) {
+    const dd = document.querySelector('#analytics .ai-history-dd');
+    if (!dd || !dd.contains(ev.target)) closeHistoryDropdown(false);
+}
+
+function renderHistoryRow(h, i) {
+    const te = h.team_evaluation || {};
+    const meta = h.meta || {};
+    const score = te.score || '?';
+    const isActive = i === state.selectedIndex && state.phase === 'done';
+
+    const row = el('div', 'ai-history-row' + (isActive ? ' ai-history-row-active' : ''));
+
+    const badge = el('div', `ai-history-score ai-hscore-${score}`, score);
+    row.appendChild(badge);
+
+    const body = el('div', 'ai-history-row-body');
+    body.appendChild(el('div', 'ai-history-row-headline', te.headline || '\uff08\u7121\u984c\u306e\u5206\u6790\uff09'));
+    const sub = el('div', 'ai-history-row-sub');
+    if (meta.model) sub.appendChild(el('span', 'ai-history-row-model', meta.model));
+    sub.appendChild(el('span', null, formatDate(meta.generated_at || '')));
+    if (meta.analysis_period) sub.appendChild(el('span', 'ai-history-row-period', meta.analysis_period));
+    body.appendChild(sub);
+    row.appendChild(body);
+
+    // \u884c\u672c\u4f53\u30af\u30ea\u30c3\u30af\u3067\u305d\u306e\u5c65\u6b74\u3092\u8868\u793a\uff08\u9078\u629e\u3067\u30c9\u30ed\u30c3\u30d7\u30c0\u30a6\u30f3\u306f\u9589\u3058\u308b\uff09
+    const selectThis = () => {
+        state.selectedIndex = i;
+        state.result = state.history[i];
+        state.lastSource = 'cache';
+        state.phase = 'done';
+        state.historyPanelOpen = false;
+        document.removeEventListener('click', onOutsideHistoryClick);
+        render(document.getElementById('ai-analysis-content'));
+    };
+    badge.addEventListener('click', selectThis);
+    body.addEventListener('click', selectThis);
+
+    // \u500b\u5225\u524a\u9664\u30dc\u30bf\u30f3
+    const delBtn = el('button', 'ai-history-del', '\u00d7');
+    delBtn.title = '\u3053\u306e\u5c65\u6b74\u3092\u524a\u9664';
+    delBtn.setAttribute('aria-label', '\u3053\u306e\u5c65\u6b74\u3092\u524a\u9664');
+    delBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        deleteHistoryAt(i);
+    });
+    row.appendChild(delBtn);
+
+    return row;
+}
+
+/** \u6307\u5b9a\u30a4\u30f3\u30c7\u30c3\u30af\u30b9\u306e\u5c65\u6b74\u30921\u4ef6\u3060\u3051\u524a\u9664\u3057\u3001\u9078\u629e\u4f4d\u7f6e\u3092\u6574\u3048\u308b */
+function deleteHistoryAt(index) {
+    const history = loadHistory();
+    if (index < 0 || index >= history.length) return;
+
+    const target = history[index];
+    const when = formatDate(target?.meta?.generated_at || '');
+    const headline = target?.team_evaluation?.headline || '';
+    if (!confirm(`\u3053\u306e\u5206\u6790\u5c65\u6b74\u3092\u524a\u9664\u3057\u307e\u3059\u3002\n${headline}\uff08${when}\uff09\n\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f`)) return;
+
+    history.splice(index, 1);
+    saveHistory(history);
+    state.history = history;
+
+    const content = document.getElementById('ai-analysis-content');
+
+    if (history.length === 0) {
+        // \u5c65\u6b74\u304c\u7a7a\u306b\u306a\u3063\u305f \u2192 \u7a7a\u72b6\u614b\u306b\u623b\u3059
+        state.result = null;
+        state.selectedIndex = 0;
+        state.phase = 'idle';
+        state.lastSource = null;
+        state.historyPanelOpen = false;
+        document.removeEventListener('click', onOutsideHistoryClick);
+        initAiAnalysis(); // analysis/latest.json \u30d5\u30a9\u30fc\u30eb\u30d0\u30c3\u30af\u3082\u518d\u8a55\u4fa1
+        return;
+    }
+
+    // \u9078\u629e\u4e2d\u30a4\u30f3\u30c7\u30c3\u30af\u30b9\u3092\u524a\u9664\u5f8c\u306e\u914d\u5217\u306b\u5408\u308f\u305b\u3066\u88dc\u6b63
+    if (index < state.selectedIndex) state.selectedIndex -= 1;
+    else if (index === state.selectedIndex) state.selectedIndex = Math.min(state.selectedIndex, history.length - 1);
+
+    state.result = history[state.selectedIndex];
+    state.lastSource = 'cache';
+    state.phase = 'done';
+    render(content);
 }
 
 function renderSettingsPanel() {
@@ -473,28 +620,9 @@ function renderResult(data, { dimmed = false, partial = false } = {}) {
     if (meta.generated_at) metaWrap.appendChild(el('span', null, formatDate(meta.generated_at)));
     if (meta.analysis_period) metaWrap.appendChild(el('span', null, meta.analysis_period));
     if (state.lastSource === 'file') metaWrap.appendChild(el('span', 'ai-source-tag', 'ファイル'));
-    // 履歴セレクタ（2件以上ある時のみ）
-    if (state.history.length >= 2) {
-        const sel = el('select', 'ai-history-select');
-        state.history.forEach((h, i) => {
-            const opt = el('option');
-            opt.value = String(i);
-            const when = formatDate(h.meta?.generated_at || '');
-            const model = h.meta?.model || '?';
-            opt.textContent = `${i + 1}/${state.history.length}: ${model} (${when})`;
-            if (i === state.selectedIndex) opt.selected = true;
-            sel.appendChild(opt);
-        });
-        sel.addEventListener('change', () => {
-            const idx = parseInt(sel.value, 10);
-            if (idx >= 0 && idx < state.history.length) {
-                state.selectedIndex = idx;
-                state.result = state.history[idx];
-                state.lastSource = 'cache';
-                render(document.getElementById('ai-analysis-content'));
-            }
-        });
-        metaWrap.appendChild(sel);
+    // 履歴ドロップダウン（履歴が1件以上 & 結果表示中のみ）。クリックでカード一覧が開き、選択/個別削除ができる
+    if (state.history.length >= 1 && state.phase === 'done' && !partial) {
+        metaWrap.appendChild(renderHistoryDropdown());
     }
     heroTop.appendChild(metaWrap);
     hero.appendChild(heroTop);
