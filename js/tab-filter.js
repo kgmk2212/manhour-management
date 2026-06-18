@@ -330,6 +330,8 @@ function renderReportFilters(container, scrollToActive = true) {
     } else {
         if (versionBtnContainer) versionBtnContainer.scrollLeft = savedVersionScroll;
         if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+        ensureActiveButtonVisible(versionBtnContainer);
+        ensureActiveButtonVisible(monthBtnContainer);
     }
 }
 
@@ -419,6 +421,8 @@ function renderEstimateFilters(container, scrollToActive = true) {
     } else {
         if (versionBtnContainer) versionBtnContainer.scrollLeft = savedVersionScroll;
         if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+        ensureActiveButtonVisible(versionBtnContainer);
+        ensureActiveButtonVisible(monthBtnContainer);
     }
 }
 
@@ -556,6 +560,7 @@ function renderActualFilters(container, scrollToActive = true) {
         scrollToActiveButton(monthBtnContainer);
     } else {
         if (monthBtnContainer) monthBtnContainer.scrollLeft = savedMonthScroll;
+        ensureActiveButtonVisible(monthBtnContainer);
     }
 }
 
@@ -619,6 +624,25 @@ function scrollToActiveButton(container) {
         const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
         container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
     }
+}
+
+// 選択中ボタンが表示エリア外にはみ出している場合のみ中央寄せでスクロール
+// （スクロール位置復元後に呼び出すことで、選択ボタンが必ず画面内に来るよう保証する）
+function ensureActiveButtonVisible(container) {
+    if (!container) return;
+    const activeBtn = container.querySelector('button.active');
+    if (!activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+
+    // 完全に表示エリア内（左右はみ出しなし）なら何もしない
+    if (btnRect.left >= containerRect.left && btnRect.right <= containerRect.right) {
+        return;
+    }
+
+    const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
 }
 
 // フィルタトグルボタンの表示/非表示
