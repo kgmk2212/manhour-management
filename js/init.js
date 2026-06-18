@@ -36,6 +36,7 @@ window.vacations = State.vacations;
 window.remainingEstimates = State.remainingEstimates;
 window.nextCompanyHolidayId = State.nextCompanyHolidayId;
 window.nextVacationId = State.nextVacationId;
+window.nextRecordId = State.nextRecordId;
 window.reportSettings = State.reportSettings;
 window.chartColorSchemes = State.chartColorSchemes;
 window.phaseCollapsed = State.phaseCollapsed;
