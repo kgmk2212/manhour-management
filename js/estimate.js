@@ -1784,6 +1784,13 @@ export function closeEstimateDetailModal() {
  * @param {number} id - 見積ID
  */
 export function editEstimateFromModal(id) {
+    // 詳細モーダルが開いている状態から編集に遷移した場合、キャンセル時に
+    // 戻れるよう再表示フラグを立てる（保存時は復元しない）
+    const detailModal = document.getElementById('estimateDetailModal');
+    const detailWasOpen = detailModal && detailModal.style.display === 'flex';
+    if (detailWasOpen && typeof window.setEditEstimateReopenDetailFlag === 'function') {
+        window.setEditEstimateReopenDetailFlag(true);
+    }
     closeEstimateDetailModal();
     if (typeof window.editEstimate === 'function') {
         window.editEstimate(id);
