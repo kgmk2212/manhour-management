@@ -21,7 +21,7 @@ let redoStack = [];
  */
 export function pushAction(action) {
     const entry = {
-        id: Date.now() + Math.random(),
+        id: State.nextId(),
         timestamp: new Date().toISOString(),
         ...action
     };

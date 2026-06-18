@@ -1,7 +1,7 @@
 // Excel ファイルから見積・実績を追加読み込みする機能
 // 仕様書: docs/superpowers/specs/2026-05-23-excel-append-import-design.md
 
-import { estimates, actuals } from './state.js';
+import { estimates, actuals , nextId} from './state.js';
 import { pushAction } from './history.js';
 
 // プレビュー中の状態（モーダルが閉じられたらクリア）
@@ -626,7 +626,7 @@ function applyImport() {
         for (const row of previewState.estimateNew) {
             const { workMonth, monthlyHours } = deriveMonthFields(row.workMonths, row.hours);
             const newEst = {
-                id: Date.now() + Math.random(),
+                id: nextId(),
                 version: row.version,
                 task: row.task,
                 process: row.process,
@@ -662,7 +662,7 @@ function applyImport() {
     if (previewState.sheets.actual) {
         for (const row of previewState.actualNew) {
             const newAct = {
-                id: Date.now() + Math.random(),
+                id: nextId(),
                 date: row.date,
                 version: row.version,
                 task: row.task,
