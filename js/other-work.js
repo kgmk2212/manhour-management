@@ -47,7 +47,7 @@ export function addMeeting() {
     let count = 0;
     members.forEach(member => {
         State.actuals.push({
-            id: Date.now() + count,
+            id: State.nextId(),
             date: date,
             version: '',  // 版数なし
             task: '打ち合わせ',
@@ -108,7 +108,7 @@ export function addOtherWork() {
 
     // その他作業を追加
     State.actuals.push({
-        id: Date.now(),
+        id: State.nextId(),
         date: date,
         version: '',  // 版数なし
         task: workName,
