@@ -4221,6 +4221,13 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 }
 
+/* モーダル「一つ前に戻る」遷移時はフェードイン/スライドインを抑止
+   （新規表示ではなく復帰なので、アニメーションがちらつきに感じられるため） */
+.modal.modal-restore-no-anim,
+.modal.modal-restore-no-anim .modal-content {
+    animation: none !important;
+}
+
 /* ---- 41. Responsive: 1200px and below ---- */
 @media (max-width: 1200px) {
     .stat-grid,

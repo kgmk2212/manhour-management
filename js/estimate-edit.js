@@ -144,11 +144,23 @@ export function setEditEstimateReopenDetailFlag(flag) {
  *   保存時は false を渡し、詳細モーダルは閉じたままにする（背後のリスト/カレンダーが更新済み）。
  */
 export function closeEditEstimateModal(reopenPrevious = true) {
-    document.getElementById('editEstimateModal').style.display = 'none';
-
     if (reopenPrevious && _shouldReopenDetailOnClose) {
+        // 「戻る」表示はアニメーションを抑止してから先に詳細モーダルを表示し、
+        // その上で編集モーダルを閉じることで切り替えのチラつきを防ぐ
         const detailModal = document.getElementById('estimateDetailModal');
-        if (detailModal) detailModal.style.display = 'flex';
+        if (detailModal) {
+            detailModal.classList.add('modal-restore-no-anim');
+            detailModal.style.display = 'flex';
+            // 2 フレーム後にクラスを外し、次回の通常オープン時はアニメーションを復活
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    detailModal.classList.remove('modal-restore-no-anim');
+                });
+            });
+        }
+        document.getElementById('editEstimateModal').style.display = 'none';
+    } else {
+        document.getElementById('editEstimateModal').style.display = 'none';
     }
 
     _shouldReopenDetailOnClose = false;
