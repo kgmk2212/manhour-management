@@ -129,11 +129,32 @@ export function editEstimate(id) {
     document.getElementById('editEstimateModal').style.display = 'flex';
 }
 
+// 編集モーダルを閉じる際、直前に開いていた詳細モーダルへ戻すかどうかのフラグ。
+// editEstimateFromModal() が詳細モーダルから遷移した場合に true を立てる。
+let _shouldReopenDetailOnClose = false;
+
+/**
+ * 編集モーダルを開く前に、戻り先となる詳細モーダルがあるかをフラグで保持する
+ * @param {boolean} flag - true の場合、キャンセル/×/ESC で詳細モーダルを再表示
+ */
+export function setEditEstimateReopenDetailFlag(flag) {
+    _shouldReopenDetailOnClose = !!flag;
+}
+
 /**
  * 見積編集モーダルを閉じる
+ * @param {boolean} reopenPrevious - true の場合、直前の詳細モーダルを再表示（キャンセル/×/ESC 用）。
+ *   保存時は false を渡し、詳細モーダルは閉じたままにする（背後のリスト/カレンダーが更新済み）。
  */
-export function closeEditEstimateModal() {
+export function closeEditEstimateModal(reopenPrevious = true) {
     document.getElementById('editEstimateModal').style.display = 'none';
+
+    if (reopenPrevious && _shouldReopenDetailOnClose) {
+        const detailModal = document.getElementById('estimateDetailModal');
+        if (detailModal) detailModal.style.display = 'flex';
+    }
+
+    _shouldReopenDetailOnClose = false;
 }
 
 /**
@@ -292,7 +313,8 @@ export function saveEstimateEdit() {
         if (typeof window.saveData === 'function') window.saveData();
     }
 
-    closeEditEstimateModal();
+    // 保存後は詳細モーダルを再表示しない（背後のリスト/カレンダーが更新される）
+    closeEditEstimateModal(false);
 
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
