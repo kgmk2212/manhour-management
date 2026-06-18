@@ -3,8 +3,8 @@
 // ============================================
 
 import {
-    estimates, actuals, remainingEstimates, schedules
-} from './state.js';
+    estimates, actuals, remainingEstimates, schedules,
+    nextId} from './state.js';
 import { pushAction } from './history.js';
 
 import {
@@ -311,7 +311,7 @@ export function saveEstimateEdit() {
     const newEstimates = [];
     extraMembers.forEach((entry, i) => {
         const newEst = {
-            id: Date.now() + i + Math.random(),
+            id: nextId(),
             version: version,
             task: task,
             process: process,
