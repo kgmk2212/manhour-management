@@ -44,11 +44,10 @@ export function addMeeting() {
     }
 
     // 全担当者分の実績を追加
-    let count = 0;
     const addedActuals = [];
     members.forEach(member => {
         const actual = {
-            id: Date.now() + count,
+            id: State.nextId(),
             date: date,
             version: '',
             task: '打ち合わせ',
@@ -59,7 +58,6 @@ export function addMeeting() {
         };
         State.actuals.push(actual);
         addedActuals.push({ ...actual });
-        count++;
     });
 
     pushAction({
@@ -116,7 +114,7 @@ export function addOtherWork() {
 
     // その他作業を追加
     const newActual = {
-        id: Date.now(),
+        id: State.nextId(),
         date: date,
         version: '',
         task: workName,

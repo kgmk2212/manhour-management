@@ -3,7 +3,7 @@
 // ============================================
 
 import {
-    estimates, actuals, schedules, memberOrder
+    estimates, actuals, schedules, memberOrder, nextId
 } from './state.js';
 
 import { showAlert, sortMembers, formatHours, escapeHtml } from './utils.js';
@@ -2574,7 +2574,7 @@ function createActualFromDrop(member, date, cardState, hours, startTime) {
  * 実績作成
  */
 function createActual(member, date, version, task, process, hours, startTime) {
-    const id = Date.now() + Math.random();
+    const id = nextId();
     const newActual = { id, date, version, task, process, member, hours };
     if (startTime != null) newActual.startTime = startTime;
 

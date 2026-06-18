@@ -3,7 +3,7 @@
 // ============================================
 
 import {
-    estimates, actuals, remainingEstimates, schedules
+    estimates, actuals, remainingEstimates, schedules, nextId
 } from './state.js';
 import { pushAction } from './history.js';
 
@@ -309,9 +309,9 @@ export function saveEstimateEdit() {
     // 追加担当者行を新規見積レコードとして作成
     const extraMembers = collectEditExtraMembers();
     const newEstimates = [];
-    extraMembers.forEach((entry, i) => {
+    extraMembers.forEach((entry) => {
         const newEst = {
-            id: Date.now() + i + Math.random(),
+            id: nextId(),
             version: version,
             task: task,
             process: process,

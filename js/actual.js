@@ -4,7 +4,7 @@
 
 import {
     estimates, actuals, remainingEstimates,
-    setActuals
+    setActuals, nextId
 } from './state.js';
 
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
@@ -1230,7 +1230,7 @@ export function saveActualEdit() {
         }
     } else {
         const newActual = {
-            id: Date.now() + Math.random(),
+            id: nextId(),
             date: date,
             version: version,
             task: task,

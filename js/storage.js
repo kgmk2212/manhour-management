@@ -8,7 +8,7 @@ import {
     companyHolidays, setCompanyHolidays,
     vacations, setVacations,
     remainingEstimates, setRemainingEstimates,
-    setNextCompanyHolidayId, setNextVacationId,
+    setNextCompanyHolidayId, setNextVacationId, setNextRecordId,
     showMonthColorsSetting, setShowMonthColorsSetting,
     reportMatrixBgColorMode, setReportMatrixBgColorMode,
     showProgressBarsSetting, setShowProgressBarsSetting,
@@ -211,6 +211,14 @@ export function loadData() {
         setNextScheduleId(maxId + 1);
     }
 
+    // 見積/実績/履歴アクション用の単調増加IDカウンタを初期化。
+    // 旧実装は Date.now() + Math.random() を使っていたが、IEEE754 double の精度限界
+    // (ms 単位で約 0.0002 のULP) により同一ミリ秒内に複数発番すると衝突するバグがあり
+    // 「選択した実績と別の実績が表示される」「見積編集で別の対応の工程が出る」現象を
+    // 引き起こしていた。新規IDは単調増加整数とし、既存データの最大値を超える地点から
+    // 始めることで旧データとの混在でも衝突しないようにする。
+    initializeRecordIdAndDedup();
+
     // 設定を読み込み
     if (savedSettings) {
         try {
@@ -291,6 +299,61 @@ export function loadData() {
 
     // Undo/Redo 履歴を復元
     loadHistory();
+}
+
+/**
+ * nextRecordId を既存IDの最大値を超える整数に初期化し、
+ * 重複IDが存在すれば後発のレコードに新しいIDを割り当ててデータを修復する。
+ *
+ * 旧 `Date.now() + Math.random()` 方式で生成されたIDは
+ *   - 同一ms内では浮動小数の精度限界で衝突する (Date.now()=1.78e12 付近では
+ *     ULPが約 2.5e-4 のため、Math.random() の下位桁が欠落する)
+ *   - 衝突するとリストの編集ボタンが別のレコードを編集対象として開いてしまう
+ * というバグを起こす。ロード直後にここでヒーリングして以降は nextId() を使う。
+ */
+function initializeRecordIdAndDedup() {
+    let maxId = 0;
+    for (const arr of [estimates, actuals, remainingEstimates]) {
+        if (!Array.isArray(arr)) continue;
+        for (const r of arr) {
+            if (r && typeof r.id === 'number' && Number.isFinite(r.id) && r.id > maxId) {
+                maxId = r.id;
+            }
+        }
+    }
+    // 旧 Math.random() 方式の小数IDを越える整数から開始。
+    // Number.MAX_SAFE_INTEGER (約 9e15) には十分余裕がある (Date.now() < 2e13)。
+    const startId = Math.floor(maxId) + 1;
+    setNextRecordId(startId);
+
+    // 重複IDの修復
+    const seenIds = new Set();
+    let dedupCount = 0;
+    for (const arr of [estimates, actuals]) {
+        if (!Array.isArray(arr)) continue;
+        for (const r of arr) {
+            if (!r || r.id === undefined || r.id === null) continue;
+            if (seenIds.has(r.id)) {
+                // 衝突検出 → 新しい単調増加IDを割り当て
+                const id = window.nextRecordId;
+                setNextRecordId(id + 1);
+                r.id = id;
+                seenIds.add(id);
+                dedupCount++;
+            } else {
+                seenIds.add(r.id);
+            }
+        }
+    }
+    if (dedupCount > 0) {
+        console.warn(`[ID dedup] 重複IDを ${dedupCount} 件修復しました（旧 Date.now()+Math.random() 由来の衝突）`);
+        try {
+            localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
+            localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+        } catch (e) {
+            console.error('ID修復後の保存に失敗:', e);
+        }
+    }
 }
 
 // ============================================
