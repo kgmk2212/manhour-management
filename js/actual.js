@@ -4,8 +4,8 @@
 
 import {
     estimates, actuals, remainingEstimates,
-    setActuals
-} from './state.js';
+    setActuals,
+    nextId} from './state.js';
 
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
@@ -1420,7 +1420,7 @@ export function saveActualEdit() {
         }
     } else {
         const newActual = {
-            id: Date.now() + Math.random(),
+            id: nextId(),
             date: date,
             version: version,
             task: task,
@@ -2533,7 +2533,7 @@ export function qmAddActual() {
     const finalDate = workDate || new Date().toISOString().split('T')[0];
 
     const newActual = {
-        id: Date.now(),
+        id: nextId(),
         date: finalDate,
         version: version,
         task: task,
@@ -2754,7 +2754,7 @@ export function qmBatchSave() {
         const finalMember = memberOverride || originalMember;
 
         newActuals.push({
-            id: Date.now() + Math.random(),
+            id: nextId(),
             date: date,
             version: version,
             task: task,

@@ -29,8 +29,8 @@ import {
     matrixEstActFormat,
 
     currentThemeColor,
-    multiFilterState
-} from './state.js';
+    multiFilterState,
+    nextId} from './state.js';
 
 import {
     getTargetVersions,
@@ -3505,7 +3505,7 @@ export function saveMatrixEstimates(version, task, process) {
         const member = newEstMember.value;
         if (!isNaN(hours) && hours > 0 && member) {
             const newEstimate = {
-                id: Date.now() + Math.random(),
+                id: nextId(),
                 version: version,
                 task: task,
                 process: process,
@@ -3563,7 +3563,7 @@ export function addMatrixActual(version, task, process) {
     }
 
     const newActual = {
-        id: Date.now() + Math.random(),
+        id: nextId(),
         date: date,
         version: version,
         task: task,

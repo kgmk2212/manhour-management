@@ -68,7 +68,7 @@ export function addMeeting() {
     const addedActuals = [];
     eligibleMembers.forEach(member => {
         const actual = {
-            id: Date.now() + count,
+            id: State.nextId(),
             date: date,
             version: '',
             task: '打ち合わせ',
@@ -141,7 +141,7 @@ export function addOtherWork() {
 
     // その他作業を追加
     const newActual = {
-        id: Date.now(),
+        id: State.nextId(),
         date: date,
         version: '',
         task: workName,
@@ -289,7 +289,7 @@ export function addOtherWorkTemplate() {
     }
 
     const template = {
-        id: Date.now(),
+        id: State.nextId(),
         name: name,
         hours: hours,
         applyToAll: applyToAll
@@ -431,7 +431,7 @@ export function applyOtherWorkTemplates() {
             // 全メンバー分追加
             eligibleMembers.forEach(member => {
                 const actual = {
-                    id: Date.now() + totalCount,
+                    id: State.nextId(),
                     date: date,
                     version: '',
                     task: template.name,
@@ -447,7 +447,7 @@ export function applyOtherWorkTemplates() {
         } else {
             // 個別の場合は最初のメンバー1人だけ（ユーザーが後で変更）
             const actual = {
-                id: Date.now() + totalCount,
+                id: State.nextId(),
                 date: date,
                 version: '',
                 task: template.name,

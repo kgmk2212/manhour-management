@@ -15,6 +15,11 @@ export let remainingEstimates = []; // 見込残存時間データ
 // ID管理
 export let nextCompanyHolidayId = 1;
 export let nextVacationId = 1;
+// 見積/実績/履歴アクション等の汎用一意IDカウンター。
+// Date.now() + Math.random() は浮動小数の精度不足で同一ms内に複数発番すると
+// 衝突しうるため、整数の単調増加カウンタに置き換える。
+// 初期値はロード時に最大値+1へ書き換える（storage.js）。
+export let nextRecordId = 1;
 
 // レポート分析機能の設定
 export let reportSettings = {
@@ -347,6 +352,22 @@ export function setNextCompanyHolidayId(value) {
 export function setNextVacationId(value) {
     nextVacationId = value;
     window.nextVacationId = value;
+}
+
+export function setNextRecordId(value) {
+    nextRecordId = value;
+    window.nextRecordId = value;
+}
+
+/**
+ * 一意な汎用レコードIDを発番する
+ * カウンタを進めて整数値を返す
+ * @returns {number}
+ */
+export function nextId() {
+    const id = nextRecordId;
+    setNextRecordId(nextRecordId + 1);
+    return id;
 }
 
 export function setReportSettings(value) {
