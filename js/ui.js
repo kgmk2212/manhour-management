@@ -1508,11 +1508,18 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
 
     if (!container || !select) return;
 
+    // 再構築前の選択値・スクロール位置を保存
+    // currentValue が前回と同じ場合はスクロール位置を優先復元し、
+    // 別の値に変わった時のみ中央寄せして見える化する。
+    const previousActiveBtn = container.querySelector('button.active');
+    const previousActiveValue = previousActiveBtn ? previousActiveBtn.value : null;
+    const previousScrollLeft = container.scrollLeft;
+
     container.className = 'segment-buttons';
     container.style.display = 'inline-flex';
     container.style.overflowX = 'auto';
     select.style.display = 'none';
-    container.innerHTML = '';
+    container.replaceChildren();
 
     // ドラッグスクロールの実装
     let isDown = false;
@@ -1578,12 +1585,32 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
         container.appendChild(button);
     });
 
-    // 初期選択ボタンを表示エリア内にスクロール
+    // スクロール位置の決定:
+    // 1) 選択値が前回と同じ（連動再構築のケース）→ 直前のスクロール位置を復元
+    // 2) 選択値が変わった、または初回 → 選択中ボタンが画面外なら中央寄せ
     setTimeout(() => {
         const activeBtn = container.querySelector('button.active');
-        if (activeBtn) {
+        const sameActive = previousActiveValue !== null && previousActiveValue === currentValue;
+
+        if (sameActive) {
+            // 連動再構築（別フィルタ変更などで自身は変わっていない）
+            // → ユーザーのスクロール位置を尊重して復元
+            container.scrollLeft = previousScrollLeft;
+            // 復元後に active が完全に画面外なら救済的に中央寄せ
+            if (activeBtn) {
+                const containerRect = container.getBoundingClientRect();
+                const btnRect = activeBtn.getBoundingClientRect();
+                if (btnRect.right < containerRect.left || btnRect.left > containerRect.right) {
+                    const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
+                    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
+                }
+            }
+        } else if (activeBtn) {
+            // 選択値が変わった/初回 → 必要なら中央寄せ
             const containerRect = container.getBoundingClientRect();
             const btnRect = activeBtn.getBoundingClientRect();
+            // 完全に表示エリア内なら何もしない
+            if (btnRect.left >= containerRect.left && btnRect.right <= containerRect.right) return;
             const scrollLeft = container.scrollLeft + (btnRect.left - containerRect.left) - (container.clientWidth / 2) + (btnRect.width / 2);
             container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'instant' });
         }
