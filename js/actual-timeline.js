@@ -3,8 +3,8 @@
 // ============================================
 
 import {
-    estimates, actuals, schedules, memberOrder
-} from './state.js';
+    estimates, actuals, schedules, memberOrder,
+    nextId} from './state.js';
 
 import { showAlert, sortMembers, formatHours, escapeHtml } from './utils.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
@@ -2509,7 +2509,7 @@ function createActualFromDrop(member, date, cardState, hours) {
  * 実績作成
  */
 function createActual(member, date, version, task, process, hours) {
-    const id = Date.now() + Math.random();
+    const id = nextId();
     const newActual = { id, date, version, task, process, member, hours };
 
     actuals.push(newActual);

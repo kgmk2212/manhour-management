@@ -49,7 +49,7 @@ export function addMeeting() {
     const addedActuals = [];
     members.forEach(member => {
         const actual = {
-            id: Date.now() + count,
+            id: State.nextId(),
             date: date,
             version: '',
             task: '打ち合わせ',
@@ -117,7 +117,7 @@ export function addOtherWork() {
 
     // その他作業を追加
     const newActual = {
-        id: Date.now(),
+        id: State.nextId(),
         date: date,
         version: '',
         task: workName,
