@@ -206,6 +206,7 @@ window.sortTaskKeysByOrder = Estimate.sortTaskKeysByOrder;
 // estimate-edit.js の関数
 window.editEstimate = EstimateEdit.editEstimate;
 window.closeEditEstimateModal = EstimateEdit.closeEditEstimateModal;
+window.setEditEstimateReopenDetailFlag = EstimateEdit.setEditEstimateReopenDetailFlag;
 window.saveEstimateEdit = EstimateEdit.saveEstimateEdit;
 window.toggleEditWorkMonthMode = EstimateEdit.toggleEditWorkMonthMode;
 window.updateEditMonthPreview = EstimateEdit.updateEditMonthPreview;
