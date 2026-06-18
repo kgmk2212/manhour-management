@@ -8,7 +8,7 @@ import {
     companyHolidays, setCompanyHolidays,
     vacations, setVacations,
     remainingEstimates, setRemainingEstimates,
-    setNextCompanyHolidayId, setNextVacationId,
+    setNextCompanyHolidayId, setNextVacationId, setNextRecordId,
     showMonthColorsSetting, setShowMonthColorsSetting,
     reportMatrixBgColorMode, setReportMatrixBgColorMode,
     showProgressBarsSetting, setShowProgressBarsSetting,
@@ -210,6 +210,9 @@ export function loadData() {
         }));
         setNextScheduleId(maxId + 1);
     }
+    // 見積/実績用の単調増加IDカウンタを初期化（旧 Date.now()+Math.random() 由来のID衝突を修復）
+    initializeRecordIdAndDedup();
+
 
     // 設定を読み込み
     if (savedSettings) {
@@ -292,6 +295,57 @@ export function loadData() {
     // Undo/Redo 履歴を復元
     loadHistory();
 }
+
+/**
+ * nextRecordId を既存IDの最大値を超える整数に初期化し、
+ * 重複IDが存在すれば後発のレコードに新しいIDを割り当ててデータを修復する。
+ *
+ * 旧 `Date.now() + Math.random()` 方式で生成されたIDは
+ *   - 同一ms内では浮動小数の精度限界 (ULP ≈ 2.5e-4 @ 1.78e12) で衝突する
+ *   - 衝突するとリストの編集ボタンが別のレコードを編集対象として開いてしまう
+ * というバグを起こす。ロード直後にここでヒーリングして以降は nextId() を使う。
+ */
+function initializeRecordIdAndDedup() {
+    let maxId = 0;
+    for (const arr of [estimates, actuals, remainingEstimates]) {
+        if (!Array.isArray(arr)) continue;
+        for (const r of arr) {
+            if (r && typeof r.id === 'number' && Number.isFinite(r.id) && r.id > maxId) {
+                maxId = r.id;
+            }
+        }
+    }
+    const startId = Math.floor(maxId) + 1;
+    setNextRecordId(startId);
+
+    const seenIds = new Set();
+    let dedupCount = 0;
+    for (const arr of [estimates, actuals]) {
+        if (!Array.isArray(arr)) continue;
+        for (const r of arr) {
+            if (!r || r.id === undefined || r.id === null) continue;
+            if (seenIds.has(r.id)) {
+                const id = window.nextRecordId;
+                setNextRecordId(id + 1);
+                r.id = id;
+                seenIds.add(id);
+                dedupCount++;
+            } else {
+                seenIds.add(r.id);
+            }
+        }
+    }
+    if (dedupCount > 0) {
+        console.warn(`[ID dedup] 重複IDを ${dedupCount} 件修復しました（旧 Date.now()+Math.random() 由来の衝突）`);
+        try {
+            localStorage.setItem('manhour_estimates', JSON.stringify(estimates));
+            localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
+        } catch (e) {
+            console.error('ID修復後の保存に失敗:', e);
+        }
+    }
+}
+
 
 // ============================================
 // バックアップ・復元

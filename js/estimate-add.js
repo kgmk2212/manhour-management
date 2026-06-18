@@ -420,7 +420,7 @@ function saveEditAllProcesses() {
             }
 
             const newEst = {
-                id: Date.now() + Math.random(),
+                id: State.nextId(),
                 version: oldVersion,
                 task: oldTask,
                 process: proc,
@@ -1202,7 +1202,7 @@ function addOtherWorkEstimate() {
     const addedEstimates = [];
     members.forEach((member, index) => {
         const est = {
-            id: Date.now() + index + Math.random(),
+            id: State.nextId(),
             version: '',
             task: taskName,
             process: '',
@@ -1343,7 +1343,7 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
         }
 
         const est = {
-            id: Date.now() + Math.random(),
+            id: State.nextId(),
             version: version,
             task: task,
             process: proc,

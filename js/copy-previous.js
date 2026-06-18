@@ -3,7 +3,7 @@
  * 前営業日（または指定日）の実績をコピーして新しい日付で作成
  */
 
-import { actuals } from './state.js';
+import { actuals , nextId} from './state.js';
 import { pushAction } from './history.js';
 import { showAlert, sortMembers } from './utils.js';
 import { validateActualInput } from './validation.js';
@@ -317,7 +317,7 @@ function applyCopyPrevious() {
     for (const source of toCopy) {
         const state = modalState.selections.get(source.id);
         const newActual = {
-            id: Date.now() + Math.random(),
+            id: nextId(),
             date: targetDate,
             version: source.version || '',
             task: source.task,

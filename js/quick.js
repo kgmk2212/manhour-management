@@ -5,8 +5,8 @@
 import {
     estimates, actuals,
     quickInputMode, setQuickInputMode,
-    rememberQuickInputMode, setRememberQuickInputMode
-} from './state.js';
+    rememberQuickInputMode, setRememberQuickInputMode,
+    nextId} from './state.js';
 import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler } from './utils.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
@@ -216,7 +216,7 @@ export function quickAddActual() {
     const finalDate = workDate || new Date().toISOString().split('T')[0];
 
     const newActual = {
-        id: Date.now(),
+        id: nextId(),
         date: finalDate,
         version: version,
         task: task,
@@ -716,7 +716,7 @@ export function addQuickEstimate() {
             }
 
             const est = {
-                id: Date.now() + Math.random(),
+                id: nextId(),
                 version: version,
                 task: task,
                 process: proc,
