@@ -82,14 +82,18 @@ function buildRecordDefs(counters) {
 
     return [
         {
-            id: 'actuals', field: 'actuals', label: '実績', kind: 'records', allowOverwrite: false,
+            // 同一性は工数を除く (date,member,version,task,process)。工数だけ違う実績は
+            // 「変更」として扱い、上書き/維持・削除/保持を選べるようにする（重複追加を防ぐ）。
+            // 同一キーで複数レコードが併存し得るが、detectDiff の完全一致優先(2パス)で安全に照合される。
+            id: 'actuals', field: 'actuals', label: '実績', kind: 'records', allowOverwrite: true,
             keyFields: ['date', 'member', 'version', 'task', 'process'],
             compareFields: [{ key: 'hours', label: '工数' }],
             spec: {
-                keyOf: r => [normalizeDate(r.date), s(r.member), s(r.version), s(r.task), s(r.process), roundNum(r.hours)].join('|'),
-                valueEq: () => true, emitChanged: false
+                keyOf: r => [normalizeDate(r.date), s(r.member), s(r.version), s(r.task), s(r.process)].join('|'),
+                valueEq: (a, b) => roundNum(a.hours) === roundNum(b.hours),
+                emitChanged: true
             },
-            apply: makeApplier('actuals', [], genFloatId)
+            apply: makeApplier('actuals', ['hours'], genFloatId)
         },
         {
             id: 'estimates', field: 'estimates', label: '見積', kind: 'records', allowOverwrite: true,

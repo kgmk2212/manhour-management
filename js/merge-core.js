@@ -53,7 +53,13 @@ export function roundNum(v) {
 }
 
 /**
- * 差分検出（汎用）。既存側を greedy に 1:1 で消費し、未消費の既存を removed とする。
+ * 差分検出（汎用）。同一キー内を 2 パスで照合する。
+ *   Pass 1: キー＋値が完全一致するペアを先取りして unchanged にする（値考慮）。
+ *   Pass 2: 残った取込を同一キーの余剰既存と 1:1 で照合し changed（値が違う場合）とする。
+ *   いずれにも当たらない取込は added、未消費の既存は removed。
+ * 同一キーに複数レコードが併存し得るエンティティ（実績など）で、完全一致が
+ * あるのに値の異なる相手と誤ペアリングされる（例「3h→5h 変更＋5h 削除」）のを防ぐ。
+ * 単一キー（見積等）では旧 greedy と挙動は同一。
  * @param {Array} incoming 取込側レコード
  * @param {Array} existing 現在側レコード
  * @param {{keyOf:Function, valueEq:Function, emitChanged:boolean}} spec
@@ -69,9 +75,24 @@ export function detectDiff(incoming, existing, spec) {
         existingByKey.get(k).push({ idx, rec });
     });
     const consumed = new Set();
+    const pending = [];
+    // Pass 1: キー＋値が完全一致するものを unchanged として先取り
     for (const inc of (incoming || [])) {
-        const k = keyOf(inc);
-        const bucket = existingByKey.get(k);
+        const bucket = existingByKey.get(keyOf(inc));
+        let matched = null;
+        if (bucket) {
+            for (const e of bucket) { if (!consumed.has(e.idx) && valueEq(e.rec, inc)) { matched = e; break; } }
+        }
+        if (matched) {
+            consumed.add(matched.idx);
+            unchanged.push({ existing: matched.rec, incoming: inc });
+        } else {
+            pending.push(inc);
+        }
+    }
+    // Pass 2: 残った取込を同一キーの余剰既存と照合（値が違えば changed）
+    for (const inc of pending) {
+        const bucket = existingByKey.get(keyOf(inc));
         let matched = null;
         if (bucket) {
             for (const e of bucket) { if (!consumed.has(e.idx)) { matched = e; break; } }
