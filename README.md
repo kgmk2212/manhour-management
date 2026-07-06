@@ -118,3 +118,10 @@ python -m http.server 8000
 ## ライセンス
 
 MIT License
+
+## 次世代版（manhour-next）
+
+段階移行先の次世代版が `~/manhour-next` で稼働中（React+TS+IndexedDB＋同期サーバー・
+Mac mini launchd 常駐・tailnet `http://100.111.64.22:8820/`・夜間バックアップ）。
+設計書は本リポジトリの `docs/architecture-consulting.md`（第2版）。本リポジトリ（現行版）は
+移行完了まで従来どおり利用・保守する。
