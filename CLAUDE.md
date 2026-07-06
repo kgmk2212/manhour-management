@@ -56,7 +56,7 @@ git branch
 - **破壊的変更OK**: 大胆なリファクタリングや設計変更を試せる
 - **失敗を恐れない**: うまくいかなければブランチごと破棄できる
 - **frontend-designスキル必須**: デザイン変更時は必ず `frontend-design` スキルを使用し、Quiet Depthコンセプトに調和するデザインで実装する
-- **自動デプロイ**: コミット・プッシュ完了時は、mainに空コミット＆プッシュしてGitHub Pagesデプロイを発火させる（`cd ../manhour-management && git commit --allow-empty -m "deploy: trigger Pages rebuild" && git push origin main`）
+- **自動デプロイ**: コミット・プッシュ完了時は、`gh workflow run deploy.yml -R kgmk2212/manhour-management` でGitHub Pagesデプロイを発火させる（deploy.yml は workflow_dispatch 対応済み。旧来の「mainへ空コミット＆プッシュ」は履歴を汚すため廃止＝2026-07-06）
 - **mainへのマージ禁止**: ユーザーの明示的な指示がない限り、sandboxの変更をmainにマージしない
 
 ### 実験が成功したら
