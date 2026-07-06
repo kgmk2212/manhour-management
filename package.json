@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "工数管理システム — アプリ本体はビルド不要の素の HTML/CSS/JS。この package.json は開発用 lint ツール(ESLint)の依存のみを管理し、配信物には影響しない。",
   "private": true,
+  "type": "module",
   "scripts": {
-    "lint": "eslint \"js/**/*.js\""
+    "lint": "eslint \"js/**/*.js\"",
+    "test": "node --test"
   },
   "devDependencies": {
     "eslint": "^9.39.0",
