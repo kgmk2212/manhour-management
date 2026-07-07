@@ -8088,3 +8088,160 @@ li.drop-below {
 .merge-compact-row:last-child { border-bottom: none; }
 .merge-compact-id { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
 .merge-compact-val { color: var(--text-secondary); }
+
+/* ============================================================================
+   モバイル redesign 整合レイヤー  (mobile scale normalization)
+   ----------------------------------------------------------------------------
+   目的: モバイル(≤768px)の文字サイズ/各要素スケールを experiment/redesign
+         ブランチと同一の実効値へ戻す。
+   背景: 現ブランチは視認性向上のため redesign の細かいタイポ階層
+         (9〜18px) の多くを 15.5px 前後へ底上げしている。--ui-scale は
+         ≤2560px で常に 1.00 のため、この底上げがモバイルにそのまま出る。
+   方針: デスクトップ(>768px, --ui-scale>1 領域)には一切影響させないため、
+         すべて max-width メディアクエリ内に閉じる。JS 生成のインライン
+         style(calc(Npx*var(--ui-scale)) = normal 宣言) や既存の
+         !important モバイルルールにも確実に勝つよう font-size 上書きは
+         一律 !important を付与する(オーサリング !important > インライン
+         normal / 同詳細度は後勝ちの CSS 仕様を利用)。JS リテラルは
+         デスクトップ寸法を担うため編集しない。
+   ============================================================================ */
+@media (max-width: 768px) {
+    /* --- 継承層の再アンカー: root 16px→14px(redesign基準) ------------------- */
+    html {
+        font-size: 14px;
+    }
+
+    /* 素(class 無し)見出しに現ブランチが付与した明示サイズ(19/17/16/15.5)を
+       UA 既定 em 相当へ戻す。root14px 基準で h2≈21 / h3≈16.4 / h4=14 ... */
+    h2 { font-size: 1.5em !important; }
+    h3 { font-size: 1.17em !important; }
+    h4 { font-size: 1em !important; }
+    h5 { font-size: 0.83em !important; }
+    h6 { font-size: 0.67em !important; }
+
+    /* --- スケジュール canvas: モバイルは redesign と同じ等倍(1.00) ---------- */
+    :root {
+        --gantt-scale: 1.00;
+    }
+
+    /* --- フォーム部品: iOS のフォーカス時ズーム回避のため 16px 維持 -------- */
+    input:not([type="radio"]):not([type="checkbox"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    /* --- redesign 16px 帯 --------------------------------------------------- */
+    .mobile-page-title,
+    .nav-item-icon {
+        font-size: 16px !important;
+    }
+    .version-header {
+        font-size: 16px !important;
+    }
+    #reportDetailView h3 {
+        font-size: 15px !important;
+    }
+
+    /* --- redesign 18px 帯(見出し/閉じる) ----------------------------------- */
+    .toast-close,
+    .modal-header h3 {
+        font-size: 18px !important;
+    }
+
+    /* --- redesign 14px 帯(カード/セクション見出し) ------------------------- */
+    .card-title,
+    .setting-section-title,
+    #reportDetailView h4 {
+        font-size: 14px !important;
+    }
+
+    /* --- redesign 13px 帯(本文・ボタン・ナビ・表・トースト・各種ラベル) --- */
+    .btn,
+    .nav-item,
+    .sidebar-collapse-btn,
+    label,
+    .page-subtitle,
+    .toast-message,
+    .toast-undo,
+    .custom-dropdown-item,
+    .custom-dropdown-empty,
+    .segment-item,
+    .segment-control .segment-btn,
+    .segment-buttons button,
+    table,
+    .actual-list-table,
+    .capacity-bar-label,
+    .capacity-gauge-label,
+    .capacity-warning-badge,
+    .schedule-filter-item label,
+    .schedule-filter-item select,
+    .month-toggle-btn,
+    .actual-tl-tp-search,
+    .modal-description,
+    .setting-label,
+    .gantt-tooltip,
+    .tooltip-status,
+    .custom-alert-footer .btn {
+        font-size: 13px !important;
+    }
+
+    /* --- redesign 12px 帯(小ボタン・列見出し・フォームラベル・件数) ------- */
+    .btn-small,
+    .btn-sm,
+    th,
+    .estimate-table th,
+    .table-group-header td,
+    .form-label,
+    .setting-desc,
+    .filter-result-count {
+        font-size: 12px !important;
+    }
+
+    /* --- redesign 11px 帯(節見出し・統計ラベル・バッジ・カレンダーセル) --- */
+    .nav-section-label,
+    .stat-card h3,
+    .stat-label,
+    .unscheduled-badge,
+    .calendar-header-cell,
+    .calendar-date,
+    .calendar-hours,
+    .calendar-entry,
+    .cm-cell,
+    .cm-vacation-label,
+    .cm-holiday-sub {
+        font-size: 11px !important;
+    }
+
+    /* 工程/小型バッジ: 文字だけでなく padding/line-height/固定幅も redesign へ */
+    .badge {
+        font-size: 11px !important;
+        padding: 2px 8px !important;
+        line-height: 1.4 !important;
+    }
+    .badge-ui,
+    .badge-pg,
+    .badge-pt,
+    .badge-it,
+    .badge-st {
+        width: auto !important;
+    }
+
+    /* --- redesign 10px 帯(ボトムタブラベル・極小バッジ) -------------------- */
+    .mobile-tab-bar .mobile-tab-item span,
+    .calendar-total-badge,
+    .actual-tl-holiday-badge,
+    .history-latest-badge {
+        font-size: 10px !important;
+    }
+}
+
+/* 超小型画面(≤480px): 480 専用の底上げ分をさらに redesign 値へ */
+@media (max-width: 480px) {
+    h3 {
+        font-size: 15px !important;
+    }
+    .version-header {
+        font-size: 14px !important;
+    }
+}
