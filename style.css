@@ -8176,7 +8176,6 @@ li.drop-below {
     .capacity-warning-badge,
     .schedule-filter-item label,
     .schedule-filter-item select,
-    .month-toggle-btn,
     .actual-tl-tp-search,
     .modal-description,
     .setting-label,
@@ -8193,8 +8192,7 @@ li.drop-below {
     .estimate-table th,
     .table-group-header td,
     .form-label,
-    .setting-desc,
-    .filter-result-count {
+    .setting-desc {
         font-size: 12px !important;
     }
 
@@ -8203,13 +8201,9 @@ li.drop-below {
     .stat-card h3,
     .stat-label,
     .unscheduled-badge,
-    .calendar-header-cell,
     .calendar-date,
     .calendar-hours,
-    .calendar-entry,
-    .cm-cell,
-    .cm-vacation-label,
-    .cm-holiday-sub {
+    .calendar-entry {
         font-size: 11px !important;
     }
 
@@ -8230,15 +8224,228 @@ li.drop-below {
     /* --- redesign 10px 帯(ボトムタブラベル・極小バッジ) -------------------- */
     .mobile-tab-bar .mobile-tab-item span,
     .calendar-total-badge,
-    .actual-tl-holiday-badge,
     .history-latest-badge {
         font-size: 10px !important;
     }
+
+    /* ========================================================================
+       JS 生成インライン style の回収（クラス/ID/構造セレクタ + !important）。
+       現ブランチの JS は redesign の小さめ px を calc(Npx*--ui-scale) に
+       置換して肥大させている。JS リテラルはデスクトップ寸法を担うため編集せず、
+       モバイルのみ CSS で redesign 実効値へ戻す。
+       ======================================================================== */
+
+    /* 担当者別合計カード(#estimateMemberSummaryContent)。
+       各カードは min-width:150px の flex-wrap 折返し。内側テキストが 15.5/19px
+       で肥大し 2 列折返しが崩れて縦積みになっていた。redesign の 13/18/12px へ
+       戻すと内容が 150px に収まり redesign と同じ 2 列配置に戻る。 */
+    #estimateMemberSummaryContent > div > div:nth-child(1) { font-size: 13px !important; }
+    #estimateMemberSummaryContent > div > div:nth-child(2) { font-size: 18px !important; }
+    #estimateMemberSummaryContent > div > div:nth-child(3) { font-size: 12px !important; }
+    /* セクション見出し「担当者別合計」: redesign 14px */
+    #estimateMemberSummary > div:first-child { font-size: 14px !important; }
+    /* 横 padding を 20px→12px に詰め、2列(150+12+150=312px)が確実に収まる
+       幅を確保（狭幅端末では flex-wrap により自然に1列へ戻る＝redesign と同挙動）。 */
+    #estimateMemberSummary {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    /* 人日/人月 表記(見積一覧・マトリクスの対応合計セル内): redesign 13px */
+    .manpower-display {
+        font-size: 13px !important;
+    }
+
+    /* ========================================================================
+       全画面比較(iPhone相当390px)による redesign 実効値との差分回収 第2弾。
+       全7タブ+全サブビューのスクリーンショット/computed styleダンプを両ブランチで
+       突き合わせ、検証済みの差分のみ追記。セレクタは JS 生成インライン style
+       (calc(Npx*--ui-scale)) を属性一致で回収するものを含む。
+       ======================================================================== */
+
+    /* --- ページコンテナ(全タブ共通) --- */
+    /* redesignはモバイル全幅(1400px capは非拘束)。94vw capを解除し折返しを解消 */
+    .tab-content { max-width: none; }
+
+    /* --- サイドバー/ドロワー --- */
+    .sidebar-title { font-size: 15px !important; }
+    .sidebar-footer .btn-sm { font-size: 11px !important; }
+
+    /* --- クイック入力 --- */
+    .quick-input-form > .form-group { margin-bottom: 10px; }
+    .quick-input .form-group > label:first-child { font-size: 12px !important; }
+
+    /* --- レポート(統計カード/キャパシティ/詳細ビュー) --- */
+    #totalEstimateManpower, #totalActualManpower { font-size: 12px !important; }
+    #reportConversionParams { font-size: 13px !important; }
+    #capacityAnalysis h4 { font-size: 16px !important; }
+    #capacityAnalysis div[style*="calc(16px"] { font-size: 14px !important; }
+    #capacityStandard { font-size: 16px !important; }
+    #capacityStandardDetail { font-size: 12px !important; }
+    #capacityBarView div[style*="calc(15.5px"] { font-size: 13px !important; }
+    #capacityEstimateText, #capacityActualText { font-size: 15px !important; }
+    #capacityDiff, #capacityRemaining { font-size: 16px !important; }
+    #phase1-arrow, #phase2-arrow, #phase3-arrow { font-size: 14px !important; }
+    #progressSectionIcon { font-size: 12px !important; }
+    .report-matrix td div[title^="進捗率"] > div + div { font-size: 9px !important; }
+    .report-matrix td .act-color ~ div[style*="nowrap"] { font-size: 12px !important; }
+    #reportDetailView td div[style*="15.5px"][style*="nowrap"] { font-size: 12px !important; }
+    #reportDetailView td div[style*="15.5px"][style*="text-align: center"] { font-size: 9px !important; }
+    #reportDetailView div[style*="background: #f8f9fa"][style*="15.5px"] { font-size: 12px !important; }
+    #reportDetailView > div[style*="flex-wrap"] { font-size: 12px !important; }
+    #report ul[style*="15.5px"] { font-size: 13px !important; }
+    div:has(> #btnExportExcel) ul { font-size: 13px !important; }
+
+    /* --- 見積一覧 --- */
+    #estimateTotalManpower { font-size: 18px !important; }
+    #estimateConversionParams { font-size: 13px !important; }
+    #estimateTotalCard div[style*="calc(16px"] { font-size: 14px !important; }
+    #estimateList > div > div[style*="flex-wrap"] { font-size: 12px !important; }
+    .estimate-matrix td.clickable-cell > div[style*="15.5px"] { font-size: 12px !important; }
+    .estimate-matrix td:last-child > div[style*="15.5px"] { font-size: 11px !important; }
+
+    /* --- 実績カレンダー/グリッド --- */
+    .cm-summary-meta { font-size: 12px !important; }
+    .cm-cell { font-size: 12px !important; }
+    .cm-vacation-label { font-size: 10px !important; }
+    .cm-holiday-sub { font-size: 10px !important; }
+    .month-toggle-btn { font-size: 11px !important; }
+    .calendar-header-cell { font-size: 12px !important; }
+    .actual-calendar-nav .month-label { font-size: 16px !important; }
+    .actual-calendar-nav .month-total { font-size: 14px !important; }
+    .actual-calendar-nav .month-total strong { font-size: 18px !important; }
+
+    /* --- 実績タイムライン --- */
+    .actual-tl-current-month { font-size: 13px !important; }
+    .actual-tl-view-btn { font-size: 11px !important; }
+    #atlTogglePane { font-size: 0 !important; }
+    .actual-tl-labels-header { font-size: 9px !important; }
+    .actual-tl-avatar { font-size: 9px !important; }
+    .actual-tl-label-name { font-size: 10px !important; }
+    .actual-tl-label-meta { font-size: 9px !important; }
+    .actual-tl-day-num { font-size: 11px !important; }
+    .actual-tl-day-label { font-size: 8px !important; }
+    .actual-tl-bar.actual { font-size: 9px !important; }
+    .actual-tl-bar-text { font-size: 10px !important; }
+    .actual-tl-bar.scheduled .actual-tl-bar-text { font-size: 8px !important; }
+    .actual-tl-bar.actual.merged .actual-tl-bar-text { font-size: 10px !important; }
+    .actual-tl-bar-hours { font-size: 10px !important; }
+    .actual-tl-pane-section-header { font-size: 13px !important; }
+    .actual-tl-sec-avatar { font-size: 10px !important; }
+    .actual-tl-sec-count { font-size: 10px !important; }
+    .actual-tl-sec-arrow { font-size: 10px !important; }
+    .actual-tl-tc-name { font-size: 13px !important; }
+    .actual-tl-tc-detail { font-size: 10px !important; }
+    .actual-tl-tc-badge { font-size: 9px !important; }
+    .actual-tl-tc-hours { font-size: 12px !important; }
+    .actual-tl-holiday-badge { font-size: 9px !important; }
+    .actual-tl-hour-header { font-size: 12px !important; }
+    .actual-tl-tp-title { font-size: 16px !important; }
+    .actual-tl-ie-unit { font-size: 14px !important; }
+    .actual-tl-ie-btn { font-size: 16px !important; }
+
+    /* --- スケジュール(ガント) --- */
+    .schedule-current-month { font-size: 18px !important; }
+    .schedule-summary-label { font-size: 12px !important; }
+    .filter-result-count { font-size: 13px !important; }
+
+    /* --- 設定 --- */
+    .setting-section > p { font-size: 12px !important; }
+    #settings .setting-section div[style*="font-size: calc(15.5px"] { font-size: 13px !important; }
+    #settings .setting-section span[style*="font-size: calc(15.5px"] { font-size: 12px !important; }
+    #btnShowMemberOrderHelp { font-size: 18px !important; }
+
+    /* --- AI分析(#analytics, redesignタイポ階層基準) --- */
+    #analytics .ra-page-header p { font-size: 13px !important; }
+    #analytics .ra-filter-bar label { font-size: 12px !important; }
+    #analytics .ra-kpi-label,
+    #analytics .ra-kpi-sub,
+    #analytics .ra-kpi-badge { font-size: 11px !important; }
+    #analytics .ra-heatmap-label { font-size: 11px !important; }
+    #analytics .ra-heatmap-col-label,
+    #analytics .ra-heatmap-cell,
+    #analytics .ra-heatmap-scale { font-size: 10px !important; }
+    #analytics .ra-chart-card-title { font-size: 13px !important; }
+    #analytics .ra-chart-card-subtitle,
+    #analytics .ra-chart-card-badge { font-size: 11px !important; }
+    #analytics .ra-chart-legend-item { font-size: 11px !important; }
+    #analytics .ra-chart-card-insight { font-size: 12px !important; }
+    #analytics .ra-mini-card-title { font-size: 13px !important; }
+    #analytics .ra-mini-card-total { font-size: 12px !important; }
+    #analytics .ra-mini-legend-item { font-size: 11px !important; }
+    #analytics .ra-alert-bar { font-size: 13px !important; }
+    #analytics .ra-alert-bar-icon { font-size: 16px !important; }
+    #analytics .ra-alert-count { font-size: 15px !important; }
+    #analytics .ra-alert-expand { font-size: 12px !important; }
+    #analytics .ra-alert-task { font-size: 13px !important; }
+    #analytics .ra-alert-task-value { font-size: 12px !important; }
+    #analytics .ra-detail-section-title { font-size: 14px !important; }
+    #analytics .ra-detail-section-arrow { font-size: 10px !important; }
+    #analytics .ra-data-table { font-size: 13px !important; }
+    #analytics .ra-data-table th { font-size: 11px !important; }
+    #analytics .ra-version-btn,
+    #analytics .ra-focus-legend-item { font-size: 12px !important; }
+    #analytics .ai-section-divider-label { font-size: 10px !important; }
+    #analytics .ai-run-btn { font-size: 12px !important; }
+    #analytics .ai-settings-btn { font-size: 11px !important; }
+    #analytics .ai-empty-title { font-size: 13px !important; }
+    #analytics .ai-empty-desc { font-size: 12px !important; }
+    #analytics .ai-empty-hint { font-size: 11px !important; }
+    #analytics .ai-hero-title h2 { font-size: 15px !important; }
+    #analytics .ai-hero-summary-text { font-size: 14px !important; }
+    #analytics .ai-top-action-title,
+    #analytics .ai-loading-label,
+    #analytics .ai-error-title { font-size: 13px !important; }
+    #analytics .ai-analysis-text,
+    #analytics .ai-top-action-rationale,
+    #analytics .ai-detail-text,
+    #analytics .ai-forecast-version,
+    #analytics .ai-forecast-value,
+    #analytics .ai-risk,
+    #analytics .ai-action-title,
+    #analytics .ai-action-extra,
+    #analytics .ai-loading-timer,
+    #analytics .ai-streaming-label,
+    #analytics .ai-error-message { font-size: 12px !important; }
+    #analytics .ai-hero-icon,
+    #analytics .ai-score-trend,
+    #analytics .ai-tag,
+    #analytics .ai-action-badge,
+    #analytics .ai-toggle,
+    #analytics .ai-detail-card-title,
+    #analytics .ai-risk-icon,
+    #analytics .ai-action-rationale,
+    #analytics .ai-review-focus,
+    #analytics .ai-settings-row label,
+    #analytics .ai-probe-btn,
+    #analytics .ai-clear-btn,
+    #analytics .ai-probe-status,
+    #analytics .ai-clear-status,
+    #analytics .ai-export-btn,
+    #analytics .ai-settings-hint,
+    #analytics .ai-loading-stream,
+    #analytics .ai-loading-hint,
+    #analytics .ai-streaming-timer,
+    #analytics .ai-error-hint,
+    #analytics .ai-code-block { font-size: 11px !important; }
+    #analytics .ai-hero-meta,
+    #analytics .ai-model-tag,
+    #analytics .ai-detail-label,
+    #analytics .ai-forecast-label,
+    #analytics .ai-action-num,
+    #analytics .ai-action-cat,
+    #analytics .ai-action-chevron,
+    #analytics .ai-source-tag { font-size: 10px !important; }
 }
 
 /* 超小型画面(≤480px): 480 専用の底上げ分をさらに redesign 値へ */
 @media (max-width: 480px) {
     h3 {
+        font-size: 15px !important;
+    }
+    /* 統計カード見出し: redesign は 481-768px で 11px、≤480px では素 h3 と同じ 15px。
+       768 レイヤーの .stat-card h3 { 11px } に詳細度で並ぶ明示上書きが必要 */
+    .stat-card h3 {
         font-size: 15px !important;
     }
     .version-header {
