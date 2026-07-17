@@ -194,7 +194,11 @@ export function deleteVacationFromModal(id, member, date) {
     window.showWorkDetail(member, date);
 }
 
-export function addVacationFromCalendar(member, date) {
+/**
+ * 休暇登録フォームのフィールドを初期化する
+ * （vacationModal 単体表示と、実績登録モーダルのタブ埋め込みの両方から使用）
+ */
+export function prepareVacationFields(member, date) {
     document.getElementById('vacationModalMember').value = member;
     document.getElementById('vacationModalDate').value = date;
     document.getElementById('vacationModalMemberDisplay').textContent = member;
@@ -207,12 +211,22 @@ export function addVacationFromCalendar(member, date) {
     document.getElementById('vacationModalType').value = '有休';
     document.getElementById('vacationModalHours').value = 8;
     handleVacationModalTypeChange();
+}
 
+export function addVacationFromCalendar(member, date) {
+    prepareVacationFields(member, date);
     document.getElementById('vacationModal').style.display = 'flex';
 }
 
 export function closeVacationModal() {
     document.getElementById('vacationModal').style.display = 'none';
+    // 実績登録モーダルのタブに埋め込まれている場合は親モーダルも閉じる
+    // （登録完了・キャンセルのどちらでも呼ばれる）
+    const editModal = document.getElementById('editActualModal');
+    if (editModal && editModal.dataset.tabMode === 'true' && editModal.style.display === 'flex' &&
+        typeof window.closeEditActualModal === 'function') {
+        window.closeEditActualModal();
+    }
 }
 
 export function handleVacationModalTypeChange() {

@@ -203,12 +203,14 @@ export function openEditAllProcesses(version, task) {
 
     // 作業月のプリフィル: 全工程の月範囲を判定
     const allWorkMonths = new Set();
-    const processWorkMonths = {}; // 工程別の作業月
+    const processWorkMonths = {}; // 工程別の作業月（同一工程複数見積の場合は先頭を代表とする）
     taskEstimates.forEach(e => {
         const est = Utils.normalizeEstimate(e);
         if (est.workMonths && est.workMonths.length > 0) {
             est.workMonths.forEach(m => allWorkMonths.add(m));
-            processWorkMonths[est.process] = est.workMonths;
+            if (!processWorkMonths[est.process]) {
+                processWorkMonths[est.process] = est.workMonths;
+            }
         }
     });
 
@@ -237,17 +239,36 @@ export function openEditAllProcesses(version, task) {
     }
 
     // 各工程の担当・工数をプリフィル
+    // 同一工程に複数担当者の見積がある場合は、2人目以降を追加担当者行として展開する
     PROCESS.TYPES.forEach(proc => {
-        const est = taskEstimates.find(e => e.process === proc);
+        const procEstimates = taskEstimates.filter(e => e.process === proc);
         const memberSelect = document.getElementById(`addEst${proc}_member`);
         const hoursInput = document.getElementById(`addEst${proc}`);
-        if (est) {
-            if (memberSelect) memberSelect.value = est.member;
-            if (hoursInput) hoursInput.value = est.hours;
+        const primaryRow = memberSelect ? memberSelect.closest('tr') : null;
+
+        const primary = procEstimates[0];
+        if (primary) {
+            if (memberSelect) memberSelect.value = primary.member;
+            if (hoursInput) hoursInput.value = primary.hours;
+            if (primaryRow) primaryRow.dataset.estimateId = primary.id;
         } else {
             if (memberSelect) memberSelect.value = '';
             if (hoursInput) hoursInput.value = '';
+            if (primaryRow) delete primaryRow.dataset.estimateId;
         }
+
+        // 2人目以降を追加担当者行としてプリフィル（保存時の対応付け用にIDを保持）
+        procEstimates.slice(1).forEach(est => {
+            addEstimateMemberRow(proc);
+            const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
+            const row = extraRows[extraRows.length - 1];
+            if (!row) return;
+            const extraMemberSelect = row.querySelector('.est-extra-member');
+            const extraHoursInput = row.querySelector('.est-extra-hours');
+            if (extraMemberSelect) extraMemberSelect.value = est.member;
+            if (extraHoursInput) extraHoursInput.value = est.hours;
+            row.dataset.estimateId = est.id;
+        });
     });
 
     // 複数月モードの場合、各工程の作業月をプリフィル
@@ -323,13 +344,31 @@ function saveEditAllProcesses() {
     const updatedScheduleIds = new Set();
 
     // 各工程を処理
+    // プライマリ行＋追加担当者行を収集し、プリフィル時に保持した見積IDで既存データと対応付ける
     PROCESS.TYPES.forEach(proc => {
+        const rows = [];
+
         const memberSelect = document.getElementById(`addEst${proc}_member`);
         const hoursInput = document.getElementById(`addEst${proc}`);
-        const member = memberSelect ? memberSelect.value : '';
-        const hours = parseFloat(hoursInput ? hoursInput.value : '') || 0;
+        const primaryRow = memberSelect ? memberSelect.closest('tr') : null;
+        rows.push({
+            member: memberSelect ? memberSelect.value : '',
+            hours: parseFloat(hoursInput ? hoursInput.value : '') || 0,
+            estimateId: primaryRow && primaryRow.dataset.estimateId ? Number(primaryRow.dataset.estimateId) : null
+        });
 
-        const existingEst = taskEstimates.find(e => e.process === proc);
+        document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
+            rows.push({
+                member: row.querySelector('.est-extra-member')?.value || '',
+                hours: parseFloat(row.querySelector('.est-extra-hours')?.value) || 0,
+                estimateId: row.dataset.estimateId ? Number(row.dataset.estimateId) : null
+            });
+        });
+
+        rows.forEach(({ member, hours, estimateId }) => {
+        const existingEst = estimateId !== null
+            ? taskEstimates.find(e => e.id === estimateId)
+            : undefined;
 
         if (existingEst && hours > 0) {
             // 既存あり + 入力あり → 更新
@@ -442,6 +481,7 @@ function saveEditAllProcesses() {
         }
         // 既存あり + 入力なし → そのまま残す
         // 既存なし + 入力なし → スキップ
+        });
     });
 
     // 版数・対応名が変更されていれば一括更新
@@ -963,7 +1003,7 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
                 td.dataset.workMonthCol = 'true';
                 const processName = row.dataset.process;
                 const selStyle = isMobile
-                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(15.5px * var(--ui-scale));'
+                    ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(13px * var(--ui-scale));'
                     : 'margin: 0; flex: 1;';
 
                 if (isTwoMonths) {
@@ -1088,7 +1128,7 @@ export function addEstimateMemberRow(proc) {
     newRow.dataset.process = proc;
     newRow.dataset.extraIndex = idx;
     newRow.innerHTML = `
-        <td style="text-align: center; color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale));">┗</td>
+        <td style="text-align: center; color: var(--text-muted); font-size: calc(11px * var(--ui-scale));">┗</td>
         <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
         <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
         <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>

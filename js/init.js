@@ -263,8 +263,6 @@ window.saveActualEdit = Actual.saveActualEdit;
 window.getPreviousActual = Actual.getPreviousActual;
 window.getLatestActualBeforeDate = Actual.getLatestActualBeforeDate;
 window.updateEditActualTaskList = Actual.updateEditActualTaskList;
-window.openOtherWorkFromCalendar = Actual.openOtherWorkFromCalendar;
-window.openVacationFromCalendar = Actual.openVacationFromCalendar;
 window.openOtherWorkModalWithContext = Actual.openOtherWorkModalWithContext;
 window.handleActualTaskSelect = Actual.handleActualTaskSelect;
 

@@ -4,7 +4,7 @@
 
 import * as State from './state.js';
 import { pushAction } from './history.js';
-import { showAlert } from './utils.js';
+import { showAlert, populateQuarterHourOptions, setHoursSelectValue } from './utils.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -207,6 +207,13 @@ export function closeOtherWorkModal() {
 
     // モーダルタイトルをリセット
     document.querySelector('#otherWorkModal .modal-header h3').textContent = 'その他作業を登録';
+
+    // 実績登録モーダルのタブに埋め込まれている場合は親モーダルも閉じる
+    const editModal = document.getElementById('editActualModal');
+    if (editModal && editModal.dataset.tabMode === 'true' && editModal.style.display === 'flex' &&
+        typeof window.closeEditActualModal === 'function') {
+        window.closeEditActualModal();
+    }
 }
 
 // その他作業モーダルのタブを切り替え
@@ -264,6 +271,7 @@ export function getPreviousOtherWork(member, beforeDate) {
  * @param {string|null} beforeDate - コンテキストの日付。null なら全期間から直近を採用。
  */
 export function applyOtherWorkDefaults(member, beforeDate) {
+    const DEFAULT_MEETING_HOURS = 1;
     const DEFAULT_HOURS = 8;
     const previous = getPreviousOtherWork(member, beforeDate);
 
@@ -272,9 +280,13 @@ export function applyOtherWorkDefaults(member, beforeDate) {
     const otherWorkMemberEl = document.getElementById('otherWorkMember');
     const otherWorkHoursEl = document.getElementById('otherWorkHours');
 
-    // 両タブとも工数は 8h をデフォルトに(タブ切替後も空にならないように)
-    if (meetingHoursEl) meetingHoursEl.value = DEFAULT_HOURS;
-    if (otherWorkHoursEl) otherWorkHoursEl.value = DEFAULT_HOURS;
+    // 工数セレクトのオプションを生成（初回のみ）
+    populateQuarterHourOptions(meetingHoursEl);
+    populateQuarterHourOptions(otherWorkHoursEl);
+
+    // デフォルト工数: 打ち合わせは 1h、任意作業は 8h(タブ切替後も空にならないように)
+    if (meetingHoursEl) setHoursSelectValue(meetingHoursEl, DEFAULT_MEETING_HOURS);
+    if (otherWorkHoursEl) setHoursSelectValue(otherWorkHoursEl, DEFAULT_HOURS);
 
     if (previous && previous.task !== '打ち合わせ') {
         // 直近が任意作業 → 任意作業タブを初期表示し、作業名・担当を復元

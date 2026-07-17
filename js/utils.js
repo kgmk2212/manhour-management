@@ -211,7 +211,7 @@ export function getMonthColor(workMonths) {
 export function generateMonthColorLegend(usedMonths, hasMultipleMonths = false, hasUnassigned = false) {
     if (!usedMonths || usedMonths.size === 0) return '';
 
-    let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: calc(15.5px * var(--ui-scale));">';
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: calc(12px * var(--ui-scale));">';
     html += '<span style="font-weight: 600; color: #666; margin-right: 5px;">月別:</span>';
 
     // 使用されている月のみ表示（ソートして）
@@ -739,4 +739,54 @@ export function getUiScale() {
 export function scaledFont(weight, sizePx, family) {
     const s = Math.round(sizePx * getUiScale());
     return `${weight} ${s}px ${family}`;
+}
+
+// ============================================
+// 工数ドロップダウン（0.25h刻み）
+// ============================================
+
+/**
+ * select要素に0.25h刻みの工数オプションを生成する（初回のみ）
+ * @param {HTMLSelectElement} selectEl - 対象のselect要素
+ * @param {number} [maxHours=16] - 最大時間
+ */
+export function populateQuarterHourOptions(selectEl, maxHours = 16) {
+    if (!selectEl || selectEl.dataset.hoursPopulated === 'true') return;
+    selectEl.innerHTML = '';
+    for (let q = 1; q <= maxHours * 4; q++) {
+        const value = q * 0.25;
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = `${value}h`;
+        selectEl.appendChild(option);
+    }
+    selectEl.dataset.hoursPopulated = 'true';
+}
+
+/**
+ * 0.25刻みに含まれない値（過去データ等）をselectに設定できるよう、
+ * 必要に応じてオプションを動的追加してから値を設定する
+ * @param {HTMLSelectElement} selectEl - 対象のselect要素
+ * @param {number|string} value - 設定したい工数
+ */
+export function setHoursSelectValue(selectEl, value) {
+    if (!selectEl) return;
+    const normalized = String(Number(value));
+    if (normalized === 'NaN' || value === '' || value === null || value === undefined) {
+        return;
+    }
+    const exists = Array.from(selectEl.options).some(o => o.value === normalized);
+    if (!exists) {
+        const option = document.createElement('option');
+        option.value = normalized;
+        option.textContent = `${normalized}h`;
+        // 数値順の位置に挿入
+        const idx = Array.from(selectEl.options).findIndex(o => Number(o.value) > Number(normalized));
+        if (idx === -1) {
+            selectEl.appendChild(option);
+        } else {
+            selectEl.insertBefore(option, selectEl.options[idx]);
+        }
+    }
+    selectEl.value = normalized;
 }

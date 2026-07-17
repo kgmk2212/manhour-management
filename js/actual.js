@@ -7,11 +7,12 @@ import {
     setActuals,
     nextId} from './state.js';
 
-import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler } from './utils.js';
+import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
 import { CALCULATIONS } from './constants.js';
 import { applyOtherWorkDefaults } from './other-work.js';
+import { prepareVacationFields } from './vacation.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -321,7 +322,7 @@ export function renderMemberCalendar() {
         const [year, month] = selectedMonth.split('-');
         html += `<div style="margin-bottom: 15px;">
             <p style="margin: 0 0 5px 0; font-weight: 600;">${year}年${parseInt(month)}月の合計</p>
-            <p style="margin: 0; color: #666; font-size: calc(16px * var(--ui-scale));">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
+            <p style="margin: 0; color: #666; font-size: calc(14px * var(--ui-scale));">稼働日数: ${workedDays}日<span style="margin-left: 20px;">営業日数: ${businessDays}日</span><span style="margin-left: 20px;">合計工数: ${formatHours(totalHours)}h</span></p>
         </div>`;
     }
 
@@ -341,7 +342,7 @@ export function renderMemberCalendar() {
 
         const [year, m, day] = date.split('-');
         const dateDisplay = isHoliday
-            ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${escapeHtml(holiday)}</span><span class="holiday-break"><br><span style="font-size: calc(15.5px * var(--ui-scale)); font-weight: normal;">${escapeHtml(holiday)}</span></span>`
+            ? `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})<span class="holiday-inline"> ${escapeHtml(holiday)}</span><span class="holiday-break"><br><span style="font-size: calc(11px * var(--ui-scale)); font-weight: normal;">${escapeHtml(holiday)}</span></span>`
             : `${parseInt(m)}/${parseInt(day)} (${dayOfWeek})`;
 
         if (dayActuals.length === 0) {
@@ -358,7 +359,7 @@ export function renderMemberCalendar() {
                 } else {
                     html += `<tr style="background: ${bgColor};">`;
                 }
-                html += `<td style="font-size: calc(16px * var(--ui-scale));">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${escapeHtml(actual.process)}]</td>`;
+                html += `<td style="font-size: calc(14px * var(--ui-scale));">${escapeHtml(actual.version)} - ${escapeHtml(actual.task)} [${escapeHtml(actual.process)}]</td>`;
                 html += `<td style="text-align: center; font-weight: 600;">${actual.hours}h</td>`;
                 html += `</tr>`;
             });
@@ -793,9 +794,9 @@ export function showWorkDetail(member, date) {
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong>${escapeHtml(vacation.vacationType)}</strong>
-                                <span style="color: #666; font-size: calc(16px * var(--ui-scale)); margin-left: 10px;">${vacation.hours}h</span>
+                                <span style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-left: 10px;">${vacation.hours}h</span>
                             </div>
-                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(15.5px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
+                            <button onclick="deleteVacationFromModal(${vacation.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                         </div>
                     </div>
                 `;
@@ -815,8 +816,8 @@ export function showWorkDetail(member, date) {
                         <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
-                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(15.5px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
-                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(15.5px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
+                        <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
+                        <button onclick="deleteActualFromModal(${actual.id}, '${escapeForHandler(member)}', '${escapeForHandler(date)}')" style="background: none; border: none; color: #95a5a6; cursor: pointer; font-size: calc(12px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">削除</button>
                     </div>
                 </div>
             `;
@@ -824,16 +825,16 @@ export function showWorkDetail(member, date) {
 
         html += `
             <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">
-                <strong style="font-size: calc(17px * var(--ui-scale));">合計: ${formatHours(totalHours)}時間</strong>
-                <span style="color: #666; font-size: calc(16px * var(--ui-scale)); margin-left: 10px;">(${dayActuals.length}件)</span>
+                <strong style="font-size: calc(16px * var(--ui-scale));">合計: ${formatHours(totalHours)}時間</strong>
+                <span style="color: #666; font-size: calc(14px * var(--ui-scale)); margin-left: 10px;">(${dayActuals.length}件)</span>
             </div>
             <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button onclick="addActualFromCalendar('${escapeForHandler(member)}', '${escapeForHandler(date)}'); closeWorkModal();"
-                        style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(16px * var(--ui-scale)); font-weight: 600;">
+                        style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     + 新しい実績を追加
                 </button>
                 <button onclick="addVacationFromCalendar('${escapeForHandler(member)}', '${escapeForHandler(date)}'); closeWorkModal();"
-                        style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(16px * var(--ui-scale)); font-weight: 600;">
+                        style="padding: 10px 20px; background: #f57c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(14px * var(--ui-scale)); font-weight: 600;">
                     + 休暇を追加
                 </button>
             </div>
@@ -1030,7 +1031,9 @@ export function addActualFromCalendar(member, date) {
     memberDisplay.textContent = member;
 
     // デフォルト工数: その日に登録済みの実績を標準工数(8h)から引いた残り工数
-    document.getElementById('editActualHours').value = String(getRemainingDayHours(member, date));
+    const hoursSelect = document.getElementById('editActualHours');
+    populateQuarterHourOptions(hoursSelect);
+    setHoursSelectValue(hoursSelect, getRemainingDayHours(member, date));
     document.getElementById('editActualRemainingHours').value = '';
 
     const modalTitle = document.querySelector('#editActualModal .modal-header h3');
@@ -1044,10 +1047,11 @@ export function addActualFromCalendar(member, date) {
         taskSelect.value = previousActual.task;
     }
 
-    document.getElementById('editActualOtherBtn').style.display = 'block';
-    document.getElementById('editActualVacationBtn').style.display = 'block';
     document.getElementById('editActualModal').dataset.calendarMember = member;
     document.getElementById('editActualModal').dataset.calendarDate = date;
+
+    // その他作業・休暇をタブで切り替えられるモードにする
+    enterEditActualTabMode(member, date);
 
     document.getElementById('editActualModal').style.display = 'flex';
 }
@@ -1091,7 +1095,9 @@ export function editActual(id) {
     }
 
     document.getElementById('editActualProcess').value = actual.process;
-    document.getElementById('editActualHours').value = actual.hours;
+    const editHoursSelect = document.getElementById('editActualHours');
+    populateQuarterHourOptions(editHoursSelect);
+    setHoursSelectValue(editHoursSelect, actual.hours);
 
     const existingRemaining = getRemainingEstimate(actual.version, actual.task, actual.process, actual.member);
     document.getElementById('editActualRemainingHours').value = existingRemaining ? existingRemaining.remainingHours : '';
@@ -1142,8 +1148,8 @@ export function editActual(id) {
     memberSelect.style.display = 'block';
     document.getElementById('editActualMemberDisplay').style.display = 'none';
 
-    document.getElementById('editActualOtherBtn').style.display = 'none';
-    document.getElementById('editActualVacationBtn').style.display = 'none';
+    // 編集時はタブモード不要
+    exitEditActualTabMode();
 
     document.getElementById('editActualModal').style.display = 'flex';
 }
@@ -1158,6 +1164,130 @@ export function closeEditActualModal() {
     const processSelect = document.getElementById('editActualProcess');
     if (versionSelect) versionSelect.disabled = false;
     if (processSelect) processSelect.disabled = false;
+    // タブモードの場合は埋め込んだフォームを元のモーダルへ戻す
+    exitEditActualTabMode();
+}
+
+// ============================================
+// 実績登録モーダルのタブモード
+// （カレンダー新規登録時に実績/その他作業/休暇をタブで切り替える）
+// ============================================
+
+let editActualTabsInitialized = false;
+
+/**
+ * タブモードを開始する。
+ * その他作業・休暇のフォームを既存モーダルからタブペインへ移設し、
+ * コンテキスト（担当者・日付）でフォームを初期化する。
+ * @param {string} member - 担当者
+ * @param {string} date - 日付 (YYYY-MM-DD)
+ */
+export function enterEditActualTabMode(member, date) {
+    const modal = document.getElementById('editActualModal');
+    const tabs = document.getElementById('editActualModeTabs');
+    const paneOther = document.getElementById('editActualPaneOther');
+    const paneVacation = document.getElementById('editActualPaneVacation');
+    if (!modal || !tabs || !paneOther || !paneVacation) return;
+
+    // タブクリックイベント（初回のみ）
+    if (!editActualTabsInitialized) {
+        document.getElementById('editActualTabActual').addEventListener('click', () => setEditActualTab('actual'));
+        document.getElementById('editActualTabOther').addEventListener('click', () => setEditActualTab('other'));
+        document.getElementById('editActualTabVacation').addEventListener('click', () => setEditActualTab('vacation'));
+        editActualTabsInitialized = true;
+    }
+
+    // その他作業フォームを移設し、コンテキストで初期化
+    const otherBody = document.querySelector('#otherWorkModal .modal-body');
+    if (otherBody && paneOther.children.length === 0) {
+        while (otherBody.firstChild) paneOther.appendChild(otherBody.firstChild);
+    }
+    // addMeeting/addOtherWork は otherWorkModal.dataset.calendarDate から日付を読む
+    document.getElementById('otherWorkModal').dataset.calendarDate = date;
+    populateOtherWorkMembers(member);
+    applyOtherWorkDefaults(member, date);
+
+    // 休暇フォームを移設し、コンテキストで初期化
+    const vacationBody = document.querySelector('#vacationModal .modal-body');
+    if (vacationBody && paneVacation.children.length === 0) {
+        while (vacationBody.firstChild) paneVacation.appendChild(vacationBody.firstChild);
+    }
+    prepareVacationFields(member, date);
+
+    modal.dataset.tabMode = 'true';
+    tabs.style.display = 'flex';
+    setEditActualTab('actual');
+}
+
+/**
+ * タブモードを終了し、移設したフォームを元のモーダルへ戻す
+ */
+export function exitEditActualTabMode() {
+    const modal = document.getElementById('editActualModal');
+    const tabs = document.getElementById('editActualModeTabs');
+    const paneOther = document.getElementById('editActualPaneOther');
+    const paneVacation = document.getElementById('editActualPaneVacation');
+    if (!modal || !tabs || !paneOther || !paneVacation) return;
+
+    const otherBody = document.querySelector('#otherWorkModal .modal-body');
+    if (otherBody) {
+        while (paneOther.firstChild) otherBody.appendChild(paneOther.firstChild);
+    }
+    const vacationBody = document.querySelector('#vacationModal .modal-body');
+    if (vacationBody) {
+        while (paneVacation.firstChild) vacationBody.appendChild(paneVacation.firstChild);
+    }
+
+    delete modal.dataset.tabMode;
+    tabs.style.display = 'none';
+    setEditActualTab('actual');
+}
+
+/**
+ * 実績登録モーダルのアクティブタブを切り替える
+ * @param {string} tab - 'actual' | 'other' | 'vacation'
+ */
+export function setEditActualTab(tab) {
+    const panes = {
+        actual: document.getElementById('editActualPaneActual'),
+        other: document.getElementById('editActualPaneOther'),
+        vacation: document.getElementById('editActualPaneVacation')
+    };
+    const tabBtns = {
+        actual: document.getElementById('editActualTabActual'),
+        other: document.getElementById('editActualTabOther'),
+        vacation: document.getElementById('editActualTabVacation')
+    };
+    Object.keys(panes).forEach(key => {
+        if (panes[key]) panes[key].style.display = key === tab ? 'block' : 'none';
+        if (tabBtns[key]) tabBtns[key].classList.toggle('active', key === tab);
+    });
+}
+
+/**
+ * その他作業フォームの担当者selectを最新のメンバーで再構築する
+ * @param {string|null} selectedMember - 初期選択する担当者
+ */
+function populateOtherWorkMembers(selectedMember) {
+    const otherWorkMemberSelect = document.getElementById('otherWorkMember');
+    if (!otherWorkMemberSelect) return;
+
+    const allMembers = new Set();
+    estimates.forEach(e => allMembers.add(e.member));
+    actuals.forEach(a => allMembers.add(a.member));
+
+    const memberOrderInput = document.getElementById('memberOrder').value.trim();
+    const sortedMembers = sortMembers([...allMembers], memberOrderInput);
+
+    otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
+    sortedMembers.forEach(m => {
+        const option = document.createElement('option');
+        option.value = m;
+        option.textContent = m;
+        otherWorkMemberSelect.appendChild(option);
+    });
+
+    if (selectedMember) otherWorkMemberSelect.value = selectedMember;
 }
 
 /**
@@ -1475,62 +1605,10 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
 }
 
 /**
- * カレンダーからその他作業モーダルを開く
- */
-export function openOtherWorkFromCalendar() {
-    const modal = document.getElementById('editActualModal');
-    const member = modal.dataset.calendarMember;
-    const date = modal.dataset.calendarDate;
-
-    closeEditActualModal();
-    openOtherWorkModalWithContext(member, date);
-}
-
-/**
- * カレンダーから休暇登録モーダルを開く
- */
-export function openVacationFromCalendar() {
-    const modal = document.getElementById('editActualModal');
-    const member = modal.dataset.calendarMember;
-    const date = modal.dataset.calendarDate;
-
-    closeEditActualModal();
-    if (typeof window.addVacationFromCalendar === 'function') {
-        window.addVacationFromCalendar(member, date);
-    }
-}
-
-/**
  * コンテキスト付きでその他作業モーダルを開く
  */
 export function openOtherWorkModalWithContext(member, date) {
-    const otherWorkMemberSelect = document.getElementById('otherWorkMember');
-    if (otherWorkMemberSelect) {
-        const allMembers = new Set();
-        estimates.forEach(e => allMembers.add(e.member));
-        actuals.forEach(a => allMembers.add(a.member));
-
-        let sortedMembers;
-        const memberOrderInput = document.getElementById('memberOrder').value.trim();
-        if (memberOrderInput) {
-            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-            const orderedMembers = orderList.filter(name => allMembers.has(name));
-            const unorderedMembers = Array.from(allMembers).filter(m => !orderedMembers.includes(m)).sort();
-            sortedMembers = [...orderedMembers, ...unorderedMembers];
-        } else {
-            sortedMembers = Array.from(allMembers).sort();
-        }
-
-        otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
-        sortedMembers.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m;
-            option.textContent = m;
-            otherWorkMemberSelect.appendChild(option);
-        });
-
-        otherWorkMemberSelect.value = member;
-    }
+    populateOtherWorkMembers(member);
 
     document.getElementById('otherWorkModal').dataset.calendarDate = date;
 
@@ -1753,10 +1831,10 @@ export function renderCalendarGrid() {
         html += `<div class="calendar-date">${day}</div>`;
 
         if (holiday) {
-            html += `<div class="calendar-entry" style="color:var(--danger);font-size: calc(15.5px * var(--ui-scale));">${holiday}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--danger);font-size: calc(10px * var(--ui-scale));">${holiday}</div>`;
         }
         if (companyHolidayName && !holiday) {
-            html += `<div class="calendar-entry" style="color:var(--warning);font-size: calc(15.5px * var(--ui-scale));">${companyHolidayName}</div>`;
+            html += `<div class="calendar-entry" style="color:var(--warning);font-size: calc(10px * var(--ui-scale));">${companyHolidayName}</div>`;
         }
 
         if (data) {

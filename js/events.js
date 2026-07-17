@@ -64,8 +64,6 @@ import {
     closeWorkModal,
     closeEditActualModal,
     saveActualEdit,
-    openOtherWorkFromCalendar,
-    openVacationFromCalendar,
     handleActualTaskSelect,
     handleActualProcessChange
 } from './actual.js';
@@ -745,25 +743,6 @@ export function initEventHandlers() {
 
     const editActualProcess = document.getElementById('editActualProcess');
     if (editActualProcess) editActualProcess.addEventListener('change', handleActualProcessChange);
-
-    // その他作業・休暇登録ボタン (カレンダーからの新規登録時に表示)
-    // イベント委譲を使用して確実にイベントをキャッチする
-    const editActualModal = document.getElementById('editActualModal');
-    if (editActualModal) {
-        editActualModal.addEventListener('click', (e) => {
-            const otherBtn = e.target.closest('#editActualOtherBtn');
-            if (otherBtn) {
-                openOtherWorkFromCalendar();
-                return;
-            }
-
-            const vacationBtn = e.target.closest('#editActualVacationBtn');
-            if (vacationBtn) {
-                openVacationFromCalendar();
-                return;
-            }
-        });
-    }
 
 
     // Vacation Modal
