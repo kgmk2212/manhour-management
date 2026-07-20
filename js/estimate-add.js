@@ -136,6 +136,10 @@ export function openEditAllProcesses(version, task) {
     hasFormData = false;
     openAddEstimateModal();
 
+    // 前回開いた際の追加担当者行が残っていると別タスクの行が混ざるため、
+    // プリフィル前にすべて除去してクリーンな状態から始める。
+    removeAllExtraMemberRows();
+
     const modal = document.getElementById('addEstimateModal');
 
     // 編集モードフラグをセット
@@ -201,16 +205,12 @@ export function openEditAllProcesses(version, task) {
     // 既存データで工程テーブルをプリフィル
     const taskEstimates = State.estimates.filter(e => e.version === version && e.task === task);
 
-    // 作業月のプリフィル: 全工程の月範囲を判定
+    // 作業月のプリフィル: 全工程の月範囲を判定（全体期間の開始/終了月の決定に使用）
     const allWorkMonths = new Set();
-    const processWorkMonths = {}; // 工程別の作業月（同一工程複数見積の場合は先頭を代表とする）
     taskEstimates.forEach(e => {
         const est = Utils.normalizeEstimate(e);
         if (est.workMonths && est.workMonths.length > 0) {
             est.workMonths.forEach(m => allWorkMonths.add(m));
-            if (!processWorkMonths[est.process]) {
-                processWorkMonths[est.process] = est.workMonths;
-            }
         }
     });
 
@@ -286,29 +286,29 @@ export function openEditAllProcesses(version, task) {
         });
     });
 
-    // 複数月モードの場合、各工程の作業月をプリフィル
+    // 複数月モードの場合、各行（プライマリ＋追加担当者）に登録済みの作業月をプリフィル。
+    // 担当者ごとに個別の作業月を保持できるよう、行ごとにその見積の workMonths を反映する。
     if (isMultiMonth) {
         setTimeout(() => {
+            // 追加担当者行の作業月セルを確実に用意（全体期間の選択肢を設定）
+            refreshAllExtraRowMonthCells();
+
             PROCESS.TYPES.forEach(proc => {
-                const procMonths = processWorkMonths[proc];
-                if (!procMonths || procMonths.length === 0) return;
+                const procEstimates = taskEstimates.filter(e => e.process === proc);
+                if (procEstimates.length === 0) return;
 
-                const startSelect = document.getElementById(`addEst${proc}_startMonth`);
-                const endSelect = document.getElementById(`addEst${proc}_endMonth`);
-
-                // 分岐は uniqueMonths（distinct数）ではなく DOM の実構造で判定する。
-                // 全体期間が非連続（例: 1月と3月のみ）だと distinct数=2 でも
-                // generateMonthRange 由来の列は範囲セレクト（start+end）になり得るため、
-                // 存在するセレクトに合わせて設定しないと終了月が登録値にならない。
-                if (startSelect && endSelect) {
-                    // 範囲セレクト（3ヶ月以上、または非連続で範囲表示の場合）
-                    const sorted = [...procMonths].sort();
-                    startSelect.value = sorted[0];
-                    endSelect.value = sorted[sorted.length - 1];
-                } else if (startSelect) {
-                    // 2ヶ月モード: 単一セレクトに最初の作業月を設定
-                    startSelect.value = procMonths[0];
+                // プライマリ行 = procEstimates[0] の登録月
+                const primaryRow = document.getElementById(`addEst${proc}_member`)?.closest('tr');
+                if (primaryRow) {
+                    prefillRowWorkMonths(primaryRow, Utils.normalizeEstimate(procEstimates[0]).workMonths);
                 }
+
+                // 追加担当者行 = 見積IDで対応付け、各担当者の登録月を反映
+                document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
+                    const id = row.dataset.estimateId ? Number(row.dataset.estimateId) : null;
+                    const est = id != null ? procEstimates.find(e => e.id === id) : null;
+                    if (est) prefillRowWorkMonths(row, Utils.normalizeEstimate(est).workMonths);
+                });
             });
         }, 50);
     }
@@ -373,18 +373,20 @@ function saveEditAllProcesses() {
         rows.push({
             member: memberSelect ? memberSelect.value : '',
             hours: parseFloat(hoursInput ? hoursInput.value : '') || 0,
-            estimateId: primaryRow && primaryRow.dataset.estimateId ? Number(primaryRow.dataset.estimateId) : null
+            estimateId: primaryRow && primaryRow.dataset.estimateId ? Number(primaryRow.dataset.estimateId) : null,
+            rowEl: primaryRow
         });
 
         document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
             rows.push({
                 member: row.querySelector('.est-extra-member')?.value || '',
                 hours: parseFloat(row.querySelector('.est-extra-hours')?.value) || 0,
-                estimateId: row.dataset.estimateId ? Number(row.dataset.estimateId) : null
+                estimateId: row.dataset.estimateId ? Number(row.dataset.estimateId) : null,
+                rowEl: row
             });
         });
 
-        rows.forEach(({ member, hours, estimateId }) => {
+        rows.forEach(({ member, hours, estimateId, rowEl }) => {
         const existingEst = estimateId !== null
             ? taskEstimates.find(e => e.id === estimateId)
             : undefined;
@@ -393,26 +395,14 @@ function saveEditAllProcesses() {
             // 既存あり + 入力あり → 更新
             const idx = State.estimates.findIndex(e => e.id === existingEst.id);
             if (idx !== -1) {
-                let workMonth, workMonths, monthlyHours;
-                if (isSingleMonth) {
-                    workMonth = startMonth;
-                    workMonths = startMonth ? [startMonth] : existingEst.workMonths || [];
-                    monthlyHours = startMonth ? { [startMonth]: hours } : existingEst.monthlyHours || {};
-                } else {
-                    // 複数月: 工程別作業月があればそれを使う
-                    const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
-                    const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
-                    if (procStartMonth && procEndMonth && procStartMonth !== procEndMonth) {
-                        const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
-                        workMonth = procStartMonth;
-                        workMonths = months;
-                        monthlyHours = {};
-                        months.forEach(m => { monthlyHours[m] = hours / months.length; });
-                    } else {
-                        workMonth = procStartMonth || startMonth;
-                        workMonths = workMonth ? [workMonth] : existingEst.workMonths || [];
-                        monthlyHours = workMonth ? { [workMonth]: hours } : existingEst.monthlyHours || {};
-                    }
+                // 作業月は各行（担当者）ごとの作業月セルから個別に算出する
+                let { workMonth, workMonths, monthlyHours } =
+                    computeRowWorkMonths(rowEl, hours, isSingleMonth, startMonth, endMonth);
+                // 行から月が取得できなかった場合は既存値を維持
+                if (!workMonths || workMonths.length === 0) {
+                    workMonth = workMonth || existingEst.workMonth;
+                    workMonths = existingEst.workMonths || [];
+                    monthlyHours = existingEst.monthlyHours || {};
                 }
 
                 State.estimates[idx] = {
@@ -456,26 +446,9 @@ function saveEditAllProcesses() {
             }
         } else if (!existingEst && hours > 0 && member) {
             // 既存なし + 入力あり → 新規作成
-            let workMonth, workMonths, monthlyHours;
-            if (isSingleMonth) {
-                workMonth = startMonth || '';
-                workMonths = startMonth ? [startMonth] : [];
-                monthlyHours = startMonth ? { [startMonth]: hours } : {};
-            } else {
-                const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
-                const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
-                if (procStartMonth && procEndMonth && procStartMonth !== procEndMonth) {
-                    const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
-                    workMonth = procStartMonth;
-                    workMonths = months;
-                    monthlyHours = {};
-                    months.forEach(m => { monthlyHours[m] = hours / months.length; });
-                } else {
-                    workMonth = procStartMonth || startMonth || '';
-                    workMonths = workMonth ? [workMonth] : [];
-                    monthlyHours = workMonth ? { [workMonth]: hours } : {};
-                }
-            }
+            // 作業月は各行（担当者）ごとの作業月セルから個別に算出する
+            const { workMonth, workMonths, monthlyHours } =
+                computeRowWorkMonths(rowEl, hours, isSingleMonth, startMonth, endMonth);
 
             const newEst = {
                 id: State.nextId(),
@@ -1043,6 +1016,9 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
             }
         });
 
+        // 追加担当者行にも作業月セルを付与
+        refreshAllExtraRowMonthCells();
+
         // DOM更新後に選択肢を設定
         setTimeout(() => {
             if (startMonthMulti && endMonthEl && startMonthMulti.value && endMonthEl.value) {
@@ -1062,6 +1038,9 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
                 row.removeChild(workMonthTd);
             }
         });
+
+        // 追加担当者行の作業月セルも除去
+        refreshAllExtraRowMonthCells();
     }
 }
 
@@ -1095,6 +1074,176 @@ export function updateDefaultAddProcessMonths(startMonth, endMonth) {
             endSelect.value = item.endMonth;
         }
     });
+
+    // 追加担当者行の作業月セルも全体期間に合わせて更新
+    refreshAllExtraRowMonthCells();
+}
+
+// ============================================
+// 追加担当者行の作業月セル（全工程編集・複数担当者の個別作業月対応）
+// プライマリ行と同じ作業月セレクトを追加担当者行にも持たせ、担当者ごとに
+// 個別の作業月を表示・編集できるようにする。id 衝突を避けるため、値の読み書きは
+// getElementById ではなく「行に対する querySelector（相対参照）」で行う。
+// ============================================
+
+/**
+ * 月セレクトに選択肢を設定する
+ * @param {HTMLSelectElement} sel
+ * @param {string[]} months - YYYY-MM の配列
+ * @param {string} selectedValue - 初期選択値
+ */
+function fillMonthSelectOptions(sel, months, selectedValue) {
+    if (!sel) return;
+    sel.innerHTML = '';
+    months.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m;
+        o.textContent = `${parseInt(m.substring(5))}月`;
+        sel.appendChild(o);
+    });
+    if (selectedValue && months.includes(selectedValue)) {
+        sel.value = selectedValue;
+    } else if (months.length) {
+        sel.value = months[0];
+    }
+}
+
+/**
+ * 追加担当者行の作業月セル(td)の中身HTMLを生成
+ */
+function buildExtraMonthCellInnerHTML(isTwoMonths, isMobile) {
+    const selStyle = isMobile
+        ? 'margin: 0; flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: calc(15.5px * var(--ui-scale));'
+        : 'margin: 0; flex: 1;';
+    if (isTwoMonths) {
+        return `<select class="est-extra-month-start" style="${selStyle}"></select>`;
+    }
+    return `<div style="display: flex; gap: ${isMobile ? '2px' : '5px'}; align-items: center;">
+            <select class="est-extra-month-start" style="${selStyle}"></select>
+            <span style="font-size: ${isMobile ? '11px' : '14px'};">〜</span>
+            <select class="est-extra-month-end" style="${selStyle}"></select>
+        </div>`;
+}
+
+/**
+ * 追加担当者行に作業月セルを用意/更新する。
+ * 複数月モードのときはプライマリ行と同じ構造のセルを付与し、単一月モードでは除去する。
+ * 既存の選択値はできる限り保持する。
+ * @param {HTMLTableRowElement} row - tr.est-extra-member-row
+ */
+export function ensureExtraRowMonthCell(row) {
+    const table = document.getElementById('addEstimateTable');
+    if (!table || !row) return;
+    const headerHasMonth = !!table.querySelector('thead [data-work-month-col]');
+    let cell = row.querySelector('[data-work-month-col]');
+
+    if (!headerHasMonth) {
+        // 単一月モード: 作業月セルは不要
+        if (cell) row.removeChild(cell);
+        return;
+    }
+
+    const startMonthMulti = document.getElementById('addEstStartMonthMulti');
+    const endMonthEl = document.getElementById('addEstEndMonth');
+    const months = (startMonthMulti && endMonthEl && startMonthMulti.value && endMonthEl.value)
+        ? Utils.generateMonthRange(startMonthMulti.value, endMonthEl.value) : [];
+    if (months.length === 0) return;
+
+    const isTwoMonths = months.length === 2;
+    const isMobile = window.innerWidth <= 768;
+    const proc = row.dataset.process;
+
+    // 既存の選択値を保持（作り直しで失わないように）
+    const prevSels = cell ? [...cell.querySelectorAll('select')] : [];
+    const prevStart = prevSels[0] ? prevSels[0].value : '';
+    const prevEnd = prevSels[1] ? prevSels[1].value : '';
+
+    if (!cell) {
+        cell = document.createElement('td');
+        cell.style.overflow = 'hidden';
+        cell.dataset.workMonthCol = 'true';
+        // 削除ボタン列（最後の列）の前に挿入
+        row.insertBefore(cell, row.lastElementChild);
+    }
+    cell.innerHTML = buildExtraMonthCellInnerHTML(isTwoMonths, isMobile);
+
+    // 既定はプライマリ行の作業月に合わせる（編集時はプリフィルで上書きされる）
+    const primStart = document.getElementById(`addEst${proc}_startMonth`);
+    const primEnd = document.getElementById(`addEst${proc}_endMonth`);
+    const es = cell.querySelector('.est-extra-month-start');
+    const ee = cell.querySelector('.est-extra-month-end');
+    fillMonthSelectOptions(es, months, prevStart || (primStart ? primStart.value : '') || months[0]);
+    if (ee) fillMonthSelectOptions(ee, months, prevEnd || (primEnd ? primEnd.value : '') || months[months.length - 1]);
+}
+
+/**
+ * すべての追加担当者行の作業月セルを用意/更新する
+ */
+export function refreshAllExtraRowMonthCells() {
+    document.querySelectorAll('#addEstimateTable tr.est-extra-member-row').forEach(row => {
+        ensureExtraRowMonthCell(row);
+    });
+}
+
+/**
+ * 行(プライマリ/追加)の作業月セルに登録済みの作業月をプリフィルする
+ * @param {HTMLTableRowElement} rowEl
+ * @param {string[]} workMonths
+ */
+function prefillRowWorkMonths(rowEl, workMonths) {
+    if (!rowEl || !workMonths || workMonths.length === 0) return;
+    const cell = rowEl.querySelector('[data-work-month-col]');
+    if (!cell) return;
+    const sels = cell.querySelectorAll('select');
+    const sorted = [...workMonths].sort();
+    if (sels.length >= 2) {
+        sels[0].value = sorted[0];
+        sels[1].value = sorted[sorted.length - 1];
+    } else if (sels.length === 1) {
+        sels[0].value = sorted[0];
+    }
+}
+
+/**
+ * 行(プライマリ/追加)の作業月セルから workMonth/workMonths/monthlyHours を算出する。
+ * 単一月モードのときは全体開始月を用いる。
+ * @param {HTMLTableRowElement} rowEl
+ * @param {number} hours
+ * @param {boolean} isSingleMonth
+ * @param {string} globalStartMonth
+ */
+function computeRowWorkMonths(rowEl, hours, isSingleMonth, globalStartMonth, globalEndMonth) {
+    const rangeResult = (start, end) => {
+        const months = Utils.generateMonthRange(start, end);
+        const mh = {};
+        months.forEach(m => { mh[m] = hours / months.length; });
+        return { workMonth: start, workMonths: months, monthlyHours: mh };
+    };
+    const singleResult = (m) => ({
+        workMonth: m || '',
+        workMonths: m ? [m] : [],
+        monthlyHours: m ? { [m]: hours } : {}
+    });
+
+    if (isSingleMonth) {
+        return singleResult(globalStartMonth);
+    }
+    const cell = rowEl ? rowEl.querySelector('[data-work-month-col]') : null;
+    const sels = cell ? cell.querySelectorAll('select') : [];
+    const s = sels[0] ? sels[0].value : '';
+    const e = sels[1] ? sels[1].value : '';
+    if (s && e && s !== e) {
+        return rangeResult(s, e);
+    }
+    if (s) {
+        // 単一セレクト（2ヶ月モード）または start=end
+        return singleResult(s);
+    }
+    // 行に作業月が無い場合は全体期間で按分（従来のフォールバック）
+    if (globalStartMonth && globalEndMonth && globalStartMonth !== globalEndMonth) {
+        return rangeResult(globalStartMonth, globalEndMonth);
+    }
+    return singleResult(globalStartMonth);
 }
 
 export function updateAddEstimateTotals() {
@@ -1154,6 +1303,9 @@ export function addEstimateMemberRow(proc) {
     `;
 
     lastRow.after(newRow);
+
+    // 複数月モードのときは、この追加行にも作業月セルを付与する
+    ensureExtraRowMonthCell(newRow);
 }
 
 /**
@@ -1178,17 +1330,18 @@ export function removeAllExtraMemberRows() {
 
 /**
  * 全工程の全担当者行（プライマリ＋追加）からデータを収集
- * @returns {Array<{process: string, member: string, hours: number}>}
+ * @returns {Array<{process: string, member: string, hours: number, rowEl: HTMLTableRowElement}>}
  */
 export function collectAllEstimateEntries() {
     const entries = [];
 
     PROCESS.TYPES.forEach(proc => {
         // プライマリ行
-        const member = document.getElementById(`addEst${proc}_member`)?.value || '';
+        const memberSelect = document.getElementById(`addEst${proc}_member`);
+        const member = memberSelect?.value || '';
         const hours = parseFloat(document.getElementById(`addEst${proc}`)?.value) || 0;
         if (hours > 0 && member) {
-            entries.push({ process: proc, member, hours });
+            entries.push({ process: proc, member, hours, rowEl: memberSelect ? memberSelect.closest('tr') : null });
         }
 
         // 追加行
@@ -1197,7 +1350,7 @@ export function collectAllEstimateEntries() {
             const extraMember = row.querySelector('.est-extra-member')?.value || '';
             const extraHours = parseFloat(row.querySelector('.est-extra-hours')?.value) || 0;
             if (extraHours > 0 && extraMember) {
-                entries.push({ process: proc, member: extraMember, hours: extraHours });
+                entries.push({ process: proc, member: extraMember, hours: extraHours, rowEl: row });
             }
         });
     });
@@ -1357,49 +1510,11 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
     const allEntries = collectAllEstimateEntries();
 
     allEntries.forEach(entry => {
-        const { process: proc, member, hours } = entry;
+        const { process: proc, member, hours, rowEl } = entry;
 
-        let workMonths, monthlyHours, workMonth;
-
-        if (isSingleMonth) {
-            workMonth = startMonth;
-            workMonths = [startMonth];
-            monthlyHours = { [startMonth]: hours };
-        } else {
-            // 複数月モード: 各工程の作業月を取得
-            const procStartMonth = document.getElementById(`addEst${proc}_startMonth`)?.value;
-            const procEndMonth = document.getElementById(`addEst${proc}_endMonth`)?.value;
-
-            if (procStartMonth && procEndMonth) {
-                if (procStartMonth === procEndMonth) {
-                    workMonth = procStartMonth;
-                    workMonths = [procStartMonth];
-                    monthlyHours = { [procStartMonth]: hours };
-                } else {
-                    const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
-                    workMonth = procStartMonth;
-                    workMonths = months;
-                    monthlyHours = {};
-                    months.forEach(m => {
-                        monthlyHours[m] = hours / months.length;
-                    });
-                }
-            } else if (procStartMonth) {
-                // 2ヶ月モード: 単一セレクトのみ（_endMonth要素なし）
-                workMonth = procStartMonth;
-                workMonths = [procStartMonth];
-                monthlyHours = { [procStartMonth]: hours };
-            } else {
-                // 工程別作業月が設定されていない場合は全期間
-                const months = Utils.generateMonthRange(startMonth, endMonth);
-                workMonth = startMonth;
-                workMonths = months;
-                monthlyHours = {};
-                months.forEach(m => {
-                    monthlyHours[m] = hours / months.length;
-                });
-            }
-        }
+        // 作業月は各行（担当者）ごとの作業月セルから個別に算出する
+        const { workMonth, workMonths, monthlyHours } =
+            computeRowWorkMonths(rowEl, hours, isSingleMonth, startMonth, endMonth);
 
         const est = {
             id: State.nextId(),

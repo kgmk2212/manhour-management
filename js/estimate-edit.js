@@ -99,6 +99,23 @@ export function editEstimate(id) {
     // memberOptionsのHTMLを保持（追加行で再利用）
     window._editEstMemberOptionsHTML = memberSelect.innerHTML;
 
+    // 同一(版数・対応・工程)に複数担当者がいる場合、他の担当者も追加担当者行として
+    // 読み込み、まとめて編集できるようにする（保存時は各既存レコードを更新）。
+    // その他工数(process/version が空)はグループ化キーが曖昧なため対象外。
+    window._editEstLoadedSiblingIds = [];
+    if (!isOther) {
+        const siblings = estimates.filter(e =>
+            e.id !== id &&
+            e.version === estimate.version &&
+            e.task === estimate.task &&
+            e.process === estimate.process
+        );
+        siblings.forEach(sib => {
+            addEditEstimateMemberRow({ member: sib.member, hours: sib.hours, estimateId: sib.id });
+            window._editEstLoadedSiblingIds.push(sib.id);
+        });
+    }
+
     generateMonthOptions('editEstimateWorkMonth', estimate.workMonth || '');
     const workMonthSelect = document.getElementById('editEstimateWorkMonth');
     workMonthSelect.insertAdjacentHTML('afterbegin', '<option value="">-- 作業月を選択 --</option>');
@@ -327,38 +344,123 @@ export function saveEstimateEdit() {
         data: { before: oldEstimate, after: { ...estimates[estimateIndex] } }
     });
 
-    // 追加担当者行を新規見積レコードとして作成
+    // 追加担当者行の処理:
+    //  - estimateId あり → 既存レコード（同一工程の他担当者）の更新
+    //  - estimateId なし → 新規レコードの作成
+    //  - 読み込んだ兄弟のうち行が消えたもの → 削除
     const extraMembers = collectEditExtraMembers();
     const newEstimates = [];
-    extraMembers.forEach((entry, i) => {
-        const newEst = {
-            id: nextId(),
-            version: version,
-            task: task,
-            process: process,
-            member: entry.member,
-            hours: entry.hours,
-            workMonth: workMonth,
-            workMonths: workMonths.length > 0 ? [...workMonths] : [],
-            monthlyHours: { ...monthlyHours }
-        };
-        // 複数月分割の場合、追加担当者の工数比で按分
-        if (workMonths.length > 1 && Object.keys(monthlyHours).length > 0) {
-            const ratio = entry.hours / hours;
-            const adjustedMonthlyHours = {};
-            workMonths.forEach(m => {
-                adjustedMonthlyHours[m] = Math.round((monthlyHours[m] || 0) * ratio * 10) / 10;
-            });
-            newEst.monthlyHours = adjustedMonthlyHours;
-        } else if (workMonth) {
-            newEst.monthlyHours = { [workMonth]: entry.hours };
-        }
-        estimates.push(newEst);
-        newEstimates.push(newEst);
+    const bulkBefore = [];
+    const bulkAfter = [];
+    const presentSiblingIds = new Set();
 
-        // 見込み残存を設定
-        saveRemainingEstimate(version, task, process, entry.member, entry.hours);
+    // プライマリの作業月配分で按分した monthlyHours を返す（新規作成用）
+    const buildPrimaryMonthly = (h) => {
+        if (workMonths.length > 1 && Object.keys(monthlyHours).length > 0) {
+            const ratio = hours ? h / hours : 0;
+            const adjusted = {};
+            workMonths.forEach(m => {
+                adjusted[m] = Math.round((monthlyHours[m] || 0) * ratio * 10) / 10;
+            });
+            return adjusted;
+        }
+        if (workMonth) return { [workMonth]: h };
+        return {};
+    };
+
+    extraMembers.forEach(entry => {
+        if (entry.estimateId != null) {
+            // 既存レコードの更新（作業月は各担当者が保持している値を維持し、
+            // 工数変更ぶんは同じ月構成の中で均等再配分する）
+            const sibIdx = estimates.findIndex(e => e.id === entry.estimateId);
+            if (sibIdx === -1) return;
+            const before = { ...estimates[sibIdx] };
+            const sibMonths = (before.workMonths && before.workMonths.length > 0)
+                ? [...before.workMonths]
+                : (workMonths.length > 0 ? [...workMonths] : []);
+            let sibMonthly = {};
+            if (sibMonths.length > 0) {
+                const per = Math.round((entry.hours / sibMonths.length) * 10) / 10;
+                sibMonths.forEach(m => { sibMonthly[m] = per; });
+            } else if (workMonth) {
+                sibMonthly = { [workMonth]: entry.hours };
+            }
+            estimates[sibIdx] = {
+                ...estimates[sibIdx],
+                version, task, process,
+                member: entry.member,
+                hours: entry.hours,
+                workMonth: sibMonths[0] || before.workMonth || workMonth,
+                workMonths: sibMonths,
+                monthlyHours: sibMonthly
+            };
+            bulkBefore.push(before);
+            bulkAfter.push({ ...estimates[sibIdx] });
+            presentSiblingIds.add(entry.estimateId);
+
+            // スケジュール連動: 担当者/工数が変わったら更新
+            if (before.member !== entry.member || before.hours !== entry.hours) {
+                const relSched = schedules.find(s =>
+                    s.version === before.version && s.task === before.task &&
+                    s.process === before.process && s.member === before.member
+                );
+                if (relSched) {
+                    updateSchedule(relSched.id, {
+                        member: entry.member,
+                        estimatedHours: entry.hours,
+                        endDate: calculateEndDate(relSched.startDate, entry.hours, entry.member)
+                    });
+                }
+            }
+        } else {
+            // 新規作成（プライマリの作業月を使用）
+            const newEst = {
+                id: nextId(),
+                version: version,
+                task: task,
+                process: process,
+                member: entry.member,
+                hours: entry.hours,
+                workMonth: workMonth,
+                workMonths: workMonths.length > 0 ? [...workMonths] : [],
+                monthlyHours: buildPrimaryMonthly(entry.hours)
+            };
+            estimates.push(newEst);
+            newEstimates.push(newEst);
+
+            // 見込み残存を設定
+            saveRemainingEstimate(version, task, process, entry.member, entry.hours);
+        }
     });
+
+    // 読み込んだ兄弟のうち、行が消えた（削除された）ものを削除
+    const removedSiblings = [];
+    (window._editEstLoadedSiblingIds || []).forEach(sibId => {
+        if (presentSiblingIds.has(sibId)) return;
+        const idx2 = estimates.findIndex(e => e.id === sibId);
+        if (idx2 !== -1) {
+            removedSiblings.push({ ...estimates[idx2] });
+            estimates.splice(idx2, 1);
+        }
+    });
+    window._editEstLoadedSiblingIds = [];
+
+    // Undo/Redo: 既存兄弟の更新は一括編集として記録
+    if (bulkBefore.length > 0) {
+        pushAction({
+            type: 'estimate_bulk_edit',
+            description: `見積編集(同一工程の担当者): ${task} (${process || 'その他'}) × ${bulkBefore.length}件`,
+            data: { beforeEstimates: bulkBefore, afterEstimates: bulkAfter }
+        });
+    }
+
+    if (removedSiblings.length > 0) {
+        pushAction({
+            type: 'estimate_delete',
+            description: `見積削除(編集時): ${task} (${process || 'その他'}) × ${removedSiblings.length}件`,
+            data: { deleted: removedSiblings }
+        });
+    }
 
     if (newEstimates.length > 0) {
         pushAction({
@@ -368,9 +470,10 @@ export function saveEstimateEdit() {
         });
     }
 
-    if (!relatedSchedule) {
-        if (typeof window.saveData === 'function') window.saveData();
-    }
+    // 兄弟担当者の更新・追加・削除まで反映した後に保存する
+    // （プライマリの updateSchedule 内 saveData はそれらの変更より前に走るため、
+    //   ここで確実に保存しないと兄弟の変更が永続化されない）
+    if (typeof window.saveData === 'function') window.saveData();
 
     // 保存後は詳細モーダルを再表示しない（背後のリスト/カレンダーが更新される）
     closeEditEstimateModal(false);
@@ -387,8 +490,11 @@ export function saveEstimateEdit() {
         showToast(`見込み残存時間を ${oldRemainingHours}h → ${newRemainingHours}h に調整しました`, 'info', 5000);
     }
 
-    const mainMsg = newEstimates.length > 0
-        ? `見積データを更新しました（+ ${newEstimates.length}件の担当者を追加）`
+    const extraNotes = [];
+    if (newEstimates.length > 0) extraNotes.push(`+${newEstimates.length}件追加`);
+    if (removedSiblings.length > 0) extraNotes.push(`${removedSiblings.length}件削除`);
+    const mainMsg = extraNotes.length > 0
+        ? `見積データを更新しました（${extraNotes.join(' / ')}）`
         : '見積データを更新しました';
     showAlert(mainMsg, true);
 }
@@ -543,8 +649,11 @@ export function updateEditManualTotal() {
 
 /**
  * 編集モーダルに追加担当者行を追加
+ * @param {{member?: string, hours?: number, estimateId?: number}} [prefill]
+ *   既存見積を読み込む場合の初期値。estimateId を渡すと保存時に「新規作成」ではなく
+ *   その既存レコードの「更新」として扱われる。
  */
-export function addEditEstimateMemberRow() {
+export function addEditEstimateMemberRow(prefill) {
     const container = document.getElementById('editEstExtraMembers');
     if (!container) return;
 
@@ -552,6 +661,9 @@ export function addEditEstimateMemberRow() {
     const row = document.createElement('div');
     row.className = 'edit-est-member-row edit-est-member-extra';
     row.dataset.extraIndex = idx;
+    if (prefill && prefill.estimateId != null) {
+        row.dataset.estimateId = prefill.estimateId;
+    }
 
     const memberOptions = window._editEstMemberOptionsHTML || '';
     row.innerHTML = `
@@ -566,6 +678,14 @@ export function addEditEstimateMemberRow() {
     `;
 
     container.appendChild(row);
+
+    // 既存見積の読み込み時は担当者・工数をプリフィル
+    if (prefill) {
+        const memberSel = row.querySelector('.edit-est-extra-member');
+        const hoursInput = row.querySelector('.edit-est-extra-hours');
+        if (memberSel && prefill.member != null) memberSel.value = prefill.member;
+        if (hoursInput && prefill.hours != null) hoursInput.value = prefill.hours;
+    }
 }
 
 /**
@@ -586,7 +706,8 @@ export function clearEditExtraMembers() {
 
 /**
  * 追加担当者行のデータを収集
- * @returns {Array<{member: string, hours: number}>}
+ * @returns {Array<{member: string, hours: number, estimateId: number|null}>}
+ *   estimateId != null は既存見積の更新、null は新規作成を表す。
  */
 function collectEditExtraMembers() {
     const container = document.getElementById('editEstExtraMembers');
@@ -596,8 +717,9 @@ function collectEditExtraMembers() {
     container.querySelectorAll('.edit-est-member-extra').forEach(row => {
         const member = row.querySelector('.edit-est-extra-member')?.value;
         const hours = parseFloat(row.querySelector('.edit-est-extra-hours')?.value) || 0;
+        const estimateId = row.dataset.estimateId ? Number(row.dataset.estimateId) : null;
         if (member && hours > 0) {
-            entries.push({ member, hours });
+            entries.push({ member, hours, estimateId });
         }
     });
     return entries;
