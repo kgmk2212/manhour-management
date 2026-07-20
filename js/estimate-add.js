@@ -222,6 +222,13 @@ export function openEditAllProcesses(version, task) {
         const multiRadio = document.querySelector('input[name="addEstMonthType"][value="multi"]');
         if (multiRadio) multiRadio.checked = true;
 
+        // 単一月セレクトも登録開始月に合わせておく。
+        // switchAddEstMonthType() は単一月セレクト(addEstStartMonth)から複数月開始月へ
+        // 値を同期するため、ここで合わせておかないと初期値(=現在月)で上書きされ、
+        // 全体期間および各工程の作業月が登録内容と無関係な月になってしまう。
+        const singleStartSelect = document.getElementById('addEstStartMonth');
+        if (singleStartSelect) singleStartSelect.value = uniqueMonths[0];
+
         const startMonthMulti = document.getElementById('addEstStartMonthMulti');
         const endMonthEl = document.getElementById('addEstEndMonth');
         if (startMonthMulti) startMonthMulti.value = uniqueMonths[0];
@@ -232,6 +239,14 @@ export function openEditAllProcesses(version, task) {
 
         // テーブルに作業月列を表示
         switchAddEstMonthType();
+
+        // switchAddEstMonthType() 内で終了月の選択肢・値が再生成される場合があるため、
+        // 登録済みの全体期間（開始=最小月 / 終了=最大月）を確実に再アサートする。
+        if (startMonthMulti) startMonthMulti.value = uniqueMonths[0];
+        if (endMonthEl) {
+            Utils.generateMonthOptions('addEstEndMonth', uniqueMonths[uniqueMonths.length - 1], uniqueMonths[0]);
+            endMonthEl.value = uniqueMonths[uniqueMonths.length - 1];
+        }
     } else if (uniqueMonths.length === 1) {
         // 単一月モード
         const startMonthSelect = document.getElementById('addEstStartMonth');
@@ -281,14 +296,18 @@ export function openEditAllProcesses(version, task) {
                 const startSelect = document.getElementById(`addEst${proc}_startMonth`);
                 const endSelect = document.getElementById(`addEst${proc}_endMonth`);
 
-                if (uniqueMonths.length === 2 && startSelect) {
-                    // 2ヶ月モード: 単一セレクトに最初の作業月を設定
-                    startSelect.value = procMonths[0];
-                } else if (startSelect && endSelect) {
-                    // 3ヶ月以上: 範囲セレクトに設定
+                // 分岐は uniqueMonths（distinct数）ではなく DOM の実構造で判定する。
+                // 全体期間が非連続（例: 1月と3月のみ）だと distinct数=2 でも
+                // generateMonthRange 由来の列は範囲セレクト（start+end）になり得るため、
+                // 存在するセレクトに合わせて設定しないと終了月が登録値にならない。
+                if (startSelect && endSelect) {
+                    // 範囲セレクト（3ヶ月以上、または非連続で範囲表示の場合）
                     const sorted = [...procMonths].sort();
                     startSelect.value = sorted[0];
                     endSelect.value = sorted[sorted.length - 1];
+                } else if (startSelect) {
+                    // 2ヶ月モード: 単一セレクトに最初の作業月を設定
+                    startSelect.value = procMonths[0];
                 }
             });
         }, 50);
