@@ -59,8 +59,8 @@
     <script src="lib/japanese-holidays.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="style.css?v=20260717-1">
-    <link rel="stylesheet" href="report-analytics.css?v=20260717-1">
+    <link rel="stylesheet" href="style.css?v=20260720-1">
+    <link rel="stylesheet" href="report-analytics.css?v=20260720-1">
     <style>
         /* 早期タブ適用：デフォルトのquickタブを非表示にし、保存タブを表示 */
         [data-early-tab] #quick.tab-content.active { display: none !important; }
@@ -126,20 +126,20 @@
             </nav>
             <div class="sidebar-footer">
                 <div style="display:flex;gap:4px;">
-                    <button class="btn btn-sm" id="btnExportBackup" style="flex:1;font-size: calc(11px * var(--ui-scale));">
+                    <button class="btn btn-sm" id="btnExportBackup" style="flex:1;font-size: calc(15.5px * var(--ui-scale));">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         バックアップ
                     </button>
-                    <button class="btn btn-sm" id="btnImportBackup" style="flex:1;font-size: calc(11px * var(--ui-scale));">
+                    <button class="btn btn-sm" id="btnImportBackup" style="flex:1;font-size: calc(15.5px * var(--ui-scale));">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         復元
                     </button>
                 </div>
-                <button class="btn btn-sm" id="btnMergeBackup" style="width:100%;font-size: calc(13px * var(--ui-scale));margin-top:4px;" title="バックアップJSONを現在のデータと差分マージ">
+                <button class="btn btn-sm" id="btnMergeBackup" style="width:100%;font-size: calc(15.5px * var(--ui-scale));margin-top:4px;" title="バックアップJSONを現在のデータと差分マージ">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
                     差分マージ
                 </button>
-                <button class="btn btn-sm" onclick="openHistoryModal()" style="width:100%;font-size: calc(11px * var(--ui-scale));margin-top:4px;">
+                <button class="btn btn-sm" onclick="openHistoryModal()" style="width:100%;font-size: calc(15.5px * var(--ui-scale));margin-top:4px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(14px * var(--ui-scale));height:calc(14px * var(--ui-scale));"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     変更履歴
                 </button>
@@ -218,7 +218,7 @@
                             <label>対応検索・選択</label>
                             <input type="text" id="quickTaskSearch" placeholder="対応名を入力して検索..." autocomplete="off" style="padding-right: 35px;">
                             <button id="quickTaskClearBtn"
-                                style="display: none; position: absolute; right: 8px; bottom: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: calc(18px * var(--ui-scale)); padding: 4px 8px; line-height: 1;"
+                                style="display: none; position: absolute; right: 8px; bottom: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: calc(19px * var(--ui-scale)); padding: 4px 8px; line-height: 1;"
                                 title="クリア">×</button>
                             <div id="quickTaskDropdown" class="custom-dropdown" style="display: none;"></div>
                         </div>
@@ -274,7 +274,7 @@
                                 <button type="button" onclick="revertFormNameToSelect('quick')" class="form-name-revert-btn" title="一覧に戻す">▼</button>
                             </div>
                             <small
-                                style="color: var(--text-muted); display: block; margin-top: 5px; font-size: calc(11px * var(--ui-scale));">既存の帳票名を選択、または新規入力できます</small>
+                                style="color: var(--text-muted); display: block; margin-top: 5px; font-size: calc(15.5px * var(--ui-scale));">既存の帳票名を選択、または新規入力できます</small>
                         </div>
                         <div class="form-group">
                             <label>対応名</label>
@@ -287,12 +287,12 @@
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="radio" name="quickEstMonthType" value="single" checked
                                         style="width: auto; margin-right: 4px;">
-                                    <span style="color: var(--text-primary); font-size: calc(11px * var(--ui-scale));">単一月</span>
+                                    <span style="color: var(--text-primary); font-size: calc(15.5px * var(--ui-scale));">単一月</span>
                                 </label>
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="radio" name="quickEstMonthType" value="multi"
                                         style="width: auto; margin-right: 4px;">
-                                    <span style="color: var(--text-primary); font-size: calc(11px * var(--ui-scale));">複数月</span>
+                                    <span style="color: var(--text-primary); font-size: calc(15.5px * var(--ui-scale));">複数月</span>
                                 </label>
                             </div>
                             <div id="quickEstMonthInputs">
@@ -428,23 +428,23 @@
                 <div id="reportFiltersCompact" class="filter-bar-sticky"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: var(--surface-elevated); padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                        <select id="reportFilterType" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                        <select id="reportFilterType" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="month">月別</option>
                             <option value="version">版数別</option>
                         </select>
                     </div>
                     <div id="reportMonthFilterCompact"
                         style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
-                        <select id="reportMonth" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
+                        <select id="reportMonth" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="all">全期間</option>
                         </select>
                     </div>
                     <div id="reportVersionFilterCompact"
                         style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
-                        <select id="reportVersion" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
+                        <select id="reportVersion" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="all">全版数</option>
                         </select>
                     </div>
@@ -455,24 +455,24 @@
                     style="display: none; margin-bottom: 20px; background: var(--surface-elevated); padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="reportVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
                             <div id="reportVersionButtons2" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportVersion2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                            <select id="reportVersion2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
                         <div id="reportMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
                             <div id="reportMonthButtons2" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="reportMonth2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                            <select id="reportMonth2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -489,13 +489,13 @@
                     <div class="stat-card stat-accent">
                         <h3>総見積工数</h3>
                         <div class="value" id="totalEstimate">0h</div>
-                        <div style="font-size: calc(12px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;"
+                        <div style="font-size: calc(15.5px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;"
                             id="totalEstimateManpower"></div>
                     </div>
                     <div class="stat-card stat-accent">
                         <h3>総実績工数</h3>
                         <div class="value" id="totalActual">0h</div>
-                        <div style="font-size: calc(12px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;"
+                        <div style="font-size: calc(15.5px * var(--ui-scale)); color: rgba(255,255,255,0.8); margin-top: 5px;"
                             id="totalActualManpower"></div>
                     </div>
                     <div class="stat-card stat-accent">
@@ -512,13 +512,13 @@
                 <div id="capacityAnalysis" class="capacity-analysis-section" style="margin: 20px 0; background: var(--surface-elevated); padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <h4 style="margin: 0; font-size: calc(16px * var(--ui-scale)); font-weight: 600; color: var(--text-primary);">キャパシティ分析</h4>
+                            <h4 style="margin: 0; font-size: calc(17px * var(--ui-scale)); font-weight: 600; color: var(--text-primary);">キャパシティ分析</h4>
                             <span id="capacityWarningBadge" class="capacity-warning-badge" style="display: none;">⚠️ 超過中</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: calc(14px * var(--ui-scale)); color: var(--text-secondary);">
-                                標準: <strong id="capacityStandard" style="color: var(--text-primary); font-size: calc(16px * var(--ui-scale));">176h</strong>
-                                <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-muted);" id="capacityStandardDetail">(22日×8h×1人)</span>
+                            <div style="font-size: calc(16px * var(--ui-scale)); color: var(--text-secondary);">
+                                標準: <strong id="capacityStandard" style="color: var(--text-primary); font-size: calc(17px * var(--ui-scale));">176h</strong>
+                                <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-muted);" id="capacityStandardDetail">(22日×8h×1人)</span>
                             </div>
                             <!-- 設定ボタン -->
                             <div style="position: relative;">
@@ -543,8 +543,8 @@
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <!-- ラベル列 -->
                             <div style="display: flex; flex-direction: column; gap: 6px; width: 45px; flex-shrink: 0;">
-                                <div style="font-size: calc(13px * var(--ui-scale)); color: var(--text-secondary); text-align: right; font-weight: 500; height: 24px; line-height: 24px;">見積</div>
-                                <div style="font-size: calc(13px * var(--ui-scale)); color: var(--text-secondary); text-align: right; font-weight: 500; height: 24px; line-height: 24px;">実績</div>
+                                <div style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary); text-align: right; font-weight: 500; height: 24px; line-height: 24px;">見積</div>
+                                <div style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary); text-align: right; font-weight: 500; height: 24px; line-height: 24px;">実績</div>
                             </div>
                             <!-- バーコンテナ（グレー背景=100%、超過分ははみ出る） -->
                             <div id="capacityBarContainer" style="flex: 1; position: relative; overflow: visible;">
@@ -569,8 +569,8 @@
                             </div>
                             <!-- 数値列 -->
                             <div style="display: flex; flex-direction: column; gap: 6px; min-width: 100px; flex-shrink: 0;">
-                                <div style="font-size: calc(15px * var(--ui-scale)); font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
-                                <div style="font-size: calc(15px * var(--ui-scale)); font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
+                                <div style="font-size: calc(17px * var(--ui-scale)); font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityEstimateText">160h (91%)</div>
+                                <div style="font-size: calc(17px * var(--ui-scale)); font-weight: 600; color: var(--text-primary); height: 24px; line-height: 24px;" id="capacityActualText">120h (68%)</div>
                             </div>
                         </div>
                     </div>
@@ -599,21 +599,21 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: calc(14px * var(--ui-scale));">
+                    <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: calc(16px * var(--ui-scale));">
                         <div id="capacityDiffContainer">
                             <span style="color: var(--text-secondary);">余裕:</span>
-                            <strong id="capacityDiff" style="color: #16a34a; font-size: calc(16px * var(--ui-scale));">+16h</strong>
+                            <strong id="capacityDiff" style="color: #16a34a; font-size: calc(17px * var(--ui-scale));">+16h</strong>
                         </div>
                         <div>
                             <span id="capacityRemainingLabel" style="color: var(--text-secondary);">実績残り:</span>
-                            <strong id="capacityRemaining" style="color: var(--text-primary); font-size: calc(16px * var(--ui-scale));">56h</strong>
+                            <strong id="capacityRemaining" style="color: var(--text-primary); font-size: calc(17px * var(--ui-scale));">56h</strong>
                         </div>
                     </div>
                 </div>
 
                 <!-- 換算基準表示エリア -->
                 <div id="reportConversionParams"
-                    style="margin-bottom: 25px; background: var(--info-light); padding: 10px 15px; border-radius: 6px; font-size: calc(13px * var(--ui-scale)); color: var(--info); display: none;">
+                    style="margin-bottom: 25px; background: var(--info-light); padding: 10px 15px; border-radius: 6px; font-size: calc(15.5px * var(--ui-scale)); color: var(--info); display: none;">
                 </div>
 
 
@@ -630,12 +630,12 @@
                 <div style="margin-top: 30px; background: var(--surface-elevated); padding: 20px 0; border-radius: 8px;">
                     <h3 onclick="window.toggleProgressSection && window.toggleProgressSection()" 
                         style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;">
-                        <span id="progressSectionIcon" style="font-size: calc(12px * var(--ui-scale)); width: 16px;">▶</span>
+                        <span id="progressSectionIcon" style="font-size: calc(15.5px * var(--ui-scale)); width: 16px;">▶</span>
                         進捗管理（見込残存時間ベース）
                     </h3>
                     
                     <div id="progressSectionContent" style="display: none;">
-                        <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(13px * var(--ui-scale));">
+                        <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">
                             見込残存時間を入力すると、より正確な進捗率と予測総工数が表示されます。
                         </p>
 
@@ -654,7 +654,7 @@
                                 <option value="exceeded">超過</option>
                             </select>
                             <button class="btn btn-primary" id="btnOpenBulkRemaining"
-                                style="padding: 8px 16px; font-size: calc(13px * var(--ui-scale));">
+                                style="padding: 8px 16px; font-size: calc(15.5px * var(--ui-scale));">
                                 一括編集
                             </button>
                         </div>
@@ -677,8 +677,8 @@
                     <p style="color: var(--text-muted); margin-bottom: 15px;">実績データと見積データをExcel形式で出力します。</p>
 
                     <div style="margin-bottom: 15px;">
-                        <h4 style="margin-bottom: 8px; font-size: calc(14px * var(--ui-scale));">出力内容:</h4>
-                        <ul style="color: var(--text-muted); font-size: calc(13px * var(--ui-scale)); margin-left: 20px;">
+                        <h4 style="margin-bottom: 8px; font-size: calc(16px * var(--ui-scale));">出力内容:</h4>
+                        <ul style="color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale)); margin-left: 20px;">
                             <li><strong>実績シート（担当者別）:</strong> 日付、曜日、備考、作業、時間</li>
                             <li><strong>見積シート:</strong> 版数、作業月、対応名、工程、担当、見積工数</li>
                         </ul>
@@ -702,25 +702,25 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <div>
-                            <div style="font-size: calc(14px * var(--ui-scale)); opacity: 0.9; margin-bottom: 5px;">合計工数</div>
+                            <div style="font-size: calc(16px * var(--ui-scale)); opacity: 0.9; margin-bottom: 5px;">合計工数</div>
                             <div style="font-size: calc(28px * var(--ui-scale)); font-weight: bold;" id="estimateTotalHours">0h</div>
                         </div>
                         <div>
-                            <div style="font-size: calc(14px * var(--ui-scale)); opacity: 0.9; margin-bottom: 5px;">人日 / 人月</div>
-                            <div style="font-size: calc(18px * var(--ui-scale)); font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月
+                            <div style="font-size: calc(16px * var(--ui-scale)); opacity: 0.9; margin-bottom: 5px;">人日 / 人月</div>
+                            <div style="font-size: calc(19px * var(--ui-scale)); font-weight: 600;" id="estimateTotalManpower">0人日 / 0人月
                             </div>
                         </div>
                     </div>
                     <!-- パターンA: サブテキスト -->
-                    <div id="estimateStandardA" style="display: none; font-size: calc(12px * var(--ui-scale)); opacity: 0.7; margin-top: 8px;"></div>
+                    <div id="estimateStandardA" style="display: none; font-size: calc(15.5px * var(--ui-scale)); opacity: 0.7; margin-top: 8px;"></div>
                     <!-- パターンB: 下部バー -->
-                    <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: calc(13px * var(--ui-scale));"></div>
+                    <div id="estimateStandardB" style="display: none; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 12px; padding-top: 10px; font-size: calc(15.5px * var(--ui-scale));"></div>
                 </div>
 
                 <!-- 担当者別合計表示 -->
                 <div id="estimateMemberSummary"
                     style="background: var(--surface-elevated); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
-                    <div style="font-size: calc(14px * var(--ui-scale)); font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">担当者別合計
+                    <div style="font-size: calc(16px * var(--ui-scale)); font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">担当者別合計
                     </div>
                     <div id="estimateMemberSummaryContent" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     </div>
@@ -738,23 +738,23 @@
                     <div
                         style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: var(--surface-elevated); padding: 10px; border-radius: 6px; overflow-x: auto;">
                         <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">フィルタ:</label>
-                            <select id="estimateFilterType" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">フィルタ:</label>
+                            <select id="estimateFilterType" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                                 <option value="month">月別</option>
                                 <option value="version">版数別</option>
                             </select>
                         </div>
                         <div id="estimateMonthFilterCompact"
                             style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
-                            <select id="estimateMonthFilter" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <select id="estimateMonthFilter" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
                         <div id="estimateVersionFilterCompact"
                             style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                            <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
-                            <select id="estimateVersionFilter" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
+                            <select id="estimateVersionFilter" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
@@ -762,7 +762,7 @@
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
                         <label
-                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="workMonthSelectionMode" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
@@ -774,33 +774,33 @@
                     style="display: none; margin-bottom: 20px; background: var(--surface-elevated); padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div id="estimateVersionFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">版数:</label>
                             <!-- セグメントボタン版 -->
                             <div id="estimateVersionButtons2" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 110px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
                             <select id="estimateVersionFilter2"
-                                style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                                style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                                 <option value="all">全版数</option>
                             </select>
                         </div>
 
                         <div id="estimateMonthFilterSegmented" style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
                             <div id="estimateMonthButtons2" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 130px));">
                             </div>
                             <!-- Select版（セグメントボタン生成用に必要） -->
-                            <select id="estimateMonthFilter2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                            <select id="estimateMonthFilter2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
                         <label
-                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">
+                            style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">
                             <input type="checkbox" id="workMonthSelectionMode2" style="width: auto; margin-right: 5px;">
                             <span>作業月割り当て</span>
                         </label>
@@ -828,7 +828,7 @@
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="font-weight: 600; color: #856404;">割り当て先:</label>
                             <select id="assignWorkMonth"
-                                style="padding: 8px 12px; border: 2px solid var(--warning); border-radius: 6px; font-weight: 500; font-size: calc(14px * var(--ui-scale)); background: var(--surface);">
+                                style="padding: 8px 12px; border: 2px solid var(--warning); border-radius: 6px; font-weight: 500; font-size: calc(16px * var(--ui-scale)); background: var(--surface);">
                             </select>
                         </div>
                         <button class="btn btn-success" id="btnExecuteWorkMonthAssignment"
@@ -840,7 +840,7 @@
                             選択解除
                         </button>
                         <div id="selectedWorkHours"
-                            style="margin-left: auto; font-weight: 700; font-size: calc(18px * var(--ui-scale)); color: var(--info); white-space: nowrap;">
+                            style="margin-left: auto; font-weight: 700; font-size: calc(19px * var(--ui-scale)); color: var(--info); white-space: nowrap;">
                             選択中: 0h (0人日 / 0人月)
                         </div>
                     </div>
@@ -850,7 +850,7 @@
 
                 <!-- 換算基準表示エリア -->
                 <div id="estimateConversionParams"
-                    style="margin-bottom: 15px; margin-top: 0px; background: var(--info-light); padding: 10px 15px; border-radius: 6px; font-size: calc(13px * var(--ui-scale)); color: var(--info); display: none;">
+                    style="margin-bottom: 15px; margin-top: 0px; background: var(--info-light); padding: 10px 15px; border-radius: 6px; font-size: calc(15.5px * var(--ui-scale)); color: var(--info); display: none;">
                 </div>
 
                 <div id="estimateList"></div>
@@ -870,22 +870,22 @@
                 <div id="actualFiltersCompact" class="filter-bar-sticky"
                     style="display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; background: var(--surface-elevated); padding: 10px; border-radius: 6px; overflow-x: auto;">
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示モード:</label>
-                        <select id="actualViewMode" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示モード:</label>
+                        <select id="actualViewMode" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="all">全担当者</option>
                             <option value="member">担当者別</option>
                         </select>
                     </div>
 
                     <div id="memberSelectGroup" style="display: none; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">担当者:</label>
-                        <select id="actualMemberSelect" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">担当者:</label>
+                        <select id="actualMemberSelect" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                         </select>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示形式:</label>
-                        <select id="actualViewType" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示形式:</label>
+                        <select id="actualViewType" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="matrix">カレンダー</option>
                             <option value="grid">グリッド</option>
                             <option value="list">リスト</option>
@@ -894,8 +894,8 @@
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                        <label style="font-size: calc(12px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示期間:</label>
-                        <select id="actualMonthFilter" style="padding: 3px 6px; font-size: calc(12px * var(--ui-scale));">
+                        <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示期間:</label>
+                        <select id="actualMonthFilter" style="padding: 3px 6px; font-size: calc(15.5px * var(--ui-scale));">
                             <option value="all">全期間</option>
                         </select>
                     </div>
@@ -906,26 +906,26 @@
                     style="display: none; margin-bottom: 20px; background: var(--surface-elevated); padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示モード:</label>
-                            <select id="actualViewMode2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale));">
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示モード:</label>
+                            <select id="actualViewMode2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale));">
                                 <option value="all">全担当者</option>
                                 <option value="member">担当者別</option>
                             </select>
                         </div>
 
                         <div id="memberSelectGroup2" style="display: none; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">担当者:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">担当者:</label>
                             <!-- セグメントボタン版 -->
                             <div id="actualMemberButtons2" class="segment-buttons"
                                 style="max-width: min(600px, calc(100vw - 120px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="actualMemberSelect2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                            <select id="actualMemberSelect2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                             </select>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示形式:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示形式:</label>
                             <div class="segment-buttons" style="max-width: min(600px, calc(100vw - 148px));">
                                 <button id="btnActualMatrix" class="active">カレンダー</button>
                                 <button id="btnActualGrid">グリッド</button>
@@ -935,13 +935,13 @@
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示期間:</label>
+                            <label style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示期間:</label>
                             <!-- セグメントボタン版 -->
                             <div id="actualMonthButtons2" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 140px));">
                             </div>
                             <!-- Select版（要素数が多い場合） -->
-                            <select id="actualMonthFilter2" style="padding: 4px 8px; font-size: calc(13px * var(--ui-scale)); display: none;">
+                            <select id="actualMonthFilter2" style="padding: 4px 8px; font-size: calc(15.5px * var(--ui-scale)); display: none;">
                                 <option value="all">全期間</option>
                             </select>
                         </div>
@@ -1102,7 +1102,7 @@
                 <!-- 空の状態メッセージ -->
                 <div id="scheduleEmptyMessage" class="schedule-empty-message" style="display: none;">
                     <p>スケジュールがありません</p>
-                    <p style="font-size: calc(14px * var(--ui-scale)); color: var(--text-muted);">「+ 予定作成」ボタンから予定を追加してください</p>
+                    <p style="font-size: calc(16px * var(--ui-scale)); color: var(--text-muted);">「+ 予定作成」ボタンから予定を追加してください</p>
                 </div>
             </div>
             <!-- /schedule -->
@@ -1119,7 +1119,7 @@
                     style="margin-bottom: 20px; background: var(--surface-elevated); padding: 12px; border-radius: 6px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: calc(13px * var(--ui-scale)); font-weight: 500; white-space: nowrap;">表示月:</label>
+                            <label id="analyticsMonthLabel" style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; white-space: nowrap;">表示月:</label>
                             <!-- セグメントボタン版 -->
                             <div id="analyticsMonthButtons" class="segment-buttons"
                                 style="max-width: min(800px, calc(100vw - 148px));">
@@ -1180,7 +1180,7 @@
 
                 <!-- Alert Detail (expandable) -->
                 <div class="ra-alert-detail" id="ra-alertDetail">
-                    <div style="font-size: calc(14px * var(--ui-scale)); font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;">要対応タスク</div>
+                    <div style="font-size: calc(15.5px * var(--ui-scale)); font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;">要対応タスク</div>
                     <div class="ra-alert-detail-grid" id="ra-alert-detail-content">
                     </div>
                 </div>
@@ -1490,7 +1490,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
                         マトリクス表示
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">見積一覧・レポートのマトリクス表示に関する設定です。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">見積一覧・レポートのマトリクス表示に関する設定です。</p>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -1622,7 +1622,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                         表示形式
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">見積一覧とレポートの表示形式を設定できます。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">見積一覧とレポートの表示形式を設定できます。</p>
 
                     <div class="form-group">
                         <label>見積一覧の表示形式</label>
@@ -1658,7 +1658,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         自動バックアップ
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">データ保存時に自動的にJSONファイルをダウンロードします。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">データ保存時に自動的にJSONファイルをダウンロードします。</p>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -1677,7 +1677,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         クイック入力モード
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">クイック入力タブの実績入力/見積登録モードの動作を設定できます。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">クイック入力タブの実績入力/見積登録モードの動作を設定できます。</p>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -1696,13 +1696,13 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         担当者表示順
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">
                         担当者の表示順序を指定できます。この順序は実績一覧、レポート、入力フォームなど全ての画面に適用されます。
                     </p>
 
                     <div class="form-group">
                         <label>表示順序 <button id="btnShowMemberOrderHelp"
-                                style="border: none; background: none; cursor: pointer; color: var(--accent); font-size: calc(18px * var(--ui-scale));">ℹ️</button></label>
+                                style="border: none; background: none; cursor: pointer; color: var(--accent); font-size: calc(19px * var(--ui-scale));">ℹ️</button></label>
                         <input type="text" id="memberOrder" placeholder="例: A,B,C,D または 山田,佐藤,田中">
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">
                             ・カンマ区切りで入力してください<br>
@@ -1728,7 +1728,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         スケジュールバーの色
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">
                         スケジュール（ガントチャート）のバーの配色を設定できます。
                     </p>
                     <div class="form-group">
@@ -1759,7 +1759,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
                         フィルタバー
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">
                         スクロール時のフィルタバー表示方法を設定できます。
                     </p>
                     <div class="form-group">
@@ -1828,7 +1828,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
                         グラフカラーパターン
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">レポートの担当者分析グラフ（見積・実績の棒グラフと工数内訳ドーナツグラフ）の配色を変更できます。
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">レポートの担当者分析グラフ（見積・実績の棒グラフと工数内訳ドーナツグラフ）の配色を変更できます。
                     </p>
 
                     <div class="form-group">
@@ -1861,53 +1861,53 @@
 
                         <!-- 棒グラフプレビュー -->
                         <div style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; margin-bottom: 10px; color: var(--text-secondary);">見積
+                            <div style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; margin-bottom: 10px; color: var(--text-secondary);">見積
                                 vs
                                 実績の棒グラフ</div>
                             <div style="display: flex; gap: 15px; align-items: center;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div id="chartPreviewEstimateBar"
                                         style="width: 40px; height: 20px; border-radius: 3px;"></div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">見積</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">見積</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div id="chartPreviewActualBar"
                                         style="width: 40px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">実績</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">実績</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- ドーナツグラフプレビュー -->
                         <div style="background: var(--surface); padding: 15px; border-radius: 8px;">
-                            <div style="font-size: calc(13px * var(--ui-scale)); font-weight: 600; margin-bottom: 10px; color: var(--text-secondary);">
+                            <div style="font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; margin-bottom: 10px; color: var(--text-secondary);">
                                 工数内訳ドーナツグラフ</div>
                             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div id="chartPreviewUI" style="width: 20px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">UI</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">UI</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div id="chartPreviewPG" style="width: 20px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">PG</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">PG</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div id="chartPreviewPT" style="width: 20px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">PT</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">PT</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div id="chartPreviewIT" style="width: 20px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">IT</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">IT</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div id="chartPreviewST" style="width: 20px; height: 20px; border-radius: 3px;">
                                     </div>
-                                    <span style="font-size: calc(12px * var(--ui-scale)); color: var(--text-secondary);">ST</span>
+                                    <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">ST</span>
                                 </div>
                             </div>
                         </div>
@@ -1919,7 +1919,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                         レポート分析機能
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">レポートに表示する分析機能を選択できます。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">レポートに表示する分析機能を選択できます。</p>
 
                     <div class="form-group">
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">Phase 1:
@@ -1986,14 +1986,14 @@
                         <label style="font-weight: 600; margin-bottom: 10px; display: block;">分析タブ</label>
 
                         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 4px;">
-                            <span style="font-size: calc(14px * var(--ui-scale)); color: var(--text-secondary);">版数別タスク構成比の表示形式:</span>
+                            <span style="font-size: calc(15.5px * var(--ui-scale)); color: var(--text-secondary);">版数別タスク構成比の表示形式:</span>
                         </label>
                         <div style="display: flex; gap: 8px; margin-top: 6px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: calc(14px * var(--ui-scale));">
+                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: calc(15.5px * var(--ui-scale));">
                                 <input type="radio" name="versionChartLayout" value="focus" style="width: auto;">
                                 <span>フォーカス表示（版数切替）</span>
                             </label>
-                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: calc(14px * var(--ui-scale));">
+                            <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-size: calc(15.5px * var(--ui-scale));">
                                 <input type="radio" name="versionChartLayout" value="multiples" style="width: auto;" checked>
                                 <span>一覧比較（全版数）</span>
                             </label>
@@ -2006,7 +2006,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:calc(16px * var(--ui-scale));height:calc(16px * var(--ui-scale));color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         会社休日設定
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(12px * var(--ui-scale));">会社の夏季休暇、年末年始休暇などを登録できます。実働日数の計算に反映されます。</p>
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: calc(15.5px * var(--ui-scale));">会社の夏季休暇、年末年始休暇などを登録できます。実働日数の計算に反映されます。</p>
 
                     <div class="form-group">
                         <label>休日名</label>
@@ -2125,7 +2125,7 @@
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <input type="number" id="editActualRemainingHours" step="0.25" min="0" placeholder="0"
                             style="flex: 1; max-width: 120px;">
-                        <span style="color: var(--text-muted); font-size: calc(13px * var(--ui-scale));">時間</span>
+                        <span style="color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale));">時間</span>
                     </div>
                     <small style="color: var(--text-muted); display: block; margin-top: 5px;">この対応にあと何時間で完了予定か入力（0=完了）</small>
                 </div>
@@ -2380,7 +2380,7 @@
                 </div>
                 <div style="margin-top: 15px; padding: 15px; background: var(--accent-secondary-light); border-radius: 6px;">
                     <div style="font-weight: 600; margin-bottom: 5px; color: #856404;">📝 変更内容</div>
-                    <div style="font-size: calc(13px * var(--ui-scale)); color: #856404;">
+                    <div style="font-size: calc(15.5px * var(--ui-scale)); color: #856404;">
                         この対応のすべての工程（UI、PG、PT、IT、ST）の版数と対応名が変更されます。関連する実績データも自動的に更新されます。</div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -2414,7 +2414,7 @@
             </div>
             <div class="modal-body">
                 <div id="remainingHoursInfo"
-                    style="background: var(--surface-elevated); padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: calc(14px * var(--ui-scale));">
+                    style="background: var(--surface-elevated); padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: calc(16px * var(--ui-scale));">
                     <!-- 版数、対応名、工程情報を表示 -->
                 </div>
 
@@ -2437,7 +2437,7 @@
                 <!-- 登録実績リスト -->
                 <div id="remainingHoursActualsList" style="margin-top: 24px; display: none;">
                     <label
-                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: calc(14px * var(--ui-scale)); color: #333;">📄
+                        style="display: block; font-weight: 600; margin-bottom: 8px; font-size: calc(16px * var(--ui-scale)); color: #333;">📄
                         実績一覧（表示期間内）</label>
                     <div id="remainingHoursActualsContent"
                         style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 12px; max-height: 200px; overflow-y: auto;">
@@ -2498,12 +2498,12 @@
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="single" checked
                                     onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
-                                <span style="font-size: calc(13px * var(--ui-scale));">単一月</span>
+                                <span style="font-size: calc(15.5px * var(--ui-scale));">単一月</span>
                             </label>
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="multi" onchange="switchAddEstMonthType()"
                                     style="width: auto; margin-right: 4px;">
-                                <span style="font-size: calc(13px * var(--ui-scale));">複数月</span>
+                                <span style="font-size: calc(15.5px * var(--ui-scale));">複数月</span>
                             </label>
                         </div>
                         <div id="addEstMonthInputs">
@@ -2778,7 +2778,7 @@
                     <label>終了予定日</label>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <input type="text" id="scheduleEndDate" readonly style="flex: 1; background: var(--surface-elevated);">
-                        <span id="scheduleWorkingDays" style="color: var(--text-muted); font-size: calc(13px * var(--ui-scale));"></span>
+                        <span id="scheduleWorkingDays" style="color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale));"></span>
                     </div>
                 </div>
                 <div class="form-group">

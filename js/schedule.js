@@ -150,8 +150,8 @@ export function renderScheduleView() {
             // フィルタ適用中とそうでない場合でメッセージを変える
             const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
             emptyMessage.innerHTML = hasFilters
-                ? '<p>該当するスケジュールがありません</p><p style="font-size: calc(14px * var(--ui-scale)); color: #888;">フィルタ条件を変更してください</p>'
-                : '<p>スケジュールがありません</p><p style="font-size: calc(14px * var(--ui-scale)); color: #888;">「+ 予定作成」ボタンから予定を追加してください</p>';
+                ? '<p>該当するスケジュールがありません</p><p style="font-size: calc(16px * var(--ui-scale)); color: #888;">フィルタ条件を変更してください</p>'
+                : '<p>スケジュールがありません</p><p style="font-size: calc(16px * var(--ui-scale)); color: #888;">「+ 予定作成」ボタンから予定を追加してください</p>';
         }
         if (ganttContainer) ganttContainer.style.display = 'none';
     } else {

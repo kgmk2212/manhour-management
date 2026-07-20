@@ -81,12 +81,12 @@ export function updateSplitPreview() {
     const preview = document.getElementById('splitPreview');
 
     if (!startMonth || !endMonth || totalHours <= 0) {
-        preview.innerHTML = '<p style="color: #999; font-size: calc(14px * var(--ui-scale));">作業期間を選択してください</p>';
+        preview.innerHTML = '<p style="color: #999; font-size: calc(16px * var(--ui-scale));">作業期間を選択してください</p>';
         return;
     }
 
     if (startMonth > endMonth) {
-        preview.innerHTML = '<p style="color: #e74c3c; font-size: calc(14px * var(--ui-scale));">⚠️ 開始月は終了月より前にしてください</p>';
+        preview.innerHTML = '<p style="color: #e74c3c; font-size: calc(16px * var(--ui-scale));">⚠️ 開始月は終了月より前にしてください</p>';
         return;
     }
 
@@ -306,12 +306,12 @@ export function updateMonthPreview() {
     const preview = document.getElementById('monthPreview');
 
     if (!startMonth || !endMonth || totalHours <= 0) {
-        preview.innerHTML = '<p style="color: #999; font-size: calc(14px * var(--ui-scale));">総工数と作業期間を入力してください</p>';
+        preview.innerHTML = '<p style="color: #999; font-size: calc(16px * var(--ui-scale));">総工数と作業期間を入力してください</p>';
         return;
     }
 
     if (startMonth > endMonth) {
-        preview.innerHTML = '<p style="color: #e74c3c; font-size: calc(14px * var(--ui-scale));">⚠️ 開始月は終了月より前にしてください</p>';
+        preview.innerHTML = '<p style="color: #e74c3c; font-size: calc(16px * var(--ui-scale));">⚠️ 開始月は終了月より前にしてください</p>';
         return;
     }
 

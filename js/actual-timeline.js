@@ -849,7 +849,7 @@ function renderRightPane() {
     });
 
     if (!html) {
-        html = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size: calc(12px * var(--ui-scale));">タスクがありません</div>';
+        html = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size: calc(15.5px * var(--ui-scale));">タスクがありません</div>';
     }
 
     dom.paneBody.innerHTML = html;
@@ -1879,14 +1879,14 @@ function showQuickRegisterConfirm(x, y, schedule, member, date) {
             <div class="actual-tl-tp-time">${escapeHtml(schedule.task)} / ${dateLabel}</div>
         </div>
         <div style="padding:12px 14px;">
-            <div style="font-size: calc(12px * var(--ui-scale));color:var(--text-secondary);margin-bottom:8px;">
+            <div style="font-size: calc(15.5px * var(--ui-scale));color:var(--text-secondary);margin-bottom:8px;">
                 ${escapeHtml(schedule.version)} / ${escapeHtml(schedule.process)}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <label style="font-size: calc(11px * var(--ui-scale));font-weight:600;">工数:</label>
+                <label style="font-size: calc(15.5px * var(--ui-scale));font-weight:600;">工数:</label>
                 <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.5" max="24" step="0.5"
-                    style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size: calc(12px * var(--ui-scale));text-align:center;">
-                <span style="font-size: calc(11px * var(--ui-scale));color:var(--text-muted);">h</span>
+                    style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size: calc(15.5px * var(--ui-scale));text-align:center;">
+                <span style="font-size: calc(15.5px * var(--ui-scale));color:var(--text-muted);">h</span>
             </div>
         </div>
         <div class="actual-tl-tp-footer">

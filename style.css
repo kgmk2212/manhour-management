@@ -86,17 +86,17 @@
 }
 
 html {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     -webkit-text-size-adjust: 100%;
 }
 
 /* 無印の見出しに明示サイズを与え、root font-size 由来の倍率増幅を抑える
    （class 付き見出しはそれぞれ個別に上書きされている） */
-h2 { font-size: calc(18px * var(--ui-scale)); }
-h3 { font-size: calc(16px * var(--ui-scale)); }
-h4 { font-size: calc(15px * var(--ui-scale)); }
-h5 { font-size: calc(14px * var(--ui-scale)); }
-h6 { font-size: calc(13.5px * var(--ui-scale)); }
+h2 { font-size: calc(19px * var(--ui-scale)); }
+h3 { font-size: calc(17px * var(--ui-scale)); }
+h4 { font-size: calc(16px * var(--ui-scale)); }
+h5 { font-size: calc(15.5px * var(--ui-scale)); }
+h6 { font-size: calc(15.5px * var(--ui-scale)); }
 
 body {
     font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -174,7 +174,7 @@ img {
 }
 
 .sidebar-title {
-    font-size: calc(15px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     color: var(--sidebar-text-active);
     white-space: nowrap;
@@ -206,7 +206,7 @@ img {
 }
 
 .nav-section-label {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -228,7 +228,7 @@ img {
     transition: all var(--transition);
     border-left: 3px solid transparent;
     margin-bottom: 2px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--sidebar-text);
     white-space: nowrap;
@@ -254,7 +254,7 @@ img {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
 }
 
 .nav-item-label {
@@ -307,7 +307,7 @@ img {
     color: var(--sidebar-text);
     cursor: pointer;
     border-radius: var(--radius-sm);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     transition: all var(--transition);
 }
 
@@ -386,7 +386,7 @@ img {
 }
 
 .mobile-page-title {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     letter-spacing: -0.02em;
     flex: 1;
@@ -477,7 +477,7 @@ img {
 }
 
 .mobile-tab-bar .mobile-tab-item span {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     letter-spacing: -0.02em;
 }
@@ -534,7 +534,7 @@ img {
 }
 
 .page-subtitle {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 4px;
 }
@@ -566,7 +566,7 @@ img {
 }
 
 .card-title {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     display: flex;
@@ -582,7 +582,7 @@ img {
     gap: 6px;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     font-family: inherit;
     border: none;
@@ -642,12 +642,12 @@ img {
 
 .btn-small {
     padding: 5px 10px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .btn-sm {
     padding: 5px 12px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .btn-accent {
@@ -699,7 +699,7 @@ textarea {
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-family: inherit;
     background: var(--surface);
     color: var(--text-primary);
@@ -732,7 +732,7 @@ input[type="checkbox"] {
 }
 
 .form-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -741,7 +741,7 @@ label {
     display: block;
     margin-bottom: 4px;
     font-weight: 500;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
 }
 
@@ -767,7 +767,7 @@ label {
     cursor: pointer;
     border-bottom: 1px solid var(--border-light);
     transition: background-color 0.15s ease;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
 }
 
@@ -788,7 +788,7 @@ label {
     padding: 20px;
     text-align: center;
     color: var(--text-muted);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 #quickTaskSearch {
@@ -808,7 +808,7 @@ label {
     gap: calc(4px * var(--ui-scale));
     padding: calc(5px * var(--ui-scale)) calc(10px * var(--ui-scale));
     border-radius: 99px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     /* line-height: 1 にして上下の余白をすべて padding で制御
        → バッジ内テキストが完全に中央寄せに、周囲テキストとの中心揃えも安定 */
@@ -887,7 +887,7 @@ label {
 .segment-item {
     padding: 7px 18px;
     border-radius: var(--radius-xs);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -915,7 +915,7 @@ label {
     border: none;
     background: transparent;
     border-radius: var(--radius-sm);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -961,7 +961,7 @@ label {
 .segment-buttons button {
     flex-shrink: 0;
     padding: 8px 16px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-primary);
@@ -1059,7 +1059,7 @@ label {
 }
 
 .filter-result-count {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-left: auto;
 }
@@ -1080,7 +1080,7 @@ label {
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     min-width: 600px;
     background: var(--surface);
 }
@@ -1094,7 +1094,7 @@ th {
     text-align: center;
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
@@ -1148,7 +1148,7 @@ table.simple-table tr th:first-child {
 .estimate-table th {
     background: var(--accent-light);
     color: var(--text-primary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     padding: 8px;
     border-bottom: 2px solid var(--border);
@@ -1166,7 +1166,7 @@ table.simple-table tr th:first-child {
 .estimate-table select,
 .estimate-table input {
     padding: 6px 8px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .estimate-table select {
@@ -1192,7 +1192,7 @@ table.simple-table tr th:first-child {
     border: 1.5px solid var(--border);
     background: var(--surface);
     color: var(--text-muted);
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
@@ -1218,7 +1218,7 @@ tr.est-extra-member-row td {
 tr.est-extra-member-row td:first-child {
     text-align: center;
     color: var(--text-muted);
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .est-remove-member-btn {
@@ -1228,7 +1228,7 @@ tr.est-extra-member-row td:first-child {
     border: 1.5px solid transparent;
     background: none;
     color: var(--text-muted);
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
@@ -1286,7 +1286,7 @@ tr.est-extra-member-row td:first-child {
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     pointer-events: none;
 }
 
@@ -1318,7 +1318,7 @@ tr.est-extra-member-row td:first-child {
     border: 1.5px solid transparent;
     background: none;
     color: var(--text-muted);
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
@@ -1343,7 +1343,7 @@ tr.est-extra-member-row td:first-child {
     border: 1.5px dashed var(--border);
     border-radius: 6px;
     color: var(--text-muted);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     padding: 4px 10px;
     cursor: pointer;
     transition: all var(--transition);
@@ -1357,7 +1357,7 @@ tr.est-extra-member-row td:first-child {
 }
 
 .edit-est-add-icon {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 700;
     line-height: 1;
 }
@@ -1413,7 +1413,7 @@ table td[rowspan] {
 .table-group-header td {
     background: #F5F4F1;
     font-weight: 600;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
     padding: 7px 14px;
 }
@@ -1477,7 +1477,7 @@ table td[rowspan] {
 
 .quick-input .form-group > label:first-child {
     color: var(--text-secondary);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
 }
 
@@ -1540,18 +1540,18 @@ table td[rowspan] {
 
 .entry-task-name {
     font-weight: 600;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
 }
 
 .entry-task-detail {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
 
 .entry-hours {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     min-width: 60px;
@@ -1594,7 +1594,7 @@ table td[rowspan] {
 }
 
 .stat-card h3 {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     margin-bottom: 6px;
     font-weight: 500;
     color: var(--text-muted);
@@ -1602,7 +1602,7 @@ table td[rowspan] {
 }
 
 .stat-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-muted);
     margin-bottom: 6px;
@@ -1620,7 +1620,7 @@ table td[rowspan] {
 }
 
 .stat-sub {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -1669,7 +1669,7 @@ table td[rowspan] {
 .capacity-bar-label {
     display: flex;
     justify-content: space-between;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 6px;
@@ -1690,7 +1690,7 @@ table td[rowspan] {
     display: flex;
     align-items: center;
     padding-left: 10px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: #FFFFFF;
 }
@@ -1730,7 +1730,7 @@ table td[rowspan] {
     color: var(--danger);
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     margin-left: 8px;
 }
@@ -1823,7 +1823,7 @@ table td[rowspan] {
     bottom: -28px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: bold;
     color: #334155;
 }
@@ -1837,7 +1837,7 @@ table td[rowspan] {
     bottom: -48px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: #64748b;
     white-space: nowrap;
 }
@@ -1883,7 +1883,7 @@ table td[rowspan] {
     padding: 8px 16px;
     cursor: pointer;
     transition: background 0.2s;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
 }
 
@@ -1907,7 +1907,7 @@ table td[rowspan] {
 .calendar-header-cell {
     padding: 8px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     background: var(--surface-elevated);
@@ -1931,21 +1931,21 @@ table td[rowspan] {
 }
 
 .calendar-date {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 4px;
 }
 
 .calendar-hours {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     text-align: center;
 }
 
 .calendar-entry {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
     text-align: center;
@@ -1968,12 +1968,12 @@ table td[rowspan] {
 }
 
 .cm-summary-title {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 600;
 }
 
 .cm-summary-meta {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2011,7 +2011,7 @@ table td[rowspan] {
 .cm-cell {
     padding: 4px 6px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .cm-cell-work {
@@ -2032,7 +2032,7 @@ table td[rowspan] {
 }
 
 .cm-vacation-label {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .cm-vacation-hours {
@@ -2077,7 +2077,7 @@ table td[rowspan] {
 }
 
 .cm-holiday-sub {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     display: block;
     color: var(--text-muted);
 }
@@ -2249,7 +2249,7 @@ table tr[style*="1565c0"] th:first-child {
     width: 180px;
     min-width: 180px;
     padding: 8px 14px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     border-right: 1px solid var(--border);
@@ -2266,7 +2266,7 @@ table tr[style*="1565c0"] th:first-child {
     flex: 1;
     text-align: center;
     padding: 6px 0;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     border-right: 1px solid var(--border-light);
@@ -2291,7 +2291,7 @@ table tr[style*="1565c0"] th:first-child {
     width: 180px;
     min-width: 180px;
     padding: 10px 14px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     border-right: 1px solid var(--border);
@@ -2325,7 +2325,7 @@ table tr[style*="1565c0"] th:first-child {
     display: flex;
     align-items: center;
     padding: 0 8px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: #FFFFFF;
     white-space: nowrap;
@@ -2373,7 +2373,7 @@ table tr[style*="1565c0"] th:first-child {
     z-index: 10000;
     max-width: 300px;
     min-width: 220px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     pointer-events: none;
 }
 
@@ -2389,7 +2389,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .gantt-tooltip .tooltip-header strong {
     color: var(--text-primary);
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
 }
 
 .tooltip-header {
@@ -2400,7 +2400,7 @@ table tr[style*="1565c0"] th:first-child {
 .tooltip-status { }
 
 .gantt-tooltip .tooltip-status {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     padding: 2px 8px;
     border-radius: 10px;
     font-weight: 500;
@@ -2463,7 +2463,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .tooltip-warning {
     color: var(--danger);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     margin-top: 8px;
 }
 
@@ -2473,7 +2473,7 @@ table tr[style*="1565c0"] th:first-child {
     background: #fff3cd;
     color: #856404;
     border-radius: var(--radius-xs);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     text-align: center;
 }
 
@@ -2502,7 +2502,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     transition: all var(--transition);
     font-family: inherit;
 }
@@ -2547,7 +2547,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .month-label {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     min-width: 120px;
@@ -2555,7 +2555,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-current-month {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     min-width: 120px;
@@ -2574,7 +2574,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     transition: all var(--transition);
     font-family: inherit;
 }
@@ -2623,7 +2623,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-summary-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -2642,7 +2642,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-empty-message p:first-child {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     margin-bottom: 10px;
 }
 
@@ -2668,7 +2668,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .schedule-progress-stats {
     text-align: right;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2692,12 +2692,12 @@ table tr[style*="1565c0"] th:first-child {
 
 .schedule-info-label {
     color: var(--text-muted);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .schedule-info-value {
     font-weight: 600;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .schedule-actual-list {
@@ -2705,7 +2705,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-actual-list h4 {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     margin: 0 0 8px 0;
     color: var(--text-secondary);
 }
@@ -2734,7 +2734,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .schedule-filter-item label {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -2743,7 +2743,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     background: var(--surface);
     min-width: 100px;
 }
@@ -2757,7 +2757,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 5px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     background: var(--surface);
     min-width: 100px;
     cursor: pointer;
@@ -2773,7 +2773,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .version-filter-arrow {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -2798,7 +2798,7 @@ table tr[style*="1565c0"] th:first-child {
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(13.5px * var(--ui-scale));
     cursor: pointer;
     white-space: nowrap;
 }
@@ -2825,7 +2825,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     transition: all var(--transition);
     font-family: inherit;
 }
@@ -2884,7 +2884,7 @@ table tr[style*="1565c0"] th:first-child {
     padding: 6px 8px;
     border: 1px solid var(--accent-secondary);
     border-radius: var(--radius-xs);
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     text-align: right;
 }
 
@@ -2896,7 +2896,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .schedule-change-hint {
     color: var(--warning, #e65100);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     padding: 6px 10px;
     margin-top: 4px;
     background: var(--warning-light, #fff3e0);
@@ -2911,7 +2911,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .schedule-remaining-input-group .input-suffix {
     color: var(--text-muted);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .schedule-remaining-input-group .btn {
@@ -2922,7 +2922,7 @@ table tr[style*="1565c0"] th:first-child {
 .actual-list-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     margin-top: 8px;
 }
 
@@ -2960,7 +2960,7 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: 50%;
     min-width: 18px;
     height: 18px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -2991,7 +2991,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .unscheduled-dropdown-header {
     padding: 10px 14px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     background: var(--surface-elevated);
@@ -3019,7 +3019,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .unscheduled-task-name {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
@@ -3028,7 +3028,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .unscheduled-task-detail {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -3037,7 +3037,7 @@ table tr[style*="1565c0"] th:first-child {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -3093,7 +3093,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .unscheduled-date-row label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -3103,13 +3103,13 @@ table tr[style*="1565c0"] th:first-child {
     padding: 4px 8px;
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .unscheduled-dropdown-action {
     display: block;
     width: 100%;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     padding: 6px 12px;
 }
 
@@ -3136,11 +3136,11 @@ table tr[style*="1565c0"] th:first-child {
 
 .auto-gen-preview .preview-stats p {
     margin: 4px 0;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .auto-gen-preview .preview-list {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .auto-gen-preview .preview-item {
@@ -3180,7 +3180,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .modal-description {
     color: var(--text-muted);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     margin-bottom: 16px;
     line-height: 1.5;
 }
@@ -3205,7 +3205,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .setting-section-title {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 16px;
@@ -3227,12 +3227,12 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .setting-label {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
 }
 
 .setting-desc {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -3333,7 +3333,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .modal-header h3 {
     margin: 0;
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 600;
     letter-spacing: -0.005em;
 }
@@ -3539,7 +3539,7 @@ table tr[style*="1565c0"] th:first-child {
 .custom-alert-body {
     padding: 16px 28px 4px;
     text-align: center;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--text-primary);
     line-height: 1.6;
     font-weight: 500;
@@ -3554,7 +3554,7 @@ table tr[style*="1565c0"] th:first-child {
 .custom-alert-footer .btn {
     min-width: 100px;
     padding: 8px 28px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     border: none;
     border-radius: var(--radius-md);
@@ -3601,7 +3601,7 @@ table tr[style*="1565c0"] th:first-child {
 .classic-alert .custom-alert-footer .btn {
     min-width: 80px;
     padding: 6px 20px;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     border-radius: 4px;
     background: var(--accent);
     color: #FFFFFF;
@@ -3654,7 +3654,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .toast-icon {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
 }
 
 .toast-success .toast-icon {
@@ -3675,14 +3675,14 @@ table tr[style*="1565c0"] th:first-child {
 
 .toast-message {
     flex: 1;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
 }
 
 .toast-close {
     background: none;
     border: none;
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     color: var(--text-muted);
     cursor: pointer;
     padding: 0;
@@ -3697,7 +3697,7 @@ table tr[style*="1565c0"] th:first-child {
     background: none;
     border: none;
     color: var(--accent);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     cursor: pointer;
     padding: 2px 8px;
@@ -3762,18 +3762,18 @@ table tr[style*="1565c0"] th:first-child {
 
 .work-item-title {
     font-weight: 600;
-    font-size: calc(15px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     color: var(--text-primary);
 }
 
 .work-item-hours {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
 }
 
 .work-item-details {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
     line-height: 1.6;
 }
@@ -3790,13 +3790,13 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-version {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-bottom: calc(6px * var(--ui-scale));
 }
 
 .ed-task-name {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: -0.01em;
@@ -3819,14 +3819,14 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-hours-unit {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--text-muted);
     /* 数字と単位の間に視覚的な余白を確保 */
     margin-left: calc(4px * var(--ui-scale));
 }
 
 .ed-hours-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -3856,7 +3856,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-meta-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     min-width: 80px;
@@ -3867,7 +3867,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .ed-section-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
@@ -3886,7 +3886,7 @@ table tr[style*="1565c0"] th:first-child {
     background: var(--accent-light);
     color: var(--accent);
     border-radius: 99px;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .ed-actions {
@@ -3900,7 +3900,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .ed-delete-link {
     color: var(--danger);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     cursor: pointer;
 }
 
@@ -3914,7 +3914,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .estimate-detail-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -3967,7 +3967,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-row-name {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -3985,7 +3985,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-row-hours {
     margin-left: auto;
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     /* 桁数違いでも縦が揃うように右寄せの固定幅カラム */
@@ -4028,18 +4028,18 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-card-title {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
 }
 
 .wd-card-hours {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
 }
 
 .wd-card-meta {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -4050,7 +4050,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-edit-link {
     color: var(--info);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     cursor: pointer;
 }
 
@@ -4060,7 +4060,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .wd-delete-link {
     color: var(--danger);
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     cursor: pointer;
 }
 
@@ -4080,12 +4080,12 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-hours-unit {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     color: var(--text-muted);
 }
 
 .wd-hero-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -4094,7 +4094,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-section-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
@@ -4115,7 +4115,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .wd-vacation-type {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
 }
 
@@ -4143,7 +4143,7 @@ table tr[style*="1565c0"] th:first-child {
     border: 1px dashed var(--border);
     background: transparent;
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
     font-family: inherit;
     transition: all var(--transition);
@@ -4198,7 +4198,7 @@ table tr[style*="1565c0"] th:first-child {
 
 .estimate-form-compact .form-group label {
     margin-bottom: 3px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .estimate-form-compact .form-group select,
@@ -4212,7 +4212,7 @@ table tr[style*="1565c0"] th:first-child {
     border: none;
     background: none;
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     border-bottom: 3px solid transparent;
     transition: all 0.3s;
@@ -4241,13 +4241,13 @@ table tr[style*="1565c0"] th:first-child {
     background: var(--accent-light);
     border-radius: var(--radius-md);
     margin-bottom: 20px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--accent);
     border-left: 4px solid var(--accent);
 }
 
 .other-work-description .other-work-icon {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     flex-shrink: 0;
 }
 
@@ -4311,12 +4311,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
 /* ---- 35. Manpower Display ---- */
 .manpower-display {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
 .total-manpower {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
 }
 
@@ -4363,7 +4363,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 /* ---- 39. Keyboard Hint ---- */
 .keyboard-hint {
     cursor: help;
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     color: var(--text-muted);
     padding: 4px;
     border-radius: var(--radius-xs);
@@ -4388,7 +4388,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     border: 1px solid var(--border);
     border-radius: 16px;
     color: var(--text-muted);
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -4587,7 +4587,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .stat-card h3 {
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* Quick input */
@@ -4612,7 +4612,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     input:not([type="radio"]):not([type="checkbox"]),
     select,
     textarea {
-        font-size: calc(16px * var(--ui-scale)) !important;
+        font-size: calc(17px * var(--ui-scale)) !important;
     }
 
     /* Hide daily total columns to save space */
@@ -4685,21 +4685,21 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .estimate-table td:nth-child(2) select {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         padding: 4px 6px;
         width: 100%;
         box-sizing: border-box;
     }
 
     .estimate-table td:nth-child(3) input {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         padding: 4px 6px;
         width: 100%;
         box-sizing: border-box;
     }
 
     table {
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* Estimate grouped/matrix mobile */
@@ -4786,11 +4786,11 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     table.estimate-grouped td[rowspan] > div:first-child {
-        font-size: calc(14px * var(--ui-scale)) !important;
+        font-size: calc(16px * var(--ui-scale)) !important;
     }
 
     table.estimate-grouped td[rowspan] > div:last-child {
-        font-size: calc(10px * var(--ui-scale)) !important;
+        font-size: calc(15.5px * var(--ui-scale)) !important;
     }
 
     #estimateList .manpower-display {
@@ -4880,7 +4880,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     /* Version header mobile */
     .version-header {
         padding: 8px 12px !important;
-        font-size: calc(16px * var(--ui-scale)) !important;
+        font-size: calc(17px * var(--ui-scale)) !important;
         margin-bottom: 10px !important;
     }
 
@@ -4915,11 +4915,11 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     #reportDetailView h3 {
-        font-size: calc(15px * var(--ui-scale)) !important;
+        font-size: calc(17px * var(--ui-scale)) !important;
     }
 
     #reportDetailView h4 {
-        font-size: calc(14px * var(--ui-scale)) !important;
+        font-size: calc(16px * var(--ui-scale)) !important;
     }
 
     #reportDetailView [style*="grid-template-columns"] {
@@ -4962,12 +4962,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .capacity-gauge-value {
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
         bottom: -12px;
     }
 
     .capacity-gauge-label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         bottom: -30px;
     }
 
@@ -5090,12 +5090,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
     .version-header {
         padding: 6px 10px !important;
-        font-size: calc(14px * var(--ui-scale)) !important;
+        font-size: calc(16px * var(--ui-scale)) !important;
         margin-bottom: 8px !important;
     }
 
     h3 {
-        font-size: calc(15px * var(--ui-scale)) !important;
+        font-size: calc(17px * var(--ui-scale)) !important;
         margin-bottom: 8px !important;
     }
 }
@@ -5156,7 +5156,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .actual-calendar-nav .month-label {
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     min-width: 120px;
@@ -5165,12 +5165,12 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
 .actual-calendar-nav .month-total {
     margin-left: auto;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--text-secondary);
 }
 
 .actual-calendar-nav .month-total strong {
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
 }
@@ -5186,7 +5186,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 .calendar-header-cell {
     padding: 8px;
     text-align: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     background: var(--surface-elevated);
@@ -5244,7 +5244,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .calendar-date {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 4px;
@@ -5255,14 +5255,14 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 .calendar-cell.sat .calendar-date { color: var(--info); }
 
 .calendar-hours {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     text-align: center;
 }
 
 .calendar-entry {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
     text-align: center;
@@ -5276,7 +5276,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     padding: 2px 6px;
     background: var(--accent-light);
     border-radius: 3px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent);
     margin-top: 4px;
@@ -5306,7 +5306,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 
 .schedule-summary-card .schedule-summary-label {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -5323,8 +5323,8 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
         min-height: 60px;
         padding: 4px;
     }
-    .calendar-date { font-size: calc(11px * var(--ui-scale)); }
-    .calendar-hours { font-size: calc(11px * var(--ui-scale)); }
+    .calendar-date { font-size: calc(15.5px * var(--ui-scale)); }
+    .calendar-hours { font-size: calc(15.5px * var(--ui-scale)); }
     .calendar-entry { display: none; }
 }
 
@@ -5386,7 +5386,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 
 .smart-sticky-bar select,
 .smart-sticky-bar button {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 /* Mobile smart sticky filter bar */
@@ -5419,7 +5419,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .smart-sticky-bar select {
-        font-size: calc(14px * var(--ui-scale)) !important;
+        font-size: calc(16px * var(--ui-scale)) !important;
         min-height: 36px;
         flex: 1;
         min-width: 0;
@@ -5432,7 +5432,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     }
 
     .smart-sticky-bar .segment-buttons button {
-        font-size: calc(12px * var(--ui-scale)) !important;
+        font-size: calc(15.5px * var(--ui-scale)) !important;
         padding: 6px 10px !important;
         flex-shrink: 0;
     }
@@ -5446,7 +5446,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     border-radius: 6px;
     padding: 6px 10px;
     cursor: pointer;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     line-height: 1;
     flex-shrink: 0;
 }
@@ -5531,7 +5531,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     padding-top: 2px;
 }
 .history-desc {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
@@ -5540,7 +5540,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     line-height: 1.4;
 }
 .history-time {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 3px;
     letter-spacing: 0.02em;
@@ -5552,7 +5552,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     color: var(--text-secondary);
     border-radius: var(--radius-sm);
     padding: 4px 10px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
@@ -5578,7 +5578,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
 }
 .history-latest-badge {
     flex-shrink: 0;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent);
     background: var(--surface);
@@ -5592,7 +5592,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--accent);
     padding: 8px 20px;
     background: var(--accent-light);
@@ -5618,7 +5618,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     text-align: center;
     color: var(--text-muted);
     padding: 48px 20px;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 .history-empty svg {
     width: 40px;
@@ -5627,14 +5627,14 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     margin-bottom: 12px;
 }
 .history-shortcut-hint {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     letter-spacing: 0.02em;
 }
 .history-shortcut-hint kbd {
     display: inline-block;
     padding: 1px 5px;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-family: inherit;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
@@ -5656,7 +5656,7 @@ html[data-segment-buttons="hidden"] #actualFiltersSegmented {
     height: 18px;
     cursor: grab;
     color: var(--text-tertiary, #aaa);
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     line-height: 1;
     border-radius: var(--radius-xs, 4px);
     transition: color 0.15s, background 0.15s;
@@ -5723,7 +5723,7 @@ li.drop-below {
 .unscheduled-drag-handle {
     flex-shrink: 0;
     margin-left: auto;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     width: 20px;
     height: 20px;
     align-self: flex-start;
@@ -5797,7 +5797,7 @@ li.drop-below {
 
 .actual-tl-holiday-badge {
     display: inline-block;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent-secondary, #C4841D);
     background: rgba(196, 132, 29, 0.1);
@@ -5828,7 +5828,7 @@ li.drop-below {
     background: transparent;
     cursor: pointer;
     font: inherit;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-secondary);
     transition: all var(--transition);
@@ -5882,7 +5882,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     padding: 0 12px;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -5930,7 +5930,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -5941,7 +5941,7 @@ li.drop-below {
 }
 
 .actual-tl-label-name {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -5950,7 +5950,7 @@ li.drop-below {
 }
 
 .actual-tl-label-meta {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -5989,14 +5989,14 @@ li.drop-below {
 }
 
 .actual-tl-day-num {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1;
 }
 
 .actual-tl-day-label {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     line-height: 1;
@@ -6032,7 +6032,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-secondary);
     border-right: 1px solid var(--border-light);
@@ -6148,7 +6148,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-time-label.lunch-zone .actual-tl-dv-time-text {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: rgba(120, 120, 120, 0.55);
     font-weight: 600;
 }
@@ -6159,7 +6159,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-time-text {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     line-height: 1;
@@ -6171,7 +6171,7 @@ li.drop-below {
 
 .actual-tl-dv-lunch-badge {
     display: block;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 500;
     color: rgba(120, 120, 120, 0.5);
     margin-top: 0;
@@ -6196,7 +6196,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -6207,7 +6207,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-member-name {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -6216,7 +6216,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-member-hours {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -6281,7 +6281,7 @@ li.drop-below {
 .actual-tl-dv-time-label.end-label .actual-tl-dv-time-text {
     position: absolute;
     top: -6px;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: rgba(196, 132, 29, 0.6);
     font-weight: 600;
 }
@@ -6343,7 +6343,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-sch-label {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     padding: 6px 6px 0;
     display: block;
@@ -6413,7 +6413,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-block-task {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6423,7 +6423,7 @@ li.drop-below {
 }
 
 .actual-tl-dv-block-hours {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.2;
@@ -6449,7 +6449,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-text {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6458,7 +6458,7 @@ li.drop-below {
 }
 
 .actual-tl-bar-hours {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
     margin-left: auto;
@@ -6478,7 +6478,7 @@ li.drop-below {
 }
 
 .actual-tl-bar.daily-bar .actual-tl-bar-text {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
 }
 
 .actual-tl-bar.daily-bar .actual-tl-bar-hours {
@@ -6501,7 +6501,7 @@ li.drop-below {
 
 .actual-tl-bar.scheduled .actual-tl-bar-text {
     font-weight: 600;
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
 }
 
@@ -6521,7 +6521,7 @@ li.drop-below {
 
 /* マージされた実績バー（連続日表示） */
 .actual-tl-bar.actual.merged .actual-tl-bar-text {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
@@ -6565,7 +6565,7 @@ li.drop-below {
     right: -4px;
     min-width: 14px;
     height: 14px;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     background: var(--text-secondary);
@@ -6643,7 +6643,7 @@ li.drop-below {
 }
 
 .actual-tl-ds-label {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--accent);
     background: rgba(255, 255, 255, 0.92);
@@ -6667,7 +6667,7 @@ li.drop-below {
     border: 2px solid var(--accent);
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 32px rgba(26, 24, 20, 0.12);
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--accent);
     display: flex;
@@ -6698,7 +6698,7 @@ li.drop-below {
     padding: 6px 14px;
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 24px rgba(26, 24, 20, 0.18), 0 2px 8px rgba(26, 24, 20, 0.08);
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: #fff;
     display: flex;
@@ -6763,7 +6763,7 @@ li.drop-below {
 }
 
 .actual-tl-pane-header h3 {
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     letter-spacing: 0.02em;
 }
@@ -6774,7 +6774,7 @@ li.drop-below {
     border: none;
     background: none;
     cursor: pointer;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--text-muted);
     border-radius: var(--radius-xs);
     transition: all var(--transition);
@@ -6806,7 +6806,7 @@ li.drop-below {
     gap: 8px;
     cursor: pointer;
     transition: background var(--transition);
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-secondary);
 }
@@ -6822,7 +6822,7 @@ li.drop-below {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: #fff;
     flex-shrink: 0;
@@ -6833,7 +6833,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-count {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     background: var(--surface-elevated);
     border: 1px solid var(--border-light);
@@ -6843,7 +6843,7 @@ li.drop-below {
 }
 
 .actual-tl-sec-arrow {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     transition: transform var(--transition);
 }
@@ -6898,7 +6898,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-name {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
@@ -6906,7 +6906,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-detail {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 4px;
@@ -6915,7 +6915,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-badge {
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 3px;
@@ -6925,7 +6925,7 @@ li.drop-below {
 }
 
 .actual-tl-tc-hours {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-secondary);
     flex-shrink: 0;
@@ -6958,7 +6958,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: 3px;
     font: inherit;
-    font-size: calc(12px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     text-align: center;
 }
@@ -6969,7 +6969,7 @@ li.drop-below {
 }
 
 .actual-tl-ie-unit {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     font-weight: 600;
 }
@@ -6983,7 +6983,7 @@ li.drop-below {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     transition: all var(--transition);
 }
 
@@ -7030,13 +7030,13 @@ li.drop-below {
 }
 
 .actual-tl-tp-title {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .actual-tl-tp-time {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--accent);
     font-weight: 600;
     margin-top: 2px;
@@ -7049,7 +7049,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     background: var(--surface);
 }
 
@@ -7086,12 +7086,12 @@ li.drop-below {
 }
 
 .actual-tl-tpi-name {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
 }
 
 .actual-tl-tpi-detail {
-    font-size: calc(9px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     gap: 3px;
@@ -7099,7 +7099,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-badge {
-    font-size: calc(8px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 3px;
@@ -7108,7 +7108,7 @@ li.drop-below {
 }
 
 .actual-tl-tpi-hours {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     flex-shrink: 0;
@@ -7136,7 +7136,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
     font: inherit;
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     text-align: center;
     background: var(--surface);
@@ -7149,7 +7149,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-hours-unit {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
     margin-right: 2px;
@@ -7162,7 +7162,7 @@ li.drop-below {
     background: var(--surface-elevated);
     border-radius: var(--radius-xs);
     cursor: pointer;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     line-height: 1;
     color: var(--text-secondary);
     display: flex;
@@ -7182,7 +7182,7 @@ li.drop-below {
 .actual-tl-tp-hint {
     padding: 6px 14px;
     border-top: 1px solid var(--border-light);
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     text-align: center;
     letter-spacing: 0.02em;
@@ -7218,7 +7218,7 @@ li.drop-below {
 }
 
 .actual-tl-tp-footer label {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-muted);
 }
@@ -7229,7 +7229,7 @@ li.drop-below {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     text-align: center;
 }
@@ -7240,7 +7240,7 @@ li.drop-below {
 }
 
 .actual-tl-tpf-unit {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-right: auto;
 }
@@ -7249,7 +7249,7 @@ li.drop-below {
     padding: 6px 14px;
     border-radius: var(--radius-sm);
     font: inherit;
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
@@ -7306,7 +7306,7 @@ li.drop-below {
 }
 
 .actual-tl-dp-title {
-    font-size: calc(15px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     font-weight: 700;
 }
 
@@ -7317,7 +7317,7 @@ li.drop-below {
     background: var(--surface);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: calc(16px * var(--ui-scale));
+    font-size: calc(17px * var(--ui-scale));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7348,7 +7348,7 @@ li.drop-below {
 
 .actual-tl-dp-field label {
     display: block;
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -7357,7 +7357,7 @@ li.drop-below {
 }
 
 .actual-tl-dp-field span {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 500;
     color: var(--text-primary);
 }
@@ -7372,7 +7372,7 @@ li.drop-below {
 
 /* ---- グループ詳細パネル ---- */
 .actual-tl-dp-total {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-secondary);
     margin-bottom: 12px;
     padding-bottom: 8px;
@@ -7417,19 +7417,19 @@ li.drop-below {
 }
 
 .actual-tl-dp-item-task {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .actual-tl-dp-item-meta {
-    font-size: calc(10px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     margin-top: 2px;
 }
 
 .actual-tl-dp-item-hours {
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-primary);
     flex-shrink: 0;
@@ -7489,7 +7489,7 @@ li.drop-below {
     }
 
     .actual-tl-current-month {
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         min-width: 0;
         flex: 1;
         white-space: normal;
@@ -7498,7 +7498,7 @@ li.drop-below {
 
     .actual-tl-holiday-badge {
         display: block;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         padding: 0 4px;
         margin: 2px auto 0;
         width: fit-content;
@@ -7511,7 +7511,7 @@ li.drop-below {
 
     .actual-tl-view-btn {
         padding: 4px 10px;
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         min-height: 28px;
     }
 
@@ -7519,7 +7519,7 @@ li.drop-below {
         min-height: 28px;
         flex-shrink: 0;
         padding: 4px 8px;
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* パネルボタンのテキストを非表示、アイコンのみ */
@@ -7546,7 +7546,7 @@ li.drop-below {
     .actual-tl-labels-header {
         height: 40px;
         padding: 0 6px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-label-row {
@@ -7557,15 +7557,15 @@ li.drop-below {
     .actual-tl-avatar {
         width: 22px;
         height: 22px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-label-name {
-        font-size: calc(10px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-label-meta {
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* ヘッダー高さ調整 */
@@ -7578,23 +7578,23 @@ li.drop-below {
     }
 
     .actual-tl-day-num {
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-day-label {
-        font-size: calc(8px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-hour-header {
         height: 40px;
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* バー: タッチしやすいサイズ（実績バーのみ、予定バーは小さいまま） */
     .actual-tl-bar.actual {
         min-height: 20px;
         border-radius: 4px;
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-bar.daily-bar {
@@ -7634,7 +7634,7 @@ li.drop-below {
     }
 
     .actual-tl-pane-header h3 {
-        font-size: calc(15px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
     }
 
     .actual-tl-pane-close {
@@ -7653,32 +7653,32 @@ li.drop-below {
     }
 
     .actual-tl-tc-name {
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tc-detail {
-        font-size: calc(10px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tc-badge {
-        font-size: calc(9px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         padding: 2px 6px;
     }
 
     .actual-tl-tc-hours {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-pane-section-header {
         padding: 10px 14px;
         min-height: 44px;
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-sec-avatar {
         width: 26px;
         height: 26px;
-        font-size: calc(10px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     /* インラインエディタ: モバイルで中央固定 */
@@ -7696,18 +7696,18 @@ li.drop-below {
     .actual-tl-ie-input {
         width: 64px;
         padding: 6px;
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
         min-height: 36px;
     }
 
     .actual-tl-ie-unit {
-        font-size: calc(14px * var(--ui-scale));
+        font-size: calc(16px * var(--ui-scale));
     }
 
     .actual-tl-ie-btn {
         width: 36px;
         height: 36px;
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
     }
 
     /* タスクピッカー: 下からスライドアップ */
@@ -7733,16 +7733,16 @@ li.drop-below {
     }
 
     .actual-tl-tp-title {
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
     }
 
     .actual-tl-tp-time {
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tp-search {
         padding: 10px 12px;
-        font-size: calc(14px * var(--ui-scale));
+        font-size: calc(16px * var(--ui-scale));
         min-height: 40px;
     }
 
@@ -7756,11 +7756,11 @@ li.drop-below {
     }
 
     .actual-tl-tpi-name {
-        font-size: calc(13px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tpi-detail {
-        font-size: calc(10px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tp-header-top {
@@ -7770,7 +7770,7 @@ li.drop-below {
 
     .actual-tl-tp-hours-ctrl input {
         width: 50px;
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
         padding: 6px 4px;
         min-height: 36px;
     }
@@ -7778,16 +7778,16 @@ li.drop-below {
     .actual-tl-tp-hours-btn {
         width: 36px;
         height: 36px;
-        font-size: calc(18px * var(--ui-scale));
+        font-size: calc(19px * var(--ui-scale));
     }
 
     .actual-tl-tp-hours-unit {
-        font-size: calc(14px * var(--ui-scale));
+        font-size: calc(16px * var(--ui-scale));
     }
 
     .actual-tl-tp-hint {
         padding: 10px 16px;
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tp-footer {
@@ -7796,19 +7796,19 @@ li.drop-below {
     }
 
     .actual-tl-tp-footer label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-tp-footer input {
         width: 64px;
         padding: 8px;
-        font-size: calc(16px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
         min-height: 40px;
     }
 
     .actual-tl-tp-btn {
         padding: 10px 18px;
-        font-size: calc(14px * var(--ui-scale));
+        font-size: calc(16px * var(--ui-scale));
         min-height: 40px;
         white-space: nowrap;
     }
@@ -7834,11 +7834,11 @@ li.drop-below {
     }
 
     .actual-tl-dp-field label {
-        font-size: calc(11px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
     }
 
     .actual-tl-dp-field span {
-        font-size: calc(15px * var(--ui-scale));
+        font-size: calc(17px * var(--ui-scale));
     }
 
     .actual-tl-dp-actions {
@@ -7853,7 +7853,7 @@ li.drop-below {
 
     /* ドラッグ選択矩形: モバイルで大きめ表示 */
     .actual-tl-ds-label {
-        font-size: calc(12px * var(--ui-scale));
+        font-size: calc(15.5px * var(--ui-scale));
         padding: 2px 8px;
     }
 }
@@ -7918,7 +7918,7 @@ li.drop-below {
 }
 
 .actual-tl-si-text {
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -7927,7 +7927,7 @@ li.drop-below {
 }
 
 .actual-tl-si-hint {
-    font-size: calc(11px * var(--ui-scale));
+    font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -7939,7 +7939,7 @@ li.drop-below {
     background: var(--border-light);
     border-radius: var(--radius-xs);
     cursor: pointer;
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -8468,6 +8468,15 @@ li.drop-below {
     #analytics .ai-action-cat,
     #analytics .ai-action-chevron,
     #analytics .ai-source-tag { font-size: 10px !important; }
+
+    /* 見積タブ 月標準サブテキスト: インラインはPC従来値(15.5px)のため
+       redesign 実効値へ再捕捉 (86159fe 時点の 12px/13px) */
+    #estimateStandardA { font-size: 12px !important; }
+    #estimateStandardB { font-size: 13px !important; }
+
+    /* 分析タブ 表示月ラベル: インラインはPC従来の太字(600)のため
+       redesign 同等の 500 へ戻す */
+    #analyticsMonthLabel { font-weight: 500 !important; }
 }
 
 /* 超小型画面(≤480px): 480 専用の底上げ分をさらに redesign 値へ */
