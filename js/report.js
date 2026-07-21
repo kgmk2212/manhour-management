@@ -512,6 +512,26 @@ export function createStatusBadge(status, statusLabel) {
     `;
 }
 
+/**
+ * レポートタブの現在の表示条件（フィルタ種別・期間・版数）で
+ * 作業が入っている版数の集合を返す。
+ * 進捗管理セクションは、この条件で作業がある版数だけを対象にする
+ * （その版数に作業が1件でもあれば、版数内の全対応を表示する）。
+ * @returns {Set<string>} 作業が入っている版数の集合
+ */
+function getVersionsInCurrentReportCondition() {
+    const filterType = document.getElementById('reportFilterType')?.value || 'month';
+    const selectedMonth = document.getElementById('reportMonth')?.value || 'all';
+    const selectedVersion = document.getElementById('reportVersion')?.value || 'all';
+
+    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
+
+    return new Set([
+        ...filteredEstimates.map(e => e.version),
+        ...filteredActuals.map(a => a.version)
+    ].filter(v => v && v.trim() !== ''));
+}
+
 // 進捗管理レポートを更新
 export function updateProgressReport() {
     const versionFilter = document.getElementById('progressVersionFilter')?.value || 'all';
@@ -520,11 +540,14 @@ export function updateProgressReport() {
     // 版数選択肢を更新
     updateProgressVersionOptions();
 
+    // レポートタブの表示条件で作業が入っている版数だけを対象にする
+    const conditionVersions = getVersionsInCurrentReportCondition();
+
     // サマリーカードを更新
-    renderProgressSummaryCards(versionFilter);
+    renderProgressSummaryCards(versionFilter, conditionVersions);
 
     // 詳細テーブルを更新
-    renderProgressDetailTable(versionFilter, statusFilter);
+    renderProgressDetailTable(versionFilter, statusFilter, conditionVersions);
 }
 
 // 版数選択肢を更新
@@ -569,12 +592,13 @@ export function updateProgressVersionOptions() {
 }
 
 // サマリーカードをレンダリング
-export function renderProgressSummaryCards(versionFilter) {
+export function renderProgressSummaryCards(versionFilter, conditionVersions = getVersionsInCurrentReportCondition()) {
     const container = document.getElementById('progressSummaryCards');
     if (!container) return;
 
-    // フィルタリング
-    const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
+    // フィルタリング（レポートタブの表示条件で作業が入っている版数だけを対象にする）
+    const targetVersions = getTargetVersions(estimates, actuals, versionFilter)
+        .filter(v => conditionVersions.has(v));
 
     // 全体統計
     let totalEstimated = 0, totalActual = 0, totalRemaining = 0;
@@ -646,12 +670,13 @@ export function renderProgressSummaryCards(versionFilter) {
 }
 
 // 詳細テーブルをレンダリング
-export function renderProgressDetailTable(versionFilter, statusFilter) {
+export function renderProgressDetailTable(versionFilter, statusFilter, conditionVersions = getVersionsInCurrentReportCondition()) {
     const container = document.getElementById('progressDetailTable');
     if (!container) return;
 
-    // フィルタリング
-    const targetVersions = getTargetVersions(estimates, actuals, versionFilter);
+    // フィルタリング（レポートタブの表示条件で作業が入っている版数だけを対象にする）
+    const targetVersions = getTargetVersions(estimates, actuals, versionFilter)
+        .filter(v => conditionVersions.has(v));
 
     let html = '<div class="table-wrapper"><table style="width: 100%; border-collapse: collapse;">';
     html += `
