@@ -890,7 +890,7 @@ export function renderEstimateGrouped() {
                     parts = taskGroup.task.split('：');
                 }
                 const restPart = escapeHtml(parts.slice(1).join(separator));
-                taskDisplayHtml = `${escapeHtml(parts[0])}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span style="font-size: calc(15.5px * var(--ui-scale)); font-weight: normal;">${restPart}</span></span>`;
+                taskDisplayHtml = `${escapeHtml(parts[0])}<span class="task-separator-inline">${separator} ${restPart}</span><span class="task-separator-break"><br><span class="task-name-subtitle">${restPart}</span></span>`;
             }
 
             taskDisplayHtml += `<span class="work-month-inline">${workMonthBadgeInline}</span><span class="work-month-block">${workMonthBadgeBlock}</span>`;
@@ -1141,7 +1141,7 @@ export function renderEstimateMatrix() {
             if (group.task.includes('：')) {
                 const parts = group.task.split('：');
                 const restPart = escapeHtml(parts.slice(1).join('：'));
-                taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(15.5px * var(--ui-scale)); font-weight: normal;">${restPart}</span>`;
+                taskDisplayHtml = `${escapeHtml(parts[0])}<br><span class="task-name-subtitle">${restPart}</span>`;
             }
 
             const escapedVer = escapeForHandler(version);

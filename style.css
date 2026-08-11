@@ -4252,6 +4252,12 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 /* ---- 32. Work Month & Task Separator Display ---- */
+/* 対応名2行目(補足テキスト)。帳票名(1行目)とfont-sizeは揃え、weightのみで階層をつける
+   （redesignブランチの実装と同じ関係性: 明示的なpx指定はせずtableから継承） */
+.task-name-subtitle {
+    font-weight: normal;
+}
+
 .task-separator-inline {
     display: inline;
 }

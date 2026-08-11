@@ -2230,7 +2230,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
                     if (taskGroup.task.includes('：')) {
                         const parts = taskGroup.task.split('：');
                         const restPart = parts.slice(1).join('：');
-                        taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(15.5px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
+                        taskDisplayHtml = `${escapeHtml(parts[0])}<br><span class="task-name-subtitle">${escapeHtml(restPart)}</span>`;
                     }
                     tableBody += `<td rowspan="${sortedProcesses.length}" style="vertical-align: top; padding-top: 12px; font-weight: 600;">${taskDisplayHtml}</td>`;
                 }
@@ -2415,7 +2415,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 if (taskGroup.task.includes('：')) {
                     const parts = taskGroup.task.split('：');
                     const restPart = parts.slice(1).join('：');
-                    taskDisplayHtml = `${escapeHtml(parts[0])}<br><span style="font-size: calc(15.5px * var(--ui-scale)); font-weight: normal;">${escapeHtml(restPart)}</span>`;
+                    taskDisplayHtml = `${escapeHtml(parts[0])}<br><span class="task-name-subtitle">${escapeHtml(restPart)}</span>`;
                 }
 
                 // その他付随作業: 工程列なしの簡略表示
