@@ -25,6 +25,7 @@ import {
     handleEditActualMemberChange,
     handleEditFormNameChange,
     handleAddFormNameChange,
+    handleQuickFormNameChange,
     initAnimationState
 } from './ui.js';
 import {
@@ -32,7 +33,6 @@ import {
     filterQuickTaskList, showQuickTaskDropdown, hideQuickTaskDropdown,
     clearQuickTaskSelection, handleMemberChange,
     quickAddActual,
-    handleQuickFormNameChange,
     switchQuickEstMonthType, updateQuickEstWorkMonthUI,
     updateQuickEstimateTotals, autoFillMember,
     addQuickEstimate,

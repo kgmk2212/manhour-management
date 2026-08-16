@@ -762,11 +762,6 @@ export function addQuickEstimate() {
     showAlert('見積を簡易登録しました', true);
 }
 
-export function handleQuickFormNameChange() {
-    const startMonth = document.getElementById('quickEstStartMonth');
-    // logic placeholder
-}
-
 export function autoFillMember(changedFieldId) {
     // Reuse logic from estimate-add? Or copy it?
     // Copy simplified version

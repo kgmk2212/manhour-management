@@ -666,6 +666,12 @@ export function renderEstimateList() {
 
     if (!monthFilterElement) return;
 
+    // 見積の追加・編集・削除で作業月の構成が変わっても「表示月」ボタン群が
+    // 初期化時のまま残るため、描画前に必ずデータと同期させる
+    if (typeof window.updateEstimateMonthOptions === 'function') {
+        window.updateEstimateMonthOptions(versionFilterElement ? versionFilterElement.value : 'all');
+    }
+
     const viewType = defaultViewTypeElement ? defaultViewTypeElement.value : 'matrix';
     const filterType = filterTypeElement ? filterTypeElement.value : 'month';
     const monthFilter = monthFilterElement.value;
@@ -1474,6 +1480,38 @@ export function showEstimateDetail(estimateId) {
     const isClassic = window.modalDesignStyle === 'classic';
 
     const isOther = isOtherWork(est);
+
+    // 同一(版数・対応・工程)の他担当レコードも表示に含める。
+    // マトリクスのセルは複数担当を合算表示しており、詳細が先頭1名分のみだと
+    // 工数がセル表記と食い違い、他担当の存在も見えなくなるため。
+    const siblings = isOther ? [] : estimates
+        .filter(e =>
+            e.id !== est.id &&
+            e.version === est.version &&
+            e.task === est.task &&
+            e.process === est.process)
+        .map(e => normalizeEstimate(e));
+    const group = [est, ...siblings];
+    const totalHours = group.reduce((sum, g) => sum + (g.hours || 0), 0);
+    const isMulti = group.length > 1;
+
+    // 月別工数はグループ全体で合算（単独担当時は従来表示と同値）
+    const mergedMonthly = {};
+    group.forEach(g => {
+        (g.workMonths || []).forEach(wm => {
+            let h = g.monthlyHours && g.monthlyHours[wm] != null ? g.monthlyHours[wm] : 0;
+            if (!h && g.workMonths.length === 1) h = g.hours || 0;
+            mergedMonthly[wm] = (mergedMonthly[wm] || 0) + h;
+        });
+    });
+    const mergedMonths = Object.keys(mergedMonthly).sort();
+
+    const memberDisplay = isMulti
+        ? group.map(g => `${escapeHtml(g.member)} ${(g.hours || 0).toFixed(1)}h`).join('<span style="color: var(--text-muted);"> ・ </span>')
+        : escapeHtml(est.member);
+    const hoursLabel = isMulti ? `見積工数（${group.length}名合計）` : '見積工数';
+    const deleteLabel = isMulti ? `${escapeHtml(est.member)}の分を削除` : '削除';
+
     let html;
 
     if (isClassic) {
@@ -1481,15 +1519,14 @@ export function showEstimateDetail(estimateId) {
         document.getElementById('estimateDetailModalTitle').textContent = isOther ? `その他工数 - ${est.task}` : `見積詳細 - ${est.task}`;
 
         let workMonthDisplay = '<span style="color: #999;">未設定</span>';
-        if (est.workMonths && est.workMonths.length > 0) {
-            if (est.workMonths.length === 1) {
-                const [y, m] = est.workMonths[0].split('-');
+        if (mergedMonths.length > 0) {
+            if (mergedMonths.length === 1) {
+                const [y, m] = mergedMonths[0].split('-');
                 workMonthDisplay = `${y}年${parseInt(m)}月`;
             } else {
-                const months = est.workMonths.map(wm => {
+                const months = mergedMonths.map(wm => {
                     const [y, m] = wm.split('-');
-                    const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : '0.0';
-                    return `${y}年${parseInt(m)}月: ${hours}h`;
+                    return `${y}年${parseInt(m)}月: ${(mergedMonthly[wm] || 0).toFixed(1)}h`;
                 });
                 workMonthDisplay = months.join('<br>');
             }
@@ -1511,11 +1548,11 @@ export function showEstimateDetail(estimateId) {
                 </div>`}
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">担当:</span>
-                    <span class="estimate-detail-value">${escapeHtml(est.member)}</span>
+                    <span class="estimate-detail-value">${memberDisplay}</span>
                 </div>
                 <div class="estimate-detail-row">
-                    <span class="estimate-detail-label">見積工数:</span>
-                    <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: calc(19px * var(--ui-scale));">${est.hours.toFixed(1)}h</span>
+                    <span class="estimate-detail-label">${hoursLabel}:</span>
+                    <span class="estimate-detail-value" style="font-weight: 700; color: #1976d2; font-size: calc(19px * var(--ui-scale));">${totalHours.toFixed(1)}h</span>
                 </div>
                 <div class="estimate-detail-row">
                     <span class="estimate-detail-label">作業予定月:</span>
@@ -1529,7 +1566,7 @@ export function showEstimateDetail(estimateId) {
                 </button>
                 <button onclick="deleteEstimateFromModal(${est.id})"
                         style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: calc(16px * var(--ui-scale)); font-weight: 600;">
-                    削除
+                    ${deleteLabel}
                 </button>
             </div>
         `;
@@ -1538,14 +1575,13 @@ export function showEstimateDetail(estimateId) {
         document.getElementById('estimateDetailModalTitle').textContent = isOther ? `その他工数` : '見積詳細';
 
         let workMonthCards = '';
-        if (est.workMonths && est.workMonths.length > 0) {
-            const monthItems = est.workMonths.map(wm => {
+        if (mergedMonths.length > 0) {
+            const monthItems = mergedMonths.map(wm => {
                 const [y, m] = wm.split('-');
-                const hours = est.monthlyHours && est.monthlyHours[wm] ? est.monthlyHours[wm].toFixed(1) : null;
-                if (est.workMonths.length === 1) {
+                if (mergedMonths.length === 1) {
                     return `<span class="ed-month-tag">${y}年${parseInt(m)}月</span>`;
                 }
-                return `<span class="ed-month-tag">${y}年${parseInt(m)}月<strong>${hours || '0.0'}h</strong></span>`;
+                return `<span class="ed-month-tag">${y}年${parseInt(m)}月<strong>${(mergedMonthly[wm] || 0).toFixed(1)}h</strong></span>`;
             });
             workMonthCards = monthItems.join('');
         }
@@ -1556,12 +1592,12 @@ export function showEstimateDetail(estimateId) {
                 <div class="ed-task-name">${escapeHtml(est.task)}</div>
                 <div class="ed-hours-row">
                     ${isOther ? '' : `<span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span>`}
-                    <span class="ed-hours">${est.hours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
+                    <span class="ed-hours">${totalHours.toFixed(1)}<span class="ed-hours-unit">h</span></span>
                 </div>
-                <div class="ed-hours-label">見積工数</div>
+                <div class="ed-hours-label">${hoursLabel}</div>
             </div>
             <div class="ed-meta">
-                <span class="ed-meta-item"><span class="ed-meta-label">担当</span><span class="ed-meta-value">${escapeHtml(est.member)}</span></span>
+                <span class="ed-meta-item"><span class="ed-meta-label">担当</span><span class="ed-meta-value">${memberDisplay}</span></span>
             </div>
             ${workMonthCards ? `
             <div class="ed-section">
@@ -1571,7 +1607,7 @@ export function showEstimateDetail(estimateId) {
             ` : ''}
             <div class="ed-actions">
                 <button class="btn btn-primary" onclick="editEstimateFromModal(${est.id})">編集</button>
-                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">削除</a>
+                <a href="#" class="ed-delete-link" onclick="event.preventDefault(); deleteEstimateFromModal(${est.id})">${deleteLabel}</a>
             </div>
         `;
     }

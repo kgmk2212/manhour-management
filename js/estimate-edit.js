@@ -121,6 +121,12 @@ export function editEstimate(id) {
     workMonthSelect.insertAdjacentHTML('afterbegin', '<option value="">-- 作業月を選択 --</option>');
     workMonthSelect.value = estimate.workMonth || '';
 
+    // 前回開いた見積の月別入力(editMonthHours_*)がDOMに残っていると、
+    // updateEditMonthPreview が保存値より残存入力を優先して初期表示が汚染されるため、
+    // モーダルを開く時点で必ず破棄する
+    const monthPreview = document.getElementById('editMonthPreview');
+    if (monthPreview) monthPreview.innerHTML = '';
+
     const est = normalizeEstimate(estimate);
     if (est.workMonths && est.workMonths.length > 1) {
         document.querySelector('input[name="editWorkMonthMode"][value="multi"]').checked = true;
@@ -134,6 +140,9 @@ export function editEstimate(id) {
             document.querySelector('input[name="editSplitMethod"][value="manual"]').checked = true;
         }
 
+        // toggleEditWorkMonthMode() が単月既定の期間で中途生成した月別入力を
+        // 「編集中の値」として拾わないよう、正しい期間を設定してから再度破棄する
+        if (monthPreview) monthPreview.innerHTML = '';
         updateEditMonthPreview();
     } else {
         document.querySelector('input[name="editWorkMonthMode"][value="single"]').checked = true;
