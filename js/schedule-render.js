@@ -1144,6 +1144,19 @@ export class GanttChartRenderer {
         });
         ctx.globalAlpha = 1.0;
 
+        // レビュー予定は斜めストライプで本作業と区別
+        if (schedule.isReview) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.lineWidth = 3;
+            const stripeGap = 8;
+            for (let sx = barX - BAR_HEIGHT; sx < barX + barWidth + BAR_HEIGHT; sx += stripeGap) {
+                ctx.beginPath();
+                ctx.moveTo(sx, barY + BAR_HEIGHT);
+                ctx.lineTo(sx + BAR_HEIGHT, barY);
+                ctx.stroke();
+            }
+        }
+
         ctx.restore();
 
         // 長押しハイライト（モバイルドラッグ開始時）
@@ -1197,7 +1210,7 @@ export class GanttChartRenderer {
             ctx.font = `bold 11px ${sysFont}`;
             const iconWidth = statusIcon ? ctx.measureText(statusIcon).width + 2 : 0;
             ctx.font = `600 11px ${sysFont}`;
-            const processText = schedule.process || '';
+            const processText = schedule.isReview ? `${schedule.process || ''} R` : (schedule.process || '');
             const processWidth = ctx.measureText(processText).width;
 
             // テキスト色（白ベース、半透明で階調をつける）
@@ -1514,7 +1527,7 @@ function showTooltip(schedule, x, y, renderer) {
             <span class="tooltip-status ${schedule.status || 'pending'}">${statusLabel}</span>
         </div>
         <div class="tooltip-body">
-            <div class="tooltip-row"><span class="tooltip-label">工程:</span><span>${escapeHtml(schedule.process)}</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">工程:</span><span>${escapeHtml(schedule.process)}${schedule.isReview ? '（レビュー）' : ''}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">担当:</span><span>${escapeHtml(schedule.member)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">期間:</span><span>${escapeHtml(schedule.startDate)} 〜 ${escapeHtml(schedule.endDate)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">進捗:</span><span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${progressInfo.actualHours.toFixed(1)}h / ${progressInfo.estimatedHours}h)</span></div>

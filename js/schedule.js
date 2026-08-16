@@ -349,10 +349,11 @@ export function addSchedule(data) {
         status: SCHEDULE.STATUS.PENDING,
         color: getTaskColor(data.task),
         note: data.note || '',
+        ...(data.isReview ? { isReview: true } : {}),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
-    
+
     setSchedules([...schedules, schedule]);
 
     if (typeof window.saveData === 'function') {
@@ -384,6 +385,7 @@ function addScheduleSilent(data) {
         status: SCHEDULE.STATUS.PENDING,
         color: getTaskColor(data.task),
         note: data.note || '',
+        ...(data.isReview ? { isReview: true } : {}),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -794,7 +796,11 @@ export function openCreateScheduleModal() {
     // 着手日を今日に設定
     const today = new Date().toISOString().split('T')[0];
     if (form.startDate) form.startDate.value = today;
-    
+
+    // レビューチェックは常にOFFから開始
+    const isReviewEl = document.getElementById('scheduleIsReview');
+    if (isReviewEl) isReviewEl.checked = false;
+
     // モーダルを表示
     const modal = document.getElementById('createScheduleModal');
     if (modal) modal.style.display = 'flex';
@@ -818,7 +824,7 @@ export function openScheduleDetailModal(scheduleId) {
     
     // タイトル
     const title = document.getElementById('scheduleDetailTitle');
-    if (title) title.textContent = `${schedule.version} / ${schedule.task} / ${schedule.process}`;
+    if (title) title.textContent = `${schedule.version} / ${schedule.task} / ${schedule.process}${schedule.isReview ? '（レビュー）' : ''}`;
     
     // 進捗
     const progress = calculateProgress(schedule);
@@ -892,12 +898,13 @@ function renderDetailActualList(schedule) {
     const container = document.getElementById('detailActualList');
     if (!container) return;
     
-    // 対応する実績を取得
+    // 対応する実績を取得（本作業とレビューの実績を取り違えないよう isReview の一致も条件にする）
     const relatedActuals = actuals.filter(a =>
         a.version === schedule.version &&
         a.task === schedule.task &&
         a.process === schedule.process &&
-        a.member === schedule.member
+        a.member === schedule.member &&
+        !a.isReview === !schedule.isReview
     ).sort((a, b) => b.date.localeCompare(a.date)); // 日付降順
     
     if (relatedActuals.length === 0) {
@@ -947,12 +954,13 @@ export function openEstimateFromSchedule() {
     const schedule = schedules.find(s => s.id === currentEditingScheduleId);
     if (!schedule) return;
 
-    // 対応する見積を検索
+    // 対応する見積を検索（本作業とレビューの見積を取り違えないよう isReview の一致も条件にする）
     const estimate = estimates.find(e =>
         e.version === schedule.version &&
         e.task === schedule.task &&
         e.process === schedule.process &&
-        e.member === schedule.member
+        e.member === schedule.member &&
+        !e.isReview === !schedule.isReview
     );
 
     if (!estimate) {
@@ -979,14 +987,15 @@ export function saveScheduleFromModal() {
     const estimatedHours = parseFloat(document.getElementById('scheduleEstimatedHours')?.value) || 0;
     const startDate = document.getElementById('scheduleStartDate')?.value;
     const note = document.getElementById('scheduleNote')?.value || '';
-    
+    const isReview = document.getElementById('scheduleIsReview')?.checked || false;
+
     if (!version || !task || !process || !member || !startDate || estimatedHours <= 0) {
         showToast('必須項目を入力してください', 'warning');
         return;
     }
-    
+
     const newSchedule = addSchedule({
-        version, task, process, member, estimatedHours, startDate, note
+        version, task, process, member, estimatedHours, startDate, note, isReview
     });
 
     pushAction({
@@ -1359,6 +1368,9 @@ export function generateSchedulesFromEstimates(options) {
         const orderA = processOrder.indexOf(a.process);
         const orderB = processOrder.indexOf(b.process);
         if (orderA !== orderB) return orderA - orderB;
+        // 同一工程内は本作業→レビューの順（レビュー開始日が本作業終了日に依存するため）
+        const reviewCmp = (a.isReview ? 1 : 0) - (b.isReview ? 1 : 0);
+        if (reviewCmp !== 0) return reviewCmp;
         return a.member.localeCompare(b.member);
     });
 
@@ -1372,12 +1384,13 @@ export function generateSchedulesFromEstimates(options) {
     const taskProcessEndDate = new Map();
 
     targetEstimates.forEach(est => {
-        // 既存スケジュールがあるかチェック
+        // 既存スケジュールがあるかチェック（本作業とレビューは別予定として扱う）
         const existingSchedule = schedules.find(s =>
             s.version === est.version &&
             s.task === est.task &&
             s.process === est.process &&
-            s.member === est.member
+            s.member === est.member &&
+            !s.isReview === !est.isReview
         );
 
         if (existingSchedule) {
@@ -1393,15 +1406,22 @@ export function generateSchedulesFromEstimates(options) {
         // 担当者の空き日（未設定なら開始日）
         const memberAvailable = memberNextDate.get(est.member) || startDate;
 
-        // 同一タスクの前工程の終了日を取得
+        // 前提となる終了日を取得
+        //  - レビュー行: まず同一工程（本作業）の終了日を待つ（工程の締めに実施）
+        //  - 本作業行: 同一タスクの前工程の終了日を待つ
         const currentProcessIdx = processOrder.indexOf(est.process);
         let prevProcessEnd = null;
-        for (let i = currentProcessIdx - 1; i >= 0; i--) {
-            const prevKey = `${est.task}::${processOrder[i]}`;
-            const endDate = taskProcessEndDate.get(prevKey);
-            if (endDate) {
-                prevProcessEnd = endDate;
-                break;
+        if (est.isReview) {
+            prevProcessEnd = taskProcessEndDate.get(`${est.task}::${est.process}`) || null;
+        }
+        if (!prevProcessEnd) {
+            for (let i = currentProcessIdx - 1; i >= 0; i--) {
+                const prevKey = `${est.task}::${processOrder[i]}`;
+                const endDate = taskProcessEndDate.get(prevKey);
+                if (endDate) {
+                    prevProcessEnd = endDate;
+                    break;
+                }
             }
         }
 
@@ -1428,7 +1448,8 @@ export function generateSchedulesFromEstimates(options) {
             estimatedHours: est.hours,
             startDate: estStartDate,
             endDate: endDate,
-            note: `見積ID: ${est.id} から自動生成`
+            isReview: !!est.isReview,
+            note: `見積ID: ${est.id} から自動生成${est.isReview ? '（レビュー）' : ''}`
         });
 
         generatedSchedules.push(schedule);

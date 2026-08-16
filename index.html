@@ -2647,6 +2647,13 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="scheduleIsReview" style="width: auto; margin: 0;">
+                        レビュー<span class="badge badge-review" title="レビュー">R</span>
+                        <span style="color: var(--text-muted); font-weight: 400; font-size: calc(14px * var(--ui-scale));">（工程内レビューの予定として登録）</span>
+                    </label>
+                </div>
+                <div class="form-group">
                     <label>担当者</label>
                     <select id="scheduleMember" onchange="populateScheduleEstimateHours()">
                         <option value="">選択してください</option>
