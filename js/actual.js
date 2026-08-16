@@ -7,7 +7,7 @@ import {
     setActuals,
     nextId} from './state.js';
 
-import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue } from './utils.js';
+import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue, reviewBadgeHtml } from './utils.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
 import { CALCULATIONS } from './constants.js';
@@ -78,7 +78,7 @@ export function renderTodayActuals() {
                 <td>${time}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
-                <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
+                <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span>${reviewBadgeHtml(a.isReview)}</td>
                 <td>${escapeHtml(a.member)}</td>
                 <td>${escapeHtml(String(a.hours))}h</td>
                 <td>
@@ -745,7 +745,7 @@ export function renderActualListView() {
                 <td>${escapeHtml(a.date)}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
-                <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span></td>
+                <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span>${reviewBadgeHtml(a.isReview)}</td>
                 <td>${escapeHtml(a.member)}</td>
                 <td>${escapeHtml(String(a.hours))}h</td>
                 <td>
@@ -813,7 +813,7 @@ export function showWorkDetail(member, date) {
                     </div>
                     <div class="work-item-details">
                         <span><strong>版数:</strong> ${escapeHtml(actual.version) || '(なし)'}</span>
-                        <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}</span>
+                        <span><strong>工程:</strong> ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '(なし)'}${reviewBadgeHtml(actual.isReview)}</span>
                     </div>
                     <div style="margin-top: 8px; text-align: right;">
                         <button onclick="editActualFromModal(${actual.id})" style="background: none; border: none; color: var(--info); cursor: pointer; font-size: calc(15.5px * var(--ui-scale)); padding: 4px 8px; text-decoration: underline;">編集</button>
@@ -886,7 +886,7 @@ export function showWorkDetail(member, date) {
                         <div class="wd-card-meta">
                             <span>${escapeHtml(actual.version) || '版数なし'}</span>
                             <span style="color: #ccc;">·</span>
-                            ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '<span>工程なし</span>'}
+                            ${actual.process ? `<span class="badge badge-${escapeHtml(actual.process.toLowerCase())}">${escapeHtml(actual.process)}</span>` : '<span>工程なし</span>'}${reviewBadgeHtml(actual.isReview)}
                         </div>
                         <div class="wd-card-actions">
                             <a href="#" class="wd-edit-link" onclick="event.preventDefault(); editActualFromModal(${actual.id})">編集</a>
@@ -1016,6 +1016,12 @@ export function addActualFromCalendar(member, date) {
         document.getElementById('editActualProcess').value = 'UI';
     }
 
+    // レビューチェックは新規登録時は常にOFFから開始
+    const isReviewCheckbox = document.getElementById('editActualIsReview');
+    const isReviewGroup = document.getElementById('editActualIsReviewGroup');
+    if (isReviewCheckbox) isReviewCheckbox.checked = false;
+    if (isReviewGroup) isReviewGroup.style.display = '';
+
     const memberSelect = document.getElementById('editActualMember');
     const memberDisplay = document.getElementById('editActualMemberDisplay');
 
@@ -1095,6 +1101,13 @@ export function editActual(id) {
     }
 
     document.getElementById('editActualProcess').value = actual.process;
+
+    // レビューフラグをプリフィル（その他工数では工程がないため非表示）
+    const isReviewCheckbox = document.getElementById('editActualIsReview');
+    const isReviewGroup = document.getElementById('editActualIsReviewGroup');
+    if (isReviewCheckbox) isReviewCheckbox.checked = !!actual.isReview;
+    if (isReviewGroup) isReviewGroup.style.display = isOther ? 'none' : '';
+
     const editHoursSelect = document.getElementById('editActualHours');
     populateQuarterHourOptions(editHoursSelect);
     setHoursSelectValue(editHoursSelect, actual.hours);
@@ -1312,6 +1325,7 @@ export function saveActualEdit() {
     const process = document.getElementById('editActualProcess').value;
     const member = document.getElementById('editActualMember').value;
     const hours = parseFloat(document.getElementById('editActualHours').value);
+    const isReview = document.getElementById('editActualIsReview')?.checked || false;
     const remainingHoursInput = document.getElementById('editActualRemainingHours');
     const remainingHours = remainingHoursInput.value !== '' ? parseFloat(remainingHoursInput.value) : null;
 
@@ -1335,6 +1349,12 @@ export function saveActualEdit() {
                 member: member,
                 hours: hours
             };
+            // レビューフラグ: ON なら付与、OFF なら旧データから確実に除去
+            if (isReview) {
+                actuals[actualIndex].isReview = true;
+            } else {
+                delete actuals[actualIndex].isReview;
+            }
 
             pushAction({
                 type: 'actual_edit',
@@ -1370,6 +1390,7 @@ export function saveActualEdit() {
             process: process,
             member: member,
             hours: hours,
+            ...(isReview ? { isReview: true } : {}),
             createdAt: new Date().toISOString()
         };
 

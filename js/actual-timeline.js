@@ -1970,7 +1970,7 @@ function showBarDetailPanel(actualId) {
             </div>
             <div class="actual-tl-dp-field">
                 <label>工程</label>
-                <span>${escapeHtml(actual.process)}</span>
+                <span>${escapeHtml(actual.process)}${actual.isReview ? ' <span class="badge badge-review" title="レビュー">R</span>' : ''}</span>
             </div>
             <div class="actual-tl-dp-field">
                 <label>担当者</label>
@@ -2039,7 +2039,7 @@ function showGroupDetailPanel(ids) {
                 <div class="actual-tl-dp-item-color" style="background:${color};"></div>
                 <div class="actual-tl-dp-item-info">
                     <div class="actual-tl-dp-item-task">${escapeHtml(a.task)}</div>
-                    <div class="actual-tl-dp-item-meta">${escapeHtml(a.version)} / ${escapeHtml(a.process)} / ${escapeHtml(a.member)}</div>
+                    <div class="actual-tl-dp-item-meta">${escapeHtml(a.version)} / ${escapeHtml(a.process)}${a.isReview ? ' <span class="badge badge-review" title="レビュー">R</span>' : ''} / ${escapeHtml(a.member)}</div>
                 </div>
                 <div class="actual-tl-dp-item-hours">${formatHours(a.hours)}h</div>
             </div>`;

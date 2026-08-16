@@ -1287,11 +1287,13 @@ export class GanttChartRenderer {
     // ============================================
 
     getScheduleActualHours(schedule) {
+        // 本作業とレビューの実績を取り違えないよう isReview の一致も条件にする
         const relatedActuals = actuals.filter(a =>
             a.version === schedule.version &&
             a.task === schedule.task &&
             a.process === schedule.process &&
-            a.member === schedule.member
+            a.member === schedule.member &&
+            !a.isReview === !schedule.isReview
         );
         return relatedActuals.reduce((sum, a) => sum + (a.hours || 0), 0);
     }
@@ -1301,7 +1303,8 @@ export class GanttChartRenderer {
         const estimatedHours = schedule.estimatedHours || 0;
 
         // タスク工程レベルで残存を取得（memberは検索キーに含めない）
-        const remainingEstimate = remainingEstimates.find(r =>
+        // 見込残存は本作業の管理値のため、レビュー予定では使わない
+        const remainingEstimate = schedule.isReview ? null : remainingEstimates.find(r =>
             r.version === schedule.version &&
             r.task === schedule.task &&
             r.process === schedule.process

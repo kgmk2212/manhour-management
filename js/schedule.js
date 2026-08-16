@@ -439,22 +439,24 @@ export function deleteSchedule(id) {
  * 予定の進捗を計算（見込み残存時間を優先使用）
  */
 export function calculateProgress(schedule) {
-    // 対応する実績を取得
+    // 対応する実績を取得（本作業とレビューの実績を取り違えないよう isReview の一致も条件にする）
     const relatedActuals = actuals.filter(a =>
         a.version === schedule.version &&
         a.task === schedule.task &&
         a.process === schedule.process &&
-        a.member === schedule.member
+        a.member === schedule.member &&
+        !a.isReview === !schedule.isReview
     );
-    
+
     const actualHours = relatedActuals.reduce((sum, a) => sum + (a.hours || 0), 0);
     const estimatedHours = schedule.estimatedHours || 0;
-    
+
     // 見込み残存時間を取得（ユーザーが入力した値を優先）
-    const remainingEstimate = getRemainingEstimate(
-        schedule.version, 
-        schedule.task, 
-        schedule.process, 
+    // 見込残存はタスク工程レベル＝本作業の管理値のため、レビュー予定では使わない
+    const remainingEstimate = schedule.isReview ? null : getRemainingEstimate(
+        schedule.version,
+        schedule.task,
+        schedule.process,
         schedule.member
     );
     
