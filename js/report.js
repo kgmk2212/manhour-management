@@ -2332,11 +2332,18 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
             versionGroups[version][taskKey].estimates[e.process] = {
                 members: new Set(),
                 hours: 0,
-                workMonths: est.workMonths || []
+                workMonths: []
             };
         }
-        versionGroups[version][taskKey].estimates[e.process].members.add(e.member);
-        versionGroups[version][taskKey].estimates[e.process].hours += e.hours;
+        const cellEst = versionGroups[version][taskKey].estimates[e.process];
+        cellEst.members.add(e.member);
+        cellEst.hours += e.hours;
+        // 複数担当者の作業月をセル単位で合算（担当者間で月が異なる場合は複数月色にする）
+        (est.workMonths || []).forEach(m => {
+            if (!cellEst.workMonths.includes(m)) cellEst.workMonths.push(m);
+        });
+        cellEst.workMonths.sort();
+        if (cellEst.workMonths.length > 1) hasMultipleMonths = true;
     });
 
     filteredActuals.forEach(a => {

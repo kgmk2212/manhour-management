@@ -1064,6 +1064,17 @@ export function renderEstimateMatrix() {
         });
     });
 
+    // 複数担当者の作業月合算で複数月になるセルも凡例の「複数月」に反映
+    if (!hasMultipleMonths) {
+        hasMultipleMonths = Object.values(versionGroups).some(tasks =>
+            Object.values(tasks).some(group =>
+                Object.values(group.processes).some(entries =>
+                    new Set(entries.flatMap(p => p.workMonths)).size > 1
+                )
+            )
+        );
+    }
+
     const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
     const showMonthColors = showMonthColorsSetting;
 
@@ -1160,8 +1171,9 @@ export function renderEstimateMatrix() {
                     const cellHours = entries.reduce((sum, p) => sum + p.hours, 0);
                     total += cellHours;
 
-                    // 月色は先頭エントリの作業月を代表として使用
-                    const monthColor = showMonthColors ? getMonthColor(entries[0].workMonths) : { bg: '', tooltip: '' };
+                    // 月色はセル内全担当者の作業月を合算して使用（担当者間で月が異なる場合は複数月表示）
+                    const cellWorkMonths = [...new Set(entries.flatMap(p => p.workMonths))].sort();
+                    const monthColor = showMonthColors ? getMonthColor(cellWorkMonths) : { bg: '', tooltip: '' };
                     const bgStyle = showMonthColors ? `background: ${monthColor.bg};` : '';
 
                     // 複数担当者の場合は担当者ごとに工数を縦に並べて表示
