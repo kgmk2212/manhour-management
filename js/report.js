@@ -1603,16 +1603,29 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
 
     const maxHours = Math.max(...Object.values(processSummary).map(p => Math.max(p.estimate, p.actual)));
 
-    // レビュー分を縞模様のセグメントとしてバー末尾に重ねる（合計幅は従来と同じ）
+    // レビュー分を縞模様のセグメントとしてバー末尾に重ねる（合計幅は従来と同じ）。
+    // バーが短くラベルが収まらない場合はラベルをバーの右外側に表示する。
     const REVIEW_STRIPE = 'repeating-linear-gradient(45deg, rgba(255,255,255,0.45) 0 4px, transparent 4px 8px)';
-    const barSegments = (total, review, color) => {
-        const mainWidth = ((total - review) / maxHours * 100).toFixed(1);
-        const reviewWidth = (review / maxHours * 100).toFixed(1);
-        let seg = `<div style="background: ${color}; height: 100%; width: ${mainWidth}%; min-width: ${review > 0 ? '0' : '30px'};"></div>`;
+    const LABEL_FONT = `font-size: calc(15.5px * var(--ui-scale)); font-weight: 600;`;
+    const renderBar = (total, review, color) => {
+        const widthPct = maxHours > 0 ? (total / maxHours * 100) : 0;
+        const mainPct = maxHours > 0 ? ((total - review) / maxHours * 100) : 0;
+        const reviewPct = maxHours > 0 ? (review / maxHours * 100) : 0;
+        const labelInside = widthPct > 12;
+
+        let h = `<div style="height: 100%; width: ${widthPct.toFixed(1)}%; border-radius: 4px; overflow: hidden; display: flex; position: relative;">`;
+        h += `<div style="background: ${color}; height: 100%; width: ${widthPct > 0 ? (mainPct / widthPct * 100).toFixed(1) : 0}%;"></div>`;
         if (review > 0) {
-            seg += `<div style="background: ${color}; background-image: ${REVIEW_STRIPE}; height: 100%; width: ${reviewWidth}%;" title="レビュー ${review.toFixed(1)}h"></div>`;
+            h += `<div style="background: ${color}; background-image: ${REVIEW_STRIPE}; height: 100%; width: ${widthPct > 0 ? (reviewPct / widthPct * 100).toFixed(1) : 0}%;" title="レビュー ${review.toFixed(1)}h"></div>`;
         }
-        return seg;
+        if (labelInside) {
+            h += `<span style="position: absolute; right: 5px; top: 0; height: 100%; display: flex; align-items: center; ${LABEL_FONT} color: white;">${total.toFixed(1)}h</span>`;
+        }
+        h += '</div>';
+        if (!labelInside) {
+            h += `<span style="position: absolute; left: calc(${widthPct.toFixed(1)}% + 6px); top: 0; height: 100%; display: flex; align-items: center; ${LABEL_FONT} color: #495057;">${total.toFixed(1)}h</span>`;
+        }
+        return h;
     };
 
     let html = '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">';
@@ -1625,8 +1638,6 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
 
     sortedProcesses.forEach(proc => {
         const data = processSummary[proc];
-        const estWidth = (data.estimate / maxHours * 100).toFixed(1);
-        const actWidth = (data.actual / maxHours * 100).toFixed(1);
         const actColor = data.actual > data.estimate ? '#dc3545' : '#28a745';
 
         // レビュー内訳ラベル（見積・実績にレビュー分がある場合のみ付記）
@@ -1643,16 +1654,12 @@ function renderProcessBarChart(filteredEstimates, filteredActuals) {
         html += '<div style="display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center;">';
         html += '<div style="text-align: right; font-size: calc(15.5px * var(--ui-scale)); color: #6c757d;">見積</div>';
         html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
-        html += `<div style="height: 100%; width: ${estWidth}%; border-radius: 4px; overflow: hidden; display: flex; min-width: 30px; position: relative;">`;
-        html += barSegments(data.estimate, data.estimateReview, '#4dabf7');
-        html += `<span style="position: absolute; right: 5px; top: 0; height: 100%; display: flex; align-items: center; font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; color: white;">${data.estimate.toFixed(1)}h</span>`;
-        html += '</div></div>';
+        html += renderBar(data.estimate, data.estimateReview, '#4dabf7');
+        html += '</div>';
         html += '<div style="text-align: right; font-size: calc(15.5px * var(--ui-scale)); color: #6c757d;">実績</div>';
-        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px;">`;
-        html += `<div style="height: 100%; width: ${actWidth}%; border-radius: 4px; overflow: hidden; display: flex; min-width: 30px; position: relative;">`;
-        html += barSegments(data.actual, data.actualReview, actColor);
-        html += `<span style="position: absolute; right: 5px; top: 0; height: 100%; display: flex; align-items: center; font-size: calc(15.5px * var(--ui-scale)); font-weight: 600; color: white;">${data.actual.toFixed(1)}h</span>`;
-        html += '</div></div>';
+        html += `<div style="background: #e9ecef; border-radius: 4px; height: 20px; position: relative;">`;
+        html += renderBar(data.actual, data.actualReview, actColor);
+        html += '</div>';
         html += '</div></div>';
     });
 
