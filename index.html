@@ -3147,6 +3147,45 @@
                 }
 
                 function attachBarEvents(cloneBar, origBar) {
+                    // --- セグメントボタン列のドラッグ横スクロール ---
+                    // クローンは innerHTML コピーのため、元バー側（createSegmentButtons）で
+                    // 付与されたドラッグ用リスナーが失われる。cloneBar へのイベント委譲で
+                    // 再実装し、syncBar による innerHTML 再生成後も有効に保つ。
+                    var dragContainer = null, dragStartX = 0, dragStartScroll = 0, dragMoved = false;
+
+                    function onSegDragMove(e) {
+                        if (!dragContainer) return;
+                        e.preventDefault();
+                        var delta = e.pageX - dragStartX;
+                        dragContainer.scrollLeft = dragStartScroll - delta * 2; // スクロール速度は元バーと同じ
+                        if (Math.abs(delta) > 5) dragMoved = true;
+                    }
+
+                    function onSegDragEnd() {
+                        if (!dragContainer) return;
+                        dragContainer.style.cursor = '';
+                        dragContainer = null;
+                        document.removeEventListener('mousemove', onSegDragMove);
+                        document.removeEventListener('mouseup', onSegDragEnd);
+                        // click は mouseup の直後に発火するため、判定を残してから解除
+                        setTimeout(function() { dragMoved = false; }, 0);
+                    }
+
+                    cloneBar.addEventListener('mousedown', function(e) {
+                        if (e.button !== 0) return;
+                        var container = e.target.closest('.segment-buttons');
+                        if (!container || container.scrollWidth <= container.clientWidth) return;
+                        dragContainer = container;
+                        dragStartX = e.pageX;
+                        dragStartScroll = container.scrollLeft;
+                        dragMoved = false;
+                        container.style.cursor = 'grabbing';
+                        e.preventDefault(); // テキスト選択を防止
+                        // バー外へカーソルが出てもドラッグを継続
+                        document.addEventListener('mousemove', onSegDragMove);
+                        document.addEventListener('mouseup', onSegDragEnd);
+                    });
+
                     cloneBar.addEventListener('change', function(e) {
                         if (e.target.tagName === 'SELECT') {
                             var cloneSelects = cloneBar.querySelectorAll('select');
@@ -3161,6 +3200,8 @@
                         }
                     });
                     cloneBar.addEventListener('click', function(e) {
+                        // ドラッグ操作をクリックとして転送しない
+                        if (dragMoved) { e.preventDefault(); e.stopPropagation(); return; }
                         var btn = e.target.closest('button');
                         if (btn) {
                             var cloneBtns = Array.from(cloneBar.querySelectorAll('button'));
