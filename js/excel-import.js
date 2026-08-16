@@ -282,7 +282,7 @@ function buildSections(result) {
     const sections = [];
 
     const estSpec = {
-        keyOf: r => [mcS(r.version), mcS(r.task), mcS(r.process), mcS(r.member)].join('|'),
+        keyOf: r => [mcS(r.version), mcS(r.task), mcS(r.process), mcS(r.member), r.isReview ? 'R' : ''].join('|'),
         valueEq: (a, b) => roundNum(a.hours) === roundNum(b.hours) && monthsKey(a) === monthsKey(b),
         emitChanged: true
     };
@@ -316,7 +316,7 @@ function buildSections(result) {
     }
 
     const actSpec = {
-        keyOf: r => [mcND(r.date), mcS(r.member), mcS(r.version), mcS(r.task), mcS(r.process), roundNum(r.hours)].join('|'),
+        keyOf: r => [mcND(r.date), mcS(r.member), mcS(r.version), mcS(r.task), mcS(r.process), roundNum(r.hours), r.isReview ? 'R' : ''].join('|'),
         valueEq: () => true, emitChanged: false
     };
     const actDiff = detectDiff(result.actualRows, actuals, actSpec);

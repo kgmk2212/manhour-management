@@ -89,7 +89,7 @@ function buildRecordDefs(counters) {
             keyFields: ['date', 'member', 'version', 'task', 'process'],
             compareFields: [{ key: 'hours', label: '工数' }],
             spec: {
-                keyOf: r => [normalizeDate(r.date), s(r.member), s(r.version), s(r.task), s(r.process)].join('|'),
+                keyOf: r => [normalizeDate(r.date), s(r.member), s(r.version), s(r.task), s(r.process), r.isReview ? 'R' : ''].join('|'),
                 valueEq: (a, b) => roundNum(a.hours) === roundNum(b.hours),
                 emitChanged: true
             },
@@ -100,7 +100,7 @@ function buildRecordDefs(counters) {
             keyFields: ['version', 'task', 'process', 'member'],
             compareFields: [{ key: 'hours', label: '工数' }, { key: 'workMonths', label: '作業月' }],
             spec: {
-                keyOf: r => [s(r.version), s(r.task), s(r.process), s(r.member)].join('|'),
+                keyOf: r => [s(r.version), s(r.task), s(r.process), s(r.member), r.isReview ? 'R' : ''].join('|'),
                 valueEq: (a, b) => roundNum(a.hours) === roundNum(b.hours) && monthsKey(a) === monthsKey(b),
                 emitChanged: true
             },
@@ -114,7 +114,7 @@ function buildRecordDefs(counters) {
                 { key: 'status', label: '状態' }, { key: 'note', label: 'メモ' }
             ],
             spec: {
-                keyOf: r => [s(r.version), s(r.task), s(r.process), s(r.member), normalizeDate(r.startDate)].join('|'),
+                keyOf: r => [s(r.version), s(r.task), s(r.process), s(r.member), normalizeDate(r.startDate), r.isReview ? 'R' : ''].join('|'),
                 valueEq: (a, b) => roundNum(a.estimatedHours) === roundNum(b.estimatedHours)
                     && normalizeDate(a.endDate) === normalizeDate(b.endDate)
                     && s(a.status) === s(b.status) && s(a.note) === s(b.note),

@@ -74,6 +74,15 @@ export function closeCustomAlert() {
     }
 }
 
+/**
+ * レビュー行を示す R バッジの HTML を返す
+ * @param {boolean} isReview - レビュー行なら true
+ * @returns {string} バッジ HTML（レビューでなければ空文字）
+ */
+export function reviewBadgeHtml(isReview) {
+    return isReview ? '<span class="badge badge-review" title="レビュー">R</span>' : '';
+}
+
 // 見積データを正規化（旧形式から新形式への変換）
 /**
  * 見積オブジェクトを正規化（旧形式→新形式変換）
