@@ -12,6 +12,7 @@ import {
     setEstimateFilterState, setReportFilterState
 } from './state.js';
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
+import { STORAGE_KEYS } from './constants.js';
 
 // タブの順序を定義
 const TAB_ORDER = ['quick', 'report', 'analytics', 'estimate', 'actual', 'schedule', 'settings'];
@@ -4269,6 +4270,46 @@ export function initSmartStickyFilters() {
             lastY = mc ? mc.scrollTop : window.scrollY;
         });
     });
+}
+
+// ============================================
+// 設定タブ: カテゴリナビ
+// ============================================
+
+/**
+ * 設定タブのカテゴリナビ（外観/表示/レポート分析/データ/詳細）を初期化する。
+ * 最後に開いたカテゴリを localStorage から復元し、クリックで切り替える。
+ */
+export function initSettingsNav() {
+    const nav = document.getElementById('settingsNav');
+    if (!nav) return;
+
+    const categories = Array.from(
+        document.querySelectorAll('#settings .settings-category')
+    ).map(el => el.dataset.category);
+
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS_CATEGORY);
+    switchSettingsCategory(categories.includes(saved) ? saved : categories[0]);
+
+    nav.addEventListener('click', (e) => {
+        const btn = e.target.closest('.settings-nav-item');
+        if (!btn) return;
+        switchSettingsCategory(btn.dataset.category);
+    });
+}
+
+/**
+ * 指定カテゴリの設定パネルだけを表示し、選択状態を保存する。
+ * @param {string} category - data-category 値（appearance/display/analysis/data/advanced）
+ */
+function switchSettingsCategory(category) {
+    document.querySelectorAll('#settingsNav .settings-nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === category);
+    });
+    document.querySelectorAll('#settings .settings-category').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.category === category);
+    });
+    localStorage.setItem(STORAGE_KEYS.SETTINGS_CATEGORY, category);
 }
 
 console.log('✅ モジュール ui.js loaded');

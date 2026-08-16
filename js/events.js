@@ -20,7 +20,6 @@ import {
     handleReportVersionChange,
     handleReportFilterTypeChange,
     showMemberOrderHelp,
-    updateAllDisplays,
     toggleFilterLayout,
     handleEditActualMemberChange,
     handleEditFormNameChange,
@@ -193,10 +192,6 @@ export function initEventHandlers() {
     const memberOrderEl = document.getElementById('memberOrder');
     if (memberOrderEl) {
         memberOrderEl.addEventListener('change', () => {
-            // UI.updateAllDisplays() saves via saveData() internally or we call it explicitly?
-            // updateAllDisplays calls setMemberOrder then render...
-            // Let's call updateAllDisplays directly if possible, or saveData.
-            // Save data first to persist
             import('./storage.js').then(m => m.saveData(true));
             import('./ui.js').then(m => m.updateAllDisplays());
         });
@@ -583,16 +578,9 @@ export function initEventHandlers() {
     const rememberQuickInputMode = document.getElementById('rememberQuickInputMode');
     if (rememberQuickInputMode) rememberQuickInputMode.addEventListener('change', saveQuickInputModeSetting);
 
-    // 担当者順序
-    const memberOrder = document.getElementById('memberOrder');
-    if (memberOrder) memberOrder.addEventListener('change', updateAllDisplays);
-
+    // 担当者順序（自動保存＋即時反映のリスナーは initEventHandlers 前半で登録済み）
     const btnShowMemberOrderHelp = document.getElementById('btnShowMemberOrderHelp');
     if (btnShowMemberOrderHelp) btnShowMemberOrderHelp.addEventListener('click', showMemberOrderHelp);
-
-    const btnUpdateAllDisplays = document.getElementById('btnUpdateAllDisplays');
-    if (btnUpdateAllDisplays) btnUpdateAllDisplays.addEventListener('click', updateAllDisplays);
-
 
     // 会社休日
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');

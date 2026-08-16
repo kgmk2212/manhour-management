@@ -636,6 +636,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ※showTabの前に初期化して、showTab内でupdateTabIndicatorが呼ばれるようにする
     UI.initTabIndicator();
 
+    // 設定タブのカテゴリナビを初期化
+    UI.initSettingsNav();
+
     // 保存されたタブを復元（リロード時に前回のタブに戻る）
     // ※initTabIndicator後に呼ぶことで、showTab内のupdateTabIndicatorが正しく動作する
     try {

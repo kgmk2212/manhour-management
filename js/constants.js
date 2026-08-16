@@ -174,6 +174,7 @@ export const STORAGE_KEYS = {
     // UI状態
     CURRENT_TAB: 'manhour_currentTab',
     MEMBER_ORDER: 'manhour_memberOrder',
+    SETTINGS_CATEGORY: 'manhour_settingsCategory',
 
     // 表示設定
     SHOW_MONTH_COLORS: 'manhour_showMonthColors',
