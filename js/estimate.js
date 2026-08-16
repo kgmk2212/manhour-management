@@ -23,7 +23,8 @@ import {
     showAlert,
     sortMembers,
     escapeHtml,
-    escapeForHandler
+    escapeForHandler,
+    reviewBadgeHtml
 } from './utils.js';
 import { pushAction } from './history.js';
 
@@ -778,6 +779,7 @@ export function renderEstimateGrouped() {
             process: e.process,
             member: e.member,
             hours: displayHours,
+            isReview: !!e.isReview,
             id: e.id
         });
     });
@@ -862,9 +864,12 @@ export function renderEstimateGrouped() {
             const months = total / 8 / workingDaysPerMonth;
 
             const processOrder = ['UI', 'PG', 'PT', 'IT', 'ST'];
-            const sortedProcesses = taskGroup.processes.sort((a, b) =>
-                processOrder.indexOf(a.process) - processOrder.indexOf(b.process)
-            );
+            const sortedProcesses = taskGroup.processes.sort((a, b) => {
+                const procDiff = processOrder.indexOf(a.process) - processOrder.indexOf(b.process);
+                if (procDiff !== 0) return procDiff;
+                // 同一工程内は本作業→レビューの順
+                return (a.isReview ? 1 : 0) - (b.isReview ? 1 : 0);
+            });
 
             const taskWorkMonths = getTaskWorkMonths(version, taskGroup.task);
 
@@ -949,13 +954,13 @@ export function renderEstimateGrouped() {
                     html += `<td style="cursor: pointer; ${grayStyle}" onclick="toggleEstimateSelection(${proc.id}, event)">
                         <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: auto; margin-right: 6px; cursor: pointer;" onclick="toggleEstimateSelection(${proc.id}, event)">
                         <div>
-                            <span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span>
+                            <span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span>${reviewBadgeHtml(proc.isReview)}
                             <span class="work-month-inline">${processWorkMonthInline}</span>
                         </div>
                         <div class="work-month-block">${processWorkMonthBlock}</div>
                     </td>`;
                 } else {
-                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span></td>`;
+                    html += `<td class="clickable-cell" style="cursor: pointer; ${grayStyle}" onclick="showEstimateDetail(${proc.id})"><span>${grayPrefix}</span><span class="badge badge-${escapeHtml(proc.process.toLowerCase())}">${escapeHtml(proc.process)}</span>${reviewBadgeHtml(proc.isReview)}</td>`;
                 }
 
                 html += `<td style="${grayStyle}">${escapeHtml(proc.member)}</td>`;
@@ -1066,6 +1071,7 @@ export function renderEstimateMatrix() {
             member: e.member,
             hours: displayHours,
             id: e.id,
+            isReview: !!e.isReview,
             workMonths: est.workMonths || []
         });
     });
@@ -1174,6 +1180,8 @@ export function renderEstimateMatrix() {
             processOrder.forEach(proc => {
                 const entries = group.processes[proc];
                 if (entries && entries.length > 0) {
+                    // 本作業→レビューの順に表示
+                    entries.sort((a, b) => (a.isReview ? 1 : 0) - (b.isReview ? 1 : 0));
                     const cellHours = entries.reduce((sum, p) => sum + p.hours, 0);
                     total += cellHours;
 
@@ -1184,7 +1192,7 @@ export function renderEstimateMatrix() {
 
                     // 複数担当者の場合は担当者ごとに工数を縦に並べて表示
                     const memberLines = entries.map(p =>
-                        `<div style="font-size: calc(15.5px * var(--ui-scale)); color: #666;">(${escapeHtml(p.member)}${entries.length > 1 ? ` ${p.hours.toFixed(1)}h` : ''})</div>`
+                        `<div style="font-size: calc(15.5px * var(--ui-scale)); color: #666;">${reviewBadgeHtml(p.isReview)}(${escapeHtml(p.member)}${entries.length > 1 ? ` ${p.hours.toFixed(1)}h` : ''})</div>`
                     ).join('');
 
                     html += `<td class="clickable-cell" style="text-align: center; cursor: pointer; transition: background 0.2s; ${bgStyle}"
@@ -1277,7 +1285,7 @@ export function renderEstimateDetailList() {
             <tr>
                 <td>${escapeHtml(est.version)}</td>
                 <td>${escapeHtml(est.task)}</td>
-                <td><span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span></td>
+                <td><span class="badge badge-${escapeHtml(est.process.toLowerCase())}">${escapeHtml(est.process)}</span>${reviewBadgeHtml(est.isReview)}</td>
                 <td>${escapeHtml(est.member)}</td>
                 <td>${displayHours.toFixed(1)}h</td>
                 <td>${workMonthDisplay}</td>
@@ -1507,8 +1515,8 @@ export function showEstimateDetail(estimateId) {
     const mergedMonths = Object.keys(mergedMonthly).sort();
 
     const memberDisplay = isMulti
-        ? group.map(g => `${escapeHtml(g.member)} ${(g.hours || 0).toFixed(1)}h`).join('<span style="color: var(--text-muted);"> ・ </span>')
-        : escapeHtml(est.member);
+        ? group.map(g => `${reviewBadgeHtml(g.isReview)}${escapeHtml(g.member)} ${(g.hours || 0).toFixed(1)}h`).join('<span style="color: var(--text-muted);"> ・ </span>')
+        : `${reviewBadgeHtml(est.isReview)}${escapeHtml(est.member)}`;
     const hoursLabel = isMulti ? `見積工数（${group.length}名合計）` : '見積工数';
     const deleteLabel = isMulti ? `${escapeHtml(est.member)}の分を削除` : '削除';
 
@@ -1629,7 +1637,9 @@ export function showTaskDetail(version, task) {
     // 工程ごとにグループ化（同一工程に複数見積がある場合も対応）
     const processEstimates = {};
     processOrder.forEach(proc => {
-        processEstimates[proc] = taskEstimates.filter(e => e.process === proc);
+        processEstimates[proc] = taskEstimates
+            .filter(e => e.process === proc)
+            .sort((a, b) => (a.isReview ? 1 : 0) - (b.isReview ? 1 : 0));
     });
 
     const totalHours = taskEstimates.reduce((sum, e) => sum + e.hours, 0);
@@ -1668,7 +1678,7 @@ export function showTaskDetail(version, task) {
 
                     html += `<div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e9ecef;">`;
                     html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">`;
-                    html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span>${escapeHtml(est.member)}</span>`;
+                    html += `<span><span class="badge badge-${proc.toLowerCase()}" style="margin-right: 8px;">${proc}</span>${reviewBadgeHtml(est.isReview)}${escapeHtml(est.member)}</span>`;
                     html += `<span style="font-weight: 700; color: #1976d2;">${est.hours.toFixed(1)}h</span>`;
                     html += `</div>`;
                     if (workMonthDisplay) {
@@ -1742,7 +1752,7 @@ export function showTaskDetail(version, task) {
 
                     html += `
                         <div class="wd-row">
-                            <span class="badge badge-${proc.toLowerCase()}">${proc}</span>
+                            <span class="badge badge-${proc.toLowerCase()}">${proc}</span>${reviewBadgeHtml(est.isReview)}
                             <span class="wd-row-name">${escapeHtml(est.member)}</span>
                             <span class="wd-row-month">${monthText}</span>
                             <span class="wd-row-hours">${est.hours.toFixed(1)}h</span>

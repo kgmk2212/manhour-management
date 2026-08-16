@@ -45,6 +45,14 @@ export function editEstimate(id) {
     if (versionGroup) versionGroup.style.display = isOther ? 'none' : '';
     if (processGroup) processGroup.style.display = isOther ? 'none' : '';
 
+    // レビュー見積を編集中であることを工程ラベルに表示
+    const processLabel = processGroup ? processGroup.querySelector('label') : null;
+    if (processLabel) {
+        processLabel.innerHTML = estimate.isReview
+            ? '工程 <span class="badge badge-review" title="レビュー">R</span>'
+            : '工程';
+    }
+
     const taskDatalist = document.getElementById('editEstimateTaskList');
     taskDatalist.innerHTML = '';
     const uniqueTasks = [...new Set([...estimates.map(e => e.task), ...actuals.map(a => a.task)])];
@@ -111,7 +119,7 @@ export function editEstimate(id) {
             e.process === estimate.process
         );
         siblings.forEach(sib => {
-            addEditEstimateMemberRow({ member: sib.member, hours: sib.hours, estimateId: sib.id });
+            addEditEstimateMemberRow({ member: sib.member, hours: sib.hours, estimateId: sib.id, isReview: !!sib.isReview });
             window._editEstLoadedSiblingIds.push(sib.id);
         });
     }
@@ -324,7 +332,8 @@ export function saveEstimateEdit() {
         s.version === oldEstimate.version &&
         s.task === oldEstimate.task &&
         s.process === oldEstimate.process &&
-        s.member === oldEstimate.member
+        s.member === oldEstimate.member &&
+        !s.isReview === !oldEstimate.isReview
     );
 
     let scheduleToastMsg = '';
@@ -408,10 +417,12 @@ export function saveEstimateEdit() {
             presentSiblingIds.add(entry.estimateId);
 
             // スケジュール連動: 担当者/工数が変わったら更新
+            // （本作業とレビューの予定を取り違えないよう isReview の一致も条件にする）
             if (before.member !== entry.member || before.hours !== entry.hours) {
                 const relSched = schedules.find(s =>
                     s.version === before.version && s.task === before.task &&
-                    s.process === before.process && s.member === before.member
+                    s.process === before.process && s.member === before.member &&
+                    !s.isReview === !before.isReview
                 );
                 if (relSched) {
                     updateSchedule(relSched.id, {
@@ -658,9 +669,10 @@ export function updateEditManualTotal() {
 
 /**
  * 編集モーダルに追加担当者行を追加
- * @param {{member?: string, hours?: number, estimateId?: number}} [prefill]
+ * @param {{member?: string, hours?: number, estimateId?: number, isReview?: boolean}} [prefill]
  *   既存見積を読み込む場合の初期値。estimateId を渡すと保存時に「新規作成」ではなく
- *   その既存レコードの「更新」として扱われる。
+ *   その既存レコードの「更新」として扱われる。isReview はレビュー見積を読み込んだ場合に
+ *   R マークを表示するための表示用フラグ（保存時はスプレッド維持で保たれる）。
  */
 export function addEditEstimateMemberRow(prefill) {
     const container = document.getElementById('editEstExtraMembers');
@@ -668,14 +680,20 @@ export function addEditEstimateMemberRow(prefill) {
 
     const idx = container.children.length;
     const row = document.createElement('div');
-    row.className = 'edit-est-member-row edit-est-member-extra';
+    const isReview = !!(prefill && prefill.isReview);
+    row.className = 'edit-est-member-row edit-est-member-extra' + (isReview ? ' est-review-row' : '');
     row.dataset.extraIndex = idx;
     if (prefill && prefill.estimateId != null) {
         row.dataset.estimateId = prefill.estimateId;
     }
+    if (isReview) row.dataset.review = 'true';
 
     const memberOptions = window._editEstMemberOptionsHTML || '';
+    const reviewMark = isReview
+        ? '<span class="badge badge-review" title="レビュー">R</span>'
+        : '';
     row.innerHTML = `
+        ${reviewMark}
         <select class="edit-est-extra-member">${memberOptions}</select>
         <div class="edit-est-hours-input">
             <input type="number" class="edit-est-extra-hours" step="0.5" min="0" placeholder="h">
