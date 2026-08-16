@@ -443,13 +443,17 @@ export function saveEstimateEdit() {
                 hours: entry.hours,
                 workMonth: workMonth,
                 workMonths: workMonths.length > 0 ? [...workMonths] : [],
-                monthlyHours: buildPrimaryMonthly(entry.hours)
+                monthlyHours: buildPrimaryMonthly(entry.hours),
+                ...(entry.isReview ? { isReview: true } : {})
             };
             estimates.push(newEst);
             newEstimates.push(newEst);
 
             // 見込み残存を設定
-            saveRemainingEstimate(version, task, process, entry.member, entry.hours);
+            // （見込残存はタスク工程レベルの本作業管理値のため、レビュー行では上書きしない）
+            if (!entry.isReview) {
+                saveRemainingEstimate(version, task, process, entry.member, entry.hours);
+            }
         }
     });
 
@@ -733,7 +737,7 @@ export function clearEditExtraMembers() {
 
 /**
  * 追加担当者行のデータを収集
- * @returns {Array<{member: string, hours: number, estimateId: number|null}>}
+ * @returns {Array<{member: string, hours: number, estimateId: number|null, isReview: boolean}>}
  *   estimateId != null は既存見積の更新、null は新規作成を表す。
  */
 function collectEditExtraMembers() {
@@ -746,7 +750,7 @@ function collectEditExtraMembers() {
         const hours = parseFloat(row.querySelector('.edit-est-extra-hours')?.value) || 0;
         const estimateId = row.dataset.estimateId ? Number(row.dataset.estimateId) : null;
         if (member && hours > 0) {
-            entries.push({ member, hours, estimateId });
+            entries.push({ member, hours, estimateId, isReview: row.dataset.review === 'true' });
         }
     });
     return entries;

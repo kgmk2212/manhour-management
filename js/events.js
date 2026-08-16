@@ -657,8 +657,12 @@ export function initEventHandlers() {
     const btnSaveEstimateEdit = document.getElementById('btnSaveEstimateEdit');
     if (btnSaveEstimateEdit) btnSaveEstimateEdit.addEventListener('click', saveEstimateEdit);
 
+    // クリックイベントを prefill 引数として渡さないようラムダで包む
     const btnAddEditEstMember = document.getElementById('btnAddEditEstMember');
-    if (btnAddEditEstMember) btnAddEditEstMember.addEventListener('click', addEditEstimateMemberRow);
+    if (btnAddEditEstMember) btnAddEditEstMember.addEventListener('click', () => addEditEstimateMemberRow());
+
+    const btnAddEditEstReview = document.getElementById('btnAddEditEstReview');
+    if (btnAddEditEstReview) btnAddEditEstReview.addEventListener('click', () => addEditEstimateMemberRow({ isReview: true }));
 
     const editEstimateVersion = document.getElementById('editEstimateVersion');
     if (editEstimateVersion) editEstimateVersion.addEventListener('change', () => handleVersionChange('editEstimateVersion'));
