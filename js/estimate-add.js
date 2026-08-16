@@ -254,9 +254,12 @@ export function openEditAllProcesses(version, task) {
     }
 
     // 各工程の担当・工数をプリフィル
-    // 同一工程に複数担当者の見積がある場合は、2人目以降を追加担当者行として展開する
+    // 同一工程に複数担当者の見積がある場合は、2人目以降を追加担当者行として展開する。
+    // レビュー見積（isReview）は本作業行の後にレビュー行として展開する。
     PROCESS.TYPES.forEach(proc => {
-        const procEstimates = taskEstimates.filter(e => e.process === proc);
+        const procAll = taskEstimates.filter(e => e.process === proc);
+        const procEstimates = procAll.filter(e => !e.isReview);
+        const reviewEstimates = procAll.filter(e => e.isReview);
         const memberSelect = document.getElementById(`addEst${proc}_member`);
         const hoursInput = document.getElementById(`addEst${proc}`);
         const primaryRow = memberSelect ? memberSelect.closest('tr') : null;
@@ -272,9 +275,13 @@ export function openEditAllProcesses(version, task) {
             if (primaryRow) delete primaryRow.dataset.estimateId;
         }
 
-        // 2人目以降を追加担当者行としてプリフィル（保存時の対応付け用にIDを保持）
-        procEstimates.slice(1).forEach(est => {
-            addEstimateMemberRow(proc);
+        // 2人目以降＋レビューを追加行としてプリフィル（保存時の対応付け用にIDを保持）
+        const extraEntries = [
+            ...procEstimates.slice(1).map(est => ({ est, isReview: false })),
+            ...reviewEstimates.map(est => ({ est, isReview: true }))
+        ];
+        extraEntries.forEach(({ est, isReview }) => {
+            addEstimateMemberRow(proc, isReview);
             const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
             const row = extraRows[extraRows.length - 1];
             if (!row) return;
@@ -294,19 +301,20 @@ export function openEditAllProcesses(version, task) {
             refreshAllExtraRowMonthCells();
 
             PROCESS.TYPES.forEach(proc => {
-                const procEstimates = taskEstimates.filter(e => e.process === proc);
-                if (procEstimates.length === 0) return;
+                const procAll = taskEstimates.filter(e => e.process === proc);
+                if (procAll.length === 0) return;
+                const procEstimates = procAll.filter(e => !e.isReview);
 
-                // プライマリ行 = procEstimates[0] の登録月
+                // プライマリ行 = 本作業の先頭見積の登録月
                 const primaryRow = document.getElementById(`addEst${proc}_member`)?.closest('tr');
-                if (primaryRow) {
+                if (primaryRow && procEstimates[0]) {
                     prefillRowWorkMonths(primaryRow, Utils.normalizeEstimate(procEstimates[0]).workMonths);
                 }
 
-                // 追加担当者行 = 見積IDで対応付け、各担当者の登録月を反映
+                // 追加行（担当者行・レビュー行）= 見積IDで対応付け、各行の登録月を反映
                 document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
                     const id = row.dataset.estimateId ? Number(row.dataset.estimateId) : null;
-                    const est = id != null ? procEstimates.find(e => e.id === id) : null;
+                    const est = id != null ? procAll.find(e => e.id === id) : null;
                     if (est) prefillRowWorkMonths(row, Utils.normalizeEstimate(est).workMonths);
                 });
             });
@@ -374,6 +382,7 @@ function saveEditAllProcesses() {
             member: memberSelect ? memberSelect.value : '',
             hours: parseFloat(hoursInput ? hoursInput.value : '') || 0,
             estimateId: primaryRow && primaryRow.dataset.estimateId ? Number(primaryRow.dataset.estimateId) : null,
+            isReview: false,
             rowEl: primaryRow
         });
 
@@ -382,11 +391,12 @@ function saveEditAllProcesses() {
                 member: row.querySelector('.est-extra-member')?.value || '',
                 hours: parseFloat(row.querySelector('.est-extra-hours')?.value) || 0,
                 estimateId: row.dataset.estimateId ? Number(row.dataset.estimateId) : null,
+                isReview: row.dataset.review === 'true',
                 rowEl: row
             });
         });
 
-        rows.forEach(({ member, hours, estimateId, rowEl }) => {
+        rows.forEach(({ member, hours, estimateId, isReview, rowEl }) => {
         const existingEst = estimateId !== null
             ? taskEstimates.find(e => e.id === estimateId)
             : undefined;
@@ -425,12 +435,14 @@ function saveEditAllProcesses() {
                 }
 
                 // スケジュール連動: 担当者またはhoursが変わった場合のみ更新
+                // （本作業とレビューの予定を取り違えないよう isReview の一致も条件にする）
                 if (existingEst.member !== member || existingEst.hours !== hours) {
                     const relatedSchedule = State.schedules.find(s =>
                         s.version === oldVersion &&
                         s.task === oldTask &&
                         s.process === proc &&
-                        s.member === existingEst.member
+                        s.member === existingEst.member &&
+                        !s.isReview === !existingEst.isReview
                     );
                     if (relatedSchedule) {
                         const schedUpdates = { estimatedHours: hours };
@@ -460,6 +472,7 @@ function saveEditAllProcesses() {
                 workMonth: workMonth,
                 workMonths: workMonths,
                 monthlyHours: monthlyHours,
+                ...(isReview ? { isReview: true } : {}),
                 createdAt: new Date().toISOString()
             };
             State.estimates.push(newEst);
@@ -1275,7 +1288,7 @@ export function updateAddEstimateTotals() {
  * 工程に担当者行を追加
  * @param {string} proc - 工程名（UI/PG/PT/IT/ST）
  */
-export function addEstimateMemberRow(proc) {
+export function addEstimateMemberRow(proc, isReview = false) {
     const table = document.getElementById('addEstimateTable');
     if (!table) return;
 
@@ -1292,11 +1305,15 @@ export function addEstimateMemberRow(proc) {
     const memberOptions = primarySelect ? primarySelect.innerHTML : '';
 
     const newRow = document.createElement('tr');
-    newRow.className = 'est-extra-member-row';
+    newRow.className = 'est-extra-member-row' + (isReview ? ' est-review-row' : '');
     newRow.dataset.process = proc;
     newRow.dataset.extraIndex = idx;
+    if (isReview) newRow.dataset.review = 'true';
+    const markCell = isReview
+        ? `<td class="est-review-mark" style="text-align: center; font-size: calc(15.5px * var(--ui-scale));" title="レビュー行">R</td>`
+        : `<td style="text-align: center; color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale));">┗</td>`;
     newRow.innerHTML = `
-        <td style="text-align: center; color: var(--text-muted); font-size: calc(15.5px * var(--ui-scale));">┗</td>
+        ${markCell}
         <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
         <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
         <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>
@@ -1329,28 +1346,28 @@ export function removeAllExtraMemberRows() {
 }
 
 /**
- * 全工程の全担当者行（プライマリ＋追加）からデータを収集
- * @returns {Array<{process: string, member: string, hours: number, rowEl: HTMLTableRowElement}>}
+ * 全工程の全担当者行（プライマリ＋追加＋レビュー）からデータを収集
+ * @returns {Array<{process: string, member: string, hours: number, isReview: boolean, rowEl: HTMLTableRowElement}>}
  */
 export function collectAllEstimateEntries() {
     const entries = [];
 
     PROCESS.TYPES.forEach(proc => {
-        // プライマリ行
+        // プライマリ行（常に本作業）
         const memberSelect = document.getElementById(`addEst${proc}_member`);
         const member = memberSelect?.value || '';
         const hours = parseFloat(document.getElementById(`addEst${proc}`)?.value) || 0;
         if (hours > 0 && member) {
-            entries.push({ process: proc, member, hours, rowEl: memberSelect ? memberSelect.closest('tr') : null });
+            entries.push({ process: proc, member, hours, isReview: false, rowEl: memberSelect ? memberSelect.closest('tr') : null });
         }
 
-        // 追加行
+        // 追加行（担当者行またはレビュー行）
         const extraRows = document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`);
         extraRows.forEach(row => {
             const extraMember = row.querySelector('.est-extra-member')?.value || '';
             const extraHours = parseFloat(row.querySelector('.est-extra-hours')?.value) || 0;
             if (extraHours > 0 && extraMember) {
-                entries.push({ process: proc, member: extraMember, hours: extraHours, rowEl: row });
+                entries.push({ process: proc, member: extraMember, hours: extraHours, isReview: row.dataset.review === 'true', rowEl: row });
             }
         });
     });
@@ -1526,6 +1543,7 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
             workMonth: workMonth,
             workMonths: workMonths,
             monthlyHours: monthlyHours,
+            ...(entry.isReview ? { isReview: true } : {}),
             createdAt: new Date().toISOString()
         };
 
