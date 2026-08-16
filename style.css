@@ -3354,6 +3354,10 @@ table tr[style*="1565c0"] th:first-child {
     margin: 0;
 }
 
+.setting-actions {
+    margin: 4px 0 16px;
+}
+
 /* スイッチ（native checkbox 内包） */
 .setting-switch {
     position: relative;
