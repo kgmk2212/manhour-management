@@ -526,15 +526,9 @@ document.addEventListener('DOMContentLoaded', function () {
     Quick.updateQuickTaskList();
     Estimate.updateWorkMonthOptions();
 
-    // 見込残存時間入力モーダル: 外クリックで閉じる
-    const remainingHoursModal = document.getElementById('remainingHoursModal');
-    if (remainingHoursModal) {
-        remainingHoursModal.addEventListener('click', function (event) {
-            if (event.target === remainingHoursModal) {
-                Modal.closeRemainingHoursModal();
-            }
-        });
-    }
+    // 見込残存時間入力モーダルの外クリック閉じは Modal.setupModalHandlers() に統合済み
+    // （click の target は mousedown/mouseup の共通祖先になるため、入力欄からモーダル外へ
+    //  ドラッグしただけで背景クリックと誤判定されて閉じてしまう問題があった）
 
     // 見積一覧のデフォルトを版数別（全版数・現在月）に設定
     const filterTypeElement = document.getElementById('estimateFilterType');
