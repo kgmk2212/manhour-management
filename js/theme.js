@@ -25,14 +25,27 @@ import {
 // グラフカラースキーム
 // ============================================
 
+// 「自動」時のテーマ名→グラフスキームの対応（chartColorSchemes に同名キーが無いテーマ用）
+const AUTO_SCHEME_FALLBACK = {
+    'forest': 'green',
+    'violet': 'purple',
+    'ink': 'slate',
+    'rose': 'purple',
+    'amber': 'classic'
+};
+
 export function getActiveChartColorScheme() {
     if (selectedChartColorScheme === 'auto') {
-        if (chartColorSchemes[window.currentThemeColor]) {
-            return chartColorSchemes[window.currentThemeColor];
+        const theme = window.currentThemeColor;
+        if (chartColorSchemes[theme]) {
+            return chartColorSchemes[theme];
         }
-        return chartColorSchemes['forest'];
+        if (AUTO_SCHEME_FALLBACK[theme]) {
+            return chartColorSchemes[AUTO_SCHEME_FALLBACK[theme]];
+        }
+        return chartColorSchemes['classic'];
     } else {
-        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['forest'];
+        return chartColorSchemes[selectedChartColorScheme] || chartColorSchemes['classic'];
     }
 }
 
