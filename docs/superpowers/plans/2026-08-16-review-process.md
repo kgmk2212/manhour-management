@@ -31,7 +31,7 @@
 **Interfaces:**
 - Produces: `Utils.reviewBadgeHtml(isReview)` — isReview が truthy なら `<span class="badge badge-review" title="レビュー">R</span>` を、falsy なら `''` を返す。以降の全表示タスクが使用。
 
-- [ ] **Step 1: style.css に badge-review と est-review-row を追加**
+- [x] **Step 1: style.css に badge-review と est-review-row を追加**
 
 ```css
 .badge-review {
@@ -51,7 +51,7 @@ tr.est-review-row .est-review-mark {
 }
 ```
 
-- [ ] **Step 2: utils.js に reviewBadgeHtml を追加**
+- [x] **Step 2: utils.js に reviewBadgeHtml を追加**
 
 ```js
 /**
@@ -64,7 +64,7 @@ export function reviewBadgeHtml(isReview) {
 }
 ```
 
-- [ ] **Step 3: merge-json.js の keyOf 3箇所に isReview を追加**
+- [x] **Step 3: merge-json.js の keyOf 3箇所に isReview を追加**
 
 ```js
 // actuals (92): ...s(r.process), r.isReview ? 'R' : ''].join('|')
@@ -72,9 +72,9 @@ export function reviewBadgeHtml(isReview) {
 // schedules (117): ...normalizeDate(r.startDate), r.isReview ? 'R' : ''].join('|')
 ```
 
-- [ ] **Step 4: excel-import.js の keyOf 2箇所（285, 319）にも同様に `r.isReview ? 'R' : ''` を追加**（Excel由来レコードは常に非レビュー扱い＝既存レビュー行を上書きしない）
+- [x] **Step 4: excel-import.js の keyOf 2箇所（285, 319）にも同様に `r.isReview ? 'R' : ''` を追加**（Excel由来レコードは常に非レビュー扱い＝既存レビュー行を上書きしない）
 
-- [ ] **Step 5: コミット** `feat(review): レビュー行の基盤（バッジ・ヘルパー・マージキー）を追加`
+- [x] **Step 5: コミット** `feat(review): レビュー行の基盤（バッジ・ヘルパー・マージキー）を追加`
 
 ---
 
@@ -88,7 +88,7 @@ export function reviewBadgeHtml(isReview) {
 - Consumes: `Utils.reviewBadgeHtml`
 - Produces: 見積レコードに `isReview: true`（レビュー行のみ）。`collectAllEstimateEntries()` の戻り値に `isReview: boolean` が加わる。
 
-- [ ] **Step 1: index.html の各工程行（UI/PG/PT/IT/ST の5行）の「＋」ボタン隣に「＋R」ボタンを追加**
+- [x] **Step 1: index.html の各工程行（UI/PG/PT/IT/ST の5行）の「＋」ボタン隣に「＋R」ボタンを追加**
 
 ```html
 <td class="est-add-member-cell">
@@ -97,17 +97,17 @@ export function reviewBadgeHtml(isReview) {
 </td>
 ```
 
-- [ ] **Step 2: addEstimateMemberRow(proc, isReview = false) に拡張**（js/estimate-add.js:1278）
+- [x] **Step 2: addEstimateMemberRow(proc, isReview = false) に拡張**（js/estimate-add.js:1278）
   - `newRow.className = 'est-extra-member-row' + (isReview ? ' est-review-row' : '')`
   - `if (isReview) newRow.dataset.review = 'true'`
   - 先頭セル: isReview なら `<td class="est-review-mark" style="text-align: center; font-size: calc(15.5px * var(--ui-scale));">R</td>`、通常は従来の `┗`
   - window バインド（init.js）が引数を渡せることを確認（onclick 直書きなので追加作業なし）
 
-- [ ] **Step 3: collectAllEstimateEntries に isReview を追加**（プライマリ行は `isReview: false`、追加行は `isReview: row.dataset.review === 'true'`）
+- [x] **Step 3: collectAllEstimateEntries に isReview を追加**（プライマリ行は `isReview: false`、追加行は `isReview: row.dataset.review === 'true'`）
 
-- [ ] **Step 4: addEstimateFromModalNormal の est 生成に `...(entry.isReview ? { isReview: true } : {})` を追加**
+- [x] **Step 4: addEstimateFromModalNormal の est 生成に `...(entry.isReview ? { isReview: true } : {})` を追加**
 
-- [ ] **Step 5: openEditAllProcesses のプリフィルを main/review に分離**（js/estimate-add.js:258）
+- [x] **Step 5: openEditAllProcesses のプリフィルを main/review に分離**（js/estimate-add.js:258）
 
 ```js
 const procAll = taskEstimates.filter(e => e.process === proc);
@@ -119,13 +119,13 @@ const reviewEstimates = procAll.filter(e => e.isReview);  // レビュー行と�
 
   - 複数月モードの作業月プリフィル（296-312行）も同様に procAll ベースの ID 対応付けで review 行を含める（既存の `est-extra-member-row` セレクタは review 行も拾うため、estimateId 対応付けはそのまま動く）
 
-- [ ] **Step 6: saveEditAllProcesses の行収集・保存に isReview を反映**（js/estimate-add.js:367-476）
+- [x] **Step 6: saveEditAllProcesses の行収集・保存に isReview を反映**（js/estimate-add.js:367-476）
   - 追加行収集（380-387）: `isReview: row.dataset.review === 'true'` を rows に追加（プライマリは false）
   - 新規作成（447-473）: newEst に `...(isReview ? { isReview: true } : {})`
   - 更新パス: 既存レコードのスプレッド維持で isReview は保たれる（変更不要）
   - スケジュール連動検索（429-434）: `&& !s.isReview === !existingEst.isReview` を追加
 
-- [ ] **Step 7: 手動確認（ブラウザで +R 行追加→保存→localStorage に isReview 付きで入ること）は Task 5 の /verify-ui に含める。コミット** `feat(estimate): 見積入力モーダルにレビュー行（+R）を追加`
+- [x] **Step 7: 手動確認（ブラウザで +R 行追加→保存→localStorage に isReview 付きで入ること）は Task 5 の /verify-ui に含める。コミット** `feat(estimate): 見積入力モーダルにレビュー行（+R）を追加`
 
 ---
 
@@ -138,25 +138,25 @@ const reviewEstimates = procAll.filter(e => e.isReview);  // レビュー行と�
 **Interfaces:**
 - Consumes: `reviewBadgeHtml`（estimate.js は `./utils.js` から import 追加）
 
-- [ ] **Step 1: renderEstimateGrouped**
+- [x] **Step 1: renderEstimateGrouped**
   - 工程内ソート（865）: `processOrder.indexOf` が同値なら `(a.isReview ? 1 : 0) - (b.isReview ? 1 : 0)` で本作業→レビュー順
   - 工程バッジ表示（952, 958）: `${reviewBadgeHtml(proc.isReview)}` を badge の直後に追加
 
-- [ ] **Step 2: renderEstimateMatrix の memberLines（1186）**: `(${member} xh)` の前に `${reviewBadgeHtml(p.isReview)}`。エントリのソートも本作業→レビュー順にする
+- [x] **Step 2: renderEstimateMatrix の memberLines（1186）**: `(${member} xh)` の前に `${reviewBadgeHtml(p.isReview)}`。エントリのソートも本作業→レビュー順にする
 
-- [ ] **Step 3: showEstimateDetail（1510）**: 担当者リストの各要素に `${reviewBadgeHtml(g.isReview)}`。グループのソートも本作業先頭
+- [x] **Step 3: showEstimateDetail（1510）**: 担当者リストの各要素に `${reviewBadgeHtml(g.isReview)}`。グループのソートも本作業先頭
 
-- [ ] **Step 4: showTaskDetail（1671, 1745 付近の各見積行）**: 担当者名の後ろに `${reviewBadgeHtml(estimate.isReview)}`
+- [x] **Step 4: showTaskDetail（1671, 1745 付近の各見積行）**: 担当者名の後ろに `${reviewBadgeHtml(estimate.isReview)}`
 
-- [ ] **Step 5: renderEstimateDetailList（1280）**: 工程バッジ直後に `${reviewBadgeHtml(est.isReview)}`
+- [x] **Step 5: renderEstimateDetailList（1280）**: 工程バッジ直後に `${reviewBadgeHtml(est.isReview)}`
 
-- [ ] **Step 6: estimate-edit.js**
+- [x] **Step 6: estimate-edit.js**
   - siblings 展開（113）: `addEditEstimateMemberRow({ member, hours, estimateId, isReview: sib.isReview })` とし、行生成側で isReview のとき行頭に R マーク（`est-review-row` クラス）を表示。更新パスはスプレッド維持のため isReview は保存される（コード変更不要な事を確認）
   - この単工程モーダルの「＋担当者」新規行は常に本作業行（レビュー新規作成は全工程一括モーダルのみ）
   - スケジュール連動（412-415）: `&& !s.isReview === !before.isReview` を追加
   - プライマリがレビュー見積の場合: モーダルの工程表示部に R バッジ（openEditEstimate 内で `#editEstimateModal` のタイトル or 工程表示に追記）
 
-- [ ] **Step 7: コミット** `feat(estimate): 見積の一覧・マトリクス・詳細にレビュー行のRバッジを表示`
+- [x] **Step 7: コミット** `feat(estimate): 見積の一覧・マトリクス・詳細にレビュー行のRバッジを表示`
 
 ---
 
@@ -165,7 +165,7 @@ const reviewEstimates = procAll.filter(e => e.isReview);  // レビュー行と�
 **Files:**
 - Modify: `js/report.js:1582-1635`（renderProcessBarChart）
 
-- [ ] **Step 1: 集計に estimateReview / actualReview を追加**
+- [x] **Step 1: 集計に estimateReview / actualReview を追加**
 
 ```js
 if (!processSummary[processKey]) {
@@ -176,25 +176,25 @@ if (e.isReview) processSummary[processKey].estimateReview += e.hours;
 // actuals 側も同様に actualReview を加算
 ```
 
-- [ ] **Step 2: バーを本作業＋レビューの2セグメント表示に変更**
+- [x] **Step 2: バーを本作業＋レビューの2セグメント表示に変更**
   - バー内を flex の2つの div に分割：本作業部分（従来色）＋レビュー部分（同色ベースに `repeating-linear-gradient(45deg, rgba(255,255,255,.45) 0 4px, transparent 4px 8px)` の縞オーバーレイ）
   - 幅: 本作業 `= (hours - reviewHours) / maxHours`、レビュー `= reviewHours / maxHours`、合計幅は従来と同一
   - reviewHours > 0 のときのみ工程ラベル行に `<span style="font-weight:400; color:#6c757d; font-size: calc(14px * var(--ui-scale));">（うちR: xh）</span>` を見積/実績それぞれ付記
 
-- [ ] **Step 3: コミット** `feat(report): 工程別バーチャートにレビュー内訳セグメントを表示`
+- [x] **Step 3: コミット** `feat(report): 工程別バーチャートにレビュー内訳セグメントを表示`
 
 ---
 
 ### Task 5: Phase 1 検証（/verify-ui）
 
-- [ ] **Step 1: /verify-ui の手順でローカル配信＋seed 投入**（seed にレビュー見積行を含める: 例 PG 10h（森）＋ PG レビュー 2h（佐藤・isReview:true））
-- [ ] **Step 2: DOM 機械判定**
+- [x] **Step 1: /verify-ui の手順でローカル配信＋seed 投入**（seed にレビュー見積行を含める: 例 PG 10h（森）＋ PG レビュー 2h（佐藤・isReview:true））
+- [x] **Step 2: DOM 機械判定**
   - 見積モーダル: `+R` クリック→ `tr.est-review-row` が生成される
   - 保存後: `JSON.parse(localStorage)` 相当の State で isReview: true の見積が存在
   - 一覧・マトリクス: `.badge-review` が期待数表示される
   - レポート: 工程別チャートに「うちR」ラベルが出る
   - 既存集計非破壊: 工程合計（PG 12.0h）が本作業＋レビューの合算になっている
-- [ ] **Step 3: FAIL があれば修正して再検証（PASS まで）。スクショ取得**
+- [x] **Step 3: FAIL があれば修正して再検証（PASS まで）。スクショ取得**
 
 ---
 
@@ -210,7 +210,7 @@ if (e.isReview) processSummary[processKey].estimateReview += e.hours;
 **Interfaces:**
 - Produces: 実績レコードに `isReview: true`（レビュー実績のみ）
 
-- [ ] **Step 1: index.html の工程 form-group 直後にチェックボックスを追加**
+- [x] **Step 1: index.html の工程 form-group 直後にチェックボックスを追加**
 
 ```html
 <div class="form-group">
@@ -221,19 +221,19 @@ if (e.isReview) processSummary[processKey].estimateReview += e.hours;
 </div>
 ```
 
-- [ ] **Step 2: actual.js saveActualEdit**
+- [x] **Step 2: actual.js saveActualEdit**
   - `const isReview = document.getElementById('editActualIsReview')?.checked || false;`
   - 更新: `isReview: isReview || undefined` ではなく、更新オブジェクトに `isReview` を明示セット（false なら `delete actuals[actualIndex].isReview` 相当のため、スプレッド後に `if (!isReview) delete ...; else ... = true`）
   - 新規: `...(isReview ? { isReview: true } : {})`
-- [ ] **Step 3: モーダル open（新規/編集）時に checkbox をプリフィル**（編集: `!!actual.isReview`、新規: false にリセット）。actual.js 内の editActual モーダルを開く関数（openEditActualModal / openAddActualModal 相当）を特定して両方に設定
-- [ ] **Step 4: 実績表示に R バッジ**（actual.js 81, 748, 816, 889 の badge 直後に `${reviewBadgeHtml(a.isReview)}`。import 追加）
-- [ ] **Step 5: actual-timeline.js の実績ブロックに R 区別**（ブロックのラベル文字列に ` R` を付加＋ CSS クラス。タイムラインからの新規作成は本作業固定）
-- [ ] **Step 6: 進捗計算の実績マッチングに isReview 一致を追加**
+- [x] **Step 3: モーダル open（新規/編集）時に checkbox をプリフィル**（編集: `!!actual.isReview`、新規: false にリセット）。actual.js 内の editActual モーダルを開く関数（openEditActualModal / openAddActualModal 相当）を特定して両方に設定
+- [x] **Step 4: 実績表示に R バッジ**（actual.js 81, 748, 816, 889 の badge 直後に `${reviewBadgeHtml(a.isReview)}`。import 追加）
+- [x] **Step 5: actual-timeline.js の実績ブロックに R 区別**（ブロックのラベル文字列に ` R` を付加＋ CSS クラス。タイムラインからの新規作成は本作業固定）
+- [x] **Step 6: 進捗計算の実績マッチングに isReview 一致を追加**
   - schedule.js:443: `&& !a.isReview === !schedule.isReview`
   - schedule-render.js:1290: 同上
   - schedule.js calculateProgress 内の remainingEstimate 参照はレビュー予定では使わない: `const remainingEstimate = schedule.isReview ? null : getRemainingEstimate(...)`（schedule-render.js:1304 も同様）
-- [ ] **Step 7: /verify-ui で Phase 2 検証**（レビュー実績の登録→R バッジ表示→レポート実績側「うちR」→本作業スケジュール進捗がレビュー実績を含まないこと）
-- [ ] **Step 8: コミット** `feat(actual): 実績入力にレビューフラグを追加し表示・進捗計算を対応`
+- [x] **Step 7: /verify-ui で Phase 2 検証**（レビュー実績の登録→R バッジ表示→レポート実績側「うちR」→本作業スケジュール進捗がレビュー実績を含まないこと）
+- [x] **Step 8: コミット** `feat(actual): 実績入力にレビューフラグを追加し表示・進捗計算を対応`
 
 ---
 
@@ -247,30 +247,30 @@ if (e.isReview) processSummary[processKey].estimateReview += e.hours;
 **Interfaces:**
 - Produces: スケジュールレコードに `isReview: true`
 
-- [ ] **Step 1: addSchedule / addScheduleSilent に `...(data.isReview ? { isReview: true } : {})` を追加**
-- [ ] **Step 2: generateSchedulesFromEstimates**
+- [x] **Step 1: addSchedule / addScheduleSilent に `...(data.isReview ? { isReview: true } : {})` を追加**
+- [x] **Step 2: generateSchedulesFromEstimates**
   - ソート（1344-1361）: 同一タスク・同一工程内で `(a.isReview ? 1 : 0) - (b.isReview ? 1 : 0)` を member 比較の前に挿入（本作業→レビュー順）
   - 既存スケジュール判定（1374-1379）: `&& !s.isReview === !est.isReview` を追加
   - 前工程終了日の決定（1395-1404）: est.isReview の場合はまず**同一工程**の終了日 `taskProcessEndDate.get(\`${est.task}::${est.process}\`)` を prevProcessEnd として使う（本作業が同キーを先に更新済み）。本作業行は従来通り前工程を遡る
   - addScheduleSilent 呼び出し（1421-1430）: `isReview: est.isReview || false` を渡し、note は `見積ID: ${est.id} から自動生成${est.isReview ? '（レビュー）' : ''}`
   - タスク×工程終了日の更新（1442-1445）: レビューも同じ `task::process` キーを更新（レビュー終了が最遅なら次工程がレビュー完了を待つ）
-- [ ] **Step 3: 手動スケジュールフォーム**: index.html のスケジュール追加/編集モーダルに `scheduleIsReview` チェックボックスを追加し、schedule.js のフォーム収集（778 付近の fields）と保存・編集プリフィルに組み込む
-- [ ] **Step 4: schedule-render.js のバー描画**
+- [x] **Step 3: 手動スケジュールフォーム**: index.html のスケジュール追加/編集モーダルに `scheduleIsReview` チェックボックスを追加し、schedule.js のフォーム収集（778 付近の fields）と保存・編集プリフィルに組み込む
+- [x] **Step 4: schedule-render.js のバー描画**
   - ベースバー塗り（1123-1125）の直後: `if (schedule.isReview)` なら clip 内に 45° 縞（`ctx.strokeStyle = 'rgba(255,255,255,0.45)'; lineWidth 3; 8px 間隔の斜線ループ`）を描画
   - バー内テキスト（1200）: `const processText = schedule.isReview ? \`${schedule.process || ''} R\` : (schedule.process || '');`
   - ツールチップ（1517 付近）: 工程表示に `（レビュー）` を付加
-- [ ] **Step 5: /verify-ui で Phase 3 検証**
+- [x] **Step 5: /verify-ui で Phase 3 検証**
   - seed: PG 本作業（森）＋PG レビュー（佐藤）＋PT 本作業（森）を投入し自動生成実行
   - 判定: レビュー予定の startDate > 本作業の endDate、PT の startDate > レビューの endDate、ガント上のレビューバーのラベルに R、既存判定（再生成でレビューが重複生成されない）
-- [ ] **Step 6: コミット** `feat(schedule): 自動生成・手動追加・ガント表示にレビュー予定を対応`
+- [x] **Step 6: コミット** `feat(schedule): 自動生成・手動追加・ガント表示にレビュー予定を対応`
 
 ---
 
 ### Task 8: 仕上げ（/deploy・ドキュメント）
 
-- [ ] **Step 1: 全 Phase の /verify-ui PASS を確認**
-- [ ] **Step 2: /deploy を実行し、GitHub Pages デプロイ完了まで確認**
-- [ ] **Step 3: 設計書のステータス更新（実装済み Phase を追記）＋計画書のチェックボックス更新をコミット**
+- [x] **Step 1: 全 Phase の /verify-ui PASS を確認**
+- [x] **Step 2: /deploy を実行し、GitHub Pages デプロイ完了まで確認**
+- [x] **Step 3: 設計書のステータス更新（実装済み Phase を追記）＋計画書のチェックボックス更新をコミット**
 
 ## Self-Review 済み事項
 
