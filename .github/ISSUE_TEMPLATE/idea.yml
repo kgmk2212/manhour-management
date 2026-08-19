@@ -1,0 +1,12 @@
+name: 💡 アイデア
+description: 「こうしたい」を1行から。自動でトリアージ・実装されます
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: やりたいこと
+      description: 思いつきのままでOK。曖昧な場合はBotが質問を返します
+      placeholder: 例）見積タブの合計行を目立たせたい
+    validations:
+      required: true
