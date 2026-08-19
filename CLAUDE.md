@@ -168,6 +168,18 @@ git branch -D experiment/sandbox
 
 ---
 
+## アイデア自動実装パイプライン
+
+「💡 アイデア」Issue を起点に triage→implement→PR→（解禁後）自動マージ→デプロイが自動で走る。
+
+- 設計: `docs/superpowers/specs/2026-08-19-idea-pipeline-design.md` ／ セットアップ・解禁手順: `docs/pipeline/SETUP.md`
+- 判定基準の調整は `.github/pipeline/prompts/*.md` と `auto-lane-policy.json` を編集
+- パイプラインが作る PR（`pipeline/issue-*`）と対話セッションは並行しうる。**対話セッションで
+  ui-scaling に push する前に `git pull --rebase`** を徹底する
+- 撤回はマージ済み PR か元 Issue に `/revert` コメント
+
+---
+
 ## コーディング規約
 
 - `js/constants.js` の定数を使用（マジックナンバー禁止）

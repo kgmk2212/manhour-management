@@ -57,10 +57,10 @@
 データ整合性に関わるモジュールは lane:auto では変更禁止。`.github/pipeline/auto-lane-policy.json` に列挙し、トリアージと CI の両方が参照する:
 
 ```
-js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js
+js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js, .github/pipeline, scripts/pipeline
 ```
 
-（初期値。運用で追加・削減可。データスキーマの変更を伴う修正は、パスに関わらず lane:design へ。）
+（初期値。運用で追加・削減可。データスキーマの変更を伴う修正は、パスに関わらず lane:design へ。パイプラインの検査機構そのものを lane:auto から保護するため。）
 
 ### 3.3 3枚の壁
 
@@ -77,7 +77,7 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js
 
 ### 4.2 triage.yml
 
-- トリガー: `issues: [opened, labeled]` で `idea` ラベルを持つもの（テンプレートを使わず作成した Issue に後からラベルを付けた場合も拾う。二重実行はトリアージ済みラベルの有無で抑止）、および needs-clarification 中の Issue への**リポジトリオーナーの**コメント。
+- トリガー: `issues: [opened, labeled]` で `idea` ラベルを持つもの（テンプレートを使わず作成した Issue に後からラベルを付けた場合も拾う。二重実行はトリアージ済みラベルの有無で抑止。発火条件に Issue 作成者＝リポジトリオーナーを含む（公開リポで第三者の Issue により Claude が起動しないため））、および needs-clarification 中の Issue への**リポジトリオーナーの**コメント。
 - 処理: claude-code-action がリポジトリを read-only で参照し、(a) 解釈文 (b) 受入条件（機械検証可能な形式）(c) レーン判定と根拠、を Issue にコメントし、ラベルを付与。
 - プロンプトは `.github/pipeline/prompts/triage.md` にバージョン管理（判定基準の調整はこのファイル編集で行う）。
 - タイムアウト 10 分。
@@ -86,7 +86,7 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js
 
 - トリガー: `issues: [labeled]` で `lane:auto` / `lane:pr` / `lane:design` が付いたとき。
 - ベースブランチ: `experiment/ui-scaling`。作業ブランチ: `pipeline/issue-<番号>`。
-- 処理（auto/pr）: 実装 → `npm run lint` → `node --test` → Playwright 検証（スモーク＋受入条件） → スクショ撮影 → PR 作成。PR 本文に解釈文・受入条件・スクショ・diff要約を記載。
+- 処理（auto/pr）: 実装 → `npm run lint` → `node --test` → Playwright 検証（スモーク＋受入条件） → スクショ撮影 → PR 作成。PR 本文に解釈文・受入条件・スクショ・diff要約を記載。エージェントが仕様として読むのは Issue 本文とリポジトリオーナー投稿のコメントのみ（第三者コメントは取り込まない）。受入条件の検証スペックは tests/e2e/acceptance-issue-<番号>.spec.js として恒久化する。
 - 処理（design）: `docs/` 配下に設計書（必要ならモックアップHTML）を生成する PR を作成して停止。
 - スクショの見せ方: PR ブランチ内 `qa/issue-<番号>/` にコミットし、コミットSHA固定の raw URL で PR 本文に埋め込む。ブランチ最終コミットで同フォルダを削除し、**squash マージ**によりマージ後のツリーには残さない。
 - 排他制御: `concurrency: group: implement`（同時実装は1件、後続はキュー）。実装前に ui-scaling 最新へ rebase し、コンフリクトしたら `verification-failed` 相当で人間へ（並行する対話セッションとの衝突対策）。
@@ -99,7 +99,7 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js
 
 ### 4.5 lane-policy-check
 
-- lane:auto ラベルの PR に対し、diff が `auto-lane-policy.json` の触禁パスに触れていないか機械検査。触れていれば fail（＝ブランチ保護で自動マージ不可）。
+- lane:auto ラベルの PR に対し、diff が `auto-lane-policy.json` の触禁パスに触れていないか機械検査。触れていれば fail（＝ブランチ保護で自動マージ不可）。検査は base ref のスクリプト・ポリシーで行い（PR 側からの書き換え防止）、rename の旧パス（previous_filename）も検査対象に含める。
 
 ### 4.6 自動マージと解禁スイッチ
 
