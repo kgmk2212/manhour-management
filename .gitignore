@@ -73,3 +73,7 @@ temp_*.js
 llm-analysis/__pycache__/
 # Claude Code chat exports (auto-added)
 session-log/
+
+# Playwright
+test-results/
+playwright-report/

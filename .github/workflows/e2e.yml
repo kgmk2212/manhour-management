@@ -1,0 +1,37 @@
+# 実ブラウザスモーク: PR と ui-scaling への push で起動・全タブ描画・コンソールエラー0 を検証する。
+# ブランチ保護の required check（名前: e2e）。
+name: e2e
+
+on:
+  pull_request:
+  push:
+    branches: [experiment/ui-scaling]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Upload failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
