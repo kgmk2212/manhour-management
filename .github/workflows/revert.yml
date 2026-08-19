@@ -1,0 +1,45 @@
+# マージ済みPR（または元Issue）への /revert コメントで squash コミットを打ち消して push する即時撤回。
+name: Revert
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  revert:
+    if: >
+      startsWith(github.event.comment.body, '/revert') &&
+      github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # PIPELINE_PAT 必須: GITHUB_TOKEN の push は deploy.yml を発火させない（再帰防止仕様）
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
+      NUM: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling
+          fetch-depth: 0
+          token: ${{ secrets.PIPELINE_PAT }}
+      - name: Revert merge commit
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.issue.pull_request != null }}" = "true" ]; then
+            PR="$NUM"
+          else
+            PR=$(gh pr list --head "pipeline/issue-${NUM}" --state merged --json number -q '.[0].number')
+          fi
+          [ -n "$PR" ] || { gh issue comment "$NUM" --body "⚠️ /revert: マージ済みPRが見つかりません"; exit 1; }
+          SHA=$(gh pr view "$PR" --json mergeCommit -q '.mergeCommit.oid')
+          [ -n "$SHA" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR はマージされていません"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git revert --no-edit "$SHA"
+          git push origin experiment/ui-scaling
+          gh issue comment "$NUM" --body "↩️ PR #$PR（$SHA）を revert して push しました。デプロイは自動で走ります。"
