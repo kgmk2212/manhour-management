@@ -157,6 +157,11 @@ git branch -D experiment/sandbox
   隔離してから作業し、完了時に `/integrate` で「rebase → /verify-ui → ff-only マージ →
   /deploy → worktree 掃除」まで自動実行する。**ui-scaling worktree は統合専用**（直接編集しない）。
 - **無効時（フラグ無し）**: 従来どおり本節上部の開発フロー（直接編集 + 明示ステージ）。
+- **claims 層（2026-08-20〜）**: 独立フラグ `.shared/hooks/claims.on` が存在する間だけ、
+  /start-work が `.shared/claims/` に着手宣言（topic・ブランチ・BACKLOG ID）を書き、hook が
+  着手中一覧を毎ターン注入する（二重着手の可視化）。**参考情報のみで、停止・ロックは一切しない**。
+  `/parallel-mode claims-off` で即無効化。設計:
+  `docs/superpowers/specs/2026-08-20-claims-layer-design.md`（原本: 各 `.orig-20260820`）。
 - **元に戻す**: `/parallel-mode off` で即復帰。完全撤去の手順と設計は
   `docs/superpowers/specs/2026-08-19-parallel-session-merge-design.md` §6 を参照
   （hook 原本バックアップ: `.shared/hooks/inject-dev-flow.py.orig-20260819`）。
