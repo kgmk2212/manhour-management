@@ -1,0 +1,75 @@
+# アイデアIssueのトリアージ: 解釈文＋受入条件をコメントし、レーン判定ラベルを付与する。
+# 判定基準の調整は .github/pipeline/prompts/triage.md を編集する。
+name: Idea Triage
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    # オーナーのIssueのみ（公開リポのため第三者Issueでは起動しない）。
+    # opened: ideaラベル付きで作成 / labeled: 後からideaを付けた場合 / comment: 質問への回答で再トリアージ。
+    # lane済み・質問中(commentイベント以外)は二重実行しない。
+    if: >
+      github.event.issue.user.login == github.repository_owner &&
+      !github.event.issue.pull_request &&
+      (
+        (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'idea')) ||
+        (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'idea') ||
+        (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'needs-clarification') && github.event.comment.user.login == github.repository_owner)
+      ) &&
+      !contains(github.event.issue.labels.*.name, 'lane:auto') &&
+      !contains(github.event.issue.labels.*.name, 'lane:pr') &&
+      !contains(github.event.issue.labels.*.name, 'lane:design')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # PIPELINE_PAT 必須: GITHUB_TOKEN によるラベル付与は後続ワークフロー（implement.yml）を
+      # 発火させない（GitHub の再帰防止仕様）。SETUP.md §1.5 参照。
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling
+
+      - name: Skip if already triaged (live label check)
+        id: guard
+        run: |
+          LABELS=$(gh issue view "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --json labels -q '[.labels[].name] | join(",")')
+          echo "current labels: $LABELS"
+          if echo "$LABELS" | grep -qE 'lane:auto|lane:pr|lane:design'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+          # needs-clarification 中の再トリアージは issue_comment イベント経由のみ許可
+          if [ "${{ github.event_name }}" = "issues" ] && echo "$LABELS" | grep -q 'needs-clarification'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run triage
+        if: steps.guard.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.PIPELINE_PAT }}
+          prompt: |
+            対象 Issue: #${{ github.event.issue.number }}
+            リポジトリ直下の .github/pipeline/prompts/triage.md を読み、
+            その指示に従ってこの Issue のトリアージだけを実行してください。
+            （needs-clarification 中の再トリアージの場合は、最新の回答コメントを踏まえて再判定し、
+            判定できたら needs-clarification ラベルを外してください: gh issue edit --remove-label）
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*)"
