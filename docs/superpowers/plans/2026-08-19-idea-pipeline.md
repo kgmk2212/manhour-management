@@ -272,7 +272,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      GH_TOKEN: ${{ github.token }}
+      # PIPELINE_PAT 必須: GITHUB_TOKEN によるラベル付与は後続ワークフロー（implement.yml）を
+      # 発火させない（GitHub の再帰防止仕様）。SETUP.md §1.5 参照。
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -283,7 +285,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.PIPELINE_PAT }}
           prompt: |
             対象 Issue: #${{ github.event.issue.number }}
             リポジトリ直下の .github/pipeline/prompts/triage.md を読み、
@@ -306,6 +308,35 @@ git add .github/workflows/triage.yml
 git commit -m "feat(pipeline): トリアージワークフローを追加"
 ```
 
+- [ ] **Step 4: main ミラースクリプト作成**（`issues`/`issue_comment`/`schedule` トリガーのワークフローは **default branch（main）上のファイルしか発火しない**ため、該当4本を main へミラーする仕組みが必要）
+
+`scripts/pipeline/mirror-workflows-to-main.sh`:
+
+```bash
+#!/usr/bin/env bash
+# issues/issue_comment/schedule トリガーのワークフローは default branch (main) 上のみ発火する。
+# ui-scaling を正本とし、該当ワークフローを main worktree へコピーして push する。
+set -euo pipefail
+MAIN_WT="../../manhour-management"   # D:/CCwork/manhour-management（main の worktree）
+FILES="triage.yml implement.yml revert.yml pipeline-report.yml"
+for f in $FILES; do
+  if [ -f ".github/workflows/$f" ]; then
+    cp ".github/workflows/$f" "$MAIN_WT/.github/workflows/$f"
+  fi
+done
+cd "$MAIN_WT"
+git add .github/workflows
+git commit -m "ci(pipeline): イベント駆動ワークフローを ui-scaling からミラー" || { echo "変更なし"; exit 0; }
+git push origin main
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add scripts/pipeline/mirror-workflows-to-main.sh
+git commit -m "chore(pipeline): ワークフローのmainミラースクリプトを追加"
+```
+
 ### Task 5: セットアップ手順書＋Phase A 実地検証
 
 **Files:**
@@ -325,9 +356,23 @@ Claude Code のターミナルで `/install-github-app` を実行し、リポジ
 `kgmk2212/manhour-management` に App をインストール。フローの中で
 Secret `CLAUDE_CODE_OAUTH_TOKEN` が作成される（既存サブスクのクォータで動く）。
 
+## 1.5 PIPELINE_PAT（要ユーザー操作）
+GITHUB_TOKEN で行った操作（ラベル付与・PR作成・push・auto-merge予約）は**後続ワークフローを発火させない**
+（GitHub の再帰防止仕様）。パイプラインの連鎖 triage→implement→checks→auto-merge→deploy を通すため、
+fine-grained PAT を作成して Secret に登録する:
+1. https://github.com/settings/personal-access-tokens/new で対象リポジトリを `kgmk2212/manhour-management` に限定し、
+   Repository permissions: **Contents=Read and write / Issues=Read and write / Pull requests=Read and write**
+2. `gh secret set PIPELINE_PAT --repo kgmk2212/manhour-management`（値を貼り付け）
+3. 失効したら同権限で再発行して再登録（triage が起動しなくなったら失効を疑う）
+
 ## 2. リポジトリ変数（自動マージ解禁スイッチ・初期OFF）
 ```bash
 gh variable set AUTO_MERGE_ENABLED --repo kgmk2212/manhour-management --body "false"
+```
+
+## 2.5 Auto-merge 機能の有効化（リポジトリ設定）
+```bash
+gh api -X PATCH repos/kgmk2212/manhour-management -F allow_auto_merge=true
 ```
 
 ## 3. ラベル
@@ -355,6 +400,11 @@ EOF
 ```bash
 gh variable set AUTO_MERGE_ENABLED --repo kgmk2212/manhour-management --body "true"
 ```
+
+## 6. ワークフローの main ミラー（運用ルール）
+issues / issue_comment / schedule トリガーは **default branch（main）上のワークフローしか発火しない**。
+`triage.yml` / `implement.yml` / `revert.yml` / `pipeline-report.yml` を変更したら必ず
+`bash scripts/pipeline/mirror-workflows-to-main.sh` を実行して main に反映する（正本は ui-scaling 側）。
 ````
 
 - [ ] **Step 2: Commit & Push**
@@ -363,11 +413,12 @@ gh variable set AUTO_MERGE_ENABLED --repo kgmk2212/manhour-management --body "tr
 git add docs/pipeline/SETUP.md
 git commit -m "docs(pipeline): セットアップ手順書を追加"
 git push origin experiment/ui-scaling
+bash scripts/pipeline/mirror-workflows-to-main.sh
 ```
 
 - [ ] **Step 3: ユーザー操作の依頼**
 
-SETUP.md §1（`/install-github-app`）はユーザーにしかできないため、ここで依頼して完了を待つ。§2・§3 は Bash で代行実行する。
+SETUP.md §1（`/install-github-app`）と §1.5（PIPELINE_PAT の作成・登録）はユーザーにしかできないため、ここで依頼して完了を待つ。§2・§2.5・§3 は Bash で代行実行する。
 
 - [ ] **Step 4: 実地検証（トリアージの実発火）**
 
@@ -904,7 +955,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      GH_TOKEN: ${{ github.token }}
+      # PIPELINE_PAT 必須: GITHUB_TOKEN で作った PR は checks（e2e 等）を発火させず、
+      # auto-merge 予約もマージ後の deploy を発火させない（再帰防止仕様）。SETUP.md §1.5 参照。
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
       ISSUE: ${{ github.event.issue.number }}
       LANE: ${{ github.event.label.name }}
     steps:
@@ -912,6 +965,7 @@ jobs:
         with:
           ref: experiment/ui-scaling
           fetch-depth: 0
+          token: ${{ secrets.PIPELINE_PAT }}   # push が PAT 経由になり PR の checks が発火する
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -924,7 +978,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.PIPELINE_PAT }}
           prompt: |
             対象 Issue: #${{ env.ISSUE }}（レーン: ${{ env.LANE }}）
             リポジトリ直下の ${{ env.LANE == 'lane:design' && '.github/pipeline/prompts/design.md' || '.github/pipeline/prompts/implement.md' }} を読み、
@@ -992,13 +1046,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      GH_TOKEN: ${{ github.token }}
+      # PIPELINE_PAT 必須: GITHUB_TOKEN の push は deploy.yml を発火させない（再帰防止仕様）
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
       NUM: ${{ github.event.issue.number }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: experiment/ui-scaling
           fetch-depth: 0
+          token: ${{ secrets.PIPELINE_PAT }}
       - name: Revert merge commit
         run: |
           set -euo pipefail
@@ -1023,6 +1079,7 @@ jobs:
 git add .github/workflows/revert.yml
 git commit -m "feat(pipeline): /revert コメントによる即時撤回ワークフローを追加"
 git push origin experiment/ui-scaling
+bash scripts/pipeline/mirror-workflows-to-main.sh
 ```
 
 ### Task 14: ブランチ保護設定と Phase C 実地検証（dry-run）
@@ -1165,6 +1222,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling   # 本ワークフローは main 上のミラーから発火するが、スクリプトの正本は ui-scaling
       - name: Build and post report
         run: |
           set -euo pipefail
@@ -1196,7 +1255,8 @@ jobs:
 git add scripts/pipeline/report.mjs tests/pipeline-report.test.js .github/workflows/pipeline-report.yml
 git commit -m "feat(pipeline): 週次レポート（学習期間の判定一致計測）を追加"
 git push origin experiment/ui-scaling
-gh workflow run "Pipeline Report" --repo kgmk2212/manhour-management
+bash scripts/pipeline/mirror-workflows-to-main.sh
+gh workflow run "Pipeline Report" --repo kgmk2212/manhour-management --ref main
 ```
 Expected: run 成功、`pipeline-report` ラベルの Issue が作られ表が表示される
 
