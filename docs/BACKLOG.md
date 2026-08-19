@@ -72,6 +72,9 @@
 
 ## アイデア（未評価）
 
+- parallel-mode の着手予約: /start-work 時に BACKLOG の該当項目へ担当ブランチ名を書き込んでから作業する規約
+  （worktree の隔離はタスク選択の重複を防げない。2026-08-20 に2セッションが同一の Undo/Redo P1 へ
+  二重着手する実害が発生 — 片方は着手直後に検知して回避）
 - 工数入力: 直近使った工数値の学習（メンバー別のよく使う値をチップに反映）
 - ID採番の一本化（`js/state.js:341` 連番整数 vs `js/excel-import.js:274` `Date.now()+Math.random()`。浮動小数IDの等値比較は脆い）
 - 未使用CSSの掃除（`style.css:6905-6919` `.actual-tl-bar-resize` 系は生成箇所なし）
