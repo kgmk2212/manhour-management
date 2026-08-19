@@ -1,14 +1,17 @@
-# GitHub Pagesへの自動デプロイ（複数ブランチ対応）
+# GitHub Pagesへの自動デプロイ（実験ブランチ動的対応）
 name: Deploy to GitHub Pages
 
 on:
-  # main または experiment/ui-scaling への push で実行
-  # （ジョブは常に main をルート、各実験ブランチを preview/ 配下に展開する。従来の
-  #   「main へ空コミットで発火」はパイプライン経路では不要になった）
+  # main または experiment/** への push で実行。
+  # ジョブは main をルートに、リモートの全 experiment/* ブランチを preview/<名前>/ へ展開し、
+  # preview/ にリンク付き一覧ページ（index.html）を自動生成する。
+  # → 実験ブランチの追加・削除で本ファイルの編集は不要（動的列挙）。
+  # 注意: push イベントは「push されたブランチ側の」ワークフロー定義で動くため、
+  #       experiment/** トリガが効くのは各ブランチがこの版の deploy.yml を取り込んでから。
   push:
     branches:
       - main
-      - experiment/ui-scaling
+      - 'experiment/**'
   workflow_dispatch:
 
 # GitHub Pagesへのデプロイ権限を設定
@@ -35,59 +38,100 @@ jobs:
           ref: main
           path: main
 
-      - name: Checkout experiment/sandbox branch
-        uses: actions/checkout@v4
-        with:
-          ref: experiment/sandbox
-          path: experiment-sandbox
-        continue-on-error: true
-
-      - name: Checkout experiment/redesign branch
-        uses: actions/checkout@v4
-        with:
-          ref: experiment/redesign
-          path: experiment-redesign
-        continue-on-error: true
-
-      - name: Checkout experiment/ui-scaling branch
-        uses: actions/checkout@v4
-        with:
-          ref: experiment/ui-scaling
-          path: experiment-ui-scaling
-        continue-on-error: true
-
-      - name: Prepare deployment directory
+      - name: Build deploy directory (main + all experiment previews + index)
         run: |
-          # mainブランチの内容をデプロイディレクトリのルートにコピー
+          set -euo pipefail
           mkdir -p deploy
           cp -r main/* deploy/
 
-          # experiment/sandboxブランチが存在する場合、プレビューディレクトリにコピー
-          if [ -d "experiment-sandbox" ]; then
-            mkdir -p deploy/preview/sandbox
-            cp -r experiment-sandbox/* deploy/preview/sandbox/
-            echo "✅ experiment/sandbox をプレビューディレクトリに追加しました"
-          else
-            echo "⚠️ experiment/sandbox ブランチが見つかりません（スキップ）"
-          fi
+          html_escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
-          # experiment/redesignブランチが存在する場合、プレビューディレクトリにコピー
-          if [ -d "experiment-redesign" ]; then
-            mkdir -p deploy/preview/redesign
-            cp -r experiment-redesign/* deploy/preview/redesign/
-            echo "✅ experiment/redesign をプレビューディレクトリに追加しました"
-          else
-            echo "⚠️ experiment/redesign ブランチが見つかりません（スキップ）"
-          fi
+          # リモートの experiment/* を動的に列挙して preview/<名前>/ へ展開
+          git -C main fetch --depth 1 origin '+refs/heads/experiment/*:refs/remotes/origin/experiment/*'
 
-          # experiment/ui-scalingブランチが存在する場合、プレビューディレクトリにコピー
-          if [ -d "experiment-ui-scaling" ]; then
-            mkdir -p deploy/preview/ui-scaling
-            cp -r experiment-ui-scaling/* deploy/preview/ui-scaling/
-            echo "✅ experiment/ui-scaling をプレビューディレクトリに追加しました"
-          else
-            echo "⚠️ experiment/ui-scaling ブランチが見つかりません（スキップ）"
-          fi
+          now_epoch=$(date +%s)
+          ROWS=$(mktemp)
+          for ref in $(git -C main for-each-ref --format='%(refname:short)' 'refs/remotes/origin/experiment/' | sort); do
+            branch="${ref#origin/experiment/}"
+            name="${branch//\//-}"
+            mkdir -p "deploy/preview/$name"
+            git -C main archive "$ref" | tar -x -C "deploy/preview/$name"
+
+            cdate=$(git -C main log -1 --format=%cs "$ref")
+            cepoch=$(git -C main log -1 --format=%ct "$ref")
+            subject=$(git -C main log -1 --format=%s "$ref" | html_escape)
+            age_days=$(( (now_epoch - cepoch) / 86400 ))
+            stale=""; tag=""
+            if [ "$age_days" -ge 45 ]; then
+              stale=" stale"
+              tag='<span class="tag">休止中</span>'
+            fi
+            {
+              printf '<li class="row%s"><a href="./%s/">' "$stale" "$name"
+              printf '<span class="bname">%s</span>%s' "$branch" "$tag"
+              printf '<span class="meta"><time>%s</time> ・ %s</span>' "$cdate" "$subject"
+              printf '</a></li>\n'
+            } >> "$ROWS"
+            echo "✅ experiment/$branch → preview/$name（最終更新 $cdate）"
+          done
+
+          main_date=$(git -C main log -1 --format=%cs)
+          main_subject=$(git -C main log -1 --format=%s | html_escape)
+          gen_at=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')
+
+          # リンク付き一覧ページ（/preview/）を生成
+          cat > deploy/preview/index.html <<HTML
+          <!DOCTYPE html>
+          <html lang="ja">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="robots" content="noindex">
+          <title>プレビュー一覧 — 工数管理</title>
+          <style>
+          :root{--bg:#101512;--panel:#171e19;--ink:#e8ebe6;--muted:#8a948c;--accent:#7fb88f;--rail:#2e3b32;--line:#232c26}
+          *{box-sizing:border-box;margin:0;padding:0}
+          body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;line-height:1.6;min-height:100vh;padding:48px 20px}
+          .wrap{max-width:640px;margin:0 auto}
+          .eyebrow{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+          h1{font-size:26px;font-weight:600;letter-spacing:.02em;margin-bottom:6px}
+          .lead{color:var(--muted);font-size:13px;margin-bottom:36px}
+          .trunk{display:block;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:14px 18px;text-decoration:none;color:inherit;transition:border-color .15s}
+          .trunk:hover{border-color:var(--accent)}
+          .sec{font-size:11px;letter-spacing:.14em;color:var(--muted);margin:26px 0 10px;font-family:ui-monospace,Consolas,monospace}
+          .branches{list-style:none;margin-left:13px;border-left:2px solid var(--rail);padding:6px 0 2px}
+          .row{position:relative;margin:0 0 8px 22px}
+          .row::before{content:"";position:absolute;left:-22px;top:24px;width:16px;height:2px;background:var(--rail)}
+          .row a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;text-decoration:none;color:inherit;transition:border-color .15s}
+          .row a:hover{border-color:var(--accent)}
+          .bname{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--accent)}
+          .row.stale a{opacity:.62}
+          .row.stale .bname{color:var(--muted)}
+          .tag{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-left:8px;vertical-align:1px}
+          .tag-main{color:var(--accent);border-color:var(--accent)}
+          .meta{display:block;font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          time{font-family:ui-monospace,Consolas,monospace}
+          footer{margin-top:40px;font-size:11px;color:var(--muted)}
+          a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+          @media (prefers-reduced-motion:reduce){.trunk,.row a{transition:none}}
+          </style>
+          </head>
+          <body>
+          <div class="wrap">
+          <p class="eyebrow">Manhour Management / Deploy Index</p>
+          <h1>プレビュー一覧</h1>
+          <p class="lead">本線と実験ブランチの配信先。45日以上更新のないブランチには「休止中」を表示します。</p>
+          <a class="trunk" href="../"><span class="bname">main</span><span class="tag tag-main">本線（ルート配信）</span><span class="meta"><time>${main_date}</time> ・ ${main_subject}</span></a>
+          <p class="sec">experiment/*</p>
+          <ul class="branches">
+          $(cat "$ROWS")
+          </ul>
+          <footer>deploy.yml が配信時に自動生成 ・ ${gen_at}</footer>
+          </div>
+          </body>
+          </html>
+          HTML
+          echo "✅ preview/index.html を生成しました"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

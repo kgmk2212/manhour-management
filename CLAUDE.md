@@ -71,7 +71,7 @@ git branch
 - **frontend-designスキル必須**: コード変更を伴うすべての作業で `frontend-design` スキルを使用する（バグ修正・機能追加・リファクタリング含む）
 - **制約なし**: どのファイルでも自由に編集可能
 - **破壊的変更OK**: 大胆なリファクタリングや設計変更を試せる
-- **自動デプロイ**: コミット・プッシュ完了時は、mainに空コミット＆プッシュしてGitHub Pagesデプロイを発火させる（`cd ../manhour-management && git commit --allow-empty -m "deploy: trigger Pages rebuild" && git push origin main`）
+- **自動デプロイ**: ブランチを push すれば deploy.yml（`experiment/**` トリガ・全 experiment ブランチを動的に `/preview/<名前>/` へ展開）が自動配信する。一覧ページ: `https://kgmk2212.github.io/manhour-management/preview/`。⚠️ push トリガは「push したブランチ側の deploy.yml」で動くため、このブランチが 2026-08-20 版 deploy.yml を取り込むまでは従来どおり main 空コミットか `gh workflow run deploy.yml` で発火させる
 - **mainへのマージ禁止**: ユーザーの明示的な指示がない限り、redesignの変更をmainにマージしない
 
 ---
@@ -86,7 +86,7 @@ git branch
 - **破壊的変更OK**: 大胆なリファクタリングや設計変更を試せる
 - **失敗を恐れない**: うまくいかなければブランチごと破棄できる
 - **frontend-designスキル必須**: デザイン変更時は必ず `frontend-design` スキルを使用し、Quiet Depthコンセプトに調和するデザインで実装する
-- **自動デプロイ**: コミット・プッシュ完了時は、mainに空コミット＆プッシュしてGitHub Pagesデプロイを発火させる（`cd ../manhour-management && git commit --allow-empty -m "deploy: trigger Pages rebuild" && git push origin main`）
+- **自動デプロイ**: ブランチを push すれば deploy.yml（`experiment/**` トリガ・全 experiment ブランチを動的に `/preview/<名前>/` へ展開）が自動配信する。一覧ページ: `https://kgmk2212.github.io/manhour-management/preview/`。⚠️ push トリガは「push したブランチ側の deploy.yml」で動くため、このブランチが 2026-08-20 版 deploy.yml を取り込むまでは従来どおり main 空コミットか `gh workflow run deploy.yml` で発火させる
 - **mainへのマージ禁止**: ユーザーの明示的な指示がない限り、sandboxの変更をmainにマージしない
 
 ### 実験が成功したら
