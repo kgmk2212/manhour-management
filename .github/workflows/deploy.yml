@@ -29,7 +29,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main branch
@@ -141,6 +141,25 @@ jobs:
         with:
           path: 'deploy'
 
+      # 直前のデプロイが Pages 側で確定しきる前に次が走ると
+      #   Deployment request failed ... due to in progress deployment (400)
+      # で落ちる。ワークフロー単位の concurrency ではこれを防げない
+      # （run が success で終わっても Pages のデプロイは進行中でありうる）。
+      # experiment/** トリガ化で並列 push が増えたため、一過性のこの競合は
+      # 1 度だけ待って自動再試行する。恒久的な失敗（環境保護違反など）は
+      # 再試行しても落ちるので、取りこぼさない。
       - name: Deploy to GitHub Pages
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Wait for the in-flight deployment to settle
+        if: steps.deployment.outcome == 'failure'
+        run: |
+          echo "::warning::1 回目のデプロイが失敗した。60 秒待って再試行する。"
+          sleep 60
+
+      - name: Deploy to GitHub Pages (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
