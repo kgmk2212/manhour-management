@@ -19,6 +19,12 @@
 
 ## P2（使いにくさ・不整合）
 
+- **ui-scaling push でのPagesデプロイが環境保護ルールで常に失敗** [確認済]: `bc85fa4` で deploy.yml の
+  push トリガに `experiment/ui-scaling` を追加したが、GitHub の `github-pages` environment が
+  main 以外からのデプロイを拒否する（run 32271132393 ほか2連続 failure、annotation:
+  「Branch "experiment/ui-scaling" is not allowed to deploy to github-pages due to environment
+  protection rules」）。リポジトリ Settings → Environments → github-pages の deployment branches に
+  `experiment/ui-scaling` を追加するか、トリガ追加を取り消して従来の main 経由に戻すかの二択
 - **storage.js:218 の初期化クラッシュ**: スケジュール id が文字列 `sch_N` 前提で `s.id.match(...)` を呼ぶため、
   数値 id のレコードが混入すると TypeError で初期化が中断する（検証シードで実証）。`String(s.id).match` に
 - **Undo の一括対応漏れ**: `history.js` の `actual_add` は `data.added` 1件しか戻せない。
