@@ -82,8 +82,10 @@ describe('normalizeDate() — 日付文字列を YYYY-MM-DD に正規化', () =>
         assert.equal(normalizeDate(new Date(2026, 6, 5)), '2026-07-05');
     });
 
-    test('日付として解釈できない文字列はそのまま返す（フォールバック）', () => {
-        assert.equal(normalizeDate('not-a-date'), 'not-a-date');
+    test('日付として解釈できない文字列は空文字を返す（40ae109 で excel-import 側と挙動統一）', () => {
+        // 旧挙動は生文字列の素通しだったが、桁揃えの崩れた日付が保存されると
+        // 文字列比較ベースの差分判定が破綻するため、未認識形式は空文字に統一された
+        assert.equal(normalizeDate('not-a-date'), '');
     });
 });
 
