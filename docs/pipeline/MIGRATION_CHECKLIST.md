@@ -27,7 +27,12 @@
 | 1 | 会社 Org で **Public リポジトリ**を作ってよいか | 情シス / 法務 / 広報 | Pages が使えない → Cloudflare Pages 等の別配信へ |
 | 2 | Org の Actions でサードパーティ Action が許可されているか | Org Settings → Actions → General | `anthropics/claude-code-action@v1` の許可申請 |
 | 3 | Org に **Claude GitHub App** をインストールできるか | Org Settings → Third-party Access | 管理者承認の申請 |
-| 4 | 会社 Claude（Team）で `claude setup-token` が発行できるか | 手元で実行して確認 | API キー方式への切替を検討 |
+| 4 | ~~会社 Claude（Team）で `claude setup-token` が発行できるか~~ | 確認済み — 下記参照 | — |
+
+#4 は解決済み。公式ドキュメントに明記があり、**Team プランでも OAuth トークンを発行できる**:
+
+> "`CLAUDE_CODE_OAUTH_TOKEN`: an OAuth token that authenticates with your Claude subscription,
+> available on Pro, Max, Team, and Enterprise plans."
 
 ### なぜ Public が必須なのか
 
@@ -103,6 +108,46 @@ gh secret set PIPELINE_PAT --repo <org>/manhour-management
 `PIPELINE_PAT` は会社アカウントで fine-grained PAT を発行し直す
 （対象リポジトリを限定 / Contents・Issues・Pull requests = Read and write）。
 **個人アカウント側の PAT は失効させる。**
+
+OAuth トークンが誰のものになるかは、生成時にログインしていたアカウントで決まる:
+
+> "an OAuth token is tied to the subscription of the person who ran `claude setup-token`"
+
+差し替え手順:
+
+```bash
+claude auth status                        # 現在のアカウントを確認
+claude auth logout && claude auth login   # 目的のアカウントへ切り替え
+claude setup-token                        # 新トークンを生成（表示のみ・保存されない）
+gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo <org>/manhour-management
+```
+
+**重要**: Secret を上書き・削除しても、そのトークン自体は生き続ける:
+
+> "If you delete a secret, the credential it held stays valid."
+
+したがって「間違ったアカウントで作ってしまったら差し替えれば済む」ではない。
+アカウント側で明示的に失効させる必要がある（OAuth トークンの失効手順はドキュメントに
+記載が無く未確認）。**そもそも間違ったアカウントで作らないことが最善。**
+
+### 3-1b. 移管後は OAuth トークンより API キー / WIF を検討する
+
+公式ドキュメントの推奨:
+
+> "For a secret shared across repositories, authenticate with an API key from the Claude Console
+> rather than an OAuth token, since an OAuth token is tied to the subscription of the person who
+> ran `claude setup-token`."
+
+OAuth トークンは個人の座席に紐づくため、会社 Org の資産としては筋が悪い（発行者が退職・異動すると
+止まる）。移管時は次のどちらかへ切り替えるのが本筋:
+
+- **Claude Console の API キー** — 組織の資産として管理でき、予算上限・失効が効く
+- **Workload Identity Federation** — 長期シークレットを一切置かない。GitHub の OIDC トークンを
+  Console のサービスアカウント経由で交換する。ワークフローに
+  `anthropic_federation_rule_id` / `anthropic_organization_id` / `anthropic_service_account_id` を設定し、
+  `id-token: write` 権限を付与する
+
+段階2の設計時に、会社の Anthropic Console 組織の有無とあわせて判断する。
 
 ### 3-2.【サイレント故障】`repository_owner` 判定でトリアージが停止する
 
@@ -240,6 +285,8 @@ Public を維持する限り Actions は**無料**で、課金は発生しない
 - [Configuring a publishing source](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 - [GitHub's plans](https://docs.github.com/en/get-started/learning-about-github/githubs-plans)
 - [GitHub pricing](https://github.com/pricing)
+- [Claude Code GitHub Actions](https://code.claude.com/docs/en/github-actions)
+- [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference)
 
 ## 関連
 
