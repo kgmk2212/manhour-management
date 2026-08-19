@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工数入力 方式比較 — 実操作モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<style>
+  :root { --ui-scale: 1; }
+  body { padding: 0; background: var(--bg); }
+
+  /* ===== ページ枠 ===== */
+  .cmp-page { max-width: 1280px; margin: 0 auto; padding: 0 20px 48px; }
+  .cmp-header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 22px;
+  }
+  .cmp-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+  .cmp-sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+
+  /* シナリオ切替 */
+  .cmp-scenarios { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .cmp-scenario-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .cmp-scenario-btn:hover { border-color: var(--accent); }
+  .cmp-scenario-btn.is-active {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+  }
+
+  /* 当日コンテキスト（実データ相当） */
+  .cmp-context {
+    margin-top: 10px;
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .cmp-context .who { font-weight: 600; color: var(--text-primary); }
+  .cmp-entry {
+    padding: 3px 10px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .cmp-entry b { color: var(--text-primary); font-weight: 600; }
+  .cmp-daysum { font-size: 12px; color: var(--text-muted); }
+
+  /* ===== カードグリッド ===== */
+  .cmp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+    gap: 20px;
+  }
+  @media (max-width: 430px) {
+    .cmp-grid { grid-template-columns: 1fr; }
+  }
+  .cmp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px 16px;
+    display: flex; flex-direction: column;
+  }
+  .cmp-card-head { margin-bottom: 14px; }
+  .cmp-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .cmp-card-desc { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.6; }
+
+  /* 疑似モーダル文脈（対応名） */
+  .cmp-taskline {
+    font-size: 12.5px; color: var(--text-secondary);
+    padding: 8px 12px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+  }
+  .cmp-taskline b { color: var(--text-primary); font-weight: 600; }
+
+  .cmp-widget { flex: 1; }
+  .cmp-foot {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-light);
+    font-size: 12px; color: var(--text-muted); line-height: 1.6;
+  }
+
+  /* ===== 共通: 値表示 ===== */
+  .hv-display { display: flex; align-items: baseline; gap: 4px; }
+  .hv-display .hv-num {
+    font-size: calc(26px * var(--ui-scale));
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 74px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .hv-display .hv-unit { font-size: 14px; color: var(--text-muted); }
+
+  /* ===== 共通: チップ ===== */
+  .hours-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .hours-chip {
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .08s ease, color .12s ease;
+    min-width: 42px;
+    text-align: center;
+  }
+  .hours-chip:hover { background: var(--accent-light); border-color: var(--accent); }
+  .hours-chip:active { transform: scale(.95); }
+  .hours-chip.is-selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .hours-chip:disabled { opacity: .4; cursor: default; }
+  .hours-chip:disabled:hover { background: var(--surface); border-color: var(--border); }
+  .hours-chip.chip-remain {
+    background: var(--accent-secondary-light);
+    border-color: var(--accent-secondary);
+    color: var(--accent-secondary);
+    font-weight: 600;
+  }
+  .hours-chip.chip-remain:hover:not(:disabled) { background: var(--accent-secondary); color: #fff; }
+  .hours-chip.chip-remain.is-selected { background: var(--accent-secondary); border-color: var(--accent-secondary); color: #fff; }
+
+  /* ===== 共通: ステッパー ===== */
+  .hv-stepper { display: flex; align-items: center; gap: 8px; }
+  .hv-step-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    color: var(--text-primary);
+    cursor: pointer;
+    line-height: 1;
+    transition: background .12s ease, border-color .12s ease;
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .hv-step-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+  .hv-stepper input[type="number"] {
+    width: 90px;
+    font-size: calc(20px * var(--ui-scale));
+    font-weight: 600;
+    text-align: center;
+  }
+  .hv-stepper input[type="number"]::-webkit-inner-spin-button { display: none; }
+  .hv-stepper .hv-unit { font-size: 14px; color: var(--text-muted); }
+
+  /* ===== 案2: 時＋0.25 の2段チップ ===== */
+  .hq-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .hq-label { font-size: 11.5px; color: var(--text-muted); margin-bottom: 2px; }
+  .hq-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hq-row .hours-chip { min-width: 38px; padding: 8px 10px; }
+
+  /* ===== 案3: 中央ホイール ===== */
+  .wheel-area { display: flex; align-items: center; gap: 18px; margin-top: 4px; }
+  .wheel-wrap { position: relative; width: 128px; flex-shrink: 0; }
+  .wheel {
+    height: 180px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+  }
+  .wheel::-webkit-scrollbar { display: none; }
+  .wheel-pad { height: 72px; }
+  .wheel-item {
+    height: 36px; line-height: 36px;
+    text-align: center;
+    font-size: 15px;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+    font-variant-numeric: tabular-nums;
+    transition: color .12s ease, transform .12s ease;
+  }
+  .wheel-item.is-center { color: var(--text-primary); font-weight: 700; transform: scale(1.2); }
+  .wheel-band {
+    position: absolute; top: 72px; left: 4px; right: 4px; height: 36px;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    background: var(--accent-light);
+    opacity: .3;
+    pointer-events: none;
+    border-radius: 4px;
+  }
+  .wheel-fade-top, .wheel-fade-bottom {
+    position: absolute; left: 1px; right: 1px; height: 44px; pointer-events: none;
+  }
+  .wheel-fade-top { top: 1px; background: linear-gradient(to bottom, var(--surface-elevated), rgba(255,255,255,0)); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .wheel-fade-bottom { bottom: 1px; background: linear-gradient(to top, var(--surface-elevated), rgba(255,255,255,0)); border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+  .wheel-side { flex: 1; }
+  .wheel-hint { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 10px; }
+
+  /* ===== 案4: ドロップダウン ===== */
+  .dd-row { display: flex; align-items: center; gap: 10px; }
+  .dd-row select { max-width: 140px; font-size: 15px; }
+
+  /* ===== 案5: スライダー ===== */
+  .sl-area { margin-top: 6px; }
+  .sl-row { display: flex; align-items: center; gap: 10px; }
+  .sl-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .sl-ticks {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; color: var(--text-muted);
+    padding: 2px 2px 0;
+  }
+  .sl-fine { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+
+  /* ===== 共通: 合計表示 ===== */
+  .hours-summary {
+    margin-top: 16px;
+    padding: 12px 15px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .hours-summary .breakdown { margin-bottom: 5px; }
+  .hours-summary .breakdown b { color: var(--text-primary); }
+  .hours-summary .total { font-size: calc(17px * var(--ui-scale)); font-weight: 700; color: var(--text-primary); }
+  .hours-summary .remain { margin-left: 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); }
+  .hours-summary.is-exact { border-left-color: var(--success); background: var(--accent-light); }
+  .hours-summary.is-exact .remain { color: var(--success); font-weight: 600; }
+  .hours-summary.is-over { border-left-color: var(--danger); background: var(--danger-light); }
+  .hours-summary.is-over .remain { color: var(--danger); font-weight: 600; }
+
+  /* 判断ポイント */
+  .cmp-criteria {
+    margin-top: 26px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+  }
+  .cmp-criteria b { color: var(--text-primary); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hours-chip, .wheel-item { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="cmp-page">
+
+  <div class="cmp-header">
+    <h1 class="cmp-title">工数入力 方式比較（すべて実際に操作できます）</h1>
+    <p class="cmp-sub">全方式とも 0.25h 刻みの全値（0.25〜16h）に対応。シナリオを切り替えると当日の登録済みデータが変わり、デフォルト値（＝残り工数）と「残り」ボタン・合計表示が連動します。</p>
+    <div class="cmp-scenarios" id="scenarioBtns"></div>
+    <div class="cmp-context" id="contextLine"></div>
+  </div>
+
+  <div class="cmp-grid" id="grid"></div>
+
+  <div class="cmp-criteria">
+    <b>判断ポイント</b><br>
+    ① よく使う値（1h・2h・残り全部）への速さ
+    ② 半端な値（3.75h など）への速さ
+    ③ 見た目のすっきりさ・モーダル内での収まり
+    ④ スマホでの操作感（タップ・スクロール）<br>
+    決定した方式は、実績登録モーダル → その他作業タブ → タイムラインのピッカーへ順に展開します。
+  </div>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const PER_DAY = 8;
+  const MIN_H = 0.25;
+  const MAX_H = 16;
+
+  // ===== 実データ相当のシナリオ =====
+  const SCENARIOS = [
+    {
+      key: 'morning', label: '朝イチ（登録済 0h）', registered: 0,
+      items: [],
+    },
+    {
+      key: 'midday', label: '日中（登録済 4.5h）', registered: 4.5,
+      items: [
+        { name: 'V2.3 帳票A改修 / PG', h: 2.5 },
+        { name: '週次定例', h: 1 },
+        { name: 'V2.3 帳票A改修 / レビュー', h: 1 },
+      ],
+    },
+    {
+      key: 'evening', label: '夕方（登録済 7.75h）', registered: 7.75,
+      items: [
+        { name: 'V2.3 帳票A改修 / PG', h: 2.5 },
+        { name: '週次定例', h: 1 },
+        { name: 'V2.3 帳票A改修 / レビュー', h: 1 },
+        { name: 'V2.3 伝票検索改善 / 単', h: 3.25 },
+      ],
+    },
+    {
+      key: 'full', label: '満了（登録済 8h）', registered: 8,
+      items: [
+        { name: 'V2.3 帳票A改修 / PG', h: 2.5 },
+        { name: '週次定例', h: 1 },
+        { name: 'V2.3 帳票A改修 / レビュー', h: 1 },
+        { name: 'V2.3 伝票検索改善 / 単', h: 3.5 },
+      ],
+    },
+  ];
+  let scenario = SCENARIOS[1]; // 初期は「日中」
+
+  // ===== 共通ユーティリティ =====
+  const fmt = (n) => String(parseFloat((Math.round(n * 100) / 100).toFixed(2)));
+  const snap = (n) => Math.min(MAX_H, Math.max(MIN_H, Math.round(n / 0.25) * 0.25));
+  const remainingOf = (sc) => Math.max(0, PER_DAY - sc.registered);
+  const defaultOf = (sc) => Math.max(MIN_H, remainingOf(sc));
+
+  // 押しっぱなしで連続増減（クリック1回＋400ms後リピート）
+  function holdRepeat(btn, fn) {
+    let t = null, iv = null;
+    const start = (e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      fn();
+      t = setTimeout(() => { iv = setInterval(fn, 80); }, 400);
+    };
+    const stop = () => { clearTimeout(t); clearInterval(iv); };
+    btn.addEventListener('pointerdown', start);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, stop));
+    // キーボード操作（Enter/Space）は click(detail=0) で1回ずつ
+    btn.addEventListener('click', (e) => { if (e.detail === 0) fn(); });
+  }
+
+  // ===== 合計表示（全方式共通モジュール） =====
+  function createSummary() {
+    const el = document.createElement('div');
+    el.className = 'hours-summary';
+    el.innerHTML = '<div class="breakdown"></div><span class="total"></span><span class="remain"></span>';
+    return {
+      el,
+      update(now) {
+        const total = scenario.registered + now;
+        const remain = PER_DAY - total;
+        el.querySelector('.breakdown').innerHTML =
+          '本日の登録済 <b>' + fmt(scenario.registered) + 'h</b> ＋ 今回 <b>' + fmt(now) + 'h</b>';
+        el.querySelector('.total').textContent = '合計 ' + fmt(total) + 'h / ' + PER_DAY + 'h';
+        el.classList.remove('is-exact', 'is-over');
+        const remainEl = el.querySelector('.remain');
+        if (Math.abs(remain) < 0.001) {
+          el.classList.add('is-exact');
+          remainEl.textContent = 'ちょうど';
+        } else if (remain < 0) {
+          el.classList.add('is-over');
+          remainEl.textContent = '超過 ' + fmt(-remain) + 'h';
+        } else {
+          remainEl.textContent = '残り ' + fmt(remain) + 'h';
+        }
+      },
+    };
+  }
+
+  // 「残り」チップ（全方式共通）
+  function createRemainChip(onPick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hours-chip chip-remain';
+    btn.addEventListener('click', () => {
+      const r = remainingOf(scenario);
+      if (r >= MIN_H) onPick(r);
+    });
+    return {
+      el: btn,
+      refresh() {
+        const r = remainingOf(scenario);
+        btn.textContent = r >= MIN_H ? '残り ' + fmt(r) + 'h' : '残りなし';
+        btn.disabled = r < MIN_H;
+      },
+    };
+  }
+
+  // ===== カード骨格 =====
+  function createCard({ id, name, desc, foot }) {
+    const card = document.createElement('div');
+    card.className = 'cmp-card';
+    card.id = id;
+    card.innerHTML =
+      '<div class="cmp-card-head">' +
+        '<div class="cmp-card-name">' + name + '</div>' +
+        '<div class="cmp-card-desc">' + desc + '</div>' +
+      '</div>' +
+      '<div class="cmp-taskline">対応名: <b>V2.3 帳票A改修（PG）</b> — 田中</div>' +
+      '<div class="cmp-widget"></div>' +
+      '<div class="cmp-foot">' + foot + '</div>';
+    return { card, widget: card.querySelector('.cmp-widget') };
+  }
+
+  const methods = []; // { reset() } を登録
+
+  // =====================================================
+  // 案1: クイックチップ＋ステッパー
+  // =====================================================
+  function buildMethod1(host) {
+    const { card, widget } = createCard({
+      id: 'm1',
+      name: '案1　クイックチップ＋ステッパー',
+      desc: 'よく使う値はワンタップ、半端な値は −/＋（0.25刻み・押しっぱなしで連続）か直接入力。',
+      foot: '操作例 — 3.75h: 「4」→「−」の2操作。またはキーボードで直接入力。',
+    });
+    host.appendChild(card);
+
+    const stepper = document.createElement('div');
+    stepper.className = 'hv-stepper';
+    stepper.innerHTML =
+      '<button type="button" class="hv-step-btn" data-d="-1">−</button>' +
+      '<input type="number" step="0.25" min="0.25" max="16">' +
+      '<span class="hv-unit">h</span>' +
+      '<button type="button" class="hv-step-btn" data-d="1">＋</button>';
+    widget.appendChild(stepper);
+
+    const chipsRow = document.createElement('div');
+    chipsRow.className = 'hours-chips';
+    widget.appendChild(chipsRow);
+
+    const input = stepper.querySelector('input');
+    const summary = createSummary();
+
+    const setVal = (v) => { input.value = fmt(snap(v)); sync(); };
+    const chipDefs = [0.25, 0.5, 1, 2, 4];
+    const chips = chipDefs.map((v) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hours-chip';
+      b.textContent = fmt(v);
+      b.addEventListener('click', () => setVal(v));
+      chipsRow.appendChild(b);
+      return { el: b, v };
+    });
+    const remainChip = createRemainChip(setVal);
+    chipsRow.appendChild(remainChip.el);
+
+    function sync() {
+      const now = parseFloat(input.value) || 0;
+      summary.update(now);
+      chips.forEach(c => c.el.classList.toggle('is-selected', Math.abs(now - c.v) < 0.001));
+      const r = remainingOf(scenario);
+      remainChip.el.classList.toggle('is-selected', r >= MIN_H && Math.abs(now - r) < 0.001);
+    }
+
+    stepper.querySelectorAll('.hv-step-btn').forEach((b) => {
+      holdRepeat(b, () => setVal((parseFloat(input.value) || 0) + 0.25 * Number(b.dataset.d)));
+    });
+    input.addEventListener('input', sync);
+    input.addEventListener('blur', () => { if (input.value !== '') setVal(parseFloat(input.value) || MIN_H); });
+
+    widget.appendChild(summary.el);
+    methods.push({ reset() { remainChip.refresh(); setVal(defaultOf(scenario)); } });
+  }
+
+  // =====================================================
+  // 案2: 時＋0.25 の2段チップ
+  // =====================================================
+  function buildMethod2(host) {
+    const { card, widget } = createCard({
+      id: 'm2',
+      name: '案2　「時間」＋「端数」の2段チップ',
+      desc: 'どんな値も必ず2タップ（時間→端数）。ドラッグもスクロールも不要。',
+      foot: '操作例 — 3.75h: 「3」→「+0.75」の2操作（どの値でも常に2タップ）。',
+    });
+    host.appendChild(card);
+
+    const disp = document.createElement('div');
+    disp.className = 'hv-display';
+    disp.innerHTML = '<span class="hv-num"></span><span class="hv-unit">h</span>';
+    widget.appendChild(disp);
+    const numEl = disp.querySelector('.hv-num');
+
+    const rows = document.createElement('div');
+    rows.className = 'hq-rows';
+    rows.innerHTML =
+      '<div><div class="hq-label">時間</div><div class="hq-row" id="m2hours"></div><div class="hq-row" id="m2hoursExt" style="display:none; margin-top:6px;"></div></div>' +
+      '<div><div class="hq-label">端数</div><div class="hq-row" id="m2quarters"></div></div>';
+    widget.appendChild(rows);
+
+    let hour = 3, quarter = 0.5;
+    const summary = createSummary();
+    const hourRow = rows.querySelector('#m2hours');
+    const hourExt = rows.querySelector('#m2hoursExt');
+    const qRow = rows.querySelector('#m2quarters');
+
+    const hourChips = [];
+    for (let h = 0; h <= 8; h++) hourChips.push(makeHourChip(h, hourRow));
+    const extToggle = document.createElement('button');
+    extToggle.type = 'button';
+    extToggle.className = 'hours-chip';
+    extToggle.textContent = '9h〜';
+    extToggle.addEventListener('click', () => {
+      hourExt.style.display = hourExt.style.display === 'none' ? 'flex' : 'none';
+    });
+    hourRow.appendChild(extToggle);
+    for (let h = 9; h <= 16; h++) hourChips.push(makeHourChip(h, hourExt));
+
+    function makeHourChip(h, parent) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hours-chip';
+      b.textContent = String(h);
+      b.addEventListener('click', () => { hour = h; clampPair(); sync(); });
+      parent.appendChild(b);
+      return { el: b, h };
+    }
+
+    const qDefs = [0, 0.25, 0.5, 0.75];
+    const qChips = qDefs.map((q) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hours-chip';
+      b.textContent = q === 0 ? '+0' : '+' + fmt(q);
+      b.addEventListener('click', () => { quarter = q; clampPair(); sync(); });
+      qRow.appendChild(b);
+      return { el: b, q };
+    });
+
+    const remainChip = createRemainChip((r) => {
+      hour = Math.floor(r); quarter = Math.round((r - hour) * 100) / 100; clampPair(); sync();
+    });
+    remainChip.el.style.marginTop = '10px';
+    widget.appendChild(remainChip.el);
+
+    function clampPair() {
+      if (hour === 0 && quarter === 0) quarter = 0.25; // 0h は不可
+      if (hour === 16) quarter = 0;                    // 上限 16h
+    }
+    function value() { return hour + quarter; }
+    function sync() {
+      numEl.textContent = fmt(value());
+      hourChips.forEach(c => c.el.classList.toggle('is-selected', c.h === hour));
+      hourExt.style.display = hour >= 9 ? 'flex' : hourExt.style.display === 'flex' ? 'flex' : 'none';
+      qChips.forEach(c => {
+        c.el.classList.toggle('is-selected', Math.abs(c.q - quarter) < 0.001);
+        c.el.disabled = (hour === 0 && c.q === 0) || (hour === 16 && c.q !== 0);
+      });
+      const r = remainingOf(scenario);
+      remainChip.el.classList.toggle('is-selected', r >= MIN_H && Math.abs(value() - r) < 0.001);
+      summary.update(value());
+    }
+
+    widget.appendChild(summary.el);
+    methods.push({ reset() {
+      remainChip.refresh();
+      const d = defaultOf(scenario);
+      hour = Math.floor(d); quarter = Math.round((d - hour) * 100) / 100;
+      clampPair();
+      if (hour < 9) hourExt.style.display = 'none';
+      sync();
+    } });
+  }
+
+  // =====================================================
+  // 案3: 中央ホイール（現在値を常に中央に表示）
+  // =====================================================
+  function buildMethod3(host) {
+    const { card, widget } = createCard({
+      id: 'm3',
+      name: '案3　中央ホイール',
+      desc: '現在値が常に中央。スクロール／ドラッグで回し、目的の値をクリックしても移動。',
+      foot: '操作例 — 3.75h: ホイールを回して 3.75 を中央へ（近い値ならひと転がし）。',
+    });
+    host.appendChild(card);
+
+    const area = document.createElement('div');
+    area.className = 'wheel-area';
+    area.innerHTML =
+      '<div class="wheel-wrap">' +
+        '<div class="wheel" tabindex="0" aria-label="工数を選択"></div>' +
+        '<div class="wheel-band"></div>' +
+        '<div class="wheel-fade-top"></div><div class="wheel-fade-bottom"></div>' +
+      '</div>' +
+      '<div class="wheel-side"></div>';
+    widget.appendChild(area);
+
+    const wheel = area.querySelector('.wheel');
+    const side = area.querySelector('.wheel-side');
+    const ITEM_H = 36;
+    const values = [];
+    for (let v = MIN_H; v <= MAX_H + 0.001; v += 0.25) values.push(Math.round(v * 100) / 100);
+
+    wheel.appendChild(Object.assign(document.createElement('div'), { className: 'wheel-pad' }));
+    const itemEls = values.map((v) => {
+      const d = document.createElement('div');
+      d.className = 'wheel-item';
+      d.textContent = fmt(v) + 'h';
+      d.addEventListener('click', () => scrollToIdx(values.indexOf(v), true));
+      wheel.appendChild(d);
+      return d;
+    });
+    wheel.appendChild(Object.assign(document.createElement('div'), { className: 'wheel-pad' }));
+
+    const summary = createSummary();
+    const remainChip = createRemainChip((r) => scrollToIdx(idxOf(r), true));
+    side.appendChild(remainChip.el);
+    const hint = document.createElement('div');
+    hint.className = 'wheel-hint';
+    hint.textContent = 'マウスホイール／ドラッグ／クリックで選択。キーボードの ↑↓ でも動きます。';
+    side.appendChild(hint);
+
+    const idxOf = (v) => Math.max(0, Math.min(values.length - 1, Math.round((v - MIN_H) / 0.25)));
+    let current = idxOf(3.5);
+    let centerEl = null;
+
+    function scrollToIdx(idx, smooth) {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      wheel.scrollTo({ top: idx * ITEM_H, behavior: smooth && !reduce ? 'smooth' : 'auto' });
+    }
+    function sync() {
+      // 変化した行だけクラスを付け替える（全行走査しない）
+      if (centerEl !== itemEls[current]) {
+        if (centerEl) centerEl.classList.remove('is-center');
+        centerEl = itemEls[current];
+        centerEl.classList.add('is-center');
+      }
+      const r = remainingOf(scenario);
+      remainChip.el.classList.toggle('is-selected', r >= MIN_H && Math.abs(values[current] - r) < 0.001);
+      summary.update(values[current]);
+    }
+
+    // スクロール中は素直に流し、停止後に最寄りの行へ自前スナップ
+    let raf = null;
+    let snapTimer = null;
+    function snapToCurrent() {
+      const target = current * ITEM_H;
+      if (Math.abs(wheel.scrollTop - target) > 1) {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        wheel.scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
+      }
+    }
+    wheel.addEventListener('scroll', () => {
+      if (!raf) {
+        raf = requestAnimationFrame(() => {
+          raf = null;
+          const idx = Math.max(0, Math.min(values.length - 1, Math.round(wheel.scrollTop / ITEM_H)));
+          if (idx !== current) { current = idx; sync(); }
+        });
+      }
+      clearTimeout(snapTimer);
+      snapTimer = setTimeout(snapToCurrent, 120);
+    });
+    wheel.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') { e.preventDefault(); scrollToIdx(Math.max(0, current - 1), true); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); scrollToIdx(Math.min(values.length - 1, current + 1), true); }
+    });
+
+    widget.appendChild(summary.el);
+    methods.push({ reset() {
+      remainChip.refresh();
+      current = idxOf(defaultOf(scenario));
+      scrollToIdx(current, false);
+      sync();
+    } });
+  }
+
+  // =====================================================
+  // 案4: 現行ドロップダウン＋チップ（最小変更・基準）
+  // =====================================================
+  function buildMethod4(host) {
+    const { card, widget } = createCard({
+      id: 'm4',
+      name: '案4　現行ドロップダウン＋チップ（最小変更）',
+      desc: '今のドロップダウンはそのまま、チップと合計表示だけを足す基準案。',
+      foot: '操作例 — 3.75h: リストを開いて 3.75h を選択（64択のスクロール）。',
+    });
+    host.appendChild(card);
+
+    const row = document.createElement('div');
+    row.className = 'dd-row';
+    const select = document.createElement('select');
+    for (let q = 1; q <= MAX_H * 4; q++) {
+      const v = q * 0.25;
+      const o = document.createElement('option');
+      o.value = String(v);
+      o.textContent = fmt(v) + 'h';
+      select.appendChild(o);
+    }
+    row.appendChild(select);
+    widget.appendChild(row);
+
+    const chipsRow = document.createElement('div');
+    chipsRow.className = 'hours-chips';
+    widget.appendChild(chipsRow);
+
+    const summary = createSummary();
+    const setVal = (v) => { select.value = String(snap(v)); sync(); };
+    const chipDefs = [0.5, 1, 2, 3, 4];
+    const chips = chipDefs.map((v) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hours-chip';
+      b.textContent = fmt(v);
+      b.addEventListener('click', () => setVal(v));
+      chipsRow.appendChild(b);
+      return { el: b, v };
+    });
+    const remainChip = createRemainChip(setVal);
+    chipsRow.appendChild(remainChip.el);
+
+    function sync() {
+      const now = parseFloat(select.value) || 0;
+      summary.update(now);
+      chips.forEach(c => c.el.classList.toggle('is-selected', Math.abs(now - c.v) < 0.001));
+      const r = remainingOf(scenario);
+      remainChip.el.classList.toggle('is-selected', r >= MIN_H && Math.abs(now - r) < 0.001);
+    }
+    select.addEventListener('change', sync);
+
+    widget.appendChild(summary.el);
+    methods.push({ reset() { remainChip.refresh(); setVal(defaultOf(scenario)); } });
+  }
+
+  // =====================================================
+  // 案5: スライダー＋微調整
+  // =====================================================
+  function buildMethod5(host) {
+    const { card, widget } = createCard({
+      id: 'm5',
+      name: '案5　スライダー＋微調整',
+      desc: 'ドラッグ1回でおおまかに→ −/＋ で 0.25 刻みの微調整。1日の中での位置が目で見える。',
+      foot: '操作例 — 3.75h: つまみを 4 付近へドラッグ→「−」で調整。8h 超は −/＋ で対応。',
+    });
+    host.appendChild(card);
+
+    const area = document.createElement('div');
+    area.className = 'sl-area';
+    area.innerHTML =
+      '<div class="sl-row"><input type="range" min="0.25" max="8" step="0.25"></div>' +
+      '<div class="sl-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>' +
+      '<div class="sl-fine">' +
+        '<button type="button" class="hv-step-btn" data-d="-1">−</button>' +
+        '<div class="hv-display"><span class="hv-num"></span><span class="hv-unit">h</span></div>' +
+        '<button type="button" class="hv-step-btn" data-d="1">＋</button>' +
+      '</div>';
+    widget.appendChild(area);
+
+    const slider = area.querySelector('input[type="range"]');
+    const numEl = area.querySelector('.hv-num');
+    const summary = createSummary();
+    let val = 3.5;
+
+    const remainChip = createRemainChip((r) => setVal(r));
+    remainChip.el.style.marginTop = '10px';
+    widget.appendChild(remainChip.el);
+
+    function setVal(v) {
+      val = snap(v);
+      slider.value = String(Math.min(8, val));
+      sync();
+    }
+    function sync() {
+      numEl.textContent = fmt(val);
+      const r = remainingOf(scenario);
+      remainChip.el.classList.toggle('is-selected', r >= MIN_H && Math.abs(val - r) < 0.001);
+      summary.update(val);
+    }
+    slider.addEventListener('input', () => { val = parseFloat(slider.value); sync(); });
+    area.querySelectorAll('.hv-step-btn').forEach((b) => {
+      holdRepeat(b, () => setVal(val + 0.25 * Number(b.dataset.d)));
+    });
+
+    widget.appendChild(summary.el);
+    methods.push({ reset() { remainChip.refresh(); setVal(defaultOf(scenario)); } });
+  }
+
+  // ===== シナリオ切替 =====
+  const btnHost = document.getElementById('scenarioBtns');
+  const ctxHost = document.getElementById('contextLine');
+
+  SCENARIOS.forEach((sc) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cmp-scenario-btn';
+    b.textContent = sc.label;
+    b.dataset.key = sc.key;
+    b.addEventListener('click', () => applyScenario(sc));
+    btnHost.appendChild(b);
+  });
+
+  function applyScenario(sc) {
+    scenario = sc;
+    btnHost.querySelectorAll('.cmp-scenario-btn').forEach(b =>
+      b.classList.toggle('is-active', b.dataset.key === sc.key));
+    const parts = ['<span class="who">田中 ・ 2026/8/19（水）</span>'];
+    sc.items.forEach(it => parts.push('<span class="cmp-entry">' + it.name + ' <b>' + fmt(it.h) + 'h</b></span>'));
+    if (sc.items.length === 0) parts.push('<span class="cmp-daysum">まだ実績なし</span>');
+    parts.push('<span class="cmp-daysum">登録済 ' + fmt(sc.registered) + 'h ／ 残り ' + fmt(remainingOf(sc)) + 'h</span>');
+    ctxHost.innerHTML = parts.join('');
+    methods.forEach(m => m.reset());
+  }
+
+  // ===== 構築 =====
+  const grid = document.getElementById('grid');
+  buildMethod1(grid);
+  buildMethod2(grid);
+  buildMethod3(grid);
+  buildMethod4(grid);
+  buildMethod5(grid);
+  applyScenario(scenario);
+})();
+</script>
+</body>
+</html>

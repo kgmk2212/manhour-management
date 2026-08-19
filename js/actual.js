@@ -8,6 +8,7 @@ import {
     nextId} from './state.js';
 
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue, reviewBadgeHtml } from './utils.js';
+import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
 import { CALCULATIONS } from './constants.js';
@@ -1037,9 +1038,11 @@ export function addActualFromCalendar(member, date) {
     memberDisplay.textContent = member;
 
     // デフォルト工数: その日に登録済みの実績を標準工数(8h)から引いた残り工数
+    // （残りが0の日は最小刻みの0.25。0h実績の登録を防ぐ）
     const hoursSelect = document.getElementById('editActualHours');
     populateQuarterHourOptions(hoursSelect);
-    setHoursSelectValue(hoursSelect, getRemainingDayHours(member, date));
+    setHoursSelectValue(hoursSelect, Math.max(0.25, getRemainingDayHours(member, date)));
+    refreshHoursInput(hoursSelect, { getRegistered: () => getRegisteredDayHours(member, date) });
     document.getElementById('editActualRemainingHours').value = '';
 
     const modalTitle = document.querySelector('#editActualModal .modal-header h3');
@@ -1111,6 +1114,10 @@ export function editActual(id) {
     const editHoursSelect = document.getElementById('editActualHours');
     populateQuarterHourOptions(editHoursSelect);
     setHoursSelectValue(editHoursSelect, actual.hours);
+    // 合計表示は自身を除いた登録済み工数で計算する
+    refreshHoursInput(editHoursSelect, {
+        getRegistered: () => getRegisteredDayHours(actual.member, actual.date, actual.id)
+    });
 
     const existingRemaining = getRemainingEstimate(actual.version, actual.task, actual.process, actual.member);
     document.getElementById('editActualRemainingHours').value = existingRemaining ? existingRemaining.remainingHours : '';
@@ -1275,6 +1282,14 @@ export function setEditActualTab(tab) {
         if (panes[key]) panes[key].style.display = key === tab ? 'block' : 'none';
         if (tabBtns[key]) tabBtns[key].classList.toggle('active', key === tab);
     });
+
+    // 非表示中はホイール等がレイアウトできないため、表示時にウィジェットを再同期する
+    if (tab === 'actual') {
+        refreshHoursInput(document.getElementById('editActualHours'));
+    } else if (tab === 'other') {
+        refreshHoursInput(document.getElementById('meetingHours'));
+        refreshHoursInput(document.getElementById('otherWorkHours'));
+    }
 }
 
 /**
@@ -1458,9 +1473,7 @@ export function getPreviousActual(member, beforeDate) {
  * @returns {number} 残り工数（0以上、小数第2位まで丸め）
  */
 export function getRemainingDayHours(member, date) {
-    const registeredHours = actuals
-        .filter(a => a.member === member && a.date === date)
-        .reduce((sum, a) => sum + (a.hours || 0), 0);
+    const registeredHours = getRegisteredDayHours(member, date);
     const remaining = CALCULATIONS.HOURS_PER_DAY - registeredHours;
     if (remaining <= 0) return 0;
     return Math.round(remaining * 100) / 100;

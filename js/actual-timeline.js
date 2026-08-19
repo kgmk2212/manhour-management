@@ -1677,22 +1677,14 @@ function closeInlineEditor() {
 function showTaskPicker(x, y, member, date, defaultHours) {
     closeTaskPicker();
 
-    const tasks = getTasksForMember(member);
-    if (tasks.length === 0) {
-        const allTasks = getAllTasks();
-        if (allTasks.length === 0) {
-            showAlert('見積データがありません', false);
-            return;
-        }
-    }
-
     const picker = document.createElement('div');
     picker.className = 'actual-tl-task-picker';
     picker.id = 'atlTaskPicker';
 
     const dateLabel = formatDateLabel(date);
+    // 見積タスクがなくてもその他作業の登録はできるため、ピッカー自体は常に開く
     const allTasks = getTasksForMember(member).length > 0 ? getTasksForMember(member) : getAllTasks();
-    const roundedHours = Math.round(defaultHours * 10) / 10;
+    const roundedHours = Math.max(0.25, Math.round(defaultHours * 4) / 4);
 
     picker.innerHTML = `
         <div class="actual-tl-tp-header">
@@ -1703,7 +1695,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
                 </div>
                 <div class="actual-tl-tp-hours-ctrl">
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursDec">&minus;</button>
-                    <input type="number" id="atlTpHours" value="${roundedHours}" min="0.5" max="24" step="0.5">
+                    <input type="number" id="atlTpHours" value="${roundedHours}" min="0.25" max="24" step="0.25">
                     <span class="actual-tl-tp-hours-unit">h</span>
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursInc">&plus;</button>
                 </div>
@@ -1711,7 +1703,15 @@ function showTaskPicker(x, y, member, date, defaultHours) {
             <input type="text" class="actual-tl-tp-search" placeholder="検索..." id="atlTpSearch">
         </div>
         <div class="actual-tl-tp-list" id="atlTpList">
-            ${renderTaskPickerItems(allTasks)}
+            ${allTasks.length > 0 ? renderTaskPickerItems(allTasks) : '<div class="actual-tl-tp-empty">見積タスクがありません</div>'}
+        </div>
+        <div class="actual-tl-tp-other">
+            <div class="actual-tl-tp-other-label">その他作業（版数・工程なし）</div>
+            <div class="actual-tl-tp-other-row">
+                <button type="button" class="actual-tl-tp-other-btn" id="atlTpMeetingBtn">打ち合わせ</button>
+                <input type="text" id="atlTpOtherName" placeholder="作業名を入力">
+                <button type="button" class="actual-tl-tp-other-btn" id="atlTpOtherAddBtn">登録</button>
+            </div>
         </div>
         <div class="actual-tl-tp-hint">タスクをクリックで即登録</div>
     `;
@@ -1731,15 +1731,42 @@ function showTaskPicker(x, y, member, date, defaultHours) {
 
     document.body.appendChild(picker);
 
-    // 工数 +/- ボタン
+    // 工数 +/- ボタン（0.25刻み・実績入力の刻みと統一）
     const hoursInput = picker.querySelector('#atlTpHours');
     picker.querySelector('#atlTpHoursDec').addEventListener('click', () => {
         const v = parseFloat(hoursInput.value) || 1;
-        hoursInput.value = Math.max(0.5, Math.round((v - 0.5) * 10) / 10);
+        hoursInput.value = Math.max(0.25, Math.round((v - 0.25) * 4) / 4);
     });
     picker.querySelector('#atlTpHoursInc').addEventListener('click', () => {
         const v = parseFloat(hoursInput.value) || 0;
-        hoursInput.value = Math.min(24, Math.round((v + 0.5) * 10) / 10);
+        hoursInput.value = Math.min(24, Math.round((v + 0.25) * 4) / 4);
+    });
+
+    // その他作業（版数・工程なし）の登録
+    const pickerHoursValue = () => {
+        const hours = parseFloat(hoursInput.value);
+        if (!hours || hours <= 0) {
+            showAlert('工数を入力してください', false);
+            return null;
+        }
+        return hours;
+    };
+    picker.querySelector('#atlTpMeetingBtn').addEventListener('click', () => {
+        const hours = pickerHoursValue();
+        if (hours === null) return;
+        createActual(member, date, '', '打ち合わせ', '', hours);
+        closeTaskPicker();
+    });
+    picker.querySelector('#atlTpOtherAddBtn').addEventListener('click', () => {
+        const name = picker.querySelector('#atlTpOtherName').value.trim();
+        if (!name) {
+            showAlert('作業名を入力してください', false);
+            return;
+        }
+        const hours = pickerHoursValue();
+        if (hours === null) return;
+        createActual(member, date, '', name, '', hours);
+        closeTaskPicker();
     });
 
     // 検索

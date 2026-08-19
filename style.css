@@ -8808,3 +8808,199 @@ li.drop-below {
         font-size: 14px !important;
     }
 }
+
+/* ============================================
+   工数入力ウィジェット（hours-input.js・方式切替式トライアル）
+   ============================================ */
+
+.hi-root { margin-top: 4px; }
+
+/* --- 共通: チップ --- */
+.hi-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.hi-chip {
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: calc(14px * var(--ui-scale));
+    line-height: 1;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .08s ease, color .12s ease;
+    min-width: 42px;
+    text-align: center;
+}
+.hi-chip:hover { background: var(--accent-light); border-color: var(--accent); }
+.hi-chip:active { transform: scale(.95); }
+.hi-chip.is-selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hi-chip:disabled { opacity: .4; cursor: default; }
+.hi-chip:disabled:hover { background: var(--surface); border-color: var(--border); }
+.hi-chip.hi-chip-remain {
+    background: var(--accent-secondary-light);
+    border-color: var(--accent-secondary);
+    color: var(--accent-secondary);
+    font-weight: 600;
+}
+.hi-chip.hi-chip-remain:hover:not(:disabled) { background: var(--accent-secondary); color: #fff; }
+.hi-chip.hi-chip-remain.is-selected { background: var(--accent-secondary); border-color: var(--accent-secondary); color: #fff; }
+.hi-remain-solo { display: inline-block; margin-top: 10px; }
+
+/* --- 共通: ステッパー・値表示 --- */
+.hi-stepper { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.hi-step-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    color: var(--text-primary);
+    cursor: pointer;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background .12s ease, border-color .12s ease;
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+}
+.hi-step-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.hi-stepper input[type="number"] {
+    width: 92px;
+    font-size: calc(18px * var(--ui-scale));
+    font-weight: 600;
+    text-align: center;
+}
+.hi-stepper input[type="number"]::-webkit-inner-spin-button { display: none; }
+.hi-unit { font-size: calc(13px * var(--ui-scale)); color: var(--text-muted); }
+.hi-display { display: flex; align-items: baseline; gap: 4px; }
+.hi-display .hi-num {
+    font-size: calc(24px * var(--ui-scale));
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 68px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- 案2: 2段チップ --- */
+.hi-two-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.hi-two-label { font-size: calc(11px * var(--ui-scale)); color: var(--text-muted); margin-bottom: 2px; }
+.hi-two-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.hi-two-row .hi-chip { min-width: 38px; padding: 8px 10px; }
+.hi-two-hours-ext { margin-top: 6px; }
+
+/* --- 案3: 中央ホイール --- */
+.hi-wheel-area { display: flex; align-items: center; gap: 16px; }
+.hi-wheel-wrap { position: relative; width: 128px; flex-shrink: 0; }
+.hi-wheel {
+    height: 180px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+}
+.hi-wheel::-webkit-scrollbar { display: none; }
+.hi-wheel-pad { height: 72px; }
+.hi-wheel-item {
+    height: 36px; line-height: 36px;
+    text-align: center;
+    font-size: calc(15px * var(--ui-scale));
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+    font-variant-numeric: tabular-nums;
+    transition: color .12s ease, transform .12s ease;
+}
+.hi-wheel-item.is-center { color: var(--text-primary); font-weight: 700; transform: scale(1.2); }
+.hi-wheel-band {
+    position: absolute; top: 72px; left: 4px; right: 4px; height: 36px;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    background: var(--accent-light);
+    opacity: .3;
+    pointer-events: none;
+    border-radius: 4px;
+}
+.hi-wheel-fade-top, .hi-wheel-fade-bottom {
+    position: absolute; left: 1px; right: 1px; height: 44px; pointer-events: none;
+}
+.hi-wheel-fade-top {
+    top: 1px;
+    background: linear-gradient(to bottom, var(--surface-elevated), rgba(255,255,255,0));
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.hi-wheel-fade-bottom {
+    bottom: 1px;
+    background: linear-gradient(to top, var(--surface-elevated), rgba(255,255,255,0));
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+.hi-wheel-side { flex: 1; min-width: 0; }
+
+/* --- 案5: スライダー --- */
+.hi-slider-row { display: flex; align-items: center; margin-top: 8px; }
+.hi-slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.hi-slider-ticks {
+    display: flex; justify-content: space-between;
+    font-size: calc(10.5px * var(--ui-scale));
+    color: var(--text-muted);
+    padding: 2px 2px 0;
+}
+
+/* --- 共通: 合計表示 --- */
+.hi-summary {
+    margin-top: 14px;
+    padding: 11px 14px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: calc(13px * var(--ui-scale));
+    color: var(--text-secondary);
+}
+.hi-summary-breakdown { margin-bottom: 5px; }
+.hi-summary-breakdown b { color: var(--text-primary); }
+.hi-summary-total { font-size: calc(16px * var(--ui-scale)); font-weight: 700; color: var(--text-primary); }
+.hi-summary-remain { margin-left: 10px; font-size: calc(13px * var(--ui-scale)); font-weight: 500; color: var(--text-muted); }
+.hi-summary.is-exact { border-left-color: var(--success); background: var(--accent-light); }
+.hi-summary.is-exact .hi-summary-remain { color: var(--success); font-weight: 600; }
+.hi-summary.is-over { border-left-color: var(--danger); background: var(--danger-light); }
+.hi-summary.is-over .hi-summary-remain { color: var(--danger); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hi-chip, .hi-wheel-item { transition: none; }
+}
+
+/* --- タイムライン タスクピッカー: その他作業登録 --- */
+.actual-tl-tp-other {
+    border-top: 1px solid var(--border-light);
+    padding: 8px 10px;
+}
+.actual-tl-tp-other-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.actual-tl-tp-other-row { display: flex; gap: 6px; align-items: center; }
+.actual-tl-tp-other-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+.actual-tl-tp-other-btn {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.actual-tl-tp-other-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.actual-tl-tp-empty {
+    padding: 14px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}

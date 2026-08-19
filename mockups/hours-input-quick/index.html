@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工数入力モックアップ — ワンタップ工数ボタン＋合計表示</title>
+<link rel="stylesheet" href="../../style.css">
+<style>
+  :root { --ui-scale: 1; }
+  body { padding: 0; background: var(--bg); }
+
+  /* モーダルを中央に常時表示（モックアップ用） */
+  .modal.mock-open { display: flex; align-items: center; justify-content: center; }
+
+  /* ===== 工数セクション ===== */
+  .hours-field-label { font-weight: 600; color: var(--text-primary); margin-bottom: 8px; display: block; }
+  .hours-input-row { display: flex; align-items: center; gap: 10px; }
+  .hours-input-row input {
+    font-size: calc(20px * var(--ui-scale));
+    font-weight: 600;
+    text-align: center;
+    max-width: 120px;
+  }
+  .hours-unit { color: var(--text-muted); font-size: 14px; }
+
+  /* ===== ワンタップ工数ボタン ===== */
+  .hours-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .hours-chip {
+    padding: 9px 15px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .08s ease, color .12s ease;
+    min-width: 44px;
+  }
+  .hours-chip:hover { background: var(--accent-light); border-color: var(--accent); }
+  .hours-chip:active { transform: scale(.95); }
+  .hours-chip.is-selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+  /* 「残りNh」だけアンバーで区別 */
+  .hours-chip.chip-remain {
+    background: var(--accent-secondary-light);
+    border-color: var(--accent-secondary);
+    color: var(--accent-secondary);
+    font-weight: 600;
+  }
+  .hours-chip.chip-remain:hover { background: var(--accent-secondary); color: #fff; }
+  .hours-chip.chip-remain.is-selected { background: var(--accent-secondary); color: #fff; }
+
+  /* ===== 合計表示 ===== */
+  .hours-summary {
+    margin-top: 16px;
+    padding: 13px 16px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .hours-summary .breakdown { margin-bottom: 6px; }
+  .hours-summary .breakdown b { color: var(--text-primary); }
+  .hours-summary .total { font-size: calc(18px * var(--ui-scale)); font-weight: 700; color: var(--text-primary); }
+  .hours-summary .remain { margin-left: 10px; font-size: 14px; font-weight: 500; color: var(--text-muted); }
+  .hours-summary.is-exact { border-left-color: var(--success); background: var(--accent-light); }
+  .hours-summary.is-exact .remain { color: var(--success); font-weight: 600; }
+  .hours-summary.is-over { border-left-color: var(--danger); background: var(--danger-light); }
+  .hours-summary.is-over .remain { color: var(--danger); font-weight: 600; }
+
+  /* モックアップ説明 */
+  .mock-note {
+    max-width: 520px;
+    margin: 22px auto 40px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .mock-note b { color: var(--text-primary); }
+  .mock-note .tag { color: var(--accent-secondary); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="modal mock-open">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>実績を登録 — 田中 (2026/6/16 月)</h3>
+        <button class="modal-close" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 既存欄（コンテキスト・簡略表示） -->
+        <div class="form-group">
+          <label>対応名</label>
+          <input type="text" value="帳票A出力（V1.0 / PG）" readonly>
+        </div>
+
+        <!-- ===== 工数セクション（今回の改善対象） ===== -->
+        <div class="form-group">
+          <label class="hours-field-label">実績工数</label>
+          <div class="hours-input-row">
+            <input type="number" id="hoursInput" step="0.5" min="0" value="4">
+            <span class="hours-unit">時間</span>
+          </div>
+
+          <div class="hours-chips" id="hoursChips">
+            <button class="hours-chip" type="button" data-v="0.5">0.5</button>
+            <button class="hours-chip" type="button" data-v="1">1</button>
+            <button class="hours-chip" type="button" data-v="2">2</button>
+            <button class="hours-chip" type="button" data-v="3">3</button>
+            <button class="hours-chip" type="button" data-v="4">4</button>
+            <button class="hours-chip chip-remain" type="button" id="chipRemain" data-v="remain">残り 6h</button>
+          </div>
+
+          <div class="hours-summary" id="hoursSummary">
+            <div class="breakdown">本日の田中さん：登録済 <b>2h</b> ＋ 今回 <b id="sumNow">4h</b></div>
+            <span class="total" id="sumTotal">合計 6h / 8h</span>
+            <span class="remain" id="sumRemain">残り 2h</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; padding:16px 24px; border-top:1px solid var(--border-light);">
+        <button class="btn btn-secondary" type="button">キャンセル</button>
+        <button class="btn btn-success" type="button">記録する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-note">
+    <b>モックアップ：ワンタップ工数ボタン＋合計表示</b><br>
+    ・数字ボタンを押すと工数欄に即入力（手打ち・スピナー連打が不要）。<br>
+    ・<span class="tag">残り Nh</span> ボタンは「1日8h − 当日登録済み」を一発入力。<br>
+    ・入力に応じて下の <b>合計 / 8h・残り</b> がその場で更新（超過すると赤）。<br>
+    ※「登録済 2h」は説明用の仮の値です。実装時は本人・当日の実績から自動算出します。
+  </div>
+
+<script>
+  const PER_DAY = 8;
+  const REGISTERED = 2; // 仮：本日その担当者が登録済みの工数
+
+  const input = document.getElementById('hoursInput');
+  const chips = document.querySelectorAll('.hours-chip');
+  const chipRemain = document.getElementById('chipRemain');
+  const summary = document.getElementById('hoursSummary');
+  const sumNow = document.getElementById('sumNow');
+  const sumTotal = document.getElementById('sumTotal');
+  const sumRemain = document.getElementById('sumRemain');
+
+  const remainBase = Math.max(0, PER_DAY - REGISTERED);
+  chipRemain.textContent = '残り ' + remainBase + 'h';
+  chipRemain.dataset.v = String(remainBase);
+
+  const fmt = (n) => Math.round(n * 100) / 100;
+
+  function update() {
+    const now = parseFloat(input.value) || 0;
+    const total = REGISTERED + now;
+    const remain = PER_DAY - total;
+
+    sumNow.textContent = fmt(now) + 'h';
+    sumTotal.textContent = '合計 ' + fmt(total) + 'h / ' + PER_DAY + 'h';
+
+    summary.classList.remove('is-exact', 'is-over');
+    if (remain === 0) {
+      summary.classList.add('is-exact');
+      sumRemain.textContent = 'ちょうど';
+    } else if (remain < 0) {
+      summary.classList.add('is-over');
+      sumRemain.textContent = '超過 ' + fmt(-remain) + 'h';
+    } else {
+      sumRemain.textContent = '残り ' + fmt(remain) + 'h';
+    }
+
+    chips.forEach((c) => {
+      const v = c.id === 'chipRemain' ? remainBase : parseFloat(c.dataset.v);
+      c.classList.toggle('is-selected', fmt(now) === fmt(v));
+    });
+  }
+
+  chips.forEach((c) => c.addEventListener('click', () => { input.value = c.dataset.v; update(); }));
+  input.addEventListener('input', update);
+  update();
+</script>
+</body>
+</html>

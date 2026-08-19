@@ -5,6 +5,8 @@
 import * as State from './state.js';
 import { pushAction } from './history.js';
 import { showAlert, populateQuarterHourOptions, setHoursSelectValue } from './utils.js';
+import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
+import { CALCULATIONS } from './constants.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -234,6 +236,12 @@ export function switchOtherWorkTab(tab) {
         meetingForm.style.display = 'none';
         customForm.style.display = 'block';
     }
+
+    // 非表示中はホイール等がレイアウトできないため、表示したフォームのウィジェットを再同期する
+    const visibleHoursEl = document.getElementById(tab === 'meeting' ? 'meetingHours' : 'otherWorkHours');
+    if (visibleHoursEl && visibleHoursEl.dataset.hoursPopulated === 'true') {
+        refreshHoursInput(visibleHoursEl);
+    }
 }
 
 // ============================================
@@ -284,10 +292,7 @@ export function applyOtherWorkDefaults(member, beforeDate) {
     populateQuarterHourOptions(meetingHoursEl);
     populateQuarterHourOptions(otherWorkHoursEl);
 
-    // デフォルト工数: 打ち合わせは 1h、任意作業は 8h(タブ切替後も空にならないように)
-    if (meetingHoursEl) setHoursSelectValue(meetingHoursEl, DEFAULT_MEETING_HOURS);
-    if (otherWorkHoursEl) setHoursSelectValue(otherWorkHoursEl, DEFAULT_HOURS);
-
+    // タブ・担当者を先に決める（任意作業のデフォルト工数は担当者の残り工数から算出するため）
     if (previous && previous.task !== '打ち合わせ') {
         // 直近が任意作業 → 任意作業タブを初期表示し、作業名・担当を復元
         if (otherWorkNameEl) otherWorkNameEl.value = previous.task;
@@ -298,6 +303,42 @@ export function applyOtherWorkDefaults(member, beforeDate) {
         if (member && otherWorkMemberEl) otherWorkMemberEl.value = member;
         switchOtherWorkTab('meeting');
     }
+
+    // デフォルト工数: 打ち合わせは 1h。
+    // 任意作業は担当者が決まっていれば当日の残り工数(8h−登録済み、最低0.25)、いなければ 8h
+    if (meetingHoursEl) setHoursSelectValue(meetingHoursEl, DEFAULT_MEETING_HOURS);
+    if (otherWorkHoursEl) {
+        const ctxMember = otherWorkMemberEl ? otherWorkMemberEl.value : '';
+        const defaultHours = ctxMember
+            ? Math.max(0.25, CALCULATIONS.HOURS_PER_DAY - getRegisteredDayHours(ctxMember, getOtherWorkContextDate()))
+            : DEFAULT_HOURS;
+        setHoursSelectValue(otherWorkHoursEl, defaultHours);
+    }
+
+    // 入力方式ウィジェット: 打ち合わせは全員一括登録のため合計・残り表示なし。
+    // 任意作業は選択中の担当者の当日実績で合計・残りを表示する
+    refreshHoursInput(meetingHoursEl, { getRegistered: () => null });
+    refreshHoursInput(otherWorkHoursEl, {
+        getRegistered: () => {
+            const m = otherWorkMemberEl ? otherWorkMemberEl.value : '';
+            return m ? getRegisteredDayHours(m, getOtherWorkContextDate()) : null;
+        }
+    });
+    if (otherWorkMemberEl && !otherWorkMemberEl.dataset.hiRefreshBound) {
+        otherWorkMemberEl.addEventListener('change', () => refreshHoursInput(otherWorkHoursEl));
+        otherWorkMemberEl.dataset.hiRefreshBound = 'true';
+    }
+}
+
+/**
+ * その他作業の対象日を返す（カレンダー経由ならその日付、なければ今日）。
+ * addMeeting/addOtherWork の保存時の日付決定と同じ規則。
+ * @returns {string} 'YYYY-MM-DD' 形式の日付
+ */
+function getOtherWorkContextDate() {
+    const modal = document.getElementById('otherWorkModal');
+    if (modal && modal.dataset.calendarDate) return modal.dataset.calendarDate;
+    return new Date().toISOString().split('T')[0];
 }
 
 console.log('✅ モジュール other-work.js loaded');

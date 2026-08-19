@@ -26,6 +26,7 @@ import * as History from './history.js';
 import * as ActualTimeline from './actual-timeline.js';
 import { initReportAnalytics } from './report-analytics.js';
 import { initAiAnalysis } from './ai-analysis.js';
+import { initHoursInputSetting } from './hours-input.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -590,6 +591,9 @@ document.addEventListener('DOMContentLoaded', function () {
             Estimate.renderEstimateList();
         });
     }
+
+    // 工数入力方式の設定セレクトを初期化
+    initHoursInputSetting();
 
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
