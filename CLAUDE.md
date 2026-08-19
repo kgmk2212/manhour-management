@@ -35,6 +35,11 @@
 | `manhour-analytics` | `experiment/analytics` | 分析系実験 |
 | `manhour-fixes` | `experiment/fixes` | 修正系実験 |
 
+> **⚠️ worktree 削除時の注意**: 各 worktree の `.claude/commands` は `.shared/commands` への
+> ジャンクション。worktree を削除する前に必ず `cmd /c rmdir "<worktree>\.claude\commands"` で
+> リンク解除すること。`git worktree remove --force` や `Remove-Item -Recurse` はジャンクション
+> 越しに実体（全コマンド定義）を削除する（2026-08-19 に実害発生・復旧済み）。
+
 ### 作業前の確認事項
 
 ```bash

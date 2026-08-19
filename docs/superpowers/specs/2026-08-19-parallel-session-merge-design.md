@@ -128,3 +128,10 @@
 ## 10. 未確認事項（実装時に確認）
 
 - redesign 等の他 worktree の `.claude/settings.json` が同じ hook を参照しているか（参照している場合も CWD 判定により現行文言が注入されるため挙動は変わらないが、確認の上で実装する）
+
+## 11. 実装時インシデント記録（2026-08-19）
+
+リハーサル（シナリオA）で、junction（`.claude/commands` → `.shared/commands`）を含む feature worktree に `git worktree remove --force` を実行した際、**junction 越しに実体 `.shared/commands` の全11ファイルが削除**された。
+
+- **復旧**: 全11ファイル復元済み。復元源: (a) 本セッションで全文取得済みの deploy.md（逐語）、(b) 当日 transcript から回収した verify-ui.md 本文と commit.md（transport-billing-system-v2 の同名ファイルと本文完全一致を確認）、(c) 共通管理元 transport-billing-system-v2 のコピー（peer-review / quick-commit / research / bundle-export / bundle-import）、(d) 実装計画に全文がある新規3件。verify-ui の frontmatter（description）はスキル一覧表示から再構成（argument-hint は原本不明のため省略）。
+- **恒久対策**: /integrate 手順6と /start-work 注意書きに「junction を `cmd /c rmdir` で先にリンク解除してから worktree を削除」を明記。リンク解除→削除で実体が無傷であることを再リハーサルで実証済み。CLAUDE.md の Worktree 構成節にも同注意を追記。

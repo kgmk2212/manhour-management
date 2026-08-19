@@ -542,3 +542,11 @@ git push origin experiment/ui-scaling
 - ON にする推奨タイミング（稼働中セッションが区切りを迎えたとき）
 - リハーサル結果（隔離・競合検出・直列化・掃除の各実証）
 - 戻し方（`/parallel-mode off` 即時 / 完全撤去は設計書 §6）
+
+---
+
+## 実行記録（2026-08-19）
+
+- Task 1〜7 完了。byte 同一・CWD 分岐・キルスイッチ・並列統合（クリーン/競合）・直列化・掃除の全検証 PASS。フラグは OFF のまま納品。
+- **インシデント**: Task 6 シナリオA の `git worktree remove --force` が junction 越しに `.shared/commands` の実体全11ファイルを削除（本計画の掃除手順の欠陥）。全ファイル復元済み。詳細は設計書 §11。
+- **対策反映**: integrate.md 手順6 / start-work.md 注意 / CLAUDE.md Worktree 節に「junction を `cmd /c rmdir` で先にリンク解除してから worktree 削除」を明記。安全性を再リハーサルで実証（リンク解除→削除で実体11ファイル無傷）。本計画の Task 4/6 のコード例は当初版のまま（修正版の正は integrate.md / start-work.md 本体）。
