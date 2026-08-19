@@ -228,8 +228,10 @@ function applyUndo(action) {
 
     // --- 実績 ---
     } else if (t === 'actual_add') {
-        const id = action.data.added.id;
-        State.setActuals(State.actuals.filter(a => a.id !== id));
+        // addMeeting（other-work.js）は全員分を addedAll で渡す。単件登録は added のみ
+        const addedList = action.data.addedAll || [action.data.added];
+        const ids = new Set(addedList.map(a => a.id));
+        State.setActuals(State.actuals.filter(a => !ids.has(a.id)));
     } else if (t === 'actual_edit') {
         if (action.data.isNew) {
             // 新規追加だった場合: 削除
@@ -335,7 +337,7 @@ function applyRedo(action) {
 
     // --- 実績 ---
     } else if (t === 'actual_add') {
-        State.actuals.push(action.data.added);
+        State.actuals.push(...(action.data.addedAll || [action.data.added]));
     } else if (t === 'actual_edit') {
         if (action.data.isNew) {
             State.actuals.push(action.data.after);

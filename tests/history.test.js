@@ -76,6 +76,38 @@ describe('applyUndo/applyRedo — 見積系の逆操作が State setter 経由�
         assert.equal(State.remainingEstimates.length, 0);
     });
 
+    test('actual_add（addMeeting の全員分一括登録）の Undo/Redo が全件を対象にする', () => {
+        // other-work.js の addMeeting は data.added（先頭1件）+ data.addedAll（全件）を渡す
+        const meetings = [
+            { id: 31, version: '', task: '打ち合わせ', member: 'A', hours: 1 },
+            { id: 32, version: '', task: '打ち合わせ', member: 'B', hours: 1 },
+            { id: 33, version: '', task: '打ち合わせ', member: 'C', hours: 1 },
+        ];
+        State.setActuals([...meetings]);
+        History.pushAction({
+            type: 'actual_add',
+            data: { added: meetings[0], addedAll: meetings.map(m => ({ ...m })) },
+        });
+
+        History.undo();
+        assert.equal(State.actuals.length, 0, 'Undo で3件すべて取り除かれること');
+
+        History.redo();
+        assert.deepEqual(State.actuals.map(a => a.id).sort(), [31, 32, 33], 'Redo で3件すべて復元されること');
+    });
+
+    test('actual_add（単件・addedAll なし）の Undo は従来どおり1件を取り除く', () => {
+        const single = { id: 41, version: 'v1', task: 'T', member: 'A', hours: 2 };
+        State.setActuals([single]);
+        History.pushAction({ type: 'actual_add', data: { added: single } });
+
+        History.undo();
+        assert.equal(State.actuals.length, 0);
+
+        History.redo();
+        assert.deepEqual(State.actuals.map(a => a.id), [41]);
+    });
+
     test('estimate_add_batch（見積編集時の担当者追加）の Undo で追加分が取り除かれる', () => {
         const kept = { id: 5, version: 'v1', task: 'T', process: 'PG', hours: 8 };
         const added = { id: 6, version: 'v1', task: 'T', process: 'PG', member: 'B', hours: 4 };

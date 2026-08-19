@@ -215,7 +215,8 @@ export function loadData() {
     // [GANTT-CHART] スケジュールIDの最大値を設定
     if (schedules.length > 0) {
         const maxId = Math.max(...schedules.map(s => {
-            const match = s.id.match(/sch_(\d+)/);
+            // id は原則 `sch_N` だが、手動追加・マージ由来で数値 id が混入しうる
+            const match = String(s.id).match(/sch_(\d+)/);
             return match ? parseInt(match[1]) : 0;
         }));
         setNextScheduleId(maxId + 1);
