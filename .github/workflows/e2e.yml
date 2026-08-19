@@ -26,7 +26,18 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # ブラウザ本体をキャッシュ（キーは lockfile = @playwright/test のバージョンに追随）
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # --with-deps を使わない: apt がミラー取得直後にハングし 15 分タイムアウトを
+      # 2 連続で起こした実績あり（run 32272106065）。ubuntu-latest イメージは
+      # Chrome 相当の共有ライブラリを同梱しており、chromium は apt なしで起動できる。
+      # 万一ライブラリ不足で起動失敗する場合はこのステップに install-deps を戻すこと。
+      - run: npx playwright install chromium
+        timeout-minutes: 6
       - run: npm run e2e
       - name: Upload failure traces
         if: failure()
