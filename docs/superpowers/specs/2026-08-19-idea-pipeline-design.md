@@ -57,7 +57,7 @@
 データ整合性に関わるモジュールは lane:auto では変更禁止。`.github/pipeline/auto-lane-policy.json` に列挙し、トリアージと CI の両方が参照する:
 
 ```
-js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js, .github/pipeline, scripts/pipeline
+js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js, .github, scripts/pipeline
 ```
 
 （初期値。運用で追加・削減可。データスキーマの変更を伴う修正は、パスに関わらず lane:design へ。パイプラインの検査機構そのものを lane:auto から保護するため。）
