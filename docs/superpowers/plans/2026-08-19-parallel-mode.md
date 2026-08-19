@@ -46,7 +46,7 @@
 - Consumes: なし
 - Produces: フラグファイルパス `.shared/hooks/parallel-mode.on`（Task 2 の /parallel-mode が操作）、PARALLEL_TEXT が参照するコマンド名 `/start-work` `/integrate`（Task 3/4 が実体を提供）
 
-- [ ] **Step 1: 改修前出力をキャプチャ（テストの期待値）**
+- [x] **Step 1: 改修前出力をキャプチャ（テストの期待値）**
 
 ```bash
 SH=D:/CCwork/.manhour-management-worktrees/.shared/hooks
@@ -56,14 +56,14 @@ echo '{}' | python "$SH/inject-dev-flow.py" > "$SP/before.json"
 cat "$SP/before.json"   # FLOW_TEXT の JSON が出ること
 ```
 
-- [ ] **Step 2: 原本バックアップを作成**
+- [x] **Step 2: 原本バックアップを作成**
 
 ```bash
 cp "$SH/inject-dev-flow.py" "$SH/inject-dev-flow.py.orig-20260819"
 diff "$SH/inject-dev-flow.py" "$SH/inject-dev-flow.py.orig-20260819" && echo BACKUP-OK
 ```
 
-- [ ] **Step 3: hook を以下の内容に書き換える**
+- [x] **Step 3: hook を以下の内容に書き換える**
 
 FLOW_TEXT は現行と一字一句同一を維持すること（byte 同一性の要）。
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
         sys.exit(0)
 ```
 
-- [ ] **Step 4: byte 同一テスト（フラグ無し）**
+- [x] **Step 4: byte 同一テスト（フラグ無し）**
 
 ```bash
 echo '{}' | python "$SH/inject-dev-flow.py" > "$SP/after-off.json"
@@ -154,7 +154,7 @@ diff "$SP/before.json" "$SP/after-off.json" && echo BYTE-IDENTICAL-OK
 ```
 Expected: `BYTE-IDENTICAL-OK`（差分ゼロ）
 
-- [ ] **Step 5: フラグ挙動テスト（scratchpad のコピーで実施。本番フラグは作らない）**
+- [x] **Step 5: フラグ挙動テスト（scratchpad のコピーで実施。本番フラグは作らない）**
 
 ```bash
 cp "$SH/inject-dev-flow.py" "$SP/inject-copy.py"
@@ -175,7 +175,7 @@ diff "$SP/before.json" "$SP/copy-off.json" && echo KILLSWITCH-OK
 ```
 Expected: (a)(b) は 1、(c) は 0、(d) は `KILLSWITCH-OK`
 
-- [ ] **Step 6: 本番側にフラグが無いことを最終確認**
+- [x] **Step 6: 本番側にフラグが無いことを最終確認**
 
 ```bash
 ls "$SH/parallel-mode.on" 2>&1   # 期待: No such file or directory
@@ -194,7 +194,7 @@ ls "$SH/parallel-mode.on" 2>&1   # 期待: No such file or directory
 - Consumes: Task 1 のフラグパス `.shared/hooks/parallel-mode.on`
 - Produces: ユーザー/セッションが呼ぶ `/parallel-mode on|off|status`
 
-- [ ] **Step 1: 以下の内容でファイルを作成**
+- [x] **Step 1: 以下の内容でファイルを作成**
 
 ```markdown
 ---
@@ -228,7 +228,7 @@ parallel-mode のトグル。フラグファイル
 - 完全撤去の手順は設計書 §6 を参照（hook 原本: `.shared/hooks/inject-dev-flow.py.orig-20260819`）。
 ```
 
-- [ ] **Step 2: 動作確認（status 相当を手で実行）**
+- [x] **Step 2: 動作確認（status 相当を手で実行）**
 
 ```bash
 ls D:/CCwork/.manhour-management-worktrees/.shared/hooks/parallel-mode.on 2>&1  # 期待: 無し
@@ -246,7 +246,7 @@ git worktree list | grep -i feature   # 現状の feature-* を確認（feature-
 - Consumes: なし（ローカル `experiment/ui-scaling` HEAD をベースにする）
 - Produces: `feature/<topic>` ブランチ + `D:/CCwork/.manhour-management-worktrees/feature-<topic>` worktree（Task 4 の /integrate が統合・掃除する対象）
 
-- [ ] **Step 1: 以下の内容でファイルを作成**
+- [x] **Step 1: 以下の内容でファイルを作成**
 
 ```markdown
 ---
@@ -289,7 +289,7 @@ parallel-mode の作業開始コマンド。専用 feature ブランチ + worktr
 - スクショ等の一時ファイルは worktree 内に置いてよい（/integrate の掃除で worktree ごと消える）。
 ```
 
-- [ ] **Step 2: 記述の静的確認**
+- [x] **Step 2: 記述の静的確認**
 
 junction 作法が memory `worktree-commands-junction` と一致すること、パスが実在することを確認:
 
@@ -310,7 +310,7 @@ ls -d D:/CCwork/.manhour-management-worktrees/.shared/commands D:/CCwork/.manhou
 - Consumes: Task 3 が作る `feature/<topic>` + worktree、既存 `/verify-ui`・`/deploy` コマンド
 - Produces: `experiment/ui-scaling` への ff-only 統合と掃除（本線更新は /deploy が push・デプロイ）
 
-- [ ] **Step 1: 以下の内容でファイルを作成**
+- [x] **Step 1: 以下の内容でファイルを作成**
 
 ```markdown
 ---
@@ -368,7 +368,7 @@ UIS = `D:/CCwork/.manhour-management-worktrees/experiment-ui-scaling`。
 8. **結果報告**: 統合したコミット範囲・検証結果・デプロイ URL（/deploy 実行時）・掃除状況。
 ```
 
-- [ ] **Step 2: 参照整合の静的確認**
+- [x] **Step 2: 参照整合の静的確認**
 
 /deploy の手順（現ブランチ push → main 空コミット）と手順5の記述が矛盾しないこと、
 /verify-ui が存在することを確認:
@@ -389,7 +389,7 @@ ls D:/CCwork/.manhour-management-worktrees/.shared/commands/deploy.md D:/CCwork/
 - Consumes: Task 1〜4 の成果物名（/parallel-mode, /start-work, /integrate, バックアップファイル名）
 - Produces: なし（ドキュメントのみ）
 
-- [ ] **Step 1: CLAUDE.md の開発フロー節の直後に以下を挿入**
+- [x] **Step 1: CLAUDE.md の開発フロー節の直後に以下を挿入**
 
 ```markdown
 ### 並列セッション統合機構（parallel-mode）
@@ -406,13 +406,13 @@ ls D:/CCwork/.manhour-management-worktrees/.shared/commands/deploy.md D:/CCwork/
   （hook 原本バックアップ: `.shared/hooks/inject-dev-flow.py.orig-20260819`）。
 ```
 
-- [ ] **Step 2: 設計書のステータスとリハーサル方式を更新**
+- [x] **Step 2: 設計書のステータスとリハーサル方式を更新**
 
 - `- ステータス: レビュー待ち` → `- ステータス: 承認済み・実装（2026-08-19）`
 - §7 に1行追記: リハーサルは本線を使わず代役ブランチ `rehearsal/mainline` 上で同一の
   git 操作を実証する方式に変更（本線に一切コミットを載せない。§7.5 の revert 方式を置換）。
 
-- [ ] **Step 3: 2ファイルのみ明示ステージしてコミット**
+- [x] **Step 3: 2ファイルのみ明示ステージしてコミット**
 
 ```bash
 git add CLAUDE.md docs/superpowers/specs/2026-08-19-parallel-session-merge-design.md
@@ -432,7 +432,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: Task 3/4 の手順（本線を `rehearsal/mainline` に読み替えて実行）
 - Produces: 設計書 §7 の検証結果（本 plan 実行報告に記載）
 
-- [ ] **Step 1: 開始状態を記録**
+- [x] **Step 1: 開始状態を記録**
 
 ```bash
 WTR=D:/CCwork/.manhour-management-worktrees
@@ -442,7 +442,7 @@ git worktree add -b rehearsal/mainline "$WTR/rehearsal-mainline" experiment/ui-s
 RMS="$WTR/rehearsal-mainline"
 ```
 
-- [ ] **Step 2: シナリオA — 別ファイル・クリーン統合（start-work → integrate の通し）**
+- [x] **Step 2: シナリオA — 別ファイル・クリーン統合（start-work → integrate の通し）**
 
 start-work 手順どおり worktree を作る（settings 複製と junction も実施して手順3を実証）:
 
@@ -464,7 +464,7 @@ git -C "$RMS" branch -d rehearsal/feat-a               # 期待: 削除成功（
 ```
 Expected: junction が張れている / ff 成功 / worktree・ブランチが消えている
 
-- [ ] **Step 3: シナリオB — 同一ファイル同一行の競合と直列化**
+- [x] **Step 3: シナリオB — 同一ファイル同一行の競合と直列化**
 
 ```bash
 git worktree add -b rehearsal/feat-b1 "$WTR/feature-rehearsal-b1" rehearsal/mainline
@@ -492,7 +492,7 @@ git -C "$RMS" branch -d rehearsal/feat-b1 rehearsal/feat-b2
 ```
 Expected: ff 拒否 → rebase コンフリクト検出 → 解消後 ff 成功、の順で全部観測できること
 
-- [ ] **Step 4: ゼロフットプリント確認と全撤去**
+- [x] **Step 4: ゼロフットプリント確認と全撤去**
 
 ```bash
 cd "$WTR/experiment-ui-scaling"
@@ -518,7 +518,7 @@ BASE 比較のみ不一致になりうる — その場合は log で理由を�
 - Consumes: 全タスクの成果物
 - Produces: ユーザーへの完了報告（有効化は `/parallel-mode on` の合図待ち）
 
-- [ ] **Step 1: 納品状態の最終確認**
+- [x] **Step 1: 納品状態の最終確認**
 
 ```bash
 SH=D:/CCwork/.manhour-management-worktrees/.shared/hooks
@@ -529,13 +529,13 @@ ls "$SH/inject-dev-flow.py.orig-20260819"               # バックアップ存�
 ls D:/CCwork/.manhour-management-worktrees/.shared/commands/{parallel-mode,start-work,integrate}.md
 ```
 
-- [ ] **Step 2: docs コミットを push（コード変更なしのため Pages 発火は不要）**
+- [x] **Step 2: docs コミットを push（コード変更なしのため Pages 発火は不要）**
 
 ```bash
 git push origin experiment/ui-scaling
 ```
 
-- [ ] **Step 3: 完了報告**
+- [x] **Step 3: 完了報告**
 
 以下を含めてユーザーへ報告する:
 - 現在 OFF のまま（挙動変化ゼロ）であること、有効化は `/parallel-mode on` で行うこと
