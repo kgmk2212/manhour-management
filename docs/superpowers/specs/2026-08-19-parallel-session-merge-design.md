@@ -1,7 +1,7 @@
 # 並列セッション統合機構「parallel-mode」設計書
 
 - 日付: 2026-08-19
-- ステータス: レビュー待ち
+- ステータス: 承認済み・実装（2026-08-19）
 - 対象ライン: `experiment/ui-scaling`（現行の正系開発ライン）
 - 関連: `CLAUDE.md`（開発フロー）、`.shared/hooks/inject-dev-flow.py`、memory `worktree-commands-junction` / `branch-strategy-current`
 
@@ -104,6 +104,8 @@
 | 進行中作業の回収 | 各 feature ブランチを `/integrate` で統合してから戻す。破棄する場合は `git worktree remove` + `git branch -D` | 作業の取りこぼしなし |
 
 ## 7. 検証計画（実装後のリハーサル）
+
+> 実装時変更（2026-08-19）: リハーサルは本線を使わず、代役ブランチ `rehearsal/mainline` 上で同一の git 操作を実証する方式に変更（本線に一切コミットを載せない。項目5の revert 方式を置換）。
 
 1. **byte 同一性**: フラグ OFF 状態で hook を実行し、出力 JSON が現行版と完全一致することを diff で機械確認
 2. **並列統合（別ファイル）**: 模擬タスク2件を start-work → integrate で通し、両方が ff で統合されること

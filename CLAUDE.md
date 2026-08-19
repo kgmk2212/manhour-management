@@ -143,6 +143,19 @@ git branch -D experiment/sandbox
 
 > この方針は `.claude/settings.json` の UserPromptSubmit hook（`.shared/hooks/inject-dev-flow.py`）でも毎ターン注入される（`.claude/` は gitignore のためローカル設定）。
 
+### 並列セッション統合機構（parallel-mode）
+
+複数セッションの並列作業を安全に統合する仕組み。フラグファイル
+`.shared/hooks/parallel-mode.on` が存在する間だけ有効（`/parallel-mode on|off|status` で切替）。
+
+- **有効時**: コード修正タスクは `/start-work <topic>` で専用 worktree（`feature/<topic>`）に
+  隔離してから作業し、完了時に `/integrate` で「rebase → /verify-ui → ff-only マージ →
+  /deploy → worktree 掃除」まで自動実行する。**ui-scaling worktree は統合専用**（直接編集しない）。
+- **無効時（フラグ無し）**: 従来どおり本節上部の開発フロー（直接編集 + 明示ステージ）。
+- **元に戻す**: `/parallel-mode off` で即復帰。完全撤去の手順と設計は
+  `docs/superpowers/specs/2026-08-19-parallel-session-merge-design.md` §6 を参照
+  （hook 原本バックアップ: `.shared/hooks/inject-dev-flow.py.orig-20260819`）。
+
 ---
 
 ## コーディング規約
