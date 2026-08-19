@@ -1,0 +1,67 @@
+# マージ済みPR（または元Issue）への /revert コメントで squash コミットを打ち消して push する即時撤回。
+name: Revert
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: revert
+  cancel-in-progress: false
+
+jobs:
+  revert:
+    if: >
+      startsWith(github.event.comment.body, '/revert') &&
+      github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # PIPELINE_PAT 必須: GITHUB_TOKEN の push は deploy.yml を発火させない（再帰防止仕様）
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
+      NUM: ${{ github.event.issue.number }}
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling
+          fetch-depth: 0
+          token: ${{ secrets.PIPELINE_PAT }}
+      - name: Revert merge commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 1行目が正確に /revert のときだけ実行（/revert-later 等・bot 案内文の誤発火防止）
+          FIRST_LINE=$(printf '%s' "$BODY" | head -1 | tr -d '\r')
+          [ "$FIRST_LINE" = "/revert" ] || { echo "コマンドではないためスキップ"; exit 0; }
+          if [ "${{ github.event.issue.pull_request != null }}" = "true" ]; then
+            PR="$NUM"
+          else
+            PR=$(gh pr list --head "pipeline/issue-${NUM}" --state merged --json number --jq '.[0].number // empty')
+          fi
+          [ -n "$PR" ] || { gh issue comment "$NUM" --body "⚠️ /revert: マージ済みPRが見つかりません"; exit 1; }
+          # パイプライン産かつ ui-scaling ベースの PR だけを対象にする
+          HEADREF=$(gh pr view "$PR" --json headRefName --jq .headRefName)
+          BASEREF=$(gh pr view "$PR" --json baseRefName --jq .baseRefName)
+          case "$HEADREF" in
+            pipeline/issue-*) ;;
+            *) gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR はパイプライン産ではないため対象外です（head: $HEADREF）"; exit 1;;
+          esac
+          [ "$BASEREF" = "experiment/ui-scaling" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR のベースが experiment/ui-scaling ではありません（base: $BASEREF）"; exit 1; }
+          SHA=$(gh pr view "$PR" --json mergeCommit --jq '.mergeCommit.oid // empty')
+          [ -n "$SHA" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR はマージされていません"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git revert --no-edit "$SHA" || { git revert --abort 2>/dev/null || true; gh issue comment "$NUM" --body "⚠️ /revert: コンフリクトのため自動撤回できません。手動対応が必要です（対象: $SHA）"; exit 1; }
+          git push origin experiment/ui-scaling
+          gh issue comment "$NUM" --body "↩️ PR #$PR（$SHA）を revert して push しました。デプロイは自動で走ります。"
+      - name: Notify failure
+        if: failure()
+        continue-on-error: true
+        run: |
+          gh issue comment "$NUM" --body "⚠️ /revert の実行に失敗しました。ログ: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

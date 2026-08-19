@@ -1,0 +1,46 @@
+# 週次でアイデアIssueの処理状況を集計し、pipeline-report ラベル付きIssueとして起票する。
+name: Pipeline Report
+
+on:
+  schedule:
+    - cron: "0 21 * * 5"   # 土曜 6:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling   # 本ワークフローは main 上のミラーから発火するが、スクリプトの正本は ui-scaling
+      - name: Build and post report
+        run: |
+          set -euo pipefail
+          SINCE=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
+          gh issue list --label idea --state all --search "created:>=$SINCE" \
+            --json number,title,labels,state \
+            -q '[.[] | {number, title, state, labels: [.labels[].name]}]' > issues.json
+          node -e '
+            const fs = require("fs");
+            const issues = JSON.parse(fs.readFileSync("issues.json", "utf8"));
+            const { execSync } = require("child_process");
+            for (const i of issues) {
+              try {
+                const pr = JSON.parse(execSync(`gh pr list --head pipeline/issue-${i.number} --state all --json state`, {encoding:"utf8"}));
+                i.prState = pr[0] ? pr[0].state.toLowerCase() : null;
+              } catch { i.prState = null; }
+            }
+            fs.writeFileSync("issues.json", JSON.stringify(issues));
+          '
+          node scripts/pipeline/report.mjs < issues.json > report.md
+          gh issue create --label pipeline-report \
+            --title "パイプライン週次レポート $(date +%Y-%m-%d)" \
+            --body-file report.md
