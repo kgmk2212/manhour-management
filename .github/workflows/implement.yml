@@ -1,0 +1,77 @@
+# lane ラベルが付いたアイデアIssueを実装しPRを作る。lane:design は設計書PRで停止。
+# AUTO_MERGE_ENABLED=true かつ lane:auto のときだけ自動マージを予約する（required checks 全緑が条件）。
+name: Idea Implement
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: implement          # 同時実装は1件（衝突回避）。後続はキュー
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    if: >
+      github.event.issue.user.login == github.repository_owner &&
+      !github.event.issue.pull_request &&
+      (github.event.label.name == 'lane:auto' || github.event.label.name == 'lane:pr' || github.event.label.name == 'lane:design')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # PIPELINE_PAT 必須: GITHUB_TOKEN で作った PR は checks（e2e 等）を発火させず、
+      # auto-merge 予約もマージ後の deploy を発火させない（再帰防止仕様）。SETUP.md §1.5 参照。
+      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
+      ISSUE: ${{ github.event.issue.number }}
+      LANE: ${{ github.event.label.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/ui-scaling
+          fetch-depth: 0
+          token: ${{ secrets.PIPELINE_PAT }}   # push が PAT 経由になり PR の checks が発火する
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+        if: env.LANE != 'lane:design'
+
+      - name: Run implementation
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.PIPELINE_PAT }}
+          prompt: |
+            対象 Issue: #${{ env.ISSUE }}（レーン: ${{ env.LANE }}）
+            リポジトリ直下の ${{ env.LANE == 'lane:design' && '.github/pipeline/prompts/design.md' || '.github/pipeline/prompts/implement.md' }} を読み、
+            その指示に従って作業してください。
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git:*),Bash(gh issue:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm:*),Bash(npx playwright:*),Bash(node:*)"
+
+      - name: Gate (auto-merge or notify)
+        if: success()
+        run: |
+          PR=$(gh pr list --head "pipeline/issue-${ISSUE}" --json number -q '.[0].number' || true)
+          if [ -z "$PR" ]; then
+            echo "PRが見つからない（needs-clarification降格等の正常系もある）"; exit 0
+          fi
+          if [ "$LANE" = "lane:auto" ] && [ "${{ vars.AUTO_MERGE_ENABLED }}" = "true" ]; then
+            gh pr merge "$PR" --squash --auto
+            gh issue comment "$ISSUE" --body "🤖 PR #$PR を作成しました。チェック全緑で**自動マージ→自動デプロイ**されます。取り消しは PR クローズ、事後の撤回は \`/revert\` コメント。"
+          else
+            gh issue comment "$ISSUE" --body "🤖 PR #$PR の準備ができました（レーン: $LANE / 学習期間中）。内容を確認してマージしてください。"
+          fi
+
+      - name: Report failure
+        if: failure()
+        run: |
+          gh issue edit "$ISSUE" --add-label verification-failed
+          gh issue comment "$ISSUE" --body "⚠️ 自動実装が失敗しました。ログ: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} — 修正後に lane ラベルを付け直すと再実行されます。"
