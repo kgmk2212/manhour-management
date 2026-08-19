@@ -1,10 +1,12 @@
 {
-  "description": "lane:auto では変更禁止のパス（前方一致）。データ整合性に関わるモジュール。",
+  "description": "lane:auto では変更禁止のパス（前方一致）。データ整合性モジュールと、パイプラインの検査機構そのもの。",
   "forbiddenPaths": [
     "js/storage.js",
     "js/state.js",
     "js/merge-core.js",
     "js/history.js",
-    "js/excel-import.js"
+    "js/excel-import.js",
+    ".github",
+    "scripts/pipeline"
   ]
 }

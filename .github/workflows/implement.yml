@@ -12,8 +12,10 @@ permissions:
   pull-requests: write
   actions: read
 
+# 同一 Issue の二重実行を防ぐ。別 Issue は並行実行され、各自の専用ブランチで作業する
+# （衝突は PR マージ時に顕在化し auto-merge がブロックされる）。
 concurrency:
-  group: implement          # 同時実装は1件（衝突回避）。後続はキュー
+  group: implement-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
@@ -25,9 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # PIPELINE_PAT 必須: GITHUB_TOKEN で作った PR は checks（e2e 等）を発火させず、
-      # auto-merge 予約もマージ後の deploy を発火させない（再帰防止仕様）。SETUP.md §1.5 参照。
-      GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
       ISSUE: ${{ github.event.issue.number }}
       LANE: ${{ github.event.label.name }}
     steps:
@@ -41,7 +40,7 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
         if: env.LANE != 'lane:design'
 
       - name: Run implementation
@@ -54,24 +53,35 @@ jobs:
             リポジトリ直下の ${{ env.LANE == 'lane:design' && '.github/pipeline/prompts/design.md' || '.github/pipeline/prompts/implement.md' }} を読み、
             その指示に従って作業してください。
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git:*),Bash(gh issue:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm:*),Bash(npx playwright:*),Bash(node:*)"
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm run lint),Bash(npm test),Bash(npm run e2e),Bash(node tests/e2e/capture.mjs:*)"
 
       - name: Gate (auto-merge or notify)
         if: success()
+        env:
+          GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
+        shell: bash
         run: |
-          PR=$(gh pr list --head "pipeline/issue-${ISSUE}" --json number -q '.[0].number' || true)
+          PR=$(gh pr list --head "pipeline/issue-${ISSUE}" --json number --jq '.[0].number // empty')
           if [ -z "$PR" ]; then
             echo "PRが見つからない（needs-clarification降格等の正常系もある）"; exit 0
           fi
-          if [ "$LANE" = "lane:auto" ] && [ "${{ vars.AUTO_MERGE_ENABLED }}" = "true" ]; then
+          BASEREF=$(gh pr view "$PR" --json baseRefName --jq .baseRefName)
+          HASLANE=$(gh pr view "$PR" --json labels --jq '[.labels[].name] | contains(["lane:auto"])')
+          ISDRAFT=$(gh pr view "$PR" --json isDraft --jq .isDraft)
+          if [ "$LANE" = "lane:auto" ] && [ "${{ vars.AUTO_MERGE_ENABLED }}" = "true" ] \
+             && [ "$BASEREF" = "experiment/ui-scaling" ] && [ "$HASLANE" = "true" ] && [ "$ISDRAFT" = "false" ]; then
             gh pr merge "$PR" --squash --auto
             gh issue comment "$ISSUE" --body "🤖 PR #$PR を作成しました。チェック全緑で**自動マージ→自動デプロイ**されます。取り消しは PR クローズ、事後の撤回は \`/revert\` コメント。"
+          elif [ "$ISDRAFT" = "true" ]; then
+            gh issue comment "$ISSUE" --body "⚠️ PR #$PR は検証FAILのため draft です。内容を確認してください。"
           else
             gh issue comment "$ISSUE" --body "🤖 PR #$PR の準備ができました（レーン: $LANE / 学習期間中）。内容を確認してマージしてください。"
           fi
 
       - name: Report failure
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
         run: |
           gh issue edit "$ISSUE" --add-label verification-failed
           gh issue comment "$ISSUE" --body "⚠️ 自動実装が失敗しました。ログ: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} — 修正後に lane ラベルを付け直すと再実行されます。"
