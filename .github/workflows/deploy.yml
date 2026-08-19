@@ -2,11 +2,13 @@
 name: Deploy to GitHub Pages
 
 on:
-  # mainブランチへのpush時に実行（sandboxはmainへの空コミットでデプロイを発火）
+  # main または experiment/ui-scaling への push で実行
+  # （ジョブは常に main をルート、各実験ブランチを preview/ 配下に展開する。従来の
+  #   「main へ空コミットで発火」はパイプライン経路では不要になった）
   push:
     branches:
       - main
-  # 手動実行も可能
+      - experiment/ui-scaling
   workflow_dispatch:
 
 # GitHub Pagesへのデプロイ権限を設定
