@@ -19,12 +19,13 @@
 
 ## P2（使いにくさ・不整合）
 
-- **ui-scaling push でのPagesデプロイが環境保護ルールで常に失敗** [確認済]: `bc85fa4` で deploy.yml の
-  push トリガに `experiment/ui-scaling` を追加したが、GitHub の `github-pages` environment が
-  main 以外からのデプロイを拒否する（run 32271132393 ほか2連続 failure、annotation:
-  「Branch "experiment/ui-scaling" is not allowed to deploy to github-pages due to environment
-  protection rules」）。リポジトリ Settings → Environments → github-pages の deployment branches に
-  `experiment/ui-scaling` を追加するか、トリガ追加を取り消して従来の main 経由に戻すかの二択
+- （2026-08-20 解決済み: **ui-scaling push でのPagesデプロイが環境保護ルールで常に失敗**。
+  `github-pages` environment の deployment branches に `experiment/ui-scaling` を追加して解消した
+  （branch policy id 57752821）。ジョブは発火ブランチによらず main をルート・実験ブランチを
+  preview/ 配下に展開するため、公開内容は変わらない。検証: workflow_dispatch --ref
+  experiment/ui-scaling で run 32278403788 が success、`/` と `/preview/ui-scaling/` ともに 200。
+  **残課題**: main 側の deploy.yml は push トリガが main のみで ui-scaling 側と乖離している。
+  本線を main へ統合する際に揃えること）
 - （2026-08-20 feature/p2-fixes で以下を修正済み（数値ID・一括Undoは本線 576fccf と同時対応）:
   storage.js 数値ID初期化クラッシュ／actual_add の一括Undo対応／
   Date往復のUTC/ローカル混在統一（timeline 6箇所＝月またぎ予定のセグメント日付ズレの実バグ含む・schedule-render 日数差）／
