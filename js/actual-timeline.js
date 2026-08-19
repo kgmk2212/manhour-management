@@ -6,7 +6,7 @@ import {
     estimates, actuals, schedules, memberOrder,
     nextId} from './state.js';
 
-import { showAlert, sortMembers, formatHours, escapeHtml } from './utils.js';
+import { showAlert, sortMembers, formatHours, escapeHtml, getTodayString } from './utils.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
 import { getTaskColor } from './schedule.js';
 import { calculateVersionProgress } from './report.js';
@@ -109,7 +109,7 @@ export function initActualTimeline() {
     // 初期月を設定
     const now = new Date();
     currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    currentDate = now.toISOString().slice(0, 10);
+    currentDate = getTodayString();
 
     // ナビゲーションボタン
     document.getElementById('atlPrevMonth')?.addEventListener('click', () => navigateMonth(-1));
@@ -199,7 +199,7 @@ function calcMemberRowHeights(members, year, month) {
 function renderGanttView() {
     const [year, month] = currentMonth.split('-').map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayString();
 
     // 月表示更新
     dom.currentMonth.textContent = `${year}年${month}月`;
@@ -551,7 +551,7 @@ function renderDailyTimeLabels(totalHeight, isHoliday, overtimeHours) {
 
     let html = '';
     const now = new Date();
-    const isToday = currentDate === now.toISOString().slice(0, 10);
+    const isToday = currentDate === getTodayString();
     const currentHour = now.getHours();
     const otSlots = Math.ceil(overtimeHours || 0);
 
@@ -677,7 +677,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
     }
     // 現在時刻ライン
     const now = new Date();
-    if (dateStr === now.toISOString().slice(0, 10)) {
+    if (dateStr === getTodayString()) {
         const nowHour = now.getHours();
         const nowMin = now.getMinutes();
         const inWork = nowHour >= WORK_START_HOUR && (nowHour < WORK_END_HOUR + otSlots);
@@ -1359,12 +1359,9 @@ function onAreaMouseUp(e) {
     let date, hours;
 
     if (viewMode === 'gantt') {
-        const [yr, mo] = currentMonth.split('-').map(Number);
-        const dayIdx = Math.floor(dragState.snappedX1 / GANTT_DAY_WIDTH);
-        const day = Math.max(1, dayIdx + 1);
-        date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const days = Math.round((dragState.snappedX2 - dragState.snappedX1) / GANTT_DAY_WIDTH);
-        hours = days * 8; // デフォルト8h/日
+        // 複数日ドラッグは日付配列にし、日ごとに登録する（工数は1日あたり）
+        date = ganttDragDates(dragState);
+        hours = 8; // デフォルト8h/日
     } else {
         date = currentDate;
         const h1 = yToWorkHours(dragState.snappedY1);
@@ -1375,6 +1372,25 @@ function onAreaMouseUp(e) {
     showTaskPicker(e.clientX, e.clientY, member, date, hours);
 
     dragState = null;
+}
+
+/**
+ * ガントのエリアドラッグ範囲を日付配列（YYYY-MM-DD）に変換する
+ * @param {object} state - dragState（snappedX1/snappedX2 を持つ）
+ * @returns {string[]} ドラッグ範囲の日付リスト（月内にクランプ・重複なし）
+ */
+function ganttDragDates(state) {
+    const [yr, mo] = currentMonth.split('-').map(Number);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    const startIdx = Math.floor(state.snappedX1 / GANTT_DAY_WIDTH);
+    const days = Math.max(1, Math.round((state.snappedX2 - state.snappedX1) / GANTT_DAY_WIDTH));
+    const dates = [];
+    for (let i = 0; i < days; i++) {
+        const day = Math.min(daysInMonth, Math.max(1, startIdx + 1 + i));
+        const ds = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (!dates.includes(ds)) dates.push(ds);
+    }
+    return dates;
 }
 
 // ============================================
@@ -1488,12 +1504,9 @@ function onAreaTouchEnd(e) {
         const touch = e.changedTouches[0];
 
         if (viewMode === 'gantt') {
-            const [yr, mo] = currentMonth.split('-').map(Number);
-            const dayIdx = Math.floor(dragState.snappedX1 / GANTT_DAY_WIDTH);
-            const day = Math.max(1, dayIdx + 1);
-            date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const days = Math.round((dragState.snappedX2 - dragState.snappedX1) / GANTT_DAY_WIDTH);
-            hours = days * 8;
+            // 複数日ドラッグは日付配列にし、日ごとに登録する（工数は1日あたり）
+            date = ganttDragDates(dragState);
+            hours = 8;
         } else {
             date = currentDate;
             const h1 = yToWorkHours(dragState.snappedY1);
@@ -1681,7 +1694,12 @@ function showTaskPicker(x, y, member, date, defaultHours) {
     picker.className = 'actual-tl-task-picker';
     picker.id = 'atlTaskPicker';
 
-    const dateLabel = formatDateLabel(date);
+    // 複数日（ガントの範囲ドラッグ）は日付配列。工数入力は「1日あたり」の意味になる
+    const dates = Array.isArray(date) ? date : [date];
+    const isMultiDay = dates.length > 1;
+    const dateLabel = isMultiDay
+        ? `${formatDateLabel(dates[0])} 〜 ${formatDateLabel(dates[dates.length - 1])}（${dates.length}日）`
+        : formatDateLabel(dates[0]);
     // 見積タスクがなくてもその他作業の登録はできるため、ピッカー自体は常に開く
     const allTasks = getTasksForMember(member).length > 0 ? getTasksForMember(member) : getAllTasks();
     const roundedHours = Math.max(0.25, Math.round(defaultHours * 4) / 4);
@@ -1696,7 +1714,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
                 <div class="actual-tl-tp-hours-ctrl">
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursDec">&minus;</button>
                     <input type="number" id="atlTpHours" value="${roundedHours}" min="0.25" max="24" step="0.25">
-                    <span class="actual-tl-tp-hours-unit">h</span>
+                    <span class="actual-tl-tp-hours-unit">${isMultiDay ? 'h/日' : 'h'}</span>
                     <button class="actual-tl-tp-hours-btn" id="atlTpHoursInc">&plus;</button>
                 </div>
             </div>
@@ -1874,7 +1892,9 @@ function onActualBarClick(e) {
 function onScheduledBarClick(e) {
     e.stopPropagation();
     const bar = e.currentTarget;
-    const scheduleId = bar.dataset.scheduleId;
+    // 描画側は data-schedule-ids（結合バーはカンマ区切りで複数）。先頭の予定を代表として使う
+    const idsAttr = bar.dataset.scheduleIds || '';
+    const scheduleId = idsAttr.split(',')[0];
     const schedule = schedules.find(s => String(s.id) === String(scheduleId));
     if (!schedule) return;
 
@@ -1897,7 +1917,7 @@ function showQuickRegisterConfirm(x, y, schedule, member, date) {
     popup.id = 'atlTaskPicker';
     popup.style.width = '260px';
 
-    const dateLabel = formatDateLabel(date || new Date().toISOString().slice(0, 10));
+    const dateLabel = formatDateLabel(date || getTodayString());
     const defaultHours = schedule.hoursPerDay || 8;
 
     popup.innerHTML = `
@@ -2535,18 +2555,31 @@ function createActualFromDrop(member, date, cardState, hours) {
 /**
  * 実績作成
  */
-function createActual(member, date, version, task, process, hours) {
-    const id = nextId();
-    const newActual = { id, date, version, task, process, member, hours };
+function createActual(member, dateOrDates, version, task, process, hours) {
+    // 複数日ドラッグからは日付配列が渡され、1日あたり hours で日ごとに登録する
+    const dates = Array.isArray(dateOrDates) ? dateOrDates : [dateOrDates];
+    const added = dates.map(date => ({
+        id: nextId(),
+        date,
+        version,
+        task,
+        process,
+        member,
+        hours,
+        createdAt: new Date().toISOString()
+    }));
 
-    actuals.push(newActual);
+    actuals.push(...added);
     saveData();
-    pushAction({
-        type: 'addActual',
-        data: { ...newActual }
-    });
+    added.forEach(a => pushAction({
+        type: 'actual_add',
+        description: `実績追加: ${task} ${a.date} ${formatHours(hours)}h`,
+        data: { added: { ...a } }
+    }));
 
-    showToast(`実績を登録: ${task} ${formatHours(hours)}h`);
+    showToast(dates.length > 1
+        ? `実績を登録: ${task} ${formatHours(hours)}h × ${dates.length}日`
+        : `実績を登録: ${task} ${formatHours(hours)}h`);
 
     // 再描画
     renderActualTimeline();
@@ -2567,8 +2600,9 @@ function deleteActualById(id) {
     const deleted = actuals.splice(idx, 1)[0];
     saveData();
     pushAction({
-        type: 'deleteActual',
-        data: { ...deleted }
+        type: 'actual_delete',
+        description: `実績削除: ${deleted.task} ${deleted.date}`,
+        data: { deleted: { ...deleted } }
     });
 
     showToast('実績を削除しました');
@@ -2599,7 +2633,7 @@ function navigateMonth(delta) {
 function goToToday() {
     const now = new Date();
     currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    currentDate = now.toISOString().slice(0, 10);
+    currentDate = getTodayString();
     renderActualTimeline();
 
     // 今日の列にスクロール
@@ -2898,9 +2932,8 @@ function mergeSchedulesByTask(scheduleList) {
     const byTask = {};
     scheduleList.forEach(s => {
         const key = `${s.version}|${s.task}`;
-        if (!byTask[key]) byTask[key] = { version: s.version, task: s.task, ranges: [], ids: [] };
-        byTask[key].ranges.push({ start: s.startDate, end: s.endDate });
-        byTask[key].ids.push(s.id);
+        if (!byTask[key]) byTask[key] = { version: s.version, task: s.task, ranges: [] };
+        byTask[key].ranges.push({ start: s.startDate, end: s.endDate, ids: [s.id] });
     });
 
     const merged = [];
@@ -2909,7 +2942,8 @@ function mergeSchedulesByTask(scheduleList) {
         // 日付範囲をソートして隣接・重複をマージ
         group.ranges.sort((a, b) => a.start.localeCompare(b.start));
 
-        let current = { start: group.ranges[0].start, end: group.ranges[0].end };
+        const first = group.ranges[0];
+        let current = { start: first.start, end: first.end, ids: [...first.ids] };
 
         for (let i = 1; i < group.ranges.length; i++) {
             const r = group.ranges[i];
@@ -2921,16 +2955,17 @@ function mergeSchedulesByTask(scheduleList) {
             if (r.start <= nextDayStr) {
                 // 隣接または重複 → 結合（終了日は最大を取る）
                 if (r.end > current.end) current.end = r.end;
+                current.ids.push(...r.ids);
             } else {
-                // 非隣接 → 新バー
+                // 非隣接 → 新バー（ids はそのセグメントを構成する予定のみ）
                 merged.push({
                     version: group.version,
                     task: group.task,
                     startDate: current.start,
                     endDate: current.end,
-                    ids: group.ids
+                    ids: current.ids
                 });
-                current = { start: r.start, end: r.end };
+                current = { start: r.start, end: r.end, ids: [...r.ids] };
             }
         }
         merged.push({
@@ -2938,7 +2973,7 @@ function mergeSchedulesByTask(scheduleList) {
             task: group.task,
             startDate: current.start,
             endDate: current.end,
-            ids: group.ids
+            ids: current.ids
         });
     });
 

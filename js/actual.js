@@ -7,7 +7,7 @@ import {
     setActuals,
     nextId} from './state.js';
 
-import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue, reviewBadgeHtml } from './utils.js';
+import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue, reviewBadgeHtml, getTodayString } from './utils.js';
 import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
 import { saveRemainingEstimate, getRemainingEstimate, isOtherWork } from './estimate.js';
 import { pushAction } from './history.js';
@@ -54,7 +54,7 @@ export function getHoliday(dateStr) {
  * 今日の実績を表示
  */
 export function renderTodayActuals() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     const todayData = actuals.filter(a => a.date === today);
 
     const container = document.getElementById('todayActuals');

@@ -404,9 +404,9 @@
                         </div>
                         <div class="form-group" id="quickVacationHoursGroup">
                             <label>時間数 (h)</label>
-                            <input type="number" id="quickVacationHours" step="1" min="1" placeholder="1" value="8">
+                            <input type="number" id="quickVacationHours" step="0.25" min="0.25" placeholder="1" value="8">
                             <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                                時間休は1h単位で入力してください。全日休暇は8hです。
+                                時間休は0.25h刻みで入力できます。全日休暇は8hです。
                             </small>
                         </div>
                         <button class="btn" id="btnAddQuickVacation"
@@ -2118,8 +2118,8 @@
                 </div>
                 <div class="form-group" id="vacationModalHoursGroup">
                     <label>時間数 (h)</label>
-                    <input type="number" id="vacationModalHours" step="1" min="1" max="8" value="8">
-                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">時間休は1h単位で入力。全日休暇は8h。</small>
+                    <input type="number" id="vacationModalHours" step="0.25" min="0.25" max="8" value="8">
+                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">時間休は0.25h刻みで入力。全日休暇は8h。</small>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="btnSaveVacationFromModal"

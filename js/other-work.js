@@ -4,7 +4,7 @@
 
 import * as State from './state.js';
 import { pushAction } from './history.js';
-import { showAlert, populateQuarterHourOptions, setHoursSelectValue } from './utils.js';
+import { showAlert, populateQuarterHourOptions, setHoursSelectValue, getTodayString } from './utils.js';
 import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
 import { CALCULATIONS } from './constants.js';
 
@@ -23,8 +23,7 @@ export function addMeeting() {
     if (modal.dataset.calendarDate) {
         date = modal.dataset.calendarDate;
     } else {
-        const today = new Date();
-        date = today.toISOString().split('T')[0];
+        date = getTodayString();
     }
 
     console.log('hours:', hours, 'date:', date);
@@ -96,8 +95,7 @@ export function addOtherWork() {
     if (modal.dataset.calendarDate) {
         date = modal.dataset.calendarDate;
     } else {
-        const today = new Date();
-        date = today.toISOString().split('T')[0];
+        date = getTodayString();
     }
 
     console.log('workName:', workName, 'member:', member, 'hours:', hours, 'date:', date);
@@ -338,7 +336,7 @@ export function applyOtherWorkDefaults(member, beforeDate) {
 function getOtherWorkContextDate() {
     const modal = document.getElementById('otherWorkModal');
     if (modal && modal.dataset.calendarDate) return modal.dataset.calendarDate;
-    return new Date().toISOString().split('T')[0];
+    return getTodayString();
 }
 
 console.log('✅ モジュール other-work.js loaded');

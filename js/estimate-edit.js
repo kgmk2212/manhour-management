@@ -11,7 +11,8 @@ import {
     normalizeEstimate,
     generateMonthRange,
     generateMonthOptions,
-    showAlert
+    showAlert,
+    splitHoursEvenly
 } from './utils.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
@@ -204,13 +205,27 @@ export function saveEstimateEdit() {
     const version = isOther ? (originalEstimate.version || '') : document.getElementById('editEstimateVersion').value;
     const process = isOther ? (originalEstimate.process || '') : document.getElementById('editEstimateProcess').value;
 
-    if (!task || !member || !hours) {
-        showAlert('すべての項目を入力してください', false);
+    if (!task || !member || !hours || hours <= 0) {
+        showAlert('すべての項目を入力してください（工数は0より大きい値）', false);
         return;
     }
 
     if (!isOther && (!version || !process)) {
         showAlert('版数と工程を入力してください', false);
+        return;
+    }
+
+    // 追加担当者行の検証: 工数が 0/空 の行は収集されず「行が消えた＝削除」と
+    // 誤認して既存レコードを黙って削除してしまうため、保存前に止める
+    const invalidExtraRow = [...document.querySelectorAll('#editEstExtraMembers .edit-est-member-extra')]
+        .find(row => {
+            const rowMember = row.querySelector('.edit-est-extra-member')?.value;
+            const rowHours = parseFloat(row.querySelector('.edit-est-extra-hours')?.value);
+            const isExisting = !!row.dataset.estimateId;
+            return (rowMember || isExisting) && (!Number.isFinite(rowHours) || rowHours <= 0);
+        });
+    if (invalidExtraRow) {
+        showAlert('追加担当者の工数を入力してください（担当者ごと削除する場合は行の×ボタンを使用）', false);
         return;
     }
 
@@ -250,10 +265,8 @@ export function saveEstimateEdit() {
         workMonths = months;
 
         if (method === 'equal') {
-            const hoursPerMonth = hours / months.length;
-            months.forEach(month => {
-                monthlyHours[month] = hoursPerMonth;
-            });
+            // 0.01h 単位に丸めて按分（端数は最終月で調整）
+            Object.assign(monthlyHours, splitHoursEvenly(hours, months));
         } else {
             let total = 0;
             months.forEach((month, index) => {
@@ -615,7 +628,7 @@ export function updateEditMonthPreview() {
             calculatedTotal += existingHours;
             html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
             html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-            html += `<input type="number" id="editMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
+            html += `<input type="number" id="editMonthHours_${index}" value="${Math.round(existingHours * 100) / 100}" step="0.1" min="0" `;
             html += `onchange="updateEditManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
             html += `</div>`;
         });

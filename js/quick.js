@@ -7,7 +7,7 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode,
     nextId} from './state.js';
-import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler, getTodayString } from './utils.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
 import { PROCESS } from './constants.js';
@@ -212,7 +212,7 @@ export function quickAddActual() {
     const finalMember = memberOverride || originalMember;
 
     // 作業日の決定: 入力があればそれを使用、なければ今日
-    const finalDate = workDate || new Date().toISOString().split('T')[0];
+    const finalDate = workDate || getTodayString();
 
     const newActual = {
         id: nextId(),
@@ -316,7 +316,7 @@ export function switchQuickInputMode(mode) {
         if (vacationBtn) vacationBtn.classList.add('active');
 
         // 休暇登録フォームの日付を今日に設定
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayString();
         const vacationDate = document.getElementById('quickVacationDate');
         if (vacationDate) vacationDate.value = today;
     }
@@ -341,7 +341,7 @@ export function initQuickEstimateForm() {
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     // クイック入力の作業日に今日の日付を設定
-    const today = now.toISOString().split('T')[0];
+    const today = getTodayString();
     const workDateInput = document.getElementById('quickWorkDate');
     if (workDateInput) {
         workDateInput.value = today;
@@ -685,10 +685,7 @@ export function addQuickEstimate() {
                         const months = Utils.generateMonthRange(procStartMonth, procEndMonth);
                         workMonth = procStartMonth;
                         workMonths = months;
-                        monthlyHours = {};
-                        months.forEach(m => {
-                            monthlyHours[m] = hours / months.length;
-                        });
+                        monthlyHours = Utils.splitHoursEvenly(hours, months);
                     }
                 } else if (procStartMonth) {
                     // 2ヶ月モード: 単一セレクトのみ（_endMonth要素なし）
@@ -700,10 +697,7 @@ export function addQuickEstimate() {
                     const months = Utils.generateMonthRange(startMonth, endMonth);
                     workMonth = startMonth;
                     workMonths = months;
-                    monthlyHours = {};
-                    months.forEach(m => {
-                        monthlyHours[m] = hours / months.length;
-                    });
+                    monthlyHours = Utils.splitHoursEvenly(hours, months);
                 }
             }
 

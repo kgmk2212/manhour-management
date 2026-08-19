@@ -690,6 +690,59 @@ export function formatMonthRangeJapanese(startMonth, endMonth) {
 }
 
 /**
+ * 今日の日付をローカル時刻基準の YYYY-MM-DD 形式で取得
+ * （new Date().toISOString() は UTC 基準のため JST では朝9時前に前日になる。
+ *   「今日」の日付文字列は必ずこの関数を使うこと）
+ * @returns {string} YYYY-MM-DD形式の今日の日付
+ */
+export function getTodayString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * YYYY-MM-DD形式の日付に日数を加算する（ローカル基準・UTC混在を避ける）
+ * @param {string} dateStr - YYYY-MM-DD形式の日付文字列
+ * @param {number} delta - 加算する日数（負数可）
+ * @returns {string} YYYY-MM-DD形式の日付
+ */
+export function addDaysToDateString(dateStr, delta) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d + delta);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * 工数を複数の月へ均等按分する。
+ * 各月 0.01h 単位に丸め、端数は最終月で調整して合計が totalHours に一致するようにする
+ * （未丸めの循環小数が localStorage に保存されるのを防ぐ）
+ * @param {number} totalHours - 按分する合計工数
+ * @param {string[]} months - 按分先の月リスト（YYYY-MM形式）
+ * @returns {Object<string, number>} 月→工数のマップ
+ */
+export function splitHoursEvenly(totalHours, months) {
+    const result = {};
+    if (!months || months.length === 0) return result;
+    const per = Math.round((totalHours / months.length) * 100) / 100;
+    let allocated = 0;
+    months.forEach((month, i) => {
+        if (i === months.length - 1) {
+            result[month] = Math.round((totalHours - allocated) * 100) / 100;
+        } else {
+            result[month] = per;
+            allocated += per;
+        }
+    });
+    return result;
+}
+
+/**
  * 現在の月をYYYY-MM形式で取得
  * @returns {string} YYYY-MM形式の現在の月
  */

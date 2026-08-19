@@ -134,8 +134,8 @@ export function addQuickVacation() {
         return;
     }
 
-    if (hours <= 0 || hours > 8) {
-        showAlert('時間数は1～8の範囲で入力してください', false);
+    if (hours <= 0 || hours > 8 || Math.round(hours * 4) !== hours * 4) {
+        showAlert('時間数は0.25～8の範囲（0.25h刻み）で入力してください', false);
         return;
     }
 
@@ -156,10 +156,12 @@ export function addQuickVacation() {
     });
     window.saveData();
     window.renderActualList();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.updateReport === 'function') window.updateReport();
     showAlert('休暇を登録しました', true);
 
-    // フォームをリセット
-    document.getElementById('quickVacationHours').value = 8;
+    // フォームをリセット（種別は保持されるため、種別に応じたデフォルト時間に戻す）
+    handleVacationTypeChange();
 }
 
 export function deleteVacation(id) {
@@ -250,8 +252,8 @@ export function saveVacationFromModal() {
         return;
     }
 
-    if (hours <= 0 || hours > 8) {
-        showAlert('時間数は1～8の範囲で入力してください', false);
+    if (hours <= 0 || hours > 8 || Math.round(hours * 4) !== hours * 4) {
+        showAlert('時間数は0.25～8の範囲（0.25h刻み）で入力してください', false);
         return;
     }
 
@@ -273,6 +275,8 @@ export function saveVacationFromModal() {
     window.saveData();
     closeVacationModal();
     window.renderActualList();
+    if (typeof window.renderTodayActuals === 'function') window.renderTodayActuals();
+    if (typeof window.updateReport === 'function') window.updateReport();
     showAlert('休暇を登録しました', true);
 }
 

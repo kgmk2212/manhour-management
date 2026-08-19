@@ -10,7 +10,8 @@ import {
     generateMonthRange,
     generateMonthOptions,
     showAlert,
-    escapeHtml
+    escapeHtml,
+    splitHoursEvenly
 } from './utils.js';
 
 import { renderEstimateList } from './estimate.js';
@@ -120,7 +121,7 @@ export function updateSplitPreview() {
             calculatedTotal += existingHours;
             html += `<div style="padding: 5px 0; display: flex; align-items: center; gap: 10px;">`;
             html += `<label style="flex: 1;">${y}年${parseInt(m)}月:</label>`;
-            html += `<input type="number" id="splitMonthHours_${index}" value="${existingHours}" step="0.1" min="0" `;
+            html += `<input type="number" id="splitMonthHours_${index}" value="${Math.round(existingHours * 100) / 100}" step="0.1" min="0" `;
             html += `onchange="updateSplitManualTotal()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> h`;
             html += `</div>`;
         });
@@ -205,10 +206,8 @@ export function executeSplitEstimate() {
     const monthlyHours = {};
 
     if (method === 'equal') {
-        const hoursPerMonth = totalHours / months.length;
-        months.forEach(month => {
-            monthlyHours[month] = hoursPerMonth;
-        });
+        // 0.01h 単位に丸めて按分（端数は最終月で調整）
+        Object.assign(monthlyHours, splitHoursEvenly(totalHours, months));
     } else {
         let total = 0;
         months.forEach((month, index) => {

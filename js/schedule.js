@@ -11,7 +11,7 @@ import {
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, sortTaskKeysByOrder, updateTaskSortOrder } from './estimate.js';
 import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
-import { formatHours, escapeHtml } from './utils.js';
+import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
@@ -240,7 +240,7 @@ export function updateScheduleSummary() {
     }, 0);
     
     // 本日の予定（今日が期間内にあるスケジュール）
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     const todaySchedules = filteredSchedules.filter(s => {
         return s.startDate <= today && s.endDate >= today && s.status !== SCHEDULE.STATUS.COMPLETED;
     }).length;
@@ -507,7 +507,7 @@ export function calculateProgress(schedule) {
 export function isDelayed(schedule) {
     if (schedule.status === SCHEDULE.STATUS.COMPLETED) return false;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     return schedule.endDate < today;
 }
 
@@ -794,7 +794,7 @@ export function openCreateScheduleModal() {
     updateScheduleVersionOptions();
     
     // 着手日を今日に設定
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     if (form.startDate) form.startDate.value = today;
 
     // レビューチェックは常にOFFから開始
@@ -1487,7 +1487,7 @@ export function openAutoGenerateModal() {
     updateAutoGenerateVersionOptions();
     
     // デフォルト開始日を今日に設定
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     const startDateInput = document.getElementById('autoGenStartDate');
     if (startDateInput) startDateInput.value = today;
     
@@ -1920,7 +1920,7 @@ export async function exportSchedulesToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, 'スケジュール');
 
     // ファイル保存
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     XLSX.writeFile(wb, `スケジュール_${today}.xlsx`);
 }
 
@@ -2234,7 +2234,7 @@ function renderUnscheduledDropdown() {
         return a.localeCompare(b);
     });
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
 
     let html = `<div class="unscheduled-dropdown-header">
         <label class="unscheduled-select-all">

@@ -3,6 +3,7 @@
 
 import { estimates, actuals } from './state.js';
 import { detectDiff, openMergePreview, s as mcS, normalizeDate as mcND, roundNum } from './merge-core.js';
+import { splitHoursEvenly } from './utils.js';
 
 /**
  * 軽量 DOM 構築ヘルパー。
@@ -264,10 +265,8 @@ async function parseWorkbook(file) {
 // 作業月配列→先頭月＋均等割り（追加時の付随フィールド）
 function deriveMonthFields(workMonths, hours) {
     if (!Array.isArray(workMonths) || workMonths.length === 0) return { workMonth: '', monthlyHours: {} };
-    const monthlyHours = {};
-    const per = hours / workMonths.length;
-    for (const m of workMonths) monthlyHours[m] = per;
-    return { workMonth: workMonths[0], monthlyHours };
+    // 0.01h 単位に丸めて按分（端数は最終月で調整・未丸めの循環小数を保存しない）
+    return { workMonth: workMonths[0], monthlyHours: splitHoursEvenly(hours, workMonths) };
 }
 
 function genId() { return Date.now() + Math.random(); }
