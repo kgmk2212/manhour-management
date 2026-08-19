@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>差分マージ モーダル — デザイン検討</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#F7F6F3; --surface:#FFFFFF; --surface-elevated:#FAFAF9;
+  --border:#E7E5E0; --border-light:#F0EEEA;
+  --text-primary:#1A1814; --text-secondary:#6B6560; --text-muted:#9C9690;
+  --accent:#2D5A27; --accent-hover:#3A7232; --accent-light:#EBF5EA;
+  --accent-secondary:#C4841D; --accent-secondary-light:#FFF8ED;
+  --danger:#B91C1C; --danger-light:#FEF2F2; --info:#1D6FA5;
+  --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans JP',-apple-system,sans-serif;
+  background:var(--bg); color:var(--text-primary); line-height:1.5;
+  min-height:100vh; padding:40px 16px; -webkit-font-smoothing:antialiased;
+}
+
+/* ============ 差分マージ プレビュー ============ */
+
+.merge-modal{
+  background:var(--surface); border-radius:var(--radius-lg);
+  width:100%; max-width:860px; margin:0 auto;
+  box-shadow:0 10px 40px rgba(26,24,20,.20);
+  overflow:hidden; display:flex; flex-direction:column; max-height:92vh;
+}
+
+/* ヘッダー: アプリ標準の forest green バー */
+.merge-header{
+  background:var(--accent); color:#fff;
+  padding:14px 22px; display:flex; align-items:flex-start;
+  justify-content:space-between; gap:16px;
+}
+.merge-header h3{ font-size:1.0625rem; font-weight:600; letter-spacing:-.01em; }
+.merge-subtitle{ font-size:.8125rem; color:rgba(255,255,255,.78); margin-top:3px; }
+.merge-filename{ color:#fff; font-weight:500; }
+.merge-close{
+  background:none; border:none; color:#fff; font-size:1.5rem; line-height:1;
+  cursor:pointer; opacity:.85; padding:0; width:28px; height:28px;
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+}
+.merge-close:hover{ opacity:1; }
+
+/* サマリー帯: 大きな統計カードは使わず、静かな1行に集約 */
+.merge-summary{
+  display:flex; align-items:baseline; gap:20px; flex-wrap:wrap;
+  padding:16px 22px; border-bottom:1px solid var(--border-light);
+  background:var(--surface-elevated);
+}
+.merge-summary-total{ display:flex; align-items:baseline; gap:7px; }
+.merge-summary-num{
+  font-size:1.75rem; font-weight:700; letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums; color:var(--text-primary);
+}
+.merge-summary-cap{ font-size:.8125rem; color:var(--text-secondary); }
+.merge-summary-break{ display:flex; gap:16px; flex-wrap:wrap; margin-left:auto; }
+.merge-stat{ display:inline-flex; align-items:center; gap:6px; font-size:.8125rem; color:var(--text-secondary); }
+.merge-stat::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--cat-c,var(--text-muted)); }
+.merge-stat b{ font-weight:700; font-variant-numeric:tabular-nums; color:var(--text-primary); }
+
+/* カテゴリ色（セマンティックトークンに対応） */
+[data-cat="add"]   { --cat-c:#2D5A27; --cat-bg:#EBF5EA; }
+[data-cat="change"]{ --cat-c:#C4841D; --cat-bg:#FFF8ED; }
+[data-cat="remove"]{ --cat-c:#B91C1C; --cat-bg:#FEF2F2; }
+[data-cat="same"]  { --cat-c:#9C9690; --cat-bg:transparent; }
+
+.merge-body{ padding:8px 22px 18px; overflow-y:auto; }
+
+/* エンティティのグループ */
+.merge-group{ border-top:1px solid var(--border-light); padding:16px 0 6px; }
+.merge-group:first-child{ border-top:none; }
+.merge-group-head{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.merge-gtitle{ font-size:.9375rem; font-weight:700; letter-spacing:-.01em; }
+.merge-gtags{ display:flex; gap:6px; flex-wrap:wrap; margin-left:auto; }
+.merge-tag{
+  font-size:.6875rem; font-weight:600; padding:2px 8px; border-radius:999px;
+  font-variant-numeric:tabular-nums;
+  color:var(--cat-c); background:var(--cat-bg);
+  border:1px solid color-mix(in srgb,var(--cat-c) 22%,transparent);
+}
+[data-cat="same"] .merge-tag, .merge-tag[data-cat="same"]{ color:var(--text-muted); background:var(--surface-elevated); border-color:var(--border); }
+
+/* グループ ON/OFF チェック */
+.merge-gcheck{ display:inline-flex; align-items:center; cursor:pointer; }
+.merge-gcheck input{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+
+/* カテゴリ・ブロック（追加 / 変更 / 現在のみ） */
+.merge-block{
+  border-left:3px solid var(--cat-c); background:var(--cat-bg);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:10px 12px; margin:8px 0;
+}
+.merge-block-head{ display:flex; align-items:center; gap:12px; }
+.merge-block-label{ font-size:.8125rem; font-weight:600; color:var(--text-primary); }
+.merge-block-label .merge-sub{ font-weight:400; color:var(--text-secondary); }
+.merge-block-spacer{ margin-left:auto; }
+
+/* 取り込みチェック */
+.merge-take{ display:inline-flex; align-items:center; gap:8px; font-size:.8125rem; cursor:pointer; }
+.merge-take input{ width:16px; height:16px; accent-color:var(--cat-c); cursor:pointer; }
+
+/* セグメント（上書き/維持 など）— アプリの segment-control を踏襲 */
+.merge-seg{ display:inline-flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; background:var(--surface); }
+.merge-seg button{
+  font:inherit; font-size:.75rem; font-weight:500; padding:4px 11px; border:none;
+  background:transparent; color:var(--text-secondary); cursor:pointer; border-left:1px solid var(--border);
+}
+.merge-seg button:first-child{ border-left:none; }
+.merge-seg button[aria-pressed="true"]{ background:var(--cat-c); color:#fff; }
+
+/* 内容リスト（追加/現在のみ） */
+.merge-reclist{ margin-top:8px; }
+.merge-reclist>summary{
+  cursor:pointer; font-size:.75rem; color:var(--text-secondary); list-style:none;
+  display:inline-flex; align-items:center; gap:5px; user-select:none;
+}
+.merge-reclist>summary::-webkit-details-marker{ display:none; }
+.merge-reclist>summary::before{ content:"▸"; font-size:.7rem; transition:transform .15s; }
+.merge-reclist[open]>summary::before{ transform:rotate(90deg); }
+.merge-rows{ margin-top:6px; max-height:220px; overflow-y:auto; }
+.merge-row{
+  display:flex; gap:14px; align-items:baseline; padding:5px 2px;
+  border-bottom:1px solid color-mix(in srgb,var(--cat-c) 10%,transparent); font-size:.8125rem;
+}
+.merge-row:last-child{ border-bottom:none; }
+.merge-row-key{ font-weight:600; color:var(--text-primary); white-space:nowrap; letter-spacing:-.005em; }
+.merge-row-val{ color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+.merge-more{ font-size:.75rem; color:var(--text-muted); padding:6px 2px 2px; }
+
+/* 変更行: before → after を1行で */
+.merge-diffrow{
+  display:grid; grid-template-columns:1fr auto; gap:6px 14px; align-items:center;
+  padding:9px 0; border-bottom:1px solid var(--border-light);
+}
+.merge-diffrow:last-child{ border-bottom:none; }
+.merge-diff-key{ font-size:.8125rem; font-weight:600; letter-spacing:-.005em; }
+.merge-diff-cmp{ display:flex; align-items:center; gap:10px; font-size:.8125rem; font-variant-numeric:tabular-nums; }
+.merge-old{ color:var(--text-muted); }
+.merge-old .merge-hl{ text-decoration:line-through; text-decoration-color:var(--text-muted); }
+.merge-arrow{ color:var(--accent-secondary); font-weight:700; }
+.merge-new .merge-hl{ color:var(--accent-secondary); font-weight:700; }
+.merge-diffrow .merge-seg{ grid-column:2; }
+
+.merge-note{ font-size:.8125rem; color:var(--text-muted); padding:4px 2px; }
+
+/* トグルのみのセクション（設定系） */
+.merge-group--toggle .merge-group-head{ margin-bottom:0; }
+.merge-toggle-row{ display:flex; align-items:center; gap:10px; }
+.merge-toggle-row .merge-take{ color:var(--text-secondary); }
+
+/* フッター */
+.merge-footer{
+  display:flex; align-items:center; gap:14px;
+  padding:14px 22px; border-top:1px solid var(--border-light); background:var(--surface-elevated);
+}
+.merge-prebackup{ display:inline-flex; align-items:center; gap:8px; font-size:.8125rem; color:var(--text-secondary); cursor:pointer; }
+.merge-prebackup input{ width:16px; height:16px; accent-color:var(--accent); }
+.merge-actions{ margin-left:auto; display:flex; gap:10px; align-items:center; }
+.btn{ font:inherit; font-size:.875rem; font-weight:600; padding:8px 16px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text-primary); cursor:pointer; }
+.btn:hover{ background:var(--surface-elevated); }
+.btn-primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn-primary:hover{ background:var(--accent-hover); }
+</style>
+</head>
+<body>
+
+<div class="merge-modal">
+  <div class="merge-header">
+    <div>
+      <h3>取り込み内容の確認</h3>
+      <div class="merge-subtitle">読み込むファイル <span class="merge-filename">工数管理_バックアップ_2026-06-16.json</span></div>
+    </div>
+    <button class="merge-close" aria-label="閉じる">×</button>
+  </div>
+
+  <div class="merge-summary">
+    <div class="merge-summary-total"><span class="merge-summary-num">43</span><span class="merge-summary-cap">件を反映します</span></div>
+    <div class="merge-summary-break">
+      <span class="merge-stat" data-cat="add"><b>28</b> 追加</span>
+      <span class="merge-stat" data-cat="change"><b>12</b> 上書き</span>
+      <span class="merge-stat" data-cat="remove"><b>3</b> 削除</span>
+      <span class="merge-stat" data-cat="same"><b>105</b> 変更なし</span>
+    </div>
+  </div>
+
+  <div class="merge-body">
+
+    <!-- 実績 -->
+    <section class="merge-group">
+      <div class="merge-group-head">
+        <label class="merge-gcheck"><input type="checkbox" checked></label>
+        <span class="merge-gtitle">実績</span>
+        <div class="merge-gtags">
+          <span class="merge-tag" data-cat="add">追加 20</span>
+          <span class="merge-tag" data-cat="remove">現在のみ 3</span>
+          <span class="merge-tag" data-cat="same">変更なし 105</span>
+        </div>
+      </div>
+
+      <div class="merge-block" data-cat="add">
+        <div class="merge-block-head">
+          <label class="merge-take"><input type="checkbox" checked><span class="merge-block-label">追加する 20 件を取り込む</span></label>
+        </div>
+        <details class="merge-reclist" open>
+          <summary>内容を表示</summary>
+          <div class="merge-rows">
+            <div class="merge-row"><span class="merge-row-key">2026-01-05 / 山田 / V1.0 / ログイン / 設計</span><span class="merge-row-val">工数 2</span></div>
+            <div class="merge-row"><span class="merge-row-key">2026-01-05 / 山田 / V1.0 / ログイン / 実装</span><span class="merge-row-val">工数 4.5</span></div>
+            <div class="merge-row"><span class="merge-row-key">2026-01-06 / 佐藤 / V1.2 / 帳票出力 / 設計</span><span class="merge-row-val">工数 3</span></div>
+            <div class="merge-more">…ほか 17 件</div>
+          </div>
+        </details>
+      </div>
+
+      <div class="merge-block" data-cat="remove">
+        <div class="merge-block-head">
+          <span class="merge-block-label">現在のデータにのみ存在 3 件 <span class="merge-sub">（読み込むファイルには無い）</span></span>
+          <div class="merge-block-spacer"></div>
+          <div class="merge-seg">
+            <button aria-pressed="true">保持</button>
+            <button aria-pressed="false">削除</button>
+          </div>
+        </div>
+        <details class="merge-reclist">
+          <summary>内容を表示</summary>
+          <div class="merge-rows">
+            <div class="merge-row"><span class="merge-row-key">2025-12-20 / 鈴木 / V0.9 / 試作 / 調査</span><span class="merge-row-val">工数 1.5</span></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="merge-note">変更なし 105 件</div>
+    </section>
+
+    <!-- 見積 -->
+    <section class="merge-group">
+      <div class="merge-group-head">
+        <label class="merge-gcheck"><input type="checkbox" checked></label>
+        <span class="merge-gtitle">見積</span>
+        <div class="merge-gtags">
+          <span class="merge-tag" data-cat="add">追加 8</span>
+          <span class="merge-tag" data-cat="change">変更 3</span>
+          <span class="merge-tag" data-cat="same">変更なし 12</span>
+        </div>
+      </div>
+
+      <div class="merge-block" data-cat="change">
+        <div class="merge-block-head">
+          <span class="merge-block-label">変更 3 件 <span class="merge-sub">の取り込み方を選択</span></span>
+          <div class="merge-block-spacer"></div>
+          <div class="merge-seg">
+            <button aria-pressed="true">全て上書き</button>
+            <button aria-pressed="false">全て維持</button>
+            <button aria-pressed="false">個別</button>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="merge-diffrow">
+            <div class="merge-diff-key">V1.0 / ログイン / 設計 / 山田</div>
+            <div class="merge-seg"><button aria-pressed="true">上書き</button><button aria-pressed="false">維持</button></div>
+            <div class="merge-diff-cmp" style="grid-column:1/-1">
+              <span class="merge-old">工数 <span class="merge-hl">8</span> ・ 作業月 2026-01</span>
+              <span class="merge-arrow">→</span>
+              <span class="merge-new">工数 <span class="merge-hl">12</span> ・ 作業月 2026-01</span>
+            </div>
+          </div>
+          <div class="merge-diffrow">
+            <div class="merge-diff-key">V1.2 / 帳票出力 / 実装 / 佐藤</div>
+            <div class="merge-seg"><button aria-pressed="true">上書き</button><button aria-pressed="false">維持</button></div>
+            <div class="merge-diff-cmp" style="grid-column:1/-1">
+              <span class="merge-old">工数 6 ・ 作業月 <span class="merge-hl">2026-02</span></span>
+              <span class="merge-arrow">→</span>
+              <span class="merge-new">工数 6 ・ 作業月 <span class="merge-hl">2026-02, 2026-03</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="merge-block" data-cat="add">
+        <div class="merge-block-head">
+          <label class="merge-take"><input type="checkbox" checked><span class="merge-block-label">追加する 8 件を取り込む</span></label>
+        </div>
+        <details class="merge-reclist">
+          <summary>内容を表示</summary>
+          <div class="merge-rows">
+            <div class="merge-row"><span class="merge-row-key">V2.0 / 検索改善 / 設計 / 田中</span><span class="merge-row-val">工数 16 ・ 作業月 2026-04</span></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 設定系トグル -->
+    <section class="merge-group merge-group--toggle">
+      <div class="merge-group-head">
+        <span class="merge-gtitle">設定とAI分析</span>
+      </div>
+      <div class="merge-toggle-row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:4px">
+        <label class="merge-take"><input type="checkbox"><span>タスクごとの表示色を取り込む（現在の色を上書き）</span></label>
+        <label class="merge-take"><input type="checkbox"><span>スケジュール表示設定を取り込む</span></label>
+        <label class="merge-take"><input type="checkbox"><span>AI分析の履歴 5 件を追加で取り込む</span></label>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="merge-footer">
+    <label class="merge-prebackup"><input type="checkbox" checked>マージ前に現在のデータをバックアップ</label>
+    <div class="merge-actions">
+      <button class="btn">キャンセル</button>
+      <button class="btn btn-primary">マージ（43件）</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

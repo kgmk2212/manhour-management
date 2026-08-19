@@ -3,8 +3,9 @@
 | 項目 | 内容 |
 |------|------|
 | 作成日 | 2026-06-15 |
-| ステータス | v1 実装済み（feature/backup-json-merge） |
-| ブランチ | `feature/backup-json-merge`（`experiment/ui-scaling` 起点） |
+| ステータス | v1 実装済み → `experiment/ui-scaling` に統合・デプロイ済み（v1残件は `docs/BACKLOG.md` P2 に起票） |
+| ブランチ | `feature/backup-json-merge`（`experiment/ui-scaling` 起点）→ 2026-08-20 に統合完了を確認し削除 |
+| モックアップ | `mockups/backup-json-merge/`（現行の見た目 ＋ 未採用のリデザイン案） |
 | 関連実装（参照） | `origin/experiment/llm-analysis:js/excel-import.js`（既存 Excel 追加インポート） |
 | 関連設計書 | `docs/superpowers/specs/2026-05-23-excel-append-import-design.md`（Excel 版・参照元） |
 | フィールド名の正 | `experiment/ui-scaling` の実コード（`git show`/`git grep` で確認済み） |

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>差分マージ モーダル — 現行実装の見た目</title>
+<!-- 実アプリの style.css をそのまま読み込み、現行の見た目を忠実に再現 -->
+<link rel="stylesheet" href="../../style.css">
+<style>
+  /* モックアップ用: モーダルを常時表示してカードとして見せる */
+  body { overflow: auto !important; background: #F7F6F3; }
+  #mergePreviewModal { position: static !important; background: transparent !important; padding: 24px 16px !important; display: block !important; }
+  #mergePreviewModal .modal-content { margin: 0 auto; }
+</style>
+</head>
+<body>
+
+<div id="mergePreviewModal" class="modal excel-import-modal">
+  <div class="modal-content excel-import-modal-content">
+
+    <div class="modal-header excel-import-header">
+      <div class="excel-import-header-body">
+        <h3 class="excel-import-title">取り込み内容の確認</h3>
+        <div class="excel-import-subtitle">
+          <span>バックアップJSON</span>
+          <span class="excel-import-filename">工数管理_バックアップ_2026-06-16.json</span>
+        </div>
+      </div>
+      <button class="modal-close">&times;</button>
+    </div>
+
+    <div class="modal-body excel-import-body">
+
+      <div class="excel-import-big-summary" id="mergeSummary">
+        <div class="excel-import-stat" data-kind="total"><div class="excel-import-stat-label">反映予定</div><div class="excel-import-stat-value" data-field="total">43</div></div>
+        <div class="excel-import-stat" data-kind="add"><div class="excel-import-stat-label">追加</div><div class="excel-import-stat-value" data-field="add">28</div></div>
+        <div class="excel-import-stat" data-kind="overwrite"><div class="excel-import-stat-label">上書き</div><div class="excel-import-stat-value" data-field="overwrite">12</div></div>
+        <div class="excel-import-stat" data-kind="skip"><div class="excel-import-stat-label">削除</div><div class="excel-import-stat-value" data-field="del">3</div></div>
+        <div class="excel-import-stat" data-kind="skip"><div class="excel-import-stat-label">維持/同一</div><div class="excel-import-stat-value" data-field="skip">105</div></div>
+      </div>
+
+      <div class="excel-import-sheets" id="mergeSheets">
+        <label class="excel-import-sheet-chip" data-sheet="actuals">
+          <input type="checkbox" checked>
+          <div class="excel-import-sheet-chip-body">
+            <div class="excel-import-sheet-chip-name">実績</div>
+            <div class="excel-import-sheet-chip-counts"><span class="excel-import-tag-add">追加 20</span><span class="excel-import-tag-skip">現在のみ 3</span><span class="excel-import-tag-skip">変更なし 105</span></div>
+          </div>
+        </label>
+        <label class="excel-import-sheet-chip" data-sheet="estimates">
+          <input type="checkbox" checked>
+          <div class="excel-import-sheet-chip-body">
+            <div class="excel-import-sheet-chip-name">見積</div>
+            <div class="excel-import-sheet-chip-counts"><span class="excel-import-tag-add">追加 8</span><span class="excel-import-tag-conflict">変更 3</span><span class="excel-import-tag-skip">変更なし 12</span></div>
+          </div>
+        </label>
+        <label class="excel-import-sheet-chip" data-sheet="taskColorMap">
+          <input type="checkbox">
+          <div class="excel-import-sheet-chip-body">
+            <div class="excel-import-sheet-chip-name">タスクごとの表示色</div>
+            <div class="excel-import-sheet-chip-counts"><span class="excel-import-tag-add">取込可</span></div>
+          </div>
+        </label>
+        <label class="excel-import-sheet-chip" data-sheet="llmAnalysisHistory">
+          <input type="checkbox">
+          <div class="excel-import-sheet-chip-body">
+            <div class="excel-import-sheet-chip-name">AI分析の履歴</div>
+            <div class="excel-import-sheet-chip-counts"><span class="excel-import-tag-add">取込可</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div id="mergeSections">
+
+        <!-- 実績 -->
+        <div class="merge-section-block">
+          <div class="excel-import-section-title">実績</div>
+          <div class="merge-section-content">
+            <label class="excel-import-bulk-bar" data-added-bar="actuals">
+              <input type="checkbox" checked>
+              <span class="excel-import-bulk-label">追加する 20 件を取り込む</span>
+            </label>
+            <details class="merge-record-details">
+              <summary class="merge-record-summary">追加する 20 件の内容を表示</summary>
+              <div class="merge-record-list">
+                <div class="merge-compact-row"><span class="merge-compact-id">2026-01-05 / 山田 / V1.0 / ログイン / 設計</span><span class="merge-compact-val">工数 2</span></div>
+                <div class="merge-compact-row"><span class="merge-compact-id">2026-01-05 / 山田 / V1.0 / ログイン / 実装</span><span class="merge-compact-val">工数 4.5</span></div>
+                <div class="merge-compact-row"><span class="merge-compact-id">2026-01-06 / 佐藤 / V1.2 / 帳票出力 / 設計</span><span class="merge-compact-val">工数 3</span></div>
+                <div class="excel-import-muted-note">…ほか 17 件</div>
+              </div>
+            </details>
+            <div class="excel-import-bulk-bar">
+              <div class="excel-import-bulk-label">現在のデータにのみ存在 3 件（読み込むファイルには無い）</div>
+              <div class="excel-import-choice-group">
+                <input type="radio" name="rmv_actuals" id="rmv_actuals_keep" checked><label for="rmv_actuals_keep" class="is-skip">保持</label>
+                <input type="radio" name="rmv_actuals" id="rmv_actuals_delete"><label for="rmv_actuals_delete" class="is-overwrite">削除</label>
+              </div>
+            </div>
+            <details class="merge-record-details" open>
+              <summary class="merge-record-summary">現在のデータのみ 3 件の内容を表示</summary>
+              <div class="merge-record-list">
+                <div class="merge-compact-row"><span class="merge-compact-id">2025-12-20 / 鈴木 / V0.9 / 試作 / 調査</span><span class="merge-compact-val">工数 1.5</span></div>
+                <div class="merge-compact-row"><span class="merge-compact-id">2025-12-21 / 鈴木 / V0.9 / 試作 / 調査</span><span class="merge-compact-val">工数 2</span></div>
+                <div class="merge-compact-row"><span class="merge-compact-id">2025-12-22 / 田中 / V0.9 / 試作 / 設計</span><span class="merge-compact-val">工数 1</span></div>
+              </div>
+            </details>
+            <div class="excel-import-muted-note">変更なし 105 件</div>
+          </div>
+        </div>
+
+        <!-- 見積 -->
+        <div class="merge-section-block">
+          <div class="excel-import-section-title">見積</div>
+          <div class="merge-section-content">
+            <div class="excel-import-section-title">変更 3 件の処理を選択</div>
+            <div class="excel-import-bulk-bar">
+              <div class="excel-import-bulk-label">一括設定</div>
+              <div class="excel-import-choice-group">
+                <input type="radio" name="bulk_estimates" id="bulk_estimates_overwrite" checked><label for="bulk_estimates_overwrite" class="is-overwrite">全て上書き</label>
+                <input type="radio" name="bulk_estimates" id="bulk_estimates_keep"><label for="bulk_estimates_keep" class="is-skip">全て維持</label>
+                <input type="radio" name="bulk_estimates" id="bulk_estimates_individual"><label for="bulk_estimates_individual">個別判断</label>
+              </div>
+            </div>
+
+            <div class="excel-import-compare-card" data-state="overwrite" data-section="estimates" data-index="0" data-row-kind="changed">
+              <div class="excel-import-compare-header">
+                <div class="excel-import-row-id"><span class="key-part">V1.0</span><span class="key-part">ログイン</span><span class="key-part">設計</span><span class="key-part">山田</span></div>
+                <div class="excel-import-choice-group">
+                  <input type="radio" name="chg_estimates_0" id="chg_estimates_0_overwrite" checked><label for="chg_estimates_0_overwrite" class="is-overwrite">上書き</label>
+                  <input type="radio" name="chg_estimates_0" id="chg_estimates_0_keep"><label for="chg_estimates_0_keep" class="is-skip">維持</label>
+                </div>
+              </div>
+              <div class="excel-import-compare-body">
+                <div class="excel-import-compare-side existing">
+                  <div class="excel-import-compare-side-label">既存</div>
+                  <div class="excel-import-field-row changed"><span class="name">工数</span><span class="val">8</span></div>
+                  <div class="excel-import-field-row"><span class="name">作業月</span><span class="val">2026-01</span></div>
+                </div>
+                <div class="excel-import-compare-arrow">→</div>
+                <div class="excel-import-compare-side incoming">
+                  <div class="excel-import-compare-side-label">取込</div>
+                  <div class="excel-import-field-row changed"><span class="name">工数</span><span class="val">12</span></div>
+                  <div class="excel-import-field-row"><span class="name">作業月</span><span class="val">2026-01</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="excel-import-compare-card" data-state="overwrite" data-section="estimates" data-index="1" data-row-kind="changed">
+              <div class="excel-import-compare-header">
+                <div class="excel-import-row-id"><span class="key-part">V1.2</span><span class="key-part">帳票出力</span><span class="key-part">実装</span><span class="key-part">佐藤</span></div>
+                <div class="excel-import-choice-group">
+                  <input type="radio" name="chg_estimates_1" id="chg_estimates_1_overwrite" checked><label for="chg_estimates_1_overwrite" class="is-overwrite">上書き</label>
+                  <input type="radio" name="chg_estimates_1" id="chg_estimates_1_keep"><label for="chg_estimates_1_keep" class="is-skip">維持</label>
+                </div>
+              </div>
+              <div class="excel-import-compare-body">
+                <div class="excel-import-compare-side existing">
+                  <div class="excel-import-compare-side-label">既存</div>
+                  <div class="excel-import-field-row"><span class="name">工数</span><span class="val">6</span></div>
+                  <div class="excel-import-field-row changed"><span class="name">作業月</span><span class="val">2026-02</span></div>
+                </div>
+                <div class="excel-import-compare-arrow">→</div>
+                <div class="excel-import-compare-side incoming">
+                  <div class="excel-import-compare-side-label">取込</div>
+                  <div class="excel-import-field-row"><span class="name">工数</span><span class="val">6</span></div>
+                  <div class="excel-import-field-row changed"><span class="name">作業月</span><span class="val">2026-02, 2026-03</span></div>
+                </div>
+              </div>
+            </div>
+
+            <label class="excel-import-bulk-bar" data-added-bar="estimates">
+              <input type="checkbox" checked>
+              <span class="excel-import-bulk-label">追加する 8 件を取り込む</span>
+            </label>
+            <details class="merge-record-details">
+              <summary class="merge-record-summary">追加する 8 件の内容を表示</summary>
+              <div class="merge-record-list">
+                <div class="merge-compact-row"><span class="merge-compact-id">V2.0 / 検索改善 / 設計 / 田中</span><span class="merge-compact-val">工数 16 ・ 作業月 2026-04</span></div>
+              </div>
+            </details>
+            <div class="excel-import-muted-note">変更なし 12 件</div>
+          </div>
+        </div>
+
+        <!-- 設定系トグル（現行は各設定が独立セクション） -->
+        <div class="merge-section-block">
+          <div class="excel-import-section-title">タスクごとの表示色</div>
+          <div class="merge-section-content">
+            <label class="excel-import-bulk-bar"><input type="checkbox"><span class="excel-import-bulk-label">タスクごとの表示色を取り込む（現在の値を上書き）</span></label>
+          </div>
+        </div>
+        <div class="merge-section-block">
+          <div class="excel-import-section-title">スケジュール表示設定</div>
+          <div class="merge-section-content">
+            <label class="excel-import-bulk-bar"><input type="checkbox"><span class="excel-import-bulk-label">スケジュール表示設定を取り込む（現在の値を上書き）</span></label>
+          </div>
+        </div>
+        <div class="merge-section-block">
+          <div class="excel-import-section-title">AI分析の履歴</div>
+          <div class="merge-section-content">
+            <label class="excel-import-bulk-bar"><input type="checkbox"><span class="excel-import-bulk-label">AI分析の履歴 5 件を追加で取り込む</span></label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer excel-import-footer">
+      <label class="excel-import-footer-info" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" checked><span>マージ前に現在のデータをバックアップ</span>
+      </label>
+      <div class="excel-import-footer-actions">
+        <span class="excel-import-footer-info">反映 <strong>43</strong> 件</span>
+        <button class="btn">キャンセル</button>
+        <button class="btn btn-primary">マージ（43件）</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
