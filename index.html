@@ -323,35 +323,35 @@
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-ui">UI</span></td>
                                         <td><select id="quickEstUI_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstUI" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-pg">PG</span></td>
                                         <td><select id="quickEstPG_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstPG" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-pt">PT</span></td>
                                         <td><select id="quickEstPT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstPT" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-it">IT</span></td>
                                         <td><select id="quickEstIT_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstIT" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align: center; font-weight: 600;"><span
                                                 class="badge badge-st">ST</span></td>
                                         <td><select id="quickEstST_member" style="margin: 0;"></select></td>
-                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.5"
+                                        <td><input type="number" id="quickEstST" placeholder="h" step="0.25"
                                                 style="margin: 0;"></td>
                                     </tr>
                                 </tbody>
@@ -2168,7 +2168,7 @@
                         <div class="edit-est-member-row edit-est-member-primary" id="editEstPrimaryRow">
                             <select id="editEstimateMember"></select>
                             <div class="edit-est-hours-input">
-                                <input type="number" id="editEstimateHours" step="0.5" min="0" placeholder="h">
+                                <input type="number" id="editEstimateHours" step="0.25" min="0" placeholder="h">
                                 <span class="edit-est-hours-unit">h</span>
                             </div>
                             <div class="edit-est-row-action"></div>
@@ -2436,31 +2436,31 @@
                                 <tr data-process="UI" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-ui">UI</span></td>
                                     <td><select id="addEstUI_member" style="margin: 0;"></select></td>
-                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstUI" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('UI')" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" onclick="addEstimateMemberRow('UI', true)" title="レビュー行を追加">+R</button></td>
                                 </tr>
                                 <tr data-process="PG" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pg">PG</span></td>
                                     <td><select id="addEstPG_member" style="margin: 0;" onchange="autoFillMember('addEstPG_member')"></select></td>
-                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstPG" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PG')" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" onclick="addEstimateMemberRow('PG', true)" title="レビュー行を追加">+R</button></td>
                                 </tr>
                                 <tr data-process="PT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-pt">PT</span></td>
                                     <td><select id="addEstPT_member" style="margin: 0;" onchange="autoFillMember('addEstPT_member')"></select></td>
-                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstPT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('PT')" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" onclick="addEstimateMemberRow('PT', true)" title="レビュー行を追加">+R</button></td>
                                 </tr>
                                 <tr data-process="IT" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-it">IT</span></td>
                                     <td><select id="addEstIT_member" style="margin: 0;" onchange="autoFillMember('addEstIT_member')"></select></td>
-                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstIT" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('IT')" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" onclick="addEstimateMemberRow('IT', true)" title="レビュー行を追加">+R</button></td>
                                 </tr>
                                 <tr data-process="ST" data-primary="true">
                                     <td style="text-align: center; font-weight: 600;"><span class="badge badge-st">ST</span></td>
                                     <td><select id="addEstST_member" style="margin: 0;" onchange="autoFillMember('addEstST_member')"></select></td>
-                                    <td><input type="number" id="addEstST" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+                                    <td><input type="number" id="addEstST" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
                                     <td class="est-add-member-cell"><button type="button" class="est-add-member-btn" onclick="addEstimateMemberRow('ST')" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" onclick="addEstimateMemberRow('ST', true)" title="レビュー行を追加">+R</button></td>
                                 </tr>
                             </tbody>
@@ -2501,7 +2501,7 @@
                     </div>
                     <div class="form-group">
                         <label>見積工数 (h)</label>
-                        <input type="number" id="addEstOtherHours" step="0.5" min="0" placeholder="例: 2">
+                        <input type="number" id="addEstOtherHours" step="0.25" min="0" placeholder="例: 2">
                     </div>
                 </div>
 

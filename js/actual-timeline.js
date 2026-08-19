@@ -6,7 +6,7 @@ import {
     estimates, actuals, schedules, memberOrder,
     nextId} from './state.js';
 
-import { showAlert, sortMembers, formatHours, escapeHtml, getTodayString } from './utils.js';
+import { showAlert, sortMembers, formatHours, escapeHtml, getTodayString, addDaysToDateString } from './utils.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
 import { getTaskColor } from './schedule.js';
 import { calculateVersionProgress } from './report.js';
@@ -167,16 +167,13 @@ function calcMemberRowHeights(members, year, month) {
         const groupedActuals = groupActualsByDateTask(memberActuals);
         const mergedBars = mergeAdjacentActuals(groupedActuals);
 
-        // 各日の同時バー数を計算
+        // 各日の同時バー数を計算（日付は文字列のまま反復し、UTC/ローカル混在を避ける）
         let maxOverlap = 1;
         const dayBars = {};
         mergedBars.forEach(bar => {
-            const start = new Date(bar.startDate);
-            const end = new Date(bar.endDate);
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const key = d.toISOString().slice(0, 10);
-                if (!dayBars[key]) dayBars[key] = 0;
-                dayBars[key]++;
+            for (let ds = bar.startDate; ds <= bar.endDate; ds = addDaysToDateString(ds, 1)) {
+                if (!dayBars[ds]) dayBars[ds] = 0;
+                dayBars[ds]++;
             }
         });
         Object.values(dayBars).forEach(count => {
@@ -380,18 +377,21 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
  * 予定の日付範囲を営業日のみの連続区間に分割（休日スキップ）
  */
 function splitScheduleByWorkdays(startDate, endDate, year, month, daysInMonth) {
-    const monthStart = new Date(year, month - 1, 1);
-    const monthEnd = new Date(year, month - 1, daysInMonth);
-    const start = new Date(startDate) < monthStart ? monthStart : new Date(startDate);
-    const end = new Date(endDate) > monthEnd ? monthEnd : new Date(endDate);
+    // 日付は YYYY-MM-DD 文字列のまま比較・反復する
+    // （従来のローカル月初クランプ→UTC文字列化の混在は、月をまたぐ予定で日付キーが1日ズレていた）
+    const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+    const monthStartStr = `${monthPrefix}-01`;
+    const monthEndStr = `${monthPrefix}-${String(daysInMonth).padStart(2, '0')}`;
+    const startStr = startDate < monthStartStr ? monthStartStr : startDate;
+    const endStr = endDate > monthEndStr ? monthEndStr : endDate;
 
     const segments = [];
     let segStart = null;
     let segEnd = null;
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const ds = d.toISOString().slice(0, 10);
-        const dow = d.getDay();
+    for (let ds = startStr; ds <= endStr; ds = addDaysToDateString(ds, 1)) {
+        const [yy, mm, dd] = ds.split('-').map(Number);
+        const dow = new Date(yy, mm - 1, dd).getDay();
         const isHoliday = dow === 0 || dow === 6 || !!getHoliday(ds);
 
         if (isHoliday) {
@@ -1614,7 +1614,7 @@ function showInlineEditor(dropInfo, cardState) {
     const defaultHours = cardState.hours || 1;
 
     editor.innerHTML = `
-        <input type="number" class="actual-tl-ie-input" value="${defaultHours}" min="0.5" max="24" step="0.5" id="atlIeHours">
+        <input type="number" class="actual-tl-ie-input" value="${defaultHours}" min="0.25" max="24" step="0.25" id="atlIeHours">
         <span class="actual-tl-ie-unit">h</span>
         <button class="actual-tl-ie-btn confirm" id="atlIeConfirm" title="確定">&#10003;</button>
         <button class="actual-tl-ie-btn cancel" id="atlIeCancel" title="キャンセル">&#10005;</button>
@@ -1931,7 +1931,7 @@ function showQuickRegisterConfirm(x, y, schedule, member, date) {
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <label style="font-size: calc(15.5px * var(--ui-scale));font-weight:600;">工数:</label>
-                <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.5" max="24" step="0.5"
+                <input type="number" id="atlQuickHours" value="${defaultHours}" min="0.25" max="24" step="0.25"
                     style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size: calc(15.5px * var(--ui-scale));text-align:center;">
                 <span style="font-size: calc(15.5px * var(--ui-scale));color:var(--text-muted);">h</span>
             </div>
@@ -2674,10 +2674,8 @@ function setViewMode(mode) {
 }
 
 function navigateDay(delta) {
-    const d = new Date(currentDate);
-    d.setDate(d.getDate() + delta);
-    currentDate = d.toISOString().slice(0, 10);
-    currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    currentDate = addDaysToDateString(currentDate, delta);
+    currentMonth = currentDate.slice(0, 7);
     renderActualTimeline();
 }
 
@@ -2946,9 +2944,7 @@ function mergeSchedulesByTask(scheduleList) {
         for (let i = 1; i < group.ranges.length; i++) {
             const r = group.ranges[i];
             // 現在の終了日の翌日以内に次の開始日があれば結合
-            const nextDay = new Date(current.end);
-            nextDay.setDate(nextDay.getDate() + 1);
-            const nextDayStr = nextDay.toISOString().slice(0, 10);
+            const nextDayStr = addDaysToDateString(current.end, 1);
 
             if (r.start <= nextDayStr) {
                 // 隣接または重複 → 結合（終了日は最大を取る）
@@ -3012,9 +3008,7 @@ function mergeAdjacentActuals(groupedActuals) {
         for (let i = 1; i < groups.length; i++) {
             const g = groups[i];
             // 前日の翌日か判定
-            const prevDate = new Date(current.endDate);
-            prevDate.setDate(prevDate.getDate() + 1);
-            const nextDateStr = prevDate.toISOString().slice(0, 10);
+            const nextDateStr = addDaysToDateString(current.endDate, 1);
 
             if (g.date === nextDateStr) {
                 // 隣接日 → 結合
@@ -3056,15 +3050,12 @@ function calculateBarLayout(mergedBars, laneTop) {
 
     if (mergedBars.length === 0) return [];
 
-    // 各日にどのバーが存在するかマッピング
+    // 各日にどのバーが存在するかマッピング（日付は文字列のまま反復）
     const dayBars = {};
     mergedBars.forEach((bar, idx) => {
-        const start = new Date(bar.startDate);
-        const end = new Date(bar.endDate);
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const key = d.toISOString().slice(0, 10);
-            if (!dayBars[key]) dayBars[key] = [];
-            dayBars[key].push(idx);
+        for (let ds = bar.startDate; ds <= bar.endDate; ds = addDaysToDateString(ds, 1)) {
+            if (!dayBars[ds]) dayBars[ds] = [];
+            dayBars[ds].push(idx);
         }
     });
 

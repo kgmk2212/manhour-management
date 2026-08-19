@@ -473,7 +473,10 @@ function renderSettingsPanel() {
         }, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        // ファイル名はローカル時刻で生成（toISOString は UTC で9時間ズレる）
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
         a.href = url;
         a.download = `ai-analysis-history_${timestamp}.json`;
         a.click();

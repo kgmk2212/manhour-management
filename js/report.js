@@ -849,7 +849,7 @@ export function renderBulkRemainingTable() {
                         <input type="number"
                                class="bulk-remaining-input"
                                value="${remainingHours}"
-                               step="0.5"
+                               step="0.25"
                                min="0"
                                placeholder="0"
                                onchange="updateBulkRowStatus(this)"

@@ -213,11 +213,12 @@ export function loadData() {
     }
 
     // [GANTT-CHART] スケジュールIDの最大値を設定
+    // （数値など文字列以外の id が混入しても初期化が中断しないよう String() を通す）
     if (schedules.length > 0) {
         const maxId = Math.max(...schedules.map(s => {
             // id は原則 `sch_N` だが、手動追加・マージ由来で数値 id が混入しうる
             const match = String(s.id).match(/sch_(\d+)/);
-            return match ? parseInt(match[1]) : 0;
+            return match ? parseInt(match[1], 10) : 0;
         }));
         setNextScheduleId(maxId + 1);
     }
@@ -777,9 +778,10 @@ export async function exportToExcel() {
         ws2['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 20 }];
         XLSX.utils.book_append_sheet(wb, ws2, '見積');
 
-        // ファイル生成とダウンロード
+        // ファイル生成とダウンロード（ファイル名はローカル時刻で生成）
         const now = new Date();
-        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const pad = (n) => String(n).padStart(2, '0');
+        const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
         XLSX.writeFile(wb, `工数管理_エクスポート_${timestamp}.xlsx`);
 
         if (typeof window.showAlert === 'function') {

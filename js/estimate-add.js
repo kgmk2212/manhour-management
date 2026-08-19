@@ -1315,7 +1315,7 @@ export function addEstimateMemberRow(proc, isReview = false) {
     newRow.innerHTML = `
         ${markCell}
         <td><select class="est-extra-member" style="margin: 0;">${memberOptions}</select></td>
-        <td><input type="number" class="est-extra-hours" placeholder="h" step="0.5" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
+        <td><input type="number" class="est-extra-hours" placeholder="h" step="0.25" style="margin: 0;" oninput="updateAddEstimateTotals()"></td>
         <td class="est-add-member-cell"><button type="button" class="est-remove-member-btn" onclick="removeEstimateMemberRow(this)" title="この行を削除">×</button></td>
     `;
 
@@ -1525,6 +1525,27 @@ export function addEstimateFromModalNormal(version, task, processes, startMonth,
 
     // collectAllEstimateEntries で全行（プライマリ＋追加担当者行）のデータを取得
     const allEntries = collectAllEstimateEntries();
+
+    // 入力不備の検出: 工数入りで担当者未選択の行は黙って捨てず、保存前に止める
+    const missingMemberProcs = new Set();
+    PROCESS.TYPES.forEach(proc => {
+        const primaryHours = parseFloat(document.getElementById(`addEst${proc}`)?.value) || 0;
+        const primaryMember = document.getElementById(`addEst${proc}_member`)?.value || '';
+        if (primaryHours > 0 && !primaryMember) missingMemberProcs.add(proc);
+        document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
+            const extraHours = parseFloat(row.querySelector('.est-extra-hours')?.value) || 0;
+            const extraMember = row.querySelector('.est-extra-member')?.value || '';
+            if (extraHours > 0 && !extraMember) missingMemberProcs.add(proc);
+        });
+    });
+    if (missingMemberProcs.size > 0) {
+        Utils.showAlert(`担当者が未選択の行があります（${[...missingMemberProcs].join('、')}）`, false);
+        return;
+    }
+    if (allEntries.length === 0) {
+        Utils.showAlert('工数と担当者が入力された行がありません', false);
+        return;
+    }
 
     allEntries.forEach(entry => {
         const { process: proc, member, hours, rowEl } = entry;

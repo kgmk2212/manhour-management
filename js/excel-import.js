@@ -112,19 +112,8 @@ function parseWorkMonths(value) {
         .filter(Boolean);
 }
 
-function normalizeDate(value) {
-    if (value == null || value === '') return '';
-    if (value instanceof Date) {
-        const y = value.getFullYear();
-        const m = String(value.getMonth() + 1).padStart(2, '0');
-        const d = String(value.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-    const s = String(value).trim();
-    const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-    if (!m) return '';
-    return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
-}
+// 日付の正規化は merge-core の normalizeDate（mcND）に一本化した
+// （同名の別実装が並立し、未認識時の挙動が食い違っていたため）
 
 function extractEstimateRows(sheet, XLSX) {
     if (!sheet) return { rows: [], invalid: [], error: null };
@@ -205,7 +194,7 @@ function extractActualRows(sheet, XLSX) {
         if (!r || r.every(c => c === '' || c == null)) continue;
 
         const row = {
-            date: normalizeDate(r[colMap.date]),
+            date: mcND(r[colMap.date]),
             version: String(r[colMap.version] ?? '').trim(),
             task: String(r[colMap.task] ?? '').trim(),
             process: String(r[colMap.process] ?? '').trim(),

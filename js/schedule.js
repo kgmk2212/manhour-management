@@ -493,8 +493,9 @@ export function calculateProgress(schedule) {
     
     return {
         actualHours,
-        progressRate: Math.min(Math.max(progressRate, 0), 100),
-        remainingHours: Math.max(remainingHours, 0),
+        // 浮動小数の減算誤差で 99.99999…% になり完了判定を外さないよう丸める
+        progressRate: Math.round(Math.min(Math.max(progressRate, 0), 100) * 10) / 10,
+        remainingHours: Math.round(Math.max(remainingHours, 0) * 100) / 100,
         hasUserRemaining,
         estimatedHours,
         isDelayed: isDelayed(schedule)
@@ -1641,10 +1642,16 @@ export function setScheduleStatus(status) {
     }
     // IN_PROGRESS → 残存変更なし
 
-    // 残存値を取得してプレビュー更新
-    const remainingHours = (status === SCHEDULE.STATUS.COMPLETED) ? 0
-        : (status === SCHEDULE.STATUS.PENDING) ? null
-        : (input?.value.trim() === '' ? null : parseFloat(input?.value));
+    // 残存値を取得してプレビュー更新（数値化できない入力は null 扱い）
+    let remainingHours;
+    if (status === SCHEDULE.STATUS.COMPLETED) {
+        remainingHours = 0;
+    } else if (status === SCHEDULE.STATUS.PENDING) {
+        remainingHours = null;
+    } else {
+        const parsed = parseFloat(input?.value);
+        remainingHours = Number.isFinite(parsed) ? parsed : null;
+    }
 
     updateProgressPreview(remainingHours, status, schedule);
     updateChangeHint(status, remainingHours);

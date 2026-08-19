@@ -713,7 +713,7 @@ export function addEditEstimateMemberRow(prefill) {
         ${reviewMark}
         <select class="edit-est-extra-member">${memberOptions}</select>
         <div class="edit-est-hours-input">
-            <input type="number" class="edit-est-extra-hours" step="0.5" min="0" placeholder="h">
+            <input type="number" class="edit-est-extra-hours" step="0.25" min="0" placeholder="h">
             <span class="edit-est-hours-unit">h</span>
         </div>
         <div class="edit-est-row-action">

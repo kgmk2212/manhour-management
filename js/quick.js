@@ -7,11 +7,12 @@ import {
     quickInputMode, setQuickInputMode,
     rememberQuickInputMode, setRememberQuickInputMode,
     nextId} from './state.js';
-import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler, getTodayString } from './utils.js';
+import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler, getTodayString, setHoursSelectValue } from './utils.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
-import { PROCESS } from './constants.js';
+import { PROCESS, CALCULATIONS } from './constants.js';
 import { pushAction } from './history.js';
+import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
 
 // クイック入力用の状態変数
 let allQuickTasks = [];
@@ -186,11 +187,51 @@ export function selectQuickTask(value, display) {
     if (dropdown) {
         dropdown.style.display = 'none';
     }
+
+    // 担当者コンテキストが決まったので工数ウィジェット（合計・残り表示）を再同期
+    refreshQuickHoursWidget();
 }
 
 // ============================================
 // 実績追加
 // ============================================
+
+/**
+ * クイック入力の工数コンテキスト（選択中の担当者・作業日の当日登録済み工数）を返す。
+ * 担当者が定まらない場合は null（合計・残り表示を出さない）
+ * @returns {number|null} 登録済み工数
+ */
+function quickHoursRegistered() {
+    const memberSelect = document.getElementById('quickMemberSelect');
+    const override = memberSelect ? memberSelect.value : '';
+    const taskMember = selectedQuickTask ? selectedQuickTask.split('|')[3] : '';
+    const member = override || taskMember;
+    if (!member) return null;
+    const dateInput = document.getElementById('quickWorkDate');
+    const date = (dateInput && dateInput.value) || getTodayString();
+    return getRegisteredDayHours(member, date);
+}
+
+/**
+ * クイック入力の工数欄に入力方式ウィジェットを適用・再同期する。
+ * 担当者・作業日の変更にも追随するようリスナーを一度だけ張る
+ */
+export function refreshQuickHoursWidget() {
+    const hoursSelect = document.getElementById('quickHours');
+    if (!hoursSelect) return;
+    refreshHoursInput(hoursSelect, { getRegistered: quickHoursRegistered });
+
+    const memberSelect = document.getElementById('quickMemberSelect');
+    if (memberSelect && !memberSelect.dataset.hiRefreshBound) {
+        memberSelect.addEventListener('change', () => refreshHoursInput(hoursSelect));
+        memberSelect.dataset.hiRefreshBound = 'true';
+    }
+    const dateInput = document.getElementById('quickWorkDate');
+    if (dateInput && !dateInput.dataset.hiRefreshBound) {
+        dateInput.addEventListener('change', () => refreshHoursInput(hoursSelect));
+        dateInput.dataset.hiRefreshBound = 'true';
+    }
+}
 
 export function quickAddActual() {
     const hoursInput = document.getElementById('quickHours');
@@ -243,8 +284,12 @@ export function quickAddActual() {
         searchInput.value = `${version} - ${task} [${process}]`;
     }
 
-    // 工数は8にリセット
-    if (hoursInput) hoursInput.value = '8';
+    // 工数はいま登録した担当者・日付の残り工数にリセット（8h固定だと超過入力を誘発する）
+    if (hoursInput) {
+        const remaining = CALCULATIONS.HOURS_PER_DAY - getRegisteredDayHours(finalMember, finalDate);
+        setHoursSelectValue(hoursInput, Math.max(0.25, remaining));
+        refreshQuickHoursWidget();
+    }
 
     // クリアボタンを表示
     const clearBtn = document.getElementById('quickTaskClearBtn');
@@ -298,10 +343,8 @@ export function switchQuickInputMode(mode) {
         if (todayActuals) todayActuals.style.display = 'block';
         if (actualBtn) actualBtn.classList.add('active');
 
-        // 前回の実績を自動選択
-        if (typeof window.setQuickInputPreviousActual === 'function') {
-            window.setQuickInputPreviousActual();
-        }
+        // 工数入力ウィジェットを適用（フォームが表示された後に同期する）
+        refreshQuickHoursWidget();
     } else if (mode === 'estimate') {
         if (estimateForm) estimateForm.style.display = 'block';
         if (modeTitle) modeTitle.textContent = '新規見積登録';
@@ -653,6 +696,26 @@ export function addQuickEstimate() {
 
     if (!startMonth) {
         showAlert('作業月を選択してください', false);
+        return;
+    }
+
+    // 入力不備の検出: 工数入りで担当者未選択の工程は黙って通さず、保存前に止める
+    const missingMemberProcs = [];
+    let hasAnyHours = false;
+    processes.forEach(proc => {
+        const h = parseFloat(document.getElementById(`quickEst${proc}`).value) || 0;
+        const m = document.getElementById(`quickEst${proc}_member`).value;
+        if (h > 0) {
+            hasAnyHours = true;
+            if (!m) missingMemberProcs.push(proc);
+        }
+    });
+    if (!hasAnyHours) {
+        showAlert('見積工数を入力してください', false);
+        return;
+    }
+    if (missingMemberProcs.length > 0) {
+        showAlert(`担当者が未選択の工程があります（${missingMemberProcs.join('、')}）`, false);
         return;
     }
 

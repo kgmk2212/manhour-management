@@ -162,9 +162,9 @@ export function initDragHandle() {
     let startY = 0;
     let startTop = 20;
 
-    const savedTop = localStorage.getItem('manhour_panelTop');
-    if (savedTop) {
-        startTop = parseInt(savedTop);
+    const savedTop = parseInt(localStorage.getItem('manhour_panelTop'), 10);
+    if (Number.isFinite(savedTop)) {
+        startTop = savedTop;
         panel.style.top = startTop + 'px';
     }
 

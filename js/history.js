@@ -337,7 +337,9 @@ function applyRedo(action) {
 
     // --- 実績 ---
     } else if (t === 'actual_add') {
-        State.actuals.push(...(action.data.addedAll || [action.data.added]));
+        // 履歴データと実データの参照共有を避けるためクローンして戻す
+        const restored = action.data.addedAll || [action.data.added];
+        State.actuals.push(...restored.map(a => ({ ...a })));
     } else if (t === 'actual_edit') {
         if (action.data.isNew) {
             State.actuals.push(action.data.after);

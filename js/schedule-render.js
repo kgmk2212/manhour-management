@@ -1349,7 +1349,7 @@ export class GanttChartRenderer {
             actualHours,
             estimatedHours,
             remainingHours: Math.max(remainingHours, 0),
-            progressRate: Math.min(Math.max(progressRate, 0), 100),
+            progressRate: Math.round(Math.min(Math.max(progressRate, 0), 100) * 10) / 10,
             hasUserRemaining
         };
     }
@@ -1357,13 +1357,18 @@ export class GanttChartRenderer {
     isDelayed(schedule) {
         if (schedule.status === SCHEDULE.STATUS.COMPLETED) return false;
 
+        // 日付はローカル深夜同士で比較する（UTCパース混在だと日数差が9時間ズレて切り上げが1日狂う）
+        const parseLocal = (ds) => {
+            const [y, m, d] = String(ds).split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const endDate = new Date(schedule.endDate);
+        const endDate = parseLocal(schedule.endDate);
 
         if (today > endDate) return true;
 
-        const startDate = new Date(schedule.startDate);
+        const startDate = parseLocal(schedule.startDate);
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
         const elapsedDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
 

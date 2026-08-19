@@ -25,15 +25,16 @@
   「Branch "experiment/ui-scaling" is not allowed to deploy to github-pages due to environment
   protection rules」）。リポジトリ Settings → Environments → github-pages の deployment branches に
   `experiment/ui-scaling` を追加するか、トリガ追加を取り消して従来の main 経由に戻すかの二択
-- **日付⇄Date 往復の UTC/ローカル混在の統一**（JST では自己整合と確認済み・負オフセットTZで破綻する脆さのみ）:
-  `js/actual-timeline.js` の `new Date('YYYY-MM-DD')`→`toISOString()` 往復（該当6箇所）と
-  `js/schedule-render.js:1362-1368` の日数差計算。`utils.addDaysToDateString`（新設済み）への置換で統一
+- （2026-08-20 feature/p2-fixes で以下を修正済み（数値ID・一括Undoは本線 576fccf と同時対応）:
+  storage.js 数値ID初期化クラッシュ／actual_add の一括Undo対応／
+  Date往復のUTC/ローカル混在統一（timeline 6箇所＝月またぎ予定のセグメント日付ズレの実バグ含む・schedule-render 日数差）／
+  クイック入力の工数欄（ウィジェット適用・保存後は残り工数リセット・死に分岐削除）／
+  見積登録の0件成功トースト＆担当者未選択行の無警告破棄（estimate-add / quick 両方）／見込残存の負値保存／
+  工数系 step の 0.25 統一（見積・タイムライン編集含む。月別按分入力のみ 0.1 のまま＝保存は0.01丸め済み）／
+  normalizeDate の一本化（未認識は空文字）／進捗率・残工数の丸め／エクスポートファイル名のローカル時刻化／
+  parseInt/parseFloat ガード2件）
 
-- **クイック入力の工数欄が文脈無視**: 保存後に常に 8h リセット（`js/quick.js:247`）、初期値も固定 8h（`index.html:245`）、工数入力ウィジェット（`js/hours-input.js`）未適用。残り工数デフォルト＋ウィジェット適用で実績モーダルと統一する
-- 死に分岐: `window.setQuickInputPreviousActual` は参照のみで未定義（`js/quick.js:302-303`）[確認済]。実装するか削除
-- 見積登録のフィードバック: 0件でも「登録しました」成功トースト（`js/estimate-add.js:1554-1599`、`js/quick.js:728-762` 同型）、担当者未選択で工数入りの行を無警告破棄（`js/estimate-add.js:1360,1369`）
-- 負値・グリッド外を保存可能: 見積工数（`js/estimate-edit.js:198,207`）、見込残存時間（`js/actual.js:1345` 周辺）
-- 工数系 step の4種混在（見積0.5／月別按分0.1／見込残存0.25／休暇1）。按分0.1刻みは合計0.5刻みと非互換で一致判定に引っかかりうる
+- 月別按分入力の刻み（0.1 のまま）: 保存側は 0.01 丸め済みのため実害は小さいが、0.25 に寄せるかは方針判断
 - タイムライン（大物「完成」の内訳にする）:
   - その他作業（version空）が通常タスクと同じ見た目・色で区別不能（描画側に分岐なし）
   - タイムライン登録の実績に `isReview` が付かない（`createdAt` は対応済み）。バー結合キーが `date|version|task` で工程・レビュー区分を含まず合算される（`:2874`）
@@ -43,11 +44,7 @@
   - モバイル: リサイズハンドルが hover 依存で不可視（`style.css:6692,6705`）、タップ配置が旧横軸レイアウトの `DAILY_HOUR_WIDTH` で工数算出（`:969`）、見積0件メンバーはカード経路が使えない（`:819`）
   - 完了版数キャッシュのキーが件数のみで編集に追随しない（`:3086`）
   - 0.25h ブロックが `min-height:28px` で下と重なる（`style.css:6670-6684`）
-- `normalizeDate` の二重実装で挙動差（`js/merge-core.js:44-46` は未認識時に生文字列を通す / `js/excel-import.js:122-125`）
-- 進捗率の浮動小数誤差で 100% にならない可能性（`js/schedule.js:473`、`js/schedule-render.js:1333`）
-- エクスポートファイル名のタイムスタンプが UTC（`js/storage.js:781`、`js/ai-analysis.js:476`。`storage.js:440-445` はローカルで不統一）
-- parseInt/parseFloat の局所ガード漏れ（`js/estimate-selection.js:167` NaN、`js/schedule.js:1647` isNaN ガードなし）
-- 連続入力時のフォームリセット方針が画面ごとに逆（`js/estimate-add.js:698-741` 全消去 vs `js/quick.js:754-759` 文脈保持）。担当者だけ毎回消える非対称（`js/quick.js:254-255`）も含め方針を決める
+- 連続入力時のフォームリセット方針が画面ごとに逆（`js/estimate-add.js:698-741` 全消去 vs `js/quick.js` 文脈保持）。クイックの担当者クリア（（自動）＝選択タスクの担当に戻る仕様）も含め方針を決める
 - 1日満了時（残り0h）の新規実績デフォルト 0.25h の妥当性確認（0h 登録を防ぐ暫定仕様）
 - タイムラインピッカーの見積タスク0件時の表示改善（現状は「見積タスクがありません」の空表示）
 

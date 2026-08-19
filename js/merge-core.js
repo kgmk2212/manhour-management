@@ -43,7 +43,8 @@ export function normalizeDate(value) {
     const str = String(value).trim();
     const m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
-    return str;
+    // 未認識の形式は空を返す（生文字列を通すと桁揃えの崩れた日付が保存され、文字列比較が破綻する）
+    return '';
 }
 
 // 工数等の数値を小数2桁に丸めて比較（浮動小数誤差を吸収）

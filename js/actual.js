@@ -1351,6 +1351,12 @@ export function saveActualEdit() {
         return;
     }
 
+    // 見込残存時間は負値を保存しない
+    if (remainingHours !== null && (isNaN(remainingHours) || remainingHours < 0)) {
+        showAlert('見込残存時間は0以上の数値で入力してください', false);
+        return;
+    }
+
     if (id && !isNaN(id)) {
         const actualIndex = actuals.findIndex(a => a.id === id);
         if (actualIndex !== -1) {
