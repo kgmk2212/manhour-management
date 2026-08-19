@@ -30,8 +30,15 @@
   （branch policy id 57752821）。ジョブは発火ブランチによらず main をルート・実験ブランチを
   preview/ 配下に展開するため、公開内容は変わらない。検証: workflow_dispatch --ref
   experiment/ui-scaling で run 32278403788 が success、`/` と `/preview/ui-scaling/` ともに 200。
-  **残課題**: main 側の deploy.yml は push トリガが main のみで ui-scaling 側と乖離している。
-  本線を main へ統合する際に揃えること）
+  **残課題も解消済み**: main 側 deploy.yml の乖離は `e161d0a` で ui-scaling の 2febec9 時点を
+  そのまま取り込んで解消（run 32282832742 が success）。あわせて許可ブランチに
+  ワイルドカード `experiment/*` を追加したので、`experiment/**` トリガ化で増えた
+  実験ブランチからの発火も環境保護で落ちない）
+- （2026-08-20 解決済み: **Pages デプロイの一過性競合**。直前のデプロイが Pages 側で確定する前に
+  次が走ると「due to in progress deployment」(400) で落ちる（run 32278590563 で実測）。
+  ワークフロー単位の concurrency では防げない（run が success でも Pages 側は進行中でありうる）
+  ため、`2febec9` で deploy ステップを continue-on-error にし失敗時のみ 60 秒待って 1 回だけ
+  再試行する構成にした。恒久的な失敗は再試行しても落ちるので取りこぼさない）
 - （2026-08-20 feature/p2-fixes で以下を修正済み（数値ID・一括Undoは本線 576fccf と同時対応）:
   storage.js 数値ID初期化クラッシュ／actual_add の一括Undo対応／
   Date往復のUTC/ローカル混在統一（timeline 6箇所＝月またぎ予定のセグメント日付ズレの実バグ含む・schedule-render 日数差）／
