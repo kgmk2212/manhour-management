@@ -1,0 +1,29 @@
+# lane:auto ラベルの PR が触禁パスに触れていないことを機械検査する（LLMの自己申告に依存しない壁）。
+# lane:auto 以外の PR は pass-through。ブランチ保護の required check（名前: lane-policy-check）。
+name: lane-policy-check
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lane-policy-check:
+    name: lane-policy-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check forbidden paths
+        run: |
+          LANE=""
+          if [ "${{ contains(github.event.pull_request.labels.*.name, 'lane:auto') }}" = "true" ]; then
+            LANE="lane:auto"
+          fi
+          gh pr diff ${{ github.event.pull_request.number }} --name-only \
+            | node scripts/pipeline/check-lane-policy.mjs --policy .github/pipeline/auto-lane-policy.json --lane "$LANE"
