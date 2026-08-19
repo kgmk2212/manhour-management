@@ -7,7 +7,17 @@ const TABS = ["quick", "report", "analytics", "estimate", "actual", "schedule", 
 test("全タブが描画されコンソールエラーが出ない", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(`console: ${m.text()}`); });
+
+  // 既知の良性エラーの許容リスト:
+  // - analysis/latest.json の 404 — js/ai-analysis.js が起動時プローブとして fetch する
+  //   任意ファイル（キャッシュ→ファイル→空 のフォールバック設計）。ファイル不存在は正常系であり、
+  //   Chrome が自動記録する 404 のみが残る。これ以外のコンソールエラーは引き続き FAIL させる。
+  const isKnownBenign = (m) =>
+    m.type() === "error" && (m.location()?.url ?? "").includes("analysis/latest.json");
+
+  page.on("console", (m) => {
+    if (m.type() === "error" && !isKnownBenign(m)) errors.push(`console: ${m.text()}`);
+  });
 
   await page.addInitScript((entries) => {
     localStorage.clear();
