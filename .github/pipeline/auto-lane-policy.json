@@ -1,0 +1,10 @@
+{
+  "description": "lane:auto では変更禁止のパス（前方一致）。データ整合性に関わるモジュール。",
+  "forbiddenPaths": [
+    "js/storage.js",
+    "js/state.js",
+    "js/merge-core.js",
+    "js/history.js",
+    "js/excel-import.js"
+  ]
+}
