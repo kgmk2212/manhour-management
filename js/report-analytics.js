@@ -5,7 +5,7 @@
 
 import { calculateProgress, calculateVersionProgress, clearProgressCache } from './report.js';
 import { PROCESS } from './constants.js';
-import { formatHours, hoursToManDays, hoursToManMonths, scaledFont } from './utils.js';
+import { formatHours, hoursToManDays, hoursToManMonths, scaledFont, escapeHtml } from './utils.js';
 
 // Always read latest data from window to avoid stale references after loadData()
 function getEstimates() { return window.estimates || []; }
@@ -257,10 +257,6 @@ function computeData(monthFilter) {
 // DOM Update Functions
 // ============================================
 
-function escapeHtml(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 function updateKPIs(data) {
     const el = (id) => document.getElementById(id);
 
@@ -377,7 +373,7 @@ function updateInsights(data) {
         const min = totals.reduce((a, b) => b.total < a.total ? b : a);
         const overall = totals.reduce((s, t) => s + t.total, 0);
         const maxPct = overall > 0 ? Math.round((max.total / overall) * 100) : 0;
-        memberInsight.innerHTML = `<strong>${max.name}</strong>に負荷が集中（総工数の${maxPct}%）。<strong>${min.name}</strong>に余裕あり。`;
+        memberInsight.innerHTML = `<strong>${escapeHtml(max.name)}</strong>に負荷が集中（総工数の${maxPct}%）。<strong>${escapeHtml(min.name)}</strong>に余裕あり。`;
     }
 
     // Heatmap insight
@@ -953,7 +949,7 @@ function renderVersionTaskMultiples(versionTaskData) {
         const maxV = versionTaskData.reduce((a, b) => b.total > a.total ? b : a);
         const topTask = maxV.slices[0];
         const topPct = maxV.total > 0 ? Math.round((topTask.hours / maxV.total) * 100) : 0;
-        insight.innerHTML = `<strong>${maxV.version}</strong>が最大工数（${Math.round(maxV.total)}h）。トップは<strong>${escapeHtml(topTask.task)}</strong>で${topPct}%を占める。`;
+        insight.innerHTML = `<strong>${escapeHtml(maxV.version)}</strong>が最大工数（${Math.round(maxV.total)}h）。トップは<strong>${escapeHtml(topTask.task)}</strong>で${topPct}%を占める。`;
     }
 }
 

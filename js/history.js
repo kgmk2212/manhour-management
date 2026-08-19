@@ -56,10 +56,21 @@ export function undo() {
         return;
     }
 
-    const action = undoStack.pop();
-    redoStack.push(action);
+    // 先に適用し、成功した場合のみスタックを動かす（失敗時に履歴と実データがずれるのを防ぐ）
+    const action = undoStack[undoStack.length - 1];
+    let applied = false;
+    try {
+        applied = applyUndo(action) !== false;
+    } catch (e) {
+        console.error('[history] Undo適用中にエラー:', e, action);
+    }
+    if (!applied) {
+        Utils.showAlert(`元に戻せませんでした: ${action.description || action.type}`, false);
+        return;
+    }
 
-    applyUndo(action);
+    undoStack.pop();
+    redoStack.push(action);
     saveHistory();
     refreshUI(action);
     showScheduleToast(action, 'undo');
@@ -76,10 +87,21 @@ export function redo() {
         return;
     }
 
-    const action = redoStack.pop();
-    undoStack.push(action);
+    // 先に適用し、成功した場合のみスタックを動かす（失敗時に履歴と実データがずれるのを防ぐ）
+    const action = redoStack[redoStack.length - 1];
+    let applied = false;
+    try {
+        applied = applyRedo(action) !== false;
+    } catch (e) {
+        console.error('[history] Redo適用中にエラー:', e, action);
+    }
+    if (!applied) {
+        Utils.showAlert(`やり直せませんでした: ${action.description || action.type}`, false);
+        return;
+    }
 
-    applyRedo(action);
+    redoStack.pop();
+    undoStack.push(action);
     saveHistory();
     refreshUI(action);
     showScheduleToast(action, 'redo');
@@ -105,9 +127,19 @@ export function revertToAction(targetId) {
     while (undoStack.length > 0) {
         const top = undoStack[undoStack.length - 1];
         if (top.id === targetId) break;
-        const action = undoStack.pop();
-        redoStack.push(action);
-        applyUndo(action);
+        // 先に適用し、失敗したらそこで中断（履歴と実データのずれを防ぐ）
+        let applied = false;
+        try {
+            applied = applyUndo(top) !== false;
+        } catch (e) {
+            console.error('[history] 連続Undo適用中にエラー:', e, top);
+        }
+        if (!applied) {
+            Utils.showAlert(`元に戻せませんでした: ${top.description || top.type}（ここで中断）`, false);
+            break;
+        }
+        undoStack.pop();
+        redoStack.push(top);
         count++;
     }
 
@@ -172,9 +204,9 @@ function applyUndo(action) {
     const t = action.type;
 
     // --- 見積 ---
-    if (t === 'estimate_add' || t === 'estimate_add_other') {
+    if (t === 'estimate_add' || t === 'estimate_add_other' || t === 'estimate_add_batch') {
         const ids = new Set(action.data.added.map(e => e.id));
-        State.estimates = State.estimates.filter(e => !ids.has(e.id));
+        State.setEstimates(State.estimates.filter(e => !ids.has(e.id)));
     } else if (t === 'estimate_edit') {
         const idx = State.estimates.findIndex(e => e.id === action.data.before.id);
         if (idx !== -1) State.estimates[idx] = { ...action.data.before };
@@ -263,33 +295,38 @@ function applyUndo(action) {
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
         applyScheduleUndo(action);
+    } else {
+        // 未対応タイプ: 適用せず警告（type 追加漏れの可視化。スタックは呼び出し側で動かさない）
+        console.warn(`[history] 未対応のUndoタイプ: ${t}`, action);
+        return false;
     }
 
     if (typeof window.saveData === 'function') window.saveData();
+    return true;
 }
 
 function applyRedo(action) {
     const t = action.type;
 
     // --- 見積 ---
-    if (t === 'estimate_add' || t === 'estimate_add_other') {
+    if (t === 'estimate_add' || t === 'estimate_add_other' || t === 'estimate_add_batch') {
         State.estimates.push(...action.data.added);
     } else if (t === 'estimate_edit') {
         const idx = State.estimates.findIndex(e => e.id === action.data.after.id);
         if (idx !== -1) State.estimates[idx] = { ...action.data.after };
     } else if (t === 'estimate_delete') {
         const ids = new Set(action.data.deleted.map(e => e.id));
-        State.estimates = State.estimates.filter(e => !ids.has(e.id));
+        State.setEstimates(State.estimates.filter(e => !ids.has(e.id)));
         if (action.data.deletedRemaining) {
             const rIds = new Set(action.data.deletedRemaining.map(r => r.id));
-            State.remainingEstimates = State.remainingEstimates.filter(r => !rIds.has(r.id));
+            State.setRemainingEstimates(State.remainingEstimates.filter(r => !rIds.has(r.id)));
         }
     } else if (t === 'task_delete') {
         const ids = new Set(action.data.deleted.map(e => e.id));
-        State.estimates = State.estimates.filter(e => !ids.has(e.id));
+        State.setEstimates(State.estimates.filter(e => !ids.has(e.id)));
         if (action.data.deletedRemaining) {
             const rIds = new Set(action.data.deletedRemaining.map(r => r.id));
-            State.remainingEstimates = State.remainingEstimates.filter(r => !rIds.has(r.id));
+            State.setRemainingEstimates(State.remainingEstimates.filter(r => !rIds.has(r.id)));
         }
     } else if (t === 'estimate_bulk_edit') {
         restoreBulkEdit(action.data, 'after');
@@ -354,9 +391,14 @@ function applyRedo(action) {
     // --- スケジュール ---
     } else if (t.startsWith('schedule_')) {
         applyScheduleRedo(action);
+    } else {
+        // 未対応タイプ: 適用せず警告（type 追加漏れの可視化。スタックは呼び出し側で動かさない）
+        console.warn(`[history] 未対応のRedoタイプ: ${t}`, action);
+        return false;
     }
 
     if (typeof window.saveData === 'function') window.saveData();
+    return true;
 }
 
 // ============================================
@@ -378,7 +420,7 @@ function restoreBulkEdit(data, direction) {
         // undo時に新規追加されたレコードを除去
         if (direction === 'before' && data.addedEstimateIds) {
             const addedIds = new Set(data.addedEstimateIds);
-            State.estimates = State.estimates.filter(e => !addedIds.has(e.id));
+            State.setEstimates(State.estimates.filter(e => !addedIds.has(e.id)));
         }
     }
 
@@ -559,7 +601,7 @@ function fullRefreshUI() {
     if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
-    if (typeof window.renderVacationList === 'function') window.renderVacationList();
+    // 個人休暇は updateAllDisplays 内のカレンダー描画で反映される（renderVacationList は存在しない関数だった）
 }
 
 /**

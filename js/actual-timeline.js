@@ -2394,10 +2394,9 @@ function finalizeBarDrop(x, y) {
 
     saveData();
     pushAction({
-        type: 'editActual',
-        id: actual.id,
-        before,
-        after: { ...actual }
+        type: 'actual_edit',
+        description: `実績移動: ${actual.task} ${actual.date}`,
+        data: { before, after: { ...actual } }
     });
 
     const changes = [];
@@ -2524,10 +2523,9 @@ function finalizeBlockResize() {
         resizeState.actual.hours = newHours;
         saveData();
         pushAction({
-            type: 'editActual',
-            id: resizeState.actual.id,
-            before,
-            after: { ...resizeState.actual }
+            type: 'actual_edit',
+            description: `実績工数変更: ${resizeState.actual.task} ${formatHours(newHours)}h`,
+            data: { before, after: { ...resizeState.actual } }
         });
         showToast(`工数を${formatHours(newHours)}hに変更`);
         renderActualTimeline();

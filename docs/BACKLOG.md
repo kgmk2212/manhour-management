@@ -12,25 +12,10 @@
   「今日」UTCズレ19箇所／ガント複数日ドラッグの工数集中／休暇時間入力の刻み・検証・リセット／月別按分の未丸め保存。
   詳細は該当コミットのメッセージ参照）
 
-以下は 2026-08-19 の別監査（4観点: 重複コード／データ層／イベント配線／CSS・巨大ファイル）由来。Undo/Redo 系はまとめて1コミットで直すのが効率的:
-
-- **Undo が実行時 TypeError で破綻** [確認済]: `js/history.js:177,282,285,289,292,381` が
-  `State.estimates = ...` と ESM 名前空間へ代入（`import * as State` は read-only）。
-  見積追加の Undo／見積・タスク削除の Redo が該当行到達で例外。しかも `undo()` は適用前に
-  スタック移動を済ませるため、例外後は履歴と実データが恒久的にずれる。
-  修正: `State.setEstimates(...)` / `State.setRemainingEstimates(...)` へ置換（6行）
-- **タイムライン実績「編集」の Undo が無反応** [確認済]: `js/actual-timeline.js:2397,2527` が
-  `'editActual'` type を push するが `history.js` の分岐は `'actual_edit'` のみ
-  （1010700 で add/delete は修正済み、edit のみ残存）。ペイロード形も `history.js` 側の期待に合わせること
-- **`'estimate_add_batch'` に Undo 分岐が無い** [確認済]: `js/estimate-edit.js:504` が push、
-  `history.js` に処理なし → エントリだけ消費して何も戻らない。
-  あわせて `applyUndo/applyRedo` に未知 type の警告分岐（default で console.warn ＋ 適用不可扱い）を入れ、type 追加漏れの再発を可視化する
-- **宛先不在の window 呼び出し** [確認済]: `js/history.js:562` の `window.renderVacationList()` は
-  全プロジェクトで未定義（Undo 後に休暇一覧が未更新）。実在の再描画関数へ差し替えるか削除
-- **escapeHtml の弱い重複実装（属性エスケープ破り）** [確認済]: `js/report-analytics.js:260` は
-  `& < >` のみで `"` 非対応。`title="${escapeHtml(v)}"`（:769）等の属性文脈で使用されており
-  `"` 入り版数名で属性脱出可。ローカル版を削除し `utils.js:342` の5文字版を import。
-  ついでに同ファイル :380 / :956 の素の `${...}` 挿入（メンバー名・版数）もエスケープ [報告]
+- （2026-08-19 別監査（4観点）由来の Undo/Redo 系 P1 5件も修正済み: ESM名前空間代入の TypeError／
+  タイムライン編集の 'editActual' タイプ不一致／'estimate_add_batch' 分岐欠落＋未知タイプの適用不可扱い／
+  宛先不在 renderVacationList／report-analytics の弱い escapeHtml 重複。feature/undo-redo-fixes で対応。
+  あわせて undo/redo/revertToAction を「適用成功時のみスタック移動」に変更し、失敗時の履歴ズレを構造的に防止）
 
 ## P2（使いにくさ・不整合）
 
