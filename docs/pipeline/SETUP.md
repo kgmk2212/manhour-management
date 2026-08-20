@@ -50,6 +50,9 @@ EOF
 gh variable set AUTO_MERGE_ENABLED --repo kgmk2212/manhour-management --body "true"
 ```
 
+解禁前チェック: 週次レポートの「判定不一致」が計測されていること／implement.yml の Gate に
+信頼側ポリシー再検査が入っていること（PR 側チェック無効化への対抗）。
+
 ## 6. ワークフローの main ミラー（運用ルール）
 issues / issue_comment / schedule トリガーは **default branch（main）上のワークフローしか発火しない**。
 `triage.yml` / `implement.yml` / `revert.yml` / `pipeline-report.yml` を変更したら必ず

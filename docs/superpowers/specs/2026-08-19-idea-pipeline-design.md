@@ -67,13 +67,14 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js,
 1. **仕様化の壁**: どのレーンでも、実装前に「私はこう解釈した」＋受入条件を Issue コメントとして残す。この解釈文は PR 本文にも転記される。
 2. **自信度エスカレーション**: 解釈が割れたら自動実装せず needs-clarification に降格。「勝手に決めて作る」を構造的に禁止。
 3. **機械的ポリシー検査**: lane:auto の PR は `lane-policy-check` ジョブが diff を検査し、触禁パスに触れていたら **fail させて自動マージを物理的にブロック**する（LLM の自己申告に依存しない）。
+   （注: pull_request の required checks は PR 側から定義を書き換えうるため、自動マージ経路では implement.yml の Gate が信頼側スクリプトで再検査する。完全な物理ブロックではない点は AUTO_MERGE 解禁の運用前提として管理）
 
 ## 4. コンポーネント詳細
 
 ### 4.1 Issue テンプレートとラベル
 
 - `.github/ISSUE_TEMPLATE/idea.yml`: 自由記述 textarea 1個のみの最小テンプレート。`idea` ラベルを自動付与。
-- ラベル一覧: `idea`（入口）／`lane:auto`・`lane:pr`・`lane:design`・`needs-clarification`（トリアージ結果）／`implementing`・`verification-failed`（状態）。
+- ラベル一覧: `idea`（入口）／`lane:auto`・`lane:pr`・`lane:design`・`needs-clarification`（トリアージ結果）／`verification-failed`（状態）。
 
 ### 4.2 triage.yml
 
@@ -89,7 +90,7 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js,
 - 処理（auto/pr）: 実装 → `npm run lint` → `node --test` → Playwright 検証（スモーク＋受入条件） → スクショ撮影 → PR 作成。PR 本文に解釈文・受入条件・スクショ・diff要約を記載。エージェントが仕様として読むのは Issue 本文とリポジトリオーナー投稿のコメントのみ（第三者コメントは取り込まない）。受入条件の検証スペックは tests/e2e/acceptance-issue-<番号>.spec.js として恒久化する。
 - 処理（design）: `docs/` 配下に設計書（必要ならモックアップHTML）を生成する PR を作成して停止。
 - スクショの見せ方: PR ブランチ内 `qa/issue-<番号>/` にコミットし、コミットSHA固定の raw URL で PR 本文に埋め込む。ブランチ最終コミットで同フォルダを削除し、**squash マージ**によりマージ後のツリーには残さない。
-- 排他制御: `concurrency: group: implement`（同時実装は1件、後続はキュー）。実装前に ui-scaling 最新へ rebase し、コンフリクトしたら `verification-failed` 相当で人間へ（並行する対話セッションとの衝突対策）。
+- 排他制御: `concurrency: group: implement`（Issue 単位で直列（同一 Issue の二重実行防止）。別 Issue は並行実行され、衝突は PR マージ時に顕在化する）。実装前に ui-scaling 最新へ rebase し、コンフリクトしたら `verification-failed` 相当で人間へ（並行する対話セッションとの衝突対策）。
 - プロンプトは `.github/pipeline/prompts/implement.md`。タイムアウト 30 分。
 
 ### 4.4 検証の CI 常設化（e2e）
@@ -125,7 +126,7 @@ js/storage.js, js/state.js, js/merge-core.js, js/history.js, js/excel-import.js,
 
 | 事象 | 挙動 |
 |---|---|
-| 検証 FAIL | PR を draft 化＋`verification-failed` ラベル＋ログ要約コメント。`/retry` コメントで再試行 |
+| 検証 FAIL | PR を draft 化＋`verification-failed` ラベル＋ログ要約コメント。lane ラベルを付け直すと再実行 |
 | rebase コンフリクト | 実装中断・Issue に報告して人間へ |
 | トリアージ不能（内容が空など） | needs-clarification で質問 |
 | Actions/トークン枯渇 | ワークフロー fail をそのまま可視化（黙って握り潰さない） |
