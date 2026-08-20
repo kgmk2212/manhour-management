@@ -2,7 +2,7 @@
 // ES Modules 配信のため MIME を明示する静的サーバー（依存なし）
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, resolve } from "node:path";
 
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
@@ -16,6 +16,8 @@ createServer(async (req, res) => {
   try {
     const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([/\\])+/, "");
     const file = join(root, path === "" ? "index.html" : path);
+    const abs = resolve(file);
+    if (!abs.startsWith(resolve(root))) throw new Error("outside root");
     const body = await readFile(file);
     res.writeHead(200, { "Content-Type": MIME[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-store" });
     res.end(body);

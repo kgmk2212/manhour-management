@@ -48,5 +48,6 @@ test("全タブが描画されコンソールエラーが出ない", async ({ pa
     visited++;
   }
   expect(visited, "最低5タブは検証する").toBeGreaterThanOrEqual(5);
+  await page.waitForTimeout(200);
   expect(errors, errors.join("\n")).toHaveLength(0);
 });
