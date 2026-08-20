@@ -7,6 +7,13 @@
     "js/history.js",
     "js/excel-import.js",
     ".github",
-    "scripts/pipeline"
+    "scripts/pipeline",
+    "package.json",
+    "package-lock.json",
+    "playwright.config.js",
+    "tests/e2e/smoke.spec.js",
+    "tests/e2e/serve.mjs",
+    "tests/e2e/seed.mjs",
+    "tests/e2e/capture.mjs"
   ]
 }
