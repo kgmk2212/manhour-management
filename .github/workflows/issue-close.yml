@@ -1,0 +1,28 @@
+# pipeline/issue-* の PR がマージされたら対応 Issue をクローズして結果報告する。
+# （Closes #N は default branch へのマージでしか発動しない GitHub 仕様への対応）
+name: Close Issue on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  close:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'pipeline/issue-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Close linked issue
+        shell: bash
+        run: |
+          NUM="${{ github.event.pull_request.head.ref }}"
+          NUM="${NUM#pipeline/issue-}"
+          gh issue close "$NUM" --repo "${{ github.repository }}" \
+            --comment "✅ PR #${{ github.event.pull_request.number }} がマージされました。デプロイは自動で走ります。撤回は \`/revert\` コメント。" \
+            || echo "issue #$NUM のクローズをスキップ（既にクローズ済み等）"
