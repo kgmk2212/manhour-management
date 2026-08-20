@@ -53,7 +53,7 @@ jobs:
             リポジトリ直下の ${{ env.LANE == 'lane:design' && '.github/pipeline/prompts/design.md' || '.github/pipeline/prompts/implement.md' }} を読み、
             その指示に従って作業してください。
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm run lint),Bash(npm test),Bash(npm run e2e),Bash(node tests/e2e/capture.mjs:*)"
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git status:*),Bash(git fetch:*),Bash(git switch:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git rm:*),Bash(git mv:*),Bash(git diff:*),Bash(git log:*),Bash(git rebase:*),Bash(git push origin pipeline/issue-:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm run lint),Bash(npm test),Bash(npm run e2e),Bash(node tests/e2e/capture.mjs:*)"
 
       - name: Gate (auto-merge or notify)
         if: success()
