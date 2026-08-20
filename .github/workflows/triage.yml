@@ -48,16 +48,22 @@ jobs:
 
       - name: Skip if already triaged (live label check)
         id: guard
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
         run: |
           LABELS=$(gh issue view "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --json labels -q '[.labels[].name] | join(",")')
           echo "current labels: $LABELS"
-          if echo "$LABELS" | grep -qE 'lane:auto|lane:pr|lane:design'; then
+          if echo ",$LABELS," | grep -qE ',lane:(auto|pr|design),'; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
           # needs-clarification 中の再トリアージは issue_comment イベント経由のみ許可
-          if [ "${{ github.event_name }}" = "issues" ] && echo "$LABELS" | grep -q 'needs-clarification'; then
+          if [ "${{ github.event_name }}" = "issues" ] && echo ",$LABELS," | grep -q ',needs-clarification,'; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
+          # パイプライン自身の定型コメント（トリアージ結果/質問/通知）では再トリアージしない
+          case "$COMMENT_BODY" in
+            "## 🔎"*|"❓"*|"🤖"*|"⚠️"*|"↩️"*|"✅"*) echo "skip=true" >> "$GITHUB_OUTPUT";;
+          esac
 
       - name: Run triage
         if: steps.guard.outputs.skip != 'true'

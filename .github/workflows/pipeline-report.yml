@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           SINCE=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
-          gh issue list --label idea --state all --search "created:>=$SINCE" \
+          gh issue list --label idea --state all --search "updated:>=$SINCE" \
             --json number,title,labels,state \
             -q '[.[] | {number, title, state, labels: [.labels[].name]}]' > issues.json
           node -e '
@@ -37,6 +37,13 @@ jobs:
                 const pr = JSON.parse(execSync(`gh pr list --head pipeline/issue-${i.number} --state all --json state`, {encoding:"utf8"}));
                 i.prState = pr[0] ? pr[0].state.toLowerCase() : null;
               } catch { i.prState = null; }
+              try {
+                const comments = JSON.parse(execSync(`gh issue view ${i.number} --json comments`, {encoding:"utf8"})).comments;
+                const triageComments = comments.filter((c) => c.body.startsWith("## 🔎"));
+                const last = triageComments[triageComments.length - 1];
+                const m = last ? last.body.match(/### レーン判定: (lane:\w+)/) : null;
+                i.judgedLane = m ? m[1] : null;
+              } catch { i.judgedLane = null; }
             }
             fs.writeFileSync("issues.json", JSON.stringify(issues));
           '

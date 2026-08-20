@@ -53,7 +53,7 @@ jobs:
             リポジトリ直下の ${{ env.LANE == 'lane:design' && '.github/pipeline/prompts/design.md' || '.github/pipeline/prompts/implement.md' }} を読み、
             その指示に従って作業してください。
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm run lint),Bash(npm test),Bash(npm run e2e),Bash(node tests/e2e/capture.mjs:*)"
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(git status:*),Bash(git fetch:*),Bash(git switch:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git rm:*),Bash(git mv:*),Bash(git diff:*),Bash(git log:*),Bash(git rebase:*),Bash(git push origin pipeline/issue-:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(npm run lint),Bash(npm test),Bash(npm run e2e),Bash(node tests/e2e/capture.mjs:*)"
 
       - name: Gate (auto-merge or notify)
         if: success()
@@ -65,14 +65,23 @@ jobs:
           if [ -z "$PR" ]; then
             echo "PRが見つからない（needs-clarification降格等の正常系もある）"; exit 0
           fi
+          # 信頼側（ui-scaling checkout）のスクリプト・ポリシーで触禁を再検査
+          # （PR 側ワークフロー/テスト自己書き換えによる required checks 無効化への対抗。AUTO_MERGE 解禁の前提）
+          if [ "$LANE" = "lane:auto" ]; then
+            gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate \
+              --jq '.[] | .filename, (.previous_filename // empty)' \
+              | node scripts/pipeline/check-lane-policy.mjs --policy .github/pipeline/auto-lane-policy.json --lane "lane:auto" \
+              || { gh issue comment "$ISSUE" --body "⚠️ 信頼側ポリシー再検査で違反を検出したため、自動マージを予約しません（PR #$PR は人間レビューへ）。"; exit 1; }
+          fi
           BASEREF=$(gh pr view "$PR" --json baseRefName --jq .baseRefName)
-          HASLANE=$(gh pr view "$PR" --json labels --jq '[.labels[].name] | contains(["lane:auto"])')
+          HASLANE=$(gh pr view "$PR" --json labels --jq '[.labels[].name] | index("lane:auto") != null')
           ISDRAFT=$(gh pr view "$PR" --json isDraft --jq .isDraft)
           if [ "$LANE" = "lane:auto" ] && [ "${{ vars.AUTO_MERGE_ENABLED }}" = "true" ] \
              && [ "$BASEREF" = "experiment/ui-scaling" ] && [ "$HASLANE" = "true" ] && [ "$ISDRAFT" = "false" ]; then
             gh pr merge "$PR" --squash --auto
             gh issue comment "$ISSUE" --body "🤖 PR #$PR を作成しました。チェック全緑で**自動マージ→自動デプロイ**されます。取り消しは PR クローズ、事後の撤回は \`/revert\` コメント。"
           elif [ "$ISDRAFT" = "true" ]; then
+            gh issue edit "$ISSUE" --add-label verification-failed
             gh issue comment "$ISSUE" --body "⚠️ PR #$PR は検証FAILのため draft です。内容を確認してください。"
           else
             gh issue comment "$ISSUE" --body "🤖 PR #$PR の準備ができました（レーン: $LANE / 学習期間中）。内容を確認してマージしてください。"
