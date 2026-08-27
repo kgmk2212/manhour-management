@@ -64,7 +64,8 @@ import {
     closeEditActualModal,
     saveActualEdit,
     handleActualTaskSelect,
-    handleActualProcessChange
+    handleActualProcessChange,
+    handleEditActualVersionChange
 } from './actual.js';
 import {
     updateReport,
@@ -725,7 +726,8 @@ export function initEventHandlers() {
     if (btnSaveActualEdit) btnSaveActualEdit.addEventListener('click', saveActualEdit);
 
     const editActualVersion = document.getElementById('editActualVersion');
-    if (editActualVersion) editActualVersion.addEventListener('change', () => handleVersionChange('editActualVersion'));
+    // 候補リスト再構築（handleVersionChange）に加えて対応名の入力モード切替を行う
+    if (editActualVersion) editActualVersion.addEventListener('change', handleEditActualVersionChange);
 
     const editActualMember = document.getElementById('editActualMember');
     if (editActualMember) editActualMember.addEventListener('change', handleEditActualMemberChange);

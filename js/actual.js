@@ -14,6 +14,7 @@ import { pushAction } from './history.js';
 import { CALCULATIONS } from './constants.js';
 import { applyOtherWorkDefaults } from './other-work.js';
 import { prepareVacationFields } from './vacation.js';
+import { handleVersionChange } from './ui.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -1085,18 +1086,15 @@ export function editActual(id) {
     const processSelect = document.getElementById('editActualProcess');
 
     if (isOther) {
-        // その他工数: 版数・工程は非表示/無効化し、対応名は自由入力
+        // その他工数: 対応名は自由入力で開く。版数・工程は選択可能のままにし、
+        // 版数を選ぶと handleEditActualVersionChange が候補 select モードへ切り替える
         versionSelect.value = '';
-        versionSelect.disabled = true;
         taskSelect.style.display = 'none';
         taskInput.style.display = 'block';
         taskInput.value = actual.task;
         processSelect.value = actual.process;
-        processSelect.disabled = true;
     } else {
         versionSelect.value = actual.version;
-        versionSelect.disabled = false;
-        processSelect.disabled = false;
         updateEditActualTaskList(actual.member, true, actual.version, actual.process);
         taskSelect.style.display = 'block';
         taskInput.style.display = 'none';
@@ -1179,11 +1177,6 @@ export function editActual(id) {
  */
 export function closeEditActualModal() {
     document.getElementById('editActualModal').style.display = 'none';
-    // その他工数編集で無効化したフィールドを復元
-    const versionSelect = document.getElementById('editActualVersion');
-    const processSelect = document.getElementById('editActualProcess');
-    if (versionSelect) versionSelect.disabled = false;
-    if (processSelect) processSelect.disabled = false;
     // タブモードの場合は埋め込んだフォームを元のモーダルへ戻す
     exitEditActualTabMode();
 }
@@ -1711,6 +1704,69 @@ export function handleActualTaskSelect() {
             }
         }
     }
+}
+
+/**
+ * 実績編集モーダルで現在入力されている対応名を返す
+ * （候補 select が表示中ならその選択値、自由入力中ならテキスト値）
+ * @returns {string}
+ */
+function getEditActualCurrentTask() {
+    const taskSelect = document.getElementById('editActualTaskSelect');
+    const taskInput = document.getElementById('editActualTaskSearch');
+    if (!taskSelect || !taskInput) return '';
+    if (taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__') {
+        return taskSelect.value;
+    }
+    return taskInput.value;
+}
+
+/**
+ * 実績編集モーダルの版数変更時の処理。
+ * 候補リスト再構築（handleVersionChange）で対応名が失われないよう前後で保持し、
+ * 版数の有無に応じて対応名の入力モードを切り替える:
+ * - 版数あり: 候補 select モード。現在の名前が候補にあればそれを選択、
+ *   無ければ「新規入力」扱いで名前を自由入力欄に保持する
+ * - 版数なし（その他工数）: 自由入力モードに戻し、名前を保持する
+ * レビュー行は版数ありのときだけ表示する。
+ */
+export function handleEditActualVersionChange() {
+    const currentTask = getEditActualCurrentTask();
+
+    handleVersionChange('editActualVersion');
+
+    const versionSelect = document.getElementById('editActualVersion');
+    const taskSelect = document.getElementById('editActualTaskSelect');
+    const taskInput = document.getElementById('editActualTaskSearch');
+    const reviewGroup = document.getElementById('editActualIsReviewGroup');
+    if (!versionSelect || !taskSelect || !taskInput) return;
+
+    const hasVersion = versionSelect.value !== '';
+
+    if (hasVersion) {
+        const existsInList = currentTask !== '' &&
+            Array.from(taskSelect.options).some(o => o.value === currentTask);
+        if (existsInList) {
+            taskSelect.value = currentTask;
+            taskSelect.style.display = 'block';
+            taskInput.style.display = 'none';
+        } else if (currentTask !== '') {
+            taskSelect.value = '__NEW__';
+            taskSelect.style.display = 'none';
+            taskInput.style.display = 'block';
+            taskInput.value = currentTask;
+        } else {
+            // 名前未入力: 候補から選ばせる（従来どおり）
+            taskSelect.style.display = 'block';
+            taskInput.style.display = 'none';
+        }
+    } else {
+        taskSelect.style.display = 'none';
+        taskInput.style.display = 'block';
+        taskInput.value = currentTask;
+    }
+
+    if (reviewGroup) reviewGroup.style.display = hasVersion ? '' : 'none';
 }
 
 /**
