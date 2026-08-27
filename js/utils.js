@@ -117,6 +117,28 @@ export function normalizeEstimate(e) {
     return e;
 }
 
+/**
+ * 指定月に計上すべき見積工数を返す（全タブ共通の唯一の実装）
+ * 見積一覧・レポート・レポート分析の月フィルタ集計はすべてこの関数を使うこと。
+ * - monthlyHours に該当月の分配があればその値（0 も有効な分配値）
+ * - 作業月が未設定の見積は、どの月でも全額を計上する
+ *   （月フィルタで月未定タスクを見落とさない、という一覧表示と対の仕様）
+ * - 作業月が設定されていて該当月の分配がない場合は 0
+ * @param {Object} e - 見積オブジェクト（正規化前でも可）
+ * @param {string} month - 対象月（YYYY-MM）
+ * @returns {number} 計上工数（時間）
+ */
+export function getEstimateHoursForMonth(e, month) {
+    const est = normalizeEstimate(e);
+    if (est.monthlyHours && est.monthlyHours[month] !== undefined) {
+        return Number(est.monthlyHours[month]) || 0;
+    }
+    if (!est.workMonths || est.workMonths.length === 0) {
+        return Number(est.hours) || 0;
+    }
+    return 0;
+}
+
 // 月の範囲を生成（YYYY-MM形式）
 export function generateMonthRange(startMonth, endMonth) {
     const months = [];

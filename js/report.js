@@ -38,6 +38,7 @@ import {
     filterByVersionAndTask,
     getWorkingDays,
     normalizeEstimate,
+    getEstimateHoursForMonth,
     getMonthColor,
     getDeviationColor,
     generateMonthColorLegend,
@@ -1180,13 +1181,8 @@ function filterReportData(filterType, selectedMonth, selectedVersion) {
             }
             return e.workMonths.includes(selectedMonth);
         }).map(e => {
-            let hoursForMonth = 0;
-            if (e.monthlyHours && e.monthlyHours[selectedMonth] !== undefined) {
-                hoursForMonth = e.monthlyHours[selectedMonth];
-            } else if (!e.workMonths || e.workMonths.length === 0) {
-                hoursForMonth = e.hours;
-            }
-            return { ...e, hours: hoursForMonth };
+            // 全タブ共通の月別計上ロジックで該当月分の工数に置き換える
+            return { ...e, hours: getEstimateHoursForMonth(e, selectedMonth) };
         });
     }
 

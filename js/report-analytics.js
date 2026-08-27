@@ -5,7 +5,7 @@
 
 import { calculateProgress, calculateVersionProgress, clearProgressCache } from './report.js';
 import { PROCESS } from './constants.js';
-import { formatHours, hoursToManDays, hoursToManMonths, scaledFont, escapeHtml } from './utils.js';
+import { formatHours, hoursToManDays, hoursToManMonths, scaledFont, escapeHtml, getEstimateHoursForMonth } from './utils.js';
 
 // Always read latest data from window to avoid stale references after loadData()
 function getEstimates() { return window.estimates || []; }
@@ -61,21 +61,6 @@ function getAllMonths() {
         }
     });
     return [...set].sort();
-}
-
-/** Get estimate hours for a given month (handling monthlyHours distribution) */
-function getEstimateHoursForMonth(est, month) {
-    if (est.monthlyHours && est.monthlyHours[month] !== undefined) {
-        return Number(est.monthlyHours[month]) || 0;
-    }
-    if (est.workMonths && est.workMonths.length > 0) {
-        if (est.workMonths.includes(month)) {
-            return est.hours / est.workMonths.length;
-        }
-        return 0;
-    }
-    if (est.workMonth === month) return est.hours;
-    return 0;
 }
 
 /**

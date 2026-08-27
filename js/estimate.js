@@ -16,6 +16,7 @@ import {
 
 import {
     normalizeEstimate,
+    getEstimateHoursForMonth,
     generateMonthRange,
     generateMonthOptions,
     getMonthColor,
@@ -470,15 +471,8 @@ function calculateEstimateTotalHours(filtered, filterType, monthFilter) {
         // 月指定なし: 全工数を合算
         totalHours = filtered.reduce((sum, e) => sum + e.hours, 0);
     } else {
-        // 月指定あり: 月別工数があればそれを使用（filterType問わず）
-        filtered.forEach(e => {
-            const est = normalizeEstimate(e);
-            if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-                totalHours += est.monthlyHours[monthFilter];
-            } else if (!est.workMonths || est.workMonths.length === 0) {
-                totalHours += est.hours;
-            }
-        });
+        // 月指定あり: 全タブ共通の月別計上ロジックで合算
+        totalHours = filtered.reduce((sum, e) => sum + getEstimateHoursForMonth(e, monthFilter), 0);
     }
 
     return totalHours;
@@ -582,11 +576,9 @@ function calculateMemberSummary(filtered, filterType, monthFilter) {
         if (monthFilter === 'all') {
             // 月指定なし: 全工数を合算
             memberSummary[member] += est.hours;
-        } else if (est.monthlyHours && est.monthlyHours[monthFilter]) {
-            // 月指定あり: 月別工数を使用（filterType問わず）
-            memberSummary[member] += est.monthlyHours[monthFilter];
-        } else if (!est.workMonths || est.workMonths.length === 0) {
-            memberSummary[member] += est.hours;
+        } else {
+            // 月指定あり: 全タブ共通の月別計上ロジックを使用
+            memberSummary[member] += getEstimateHoursForMonth(est, monthFilter);
         }
     });
 
