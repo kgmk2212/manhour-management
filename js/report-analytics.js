@@ -138,8 +138,11 @@ function computeData(monthFilter) {
     // --- Risk heatmap (version × process overrun %) ---
     const heatmapData = versions.map(v => {
         return PROC_TYPES.map(p => {
-            const pEst = est.filter(e => e.version === v && e.process === p)
-                .reduce((s, e) => s + e.hours, 0);
+            // 実績と同じ期間の見積で比較する（月フィルタ時に見積だけ全期間だと超過率が過小になる）
+            const vpEst = est.filter(e => e.version === v && e.process === p);
+            const pEst = monthFilter
+                ? vpEst.reduce((s, e) => s + getEstimateHoursForMonth(e, monthFilter), 0)
+                : vpEst.reduce((s, e) => s + e.hours, 0);
             const pAct = filteredActuals.filter(a => a.version === v && a.process === p)
                 .reduce((s, a) => s + a.hours, 0);
             if (pEst === 0 && pAct === 0) return null;

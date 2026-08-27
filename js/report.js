@@ -1779,6 +1779,37 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
 }
 
 /**
+ * 見積の自動分割（按分）: 見積タスクと同一キー(version/task/process)の
+ * 他メンバー実績分を見積から差し引き、実績者側の見積として付け替える。
+ * 付け替え合計は元見積(hours)を超えない（超過時は実績比例で圧縮）ため、
+ * 按分後の合計は常に元見積と一致する（見積一覧タブの合計と整合）。
+ * @param {Object} estimate - 見積オブジェクト（hours はフィルタ済みの計上値）
+ * @param {Array} filteredActuals - フィルタ済み実績配列
+ * @returns {Array<{member: string, hours: number}>} 担当者ごとの按分内訳
+ */
+export function computeEstimateShares(estimate, filteredActuals) {
+    const otherMembersHours = {};
+    let otherSum = 0;
+
+    filteredActuals.forEach(a => {
+        if (a.version === estimate.version &&
+            a.task === estimate.task &&
+            a.process === estimate.process &&
+            a.member !== estimate.member) {
+            otherSum += a.hours;
+            otherMembersHours[a.member] = (otherMembersHours[a.member] || 0) + a.hours;
+        }
+    });
+
+    const transferable = Math.min(otherSum, estimate.hours);
+    const shares = [{ member: estimate.member, hours: estimate.hours - transferable }];
+    Object.entries(otherMembersHours).forEach(([member, hours]) => {
+        shares.push({ member, hours: otherSum > 0 ? (hours / otherSum) * transferable : 0 });
+    });
+    return shares;
+}
+
+/**
  * 担当者別パフォーマンスを描画
  */
 function renderMemberPerformance(filteredEstimates, filteredActuals, workingDaysPerMonth) {
@@ -1795,33 +1826,13 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
     });
 
     filteredEstimates.forEach(estimate => {
-        const relatedActuals = filteredActuals.filter(a =>
-            a.version === estimate.version &&
-            a.task === estimate.task &&
-            a.process === estimate.process
-        );
-
-        let otherMembersActualHours = 0;
-        const otherMembersHours = {};
-
-        relatedActuals.forEach(actual => {
-            if (actual.member !== estimate.member) {
-                otherMembersActualHours += actual.hours;
-                otherMembersHours[actual.member] = (otherMembersHours[actual.member] || 0) + actual.hours;
+        computeEstimateShares(estimate, filteredActuals).forEach(({ member, hours }) => {
+            if (!memberSummary[member]) {
+                memberSummary[member] = { estimate: 0, actual: 0 };
+                memberTasks[member] = new Set();
             }
-        });
-
-        const originalMemberEstimate = Math.max(0, estimate.hours - otherMembersActualHours);
-        memberSummary[estimate.member].estimate += originalMemberEstimate;
-        memberTasks[estimate.member].add(`${estimate.version}-${estimate.task}`);
-
-        Object.keys(otherMembersHours).forEach(otherMember => {
-            if (!memberSummary[otherMember]) {
-                memberSummary[otherMember] = { estimate: 0, actual: 0 };
-                memberTasks[otherMember] = new Set();
-            }
-            memberSummary[otherMember].estimate += otherMembersHours[otherMember];
-            memberTasks[otherMember].add(`${estimate.version}-${estimate.task}`);
+            memberSummary[member].estimate += hours;
+            memberTasks[member].add(`${estimate.version}-${estimate.task}`);
         });
     });
 
@@ -2032,34 +2043,15 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         return;
     }
 
-    // 自動分割ロジック
+    // 自動分割ロジック（按分は computeEstimateShares に共通化・合計保存）
     const adjustedEstimates = {};
     members.forEach(member => {
         adjustedEstimates[member] = 0;
     });
 
     filteredEstimates.forEach(estimate => {
-        const relatedActuals = filteredActuals.filter(a =>
-            a.version === estimate.version &&
-            a.task === estimate.task &&
-            a.process === estimate.process
-        );
-
-        let otherMembersActualHours = 0;
-        const otherMembersHours = {};
-
-        relatedActuals.forEach(actual => {
-            if (actual.member !== estimate.member) {
-                otherMembersActualHours += actual.hours;
-                otherMembersHours[actual.member] = (otherMembersHours[actual.member] || 0) + actual.hours;
-            }
-        });
-
-        const originalMemberEstimate = Math.max(0, estimate.hours - otherMembersActualHours);
-        adjustedEstimates[estimate.member] = (adjustedEstimates[estimate.member] || 0) + originalMemberEstimate;
-
-        Object.keys(otherMembersHours).forEach(otherMember => {
-            adjustedEstimates[otherMember] = (adjustedEstimates[otherMember] || 0) + otherMembersHours[otherMember];
+        computeEstimateShares(estimate, filteredActuals).forEach(({ member, hours }) => {
+            adjustedEstimates[member] = (adjustedEstimates[member] || 0) + hours;
         });
     });
 

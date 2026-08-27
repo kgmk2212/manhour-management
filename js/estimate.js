@@ -762,10 +762,10 @@ export function renderEstimateGrouped() {
         }
 
         const est = normalizeEstimate(e);
-        let displayHours = e.hours;
-        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
-            displayHours = est.monthlyHours[workMonthFilter];
-        }
+        // 月フィルタ時は全タブ共通の月別計上ロジックで表示（合計カードと一致させる）
+        const displayHours = workMonthFilter !== 'all'
+            ? getEstimateHoursForMonth(est, workMonthFilter)
+            : e.hours;
 
         versionGroups[e.version][taskKey].processes.push({
             process: e.process,
@@ -1039,10 +1039,10 @@ export function renderEstimateMatrix() {
         }
 
         const est = normalizeEstimate(e);
-        let displayHours = e.hours;
-        if (workMonthFilter !== 'all' && est.monthlyHours && est.monthlyHours[workMonthFilter]) {
-            displayHours = est.monthlyHours[workMonthFilter];
-        }
+        // 月フィルタ時は全タブ共通の月別計上ロジックで表示（合計カードと一致させる）
+        const displayHours = workMonthFilter !== 'all'
+            ? getEstimateHoursForMonth(est, workMonthFilter)
+            : e.hours;
 
         if (est.workMonths && est.workMonths.length > 0) {
             est.workMonths.forEach(m => usedMonths.add(m));
@@ -1249,8 +1249,9 @@ export function renderEstimateDetailList() {
         const est = normalizeEstimate(e);
 
         let displayHours = est.hours;
-        if (filterType === 'month' && workMonthFilter !== 'all' && est.monthlyHours[workMonthFilter]) {
-            displayHours = est.monthlyHours[workMonthFilter];
+        if (filterType === 'month' && workMonthFilter !== 'all') {
+            // 月フィルタ時は全タブ共通の月別計上ロジックで表示（合計カードと一致させる）
+            displayHours = getEstimateHoursForMonth(est, workMonthFilter);
         }
 
         let workMonthDisplay = '-';
