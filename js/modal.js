@@ -6,13 +6,14 @@ import * as State from './state.js';
 import * as Estimate from './estimate.js';
 import { formatHours, escapeHtml, showAlert } from './utils.js';
 import { pushAction } from './history.js';
+import { filterReportData } from './report.js';
 
 // ============================================
 // 工程内訳モーダル
 // ============================================
 
 // 工程内訳モーダルを表示
-export function showProcessBreakdown(version, task, process, filteredActuals, filteredEstimates) {
+export function showProcessBreakdown(version, task, process, filteredActuals, filteredEstimates, periodLabel = '') {
     const modal = document.getElementById('processBreakdownModal');
     const title = document.getElementById('breakdownModalTitle');
     const content = document.getElementById('breakdownModalContent');
@@ -22,8 +23,8 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
         return;
     }
 
-    // タイトルを設定
-    title.textContent = `${version} - ${task} [${process}] の内訳`;
+    // タイトルを設定（期間フィルタ中はどの期間の内訳かを明示する）
+    title.textContent = `${version} - ${task} [${process}] の内訳${periodLabel ? `（${periodLabel}）` : ''}`;
 
     // 担当者別にデータを集計
     const memberData = {};
@@ -232,15 +233,25 @@ export function drawBreakdownDonutChart(canvasId, memberData, dataType, members,
 
 // 工程内訳モーダルを開く（IDベースのラッパー）
 export function openProcessBreakdown(version, task, process) {
-    // データをフィルタリング
-    const filteredEstimates = State.estimates.filter(e =>
-        e.version === version && e.task === task && e.process === process
-    );
-    const filteredActuals = State.actuals.filter(a =>
-        a.version === version && a.task === task && a.process === process
-    );
+    // レポートタブの現在のフィルタ条件（月・版数）を適用してから該当工程を抽出する
+    // （レポート画面に表示されている集計値とモーダルの内訳を一致させる）
+    const filterType = document.getElementById('reportFilterType')?.value || 'month';
+    const selectedMonth = document.getElementById('reportMonth')?.value || 'all';
+    const selectedVersion = document.getElementById('reportVersion')?.value || 'all';
+    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
 
-    showProcessBreakdown(version, task, process, filteredActuals, filteredEstimates);
+    let periodLabel = '';
+    if (selectedMonth !== 'all') {
+        const [y, m] = selectedMonth.split('-');
+        periodLabel = `${y}年${parseInt(m)}月`;
+    }
+
+    showProcessBreakdown(
+        version, task, process,
+        filteredActuals.filter(a => a.version === version && a.task === task && a.process === process),
+        filteredEstimates.filter(e => e.version === version && e.task === task && e.process === process),
+        periodLabel
+    );
 }
 
 // Windowオブジェクトに公開

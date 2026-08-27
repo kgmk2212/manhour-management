@@ -1128,7 +1128,7 @@ export function getAnalysisGradients() {
  * @param {string} selectedVersion - 選択された版数
  * @returns {Object} { filteredActuals, filteredEstimates }
  */
-function filterReportData(filterType, selectedMonth, selectedVersion) {
+export function filterReportData(filterType, selectedMonth, selectedVersion) {
     const isOtherWork = typeof window.isOtherWork === 'function' ? window.isOtherWork : (() => false);
     let filteredActuals = actuals;
     // 最初に見積データを正規化
