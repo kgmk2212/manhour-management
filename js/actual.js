@@ -1715,8 +1715,9 @@ function getEditActualCurrentTask() {
     const taskSelect = document.getElementById('editActualTaskSelect');
     const taskInput = document.getElementById('editActualTaskSearch');
     if (!taskSelect || !taskInput) return '';
-    if (taskSelect.style.display !== 'none' && taskSelect.value && taskSelect.value !== '__NEW__') {
-        return taskSelect.value;
+    if (taskSelect.style.display !== 'none') {
+        // 候補 select モード: 未選択なら空（隠れている自由入力欄の残存値は拾わない）
+        return taskSelect.value && taskSelect.value !== '__NEW__' ? taskSelect.value : '';
     }
     return taskInput.value;
 }
@@ -1725,12 +1726,16 @@ function getEditActualCurrentTask() {
  * 実績編集モーダルの版数変更時の処理。
  * 候補リスト再構築（handleVersionChange）で対応名が失われないよう前後で保持し、
  * 版数の有無に応じて対応名の入力モードを切り替える:
- * - 版数あり: 候補 select モード。現在の名前が候補にあればそれを選択、
- *   無ければ「新規入力」扱いで名前を自由入力欄に保持する
+ * - 版数あり: 候補 select モード。現在の名前が新しい候補にあればそれを再選択する。
+ *   無い場合、自由入力中だった名前は「新規入力」扱いで自由入力欄に保持するが、
+ *   候補 select で選んでいた旧版数の対応名は持ち越さず、新版数の候補から選ばせる
+ *   （テキストボックス化して候補を選べなくならないように）
  * - 版数なし（その他工数）: 自由入力モードに戻し、名前を保持する
  * レビュー行は版数ありのときだけ表示する。
  */
 export function handleEditActualVersionChange() {
+    const taskInputBefore = document.getElementById('editActualTaskSearch');
+    const wasFreeInput = !!taskInputBefore && taskInputBefore.style.display !== 'none';
     const currentTask = getEditActualCurrentTask();
 
     handleVersionChange('editActualVersion');
@@ -1750,13 +1755,15 @@ export function handleEditActualVersionChange() {
             taskSelect.value = currentTask;
             taskSelect.style.display = 'block';
             taskInput.style.display = 'none';
-        } else if (currentTask !== '') {
+        } else if (wasFreeInput && currentTask !== '') {
+            // 自由入力中の名前は失わない
             taskSelect.value = '__NEW__';
             taskSelect.style.display = 'none';
             taskInput.style.display = 'block';
             taskInput.value = currentTask;
         } else {
-            // 名前未入力: 候補から選ばせる（従来どおり）
+            // 名前未入力、または旧版数の候補を選んでいた: 新しい候補から選ばせる
+            taskSelect.value = '';
             taskSelect.style.display = 'block';
             taskInput.style.display = 'none';
         }
