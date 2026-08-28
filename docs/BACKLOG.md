@@ -9,7 +9,7 @@
 > **登録規律（2026-08-20〜）**: ①項目を追加する前に、既存項目（解決済みの括弧書き記録を含む）から
 > 同根のものを検索し、あれば新規追加せず既存項目へ統合する ②原因は可能な限り file:line で特定して書く
 > ③何かを修正したら、同じ修正で解消される他項目が無いか台帳を見て一緒に閉じる
-> ④各項目には通し番号 `[B-nnn]` を付け、番号は再利用しない（**次番号: B-016**）。
+> ④各項目には通し番号 `[B-nnn]` を付け、番号は再利用しない（**次番号: B-045**）。
 > claims 層（/start-work の着手宣言）はこの ID を参照する。
 
 ## P1（バグ・実害あり）
@@ -22,6 +22,83 @@
   タイムライン編集の 'editActual' タイプ不一致／'estimate_add_batch' 分岐欠落＋未知タイプの適用不可扱い／
   宛先不在 renderVacationList／report-analytics の弱い escapeHtml 重複。feature/undo-redo-fixes で対応。
   あわせて undo/redo/revertToAction を「適用成功時のみスタック移動」に変更し、失敗時の履歴ズレを構造的に防止）
+
+- （2026-08-28 コード監査: 5系統（実績／見積／レポート・スケジュール／UI基盤／状態・保存）のサブエージェントで全 js 約37,000行を
+  全文精読し、各候補を引用箇所の再読で裏取りした。[確認済] は本セッションで該当コードを直接読んで到達経路を確認済み。
+  同監査の起点バグ（実績登録で版数変更時に対応名がテキスト入力化）は `bc03b3f` で修正・デプロイ済み）
+
+- [B-016] [確認済] **「前回のクイック入力モードを記憶」ON でリロードすると初期化が TypeError で停止し全ボタン無反応**:
+  `js/quick.js:414` `quickInputMode = savedMode;` が ESM import バインディング（const）への代入。呼び出し元 `js/init.js:542` は
+  DOMContentLoaded 内で try/catch 無しのため、以降の `initEventHandlers`/`showTab`/timeline 初期化が全部スキップされる。
+  直後の `switchQuickInputMode(savedMode)` が setter を呼ぶので 414 行は削除でよい
+- [B-017] [確認済] 実績編集モーダルの残存値・非表示値の保存混入: ①`saveActualEdit`（`js/actual.js:1329-1331`）が候補 select 表示中でも
+  未選択なら隠れた自由入力欄の残存テキストを対応名として保存（`editActual` :1096-1102 は `taskInput.value` を消さない）→ 同ファイルの
+  `getEditActualCurrentTask()` に置換 ②版数を空にして保存すると非表示のレビューチェックが `isReview:true` で保存（:1336, :1769 は隠すだけ）
+  ③担当変更（`js/ui.js:3932-3943`）でリスト再構築後に対応名を再選択しない（工程変更 :1793-1827 は復元する）
+  ④版数「+ 新しい版数を追加...」の prompt キャンセルで `select.value=''`（`js/ui.js:3818-3820`）→ 実績モーダルではその他工数モードへ切替わる。直前値へ戻すべき
+- [B-018] [確認済] その他作業の登録日付が汚染される: `enterEditActualTabMode`（`js/actual.js:1219`）が `otherWorkModal.dataset.calendarDate` を
+  セットするが `exitEditActualTabMode` は消さず、削除は `js/other-work.js:206`（closeOtherWorkModal）のみ。カレンダーから実績モーダルを開いた後、
+  クイック入力の「その他作業」（`other-work.js:23-24, 336-339`）がその日付で登録される
+- [B-019] [確認済] タイムライン横スクロール時にドロップ／範囲選択／タップ配置の日付が scrollLeft/36 日ぶん右へズレる:
+  `js/actual-timeline.js:956, 1210, 1308, 1423, 1535, 2348` の `e.clientX - rect.left + dom.section.scrollLeft` は、行が
+  スクローラ `.actual-tl-section`（`style.css:6175 overflow:auto`）の内側にあるため rect.left が既にスクロール分を含み二重計上。`+ scrollLeft` を削除
+- [B-020] [確認済] 作業詳細モーダルで最後の休暇を削除すると削除済み行が残りモーダルが閉じない: `js/vacation.js:197` が無条件に
+  `showWorkDetail` を呼ぶが、`js/actual.js:776` は実績も休暇も 0 件なら早期 return して再描画しない。`deleteActualFromModal`（:981-986）同様に残件 0 なら `closeWorkModal()`
+- [B-021] [確認済] 作業月一括割り当てが作業月設定済みの見積に効かない: `js/estimate-selection.js:127-131` は `e.workMonth` のみ更新、
+  `normalizeEstimate`（`js/utils.js:93-97`）は `workMonths`/`monthlyHours` 非空なら旧値を返すため一覧・フィルタ・レポートは旧月のまま
+  （workMonth と workMonths が不整合のまま保存される）。`workMonths=[m]; monthlyHours={[m]:hours}` も設定する（Undo の pushAction も無い）
+- [B-022] [確認済] 全工程編集（`js/estimate-add.js` openEditAllProcesses/saveEditAllProcesses）の不具合群:
+  ①単一月分岐（:250-253）が `addEstMonthType` ラジオを single に戻さず、登録モーダルで「複数月」を選んで閉じた後に開くと保存側（:353-361）が
+  multi 経路で全工程の作業月を当月に置換 ②版数/対応名リネーム（:492-515）が estimates/actuals/schedules のみで `remainingEstimates`
+  （`js/estimate.js:225-231` キー）と `taskSortOrder` を追随させず、次回起動の `cleanupOrphanedRemainingEstimates` で見込残存が消える
+  ③`pushAction('estimate_bulk_edit')`（:521-524）に `addedEstimateIds` を渡さず、Undo で新規追加工程が残る（`js/history.js:412-429` は対応済み）
+  ④既存行の担当「-」で `member:''` のまま保存（:404-425。新規登録側 :1529-1544 はブロック）⑤追加担当者行を × で消しても該当見積が削除されない
+  （:389-397, :487-488。`js/estimate-edit.js:473-482` は削除する）⑥登録モーダルの「その他工数」モード／単一工程モードが持ち越される
+  （`switchEstimateMode('normal')` 未呼出、`addOtherWorkEstimate` が `exitSingleProcessMode` を呼ばない）
+- [B-023] [確認済] 単一工程追加モーダル（`js/estimate-add.js:46-129`）で非表示にした他工程行の残存入力がそのまま登録される:
+  `initAddEstimateForm`（:844-892）はフィールド・追加担当者行をクリアせず、行非表示は `tbody tr` の index を `PROCESS.TYPES[i]` に対応させる
+  （:107-111）ため追加行があるとズレ、`collectAllEstimateEntries` は非表示行も拾う。冒頭で `resetAddEstimateForm()` 相当を呼ぶ
+- [B-024] [確認済] 見積編集の保存で兄弟（同工程の他担当）レコードの月別配分が無条件に 0.1 丸め均等再配分され手動配分が消える・合計不一致
+  （`js/estimate-edit.js:402-431`。`per = Math.round(hours/n*10)/10`、変更有無の判定なし）。不変なら維持、再配分は `splitHoursEvenly` に統一
+- [B-025] [確認済] 見積 1 件削除（`js/estimate.js:1342`）が `deleteRemainingEstimate`（:241-256、member を見ず version/task/process で削除）を呼び、
+  同工程に他担当が残っていても工程レベルの見込残存が消える。`pushAction` data に `deletedRemaining` が無く Undo で残存が戻らない（`js/history.js:213-217` は対応済み）
+- [B-026] [確認済] レビュー予定の詳細モーダルで状態を保存すると本作業の見込残存を上書き／削除し、本作業予定の status まで変わる:
+  `js/schedule.js:855-860, 872` が isReview を見ずに残存を入力欄へ載せ、保存（:1070-1079）が `saveRemainingEstimate`/`deleteRemainingEstimate` を
+  無条件に呼ぶ（`calculateProgress` :458 はレビューを除外している）。さらに `js/estimate.js:205-209` の連動が `!s.isReview` を条件に含めない
+- [B-027] [確認済] 未スケジュール判定・一括登録・自動生成プレビューが isReview を無視: `js/schedule.js:2162-2167`（getUnscheduledEstimates）、
+  `:2418-2437`（registerCheckedSchedules、`addScheduleSilent` に `isReview` 未渡し）、`:1592-1599`（プレビュー）が 4 キー比較のみ。
+  実行側 :1387-1395 は `!s.isReview === !est.isReview` で別扱いのため件数が食い違い、レビュー見積の予定が作れない
+- [B-028] [確認済] 分析タブ「月別推移」で作業月未設定の見積が直近 6 ヶ月すべてに全額計上される（`js/report-analytics.js:109-111`）。
+  `getEstimateHoursForMonth`（`js/utils.js:136-138`）は月フィルタ用に「未設定は全額」仕様のため、月を横断して足す推移では重複。
+  レポートタブの `renderMonthlyTrend`（`js/report.js:1669-1683`）は未設定を載せない → 両タブ不一致（`1985e7a` の回帰）
+- [B-029] [確認済] ガントの `scrollToToday`（`js/schedule-render.js:1466-1476`）と `getVisibleCenterMonth`（:1488-1497）が `--gantt-scale`
+  （`this.uiScale`）を換算しない（`scrollToMonth` :1457 は換算済み）→ PC で「今日」が手前で止まり、ヘッダ月表示が先の月にズレる
+- [B-030] [確認済] 見込残存モーダルの実績リスト（`js/modal.js:352-357`）がレポートの月×版数フィルタを `filterType` で片側しか適用しない。
+  `filterReportData`（`js/report.js:1131-1190`）は両方適用するためセルの数値と合わない（工程内訳モーダルは `4753293` で修正済み、こちらは取り残し）
+- [B-031] [確認済] バックアップ JSON 復元（`js/storage.js` handleFileImport）の欠陥群: ①配列差し替え後に `initializeRecordIdAndDedup()` を
+  呼ばず（:501-552。loadData :226 は呼ぶ）新規登録 id が復元データと衝突 ②`s.id.match(...)`（:520）が数値 id で TypeError → 配列差し替え済み・
+  設定未復元・未保存の半端な状態で中断（loadData :218-222 は `String()` 化済み）③autoBackup が書く `matrixEstActFormat`/`chartColorScheme`/
+  `workDetailStyle`/`estimateStandardDisplay` を復元側が読まず、直後の `saveData(true)`（:685）で捨てられる（:555-683）
+  ④`memberOrder` を DOM にしか書かず `setMemberOrder` 未呼出（:640-643）→ saveData は旧値を保存しリロードで戻る
+- [B-032] [確認済] アクセントカラー Rose/Teal/Slate（`index.html:1493-1495`、`THEME_COLORS` :169-179 に定義あり）を選ぶとリロードで
+  Forest/Forest/Ink に戻る: `js/theme.js:116-126` `THEME_MIGRATION` に 3 色の恒等エントリが無く `|| 'forest'`／`'teal':'forest'`／`'slate':'ink'`
+  に落ち、`applyTheme` 末尾の `saveData(true)`（:230）が移行後の値を保存して選択が永久に失われる
+- [B-033] [確認済] 既定の「固定カラー」モード（`scheduleBarColorMode='original'`）でタスク色マップがリロード毎に破棄される:
+  `js/storage.js:171-182`（loadData）、`:528-538`（復元）、`js/merge-json.js:163-167` の `allColors` が `THEME_TASK_COLORS` のみで、
+  既定モードのパレット `TASK_COLORS`（`js/schedule.js:622` が返す）24 色のうち 17 色が含まれず `hasOldColors` が常に true → `setTaskColorMap({})`
+- [B-034] [確認済] 変更履歴（`js/history.js`）: ①`redoToAction`（:170-173）だけ `pop→push→applyRedo` の順で戻り値・例外を見ず、失敗した操作が
+  undo 側に積まれる（undo/redo/revertToAction は「成功時のみ移動」に修正済み）②アクション id が `State.nextId()`（:22-27）でレコード id と
+  カウンタ共有。`initializeRecordIdAndDedup`（`js/storage.js:320-331`）は履歴の id を見ずに再初期化するため、レコードを作らない操作（編集・削除等）
+  → リロード → 再操作で同 id が重複し、`revertToAction`/`redoToAction` の `top.id === targetId` 判定（:127-130, :170-175）が即 break して無反応
+- [B-035] [確認済] フィルタ状態の保存順序: `handleEstimateVersionChange`（`js/ui.js:3286`）等が `saveEstimateFilterToStorage()` の**後**に
+  `updateEstimateMonthOptions(value)` で月を連動変更するため差し替え後の月が保存されず、リロード時 `restoreEstimateFilterState`（:3714）が
+  旧月で版数候補を再生成して版数が「全版数」に戻る（月 :3250、レポート :3340/:3395 も同様）
+- [B-036] [確認済] タブ間同期の存在チェック欠落: `syncMonthToReport`（`js/ui.js:2948-2961`）、`syncMonthToEstimate`（:2963-2979）、
+  `syncVersionToEstimate`（:3015-3031）は選択肢の有無を見ずに value を代入し、無い月・版数で `''` になる（`syncMonthToActual` :2981-2998 だけ
+  `optionExists` ガードあり）→ レポートが「年NaN月」・実績全期間計上、見積一覧がその他工数のみ表示
+- [B-037] [確認済] 見積の表示形式をグループ以外へ切替えると作業月割り当てモードの state が残る: `setEstimateViewType`（`js/ui.js:1663-1669`）が
+  チェック OFF・パネル非表示だけで `setWorkMonthSelectionMode(false)`／`selectedEstimateIds.clear()` を呼ばず、グループ表示に戻ると
+  工程セルの onclick が `toggleEstimateSelection` のままで詳細が開けない
 
 ## P2（使いにくさ・不整合）
 
@@ -69,6 +146,27 @@
   - `scheduleSettings` の undo が固定スキーマ前提（取込側が未知の新規キーを持つ場合のみ完全復元されない端ケース）
   - **実ブラウザでの通しスモーク未実施**（差分マージボタン→JSON選択→プレビュー→マージ→Undo）。
     純粋ロジックは `tests/merge-core.test.js` 24件で担保、実績重複バグ（`76b2184`）等の個別修正は検証済み
+
+- [B-038] [確認済] `loadData`（`js/storage.js:158-193`）が全キーを 1 つの try で囲むため、1 キーの JSON 破損で残りが未読込のまま
+  `applyTheme→saveData(true)`（`js/theme.js:230`）が無傷のキーを `[]`/`{}` で上書き。キー毎 try/catch（`safeGetLocalStorage` あり）＋ロード失敗時は保存抑止
+- [B-039] [確認済] レポート集計の粒度混在: ①マトリクスの色・進捗（`js/report.js:2482-2501, 2599-2625, 2657-2665`）が月フィルタ時に月按分の
+  見積・実績と全期間の見込残存を混ぜて判定 ②見積自動按分 `computeEstimateShares`（:1794-1802）が isReview を見ずレビュー実績が本作業見積を引き抜く
+  ③分析タブの版数別テーブル・精度推移（`js/report-analytics.js:155-163, 191-201`）が月フィルタを無視（隣の担当者別は反映）
+- [B-040] [確認済] スケジュール: ①遅延判定の二重実装で数え方が不一致（`js/schedule.js:508-513` 終了日超過のみ vs `js/schedule-render.js:1357-1385`
+  80% 未満も遅延）②`expandRangeForSchedules`（`schedule-render.js:374-391`）が `new Date('YYYY-MM-DD')` UTC 解釈で最終日終了の予定を範囲外と誤判定し
+  不要に拡張 ③タッチドラッグ（:2114-2117）が元位置に戻しても移動確定・Undo 履歴が積まれる（mouseup :1814 は判定あり）
+  ④taskColorMap のキー二重（`schedule.js:350,386` は `task`、`schedule-render.js:1081` は `version/task`）でパレットが半分で枯渇
+- [B-041] [確認済] 見積: ①複数月按分の未丸め保存（`js/estimate-add.js:1232` `hours/months.length` → `splitHoursEvenly`。P1「未丸め保存」修正の取りこぼし）
+  ②編集の開始月変更で月別工数が index 位置で引き継がれ別の月にズレる（`js/estimate-edit.js:598-606`）③「：」を含まない対応名（Excel 取込・旧形式）で
+  詳細モーダルからの工程追加が「帳票名を入力してください」で不能・全工程編集で強制リネーム（`estimate-add.js:99-102, 163-200, 343-350`）
+  ④Excel 取込で工数空欄が `Number('')=0` を通り 0h 見積/実績になる（`js/excel-import.js:150,158,202,210`）
+- [B-042] [確認済] 実績: ①実績 0 件・全期間でタイムラインが開けない（`js/actual.js:129-133` の早期 return がビュー分岐より前）②複数日予定バーの
+  クリックがバー先頭日で「予定から登録」（`js/actual-timeline.js:1903`）③候補リストの残/超過（`js/actual.js:1524-1556`）が担当別見積から全員合算実績を引く
+  （`feature/fix-multi-member-display` と重なる可能性）④モバイル長押し範囲選択と月送りスワイプが同時発火（`actual-timeline.js:2759-2816`）
+  ⑤実績月切替のモバイルアニメ分岐（`js/ui.js:3161-3203`）が早期 return し他タブへの月同期が漏れる
+- [B-043] [確認済] モバイル UI: ①`TAB_TITLES`（`js/ui.js:4054-4061`）に `analytics` が無くヘッダタイトルが前タブのまま
+  ②`showTab` の同一タブ早期 return（:163-166）が `closeMobileSidebar()`（:329）より前でサイドバーが閉じない
+- [B-044] [確認済] AI 分析の設定パネル（`js/ai-analysis.js:415-423`）が描画毎に `/api/tags` を叩き、推論中は 200ms 毎の再描画で疎通リクエストが多重発火
 
 ## 大物（設計が要るもの）
 
