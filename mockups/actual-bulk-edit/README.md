@@ -93,4 +93,4 @@
 ## ステータス
 
 **案1 採用**（2026-08-29 決定。「条件で選択」「タイムラインからの選択」をモックに追加済み）。
-次は `docs/superpowers/specs/` に設計書を起こし、ADR と相互リンクする。
+設計書: `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md`（レビュー待ち）。

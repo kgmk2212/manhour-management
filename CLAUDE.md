@@ -247,7 +247,7 @@ git branch -D experiment/sandbox
 |---------|------|------|
 | `mockups/mobile-backup-access/` | モバイル版バックアップ復元アクセス改善 | 検討中 |
 | `mockups/timeline-actuals/` | タイムライン実績入力（D&D） | 検討中 |
-| `mockups/actual-bulk-edit/` | 実績のまとめ変更（選択一括編集／条件置換／表直接編集の3案比較） | 検討中 |
+| `mockups/actual-bulk-edit/` | 実績のまとめ変更（選択一括編集／条件置換／表直接編集の3案比較） | 案1 採用・設計書 `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md` |
 
 ---
 
