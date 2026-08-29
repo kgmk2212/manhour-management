@@ -189,6 +189,39 @@ git branch -D experiment/sandbox
 
 ---
 
+## コードマップ（探索コストの削減）
+
+`docs/CODEMAP.md` は js/・index.html の「どこに何があるか」の索引（`名前:行番号` 形式）。
+**自動生成物なので手で編集しない。**
+
+| 項目 | 内容 |
+|------|------|
+| 使い方 | 関数・要素IDを探すときは、`js/` を総当たり Grep する**前に** CODEMAP.md を Grep する。当たった行番号をそのまま `Read` の `offset` に渡せば該当箇所だけ読める |
+| 再生成 | `node scripts/codemap.mjs`（`js/**.js`・`index.html`・`style.css` の編集時は PostToolUse hook が自動実行） |
+| 鮮度保証 | CI の `checks` ジョブが `node scripts/codemap.mjs --check` で検査。ずれていれば赤くなる |
+| テスト | `tests/codemap.test.js`（`node --test`） |
+
+**なぜ生成物にしたか**: 手書きの `CODEBASE_STRUCTURE.md` は2ヶ月で誤情報化した
+（「19ファイル」と書かれていたが実際は34ファイル、行数も全て古い）。誤った索引は
+無いよりも害が大きいため、索引は人が書かず機械が生成し CI が守る。
+
+### 探索の原則
+
+実測（2026-08-29・全25セッション）に基づく方針:
+
+- **同じファイルの同じ範囲を二度読まない** — Read 347回のうち143回（41.2%・約124K tok）が
+  同一セッション内の重複読みだった。PreToolUse hook が重複時に警告する（ブロックはしない）
+- **複数ファイルにまたがる調査は Explore エージェントに委譲する** — 子の `tool_result` は
+  本体の文脈に入らないため、以降の全ターンでの再送コストが消える。実測で Agent 1回あたり
+  317 tok に対し、自前調査は1セッション 5K〜46K tok を文脈に積む
+- 読むときは `offset`/`limit` で必要な範囲だけ（現状67%は実施済み）
+
+> hook 本体は `.shared/hooks/`（gitignore 外の共有ディレクトリ）。
+> 各フラグ（`codemap-autogen.on` / `dup-read-guard.on` / `search-policy.on`）を
+> 消せばその機能だけ即座に無効化できる。
+
+---
+
 ## モックアップ管理
 
 モックアップは設計判断の重要な記録資料としてGitに含める。
@@ -216,5 +249,6 @@ git branch -D experiment/sandbox
 
 - `docs/GANTT_CHART_SPEC.md` - ガントチャート仕様書
 - `docs/GANTT_CHART_DESIGN.md` - 詳細設計書
-- `ARCHITECTURE.md` - アーキテクチャ構成
-- `CODEBASE_STRUCTURE.md` - コードベース構造
+- `docs/CODEMAP.md` - 関数・要素IDの索引（自動生成。**何かを探すときはまずこれ**）
+- `ARCHITECTURE.md` - アーキテクチャ構成（依存関係・技術仕様。ファイルサイズ等の数値は古い）
+- `CODEBASE_STRUCTURE.md` - コードベース構造（⚠️ 2026-06-14 時点の手書き記録。現状と不一致）

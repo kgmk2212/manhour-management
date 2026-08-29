@@ -88,6 +88,13 @@ jobs:
           fi
           echo "参照切れなし"
 
+      # docs/CODEMAP.md（関数・要素IDの索引）が現在のコードと一致しているか検査する。
+      # 手書きの CODEBASE_STRUCTURE.md が誤情報化した反省から、索引は生成物とし
+      # 鮮度を CI で守る。ローカルでは PostToolUse hook が自動再生成するため、
+      # ここが赤くなるのは hook 未設定の環境で js/index.html を触った場合。
+      - name: コードマップの鮮度チェック
+        run: node scripts/codemap.mjs --check
+
   # ESLint（レベル2）: "構文は正しいが未定義参照" 型を静的検出する。
   # 既存の checks（依存ゼロ）とは分離し、開発用依存を使うのはこのジョブだけに閉じる。
   lint:
