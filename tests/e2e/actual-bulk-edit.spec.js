@@ -131,3 +131,39 @@ test("一括編集: その他工数に版数だけ付けると警告が出て適
   await page.locator("#btnBulkActualEditCancel").click();
   await expect(page.locator("#bulkActualEditModal")).toBeHidden();
 });
+
+test("一括削除は確認あり、複製は指定日に新規追加。どちらも Undo で戻る", async ({ page }) => {
+  await page.locator("#btnActualSelectionMode").click();
+  await page.locator('tr[data-actual-id="101"] td:nth-child(3)').click();
+  await page.locator('tr[data-actual-id="104"] td:nth-child(3)').click();
+
+  // 複製
+  await page.locator("#btnBulkActualCopy").click();
+  await expect(page.locator("#bulkActualCopyModal")).toBeVisible();
+  await page.locator("#bulkActualCopyDate").fill(D(26));
+  await expect(page.locator("#bulkActualCopyPreview")).toContainText("2 件");
+  await page.locator("#btnBulkActualCopyApply").click();
+  let saved = await readActuals(page);
+  expect(saved.length).toBe(ACTUALS.length + 2);
+  const copies = saved.filter((a) => a.date === D(26));
+  expect(copies.map((a) => a.task).sort()).toEqual(["帳票A出力改修", "帳票A出力改修"]);
+  expect(new Set(saved.map((a) => a.id)).size).toBe(saved.length); // id は一意
+  await page.locator(".bk-undo-toast button.bk-undo").click();
+  expect((await readActuals(page)).length).toBe(ACTUALS.length);
+
+  // 削除（confirm を accept）
+  await page.locator('tr[data-actual-id="102"] td:nth-child(3)').click();
+  page.once("dialog", (d) => { expect(d.message()).toContain("1 件"); d.accept(); });
+  await page.locator("#btnBulkActualDelete").click();
+  saved = await readActuals(page);
+  expect(saved.find((a) => a.id === 102)).toBeUndefined();
+  await page.locator(".bk-undo-toast button.bk-undo").click();
+  saved = await readActuals(page);
+  expect(saved.find((a) => a.id === 102)).toEqual(ACTUALS.find((a) => a.id === 102));
+
+  // 削除（confirm を dismiss → 何も変わらない）
+  await page.locator('tr[data-actual-id="103"] td:nth-child(3)').click();
+  page.once("dialog", (d) => d.dismiss());
+  await page.locator("#btnBulkActualDelete").click();
+  expect((await readActuals(page)).find((a) => a.id === 103)).toBeTruthy();
+});

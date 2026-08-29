@@ -2096,6 +2096,27 @@
         </div>
     </div>
 
+    <!-- 実績の一括複製モーダル -->
+    <div id="bulkActualCopyModal" class="modal">
+        <div class="modal-content" style="max-width: min(calc(480px * var(--ui-scale)), 90vw);">
+            <div class="modal-header">
+                <h3 id="bulkActualCopyTitle">選択した実績を別日に複製</h3>
+                <button class="modal-close" id="btnCloseBulkActualCopyModal" aria-label="閉じる">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">複製先の日付</label>
+                    <input type="date" id="bulkActualCopyDate" style="max-width: 200px;">
+                </div>
+                <div id="bulkActualCopyPreview"></div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="btnBulkActualCopyCancel">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="btnBulkActualCopyApply">複製</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 見込残存時間一括編集モーダル -->
     <div id="bulkRemainingModal" class="modal">
         <div class="modal-content" style="max-width: 1000px; max-height: 85vh;">

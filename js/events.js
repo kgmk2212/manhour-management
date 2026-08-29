@@ -116,6 +116,12 @@ export function initEventHandlers() {
     bind('btnCloseBulkActualEditModal', ActualBulk.closeBulkActualEditModal);
     bind('btnBulkActualApply', ActualBulk.applyBulkActualEdit);
     ActualBulk.initBulkActualModalEvents();
+    bind('btnBulkActualDelete', ActualBulk.deleteSelectedActuals);
+    bind('btnBulkActualCopy', ActualBulk.openBulkActualCopyModal);
+    bind('btnBulkActualCopyCancel', ActualBulk.closeBulkActualCopyModal);
+    bind('btnCloseBulkActualCopyModal', ActualBulk.closeBulkActualCopyModal);
+    bind('btnBulkActualCopyApply', ActualBulk.applyBulkActualCopy);
+    ActualBulk.initBulkActualCopyEvents();
     const exportBtn = document.getElementById('btnExportBackup');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBackup);

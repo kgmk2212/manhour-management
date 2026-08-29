@@ -6,12 +6,12 @@
 import {
     actuals, estimates, setActuals,
     actualSelectionMode, setActualSelectionMode, selectedActualIds,
-    memberOrder,
+    memberOrder, nextId,
 } from './state.js';
 import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
 import { PROCESS } from './constants.js';
 import { pushAction, undo } from './history.js';
-import { applyBulkPatch, summarizeField, displayValue } from './actual-bulk-core.js';
+import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString } from './actual-bulk-core.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -340,6 +340,62 @@ function afterBulkChange(message) {
     if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
     updateActualSelectionUI();
     showUndoToast(message);
+}
+
+// ============================================
+// 一括削除・別日に複製
+// ============================================
+
+/** 選択中の実績を確認のうえ削除（Undo 可） */
+export function deleteSelectedActuals() {
+    const targets = getSelectedActuals();
+    if (!targets.length) return;
+    if (!confirm(`${targets.length} 件の実績を削除しますか？`)) return;
+    const { after, deleted } = deleteActuals(actuals, targets.map(a => a.id));
+    setActuals(after);
+    pushAction({ type: 'actual_bulk_edit', description: `実績一括削除: ${deleted.length}件`, data: { deletedActuals: deleted.map(a => ({ ...a })) } });
+    afterBulkChange(`${deleted.length} 件の実績を削除しました`);
+}
+
+function renderCopyPreview() {
+    const targets = getSelectedActuals();
+    const date = $('bulkActualCopyDate').value;
+    const ok = isValidDateString(date);
+    const list = targets.slice(0, 4).map(a => `<span class="bk-diff-date">${escapeHtml(a.date)} → <b>${escapeHtml(date || '?')}</b></span><span>${escapeHtml(a.member)} ${escapeHtml(a.task)} ${escapeHtml(a.process || '—')} ${formatHours(a.hours)}h</span>`).join('');
+    $('bulkActualCopyPreview').innerHTML = `<div class="bk-preview"><div class="bk-preview-title">複製プレビュー<span class="bk-muted">${targets.length} 件を新規追加（元は残す）</span></div><div class="bk-diff">${list}</div>${targets.length > 4 ? `<p class="bk-muted">他 ${targets.length - 4} 件</p>` : ''}${ok ? '' : '<p class="bk-warn">⚠ 複製先の日付を入力してください。</p>'}</div>`;
+    $('btnBulkActualCopyApply').disabled = !ok;
+    $('btnBulkActualCopyApply').textContent = `${targets.length} 件を複製`;
+}
+
+export function openBulkActualCopyModal() {
+    const targets = getSelectedActuals();
+    if (!targets.length) { showAlert('実績を選択してください', false); return; }
+    $('bulkActualCopyTitle').textContent = `選択した ${targets.length} 件を別日に複製`;
+    $('bulkActualCopyDate').value = targets[0].date;
+    renderCopyPreview();
+    $('bulkActualCopyModal').style.display = 'flex';
+}
+
+export function closeBulkActualCopyModal() {
+    $('bulkActualCopyModal').style.display = 'none';
+}
+
+export function applyBulkActualCopy() {
+    const targets = getSelectedActuals();
+    const date = $('bulkActualCopyDate').value;
+    if (!targets.length || !isValidDateString(date)) return;
+    const { after, added } = duplicateActuals(actuals, targets.map(a => a.id), date, nextId);
+    setActuals(after);
+    pushAction({ type: 'actual_bulk_edit', description: `実績一括複製: ${added.length}件 → ${date}`, data: { afterActuals: added.map(a => ({ ...a })), addedActualIds: added.map(a => a.id) } });
+    afterBulkChange(`${added.length} 件の実績を ${date} に複製しました`);
+    closeBulkActualCopyModal();
+}
+
+/** 複製モーダルの日付変更でプレビュー更新（initEventHandlers から呼ぶ） */
+export function initBulkActualCopyEvents() {
+    const input = $('bulkActualCopyDate'); if (!input) return;
+    input.addEventListener('change', renderCopyPreview);
+    input.addEventListener('input', renderCopyPreview);
 }
 
 /** 「元に戻す」付きトースト（8 秒で消える） */
