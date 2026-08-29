@@ -170,12 +170,21 @@ function fillConditionOptions() {
     p.innerHTML = `<option value="">指定なし</option>${opt(PROCESS.TYPES, pv)}`;
 }
 
+/** 現在の表示形式で画面に出ている実績 id（リスト: 行、タイムライン: バー） */
+function visibleActualIdsForView() {
+    if ($('actualViewType')?.value === 'timeline') {
+        return new Set([...document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids]')]
+            .flatMap(bar => bar.dataset.actualIds.split(',').filter(Boolean).map(Number)));
+    }
+    return new Set(visibleRowIds());
+}
+
 /** 該当件数・合計・表示外注記・一覧ハイライトを更新 */
 export function updateActualConditionHits() {
     if (!condOpen) return;
     const hits = findByCondition(actuals, getActualCondition());
-    const visible = new Set(visibleRowIds());
-    const hidden = visible.size ? hits.filter(a => !visible.has(a.id)).length : 0;
+    const visible = visibleActualIdsForView();
+    const hidden = hits.filter(a => !visible.has(a.id)).length;
     const box = $('actualCondHits');
     box.classList.toggle('is-zero', hits.length === 0);
     box.innerHTML = `該当<b>${hits.length}</b>件${hits.length ? ` · ${formatHours(hits.reduce((s, a) => s + a.hours, 0))}h` : ' — 条件を広げてください'}${hidden ? `<span class="bk-pop-note">表示外 ${hidden} 件を含む</span>` : ''}`;
@@ -218,8 +227,11 @@ export function applyActualCondition(mode) {
 
 /** 条件入力のイベント登録（initEventHandlers から呼ぶ） */
 export function initActualConditionEvents() {
-    ['actualCondFrom', 'actualCondTo', 'actualCondMember', 'actualCondVersion', 'actualCondTask', 'actualCondProcess'].forEach(id => {
-        const el = $(id); if (el) { el.addEventListener('change', updateActualConditionHits); el.addEventListener('input', updateActualConditionHits); }
+    ['actualCondMember', 'actualCondVersion', 'actualCondTask', 'actualCondProcess'].forEach(id => {
+        const el = $(id); if (el) el.addEventListener('change', updateActualConditionHits);
+    });
+    ['actualCondFrom', 'actualCondTo'].forEach(id => {
+        const el = $(id); if (el) el.addEventListener('input', updateActualConditionHits);
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && condOpen) closeActualConditionPopover(); });
 }

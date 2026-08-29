@@ -4,13 +4,13 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 36 ファイル / 38,240 行
+## js/ — 36 ファイル / 38,252 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
 
-### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (497行)
-- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, isActualConditionOpen:150, getActualCondition:153, updateActualConditionHits:174, toggleActualConditionPopover:192, closeActualConditionPopover:201, applyActualCondition:212, initActualConditionEvents:220, openBulkActualEditModal:342, closeBulkActualEditModal:356, applyBulkActualEdit:390, deleteSelectedActuals:425, openBulkActualCopyModal:445, closeBulkActualCopyModal:454, applyBulkActualCopy:458, initBulkActualCopyEvents:470, showUndoToast:477, initBulkActualModalEvents:490
+### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (509行)
+- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, isActualConditionOpen:150, getActualCondition:153, updateActualConditionHits:183, toggleActualConditionPopover:201, closeActualConditionPopover:210, applyActualCondition:221, initActualConditionEvents:229, openBulkActualEditModal:354, closeBulkActualEditModal:368, applyBulkActualEdit:402, deleteSelectedActuals:437, openBulkActualCopyModal:457, closeBulkActualCopyModal:466, applyBulkActualCopy:470, initBulkActualCopyEvents:482, showUndoToast:489, initBulkActualModalEvents:502
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
@@ -123,4 +123,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9100行
+- style.css — 9101行
