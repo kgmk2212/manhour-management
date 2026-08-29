@@ -126,8 +126,14 @@ export const INSIGHT = {
     // 見積外の作業（見積が無いタスクに積まれた実績）
     UNESTIMATED_WARN_HOURS: 8,
 
+    // 月の標準工数（営業日数 × 8h − 休暇）に対する見積の割当率（%）
+    // 見積と実績の突き合わせとは別軸で、稼働可能時間に対する多寡を見る
+    CAPACITY_OVER_PERCENT: 110,
+    CAPACITY_UNDER_PERCENT: 70,
+    CAPACITY_MIN_STANDARD_HOURS: 8, // 標準工数がこれ未満の担当者は判定しない
+
     // 表示件数の上限
-    MAX_ITEMS: 6
+    MAX_ITEMS: 8
 };
 
 /**

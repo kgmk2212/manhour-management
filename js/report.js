@@ -49,7 +49,7 @@ import {
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 import { pushAction } from './history.js';
-import { INSIGHT } from './constants.js';
+import { INSIGHT, CALCULATIONS } from './constants.js';
 
 // ============================================
 // 人月換算基準の計算
@@ -1747,7 +1747,7 @@ function renderMonthlyTrend(filteredEstimates, filteredActuals) {
  * @param {number} workingDaysPerMonth - 月あたり稼働日数
  * @returns {Object} { html: string, chartData: Object|null }
  */
-function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth) {
+function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth, capacity) {
     if (!reportSettings.memberAnalysisEnabled && !reportSettings.insightsEnabled) {
         return { html: '', chartData: null };
     }
@@ -1770,7 +1770,7 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
 
     // AIライクなインサイト
     if (reportSettings.insightsEnabled) {
-        html += renderInsights(filteredEstimates, filteredActuals);
+        html += renderInsights(filteredEstimates, filteredActuals, capacity);
     }
 
     html += '</div>'; // close phase3-content
@@ -2080,6 +2080,102 @@ function buildMemberInsights(filteredEstimates, filteredActuals) {
 }
 
 /**
+ * 月の標準工数に対する見積の割当を判定する
+ *
+ * 標準工数 = 営業日数 × 1日の稼働時間 − その担当者の休暇時間。
+ * 見積と実績の突き合わせ（精度）とは別軸で、稼働可能時間に対して
+ * 見積が多すぎる／少なすぎる状態を検出する。
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {Object|null} capacity - { workingDays, hoursPerDay, periodLabel, vacationHoursByMember }
+ * @returns {Array<Object>} インサイト配列
+ */
+function buildCapacityInsights(filteredEstimates, capacity) {
+    // 対象期間が特定できない（月フィルタが全期間など）場合は判定しない
+    if (!capacity || !(capacity.workingDays > 0)) {
+        return [];
+    }
+
+    const hoursPerDay = capacity.hoursPerDay > 0 ? capacity.hoursPerDay : 8;
+    const baseStandard = capacity.workingDays * hoursPerDay;
+    const vacationHours = capacity.vacationHoursByMember || {};
+
+    // 見積が割り当てられている担当者だけを対象にする
+    // （実績しか無い担当者を「割当不足」と誤判定しないため）
+    const judged = Object.entries(sumEstimateHoursByMember(filteredEstimates))
+        .map(([name, estimate]) => {
+            const standard = Math.max(0, baseStandard - (vacationHours[name] || 0));
+            return {
+                name,
+                estimate,
+                standard,
+                usage: standard > 0 ? estimate / standard * 100 : 0
+            };
+        })
+        .filter(m => m.estimate > 0 && m.standard >= INSIGHT.CAPACITY_MIN_STANDARD_HOURS);
+
+    if (judged.length === 0) {
+        return [];
+    }
+
+    const insights = [];
+    const period = capacity.periodLabel ? `${capacity.periodLabel}・` : '';
+
+    // チーム全体
+    const teamEstimate = judged.reduce((sum, m) => sum + m.estimate, 0);
+    const teamStandard = judged.reduce((sum, m) => sum + m.standard, 0);
+    const teamUsage = teamStandard > 0 ? teamEstimate / teamStandard * 100 : 0;
+    const teamDetail = `${period}見積 ${teamEstimate.toFixed(1)}h / 標準 ${teamStandard.toFixed(1)}h・対象${judged.length}名`;
+
+    if (teamUsage > INSIGHT.CAPACITY_OVER_PERCENT) {
+        insights.push({
+            type: 'warning',
+            title: 'チームのキャパシティ超過',
+            message: `見積がチームの稼働可能時間の${teamUsage.toFixed(0)}%に達しています（${teamDetail}）。要員追加かスコープ調整の検討が必要です。`
+        });
+    } else if (teamUsage < INSIGHT.CAPACITY_UNDER_PERCENT) {
+        insights.push({
+            type: 'warning',
+            title: 'チームの割当不足',
+            message: `見積がチームの稼働可能時間の${teamUsage.toFixed(0)}%にとどまっています（${teamDetail}）。見積漏れか、まだ計画に落ちていない作業がある可能性があります。`
+        });
+    }
+
+    // 担当者別
+    const format = (members) => {
+        const shown = members
+            .slice(0, INSIGHT.MEMBER_NAME_MAX_ITEMS)
+            .map(m => `${m.name}（${m.usage.toFixed(0)}%・見積 ${m.estimate.toFixed(1)}h / 標準 ${m.standard.toFixed(1)}h）`)
+            .join('、');
+        const rest = members.length - INSIGHT.MEMBER_NAME_MAX_ITEMS;
+        return rest > 0 ? `${shown} ほか${rest}名` : shown;
+    };
+
+    const over = judged
+        .filter(m => m.usage > INSIGHT.CAPACITY_OVER_PERCENT)
+        .sort((a, b) => b.usage - a.usage);
+    if (over.length > 0) {
+        insights.push({
+            type: 'warning',
+            title: 'キャパシティ超過の担当者',
+            message: `${format(over)}。稼働可能時間を超える見積が割り当てられています。`
+        });
+    }
+
+    const under = judged
+        .filter(m => m.usage < INSIGHT.CAPACITY_UNDER_PERCENT)
+        .sort((a, b) => a.usage - b.usage);
+    if (under.length > 0) {
+        insights.push({
+            type: 'warning',
+            title: 'キャパシティに余裕がある担当者',
+            message: `${format(under)}。稼働可能時間に対して見積が少なく、割当を増やせる余地があります。`
+        });
+    }
+
+    return insights;
+}
+
+/**
  * 工程別のインサイト（乖離の大きい工程・最適な工程）を生成する
  * @param {Array<{process: string, estimate: number, actual: number}>} evaluated - 評価対象タスク
  * @returns {{warnings: Array<Object>, best: Object|null}}
@@ -2128,19 +2224,24 @@ function buildProcessInsights(evaluated) {
 /**
  * レポートのインサイトを判定する（描画を伴わない純粋関数）
  *
- * 評価対象は「見積があり、かつ実績があるタスク」に限定する。
- * 未着手タスクを混ぜると実績不足を見積過大と誤判定するため。
+ * 見積と実績の突き合わせ（精度）では、評価対象を「見積があり、かつ実績がある
+ * タスク」に限定する。未着手タスクを混ぜると実績不足を見積過大と誤判定するため。
+ * capacity を渡した場合は、月の標準工数に対する見積の割当も併せて判定する。
  * @param {Array} filteredEstimates - フィルタ済み見積データ
  * @param {Array} filteredActuals - フィルタ済み実績データ
- * @returns {Array<{type: string, title: string, message: string}>} 警告→情報→成功の順
+ * @param {Object|null} capacity - 標準工数の判定材料。対象期間が特定できない場合は null
+ * @returns {Array<{type: string, title: string, message: string}>} 警告を先頭に並べた配列
  */
-export function computeInsights(filteredEstimates, filteredActuals) {
+export function computeInsights(filteredEstimates, filteredActuals, capacity = null) {
     const insights = [];
     const tasks = summarizeTasksForInsights(filteredEstimates, filteredActuals);
     const evaluated = tasks.filter(t => t.estimate > 0 && t.actual > 0);
     const unestimated = tasks.filter(t => t.estimate === 0 && t.actual > 0);
 
     let processInsights = { warnings: [], best: null };
+
+    // 稼働可能時間に対する割当は、実績の有無に関わらず先に評価する
+    insights.push(...buildCapacityInsights(filteredEstimates, capacity));
 
     if (evaluated.length > 0) {
         insights.push(buildOverallInsight(calcAccuracyMetrics(evaluated)));
@@ -2174,10 +2275,45 @@ export function computeInsights(filteredEstimates, filteredActuals) {
 }
 
 /**
+ * 標準工数判定の材料を組み立てる
+ *
+ * 対象期間が1ヶ月に特定できるときだけ返す。全期間だと担当者ごとの参画月数が
+ * 異なり、標準工数の分母が実態と合わないため判定しない。
+ * @param {string} selectedMonth - 選択された月（'all' または 'YYYY-MM'）
+ * @returns {Object|null} { workingDays, hoursPerDay, periodLabel, vacationHoursByMember }
+ */
+function buildCapacityContext(selectedMonth) {
+    if (!selectedMonth || selectedMonth === 'all') {
+        return null;
+    }
+
+    const [year, month] = selectedMonth.split('-');
+    const workingDays = getWorkingDays(parseInt(year), parseInt(month));
+    if (!(workingDays > 0)) {
+        return null;
+    }
+
+    // 対象月の休暇時間を担当者ごとに合計する（会社休日・祝日は営業日数側で除外済み）
+    const vacationHoursByMember = {};
+    vacations.forEach(v => {
+        if (typeof v.date === 'string' && v.date.startsWith(selectedMonth)) {
+            vacationHoursByMember[v.member] = (vacationHoursByMember[v.member] || 0) + (Number(v.hours) || 0);
+        }
+    });
+
+    return {
+        workingDays,
+        hoursPerDay: CALCULATIONS.HOURS_PER_DAY,
+        periodLabel: `${year}年${parseInt(month)}月`,
+        vacationHoursByMember
+    };
+}
+
+/**
  * インサイトを描画
  */
-function renderInsights(filteredEstimates, filteredActuals) {
-    const insights = computeInsights(filteredEstimates, filteredActuals);
+function renderInsights(filteredEstimates, filteredActuals, capacity) {
+    const insights = computeInsights(filteredEstimates, filteredActuals, capacity);
 
     if (insights.length === 0) {
         return '';
@@ -2225,8 +2361,9 @@ export function renderReportAnalytics(filteredActuals, filteredEstimates, select
     // Phase 2: ビジュアル分析
     html += renderPhase2VisualAnalysis(filteredEstimates, filteredActuals, selectedMonth);
 
-    // Phase 3: 担当者分析とインサイト
-    const phase3Result = renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth);
+    // Phase 3: 担当者分析とインサイト（月が特定できるときは標準工数比も判定する）
+    const capacity = buildCapacityContext(selectedMonth);
+    const phase3Result = renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingDaysPerMonth, capacity);
     html += phase3Result.html;
 
     return { html, chartData: phase3Result.chartData };

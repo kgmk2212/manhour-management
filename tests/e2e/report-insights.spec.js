@@ -15,11 +15,22 @@ const actRec = (id, task, member, hours, process = "PG") => ({
   id, date: "2026-08-03", version: "V1.0", task, process, member, hours,
 });
 
-const seed = (estimates, actuals) => ({
+const seed = (estimates, actuals, vacations = []) => ({
   manhour_estimates: JSON.stringify(estimates),
   manhour_actuals: JSON.stringify(actuals),
+  manhour_vacations: JSON.stringify(vacations),
   manhour_currentTab: "report",
 });
+
+/** 8h の休暇を指定日数ぶん生成する（営業日数 × 8h から差し引かれる） */
+const vacationDays = (member, count) =>
+  Array.from({ length: count }, (_, i) => ({
+    id: 900 + i,
+    member,
+    date: `2026-08-${String(i + 3).padStart(2, "0")}`,
+    vacationType: "有給",
+    hours: 8,
+  }));
 
 /** 見積は合計一致だが、担当者ごとに +50% / -50% と相殺しているケース */
 const CANCEL_OUT = seed(
@@ -27,10 +38,14 @@ const CANCEL_OUT = seed(
   [actRec(101, "対応A", "山田", 60), actRec(102, "対応B", "佐藤", 20)]
 );
 
-/** 見積どおりに進行しているケース（緑が出てよい対照） */
+/**
+ * 見積どおりに進行しているケース（緑が出てよい対照）
+ * 月の標準工数（2026-08 は 20営業日 × 8h = 160h）に対しても妥当な割当にして、
+ * キャパシティ側の警告が混ざらないようにする。
+ */
 const ACCURATE = seed(
-  [estRec(1, "対応A", "山田", 40), estRec(2, "対応B", "佐藤", 40)],
-  [actRec(101, "対応A", "山田", 40), actRec(102, "対応B", "佐藤", 40)]
+  [estRec(1, "対応A", "山田", 150), estRec(2, "対応B", "佐藤", 150)],
+  [actRec(101, "対応A", "山田", 150), actRec(102, "対応B", "佐藤", 150)]
 );
 
 /** 実績が見積の半分しか無いケース（旧実装では警告が一切出なかった） */
@@ -61,8 +76,8 @@ const readInsights = (page) =>
       });
   });
 
-/** seed を入れてレポートタブを当月表示にする */
-async function openReport(page, entries) {
+/** seed を入れてレポートタブを指定月の表示にする */
+async function openReport(page, entries, month = M) {
   await page.addInitScript((data) => {
     localStorage.clear();
     for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v);
@@ -74,7 +89,7 @@ async function openReport(page, entries) {
     window.showTab("report");
     document.getElementById("reportMonth").value = m;
     window.updateReport();
-  }, M);
+  }, month);
   await expect(page.locator("#report")).toHaveClass(/active/);
 }
 
@@ -111,6 +126,64 @@ test("実績が見積を大きく下回れば「見積が過大」を警告す�
   expect(titles(insights)).toContain("見積が過大");
   expect(titles(insights)).toContain("見積に余裕がある担当者");
   expect(titles(insights), "半分しか消化していないのに最適な工程は出さない").not.toContain("最適な工程");
+});
+
+// --- 月の標準工数（営業日数 × 8h − 休暇）に対する見積の割当 ---
+// 営業日数の実値に依存しないよう、標準工数(160h前後)に対して極端な値を使う。
+
+test("月の標準工数を大きく超える見積の担当者を名指しする", async ({ page }) => {
+  await openReport(page, seed(
+    [estRec(1, "対応A", "山田", 400), estRec(2, "対応B", "佐藤", 120)],
+    [actRec(101, "対応A", "山田", 100), actRec(102, "対応B", "佐藤", 100)]
+  ));
+  const insights = await readInsights(page);
+
+  const warn = insights.find((i) => i.title === "キャパシティ超過の担当者");
+  expect(warn, `キャパ超過の警告が必要: ${titles(insights).join(" / ")}`).toBeTruthy();
+  expect(warn.message).toContain("山田");
+  expect(warn.message).not.toContain("佐藤");
+});
+
+test("月の標準工数に対して見積が少ない担当者を名指しする", async ({ page }) => {
+  await openReport(page, seed(
+    [estRec(1, "対応A", "山田", 150), estRec(2, "対応B", "佐藤", 20)],
+    [actRec(101, "対応A", "山田", 100), actRec(102, "対応B", "佐藤", 20)]
+  ));
+  const insights = await readInsights(page);
+
+  const warn = insights.find((i) => i.title === "キャパシティに余裕がある担当者");
+  expect(warn, `キャパ余裕の警告が必要: ${titles(insights).join(" / ")}`).toBeTruthy();
+  expect(warn.message).toContain("佐藤");
+});
+
+test("休暇を登録すると稼働可能時間が減り、同じ見積でも超過判定に変わる", async ({ page }) => {
+  const estimates = [estRec(1, "対応A", "山田", 100), estRec(2, "対応B", "佐藤", 150)];
+  const actuals = [actRec(101, "対応A", "山田", 80), actRec(102, "対応B", "佐藤", 120)];
+
+  // 休暇なし: 100h は標準工数(160h前後)の 6割程度 → 余裕側
+  await openReport(page, seed(estimates, actuals));
+  const before = await readInsights(page);
+  expect(titles(before)).toContain("キャパシティに余裕がある担当者");
+  expect(titles(before)).not.toContain("キャパシティ超過の担当者");
+
+  // 山田に 15日ぶん(120h)の休暇 → 稼働可能時間が大きく減り 100h が超過になる
+  await openReport(page, seed(estimates, actuals, vacationDays("山田", 15)));
+  const after = await readInsights(page);
+  const warn = after.find((i) => i.title === "キャパシティ超過の担当者");
+  expect(warn, `休暇が標準工数に反映されていない: ${titles(after).join(" / ")}`).toBeTruthy();
+  expect(warn.message).toContain("山田");
+});
+
+test("全期間表示では標準工数の判定を出さない（参画月数が担当者ごとに異なるため）", async ({ page }) => {
+  await openReport(page, seed(
+    [estRec(1, "対応A", "山田", 400), estRec(2, "対応B", "佐藤", 20)],
+    [actRec(101, "対応A", "山田", 100), actRec(102, "対応B", "佐藤", 20)]
+  ), "all");
+  const insights = await readInsights(page);
+
+  expect(titles(insights)).not.toContain("キャパシティ超過の担当者");
+  expect(titles(insights)).not.toContain("キャパシティに余裕がある担当者");
+  expect(titles(insights)).not.toContain("チームのキャパシティ超過");
 });
 
 test("本当に見積どおりなら「優れた見積精度」と「最適な工程」を出す（対照）", async ({ page }) => {

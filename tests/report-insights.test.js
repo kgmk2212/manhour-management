@@ -191,6 +191,110 @@ describe('computeInsights() — 担当者', () => {
     });
 });
 
+describe('computeInsights() — 月の標準工数に対する割当（キャパシティ）', () => {
+    // 標準工数 = 営業日数 × 8h − その担当者の休暇時間。ここでは 20日 × 8h = 160h/人。
+    const capacity = (over = {}) => ({
+        workingDays: 20,
+        hoursPerDay: 8,
+        periodLabel: '2026年8月',
+        vacationHoursByMember: {},
+        ...over,
+    });
+
+    test('標準工数を超えて見積が割り当てられた担当者を名指しする', () => {
+        // A は 200h（125%）、B は 150h（94%）
+        const insights = computeInsights(
+            [est('t1', 200, { member: 'A' }), est('t2', 150, { member: 'B' })],
+            [act('t1', 200, { member: 'A' }), act('t2', 150, { member: 'B' })],
+            capacity()
+        );
+        const warn = pick(insights, 'キャパシティ超過の担当者');
+        assert.ok(warn, `キャパ超過の担当者警告が出ていない: ${titles(insights).join(' / ')}`);
+        assert.equal(warn.type, 'warning');
+        assert.match(warn.message, /A/);
+        assert.doesNotMatch(warn.message, /B/);
+    });
+
+    test('標準工数に対して見積が少ない担当者を名指しする', () => {
+        // A は 160h（100%）、B は 60h（37%）
+        const insights = computeInsights(
+            [est('t1', 160, { member: 'A' }), est('t2', 60, { member: 'B' })],
+            [act('t1', 160, { member: 'A' }), act('t2', 60, { member: 'B' })],
+            capacity()
+        );
+        const warn = pick(insights, 'キャパシティに余裕がある担当者');
+        assert.ok(warn, `キャパ余裕の担当者警告が出ていない: ${titles(insights).join(' / ')}`);
+        assert.match(warn.message, /B/);
+    });
+
+    test('休暇時間を標準工数から差し引いて判定する', () => {
+        const estimates = [est('t1', 130, { member: 'A' }), est('t2', 130, { member: 'B' })];
+        const actuals = [act('t1', 130, { member: 'A' }), act('t2', 130, { member: 'B' })];
+
+        // 休暇なし: 130h / 160h = 81% で超過ではない
+        assert.equal(
+            pick(computeInsights(estimates, actuals, capacity()), 'キャパシティ超過の担当者'),
+            undefined
+        );
+
+        // A が 48h 休暇 → 標準 112h に減り、130h は 116% で超過
+        const withVacation = computeInsights(estimates, actuals,
+            capacity({ vacationHoursByMember: { A: 48 } }));
+        const warn = pick(withVacation, 'キャパシティ超過の担当者');
+        assert.ok(warn, `休暇を差し引いていない: ${titles(withVacation).join(' / ')}`);
+        assert.match(warn.message, /A/);
+    });
+
+    test('チーム全体の割当が標準工数を超えていれば警告する', () => {
+        const insights = computeInsights(
+            [est('t1', 200, { member: 'A' }), est('t2', 200, { member: 'B' })],
+            [act('t1', 200, { member: 'A' }), act('t2', 200, { member: 'B' })],
+            capacity()
+        );
+        const warn = pick(insights, 'チームのキャパシティ超過');
+        assert.ok(warn, `チーム全体のキャパ警告が出ていない: ${titles(insights).join(' / ')}`);
+        assert.equal(warn.type, 'warning');
+    });
+
+    test('チーム全体の割当が標準工数に対して少なければ警告する', () => {
+        const insights = computeInsights(
+            [est('t1', 50, { member: 'A' }), est('t2', 50, { member: 'B' })],
+            [act('t1', 50, { member: 'A' }), act('t2', 50, { member: 'B' })],
+            capacity()
+        );
+        const warn = pick(insights, 'チームの割当不足');
+        assert.ok(warn, `チーム全体の割当不足警告が出ていない: ${titles(insights).join(' / ')}`);
+    });
+
+    test('対象期間が特定できない場合はキャパシティ判定を出さない', () => {
+        const insights = computeInsights(
+            [est('t1', 200, { member: 'A' }), est('t2', 200, { member: 'B' })],
+            [act('t1', 200, { member: 'A' }), act('t2', 200, { member: 'B' })]
+        );
+        assert.equal(pick(insights, 'チームのキャパシティ超過'), undefined);
+        assert.equal(pick(insights, 'キャパシティ超過の担当者'), undefined);
+    });
+
+    test('見積が割り当てられていない担当者はキャパシティ判定の対象にしない', () => {
+        const insights = computeInsights(
+            [est('t1', 160, { member: 'A' })],
+            [act('t1', 160, { member: 'A' }), act('t2', 10, { member: 'B' })],
+            capacity()
+        );
+        assert.equal(pick(insights, 'キャパシティに余裕がある担当者'), undefined,
+            `見積の無い担当者を低稼働扱いしている: ${titles(insights).join(' / ')}`);
+    });
+
+    test('営業日数が取れない場合は判定しない', () => {
+        const insights = computeInsights(
+            [est('t1', 200, { member: 'A' }), est('t2', 200, { member: 'B' })],
+            [act('t1', 200, { member: 'A' }), act('t2', 200, { member: 'B' })],
+            capacity({ workingDays: 0 })
+        );
+        assert.equal(pick(insights, 'チームのキャパシティ超過'), undefined);
+    });
+});
+
 describe('computeInsights() — 見積外の作業', () => {
     test('見積が無いタスクに実績が積まれていれば警告する', () => {
         const insights = computeInsights(
