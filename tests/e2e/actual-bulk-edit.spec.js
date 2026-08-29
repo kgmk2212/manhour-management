@@ -288,7 +288,7 @@ test.describe("モバイル幅", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
   test("行タップで選択でき、トレイが画面内に出る", async ({ page }) => {
     await page.locator("#btnActualSelectionMode").click();
-    await page.locator('tr[data-actual-id="101"] td:nth-child(3)').tap().catch(() => page.locator('tr[data-actual-id="101"] td:nth-child(3)').click());
+    await page.locator('tr[data-actual-id="101"] td:nth-child(3)').tap();
     await expect(page.locator("#actualSelectionCount")).toContainText("1 件");
     const tray = page.locator("#actualSelectionTray .bk-bar");
     await expect(tray).toBeVisible();
