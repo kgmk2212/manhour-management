@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実績のまとめ変更 — 3案の比較モックアップ</title>
+
+<!-- 実物の style.css をそのまま読み込み、色・フォント・部品を本番と揃える -->
+<link rel="stylesheet" href="../../style.css">
+
+<style>
+/* ============================================================
+   モックアップ専用スタイル
+   mk-* : 比較ページの外枠（本番には入れない）
+   bk-* : 一括変更 UI の部品（採用案が決まったら style.css へ移植）
+   ============================================================ */
+:root { --ui-scale: 1; }
+body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.mk-wrap { max-width: 1280px; margin: 0 auto; }
+.mk-eyebrow { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-secondary); font-weight: 700; }
+.mk-h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; color: var(--text-primary); margin: 6px 0 8px; }
+.mk-lead { color: var(--text-secondary); max-width: 780px; line-height: 1.75; font-size: 15.5px; }
+
+.mk-scenario {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: var(--radius-lg); padding: 18px 22px; margin: 26px 0 20px; box-shadow: var(--shadow-sm);
+}
+.mk-scenario-label { font-size: 12.5px; letter-spacing: .06em; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.mk-scenario-text { font-size: 16.5px; line-height: 1.6; color: var(--text-primary); }
+.mk-scenario-text b { color: var(--accent); }
+.mk-scenario-sub { margin-top: 6px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+.mk-scenario-ctl { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.mk-ctl-label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+
+.mk-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.mk-tab {
+    padding: 10px 18px 12px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 15.5px;
+    color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; text-align: left;
+}
+.mk-tab small { display: block; font-weight: 500; font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.mk-tab:hover { color: var(--text-primary); }
+.mk-tab.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+.mk-hint { font-size: 13.5px; color: var(--text-secondary); margin: 12px 2px 14px; line-height: 1.6; }
+.mk-hint b { color: var(--text-primary); }
+
+.mk-stage { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.mk-stage.is-mobile { grid-template-columns: 390px minmax(0, 1fr); }
+.mk-stage.is-mobile .mk-log { max-width: 460px; }
+@media (max-width: 900px) {
+    .mk-stage, .mk-stage.is-mobile { grid-template-columns: 1fr; }
+    .mk-scenario { grid-template-columns: 1fr; }
+    .mk-scenario-ctl { align-items: flex-start; }
+}
+
+/* 実アプリの実績タブを模した枠 */
+.mk-frame {
+    position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 18px; min-height: 640px; overflow: clip; box-shadow: var(--shadow-md);
+}
+.mk-frame.is-mobile { width: 390px; padding: 12px; }
+.mk-frame-title { font-size: 19px; font-weight: 700; letter-spacing: -.02em; color: var(--text-primary); margin-bottom: 12px; }
+
+/* モーダルは枠の中に収める（本番は fixed。比較しやすさ優先で absolute） */
+.mk-frame .modal { position: absolute; inset: 0; padding: 20px 0 0; border-radius: inherit; z-index: 50; animation: none; }
+.mk-frame .modal.is-open { display: flex; }
+/* 枠が縦長でも画面内に留まるよう、モーダル本体は sticky。再描画のたびに
+   本番の slideIn が再始動して半透明に見えるのを防ぐため animation も止める */
+.mk-frame .modal-content { position: sticky; top: 20px; max-height: min(calc(100% - 40px), calc(100vh - 40px)); display: flex; flex-direction: column; animation: none; }
+.mk-frame .modal-body { max-height: none; flex: 1; }
+/* 案2 は「条件」「置換内容」の 2 カラムなので広めに */
+.mk-frame .modal-content.is-wide { width: 96%; max-width: min(960px, 96%); }
+/* モーダル表示中は枠に高さを確保し、行数が少ないときもモーダルが枠内に収まるようにする */
+.mk-frame.has-modal { min-height: 840px; }
+.mk-frame.is-mobile .modal { padding-top: 8px; }
+.mk-frame.is-mobile .modal-content { width: 96%; }
+
+/* 操作ログ */
+.mk-log { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.mk-log-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.mk-log-title { font-size: 12.5px; letter-spacing: .06em; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+.mk-log-empty { margin-top: 12px; font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+.mk-steps { list-style: none; margin: 12px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow: auto; }
+.mk-steps li { display: grid; grid-template-columns: 24px 1fr; gap: 8px; font-size: 14px; color: var(--text-primary); line-height: 1.45; }
+.mk-steps li b { color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.mk-result { border-top: 1px solid var(--border-light); padding-top: 12px; margin-top: 10px; font-size: 14px; line-height: 1.6; }
+.mk-result p { margin: 6px 0 8px; }
+.mk-result strong { color: var(--accent); font-size: 15px; }
+.mk-result.is-pending strong { color: var(--text-muted); }
+.mk-goal { border-top: 1px solid var(--border-light); padding-top: 12px; margin-top: 12px; }
+.mk-goal ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mk-goal li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; font-size: 14px; color: var(--text-muted); line-height: 1.45; }
+.mk-goal li span { font-weight: 800; color: var(--border); }
+.mk-goal li.is-ok { color: var(--text-primary); }
+.mk-goal li.is-ok span { color: var(--accent); }
+.mk-goal li.is-bad { color: var(--danger); }
+.mk-goal li.is-bad span { color: var(--danger); }
+
+/* 比較表 */
+.mk-compare { margin-top: 40px; }
+.mk-compare-title { font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 4px; }
+.mk-compare-lead { color: var(--text-secondary); font-size: 14.5px; margin-bottom: 16px; }
+.mk-compare .table-wrapper { background: var(--surface); }
+.mk-compare table { min-width: 720px; }
+.mk-compare th { text-align: left; }
+.mk-compare th:first-child, .mk-compare td:first-child { color: var(--text-secondary); font-weight: 600; white-space: nowrap; }
+.mk-compare td { vertical-align: top; line-height: 1.55; font-size: 14.5px; }
+.mk-compare tr:hover td { background: transparent; }
+.mk-verdict {
+    margin-top: 18px; background: var(--accent-light); border: 1px solid #cfe3cd; border-radius: var(--radius-md);
+    padding: 14px 18px; font-size: 14.5px; line-height: 1.7; color: var(--text-primary);
+}
+.mk-verdict b { color: var(--accent); }
+
+/* ---------- bk: 一括変更 UI 部品 ---------- */
+.bk-toolbar {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--surface-elevated);
+    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 12px;
+}
+.bk-toolbar label { font-size: 14px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+.bk-toolbar select { width: auto; padding: 4px 8px; font-size: 14px; }
+.bk-toolbar .bk-spacer { flex: 1; }
+.bk-mode-btn.is-on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.bk-mode-btn.is-on:hover { background: var(--accent-hover); }
+
+.bk-table { min-width: 560px; }
+.bk-table th { text-align: left; }
+.bk-table td { white-space: nowrap; } /* 本番同様、狭い幅では折り返さず横スクロールさせる */
+.bk-table td:first-child, .bk-table td.bk-th-check + td { font-variant-numeric: tabular-nums; }
+.bk-table th.bk-th-check, .bk-table td.bk-th-check { width: 38px; text-align: center; padding-left: 10px; padding-right: 6px; }
+.bk-table.is-selectable tbody tr { cursor: pointer; }
+.bk-table tr.is-selected td { background: var(--accent-light); }
+.bk-table tr.is-hit td { background: var(--accent-light); }
+.bk-table tr.is-dim td { opacity: .35; }
+.bk-table td.is-dirty { box-shadow: inset 3px 0 0 var(--accent-secondary); background: var(--accent-secondary-light); }
+.bk-table td input, .bk-table td select { padding: 4px 6px; font-size: 14px; width: auto; min-width: 72px; }
+.bk-table td input[type="number"] { width: 72px; min-width: 0; }
+.bk-table th .bk-fill { display: block; margin-top: 4px; font-size: 12px; padding: 2px 4px; width: 100%; font-weight: 500; color: var(--accent-secondary); border-color: var(--accent-secondary); }
+.bk-table .bk-ops { white-space: nowrap; }
+.bk-table .bk-ops .btn { padding: 4px 9px; font-size: 13.5px; }
+.bk-cb { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
+.bk-muted { color: var(--text-muted); }
+.bk-table .badge { font-size: 13px; padding: 3px 8px; }
+.bk-table .badge-review { width: 22px; padding: 3px 0; }
+
+/* 下部の作業トレイ（選択バー／保存バー）とトースト */
+.bk-dock { position: sticky; bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; pointer-events: none; z-index: 20; }
+.bk-bar {
+    pointer-events: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--text-primary); color: #fff; padding: 10px 14px; border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(26, 24, 20, .28); width: min(100%, 760px);
+}
+.bk-bar-count { font-weight: 700; margin-right: auto; font-size: 15px; }
+.bk-bar-sub { font-weight: 500; color: rgba(255,255,255,.7); }
+.bk-bar-err { font-weight: 600; color: #FCA5A5; }
+.bk-bar .btn { padding: 6px 12px; font-size: 14px; }
+.bk-bar .btn-primary { background: #fff; color: var(--text-primary); }
+.bk-bar .btn-primary:hover { background: #f1efe9; }
+.bk-bar .btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.28); }
+.bk-bar .btn-ghost:hover { background: rgba(255,255,255,.18); }
+.bk-bar .btn:disabled { opacity: .4; cursor: default; }
+.bk-toast {
+    pointer-events: auto; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-md); display: flex; gap: 12px; align-items: center; font-size: 14.5px;
+}
+.bk-toast button { border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; padding: 2px 4px; }
+.bk-toast button.bk-x { color: var(--text-muted); font-weight: 600; }
+
+/* セグメント（変更しない／変更する） */
+.bk-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 99px; padding: 2px; background: var(--surface-elevated); flex-shrink: 0; }
+.bk-seg button { border: 0; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); padding: 4px 11px; border-radius: 99px; cursor: pointer; white-space: nowrap; }
+.bk-seg button:hover { color: var(--text-primary); }
+.bk-seg button.is-on { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+
+/* 一括編集モーダルの項目行 */
+.bk-field { padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.bk-field:last-of-type { border-bottom: 0; }
+.bk-field-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.bk-field-head > div:first-child { flex: 1 1 200px; min-width: 0; }
+.bk-field-name { font-weight: 700; color: var(--text-primary); font-size: 15px; }
+.bk-field-current { font-size: 12.5px; color: var(--text-muted); margin-top: 1px; }
+.bk-field-body { margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bk-field-body select, .bk-field-body input { width: auto; min-width: 160px; }
+.bk-field.is-keep .bk-field-body { display: none; }
+
+/* プレビュー */
+.bk-preview { margin-top: 14px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
+.bk-preview-title { font-size: 12.5px; font-weight: 700; color: var(--text-secondary); letter-spacing: .04em; }
+.bk-preview-title .bk-muted { font-weight: 500; letter-spacing: 0; margin-left: 6px; }
+.bk-preview p { margin-top: 6px; font-size: 13.5px; line-height: 1.55; }
+.bk-diff { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; margin-top: 8px; line-height: 1.5; }
+.bk-diff-date { color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bk-diff .old { color: var(--text-muted); text-decoration: line-through; }
+.bk-diff .new { color: var(--accent); font-weight: 700; }
+.bk-diff-f { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: 2px; }
+.bk-sep { color: var(--border); margin: 0 6px; }
+.bk-warn { color: var(--danger); font-size: 13.5px; margin-top: 8px; font-weight: 600; }
+
+/* 案2: 2カラム */
+.bk-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.mk-frame.is-mobile .bk-cols { grid-template-columns: minmax(0, 1fr); }
+.bk-col-title { font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: .04em; margin-bottom: 8px; }
+.bk-cond { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px 10px; align-items: center; }
+.bk-cond label { font-size: 13.5px; font-weight: 600; color: var(--text-secondary); }
+.bk-cond select, .bk-cond input { width: 100%; min-width: 0; padding: 6px 8px; font-size: 14px; }
+.bk-cond-range { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.bk-cond-range input { flex: 1 1 0; }
+.bk-cond-range span { color: var(--text-muted); font-size: 13px; }
+.bk-hits { margin-top: 12px; font-size: 14px; color: var(--text-secondary); }
+.bk-hits b { font-size: 20px; color: var(--accent); font-weight: 800; margin: 0 2px; }
+.bk-hits.is-zero b { color: var(--danger); }
+.bk-hit-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--text-primary); }
+.bk-hit-list li { display: flex; gap: 8px; }
+.bk-hit-list .d { color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="mk-wrap">
+    <header>
+        <div class="mk-eyebrow">モックアップ · 実績タブ · 2026-08-29</div>
+        <h1 class="mk-h1">実績のまとめ変更 — 3案の比較</h1>
+        <p class="mk-lead">同じ 12 件の実績データと同じ課題を、3 つの操作方法で解いてみます。タブで案を切り替え、実際に操作して、右の操作ログでステップ数と結果を見比べてください。</p>
+    </header>
+
+    <section class="mk-scenario">
+        <div>
+            <div class="mk-scenario-label">共通の課題</div>
+            <p class="mk-scenario-text">田中さんが 8/17〜8/21 に <b>V2.3「帳票A出力改修」</b>として登録した 5 件を、<b>V2.4「帳票A出力改修（追補）」</b>へ付け替える。</p>
+            <p class="mk-scenario-sub">同じ週の田中さんには「打ち合わせ」（その他工数）が 1 件あり、これは変えない。各案は同じ 12 件から始まり、右のリセットでいつでも戻せます。</p>
+        </div>
+        <div class="mk-scenario-ctl">
+            <span class="mk-ctl-label">表示幅</span>
+            <div class="bk-seg" id="widthSeg">
+                <button type="button" data-act="width" data-v="pc" class="is-on">PC</button>
+                <button type="button" data-act="width" data-v="mobile">スマホ</button>
+            </div>
+        </div>
+    </section>
+
+    <nav class="mk-tabs" id="tabs">
+        <button type="button" class="mk-tab is-active" data-act="tab" data-v="1">案1 選んで一括編集<small>✓ を付けて、変えたい項目だけ指定する</small></button>
+        <button type="button" class="mk-tab" data-act="tab" data-v="2">案2 条件で置き換え<small>条件で絞り、件数を確かめてから置換する</small></button>
+        <button type="button" class="mk-tab" data-act="tab" data-v="3">案3 表で直接編集<small>一覧をそのまま書き換えて一括保存する</small></button>
+    </nav>
+    <p class="mk-hint" id="hint"></p>
+
+    <div class="mk-stage" id="stage">
+        <div class="mk-frame" id="frame"></div>
+        <aside class="mk-log" id="log"></aside>
+    </div>
+
+    <section class="mk-compare">
+        <h2 class="mk-compare-title">並べて比べる</h2>
+        <p class="mk-compare-lead">上で操作した感触と合わせて読んでください。</p>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>観点</th><th>案1 選んで一括編集</th><th>案2 条件で置き換え</th><th>案3 表で直接編集</th></tr></thead>
+                <tbody>
+                    <tr><td>向いている場面</td><td>目で確かめながらの付け替え・削除・日付移動</td><td>件数が多い機械的な置換（表記ゆれの統一、版数の付け直し）</td><td>行ごとに違う値を直す個別修正</td></tr>
+                    <tr><td>対象の決め方</td><td>手で ✓（表示中の全選択・Shift 範囲選択あり）</td><td>条件式（期間・担当・版数・対応名・工程）</td><td>表示中の全行（列一括）またはセル単位</td></tr>
+                    <tr><td>誤爆の防ぎ方</td><td>選ぶ時点で対象が見える。プレビューで最終確認</td><td>該当件数と一覧ハイライトで確認。プレビューで最終確認</td><td>列一括は無関係な行にも入る。変更セルの色で気づく</td></tr>
+                    <tr><td>モバイル</td><td>行タップ＋下部バー。片手で完結する</td><td>モーダル 1 枚で完結する</td><td>横スクロールの表でセル編集。指では狙いにくい</td></tr>
+                    <tr><td>Undo</td><td>1 回で全件戻る</td><td>1 回で全件戻る</td><td>1 回で全件戻る（保存単位）</td></tr>
+                    <tr><td>実装の重さ</td><td>中：選択状態・下部バー・一括編集モーダル</td><td>小〜中：モーダル 1 枚＋一致判定</td><td>中〜大：セル編集・変更管理・工数入力ウィジェットとの整合</td></tr>
+                    <tr><td>既存の前見本</td><td><code>js/estimate-selection.js</code>（作業月選択モード）</td><td><code>js/merge-core.js</code>（差分プレビュー）</td><td><code>js/report.js</code>（見込残存の一括編集）</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mk-verdict">
+            <b>提案者の見立て：</b>案1 を土台にし、案2 の「条件で絞る」を案1 の選択バーに「条件で選択…」として吸収する。対象の集め方は 2 通り、適用エンジン（パッチ適用＋一括 Undo）は 1 つ。案3 は「まとめて同じ値にする」用途からずれるため見送り。
+        </div>
+    </section>
+</div>
+
+<script>
+(() => {
+    // ---------- 共通データ ----------
+    const SEED = [
+        { id: 1,  date: '2026-08-17', version: 'V2.3', task: '帳票A出力改修',   process: 'PG', member: '田中', hours: 6 },
+        { id: 2,  date: '2026-08-17', version: '',     task: '打ち合わせ',       process: '',   member: '田中', hours: 2 },
+        { id: 3,  date: '2026-08-17', version: 'V2.3', task: 'ログイン画面改修', process: 'UI', member: '佐藤', hours: 8 },
+        { id: 4,  date: '2026-08-18', version: 'V2.3', task: '帳票A出力改修',   process: 'PG', member: '田中', hours: 8 },
+        { id: 5,  date: '2026-08-18', version: 'V2.3', task: 'ログイン画面改修', process: 'PG', member: '佐藤', hours: 6, isReview: true },
+        { id: 6,  date: '2026-08-18', version: 'V2.4', task: '検索性能改善',     process: 'PT', member: '鈴木', hours: 8 },
+        { id: 7,  date: '2026-08-19', version: 'V2.3', task: '帳票A出力改修',   process: 'PT', member: '田中', hours: 8 },
+        { id: 8,  date: '2026-08-19', version: '',     task: '検証環境構築',     process: '',   member: '高橋', hours: 4 },
+        { id: 9,  date: '2026-08-20', version: 'V2.3', task: '帳票A出力改修',   process: 'PT', member: '田中', hours: 7 },
+        { id: 10, date: '2026-08-20', version: 'V2.4', task: '検索性能改善',     process: 'IT', member: '鈴木', hours: 8 },
+        { id: 11, date: '2026-08-21', version: 'V2.3', task: '帳票A出力改修',   process: 'IT', member: '田中', hours: 8 },
+        { id: 12, date: '2026-08-21', version: 'V2.3', task: 'ログイン画面改修', process: 'IT', member: '佐藤', hours: 8 },
+    ];
+    const TARGET_IDS = [1, 4, 7, 9, 11];
+    const VERSIONS = ['V2.3', 'V2.4'];
+    const TASKS = { 'V2.3': ['帳票A出力改修', 'ログイン画面改修'], 'V2.4': ['帳票A出力改修（追補）', '検索性能改善'], '': ['打ち合わせ', '検証環境構築'] };
+    const PROCESSES = ['UI', 'PG', 'PT', 'IT', 'ST'];
+    const MEMBERS = ['田中', '佐藤', '鈴木', '高橋'];
+    const LABEL = { date: '日付', version: '版数', task: '対応名', process: '工程', member: '担当', isReview: 'レビュー', hours: '工数' };
+    const HINTS = {
+        1: '<b>操作:</b> 「選択モード」をオンにして、行のどこを押しても選べます。Shift+クリックで範囲選択、ヘッダーの ✓ で表示中を全選択。下のバーから「一括編集」。',
+        2: '<b>操作:</b> 「条件で置き換え…」を開き、担当・版数・対応名を絞ると該当件数と一覧のハイライトがその場で変わります。0 件では適用できません。',
+        3: '<b>操作:</b> 「表で直接編集」をオンにするとセルが入力欄になります。列ヘッダーの「列を一括で…」は表示中の全行に同じ値を入れます（打ち合わせ行にも入るので注意）。',
+    };
+
+    const clone = a => a.map(r => ({ ...r }));
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmtH = n => (Math.round(n * 100) / 100) + 'h';
+    const pad = n => String(n).padStart(2, '0');
+    const addDays = (d, n) => { const [y, m, dd] = d.split('-').map(Number); const t = new Date(y, m - 1, dd + n); return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`; };
+    const wd = d => { const [y, m, dd] = d.split('-').map(Number); return '日月火水木金土'[new Date(y, m - 1, dd).getDay()]; };
+    const shortDate = d => { const [, m, dd] = d.split('-'); return `${Number(m)}/${Number(dd)}(${wd(d)})`; };
+    const sum = rows => rows.reduce((s, r) => s + r.hours, 0);
+    const allTasks = () => [...new Set(Object.values(TASKS).flat())];
+    const taskOptions = v => (v === null ? allTasks() : (TASKS[v] || []));
+    const opt = (arr, cur, labelFn) => arr.map(v => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(labelFn ? labelFn(v) : v)}</option>`).join('');
+    const newPatch = () => ({ version: { on: false, val: 'V2.4' }, task: { on: false, val: '' }, process: { on: false, val: 'PG' }, member: { on: false, val: '田中' }, review: { mode: 'keep' }, date: { mode: 'keep', val: '2026-08-24', n: 7 } });
+    const newCond = () => ({ from: '2026-08-01', to: '2026-08-31', member: '', version: '', task: '', process: '' });
+
+    // ---------- 状態 ----------
+    const state = {
+        approach: 1, mobile: false,
+        data: { 1: clone(SEED), 2: clone(SEED), 3: clone(SEED) },
+        undo: { 1: null, 2: null, 3: null },
+        log: { 1: [], 2: [], 3: [] },
+        toast: { 1: null, 2: null, 3: null },
+        filter: { 1: { member: '' }, 2: { member: '' }, 3: { member: '' } },
+        a1: { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24' },
+        a2: { open: false, cond: newCond(), patch: newPatch() },
+        a3: { mode: false, edits: {}, error: '' },
+    };
+    const frame = document.getElementById('frame');
+    const logEl = document.getElementById('log');
+    const stage = document.getElementById('stage');
+    const hint = document.getElementById('hint');
+
+    const K = () => state.approach;
+    const log = (k, text) => state.log[k].push(text);
+    const visibleRows = k => {
+        const f = state.filter[k];
+        return state.data[k].filter(r => !f.member || r.member === f.member)
+            .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : MEMBERS.indexOf(a.member) - MEMBERS.indexOf(b.member));
+    };
+    function commit(k, before, after, desc) {
+        state.undo[k] = { before, desc };
+        state.data[k] = after;
+        setToast(k, desc, true);
+    }
+    function setToast(k, text, undoable) {
+        const t = { text, undo: !!undoable };
+        state.toast[k] = t;
+        setTimeout(() => { if (state.toast[k] === t) { state.toast[k] = null; render(); } }, 8000);
+    }
+    function doUndo(k) {
+        const u = state.undo[k]; if (!u) return;
+        state.data[k] = clone(u.before); state.undo[k] = null;
+        setToast(k, '元に戻しました', false);
+        log(k, `元に戻す（Undo 1 回）: 「${u.desc}」を取り消し`);
+    }
+    function resetApproach(k) {
+        state.data[k] = clone(SEED); state.undo[k] = null; state.log[k] = []; state.toast[k] = null; state.filter[k] = { member: '' };
+        if (k === 1) state.a1 = { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24' };
+        if (k === 2) state.a2 = { open: false, cond: newCond(), patch: newPatch() };
+        if (k === 3) state.a3 = { mode: false, edits: {}, error: '' };
+    }
+
+    // ---------- パッチ適用（本実装では js/actual-bulk.js に相当） ----------
+    function applyPatch(r, p) {
+        const o = { ...r };
+        if (p.version.on) o.version = p.version.val;
+        if (p.task.on) o.task = p.task.val;
+        if (p.process.on) o.process = p.process.val;
+        if (p.member.on) o.member = p.member.val;
+        if (p.review.mode === 'on') o.isReview = true;
+        if (p.review.mode === 'off') delete o.isReview;
+        if (p.date.mode === 'set' && p.date.val) o.date = p.date.val;
+        if (p.date.mode === 'shift' && p.date.n) o.date = addDays(o.date, p.date.n);
+        return o;
+    }
+    const fmtVal = (f, r) => f === 'isReview' ? (r.isReview ? 'あり' : 'なし') : f === 'version' ? (r.version || '（その他）') : f === 'process' ? (r.process || '—') : f === 'date' ? shortDate(r.date) : f === 'hours' ? fmtH(r.hours) : r[f];
+    const changedFields = (a, b) => ['date', 'version', 'task', 'process', 'member', 'hours'].filter(f => a[f] !== b[f]).concat(!!a.isReview !== !!b.isReview ? ['isReview'] : []);
+    function diffText(b, a) {
+        return changedFields(b, a).map(f => `<span class="bk-diff-f">${LABEL[f]}</span><span class="old">${esc(fmtVal(f, b))}</span> → <span class="new">${esc(fmtVal(f, a))}</span>`).join('<span class="bk-sep">·</span>');
+    }
+    function normalizeTask(p) {
+        const to = taskOptions(p.version.on ? p.version.val : null);
+        if (!to.includes(p.task.val)) p.task.val = to[0] || '';
+    }
+    function summarize(targets, f) {
+        const m = new Map();
+        targets.forEach(r => { const v = fmtVal(f, r); m.set(v, (m.get(v) || 0) + 1); });
+        if (!m.size) return '—';
+        const parts = [...m].map(([v, c]) => `${esc(v)} ×${c}`);
+        return parts.length > 3 ? parts.slice(0, 3).join('、') + `、他 ${parts.length - 3} 種` : parts.join('、');
+    }
+    function renderPreview(targets, patch, title = '変更後プレビュー') {
+        const after = targets.map(r => applyPatch(r, patch));
+        const changedIdx = after.map((r, i) => changedFields(targets[i], r).length ? i : -1).filter(i => i >= 0);
+        const invalid = after.filter(r => r.version && !r.process).length;
+        let html = `<div class="bk-preview"><div class="bk-preview-title">${title}<span class="bk-muted">対象 ${targets.length} 件 · 変わる ${changedIdx.length} 件</span></div>`;
+        if (!targets.length) html += '<p class="bk-muted">対象がありません。</p>';
+        else if (!changedIdx.length) html += '<p class="bk-muted">「変更する」に切り替えて値を選ぶと、ここに変更前 → 変更後が出ます。</p>';
+        else {
+            html += '<div class="bk-diff">';
+            changedIdx.slice(0, 3).forEach(i => { html += `<span class="bk-diff-date">${shortDate(targets[i].date)} ${esc(targets[i].member)}</span><span>${diffText(targets[i], after[i])}</span>`; });
+            html += '</div>';
+            if (changedIdx.length > 3) html += `<p class="bk-muted">他 ${changedIdx.length - 3} 件も同じ規則で変わります。</p>`;
+        }
+        if (invalid) html += `<p class="bk-warn">⚠ ${invalid} 件で版数があるのに工程が空です。工程も「変更する」で指定してください。</p>`;
+        html += '</div>';
+        return { html, ok: changedIdx.length > 0 && !invalid, changed: changedIdx.length };
+    }
+    const segBtn = (f, v, cur, label) => `<button type="button" data-act="pseg" data-f="${f}" data-v="${v}" class="${cur === v ? 'is-on' : ''}">${label}</button>`;
+    function renderPatchFields(p, targets) {
+        const fld = (f, isKeep, seg, body) => `
+            <div class="bk-field ${isKeep ? 'is-keep' : ''}">
+                <div class="bk-field-head">
+                    <div><div class="bk-field-name">${LABEL[f]}</div><div class="bk-field-current">現在: ${summarize(targets, f)}</div></div>
+                    <div class="bk-seg">${seg}</div>
+                </div>
+                <div class="bk-field-body">${body}</div>
+            </div>`;
+        const two = (f, on) => segBtn(f, 'keep', on ? 'set' : 'keep', '変更しない') + segBtn(f, 'set', on ? 'set' : 'keep', '変更する');
+        const tOpts = taskOptions(p.version.on ? p.version.val : null);
+        const dm = p.date.mode;
+        return [
+            fld('version', !p.version.on, two('version', p.version.on), `<select data-act="pval" data-f="version">${opt(['', ...VERSIONS], p.version.val, v => v || '（なし = その他工数）')}</select>`),
+            fld('task', !p.task.on, two('task', p.task.on), `<select data-act="pval" data-f="task">${opt(tOpts, p.task.val)}</select>${p.version.on ? '<span class="bk-muted" style="font-size:12.5px">版数 ' + esc(p.version.val || '（なし）') + ' の候補</span>' : ''}`),
+            fld('process', !p.process.on, two('process', p.process.on), `<select data-act="pval" data-f="process">${opt(['', ...PROCESSES], p.process.val, v => v || '（なし）')}</select>`),
+            fld('member', !p.member.on, two('member', p.member.on), `<select data-act="pval" data-f="member">${opt(MEMBERS, p.member.val)}</select>`),
+            fld('isReview', true, segBtn('review', 'keep', p.review.mode, '変更しない') + segBtn('review', 'on', p.review.mode, '付ける') + segBtn('review', 'off', p.review.mode, '外す'), ''),
+            fld('date', dm === 'keep', segBtn('date', 'keep', dm, '変更しない') + segBtn('date', 'set', dm, '指定日に') + segBtn('date', 'shift', dm, '日数をずらす'),
+                dm === 'set' ? `<input type="date" data-act="pval" data-f="dateval" value="${p.date.val}">`
+                    : `<input type="number" data-act="pval" data-f="daten" value="${p.date.n}" step="1" style="width:90px;min-width:0"> <span class="bk-muted" style="font-size:12.5px">日（マイナスで前へ）</span>`),
+        ].join('');
+    }
+    const modalShell = (title, body, footer, cls = '') => `
+        <div class="modal is-open" role="dialog" aria-modal="true">
+            <div class="modal-content ${cls}">
+                <div class="modal-header"><h3>${title}</h3><button type="button" class="modal-close" data-act="modal-close" aria-label="閉じる">&times;</button></div>
+                <div class="modal-body">${body}</div>
+                <div class="modal-footer" style="justify-content:flex-end">${footer}</div>
+            </div>
+        </div>`;
+
+    // ---------- 描画: 共通部品 ----------
+    const procBadge = r => (r.process ? `<span class="badge badge-${r.process.toLowerCase()}">${r.process}</span>` : '<span class="bk-muted">—</span>') + (r.isReview ? '<span class="badge badge-review" title="レビュー">R</span>' : '');
+    function renderToolbar(k) {
+        const f = state.filter[k];
+        let ctl = '';
+        if (k === 1) ctl = `<button type="button" class="btn btn-secondary btn-small bk-mode-btn ${state.a1.mode ? 'is-on' : ''}" data-act="a1-mode">${state.a1.mode ? '✓ 選択モード' : '選択モード'}</button>`;
+        if (k === 2) ctl = `<button type="button" class="btn btn-primary btn-small" data-act="a2-open">条件で置き換え…</button>`;
+        if (k === 3) ctl = `<button type="button" class="btn btn-secondary btn-small bk-mode-btn ${state.a3.mode ? 'is-on' : ''}" data-act="a3-mode">${state.a3.mode ? '✓ 表で直接編集' : '表で直接編集'}</button>`;
+        return `<div class="bk-toolbar">
+            <label>担当</label><select data-act="filter-member" aria-label="担当で絞り込み">${opt(['', ...MEMBERS], f.member, v => v || '全担当者')}</select>
+            <label>表示形式</label><select disabled aria-label="表示形式"><option>リスト</option></select>
+            <label>表示期間</label><select disabled aria-label="表示期間"><option>2026年8月</option></select>
+            <span class="bk-spacer"></span>${ctl}
+        </div>`;
+    }
+    const fillOpts = f => f === 'version' ? opt(['', ...VERSIONS], '__', v => v || '（なし = その他工数）') : f === 'task' ? opt(allTasks(), '__') : f === 'process' ? opt(['', ...PROCESSES], '__', v => v || '（なし）') : opt(MEMBERS, '__');
+    function cellEditor(r, f) {
+        const e = state.a3.edits[r.id] || {};
+        const val = f in e ? e[f] : r[f];
+        const cls = f in e ? 'is-dirty' : '';
+        const attrs = `data-act="a3-cell" data-id="${r.id}" data-f="${f}"`;
+        if (f === 'date') return `<td class="${cls}"><input type="date" value="${val}" ${attrs}></td>`;
+        if (f === 'hours') return `<td class="${cls}"><input type="number" value="${val}" step="0.25" min="0.25" ${attrs}></td>`;
+        if (f === 'version') return `<td class="${cls}"><select ${attrs}>${opt(['', ...VERSIONS], val, v => v || '（その他）')}</select></td>`;
+        if (f === 'task') { const ver = 'version' in e ? e.version : r.version; const to = taskOptions(ver); const list = to.includes(val) ? to : [val, ...to]; return `<td class="${cls}"><select ${attrs}>${opt(list, val)}</select></td>`; }
+        if (f === 'process') return `<td class="${cls}"><select ${attrs}>${opt(['', ...PROCESSES], val, v => v || '—')}</select></td>`;
+        return `<td class="${cls}"><select ${attrs}>${opt(MEMBERS, val)}</select></td>`;
+    }
+    function renderTable(k) {
+        const rows = visibleRows(k);
+        const a1 = k === 1 && state.a1.mode, a3 = k === 3 && state.a3.mode, a2open = k === 2 && state.a2.open;
+        const allSel = a1 && rows.length > 0 && rows.every(r => state.a1.selected.has(r.id));
+        const th = (label, f) => `<th>${label}${a3 && f ? `<select class="bk-fill" data-act="a3-fill" data-f="${f}" aria-label="${label}を列ごと一括で入力"><option value="__">列を一括で…</option>${fillOpts(f)}</select>` : ''}</th>`;
+        let h = `<div class="table-wrapper"><table class="bk-table ${a1 ? 'is-selectable' : ''}"><thead><tr>`;
+        if (a1) h += `<th class="bk-th-check"><input type="checkbox" class="bk-cb" data-act="a1-toggle-all" ${allSel ? 'checked' : ''} aria-label="表示中を全選択"></th>`;
+        h += th('日付') + th('版数', 'version') + th('対応名', 'task') + th('工程', 'process') + th('担当', 'member') + th('実績工数') + (a1 || a3 ? '' : '<th>操作</th>') + '</tr></thead><tbody>';
+        if (!rows.length) h += '<tr><td colspan="8" class="bk-muted" style="text-align:center;padding:32px">選択した条件に該当する実績データがありません</td></tr>';
+        rows.forEach((r, i) => {
+            const sel = a1 && state.a1.selected.has(r.id);
+            const cls = [sel ? 'is-selected' : '', a2open ? (matches(r, state.a2.cond) ? 'is-hit' : 'is-dim') : ''].join(' ').trim();
+            h += `<tr class="${cls}" data-id="${r.id}" data-idx="${i}">`;
+            if (a1) h += `<td class="bk-th-check"><input type="checkbox" class="bk-cb" data-act="a1-toggle" data-id="${r.id}" data-idx="${i}" ${sel ? 'checked' : ''} aria-label="この実績を選択"></td>`;
+            if (a3) h += ['date', 'version', 'task', 'process', 'member', 'hours'].map(f => cellEditor(r, f)).join('');
+            else {
+                h += `<td>${r.date}</td><td>${r.version ? esc(r.version) : '<span class="bk-muted">（その他）</span>'}</td><td>${esc(r.task)}</td><td>${procBadge(r)}</td><td>${esc(r.member)}</td><td>${fmtH(r.hours)}</td>`;
+                if (!a1) h += `<td class="bk-ops"><button type="button" class="btn btn-primary btn-small" data-act="noop">編集</button> <button type="button" class="btn btn-danger btn-small" data-act="noop">削除</button></td>`;
+            }
+            h += '</tr>';
+        });
+        return h + '</tbody></table></div>';
+    }
+    function renderDock(k) {
+        let h = '<div class="bk-dock">';
+        if (k === 1 && state.a1.mode) {
+            const rows = state.data[1].filter(r => state.a1.selected.has(r.id)); const n = rows.length; const dis = n ? '' : 'disabled';
+            h += `<div class="bk-bar" role="toolbar" aria-label="選択した実績への操作">
+                <span class="bk-bar-count">${n} 件選択中<span class="bk-bar-sub"> · 合計 ${fmtH(sum(rows))}</span></span>
+                <button type="button" class="btn btn-primary" data-act="a1-open-edit" ${dis}>一括編集</button>
+                <button type="button" class="btn btn-ghost" data-act="a1-open-copy" ${dis}>別日に複製</button>
+                <button type="button" class="btn btn-ghost" data-act="a1-delete" ${dis}>削除</button>
+                <button type="button" class="btn btn-ghost" data-act="a1-clear" ${dis}>選択解除</button>
+            </div>`;
+        }
+        if (k === 3 && state.a3.mode) {
+            const cells = Object.values(state.a3.edits).reduce((s, e) => s + Object.keys(e).length, 0);
+            const rows = Object.keys(state.a3.edits).length;
+            h += `<div class="bk-bar" role="toolbar" aria-label="表の変更を保存">
+                <span class="bk-bar-count">${cells ? `変更 ${cells} セル<span class="bk-bar-sub">（${rows} 行）</span>` : '変更なし'}${state.a3.error ? `<span class="bk-bar-err"> · ${esc(state.a3.error)}</span>` : ''}</span>
+                <button type="button" class="btn btn-primary" data-act="a3-save" ${cells ? '' : 'disabled'}>保存</button>
+                <button type="button" class="btn btn-ghost" data-act="a3-discard" ${cells ? '' : 'disabled'}>破棄</button>
+                <button type="button" class="btn btn-ghost" data-act="a3-mode">編集を終了</button>
+            </div>`;
+        }
+        const t = state.toast[k];
+        if (t) h += `<div class="bk-toast" role="status"><span>${esc(t.text)}</span>${t.undo ? '<button type="button" data-act="undo">元に戻す</button>' : ''}<button type="button" class="bk-x" data-act="toast-close" aria-label="閉じる">×</button></div>`;
+        return h + '</div>';
+    }
+
+    // ---------- 描画: 案ごとのモーダル ----------
+    function renderA1Modal() {
+        const s = state.a1; if (!s.modal) return '';
+        const targets = state.data[1].filter(r => s.selected.has(r.id));
+        if (s.modal === 'edit') {
+            const pv = renderPreview(targets, s.patch);
+            return modalShell(`選択した ${targets.length} 件を一括編集`, renderPatchFields(s.patch, targets) + pv.html,
+                `<button type="button" class="btn btn-secondary" data-act="a1-cancel">キャンセル</button><button type="button" class="btn btn-primary" data-act="a1-apply" ${pv.ok ? '' : 'disabled'}>${targets.length} 件に適用</button>`);
+        }
+        const list = targets.slice(0, 4).map(r => `<li><span class="d">${shortDate(r.date)} → <b>${shortDate(s.copyDate)}</b></span><span>${esc(r.task)} ${esc(r.process)} ${fmtH(r.hours)}</span></li>`).join('');
+        const body = `<div class="form-group"><label class="form-label">複製先の日付</label><input type="date" data-act="a1-copydate" value="${s.copyDate}" style="width:auto"></div>
+            <div class="bk-preview"><div class="bk-preview-title">複製プレビュー<span class="bk-muted">${targets.length} 件を新規追加（元は残す）</span></div><ul class="bk-hit-list">${list}</ul>${targets.length > 4 ? `<p class="bk-muted">他 ${targets.length - 4} 件</p>` : ''}</div>`;
+        return modalShell(`選択した ${targets.length} 件を別日に複製`, body,
+            `<button type="button" class="btn btn-secondary" data-act="a1-cancel">キャンセル</button><button type="button" class="btn btn-primary" data-act="a1-copy-apply">${targets.length} 件を複製</button>`);
+    }
+    const matches = (r, c) => (!c.from || r.date >= c.from) && (!c.to || r.date <= c.to) && (!c.member || r.member === c.member)
+        && (!c.version || (c.version === '__none__' ? r.version === '' : r.version === c.version)) && (!c.task || r.task === c.task) && (!c.process || r.process === c.process);
+    function renderA2Modal() {
+        const s = state.a2; if (!s.open) return '';
+        const c = s.cond;
+        const hits = state.data[2].filter(r => matches(r, c)).sort((a, b) => a.date < b.date ? -1 : 1);
+        const pv = renderPreview(hits, s.patch);
+        const hitList = hits.slice(0, 6).map(r => `<li><span class="d">${shortDate(r.date)} ${esc(r.member)}</span><span>${esc(r.version || '（その他）')} ${esc(r.task)} ${esc(r.process || '—')} ${fmtH(r.hours)}</span></li>`).join('');
+        const body = `<div class="bk-cols">
+            <div><div class="bk-col-title">1. 対象を絞る</div>
+                <div class="bk-cond">
+                    <label>期間</label><div class="bk-cond-range"><input type="date" data-act="cond" data-f="from" value="${c.from}"><span>〜</span><input type="date" data-act="cond" data-f="to" value="${c.to}"></div>
+                    <label>担当</label><select data-act="cond" data-f="member">${opt(['', ...MEMBERS], c.member, v => v || '指定なし')}</select>
+                    <label>版数</label><select data-act="cond" data-f="version">${opt(['', '__none__', ...VERSIONS], c.version, v => v === '' ? '指定なし' : v === '__none__' ? '（なし = その他工数）' : v)}</select>
+                    <label>対応名</label><select data-act="cond" data-f="task">${opt(['', ...allTasks()], c.task, v => v || '指定なし')}</select>
+                    <label>工程</label><select data-act="cond" data-f="process">${opt(['', ...PROCESSES], c.process, v => v || '指定なし')}</select>
+                </div>
+                <div class="bk-hits ${hits.length ? '' : 'is-zero'}">該当<b>${hits.length}</b>件${hits.length ? ` · 合計 ${fmtH(sum(hits))}` : ' — 条件を広げてください'}</div>
+                <ul class="bk-hit-list">${hitList}</ul>${hits.length > 6 ? `<p class="bk-muted" style="font-size:12.5px;margin-top:4px">他 ${hits.length - 6} 件</p>` : ''}
+            </div>
+            <div><div class="bk-col-title">2. 置き換える内容</div>${renderPatchFields(s.patch, hits)}</div>
+        </div>${pv.html}`;
+        return modalShell('条件で置き換え', body,
+            `<button type="button" class="btn btn-secondary" data-act="a2-cancel">キャンセル</button><button type="button" class="btn btn-primary" data-act="a2-apply" ${pv.ok ? '' : 'disabled'}>該当 ${hits.length} 件に適用</button>`,
+            'is-wide');
+    }
+
+    // ---------- 描画: 全体 ----------
+    function render() {
+        const k = K();
+        const hasModal = (k === 1 && !!state.a1.modal) || (k === 2 && state.a2.open);
+        frame.className = 'mk-frame' + (state.mobile ? ' is-mobile' : '') + (hasModal ? ' has-modal' : '');
+        stage.className = 'mk-stage' + (state.mobile ? ' is-mobile' : '');
+        document.querySelectorAll('#widthSeg button').forEach(b => b.classList.toggle('is-on', (b.dataset.v === 'mobile') === state.mobile));
+        document.querySelectorAll('.mk-tab').forEach(b => b.classList.toggle('is-active', Number(b.dataset.v) === k));
+        hint.innerHTML = HINTS[k];
+        frame.innerHTML = `<div class="mk-frame-title">実績一覧</div>` + renderToolbar(k) + renderTable(k) + renderDock(k) + (k === 1 ? renderA1Modal() : k === 2 ? renderA2Modal() : '');
+        renderLog(k);
+    }
+    function renderGoalCheck(k) {
+        const d = state.data[k]; const byId = id => d.find(r => r.id === id);
+        const targets = TARGET_IDS.map(byId);
+        const c1 = targets.every(r => r && r.version === 'V2.4' && r.task === '帳票A出力改修（追補）');
+        const m = byId(2); const c2 = !!m && m.version === '' && m.task === '打ち合わせ' && m.date === '2026-08-17' && m.hours === 2 && m.member === '田中';
+        const same = (a, b) => ['date', 'version', 'task', 'process', 'member', 'hours'].every(f => a[f] === b[f]) && !!a.isReview === !!b.isReview;
+        const others = SEED.filter(r => !TARGET_IDS.includes(r.id) && r.id !== 2);
+        const c3 = others.every(o => { const r = byId(o.id); return r && same(r, o); }) && d.length === SEED.length
+            && targets.every((r, i) => r && ['process', 'member', 'hours', 'date'].every(f => r[f] === SEED.find(s => s.id === TARGET_IDS[i])[f]));
+        const touched = state.undo[k] !== null;
+        const item = (ok, t) => `<li class="${ok ? 'is-ok' : (touched ? 'is-bad' : '')}"><span>${ok ? '✓' : (touched ? '✗' : '○')}</span>${t}</li>`;
+        return `<div class="mk-goal"><div class="mk-log-title">課題の達成度</div><ul>${item(c1, '5 件が V2.4「帳票A出力改修（追補）」になった')}${item(c2, '打ち合わせ（8/17）は変わっていない')}${item(c3, 'それ以外（日付・工程・工数・他の人）は変わっていない')}</ul></div>`;
+    }
+    function renderLog(k) {
+        const steps = state.log[k]; const u = state.undo[k];
+        let h = `<div class="mk-log-head"><div class="mk-log-title">操作ログ · 案${k}</div><button type="button" class="btn btn-secondary btn-small" data-act="reset">リセット</button></div>`;
+        h += steps.length ? `<ol class="mk-steps">${steps.map((s, i) => `<li><b>${i + 1}</b><span>${esc(s)}</span></li>`).join('')}</ol>` : '<p class="mk-log-empty">左の画面を操作すると、手順がここに並びます。</p>';
+        h += `<div class="mk-result ${u ? '' : 'is-pending'}"><div class="mk-log-title">結果</div>`;
+        if (u) h += `<p><strong>${esc(u.desc)}</strong><br><span class="bk-muted">${steps.length} ステップ · Undo 1 回で全件復元</span></p><button type="button" class="btn btn-secondary btn-small" data-act="undo">元に戻す</button>`;
+        else h += `<p><strong>まだ適用していません</strong><br><span class="bk-muted">${steps.length ? steps.length + ' ステップ操作中' : '操作を始めてください'}</span></p>`;
+        h += '</div>' + renderGoalCheck(k);
+        logEl.innerHTML = h;
+        const ol = logEl.querySelector('.mk-steps'); if (ol) ol.scrollTop = ol.scrollHeight;
+    }
+
+    // ---------- 操作 ----------
+    function toggleSel(id, idx, shift) {
+        const s = state.a1; const rows = visibleRows(1); const r = rows[idx];
+        if (shift && s.lastIdx !== null && s.lastIdx !== idx) {
+            const [a, b] = [Math.min(s.lastIdx, idx), Math.max(s.lastIdx, idx)];
+            rows.slice(a, b + 1).forEach(x => s.selected.add(x.id));
+            log(1, `Shift+クリックで ${b - a + 1} 件を範囲選択（計 ${s.selected.size} 件）`);
+        } else if (s.selected.has(id)) { s.selected.delete(id); log(1, `${shortDate(r.date)} ${r.member} の選択を解除（計 ${s.selected.size} 件）`); }
+        else { s.selected.add(id); log(1, `${shortDate(r.date)} ${r.member} ${r.task} を選択（計 ${s.selected.size} 件）`); }
+        s.lastIdx = idx;
+    }
+    const curPatch = () => K() === 1 ? state.a1.patch : state.a2.patch;
+    function setA3Edit(id, f, raw) {
+        const orig = state.data[3].find(r => r.id === id); if (!orig) return;
+        const v = f === 'hours' ? (parseFloat(raw) || orig.hours) : raw;
+        const e = state.a3.edits[id] || (state.a3.edits[id] = {});
+        if (v === orig[f]) delete e[f]; else e[f] = v;
+        if (!Object.keys(e).length) delete state.a3.edits[id];
+        state.a3.error = '';
+    }
+
+    document.addEventListener('click', e => {
+        const t = e.target.closest('[data-act]');
+        if (!t) {
+            const tr = e.target.closest('#frame tr[data-id]');
+            if (tr && K() === 1 && state.a1.mode && !e.target.closest('.modal')) { toggleSel(Number(tr.dataset.id), Number(tr.dataset.idx), e.shiftKey); render(); }
+            return;
+        }
+        if (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type !== 'checkbox')) return; // change で処理
+        const k = K(); const act = t.dataset.act;
+        switch (act) {
+            case 'tab': state.approach = Number(t.dataset.v); break;
+            case 'width': state.mobile = t.dataset.v === 'mobile'; break;
+            case 'reset': resetApproach(k); break;
+            case 'undo': doUndo(k); break;
+            case 'toast-close': state.toast[k] = null; break;
+            case 'noop': setToast(k, '個別の編集・削除は、このモックでは省略しています', false); break;
+            case 'modal-close': if (k === 1) { state.a1.modal = null; log(1, 'モーダルを閉じる'); } if (k === 2) { state.a2.open = false; log(2, 'モーダルを閉じる'); } break;
+
+            // 案1
+            case 'a1-mode': state.a1.mode = !state.a1.mode; state.a1.selected.clear(); state.a1.lastIdx = null; log(1, state.a1.mode ? '選択モードをオン' : '選択モードをオフ'); break;
+            case 'a1-toggle': toggleSel(Number(t.dataset.id), Number(t.dataset.idx), e.shiftKey); break;
+            case 'a1-toggle-all': {
+                const rows = visibleRows(1); const all = rows.every(r => state.a1.selected.has(r.id));
+                if (all) { rows.forEach(r => state.a1.selected.delete(r.id)); log(1, '全選択を解除'); }
+                else { rows.forEach(r => state.a1.selected.add(r.id)); log(1, `表示中の ${rows.length} 件を全選択`); }
+                break;
+            }
+            case 'a1-clear': state.a1.selected.clear(); log(1, '選択を解除'); break;
+            case 'a1-open-edit': state.a1.patch = newPatch(); normalizeTask(state.a1.patch); state.a1.modal = 'edit'; log(1, `一括編集を開く（${state.a1.selected.size} 件）`); break;
+            case 'a1-open-copy': state.a1.modal = 'copy'; log(1, `別日に複製を開く（${state.a1.selected.size} 件）`); break;
+            case 'a1-cancel': state.a1.modal = null; log(1, 'キャンセル'); break;
+            case 'a1-apply': {
+                const s = state.a1; const before = clone(state.data[1]);
+                let n = 0; const after = state.data[1].map(r => { if (!s.selected.has(r.id)) return r; const o = applyPatch(r, s.patch); if (changedFields(r, o).length) n++; return o; });
+                commit(1, before, after, `${n} 件を更新しました`); log(1, `適用: ${n} 件を更新`); s.modal = null; s.selected.clear(); break;
+            }
+            case 'a1-copy-apply': {
+                const s = state.a1; const before = clone(state.data[1]); let nextId = Math.max(...state.data[1].map(r => r.id)) + 1;
+                const copies = state.data[1].filter(r => s.selected.has(r.id)).map(r => ({ ...r, id: nextId++, date: s.copyDate }));
+                commit(1, before, [...state.data[1], ...copies], `${copies.length} 件を ${shortDate(s.copyDate)} に複製しました`); log(1, `複製: ${copies.length} 件を ${shortDate(s.copyDate)} に追加`); s.modal = null; s.selected.clear(); break;
+            }
+            case 'a1-delete': {
+                const s = state.a1; const before = clone(state.data[1]); const n = s.selected.size;
+                commit(1, before, state.data[1].filter(r => !s.selected.has(r.id)), `${n} 件を削除しました`); log(1, `削除: ${n} 件`); s.selected.clear(); break;
+            }
+
+            // 案2
+            case 'a2-open': state.a2.open = true; state.a2.cond = newCond(); state.a2.patch = newPatch(); normalizeTask(state.a2.patch); log(2, '「条件で置き換え」を開く'); break;
+            case 'a2-cancel': state.a2.open = false; log(2, 'キャンセル'); break;
+            case 'a2-apply': {
+                const s = state.a2; const before = clone(state.data[2]); let n = 0;
+                const after = state.data[2].map(r => { if (!matches(r, s.cond)) return r; const o = applyPatch(r, s.patch); if (changedFields(r, o).length) n++; return o; });
+                commit(2, before, after, `該当 ${n} 件を更新しました`); log(2, `適用: 該当 ${n} 件を更新`); s.open = false; break;
+            }
+
+            // 案3
+            case 'a3-mode': state.a3.mode = !state.a3.mode; state.a3.edits = {}; state.a3.error = ''; log(3, state.a3.mode ? '表で直接編集をオン' : '編集を終了'); break;
+            case 'a3-discard': state.a3.edits = {}; state.a3.error = ''; log(3, '変更を破棄'); break;
+            case 'a3-save': {
+                const s = state.a3; const before = clone(state.data[3]);
+                const after = state.data[3].map(r => s.edits[r.id] ? { ...r, ...s.edits[r.id] } : r);
+                const bad = after.filter(r => r.version && !r.process).length;
+                if (bad) { s.error = `${bad} 行で版数があるのに工程が空です`; log(3, `保存できず: ${s.error}`); break; }
+                const rows = Object.keys(s.edits).length;
+                commit(3, before, after, `${rows} 行を更新しました`); log(3, `保存: ${rows} 行を更新`); s.edits = {}; s.mode = false; break;
+            }
+
+            // 共通: パッチのセグメント
+            case 'pseg': {
+                const p = curPatch(); const f = t.dataset.f, v = t.dataset.v;
+                if (f === 'review') { p.review.mode = v; log(k, `レビュー: ${v === 'keep' ? '変更しない' : v === 'on' ? '付ける' : '外す'}`); }
+                else if (f === 'date') { p.date.mode = v; log(k, `日付: ${v === 'keep' ? '変更しない' : v === 'set' ? '指定日に' : '日数をずらす'}`); }
+                else { p[f].on = v === 'set'; normalizeTask(p); log(k, `${LABEL[f]}: ${p[f].on ? `変更する（→ ${p[f].val || '（なし）'}）` : '変更しない'}`); }
+                break;
+            }
+            default: return;
+        }
+        render();
+    });
+
+    document.addEventListener('change', e => {
+        const t = e.target.closest('[data-act]'); if (!t) return;
+        const k = K(); const act = t.dataset.act; const v = t.value;
+        switch (act) {
+            case 'filter-member': state.filter[k].member = v; if (k === 1) { state.a1.lastIdx = null; } log(k, `担当フィルタ → ${v || '全担当者'}`); break;
+            case 'pval': {
+                const p = curPatch(); const f = t.dataset.f;
+                if (f === 'dateval') { p.date.val = v; log(k, `日付 → ${v ? shortDate(v) : '（未入力）'}`); }
+                else if (f === 'daten') { p.date.n = parseInt(v, 10) || 0; log(k, `日付を ${p.date.n} 日ずらす`); }
+                else { p[f].val = v; if (f === 'version') normalizeTask(p); log(k, `${LABEL[f]} → ${v || '（なし）'}`); }
+                break;
+            }
+            case 'a1-copydate': state.a1.copyDate = v; log(1, `複製先 → ${shortDate(v)}`); break;
+            case 'cond': {
+                const f = t.dataset.f; state.a2.cond[f] = v;
+                const name = { from: '期間（開始）', to: '期間（終了）', member: '担当', version: '版数', task: '対応名', process: '工程' }[f];
+                const disp = v === '' ? '指定なし' : v === '__none__' ? '（なし = その他工数）' : (f === 'from' || f === 'to') ? shortDate(v) : v;
+                normalizeTask(state.a2.patch);
+                log(2, `条件 ${name} → ${disp}（該当 ${state.data[2].filter(r => matches(r, state.a2.cond)).length} 件）`);
+                break;
+            }
+            case 'a3-cell': {
+                const id = Number(t.dataset.id), f = t.dataset.f; const r = state.data[3].find(x => x.id === id);
+                setA3Edit(id, f, v);
+                if (f === 'version') { // 版数を変えたら対応名候補を追随（本実装の editActual と同じ挙動）
+                    const to = taskOptions(v); const curTask = (state.a3.edits[id] || {}).task ?? r.task;
+                    if (!to.includes(curTask) && to.length) setA3Edit(id, 'task', to[0]);
+                }
+                log(3, `${shortDate(r.date)} ${r.member} の${LABEL[f]} → ${f === 'version' ? (v || '（その他）') : f === 'process' ? (v || '—') : f === 'date' ? shortDate(v) : v}`);
+                break;
+            }
+            case 'a3-fill': {
+                const f = t.dataset.f; if (v === '__') return;
+                const rows = visibleRows(3);
+                rows.forEach(r => {
+                    setA3Edit(r.id, f, v);
+                    if (f === 'version') { const to = taskOptions(v); const curTask = (state.a3.edits[r.id] || {}).task ?? r.task; if (!to.includes(curTask) && to.length) setA3Edit(r.id, 'task', to[0]); }
+                });
+                log(3, `列「${LABEL[f]}」を ${f === 'version' ? (v || '（その他）') : f === 'process' ? (v || '—') : v} で一括埋め（${rows.length} 行）`);
+                break;
+            }
+            default: return;
+        }
+        render();
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>
