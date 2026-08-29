@@ -108,16 +108,22 @@ git branch -D experiment/sandbox
 /
 ├── index.html          # メインHTML
 ├── style.css           # スタイルシート
-├── js/                 # JavaScriptモジュール（19ファイル）
+├── js/                 # JavaScriptモジュール（34ファイル・約37,000行）
 │   ├── state.js        # グローバル状態管理
 │   ├── storage.js      # localStorage操作
 │   ├── constants.js    # 定数定義
-│   ├── init.js         # 初期化処理
+│   ├── init.js         # 初期化処理（window への公開もここに集約）
 │   ├── estimate*.js    # 見積管理
-│   ├── actual.js       # 実績管理
-│   ├── report.js       # レポート・分析
-│   └── ...
+│   ├── actual*.js      # 実績管理（actual-timeline.js はタイムライン表示）
+│   ├── report*.js      # レポート・分析
+│   ├── schedule*.js    # スケジュール・ガント
+│   └── ...             # 全ファイルの一覧は docs/CODEMAP.md（自動生成）
+├── scripts/            # 開発用スクリプト
+│   ├── codemap.mjs     # docs/CODEMAP.md 生成器
+│   └── pipeline/       # アイデア自動実装パイプライン用
+├── tests/              # 特性テスト（node --test）・e2e（Playwright）
 ├── docs/               # 設計ドキュメント
+│   ├── CODEMAP.md                    # 関数・要素IDの索引（自動生成）
 │   ├── GANTT_CHART_SPEC.md           # ガントチャート仕様書
 │   ├── GANTT_CHART_DESIGN.md         # 詳細設計書
 │   └── GANTT_CHART_IMPLEMENTATION_PLAN.md  # 実装計画
