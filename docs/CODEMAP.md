@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 34 ファイル / 37,329 行
+## js/ — 34 ファイル / 37,472 行
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
@@ -15,8 +15,8 @@
 ### js/ai-analysis.js — AI 分析セクション (941行)
 - export: loadHistory:75, appendHistory:110, initAiAnalysis:133
 
-### js/constants.js — アプリケーション定数定義 (662行)
-- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:136, STORAGE_KEYS:196, VALIDATION:244, ERROR_MESSAGES:263, SUCCESS_MESSAGES:277, PROCESS:288, SCHEDULE:314, CAPACITY_DISPLAY_MODE:373, TASK_COLORS:381, THEME_TASK_COLORS:410
+### js/constants.js — アプリケーション定数定義 (668行)
+- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:202, VALIDATION:250, ERROR_MESSAGES:269, SUCCESS_MESSAGES:283, PROCESS:294, SCHEDULE:320, CAPACITY_DISPLAY_MODE:379, TASK_COLORS:387, THEME_TASK_COLORS:416
 
 ### js/estimate-add.js — 見積追加関連機能 (1623行)
 - export: openAddEstimateModal:23, openAddEstimateSingleProcess:46, openEditAllProcesses:134, closeAddEstimateModal:657, resetAddEstimateForm:698, switchEstimateMode:750, getCurrentEstimateMode:779, initOtherWorkMemberSelect:786, autoFillMember:813, initAddEstimateForm:844, updateAddEstWorkMonthUI:895, switchAddEstMonthType:928, updateAddEstimateTableHeader:965, updateDefaultAddProcessMonths:1061, ensureExtraRowMonthCell:1147, refreshAllExtraRowMonthCells:1195, updateAddEstimateTotals:1262, addEstimateMemberRow:1291, removeEstimateMemberRow:1331, removeAllExtraMemberRows:1342, collectAllEstimateEntries:1352, addEstimateFromModal:1378, addEstimateFromModalNormal:1522
@@ -79,8 +79,8 @@
 ### js/report-analytics.js — Report Analytics — Real-data driven dashboard (1246行)
 - export: initReportAnalytics:1204
 
-### js/report.js — レポート設定関連機能 (3595行)
-- export: loadReportSettings:108, saveReportSettings:148, loadDebugModeSetting:167, saveDebugModeSetting:178, loadDevFeaturesSetting:190, saveDevFeaturesSetting:203, clearProgressCache:246, calculateProgress:259, calculateVersionProgress:358, createProgressBar:405, createStatusBadge:488, updateProgressReport:538, updateProgressVersionOptions:556, renderProgressSummaryCards:597, renderProgressDetailTable:675, openBulkRemainingModal:763, closeBulkRemainingModal:770, renderBulkRemainingTable:775, updateBulkRowStatus:880, saveBulkRemaining:928, togglePhaseCollapse:984, getProgressColor:1007, generateProgressBar:1023, getAnalysisGradients:1115, filterReportData:1132, updateReport:1259, sumEstimateHoursByMember:1789, computeInsights:2137, renderReportAnalytics:2219, renderMemberReport:2239, renderVersionReport:2286, renderReportGrouped:2330, renderReportMatrix:2507, setCapacityDisplayMode:3274, initCapacitySettings:3284, updateCapacityAnalysis:3328, toggleProgressSection:3563, initProgressSectionState:3584
+### js/report.js — レポート設定関連機能 (3732行)
+- export: loadReportSettings:108, saveReportSettings:148, loadDebugModeSetting:167, saveDebugModeSetting:178, loadDevFeaturesSetting:190, saveDevFeaturesSetting:203, clearProgressCache:246, calculateProgress:259, calculateVersionProgress:358, createProgressBar:405, createStatusBadge:488, updateProgressReport:538, updateProgressVersionOptions:556, renderProgressSummaryCards:597, renderProgressDetailTable:675, openBulkRemainingModal:763, closeBulkRemainingModal:770, renderBulkRemainingTable:775, updateBulkRowStatus:880, saveBulkRemaining:928, togglePhaseCollapse:984, getProgressColor:1007, generateProgressBar:1023, getAnalysisGradients:1115, filterReportData:1132, updateReport:1259, sumEstimateHoursByMember:1789, computeInsights:2235, renderReportAnalytics:2355, renderMemberReport:2376, renderVersionReport:2423, renderReportGrouped:2467, renderReportMatrix:2644, setCapacityDisplayMode:3411, initCapacitySettings:3421, updateCapacityAnalysis:3465, toggleProgressSection:3700, initProgressSectionState:3721
 
 ### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (2171行)
 - export: GanttChartRenderer:105, setupTooltipHandler:1567, getRenderer:1620, renderGanttChart:1633, setupCanvasClickHandler:1644, setupDragAndDrop:1703, setupTouchHandlers:1974
