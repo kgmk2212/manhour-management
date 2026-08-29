@@ -95,6 +95,11 @@ export function getSelectedActuals() {
     return actuals.filter(a => selectedActualIds.has(a.id));
 }
 
+/** バー/ブロック要素が持つ実績 id（ガントの単一 data-actual-id か複数 data-actual-ids のカンマ区切り） */
+function barElementIds(el) {
+    return (el.dataset.actualIds || el.dataset.actualId || '').split(',').filter(Boolean).map(Number);
+}
+
 /** 選択バー・一覧の行・タイムラインのバーの見た目を状態に合わせる（再描画はしない） */
 export function updateActualSelectionUI() {
     const viewType = $('actualViewType')?.value;
@@ -132,9 +137,9 @@ export function updateActualSelectionUI() {
     const all = $('actualSelectAll');
     if (all) { const ids = visibleRowIds(); all.checked = ids.length > 0 && ids.every(x => selectedActualIds.has(x)); }
 
-    // タイムラインのバー（全 id が選択済みなら selected）
-    document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids]').forEach(bar => {
-        const ids = bar.dataset.actualIds.split(',').map(Number);
+    // タイムラインのバー・日別ビューのブロック（全 id が選択済みなら selected）
+    document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids], .actual-tl-dv-block[data-actual-id]').forEach(bar => {
+        const ids = barElementIds(bar);
         bar.classList.toggle('selected', ids.length > 0 && ids.every(x => selectedActualIds.has(x)));
     });
 
@@ -192,9 +197,9 @@ export function updateActualConditionHits() {
     $('btnActualConditionReplace').disabled = hits.length === 0;
     const hitIds = new Set(hits.map(a => a.id));
     document.querySelectorAll('#actualList tr[data-actual-id]').forEach(tr => tr.classList.toggle('is-hit', hitIds.has(Number(tr.dataset.actualId))));
-    document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids]').forEach(bar => {
-        const ids = bar.dataset.actualIds.split(',').map(Number);
-        bar.classList.toggle('is-hit', ids.every(x => hitIds.has(x)));
+    document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids], .actual-tl-dv-block[data-actual-id]').forEach(bar => {
+        const ids = barElementIds(bar);
+        bar.classList.toggle('is-hit', ids.length > 0 && ids.every(x => hitIds.has(x)));
     });
 }
 

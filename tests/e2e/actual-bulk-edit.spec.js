@@ -253,8 +253,22 @@ test("タイムライン: Ctrl+クリックでトグル、右クリックでメ�
   await expect(bar).not.toHaveClass(/selected/);
   await expect(page.locator("#actualSelectionCount")).toContainText("0 件");
 
-  await page.locator('.actual-tl-bar.actual[data-actual-ids="102"]').click({ button: "right" });
+  // メニュー外クリックでも閉じる
+  await bar.click({ button: "right" });
   const menu = page.locator("#atlCtxMenu");
+  await expect(menu).toBeVisible();
+  await page.locator("#atlCurrentMonth").click();
+  await expect(menu).toHaveCount(0);
+
+  // 「同じ対応をすべて選択（全員…）」= 版数・対応名一致の全員（このフィクスチャは田中のみ = 5件）
+  await bar.click({ button: "right" });
+  await expect(menu.locator("button", { hasText: "同じ対応をすべて選択（全員" })).toContainText("5 件");
+  await menu.locator("button", { hasText: "同じ対応をすべて選択（全員" }).click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("5 件");
+  await page.locator("#btnBulkActualClear").click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("0 件");
+
+  await page.locator('.actual-tl-bar.actual[data-actual-ids="102"]').click({ button: "right" });
   await expect(menu).toBeVisible();
   await expect(menu).toContainText("打ち合わせ");
   await menu.locator("button", { hasText: "このバーの 1 件を選択" }).click();

@@ -752,6 +752,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
             dayActuals.forEach(act => {
                 const top = workHoursToY(accumulatedHours);
                 const endHours = accumulatedHours + act.hours;
+                const dvSelectedClass = selectedActualIds.has(act.id) ? ' selected' : '';
 
                 // バーが午前→午後をまたぐ場合は分割して描画
                 if (accumulatedHours < MORNING_HOURS && endHours > MORNING_HOURS) {
@@ -760,7 +761,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                     const morningTop = workHoursToY(accumulatedHours);
                     const morningHeight = morningPart * DAILY_HOUR_HEIGHT;
                     const color = getTaskColor(act.version, act.task);
-                    html += `<div class="actual-tl-dv-block" style="top:${morningTop}px;height:${morningHeight}px;background:${color};"
+                    html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${morningTop}px;height:${morningHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
@@ -769,7 +770,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                     // 午後部分
                     const afternoonPart = endHours - MORNING_HOURS;
                     const afternoonHeight = afternoonPart * DAILY_HOUR_HEIGHT;
-                    html += `<div class="actual-tl-dv-block" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${color};"
+                    html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h (続き)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
@@ -778,7 +779,7 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                     // 午前のみ or 午後のみ — 通常描画
                     const height = act.hours * DAILY_HOUR_HEIGHT;
                     const color = getTaskColor(act.version, act.task);
-                    html += `<div class="actual-tl-dv-block" style="top:${top}px;height:${height}px;background:${color};"
+                    html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${top}px;height:${height}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
@@ -1875,6 +1876,32 @@ function barIdsOf(bar) {
     return raw.split(',').filter(Boolean).map(Number);
 }
 
+/** window.* ブリッジ呼び出しを一箇所で防御的に行う（未ロード時は無視して例外にしない） */
+function callBridge(name, ...args) {
+    if (typeof window[name] === 'function') return window[name](...args);
+    return undefined;
+}
+
+/**
+ * 選択メニュー・グループ詳細パネルが共有する4アクション
+ * @param {'select'|'same-member'|'same-all'|'edit'} act
+ * @param {number[]} ids バー/グループ自身が持つ実績id
+ * @param {object} seed 「同じ対応」判定の代表実績（sameTaskIds の seed）
+ */
+function applyBarSelectionAction(act, ids, seed) {
+    if (act === 'select') {
+        const allSel = ids.every(id => selectedActualIds.has(id)); // 実行時点の状態で判定（構築時点の値を使い回さない）
+        callBridge(allSel ? 'deselectActualIds' : 'selectActualIds', ids);
+    } else if (act === 'same-member') {
+        callBridge('selectActualIds', sameTaskIds(actuals, seed, { sameMember: true }));
+    } else if (act === 'same-all') {
+        callBridge('selectActualIds', sameTaskIds(actuals, seed, { sameMember: false }));
+    } else if (act === 'edit') {
+        callBridge('selectActualIds', ids, { replace: true });
+        callBridge('openBulkActualEditModal');
+    }
+}
+
 /**
  * 実績バークリック → 詳細パネル。Ctrl/Meta/Shift 付きなら選択トグルのみ
  */
@@ -1884,9 +1911,9 @@ function onActualBarClick(e) {
     const ids = barIdsOf(bar);
     if (ids.length === 0) return;
 
-    if ((e.ctrlKey || e.metaKey || e.shiftKey) && typeof window.selectActualIds === 'function') {
+    if (e.ctrlKey || e.metaKey || e.shiftKey) {
         const all = ids.every(id => selectedActualIds.has(id));
-        if (all) window.deselectActualIds(ids); else window.selectActualIds(ids);
+        callBridge(all ? 'deselectActualIds' : 'selectActualIds', ids);
         return;
     }
     if (ids.length === 1) {
@@ -1896,8 +1923,9 @@ function onActualBarClick(e) {
     }
 }
 
-/** 右クリック → 選択メニュー */
+/** 右クリック → 選択メニュー（長押しドラッグ中・ドラッグ中の contextmenu は無視する） */
 function onActualBarContextMenu(e) {
+    if (barTouchState || (barDragState && barDragState.moved)) return;
     const ids = barIdsOf(e.currentTarget);
     if (ids.length === 0) return;
     e.preventDefault();
@@ -1905,7 +1933,13 @@ function onActualBarContextMenu(e) {
     showBarContextMenu(ids, e.clientX, e.clientY);
 }
 
+/** 選択メニューの document 監視ハンドラ（closeBarContextMenu だけが登録/解除の唯一の owner） */
+let ctxMenuDocHandler = null;
+let ctxMenuKeyHandler = null;
+
 function closeBarContextMenu() {
+    if (ctxMenuDocHandler) { document.removeEventListener('mousedown', ctxMenuDocHandler, true); ctxMenuDocHandler = null; }
+    if (ctxMenuKeyHandler) { document.removeEventListener('keydown', ctxMenuKeyHandler); ctxMenuKeyHandler = null; }
     const m = document.getElementById('atlCtxMenu');
     if (m) m.remove();
 }
@@ -1918,12 +1952,14 @@ function closeBarContextMenu() {
  */
 function showBarContextMenu(ids, x, y) {
     closeBarContextMenu();
-    const items = ids.map(id => actuals.find(a => a.id === id)).filter(Boolean);
+    const items = ids.map(id => actuals.find(a => String(a.id) === String(id))).filter(Boolean);
     if (!items.length) return;
     const b = items[0];
     const allSel = ids.every(id => selectedActualIds.has(id));
     const procs = [...new Set(items.map(a => a.process || '—'))].join('·');
     const dates = items.map(a => a.date).sort();
+    const dateFrom = escapeHtml(dates[0]);
+    const dateTo = escapeHtml(dates[dates.length - 1]);
     const sameMember = sameTaskIds(actuals, b, { sameMember: true });
     const sameAll = sameTaskIds(actuals, b, { sameMember: false });
     const total = items.reduce((s, a) => s + (a.hours || 0), 0);
@@ -1933,7 +1969,7 @@ function showBarContextMenu(ids, x, y) {
     menu.id = 'atlCtxMenu';
     menu.setAttribute('role', 'menu');
     menu.innerHTML = `
-        <div class="actual-tl-ctx-head"><b>${escapeHtml(b.task)}</b><span>${escapeHtml(b.version || '（その他）')} · ${escapeHtml(b.member)} · ${escapeHtml(procs)}</span><span>${dates[0]}${dates[0] !== dates[dates.length - 1] ? '〜' + dates[dates.length - 1] : ''} · ${ids.length} 件 · ${formatHours(total)}h</span></div>
+        <div class="actual-tl-ctx-head"><b>${escapeHtml(b.task)}</b><span>${escapeHtml(b.version || '（その他）')} · ${escapeHtml(b.member)} · ${escapeHtml(procs)}</span><span>${dateFrom}${dateFrom !== dateTo ? '〜' + dateTo : ''} · ${ids.length} 件 · ${formatHours(total)}h</span></div>
         <button type="button" class="actual-tl-ctx-item" data-act="select">${allSel ? 'このバーの選択を外す' : `このバーの ${ids.length} 件を選択`}</button>
         <button type="button" class="actual-tl-ctx-item" data-act="same-member">同じ対応をすべて選択（${escapeHtml(b.member)} · ${sameMember.length} 件）</button>
         <button type="button" class="actual-tl-ctx-item" data-act="same-all">同じ対応をすべて選択（全員 · ${sameAll.length} 件）</button>
@@ -1947,17 +1983,13 @@ function showBarContextMenu(ids, x, y) {
 
     menu.addEventListener('click', (ev) => {
         const btn = ev.target.closest('[data-act]'); if (!btn) return;
-        const act = btn.dataset.act;
-        if (act === 'select') { if (allSel) window.deselectActualIds(ids); else window.selectActualIds(ids); }
-        else if (act === 'same-member') window.selectActualIds(sameMember);
-        else if (act === 'same-all') window.selectActualIds(sameAll);
-        else if (act === 'edit') { window.selectActualIds(ids, { replace: true }); window.openBulkActualEditModal(); }
+        applyBarSelectionAction(btn.dataset.act, ids, b);
         closeBarContextMenu();
     });
-    const onDoc = (ev) => { if (!menu.contains(ev.target)) { closeBarContextMenu(); document.removeEventListener('mousedown', onDoc, true); } };
-    document.addEventListener('mousedown', onDoc, true);
-    const onKey = (ev) => { if (ev.key === 'Escape') { closeBarContextMenu(); document.removeEventListener('keydown', onKey); } };
-    document.addEventListener('keydown', onKey);
+    ctxMenuDocHandler = (ev) => { if (!menu.contains(ev.target)) closeBarContextMenu(); };
+    document.addEventListener('mousedown', ctxMenuDocHandler, true);
+    ctxMenuKeyHandler = (ev) => { if (ev.key === 'Escape') closeBarContextMenu(); };
+    document.addEventListener('keydown', ctxMenuKeyHandler);
 }
 
 /**
@@ -2135,7 +2167,8 @@ function showBarDetailPanel(actualId) {
     });
 
     panel.querySelector('#atlDpSelect').addEventListener('click', () => {
-        if (selectedActualIds.has(actual.id)) window.deselectActualIds([actual.id]); else window.selectActualIds([actual.id]);
+        const on = selectedActualIds.has(actual.id);
+        callBridge(on ? 'deselectActualIds' : 'selectActualIds', [actual.id]);
         closeDetailPanel();
     });
 }
@@ -2198,17 +2231,16 @@ function showGroupDetailPanel(ids) {
 
     const numIds = ids.map(Number);
     panel.querySelector('#atlDpSelect').addEventListener('click', () => {
-        if (numIds.every(id => selectedActualIds.has(id))) window.deselectActualIds(numIds); else window.selectActualIds(numIds);
+        applyBarSelectionAction('select', numIds, items[0]);
         closeDetailPanel();
     });
     panel.querySelector('#atlDpSelectSame').addEventListener('click', () => {
-        window.selectActualIds(sameTaskIds(actuals, items[0], { sameMember: true }));
+        applyBarSelectionAction('same-member', numIds, items[0]);
         closeDetailPanel();
     });
     panel.querySelector('#atlDpBulkEdit').addEventListener('click', () => {
-        window.selectActualIds(numIds, { replace: true });
+        applyBarSelectionAction('edit', numIds, items[0]);
         closeDetailPanel();
-        if (typeof window.openBulkActualEditModal === 'function') window.openBulkActualEditModal();
     });
 
     // 各アイテムクリックで個別詳細へ
