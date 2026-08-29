@@ -49,6 +49,7 @@ import {
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 import { pushAction } from './history.js';
+import { INSIGHT } from './constants.js';
 
 // ============================================
 // 人月換算基準の計算
@@ -1901,60 +1902,282 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
 }
 
 /**
- * AIライクなインサイトを描画
+ * インサイト判定用に、見積と実績をタスク単位（版数-対応-工程）で突き合わせる
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @returns {Array<{process: string, estimate: number, actual: number}>}
  */
-function renderInsights(filteredEstimates, filteredActuals) {
-    const insights = [];
+function summarizeTasksForInsights(filteredEstimates, filteredActuals) {
+    const tasks = {};
+    const ensure = (record) => {
+        const key = `${record.version}-${record.task}-${record.process}`;
+        if (!tasks[key]) {
+            tasks[key] = { process: record.process || 'その他', estimate: 0, actual: 0 };
+        }
+        return tasks[key];
+    };
 
-    const totalEst = filteredEstimates.reduce((sum, e) => sum + e.hours, 0);
-    const totalAct = filteredActuals.reduce((sum, a) => sum + a.hours, 0);
-    const overallAccuracy = totalEst > 0 ? (totalAct / totalEst * 100) : 0;
+    filteredEstimates.forEach(e => { ensure(e).estimate += e.hours; });
+    filteredActuals.forEach(a => { ensure(a).actual += a.hours; });
 
-    if (overallAccuracy > 120) {
-        insights.push({
+    return Object.values(tasks);
+}
+
+/**
+ * 見積と実績の「バイアス」と「ばらつき」を計算する
+ *
+ * バイアスは符号つきの合計比なので、過小見積と過大見積が相殺する。
+ * ばらつきはタスクごとの絶対差を見積で加重平均するため相殺せず、
+ * 「合計は見積どおりだが中身はばらばら」という状態を検出できる。
+ * @param {Array<{estimate: number, actual: number}>} items - タスク単位の集計
+ * @returns {{estimate: number, actual: number, count: number, bias: number, dispersion: number}}
+ */
+function calcAccuracyMetrics(items) {
+    let estimate = 0;
+    let actual = 0;
+    let absDiff = 0;
+
+    items.forEach(item => {
+        estimate += item.estimate;
+        actual += item.actual;
+        absDiff += Math.abs(item.actual - item.estimate);
+    });
+
+    return {
+        estimate,
+        actual,
+        count: items.length,
+        bias: estimate > 0 ? (actual - estimate) / estimate * 100 : 0,
+        dispersion: estimate > 0 ? absDiff / estimate * 100 : 0
+    };
+}
+
+/**
+ * 符号つきパーセント表記（+12% / -8%）
+ * @param {number} value - パーセント値
+ * @returns {string}
+ */
+function formatSignedPercent(value) {
+    return `${value >= 0 ? '+' : '-'}${Math.abs(value).toFixed(0)}%`;
+}
+
+/**
+ * 担当者を「名前（+50%）」形式で列挙する（上限を超えた分は「ほかN名」）
+ * @param {Array<{name: string, bias: number}>} members - 乖離の大きい順に並んだ担当者
+ * @returns {string}
+ */
+function formatMemberDeviationList(members) {
+    const shown = members
+        .slice(0, INSIGHT.MEMBER_NAME_MAX_ITEMS)
+        .map(m => `${m.name}（${formatSignedPercent(m.bias)}）`)
+        .join('、');
+    const rest = members.length - INSIGHT.MEMBER_NAME_MAX_ITEMS;
+    return rest > 0 ? `${shown} ほか${rest}名` : shown;
+}
+
+/**
+ * 全体評価のインサイトを1件生成する（該当なしの無言レンジを作らない）
+ * @param {Object} overall - calcAccuracyMetrics() の戻り値
+ * @returns {Object} インサイト
+ */
+function buildOverallInsight(overall) {
+    const range = `見積 ${overall.estimate.toFixed(1)}h → 実績 ${overall.actual.toFixed(1)}h・対象${overall.count}件`;
+
+    if (overall.bias > INSIGHT.BIAS_WARN_PERCENT) {
+        return {
             type: 'warning',
-            title: '見積精度に課題',
-            message: `全体で見積を${(overallAccuracy - 100).toFixed(0)}%超過しています。タスク分解の見直しが必要かもしれません。`
-        });
-    } else if (overallAccuracy >= 90 && overallAccuracy <= 110) {
-        insights.push({
+            title: '見積が不足',
+            message: `実績が見積を${overall.bias.toFixed(0)}%上回っています（${range}）。見積基準の底上げやタスク分解の見直しを検討してください。`
+        };
+    }
+    if (overall.bias < -INSIGHT.BIAS_WARN_PERCENT) {
+        return {
+            type: 'warning',
+            title: '見積が過大',
+            message: `実績が見積を${Math.abs(overall.bias).toFixed(0)}%下回っています（${range}）。見積が過大か、作業範囲が縮小している可能性があります。`
+        };
+    }
+    if (overall.dispersion > INSIGHT.DISPERSION_WARN_PERCENT) {
+        return {
+            type: 'warning',
+            title: 'タスク間のばらつきが大きい',
+            message: `合計の偏りは${formatSignedPercent(overall.bias)}ですが、タスク単位では平均${overall.dispersion.toFixed(0)}%ずれています（${range}）。過小見積と過大見積が相殺しているだけの状態です。`
+        };
+    }
+    if (Math.abs(overall.bias) <= INSIGHT.BIAS_GOOD_PERCENT
+        && overall.dispersion <= INSIGHT.DISPERSION_GOOD_PERCENT) {
+        return {
             type: 'success',
             title: '優れた見積精度',
-            message: `見積精度${overallAccuracy.toFixed(1)}%で、非常に正確な見積ができています。`
+            message: `合計の偏り${formatSignedPercent(overall.bias)}、タスク単位の平均乖離${overall.dispersion.toFixed(0)}%（${range}）。タスク単位でも見積どおりに進行しています。`
+        };
+    }
+    return {
+        type: 'info',
+        title: '見積精度は概ね良好',
+        message: `合計の偏り${formatSignedPercent(overall.bias)}、タスク単位の平均乖離${overall.dispersion.toFixed(0)}%（${range}）。大きな問題はありませんが、精度改善の余地があります。`
+    };
+}
+
+/**
+ * 担当者別の見積乖離インサイトを生成する
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @returns {Array<Object>} インサイト配列
+ */
+function buildMemberInsights(filteredEstimates, filteredActuals) {
+    const memberEstimates = sumEstimateHoursByMember(filteredEstimates);
+    const memberActuals = {};
+    filteredActuals.forEach(a => {
+        memberActuals[a.member] = (memberActuals[a.member] || 0) + a.hours;
+    });
+
+    const names = new Set([...Object.keys(memberEstimates), ...Object.keys(memberActuals)]);
+    // 担当者が1人だけなら全体評価と同じ内容になるため出さない
+    if (names.size < INSIGHT.MEMBER_MIN_COUNT) {
+        return [];
+    }
+
+    // 実績が未登録の担当者は「見積過大」と誤判定するため除外する
+    const judged = [...names]
+        .map(name => {
+            const estimate = memberEstimates[name] || 0;
+            const actual = memberActuals[name] || 0;
+            return {
+                name,
+                estimate,
+                actual,
+                bias: estimate > 0 ? (actual - estimate) / estimate * 100 : 0
+            };
+        })
+        .filter(m => m.estimate >= INSIGHT.MEMBER_MIN_HOURS && m.actual > 0);
+
+    const insights = [];
+
+    const over = judged
+        .filter(m => m.bias > INSIGHT.MEMBER_BIAS_WARN_PERCENT)
+        .sort((a, b) => b.bias - a.bias);
+    if (over.length > 0) {
+        insights.push({
+            type: 'warning',
+            title: '見積を超過しがちな担当者',
+            message: `${formatMemberDeviationList(over)}の実績が見積を上回っています。次回見積時の上振れ補正を検討してください。`
         });
     }
 
-    const processSummary = {};
-    filteredEstimates.forEach(e => {
-        const processKey = e.process || 'その他';
-        if (!processSummary[processKey]) processSummary[processKey] = { estimate: 0, actual: 0 };
-        processSummary[processKey].estimate += e.hours;
-    });
-    filteredActuals.forEach(a => {
-        const processKey = a.process || 'その他';
-        if (!processSummary[processKey]) processSummary[processKey] = { estimate: 0, actual: 0 };
-        processSummary[processKey].actual += a.hours;
+    const under = judged
+        .filter(m => m.bias < -INSIGHT.MEMBER_BIAS_WARN_PERCENT)
+        .sort((a, b) => a.bias - b.bias);
+    if (under.length > 0) {
+        insights.push({
+            type: 'warning',
+            title: '見積に余裕がある担当者',
+            message: `${formatMemberDeviationList(under)}の実績が見積を下回っています。見積の前提や割り当ての見直しを検討してください。`
+        });
+    }
+
+    return insights;
+}
+
+/**
+ * 工程別のインサイト（乖離の大きい工程・最適な工程）を生成する
+ * @param {Array<{process: string, estimate: number, actual: number}>} evaluated - 評価対象タスク
+ * @returns {{warnings: Array<Object>, best: Object|null}}
+ */
+function buildProcessInsights(evaluated) {
+    const groups = {};
+    evaluated.forEach(t => {
+        if (!groups[t.process]) groups[t.process] = [];
+        groups[t.process].push(t);
     });
 
-    let bestProcess = null;
-    let bestAccuracy = 1000;
-    Object.entries(processSummary).forEach(([proc, data]) => {
-        if (data.estimate > 0) {
-            const accuracy = Math.abs(100 - (data.actual / data.estimate * 100));
-            if (accuracy < bestAccuracy) {
-                bestAccuracy = accuracy;
-                bestProcess = proc;
-            }
-        }
-    });
+    const stats = Object.entries(groups).map(([process, items]) => ({
+        process,
+        ...calcAccuracyMetrics(items)
+    }));
 
-    if (bestProcess) {
+    const warnings = [];
+    const deviated = stats
+        .filter(p => p.estimate >= INSIGHT.PROCESS_MIN_HOURS
+            && Math.abs(p.bias) > INSIGHT.PROCESS_BIAS_WARN_PERCENT)
+        .sort((a, b) => Math.abs(b.bias) - Math.abs(a.bias))
+        .slice(0, INSIGHT.PROCESS_WARN_MAX_ITEMS);
+
+    if (deviated.length > 0) {
+        const detail = deviated
+            .map(p => `${p.process}工程 ${formatSignedPercent(p.bias)}（${p.estimate.toFixed(1)}h → ${p.actual.toFixed(1)}h）`)
+            .join('、');
+        warnings.push({
+            type: 'warning',
+            title: '乖離の大きい工程',
+            message: `${detail}。工程ごとの見積基準を見直してください。`
+        });
+    }
+
+    // 「最適な工程」は実績が伴い、かつ工程内で相殺していない場合だけ出す
+    const best = stats
+        .filter(p => p.estimate >= INSIGHT.PROCESS_MIN_HOURS
+            && p.count >= INSIGHT.PROCESS_MIN_TASKS
+            && Math.abs(p.bias) <= INSIGHT.BIAS_GOOD_PERCENT
+            && p.dispersion <= INSIGHT.DISPERSION_GOOD_PERCENT)
+        .sort((a, b) => a.dispersion - b.dispersion)[0] || null;
+
+    return { warnings, best };
+}
+
+/**
+ * レポートのインサイトを判定する（描画を伴わない純粋関数）
+ *
+ * 評価対象は「見積があり、かつ実績があるタスク」に限定する。
+ * 未着手タスクを混ぜると実績不足を見積過大と誤判定するため。
+ * @param {Array} filteredEstimates - フィルタ済み見積データ
+ * @param {Array} filteredActuals - フィルタ済み実績データ
+ * @returns {Array<{type: string, title: string, message: string}>} 警告→情報→成功の順
+ */
+export function computeInsights(filteredEstimates, filteredActuals) {
+    const insights = [];
+    const tasks = summarizeTasksForInsights(filteredEstimates, filteredActuals);
+    const evaluated = tasks.filter(t => t.estimate > 0 && t.actual > 0);
+    const unestimated = tasks.filter(t => t.estimate === 0 && t.actual > 0);
+
+    let processInsights = { warnings: [], best: null };
+
+    if (evaluated.length > 0) {
+        insights.push(buildOverallInsight(calcAccuracyMetrics(evaluated)));
+        insights.push(...buildMemberInsights(filteredEstimates, filteredActuals));
+        processInsights = buildProcessInsights(evaluated);
+        insights.push(...processInsights.warnings);
+    }
+
+    const unestimatedHours = unestimated.reduce((sum, t) => sum + t.actual, 0);
+    if (unestimatedHours >= INSIGHT.UNESTIMATED_WARN_HOURS) {
+        insights.push({
+            type: 'warning',
+            title: '見積外の作業',
+            message: `見積の無いタスクに${unestimatedHours.toFixed(1)}h（${unestimated.length}件）の実績があります。見積漏れか計画外の作業が発生しています。`
+        });
+    }
+
+    if (processInsights.best) {
+        const best = processInsights.best;
         insights.push({
             type: 'info',
             title: '最適な工程',
-            message: `${bestProcess}工程の見積精度が最も高く、計画通りに進行しています。`
+            message: `${best.process}工程はタスク単位でも見積どおりに進行しています（偏り${formatSignedPercent(best.bias)}・平均乖離${best.dispersion.toFixed(0)}%・見積${best.estimate.toFixed(1)}h／${best.count}件）。`
         });
     }
+
+    // 警告を先頭に寄せ、それ以外は生成順（全体評価 → 工程の補足）を保つ
+    return insights
+        .sort((a, b) => (a.type === 'warning' ? 0 : 1) - (b.type === 'warning' ? 0 : 1))
+        .slice(0, INSIGHT.MAX_ITEMS);
+}
+
+/**
+ * インサイトを描画
+ */
+function renderInsights(filteredEstimates, filteredActuals) {
+    const insights = computeInsights(filteredEstimates, filteredActuals);
 
     if (insights.length === 0) {
         return '';
@@ -1975,8 +2198,9 @@ function renderInsights(filteredEstimates, filteredActuals) {
                 '#004085';
 
         html += `<div style="background: ${bgColor}; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid ${borderColor};">`;
-        html += `<div style="font-weight: 600; margin-bottom: 3px; color: ${textColor};">${insight.title}</div>`;
-        html += `<div style="font-size: calc(15.5px * var(--ui-scale)); color: ${textColor};">${insight.message}</div>`;
+        // message には担当者名・工程名（ユーザー入力）が含まれるため必ずエスケープする
+        html += `<div style="font-weight: 600; margin-bottom: 3px; color: ${textColor};">${escapeHtml(insight.title)}</div>`;
+        html += `<div style="font-size: calc(15.5px * var(--ui-scale)); color: ${textColor};">${escapeHtml(insight.message)}</div>`;
         html += '</div>';
     });
 

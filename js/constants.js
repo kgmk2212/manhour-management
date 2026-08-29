@@ -95,6 +95,42 @@ export const CALCULATIONS = {
 };
 
 /**
+ * レポートのインサイト判定に使う閾値
+ *
+ * 見積と実績の突き合わせは「バイアス」と「ばらつき」を分けて評価する。
+ * - バイアス: 符号つきの合計比。系統的な見積不足／見積過大を表すが、
+ *   過小見積と過大見積が相殺するため単独では実態を見誤る。
+ * - ばらつき: タスクごとの絶対差を見積で加重平均した値。相殺しない。
+ */
+export const INSIGHT = {
+    // 全体・担当者・工程のバイアス判定（%）
+    BIAS_GOOD_PERCENT: 10,   // これ以内なら偏りなしとみなす
+    BIAS_WARN_PERCENT: 20,   // これを超えたら全体を警告
+
+    // ばらつき判定（%）
+    DISPERSION_GOOD_PERCENT: 15,
+    DISPERSION_WARN_PERCENT: 30,
+
+    // 工程判定
+    PROCESS_BIAS_WARN_PERCENT: 25,
+    PROCESS_MIN_HOURS: 8,      // 判定対象とする最小見積工数（1人日）
+    PROCESS_MIN_TASKS: 2,      // 「最適な工程」に必要な最小タスク数
+    PROCESS_WARN_MAX_ITEMS: 2, // 名指しする工程の最大数
+
+    // 担当者判定
+    MEMBER_BIAS_WARN_PERCENT: 20,
+    MEMBER_MIN_HOURS: 8,       // 判定対象とする最小見積工数
+    MEMBER_MIN_COUNT: 2,       // 担当者が1人だけなら全体評価と重複するため出さない
+    MEMBER_NAME_MAX_ITEMS: 3,  // 名指しする担当者の最大数
+
+    // 見積外の作業（見積が無いタスクに積まれた実績）
+    UNESTIMATED_WARN_HOURS: 8,
+
+    // 表示件数の上限
+    MAX_ITEMS: 6
+};
+
+/**
  * UI表示関連の定数
  */
 export const UI = {
