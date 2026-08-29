@@ -42,7 +42,10 @@ export function countLines(source) {
  * @returns {{exports: {name: string, line: number}[], globals: {name: string, line: number}[], title: string, lines: number}}
  */
 export function parseJsSource(source) {
-    const rawLines = source.split('\n');
+    // 行末の CR を落としてから解析する。CRLF のまま扱うと `(.*)$` が CR を越えられず、
+    // Windows の working tree(CRLF) と CI(LF) で title の抽出結果が食い違って
+    // 生成物が環境依存になる（CI の鮮度チェックが永久に一致しなくなる）。
+    const rawLines = source.split('\n').map(line => (line.endsWith('\r') ? line.slice(0, -1) : line));
     const lines = countLines(source);
 
     const exports = [];

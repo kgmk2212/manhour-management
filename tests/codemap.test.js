@@ -172,6 +172,42 @@ describe('parseJsSource() — ファイル冒頭の役割コメント', () => {
     });
 });
 
+describe('parseJsSource() — 改行コードに依存しない', () => {
+    // CI(Linux/LF) と Windows working tree(CRLF) で抽出結果が食い違うと、
+    // 生成物が環境依存になり CI の鮮度チェックが永久に一致しなくなる。
+    const lf = [
+        '// ============================================',
+        '// 実績管理モジュール (actual.js)',
+        '// ============================================',
+        'export function addActual() {}',
+        'window.editActual = editActual;',
+    ].join('\n') + '\n';
+    const crlf = lf.replace(/\n/g, '\r\n');
+
+    test('CRLF のソースでも title を抽出する', () => {
+        assert.equal(parseJsSource(crlf).title, '実績管理モジュール (actual.js)');
+    });
+
+    test('CRLF と LF で完全に同じ結果を返す', () => {
+        assert.deepEqual(parseJsSource(crlf), parseJsSource(lf));
+    });
+
+    test('CRLF でも export / window を取りこぼさない', () => {
+        const r = parseJsSource(crlf);
+
+        assert.deepEqual(r.exports, [{ name: 'addActual', line: 4 }]);
+        assert.deepEqual(r.globals, [{ name: 'editActual', line: 5 }]);
+    });
+});
+
+describe('parseHtmlIds() — 改行コードに依存しない', () => {
+    test('CRLF でも LF と同じ結果を返す', () => {
+        const lf = '<div id="a">\n<span id="b"></span>\n';
+
+        assert.deepEqual(parseHtmlIds(lf.replace(/\n/g, '\r\n')), parseHtmlIds(lf));
+    });
+});
+
 describe('parseJsSource() — 行数', () => {
     test('lines は総行数を返す', () => {
         const src = 'a\nb\nc\n';

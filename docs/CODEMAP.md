@@ -6,109 +6,109 @@
 
 ## js/ — 34 ファイル / 37,329 行
 
-### js/actual-timeline.js (3203行)
+### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
 
-### js/actual.js (1974行)
+### js/actual.js — 実績管理モジュール (actual.js) (1974行)
 - export: getDayOfWeek:26, getHoliday:37, renderTodayActuals:57, renderActualList:110, updateMemberSelectOptions:171, renderMemberCalendar:255, setupCalendarSwipe:386, renderActualMatrix:443, renderActualListView:702, showWorkDetail:772, closeWorkModal:922, deleteActual:933, editActualFromModal:956, deleteActualFromModal:964, addActualFromCalendar:993, editActual:1072, closeEditActualModal:1178, enterEditActualTabMode:1198, exitEditActualTabMode:1238, setEditActualTab:1263, saveActualEdit:1322, getPreviousActual:1445, getRemainingDayHours:1474, getLatestActualBeforeDate:1484, updateEditActualTaskList:1501, openOtherWorkModalWithContext:1643, handleActualTaskSelect:1661, handleEditActualVersionChange:1736, handleActualProcessChange:1782, renderCalendarGrid:1837
 
-### js/ai-analysis.js (941行)
+### js/ai-analysis.js — AI 分析セクション (941行)
 - export: loadHistory:75, appendHistory:110, initAiAnalysis:133
 
-### js/constants.js (662行)
+### js/constants.js — アプリケーション定数定義 (662行)
 - export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:136, STORAGE_KEYS:196, VALIDATION:244, ERROR_MESSAGES:263, SUCCESS_MESSAGES:277, PROCESS:288, SCHEDULE:314, CAPACITY_DISPLAY_MODE:373, TASK_COLORS:381, THEME_TASK_COLORS:410
 
-### js/estimate-add.js (1623行)
+### js/estimate-add.js — 見積追加関連機能 (1623行)
 - export: openAddEstimateModal:23, openAddEstimateSingleProcess:46, openEditAllProcesses:134, closeAddEstimateModal:657, resetAddEstimateForm:698, switchEstimateMode:750, getCurrentEstimateMode:779, initOtherWorkMemberSelect:786, autoFillMember:813, initAddEstimateForm:844, updateAddEstWorkMonthUI:895, switchAddEstMonthType:928, updateAddEstimateTableHeader:965, updateDefaultAddProcessMonths:1061, ensureExtraRowMonthCell:1147, refreshAllExtraRowMonthCells:1195, updateAddEstimateTotals:1262, addEstimateMemberRow:1291, removeEstimateMemberRow:1331, removeAllExtraMemberRows:1342, collectAllEstimateEntries:1352, addEstimateFromModal:1378, addEstimateFromModalNormal:1522
 
-### js/estimate-edit.js (951行)
+### js/estimate-edit.js — 見積編集・対応名編集関連機能 (951行)
 - export: editEstimate:28, setEditEstimateReopenDetailFlag:172, closeEditEstimateModal:181, saveEstimateEdit:195, toggleEditWorkMonthMode:542, updateEditMonthPreview:573, updateEditManualTotal:650, addEditEstimateMemberRow:694, removeEditEstimateMemberRow:738, clearEditExtraMembers:746, editTask:779, closeEditTaskModal:850, saveTaskEdit:857
 
-### js/estimate-selection.js (234行)
+### js/estimate-selection.js — 選択モード・作業月割り当て関連機能 (234行)
 - export: toggleWorkMonthSelectionMode:21, toggleEstimateSelection:58, selectTaskEstimates:76, updateSelectedWorkHours:99, executeWorkMonthAssignment:114, cancelWorkMonthSelection:146, initDragHandle:155
 
-### js/estimate-split.js (387行)
+### js/estimate-split.js — 見積分割・フォーム関連機能 (387行)
 - export: openSplitEstimateModal:26, closeSplitEstimateModal:70, updateSplitPreview:77, updateSplitManualTotal:152, executeSplitEstimate:188, clearEstimateForm:260, toggleMonthSplit:279, updateMonthPreview:300, updateManualTotal:354
 
-### js/estimate.js (2369行)
+### js/estimate.js — 見積管理モジュール (estimate.js) (2369行)
 - export: getWorkingDays:39, getCurrentMonthWorkingDays:115, formatNumber:123, isOtherWork:131, calculateDefaultWorkMonths:144, saveRemainingEstimate:179, getRemainingEstimate:225, deleteRemainingEstimate:241, cleanupOrphanedRemainingEstimates:268, repairRemainingEstimateConsistency:312, migrateRemainingEstimatesToTaskLevel:350, renderEstimateList:651, renderEstimateGrouped:721, renderEstimateMatrix:1014, renderEstimateDetailList:1238, deleteEstimate:1305, deleteTask:1365, updateWorkMonthOptions:1429, showEstimateDetail:1476, showTaskDetail:1625, addProcessFromTaskModal:1791, deleteEstimateFromTaskModal:1801, deleteTaskFromModal:1818, editTaskFromTaskModal:1826, openEditAllProcessesFromTaskModal:1836, showOtherWorkTaskDetail:1848, closeEstimateDetailModal:1958, editEstimateFromModal:1966, deleteEstimateFromModal:1984, sortTaskKeysByOrder:2002, updateTaskSortOrder:2023, initEstimateDragAndDrop:2046
 
-### js/events.js (778行)
+### js/events.js — イベントハンドラ一括登録 (778行)
 - export: initEventHandlers:106
 
-### js/excel-import.js (355行)
+### js/excel-import.js — Excel ファイルから見積・実績を追加読み込みする機能 (355行)
 - export: handleExcelImport:333
 
-### js/history.js (805行)
+### js/history.js — グローバル Undo/Redo & 変更履歴 (805行)
 - export: pushAction:22, canUndo:36, canRedo:37, getHistory:42, undo:53, redo:84, revertToAction:115, redoToAction:158, saveHistory:626, loadHistory:643, setupGlobalKeyboardShortcuts:660, openHistoryModal:702, closeHistoryModal:709
 
 ### js/hours-input.js — 工数入力ウィジェット（方式切替式・実地トライアル） (562行)
 - export: HOURS_INPUT_METHODS:18, getHoursInputMethod:33, setHoursInputMethod:42, getRegisteredDayHours:55, refreshHoursInput:522, initHoursInputSetting:548
 
-### js/init.js (686行)
+### js/init.js — モジュール統合・初期化処理 (686行)
 - window: estimates:36, actuals:37, filteredEstimates:38, companyHolidays:39, vacations:40, remainingEstimates:41, nextCompanyHolidayId:42, nextVacationId:43, nextRecordId:44, reportSettings:45, chartColorSchemes:46, phaseCollapsed:47, selectedChartColorScheme:48, monthColors:49, showMonthColorsSetting:50, reportMatrixBgColorMode:51, showProgressBarsSetting:52, showProgressPercentageSetting:53, progressBarStyle:54, matrixEstActFormat:55, mobileTabDesign:56, workDetailStyle:57, modalDesignStyle:58, debugModeEnabled:60, memberOrder:61, showAlert:64, closeCustomAlert:65, normalizeEstimate:66, generateMonthRange:67, generateMonthOptions:68, getMonthColor:69, generateMonthColorLegend:70, getDeviationColor:71, addCompanyHoliday:74, deleteCompanyHoliday:75, renderCompanyHolidayList:76, isCompanyHoliday:77, getCompanyHolidayName:78, handleVacationTypeChange:79, addQuickVacation:80, deleteVacation:81, deleteVacationFromModal:82, addVacationFromCalendar:83, closeVacationModal:84, handleVacationModalTypeChange:85, saveVacationFromModal:86, getVacation:87, loadAutoBackupSetting:90, saveAutoBackupSetting:91, saveData:92, loadData:93, autoBackup:94, exportBackup:95, importBackup:96, handleFileImport:97, showTab:100, nextTab:101, prevTab:102, initTabSwipe:103, initSmartSticky:104, initTabIndicator:105, initSidebar:106, createSegmentButtons:107, updateSegmentButtonSelection:108, setEstimateViewType:109, setActualViewType:110, setReportViewType:111, getThemeColor:112, applyLayoutSettings:113, toggleFilterLayout:114, updateLayoutToggleButtons:115, updateSegmentedButtons:116, updateMemberOptions:117, updateVersionOptions:118, updateFormNameOptions:119, updateReportVersionOptions:120, updateMonthOptions:121, updateEstimateMonthOptions:122, updateEstimateVersionOptions:123, updateActualMonthOptions:124, getDefaultMonth:125, setDefaultActualMonth:126, setDefaultReportMonth:127, setDefaultEstimateMonth:128, syncMonthToReport:129, syncMonthToEstimate:130, syncVersionToReport:131, syncVersionToEstimate:132, syncFilterTypeToReport:133, syncFilterTypeToEstimate:134, updateFilterTypeButtons:135, handleActualMemberChange:136, handleActualMonthChange:137, handleEstimateMonthChange:138, handleEstimateVersionChange:139, handleReportMonthChange:140, handleReportVersionChange:141, handleEstimateFilterTypeChange:142, setEstimateFilterType:143, handleReportFilterTypeChange:144, setReportFilterType:145, handleVersionChange:146, handleQuickFormNameChange:147, handleAddFormNameChange:148, handleEditFormNameChange:149, revertFormNameToSelect:150, handleEditActualMemberChange:151, updateAllDisplays:152, showMemberOrderHelp:153, getActiveChartColorScheme:156, saveChartColorScheme:157, loadChartColorScheme:158, updateChartColorPreview:159, loadThemeSettings:160, applyTheme:161, updateThemePreview:162, updateThemeElements:163, updateBodyBackground:164, updateElementTheme:165, toggleMonthColorsSetting:166, toggleDeviationColorsSetting:167, toggleProgressBarsSetting:168, toggleProgressPercentageSetting:169, saveProgressBarStyle:170, saveMatrixEstActFormat:171, saveDefaultViewTypeSetting:173, applyDefaultEstimateViewType:174, applyDefaultReportViewType:175, getWorkingDays:178, getCurrentMonthWorkingDays:179, formatNumber:180, isOtherWork:181, calculateDefaultWorkMonths:182, saveRemainingEstimate:183, getRemainingEstimate:184, deleteRemainingEstimate:185, cleanupOrphanedRemainingEstimates:186, repairRemainingEstimateConsistency:187, renderEstimateList:188, renderEstimateGrouped:189, renderEstimateMatrix:190, renderEstimateDetailList:191, deleteEstimate:192, deleteTask:193, updateWorkMonthOptions:194, showEstimateDetail:195, showTaskDetail:196, showOtherWorkTaskDetail:197, closeEstimateDetailModal:198, editEstimateFromModal:199, deleteEstimateFromModal:200, addProcessFromTaskModal:201, deleteEstimateFromTaskModal:202, deleteTaskFromModal:203, editTaskFromTaskModal:204, openEditAllProcessesFromTaskModal:205, updateTaskSortOrder:206, sortTaskKeysByOrder:207, editEstimate:210, closeEditEstimateModal:211, setEditEstimateReopenDetailFlag:212, saveEstimateEdit:213, toggleEditWorkMonthMode:214, updateEditMonthPreview:215, updateEditManualTotal:216, addEditEstimateMemberRow:217, removeEditEstimateMemberRow:218, editTask:219, closeEditTaskModal:220, saveTaskEdit:221, toggleWorkMonthSelectionMode:225, toggleEstimateSelection:226, selectTaskEstimates:227, updateSelectedWorkHours:228, executeWorkMonthAssignment:229, cancelWorkMonthSelection:230, initDragHandle:231, openSplitEstimateModal:234, closeSplitEstimateModal:235, updateSplitPreview:236, updateSplitManualTotal:237, executeSplitEstimate:238, clearEstimateForm:239, toggleMonthSplit:240, updateMonthPreview:241, updateManualTotal:242, getDayOfWeek:245, getHoliday:246, renderTodayActuals:247, renderActualList:248, updateMemberSelectOptions:249, renderMemberCalendar:250, setupCalendarSwipe:251, renderActualMatrix:252, renderActualListView:253, renderCalendarGrid:254, showWorkDetail:255, closeWorkModal:256, deleteActual:257, editActualFromModal:258, deleteActualFromModal:259, addActualFromCalendar:260, editActual:261, closeEditActualModal:262, saveActualEdit:263, getPreviousActual:264, getLatestActualBeforeDate:265, updateEditActualTaskList:266, openOtherWorkModalWithContext:267, handleActualTaskSelect:268, workMonthSelectionMode:272, selectedEstimateIds:273, currentThemeColor:274, currentThemePattern:275, currentTabColor:276, currentBackgroundColor:277, estimateLayout:278, actualLayout:279, reportLayout:280, isEstimateTabFirstView:281, isReportTabFirstView:282, estimateFilterState:283, reportFilterState:284, setEstimateFilterState:285, setReportFilterState:286, updateQuickTaskList:289, updateQuickMemberSelect:290, handleMemberChange:291, showQuickTaskDropdown:292, hideQuickTaskDropdown:293, clearQuickTaskSelection:294, filterQuickTaskList:295, selectQuickTask:296, quickAddActual:297, switchQuickInputMode:298, initQuickEstimateForm:299, initQuickTaskDropdownHandler:300, openAddEstimateModal:303, closeAddEstimateModal:304, resetAddEstimateForm:305, openAddEstimateSingleProcess:306, openEditAllProcesses:307, autoFillMember:308, addEstimateMemberRow:309, removeEstimateMemberRow:310, initAddEstimateForm:311, updateAddEstWorkMonthUI:312, switchAddEstMonthType:313, updateAddEstimateTableHeader:314, updateDefaultAddProcessMonths:315, updateAddEstimateTotals:316, addEstimateFromModal:317, addEstimateFromModalNormal:318, switchEstimateMode:319, addMeeting:322, addOtherWork:323, openOtherWorkModal:324, closeOtherWorkModal:325, switchOtherWorkTab:326, showProcessBreakdown:330, drawBreakdownDonutChart:331, closeProcessBreakdownModal:332, openRemainingHoursModal:333, updateRemainingHoursInput:334, updateRemainingHoursActualsList:335, closeRemainingHoursModal:336, saveRemainingHoursFromModal:337, setupModalHandlers:338, loadReportSettings:341, saveReportSettings:342, loadDebugModeSetting:343, saveDebugModeSetting:344, loadDevFeaturesSetting:345, saveDevFeaturesSetting:346, calculateProgress:347, calculateVersionProgress:348, createProgressBar:349, createStatusBadge:350, updateProgressReport:351, updateProgressVersionOptions:352, renderProgressSummaryCards:353, renderProgressDetailTable:354, openBulkRemainingModal:355, closeBulkRemainingModal:356, renderBulkRemainingTable:357, updateBulkRowStatus:358, saveBulkRemaining:359, togglePhaseCollapse:360, getProgressColor:361, generateProgressBar:362, getAnalysisGradients:363, updateReport:364, updateCapacityAnalysis:365, renderReportAnalytics:366, renderMemberReport:367, renderVersionReport:368, renderReportGrouped:369, renderReportMatrix:370, toggleProgressSection:371, initReportAnalytics:375, initAiAnalysis:376, initScheduleModule:378, renderScheduleView:379, navigateScheduleMonth:380, goToScheduleToday:381, setScheduleViewMode:382, addSchedule:383, updateSchedule:384, deleteSchedule:385, openCreateScheduleModal:386, closeCreateScheduleModal:387, openScheduleDetailModal:388, closeScheduleDetailModal:389, saveScheduleFromModal:390, saveScheduleDetailChanges:391, deleteScheduleFromModal:392, openEstimateFromSchedule:393, historyUndo:395, historyRedo:396, openHistoryModal:397, closeHistoryModal:398, revertToAction:399, redoToAction:400, updateScheduleFn:403, deleteScheduleFn:404, showScheduleToast:405, saveRemainingEstimateFn:406, deleteRemainingEstimateFn:407, getScheduleRenderer:408, updateScheduleVersionOptions:409, updateScheduleTaskOptions:410, updateScheduleProcessOptions:411, updateScheduleMemberOptions:412, populateScheduleEstimateHours:413, recalculateScheduleEndDate:414, recalculateScheduleEndDateDetail:415, saveScheduleRemainingHours:416, isBusinessDay:417, countBusinessDays:418, generateSchedulesFromEstimates:419, openAutoGenerateModal:420, closeAutoGenerateModal:421, updateAutoGenerateVersionOptions:422, updateAutoGenerateTargetOptions:423, updateAutoGeneratePreview:424, executeAutoGenerate:425, handleScheduleDrag:426, setScheduleStatus:427, getFilteredSchedules:428, applyScheduleFilters:429, clearScheduleFilters:430, updateScheduleFilterOptions:431, exportSchedulesToExcel:432, deleteFilteredSchedules:433, showToast:434, updateFilterResultCount:435, updateUnscheduledBadge:436, toggleUnscheduledDropdown:437, toggleUnscheduledSelectAll:438, updateUnscheduledCount:439, registerCheckedSchedules:440, calculateEndDate:441, getTaskColor:442, initActualTimeline:445, renderActualTimeline:446, schedules:449, scheduleSettings:450, taskColorMap:451, estimates:463, actuals:464, companyHolidays:465, vacations:466, remainingEstimates:467, memberOrder:468, schedules:469, scheduleSettings:470, taskColorMap:471
 
-### js/llm-analyze.js (481行)
+### js/llm-analyze.js — 要約 JSON → Ollama 推論 → 結果 JSON (481行)
 - export: extractKeyFindings:24, validateAnalysisOutput:123, probeOllama:363, analyze:405
 
-### js/llm-prompts.js (288行)
+### js/llm-prompts.js — LLM 推論用のプロンプト資産 (288行)
 - export: OUTPUT_FORMAT:8, getSystemPrompt:217, OUTPUT_SCHEMA:225
 
-### js/llm-summarize.js (485行)
+### js/llm-summarize.js — バックアップ形式のデータ → LLM 入力用の要約 JSON に変換 (485行)
 - export: summarize:453, summarizeFromAppState:478
 
-### js/merge-core.js (612行)
+### js/merge-core.js — merge-core.js — 差分マージ共通基盤 (612行)
 - export: el:13, s:32, normalizeDate:35, roundNum:51, detectDiff:69, openMergePreview:362
 
-### js/merge-json.js (304行)
+### js/merge-json.js — merge-json.js — バックアップJSON 差分マージのアダプタ (304行)
 - export: handleBackupMerge:244
 
-### js/modal.js (505行)
+### js/modal.js — モーダル関連機能（工程内訳・残存時間） (505行)
 - export: showProcessBreakdown:16, drawBreakdownDonutChart:143, openProcessBreakdown:235, closeProcessBreakdownModal:260, openRemainingHoursModal:269, updateRemainingHoursInput:328, updateRemainingHoursActualsList:340, closeRemainingHoursModal:403, saveRemainingHoursFromModal:408, setupModalHandlers:454
 - window: openProcessBreakdown:258
 
-### js/other-work.js (342行)
+### js/other-work.js — その他作業関連機能 (342行)
 - export: addMeeting:16, addOtherWork:86, openOtherWorkModal:152, closeOtherWorkModal:201, switchOtherWorkTab:220, getPreviousOtherWork:256, applyOtherWorkDefaults:279
 
-### js/partial-json.js (123行)
+### js/partial-json.js — Lenient partial-JSON パーサ (123行)
 - export: parsePartialJson:22
 
-### js/quick.js (842行)
+### js/quick.js — クイック入力関連機能 (842行)
 - export: updateQuickTaskList:26, updateQuickMemberSelect:48, handleMemberChange:82, showQuickTaskDropdown:100, hideQuickTaskDropdown:104, clearQuickTaskSelection:111, filterQuickTaskList:128, selectQuickTask:163, refreshQuickHoursWidget:219, quickAddActual:236, switchQuickInputMode:315, initQuickEstimateForm:382, saveQuickInputModeSetting:420, initQuickTaskDropdownHandler:437, getSelectedQuickTask:455, setSelectedQuickTask:459, getQuickInputMode:463, updateQuickEstWorkMonthUI:471, switchQuickEstMonthType:498, updateQuickEstimateTotals:531, updateQuickEstimateTableHeader:551, updateDefaultQuickProcessMonths:640, addQuickEstimate:671, autoFillMember:822
 
-### js/report-analytics.js (1246行)
+### js/report-analytics.js — Report Analytics — Real-data driven dashboard (1246行)
 - export: initReportAnalytics:1204
 
-### js/report.js (3595行)
+### js/report.js — レポート設定関連機能 (3595行)
 - export: loadReportSettings:108, saveReportSettings:148, loadDebugModeSetting:167, saveDebugModeSetting:178, loadDevFeaturesSetting:190, saveDevFeaturesSetting:203, clearProgressCache:246, calculateProgress:259, calculateVersionProgress:358, createProgressBar:405, createStatusBadge:488, updateProgressReport:538, updateProgressVersionOptions:556, renderProgressSummaryCards:597, renderProgressDetailTable:675, openBulkRemainingModal:763, closeBulkRemainingModal:770, renderBulkRemainingTable:775, updateBulkRowStatus:880, saveBulkRemaining:928, togglePhaseCollapse:984, getProgressColor:1007, generateProgressBar:1023, getAnalysisGradients:1115, filterReportData:1132, updateReport:1259, sumEstimateHoursByMember:1789, computeInsights:2137, renderReportAnalytics:2219, renderMemberReport:2239, renderVersionReport:2286, renderReportGrouped:2330, renderReportMatrix:2507, setCapacityDisplayMode:3274, initCapacitySettings:3284, updateCapacityAnalysis:3328, toggleProgressSection:3563, initProgressSectionState:3584
 
-### js/schedule-render.js (2171行)
+### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (2171行)
 - export: GanttChartRenderer:105, setupTooltipHandler:1567, getRenderer:1620, renderGanttChart:1633, setupCanvasClickHandler:1644, setupDragAndDrop:1703, setupTouchHandlers:1974
 
-### js/schedule.js (2695行)
+### js/schedule.js — [GANTT-CHART] スケジュール管理モジュール (2695行)
 - export: initScheduleModule:34, updateCurrentMonthDisplay:116, renderScheduleView:127, updateScheduleSummary:229, navigateScheduleMonth:269, goToScheduleToday:291, setScheduleViewMode:314, addSchedule:336, updateSchedule:400, deleteSchedule:425, calculateProgress:443, isDelayed:508, getCurrentTaskPalette:618, getTaskColor:631, isBusinessDay:668, calculateEndDate:722, countBusinessDays:752, openCreateScheduleModal:778, closeCreateScheduleModal:813, openScheduleDetailModal:821, closeScheduleDetailModal:943, openEstimateFromSchedule:953, saveScheduleFromModal:983, saveScheduleDetailChanges:1017, deleteScheduleFromModal:1090, updateScheduleVersionOptions:1116, updateScheduleTaskOptions:1131, updateScheduleProcessOptions:1155, updateScheduleMemberOptions:1178, populateScheduleEstimateHours:1202, recalculateScheduleEndDate:1223, saveScheduleRemainingHours:1244, recalculateScheduleEndDateDetail:1308, generateSchedulesFromEstimates:1336, openAutoGenerateModal:1486, closeAutoGenerateModal:1508, updateAutoGenerateVersionOptions:1516, updateAutoGenerateTargetOptions:1531, updateAutoGeneratePreview:1568, setScheduleStatus:1628, handleScheduleDrag:1681, executeAutoGenerate:1711, getFilteredSchedules:1757, applyScheduleFilters:1783, updateFilterResultCount:1801, clearScheduleFilters:1820, deleteFilteredSchedules:1842, exportSchedulesToExcel:1883, showToast:1960, updateScheduleFilterOptions:2120, updateUnscheduledBadge:2175, toggleUnscheduledDropdown:2195, toggleUnscheduledSelectAll:2325, updateUnscheduledCount:2334, registerCheckedSchedules:2354
 
-### js/state.js (564行)
+### js/state.js — グローバル変数・状態管理 (564行)
 - export: estimates:6, filteredEstimates:7, actuals:8, companyHolidays:11, vacations:12, remainingEstimates:13, nonProjectWork:14, nextCompanyHolidayId:17, nextVacationId:18, nextRecordId:23, nextNonProjectId:24, reportSettings:27, chartColorSchemes:38, phaseCollapsed:210, selectedChartColorScheme:217, monthColors:220, showMonthColorsSetting:236, reportMatrixBgColorMode:237, showProgressBarsSetting:238, showProgressPercentageSetting:239, progressBarStyle:240, matrixEstActFormat:241, filterBarMode:243, scheduleBarColorMode:244, debugModeEnabled:246, devFeaturesEnabled:247, memberOrder:248, workMonthSelectionMode:251, selectedEstimateIds:252, currentThemeColor:255, currentThemePattern:256, currentTabColor:257, currentBackgroundColor:258, estimateLayout:261, actualLayout:262, reportLayout:263, isEstimateTabFirstView:266, isReportTabFirstView:267, quickInputMode:270, rememberQuickInputMode:271, mobileTabDesign:272, workDetailStyle:273, modalDesignStyle:274, estimateFilterState:277, reportFilterState:281, setEstimates:291, setFilteredEstimates:296, setActuals:301, setCompanyHolidays:306, setVacations:311, setRemainingEstimates:316, setNextCompanyHolidayId:321, setNextVacationId:326, setNextRecordId:331, nextId:341, setNonProjectWork:347, setNextNonProjectId:352, setReportSettings:357, setPhaseCollapsed:362, setSelectedChartColorScheme:367, setShowMonthColorsSetting:372, setReportMatrixBgColorMode:377, setShowProgressBarsSetting:382, setShowProgressPercentageSetting:387, setProgressBarStyle:392, setMatrixEstActFormat:397, setFilterBarMode:404, setScheduleBarColorMode:409, setDebugModeEnabled:414, setDevFeaturesEnabled:419, setWorkMonthSelectionMode:424, setMemberOrder:429, setCurrentThemeColor:434, setCurrentThemePattern:439, setCurrentTabColor:444, setCurrentBackgroundColor:449, setEstimateLayout:454, setActualLayout:459, setReportLayout:464, setIsEstimateTabFirstView:469, setIsReportTabFirstView:474, setQuickInputMode:479, setRememberQuickInputMode:484, setMobileTabDesign:489, setWorkDetailStyle:494, setModalDesignStyle:499, schedules:515, nextScheduleId:516, scheduleSettings:519, taskColorMap:531, taskSortOrder:534, setSchedules:537, setNextScheduleId:541, setScheduleSettings:545, setTaskColorMap:549, setTaskSortOrder:553, setEstimateFilterState:558, setReportFilterState:562
 
-### js/storage.js (795行)
+### js/storage.js — localStorage・バックアップ機能 (795行)
 - export: loadAutoBackupSetting:44, saveAutoBackupSetting:51, saveData:69, loadData:149, autoBackup:371, exportBackup:455, importBackup:460, handleFileImport:471, exportToExcel:743
 
-### js/tab-filter.js (768行)
+### js/tab-filter.js — タブ内フィルタドロワー (768行)
 - export: getActualMonthExpanded:9, setActualMonthExpanded:10, saveTabBarAlwaysVisible:13, loadTabBarAlwaysVisible:20, saveTabFilterAlwaysExpanded:30, loadTabFilterAlwaysExpanded:37, saveTabFilterButtonStyle:47, loadTabFilterButtonStyle:54, applyFilterButtonStyle:65, saveTabFilterLayout:74, loadTabFilterLayout:81, applyFilterLayout:92, saveHideInlineFilters:102, loadHideInlineFilters:109, applyInlineFilterVisibility:119, saveShowSegmentButtons:138, loadShowSegmentButtons:145, applySegmentButtonsVisibility:156, applyTabBarVisibility:162, applyFilterExpansion:175, toggleTabFilterDrawer:194, updateTabFilterContent:230, onTabChange:671, initTabFilter:690
 - window: toggleTabFilterDrawer:762, updateTabFilterContent:763, onTabFilterChange:764, getActualMonthExpanded:765, setActualMonthExpanded:766
 
-### js/theme.js (506行)
+### js/theme.js — テーマ・UI設定 (506行)
 - export: getActiveChartColorScheme:37, saveChartColorScheme:52, loadChartColorScheme:69, updateChartColorPreview:89, loadThemeSettings:128, applyTheme:181, updateThemePreview:235, updateThemeElements:240, updateBodyBackground:284, updateElementTheme:290, toggleMonthColorsSetting:311, changeReportMatrixBgColorMode:327, toggleProgressBarsSetting:340, toggleProgressPercentageSetting:353, saveProgressBarStyle:366, saveMatrixEstActFormat:379, changeScheduleBarColorMode:403, changeFilterBarMode:415, saveDefaultViewTypeSetting:428, loadMobileTabDesign:438, changeMobileTabDesign:449, applyDefaultEstimateViewType:463, applyDefaultReportViewType:484
 
-### js/ui.js (4316行)
+### js/ui.js — UI操作・DOM操作 (4316行)
 - export: showTab:131, nextTab:361, prevTab:370, initTabIndicator:390, updateTabIndicator:514, updateTabIndicatorProgress:740, finalizeTabIndicator:792, initSmartSticky:801, initTabSwipe:870, createSegmentButtons:1515, updateSegmentButtonSelection:1603, setEstimateViewType:1629, setActualViewType:1676, setReportViewType:1705, getThemeColor:1718, applyLayoutSettings:1726, toggleFilterLayout:1764, updateLayoutToggleButtons:1910, updateSegmentedButtons:1953, updateMemberOptions:2089, updateVersionOptions:2181, updateFormNameOptions:2233, updateReportVersionOptions:2288, updateMonthOptions:2397, updateEstimateMonthOptions:2543, updateEstimateVersionOptions:2642, updateActualMonthOptions:2736, getDefaultMonth:2872, setDefaultActualMonth:2895, setDefaultReportMonth:2908, setDefaultEstimateMonth:2929, syncMonthToReport:2948, syncMonthToEstimate:2963, syncMonthToActual:2981, syncVersionToReport:3000, syncVersionToEstimate:3015, syncFilterTypeToReport:3033, syncFilterTypeToEstimate:3059, updateFilterTypeButtons:3095, handleActualMemberChange:3107, initAnimationState:3121, handleActualMonthChange:3128, handleEstimateMonthChange:3221, handleEstimateVersionChange:3276, handleReportMonthChange:3327, handleReportVersionChange:3382, handleEstimateFilterTypeChange:3432, setEstimateFilterType:3483, handleReportFilterTypeChange:3501, setReportFilterType:3563, loadFilterStatesFromStorage:3621, restoreReportFilterState:3662, restoreEstimateFilterState:3737, handleVersionChange:3797, handleQuickFormNameChange:3840, handleAddFormNameChange:3862, handleEditFormNameChange:3884, revertFormNameToSelect:3909, handleEditActualMemberChange:3932, syncSettingsToUI:3949, updateAllDisplays:4009, showMemberOrderHelp:4034, initSidebar:4086, initSmartStickyFilters:4150, initSettingsNav:4283
 - window: isTabInteracting:98
 
-### js/utils.js (876行)
+### js/utils.js — ユーティリティ関数 (876行)
 - export: showAlert:8, closeCustomAlert:61, reviewBadgeHtml:82, normalizeEstimate:93, getEstimateHoursForMonth:131, generateMonthRange:143, generateMonthOptions:160, getMonthColor:203, generateMonthColorLegend:242, getDeviationColor:282, sortMembers:328, escapeHtml:364, escapeForHandler:381, enableDragScroll:406, getTargetVersions:482, determineProgressStatus:516, formatHours:557, hoursToManDays:580, hoursToManMonths:590, filterByVersionAndTask:613, safeGetLocalStorage:628, safeSetLocalStorage:645, safeQuerySelector:661, parseMonthString:675, formatMonthJapanese:689, formatMonthRangeJapanese:699, getTodayString:720, addDaysToDateString:734, splitHoursEvenly:751, getCurrentMonthString:771, getNextDateString:783, getWorkingDays:793, getUiScale:816, scaledFont:823, populateQuarterHourOptions:837, setHoursSelectValue:856
 
-### js/vacation.js (285行)
+### js/vacation.js — 休暇・休日管理機能 (285行)
 - export: addCompanyHoliday:18, deleteCompanyHoliday:58, renderCompanyHolidayList:74, isCompanyHoliday:100, getCompanyHolidayName:104, handleVacationTypeChange:113, addQuickVacation:126, deleteVacation:167, deleteVacationFromModal:182, prepareVacationFields:203, addVacationFromCalendar:218, closeVacationModal:223, handleVacationModalTypeChange:234, saveVacationFromModal:244, getVacation:283
 
 ## index.html — 3457行 / 要素ID 497件
