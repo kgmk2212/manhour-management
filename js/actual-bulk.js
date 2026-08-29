@@ -153,7 +153,6 @@ export function closeActualConditionPopover() {
 // 一括編集モーダル
 // ============================================
 
-const PATCH_FIELDS = ['version', 'task', 'process', 'member', 'isReview', 'date'];
 const FIELD_LABEL = { date: '日付', version: '版数', task: '対応名', process: '工程', member: '担当', isReview: 'レビュー', hours: '工数' };
 
 /** モーダル内で編集中のパッチ（UI 状態）。適用時に BulkPatch へ変換する */
@@ -227,8 +226,8 @@ function renderPatchFields(targets) {
         fld('isReview', true, segBtn('isReview', 'keep', u.isReview, '変更しない') + segBtn('isReview', 'on', u.isReview, '付ける') + segBtn('isReview', 'off', u.isReview, '外す'), ''),
         fld('date', dm === 'keep', segBtn('date', 'keep', dm, '変更しない') + segBtn('date', 'set', dm, '指定日に') + segBtn('date', 'shift', dm, '日数をずらす'),
             dm === 'set'
-                ? `<input type="date" data-val value="${u.date.value}">`
-                : `<input type="number" data-val value="${u.date.days}" step="1" style="width:90px;min-width:0"> <span class="bk-muted">日（マイナスで前へ）</span>`),
+                ? `<input type="date" data-val value="${escapeHtml(u.date.value)}">`
+                : `<input type="number" data-val value="${escapeHtml(String(u.date.days))}" step="1" style="width:90px;min-width:0"> <span class="bk-muted">日（マイナスで前へ）</span>`),
     ].join('');
 }
 
@@ -284,6 +283,12 @@ export function closeBulkActualEditModal() {
     ui = null;
 }
 
+/** 版数の指定/選択が変わった直後、対応名が新しい候補に無ければ候補の先頭（無ければ自由入力）へ差し替える */
+function resyncTaskForVersion() {
+    const to = taskOptions(ui.version.on ? ui.version.val : null);
+    if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__';
+}
+
 /** モーダル内のセグメント／値変更（イベント委譲。Task 4 Step 5 で登録） */
 function onBulkFieldClick(e) {
     const btn = e.target.closest('button[data-seg]'); if (!btn || !ui) return;
@@ -292,7 +297,7 @@ function onBulkFieldClick(e) {
     else if (f === 'date') ui.date.mode = v;
     else {
         ui[f].on = v === 'set';
-        if (f === 'version') { const to = taskOptions(ui.version.on ? ui.version.val : null); if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__'; }
+        if (f === 'version') resyncTaskForVersion();
     }
     rerenderModal();
 }
@@ -301,13 +306,14 @@ function onBulkFieldChange(e) {
     const f = row.dataset.field, v = e.target.value;
     if (e.target.matches('[data-free]')) { ui.task.free = v; renderPreview(getSelectedActuals()); return; }
     if (f === 'date') { if (ui.date.mode === 'set') ui.date.value = v; else ui.date.days = v; }
-    else if (f === 'version') { ui.version.val = v; const to = taskOptions(v); if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__'; }
+    else if (f === 'version') { ui.version.val = v; resyncTaskForVersion(); }
     else ui[f].val = v;
     rerenderModal();
 }
 
 /** 適用: エンジン → State → pushAction → 保存 → 再描画 */
 export function applyBulkActualEdit() {
+    if (!ui) return;
     const targets = getSelectedActuals();
     const patch = toBulkPatch(ui);
     const { after, changed, invalid } = applyBulkPatch(actuals, targets.map(a => a.id), patch);

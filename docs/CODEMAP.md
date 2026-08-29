@@ -4,13 +4,13 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 36 ファイル / 38,089 行
+## js/ — 36 ファイル / 38,095 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
 
-### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (360行)
-- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, closeActualConditionPopover:146, openBulkActualEditModal:268, closeBulkActualEditModal:282, applyBulkActualEdit:310, showUndoToast:340, initBulkActualModalEvents:353
+### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (366行)
+- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, closeActualConditionPopover:146, openBulkActualEditModal:267, closeBulkActualEditModal:281, applyBulkActualEdit:315, showUndoToast:346, initBulkActualModalEvents:359
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
