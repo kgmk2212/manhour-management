@@ -111,6 +111,11 @@ export function initEventHandlers() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
     bind('btnActualSelectionMode', ActualBulk.toggleActualSelectionMode);
     bind('btnBulkActualClear', ActualBulk.clearActualSelection);
+    bind('btnBulkActualEdit', ActualBulk.openBulkActualEditModal);
+    bind('btnBulkActualEditCancel', ActualBulk.closeBulkActualEditModal);
+    bind('btnCloseBulkActualEditModal', ActualBulk.closeBulkActualEditModal);
+    bind('btnBulkActualApply', ActualBulk.applyBulkActualEdit);
+    ActualBulk.initBulkActualModalEvents();
     const exportBtn = document.getElementById('btnExportBackup');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBackup);

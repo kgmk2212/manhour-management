@@ -2078,6 +2078,24 @@
         </div>
     </div>
 
+    <!-- 実績の一括編集モーダル -->
+    <div id="bulkActualEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="bulkActualEditTitle">選択した実績を一括編集</h3>
+                <button class="modal-close" id="btnCloseBulkActualEditModal" aria-label="閉じる">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="bulkActualFields"></div>
+                <div id="bulkActualPreview"></div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="btnBulkActualEditCancel">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="btnBulkActualApply" disabled>適用</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 見込残存時間一括編集モーダル -->
     <div id="bulkRemainingModal" class="modal">
         <div class="modal-content" style="max-width: 1000px; max-height: 85vh;">

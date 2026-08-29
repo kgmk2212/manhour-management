@@ -4,10 +4,14 @@
 // ============================================
 
 import {
-    actuals,
+    actuals, estimates, setActuals,
     actualSelectionMode, setActualSelectionMode, selectedActualIds,
+    memberOrder,
 } from './state.js';
-import { formatHours } from './utils.js';
+import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
+import { PROCESS } from './constants.js';
+import { pushAction, undo } from './history.js';
+import { applyBulkPatch, summarizeField, displayValue } from './actual-bulk-core.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,11 +26,13 @@ function visibleRowIds() {
 
 let lastClickedId = null;
 
-/** 選択モードのオン/オフ。オフで選択もクリア */
+/** 選択モードのオン/オフ。オフにするときだけ選択もクリア（オンにする際はタイムライン等での選択を保つ） */
 export function toggleActualSelectionMode() {
     setActualSelectionMode(!actualSelectionMode);
-    selectedActualIds.clear();
-    lastClickedId = null;
+    if (!actualSelectionMode) {
+        selectedActualIds.clear();
+        lastClickedId = null;
+    }
     closeActualConditionPopover();
     if (typeof window.renderActualList === 'function') window.renderActualList();
     updateActualSelectionUI();
@@ -100,13 +106,13 @@ export function updateActualSelectionUI() {
     [...selectedActualIds].forEach(x => { if (!alive.has(x)) selectedActualIds.delete(x); });
 
     const tray = $('actualSelectionTray');
-    if (tray) tray.style.display = (actualSelectionMode || viewType === 'timeline') ? 'flex' : 'none';
+    if (tray) tray.style.display = ((actualSelectionMode && viewType === 'list') || viewType === 'timeline') ? 'flex' : 'none';
 
     const modeBtn = $('btnActualSelectionMode');
     if (modeBtn) {
         modeBtn.classList.toggle('is-on', actualSelectionMode);
         modeBtn.textContent = actualSelectionMode ? '✓ 選択モード' : '選択モード';
-        modeBtn.style.display = viewType === 'timeline' ? 'none' : '';
+        modeBtn.style.display = viewType === 'list' ? '' : 'none';
     }
 
     const count = $('actualSelectionCount');
@@ -141,6 +147,214 @@ export function closeActualConditionPopover() {
     const pop = $('actualConditionPopover');
     if (pop) pop.style.display = 'none';
     const b = $('btnBulkActualCondition'); if (b) b.classList.remove('is-on');
+}
+
+// ============================================
+// 一括編集モーダル
+// ============================================
+
+const PATCH_FIELDS = ['version', 'task', 'process', 'member', 'isReview', 'date'];
+const FIELD_LABEL = { date: '日付', version: '版数', task: '対応名', process: '工程', member: '担当', isReview: 'レビュー', hours: '工数' };
+
+/** モーダル内で編集中のパッチ（UI 状態）。適用時に BulkPatch へ変換する */
+let ui = null;
+
+function newPatchUI() {
+    return {
+        version: { on: false, val: '' }, task: { on: false, val: '', free: '' }, process: { on: false, val: '' },
+        member: { on: false, val: '' }, isReview: 'keep', date: { mode: 'keep', value: '', days: 7 },
+    };
+}
+
+/** 版数一覧（見積＋実績）。空版数は含めない */
+function versionOptions() {
+    return [...new Set([...estimates.map(e => e.version), ...actuals.map(a => a.version)].filter(Boolean))].sort();
+}
+/** 対応名候補。version が null なら全体、'' はその他工数の実績由来 */
+function taskOptions(version) {
+    const src = version === null
+        ? [...estimates.map(e => e.task), ...actuals.map(a => a.task)]
+        : [...estimates.filter(e => e.version === version).map(e => e.task), ...actuals.filter(a => a.version === version).map(a => a.task)];
+    return [...new Set(src.filter(Boolean))];
+}
+function memberOptions() {
+    return sortMembers([...new Set([...estimates.map(e => e.member), ...actuals.map(a => a.member)].filter(Boolean))], memberOrder || '');
+}
+const opt = (arr, cur, labelFn) => arr.map(v => `<option value="${escapeHtml(v)}" ${v === cur ? 'selected' : ''}>${escapeHtml(labelFn ? labelFn(v) : v)}</option>`).join('');
+
+/** UI 状態 → BulkPatch（core の入力形） */
+function toBulkPatch(u) {
+    const p = {};
+    if (u.version.on) p.version = { set: u.version.val };
+    if (u.task.on) p.task = { set: u.task.val === '__free__' ? u.task.free.trim() : u.task.val };
+    if (u.process.on) p.process = { set: u.process.val };
+    if (u.member.on) p.member = { set: u.member.val };
+    if (u.isReview !== 'keep') p.isReview = u.isReview;
+    if (u.date.mode === 'set') p.date = { mode: 'set', value: u.date.value };
+    if (u.date.mode === 'shift') p.date = { mode: 'shift', days: Number(u.date.days) || 0 };
+    return p;
+}
+
+function summaryText(targets, field) {
+    const parts = summarizeField(targets, field).map(s => `${escapeHtml(s.value)} ×${s.count}`);
+    return parts.length > 3 ? `${parts.slice(0, 3).join('、')}、他 ${parts.length - 3} 種` : (parts.join('、') || '—');
+}
+const segBtn = (field, v, cur, label) => `<button type="button" data-seg data-field="${field}" data-v="${v}" class="${cur === v ? 'is-on' : ''}">${label}</button>`;
+
+function renderPatchFields(targets) {
+    const u = ui;
+    const fld = (field, isKeep, seg, body) => `
+        <div class="bk-field ${isKeep ? 'is-keep' : ''}" data-field="${field}">
+            <div class="bk-field-head">
+                <div><div class="bk-field-name">${FIELD_LABEL[field]}</div><div class="bk-field-current">現在: ${summaryText(targets, field)}</div></div>
+                <div class="bk-seg">${seg}</div>
+            </div>
+            <div class="bk-field-body">${body}</div>
+        </div>`;
+    const two = (field, on) => segBtn(field, 'keep', on ? 'set' : 'keep', '変更しない') + segBtn(field, 'set', on ? 'set' : 'keep', '変更する');
+    const tOpts = taskOptions(u.version.on ? u.version.val : null);
+    const dm = u.date.mode;
+    $('bulkActualFields').innerHTML = [
+        fld('version', !u.version.on, two('version', u.version.on),
+            `<select data-val>${opt(['', ...versionOptions()], u.version.val, v => v || '（なし = その他工数）')}</select>`),
+        fld('task', !u.task.on, two('task', u.task.on),
+            `<select data-val>${opt([...tOpts, '__free__'], u.task.val, v => v === '__free__' ? '（直接入力）' : v)}</select>`
+            + `<input type="text" data-free placeholder="対応名を入力" value="${escapeHtml(u.task.free)}" style="${u.task.val === '__free__' ? '' : 'display:none'}">`),
+        fld('process', !u.process.on, two('process', u.process.on),
+            `<select data-val>${opt(['', ...PROCESS.TYPES], u.process.val, v => v || '（なし）')}</select>`),
+        fld('member', !u.member.on, two('member', u.member.on),
+            `<select data-val>${opt(memberOptions(), u.member.val)}</select>`),
+        fld('isReview', true, segBtn('isReview', 'keep', u.isReview, '変更しない') + segBtn('isReview', 'on', u.isReview, '付ける') + segBtn('isReview', 'off', u.isReview, '外す'), ''),
+        fld('date', dm === 'keep', segBtn('date', 'keep', dm, '変更しない') + segBtn('date', 'set', dm, '指定日に') + segBtn('date', 'shift', dm, '日数をずらす'),
+            dm === 'set'
+                ? `<input type="date" data-val value="${u.date.value}">`
+                : `<input type="number" data-val value="${u.date.days}" step="1" style="width:90px;min-width:0"> <span class="bk-muted">日（マイナスで前へ）</span>`),
+    ].join('');
+}
+
+function renderPreview(targets) {
+    const { changed, invalid } = applyBulkPatch(actuals, targets.map(a => a.id), toBulkPatch(ui));
+    const box = $('bulkActualPreview');
+    let html = `<div class="bk-preview"><div class="bk-preview-title">変更後プレビュー<span class="bk-muted">対象 ${targets.length} 件 · 変わる ${changed.length} 件</span></div>`;
+    if (!changed.length) {
+        html += '<p class="bk-muted">「変更する」に切り替えて値を選ぶと、ここに変更前 → 変更後が出ます。</p>';
+    } else {
+        html += '<div class="bk-diff">';
+        changed.slice(0, 3).forEach(c => {
+            const diff = c.fields.map(f => `<span class="bk-diff-f">${FIELD_LABEL[f]}</span><span class="old">${escapeHtml(displayValue(f, c.before))}</span> → <span class="new">${escapeHtml(displayValue(f, c.after))}</span>`).join('<span class="bk-sep">·</span>');
+            html += `<span class="bk-diff-date">${escapeHtml(c.before.date)} ${escapeHtml(c.before.member)}</span><span>${diff}</span>`;
+        });
+        html += '</div>';
+        if (changed.length > 3) html += `<p class="bk-muted">他 ${changed.length - 3} 件も同じ規則で変わります。</p>`;
+    }
+    const proc = invalid.filter(i => i.reason === 'process-required').length;
+    const date = invalid.filter(i => i.reason === 'invalid-date').length;
+    const task = invalid.filter(i => i.reason === 'task-required').length;
+    if (proc) html += `<p class="bk-warn">⚠ ${proc} 件で版数があるのに工程が空です。工程も「変更する」で指定してください。</p>`;
+    if (date) html += `<p class="bk-warn">⚠ ${date} 件で日付が不正です。</p>`;
+    if (task) html += `<p class="bk-warn">⚠ ${task} 件で対応名が空です。</p>`;
+    box.innerHTML = html + '</div>';
+    $('btnBulkActualApply').disabled = changed.length === 0 || invalid.length > 0;
+    $('btnBulkActualApply').textContent = `${targets.length} 件に適用`;
+}
+
+function rerenderModal() {
+    const targets = getSelectedActuals();
+    renderPatchFields(targets);
+    renderPreview(targets);
+}
+
+/** 選択中の実績を対象に一括編集モーダルを開く */
+export function openBulkActualEditModal() {
+    const targets = getSelectedActuals();
+    if (!targets.length) { showAlert('実績を選択してください', false); return; }
+    ui = newPatchUI();
+    ui.version.val = versionOptions()[0] || '';
+    ui.task.val = taskOptions(null)[0] || '__free__';
+    ui.process.val = PROCESS.TYPES[0];
+    ui.member.val = memberOptions()[0] || '';
+    ui.date.value = targets[0].date;
+    $('bulkActualEditTitle').textContent = `選択した ${targets.length} 件を一括編集`;
+    rerenderModal();
+    $('bulkActualEditModal').style.display = 'flex';
+}
+
+export function closeBulkActualEditModal() {
+    $('bulkActualEditModal').style.display = 'none';
+    ui = null;
+}
+
+/** モーダル内のセグメント／値変更（イベント委譲。Task 4 Step 5 で登録） */
+function onBulkFieldClick(e) {
+    const btn = e.target.closest('button[data-seg]'); if (!btn || !ui) return;
+    const f = btn.dataset.field, v = btn.dataset.v;
+    if (f === 'isReview') ui.isReview = v;
+    else if (f === 'date') ui.date.mode = v;
+    else {
+        ui[f].on = v === 'set';
+        if (f === 'version') { const to = taskOptions(ui.version.on ? ui.version.val : null); if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__'; }
+    }
+    rerenderModal();
+}
+function onBulkFieldChange(e) {
+    const row = e.target.closest('.bk-field'); if (!row || !ui) return;
+    const f = row.dataset.field, v = e.target.value;
+    if (e.target.matches('[data-free]')) { ui.task.free = v; renderPreview(getSelectedActuals()); return; }
+    if (f === 'date') { if (ui.date.mode === 'set') ui.date.value = v; else ui.date.days = v; }
+    else if (f === 'version') { ui.version.val = v; const to = taskOptions(v); if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__'; }
+    else ui[f].val = v;
+    rerenderModal();
+}
+
+/** 適用: エンジン → State → pushAction → 保存 → 再描画 */
+export function applyBulkActualEdit() {
+    const targets = getSelectedActuals();
+    const patch = toBulkPatch(ui);
+    const { after, changed, invalid } = applyBulkPatch(actuals, targets.map(a => a.id), patch);
+    if (!changed.length || invalid.length) return;
+    setActuals(after);
+    const fields = [...new Set(changed.flatMap(c => c.fields))].map(f => FIELD_LABEL[f]).join('・');
+    pushAction({
+        type: 'actual_bulk_edit',
+        description: `実績一括編集: ${fields} × ${changed.length}件`,
+        data: { beforeActuals: changed.map(c => ({ ...c.before })), afterActuals: changed.map(c => ({ ...c.after })) },
+    });
+    afterBulkChange(`${changed.length} 件の実績を更新しました`);
+    closeBulkActualEditModal();
+}
+
+/** 一括操作後の共通後処理: 保存・選択クリア・全画面更新・Undo トースト */
+function afterBulkChange(message) {
+    if (typeof window.saveData === 'function') window.saveData();
+    selectedActualIds.clear();
+    lastClickedId = null;
+    if (typeof window.updateMonthOptions === 'function') window.updateMonthOptions();
+    if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
+    updateActualSelectionUI();
+    showUndoToast(message);
+}
+
+/** 「元に戻す」付きトースト（8 秒で消える） */
+export function showUndoToast(message) {
+    document.querySelectorAll('.bk-undo-toast').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'bk-undo-toast';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${escapeHtml(message)}</span><button type="button" class="bk-undo">元に戻す</button><button type="button" class="bk-x" aria-label="閉じる">&times;</button>`;
+    el.querySelector('.bk-undo').addEventListener('click', () => { el.remove(); undo(); });
+    el.querySelector('.bk-x').addEventListener('click', () => el.remove());
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 8000);
+}
+
+/** モーダルのイベント委譲を登録（initEventHandlers から 1 回呼ぶ） */
+export function initBulkActualModalEvents() {
+    const modal = $('bulkActualEditModal'); if (!modal) return;
+    modal.addEventListener('click', onBulkFieldClick);
+    modal.addEventListener('change', onBulkFieldChange);
+    modal.addEventListener('input', (e) => { if (e.target.matches('[data-free]') && ui) { ui.task.free = e.target.value; renderPreview(getSelectedActuals()); } });
 }
 
 console.log('✅ モジュール actual-bulk.js loaded');

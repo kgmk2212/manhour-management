@@ -456,6 +456,7 @@ export function setupModalHandlers() {
     const modals = [
         { id: 'workModal', closeFunc: () => { if (typeof window.closeWorkModal === 'function') window.closeWorkModal(); } },
         { id: 'editActualModal', closeFunc: () => { if (typeof window.closeEditActualModal === 'function') window.closeEditActualModal(); } },
+        { id: 'bulkActualEditModal', closeFunc: () => { if (typeof window.closeBulkActualEditModal === 'function') window.closeBulkActualEditModal(); } },
         { id: 'bulkRemainingModal', closeFunc: () => { if (typeof window.closeBulkRemainingModal === 'function') window.closeBulkRemainingModal(); } },
         { id: 'vacationModal', closeFunc: () => { if (typeof window.closeVacationModal === 'function') window.closeVacationModal(); } },
         { id: 'editEstimateModal', closeFunc: () => { if (typeof window.closeEditEstimateModal === 'function') window.closeEditEstimateModal(); } },
