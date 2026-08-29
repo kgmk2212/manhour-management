@@ -214,6 +214,48 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
 .bk-hit-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--text-primary); }
 .bk-hit-list li { display: flex; gap: 8px; }
 .bk-hit-list .d { color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 条件で選択 ポップオーバー（選択バーの上に出る） */
+.bk-pop { pointer-events: auto; width: min(100%, 760px); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 30px rgba(26, 24, 20, .16); padding: 12px 14px; }
+.bk-pop-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+.bk-pop-head .bk-x { border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 18px; cursor: pointer; line-height: 1; }
+.bk-cond-inline { grid-template-columns: 56px minmax(0, 1fr) 56px minmax(0, 1fr); }
+.mk-frame.is-mobile .bk-cond-inline { grid-template-columns: 56px minmax(0, 1fr); }
+.bk-pop-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.bk-pop-actions { display: flex; gap: 8px; }
+.bk-pop-note { color: var(--accent-secondary); font-weight: 600; margin-left: 8px; font-size: 13px; }
+.bk-bar .btn-ghost.is-on { background: #fff; color: var(--text-primary); }
+
+/* 案1: タイムライン（ガント）からの選択 */
+.tl { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 88px repeat(12, minmax(54px, 1fr)); min-width: 740px; }
+.tl-head > div { font-size: 12.5px; text-align: center; padding: 6px 0 4px; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tl-head > div small { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); }
+.tl-head > div.is-off { background: var(--surface-elevated); color: var(--text-muted); }
+.tl-head > .tl-corner { text-align: left; padding-left: 10px; }
+.tl-row { border-bottom: 1px solid var(--border-light); }
+.tl-row:last-child { border-bottom: 0; }
+.tl-member { padding: 8px 10px; font-weight: 600; font-size: 14px; border-right: 1px solid var(--border); display: flex; align-items: center; }
+.tl-cells { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(12, minmax(54px, 1fr)); row-gap: 5px; padding: 6px 0; position: relative; }
+.tl-cell.is-off { background: var(--surface-elevated); }
+.tl-bar { position: relative; z-index: 1; margin: 0 2px; padding: 0 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; overflow: hidden; white-space: nowrap; user-select: none; }
+.tl-bar:hover { filter: brightness(1.07); }
+.tl-bar-label { overflow: hidden; text-overflow: ellipsis; }
+.tl-bar-meta { margin-left: auto; font-weight: 500; opacity: .85; font-size: 11.5px; }
+.tl-check { font-size: 12px; }
+.tl-bar.is-selected { outline: 2.5px solid var(--text-primary); outline-offset: 1.5px; }
+.tl-bar.is-partial { outline: 2.5px dashed var(--text-primary); outline-offset: 1.5px; }
+.tl-bar.is-hit { outline: 2.5px dashed var(--accent-secondary); outline-offset: 1.5px; }
+.tl-note { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+.tl-note code { font-size: 12px; }
+.tl-menu { position: absolute; z-index: 60; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 12px 30px rgba(26, 24, 20, .18); width: 300px; padding: 6px; }
+.tl-menu-head { padding: 8px 10px 10px; border-bottom: 1px solid var(--border-light); margin-bottom: 4px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--text-secondary); }
+.tl-menu-head b { font-size: 14.5px; color: var(--text-primary); }
+.tl-menu-item { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 6px; cursor: pointer; color: var(--text-primary); }
+.tl-menu-item:hover { background: var(--accent-light); }
+.tl-menu-item.is-primary { font-weight: 700; color: var(--accent); }
+.tl-menu-item.is-muted { color: var(--text-muted); font-size: 13px; }
+.tl-menu-sep { height: 1px; background: var(--border-light); margin: 4px 0; }
 </style>
 </head>
 <body>
@@ -221,14 +263,14 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     <header>
         <div class="mk-eyebrow">モックアップ · 実績タブ · 2026-08-29</div>
         <h1 class="mk-h1">実績のまとめ変更 — 3案の比較</h1>
-        <p class="mk-lead">同じ 12 件の実績データと同じ課題を、3 つの操作方法で解いてみます。タブで案を切り替え、実際に操作して、右の操作ログでステップ数と結果を見比べてください。</p>
+        <p class="mk-lead">同じ 16 件の実績データと同じ課題を、3 つの操作方法で解いてみます。タブで案を切り替え、実際に操作して、右の操作ログでステップ数と結果を見比べてください。案1 には「条件で選択…」（案2 の吸収）と「タイムラインからの選択」も入っています。</p>
     </header>
 
     <section class="mk-scenario">
         <div>
             <div class="mk-scenario-label">共通の課題</div>
             <p class="mk-scenario-text">田中さんが 8/17〜8/21 に <b>V2.3「帳票A出力改修」</b>として登録した 5 件を、<b>V2.4「帳票A出力改修（追補）」</b>へ付け替える。</p>
-            <p class="mk-scenario-sub">同じ週の田中さんには「打ち合わせ」（その他工数）が 1 件あり、これは変えない。各案は同じ 12 件から始まり、右のリセットでいつでも戻せます。</p>
+            <p class="mk-scenario-sub">同じ週の田中さんには「打ち合わせ」（その他工数）が 1 件あり、これは変えない。翌週 8/24〜 の追補は正しく V2.4 で登録済み。各案は同じ 16 件から始まり、右のリセットでいつでも戻せます。</p>
         </div>
         <div class="mk-scenario-ctl">
             <span class="mk-ctl-label">表示幅</span>
@@ -259,7 +301,7 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
                 <thead><tr><th>観点</th><th>案1 選んで一括編集</th><th>案2 条件で置き換え</th><th>案3 表で直接編集</th></tr></thead>
                 <tbody>
                     <tr><td>向いている場面</td><td>目で確かめながらの付け替え・削除・日付移動</td><td>件数が多い機械的な置換（表記ゆれの統一、版数の付け直し）</td><td>行ごとに違う値を直す個別修正</td></tr>
-                    <tr><td>対象の決め方</td><td>手で ✓（表示中の全選択・Shift 範囲選択あり）</td><td>条件式（期間・担当・版数・対応名・工程）</td><td>表示中の全行（列一括）またはセル単位</td></tr>
+                    <tr><td>対象の決め方</td><td>手で ✓（全選択・Shift 範囲選択）／条件で選択／ガントのバー（連続日 = 1 本）</td><td>条件式（期間・担当・版数・対応名・工程）</td><td>表示中の全行（列一括）またはセル単位</td></tr>
                     <tr><td>誤爆の防ぎ方</td><td>選ぶ時点で対象が見える。プレビューで最終確認</td><td>該当件数と一覧ハイライトで確認。プレビューで最終確認</td><td>列一括は無関係な行にも入る。変更セルの色で気づく</td></tr>
                     <tr><td>モバイル</td><td>行タップ＋下部バー。片手で完結する</td><td>モーダル 1 枚で完結する</td><td>横スクロールの表でセル編集。指では狙いにくい</td></tr>
                     <tr><td>Undo</td><td>1 回で全件戻る</td><td>1 回で全件戻る</td><td>1 回で全件戻る（保存単位）</td></tr>
@@ -269,7 +311,7 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
             </table>
         </div>
         <div class="mk-verdict">
-            <b>提案者の見立て：</b>案1 を土台にし、案2 の「条件で絞る」を案1 の選択バーに「条件で選択…」として吸収する。対象の集め方は 2 通り、適用エンジン（パッチ適用＋一括 Undo）は 1 つ。案3 は「まとめて同じ値にする」用途からずれるため見送り。
+            <b>方針（2026-08-29 決定）：案1 を採用。</b>案2 の「条件で絞る」は案1 の選択バーに「条件で選択…」として吸収し、タイムライン（ガント）のバーからも同じ選択に合流させる。対象の集め方は 3 通り（手で ✓／条件／バー）、適用エンジン（パッチ適用＋一括 Undo）は 1 つ。案3 は「まとめて同じ値にする」用途からずれるため見送り。
         </div>
     </section>
 </div>
@@ -290,6 +332,11 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
         { id: 10, date: '2026-08-20', version: 'V2.4', task: '検索性能改善',     process: 'IT', member: '鈴木', hours: 8 },
         { id: 11, date: '2026-08-21', version: 'V2.3', task: '帳票A出力改修',   process: 'IT', member: '田中', hours: 8 },
         { id: 12, date: '2026-08-21', version: 'V2.3', task: 'ログイン画面改修', process: 'IT', member: '佐藤', hours: 8 },
+        // 翌週: 追補は正しく V2.4 で登録済み（＝先週分だけ版数を間違えていた、という筋書き）
+        { id: 13, date: '2026-08-24', version: 'V2.4', task: '帳票A出力改修（追補）', process: 'IT', member: '田中', hours: 8 },
+        { id: 14, date: '2026-08-25', version: 'V2.4', task: '帳票A出力改修（追補）', process: 'ST', member: '田中', hours: 8 },
+        { id: 15, date: '2026-08-24', version: 'V2.3', task: 'ログイン画面改修',     process: 'ST', member: '佐藤', hours: 8 },
+        { id: 16, date: '2026-08-24', version: 'V2.4', task: '検索性能改善',         process: 'IT', member: '鈴木', hours: 8 },
     ];
     const TARGET_IDS = [1, 4, 7, 9, 11];
     const VERSIONS = ['V2.3', 'V2.4'];
@@ -298,7 +345,8 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     const MEMBERS = ['田中', '佐藤', '鈴木', '高橋'];
     const LABEL = { date: '日付', version: '版数', task: '対応名', process: '工程', member: '担当', isReview: 'レビュー', hours: '工数' };
     const HINTS = {
-        1: '<b>操作:</b> 「選択モード」をオンにして、行のどこを押しても選べます。Shift+クリックで範囲選択、ヘッダーの ✓ で表示中を全選択。下のバーから「一括編集」。',
+        1: '<b>操作:</b> 「選択モード」をオンにして、行のどこを押しても選べます。Shift+クリックで範囲選択、ヘッダーの ✓ で表示中を全選択。下のバーの「条件で選択…」は条件に合う行をまとめて ✓ にします（案2 の吸収）。表示形式を「タイムライン」にするとガントからも選べます。',
+        '1t': '<b>操作:</b> ガントのバーは「同じ対応の連続日」が 1 本に結合されています（本番の mergeAdjacentActuals と同じ）。バーをクリック → メニューから「このバーの N 件を選択」「同じ対応をすべて選択」「一括編集…」。Ctrl/Shift+クリックは即トグル、右クリックでも同じメニュー。長押し・横ドラッグは既存のバー移動・スワイプが使うので使いません。',
         2: '<b>操作:</b> 「条件で置き換え…」を開き、担当・版数・対応名を絞ると該当件数と一覧のハイライトがその場で変わります。0 件では適用できません。',
         3: '<b>操作:</b> 「表で直接編集」をオンにするとセルが入力欄になります。列ヘッダーの「列を一括で…」は表示中の全行に同じ値を入れます（打ち合わせ行にも入るので注意）。',
     };
@@ -311,6 +359,9 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     const wd = d => { const [y, m, dd] = d.split('-').map(Number); return '日月火水木金土'[new Date(y, m - 1, dd).getDay()]; };
     const shortDate = d => { const [, m, dd] = d.split('-'); return `${Number(m)}/${Number(dd)}(${wd(d)})`; };
     const sum = rows => rows.reduce((s, r) => s + r.hours, 0);
+    const DAYS = Array.from({ length: 12 }, (_, i) => addDays('2026-08-17', i)); // タイムラインの表示範囲 8/17(月)〜8/28(金)
+    const TASK_COLORS = { '帳票A出力改修': '#4C7FD1', '帳票A出力改修（追補）': '#7A5AF8', 'ログイン画面改修': '#D9822B', '検索性能改善': '#2E9E8F' };
+    const barColor = t => TASK_COLORS[t] || '#9C9690';
     const allTasks = () => [...new Set(Object.values(TASKS).flat())];
     const taskOptions = v => (v === null ? allTasks() : (TASKS[v] || []));
     const opt = (arr, cur, labelFn) => arr.map(v => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(labelFn ? labelFn(v) : v)}</option>`).join('');
@@ -325,7 +376,7 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
         log: { 1: [], 2: [], 3: [] },
         toast: { 1: null, 2: null, 3: null },
         filter: { 1: { member: '' }, 2: { member: '' }, 3: { member: '' } },
-        a1: { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24' },
+        a1: { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24', view: 'list', cond: newCond(), condOpen: false, menu: null },
         a2: { open: false, cond: newCond(), patch: newPatch() },
         a3: { mode: false, edits: {}, error: '' },
     };
@@ -359,7 +410,7 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     }
     function resetApproach(k) {
         state.data[k] = clone(SEED); state.undo[k] = null; state.log[k] = []; state.toast[k] = null; state.filter[k] = { member: '' };
-        if (k === 1) state.a1 = { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24' };
+        if (k === 1) state.a1 = { mode: false, selected: new Set(), lastIdx: null, modal: null, patch: newPatch(), copyDate: '2026-08-24', view: 'list', cond: newCond(), condOpen: false, menu: null };
         if (k === 2) state.a2 = { open: false, cond: newCond(), patch: newPatch() };
         if (k === 3) state.a3 = { mode: false, edits: {}, error: '' };
     }
@@ -448,12 +499,15 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     function renderToolbar(k) {
         const f = state.filter[k];
         let ctl = '';
-        if (k === 1) ctl = `<button type="button" class="btn btn-secondary btn-small bk-mode-btn ${state.a1.mode ? 'is-on' : ''}" data-act="a1-mode">${state.a1.mode ? '✓ 選択モード' : '選択モード'}</button>`;
+        if (k === 1) ctl = state.a1.view === 'timeline' ? '' : `<button type="button" class="btn btn-secondary btn-small bk-mode-btn ${state.a1.mode ? 'is-on' : ''}" data-act="a1-mode">${state.a1.mode ? '✓ 選択モード' : '選択モード'}</button>`;
+        const viewSel = k === 1
+            ? `<select data-act="a1-view" aria-label="表示形式">${opt(['list', 'timeline'], state.a1.view, v => v === 'list' ? 'リスト' : 'タイムライン')}</select>`
+            : '<select disabled aria-label="表示形式"><option>リスト</option></select>';
         if (k === 2) ctl = `<button type="button" class="btn btn-primary btn-small" data-act="a2-open">条件で置き換え…</button>`;
         if (k === 3) ctl = `<button type="button" class="btn btn-secondary btn-small bk-mode-btn ${state.a3.mode ? 'is-on' : ''}" data-act="a3-mode">${state.a3.mode ? '✓ 表で直接編集' : '表で直接編集'}</button>`;
         return `<div class="bk-toolbar">
             <label>担当</label><select data-act="filter-member" aria-label="担当で絞り込み">${opt(['', ...MEMBERS], f.member, v => v || '全担当者')}</select>
-            <label>表示形式</label><select disabled aria-label="表示形式"><option>リスト</option></select>
+            <label>表示形式</label>${viewSel}
             <label>表示期間</label><select disabled aria-label="表示期間"><option>2026年8月</option></select>
             <span class="bk-spacer"></span>${ctl}
         </div>`;
@@ -482,7 +536,8 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
         if (!rows.length) h += '<tr><td colspan="8" class="bk-muted" style="text-align:center;padding:32px">選択した条件に該当する実績データがありません</td></tr>';
         rows.forEach((r, i) => {
             const sel = a1 && state.a1.selected.has(r.id);
-            const cls = [sel ? 'is-selected' : '', a2open ? (matches(r, state.a2.cond) ? 'is-hit' : 'is-dim') : ''].join(' ').trim();
+            const condHit = k === 1 && state.a1.condOpen && matches(r, state.a1.cond);
+            const cls = [sel ? 'is-selected' : '', condHit ? 'is-hit' : '', a2open ? (matches(r, state.a2.cond) ? 'is-hit' : 'is-dim') : ''].join(' ').trim();
             h += `<tr class="${cls}" data-id="${r.id}" data-idx="${i}">`;
             if (a1) h += `<td class="bk-th-check"><input type="checkbox" class="bk-cb" data-act="a1-toggle" data-id="${r.id}" data-idx="${i}" ${sel ? 'checked' : ''} aria-label="この実績を選択"></td>`;
             if (a3) h += ['date', 'version', 'task', 'process', 'member', 'hours'].map(f => cellEditor(r, f)).join('');
@@ -496,10 +551,12 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
     }
     function renderDock(k) {
         let h = '<div class="bk-dock">';
-        if (k === 1 && state.a1.mode) {
+        if (k === 1 && (state.a1.mode || state.a1.view === 'timeline')) {
             const rows = state.data[1].filter(r => state.a1.selected.has(r.id)); const n = rows.length; const dis = n ? '' : 'disabled';
+            if (state.a1.condOpen) h += renderCondPop();
             h += `<div class="bk-bar" role="toolbar" aria-label="選択した実績への操作">
-                <span class="bk-bar-count">${n} 件選択中<span class="bk-bar-sub"> · 合計 ${fmtH(sum(rows))}</span></span>
+                <span class="bk-bar-count">${n ? `${n} 件選択中<span class="bk-bar-sub"> · 合計 ${fmtH(sum(rows))}</span>` : `0 件選択中<span class="bk-bar-sub"> · ${state.a1.view === 'timeline' ? 'バーをクリックして選択' : '行をクリックして選択'}</span>`}</span>
+                <button type="button" class="btn btn-ghost ${state.a1.condOpen ? 'is-on' : ''}" data-act="a1-cond-toggle">条件で選択…</button>
                 <button type="button" class="btn btn-primary" data-act="a1-open-edit" ${dis}>一括編集</button>
                 <button type="button" class="btn btn-ghost" data-act="a1-open-copy" ${dis}>別日に複製</button>
                 <button type="button" class="btn btn-ghost" data-act="a1-delete" ${dis}>削除</button>
@@ -563,6 +620,101 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
             'is-wide');
     }
 
+    // ---------- 案1: 条件で選択 / タイムライン（ガント）からの選択 ----------
+    const condHits = (k, c) => state.data[k].filter(r => matches(r, c));
+    const condLabel = (f, v) => {
+        const name = { from: '期間（開始）', to: '期間（終了）', member: '担当', version: '版数', task: '対応名', process: '工程' }[f];
+        const disp = v === '' ? '指定なし' : v === '__none__' ? '（なし = その他工数）' : (f === 'from' || f === 'to') ? shortDate(v) : v;
+        return `${name} → ${disp}`;
+    };
+    function renderCondPop() {
+        const c = state.a1.cond; const hits = condHits(1, c);
+        const vis = new Set(visibleRows(1).map(r => r.id)); const hidden = hits.filter(r => !vis.has(r.id)).length;
+        return `<div class="bk-pop" role="dialog" aria-label="条件で選択">
+            <div class="bk-pop-head"><span class="bk-col-title" style="margin:0">条件で選択 <span class="bk-muted" style="font-weight:500">— 条件に合う実績をまとめて ✓ にする</span></span><button type="button" class="bk-x" data-act="a1-cond-toggle" aria-label="閉じる">×</button></div>
+            <div class="bk-cond bk-cond-inline">
+                <label>期間</label><div class="bk-cond-range"><input type="date" data-act="a1cond" data-f="from" value="${c.from}"><span>〜</span><input type="date" data-act="a1cond" data-f="to" value="${c.to}"></div>
+                <label>担当</label><select data-act="a1cond" data-f="member">${opt(['', ...MEMBERS], c.member, v => v || '指定なし')}</select>
+                <label>版数</label><select data-act="a1cond" data-f="version">${opt(['', '__none__', ...VERSIONS], c.version, v => v === '' ? '指定なし' : v === '__none__' ? '（なし = その他工数）' : v)}</select>
+                <label>対応名</label><select data-act="a1cond" data-f="task">${opt(['', ...allTasks()], c.task, v => v || '指定なし')}</select>
+                <label>工程</label><select data-act="a1cond" data-f="process">${opt(['', ...PROCESSES], c.process, v => v || '指定なし')}</select>
+            </div>
+            <div class="bk-pop-foot">
+                <div class="bk-hits ${hits.length ? '' : 'is-zero'}" style="margin:0">該当<b>${hits.length}</b>件${hits.length ? ` · ${fmtH(sum(hits))}` : ''}${hidden ? `<span class="bk-pop-note">表示外 ${hidden} 件を含む</span>` : ''}</div>
+                <div class="bk-pop-actions"><button type="button" class="btn btn-secondary btn-small" data-act="a1-cond-only" ${hits.length ? '' : 'disabled'}>この条件だけを選択</button><button type="button" class="btn btn-primary btn-small" data-act="a1-cond-add" ${hits.length ? '' : 'disabled'}>選択に追加</button></div>
+            </div>
+        </div>`;
+    }
+    /** 本番 mergeAdjacentActuals 相当: 同じ担当・版数・対応名で暦日が連続する実績を 1 本のバーに（工程は見ない） */
+    function mergeBars(rows) {
+        const byKey = new Map();
+        rows.forEach(r => { const k = `${r.version}|${r.task}`; if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(r); });
+        const bars = [];
+        byKey.forEach(list => {
+            list.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id);
+            let cur = null;
+            list.forEach(r => {
+                if (cur && (r.date === cur.end || addDays(cur.end, 1) === r.date)) { cur.ids.push(r.id); cur.end = r.date; cur.hours += r.hours; cur.procs.add(r.process || '—'); }
+                else { cur = { version: r.version, task: r.task, member: r.member, start: r.date, end: r.date, ids: [r.id], hours: r.hours, procs: new Set([r.process || '—']) }; bars.push(cur); }
+            });
+        });
+        return bars;
+    }
+    function barLabelFromIds(ids) {
+        const recs = state.data[1].filter(r => ids.includes(r.id)); if (!recs.length) return '';
+        const dates = recs.map(r => r.date).sort();
+        return `${shortDate(dates[0])}${dates[0] !== dates[dates.length - 1] ? '〜' + shortDate(dates[dates.length - 1]) : ''} ${recs[0].member} ${recs[0].task}（${recs.length} 件）`;
+    }
+    function openBarMenu(e, ids) {
+        const fr = frame.getBoundingClientRect();
+        state.a1.menu = { ids, x: Math.max(8, Math.min(e.clientX - fr.left, fr.width - 320)), y: e.clientY - fr.top + 6 };
+    }
+    function renderTimeline() {
+        const rows = visibleRows(1); const sel = state.a1.selected; const condOpen = state.a1.condOpen;
+        const members = state.filter[1].member ? [state.filter[1].member] : MEMBERS;
+        const idx = d => DAYS.indexOf(d);
+        const isOff = d => { const w = wd(d); return w === '土' || w === '日'; };
+        let h = `<div class="tl"><div class="tl-head"><div class="tl-corner">担当</div>${DAYS.map(d => `<div class="${isOff(d) ? 'is-off' : ''}">${Number(d.slice(8))}<small>${wd(d)}</small></div>`).join('')}</div>`;
+        members.forEach(m => {
+            const bars = mergeBars(rows.filter(r => r.member === m))
+                .map(b => ({ ...b, s: b.start < DAYS[0] ? 0 : idx(b.start), e: b.end > DAYS[DAYS.length - 1] ? DAYS.length - 1 : idx(b.end) }))
+                .filter(b => b.s >= 0 && b.e >= 0 && b.s <= b.e)
+                .sort((a, b) => a.s - b.s || (b.e - b.s) - (a.e - a.s));
+            const laneEnd = [];
+            bars.forEach(b => { let l = laneEnd.findIndex(end => end < b.s); if (l < 0) { l = laneEnd.length; laneEnd.push(b.e); } else laneEnd[l] = b.e; b.lane = l + 1; });
+            const L = Math.max(1, laneEnd.length);
+            h += `<div class="tl-row"><div class="tl-member">${esc(m)}</div><div class="tl-cells" style="grid-template-rows: repeat(${L}, 30px)">`;
+            DAYS.forEach((d, i) => { if (isOff(d)) h += `<div class="tl-cell is-off" style="grid-column:${i + 1};grid-row:1 / -1"></div>`; });
+            bars.forEach(b => {
+                const all = b.ids.every(id => sel.has(id)); const part = !all && b.ids.some(id => sel.has(id));
+                const hit = condOpen && b.ids.every(id => matches(state.data[1].find(r => r.id === id), state.a1.cond));
+                const title = `${shortDate(b.start)}${b.start !== b.end ? '〜' + shortDate(b.end) : ''} ${b.member} ${b.version || '（その他）'} ${b.task}（${b.ids.length} 件 · ${fmtH(b.hours)}）`;
+                h += `<div class="tl-bar ${all ? 'is-selected' : ''} ${part ? 'is-partial' : ''} ${hit ? 'is-hit' : ''}" data-act="a1-bar" data-ids="${b.ids.join(',')}" style="grid-column:${b.s + 1} / ${b.e + 2};grid-row:${b.lane};background:${barColor(b.task)}" title="${esc(title)}">${all ? '<span class="tl-check">✓</span>' : ''}<span class="tl-bar-label">${esc(b.task)}</span>${b.e > b.s ? `<span class="tl-bar-meta">${[...b.procs].join('·')} · ${fmtH(b.hours)}${b.ids.length > 1 ? ` · ${b.ids.length}件` : ''}</span>` : ''}</div>`;
+            });
+            h += '</div></div>';
+        });
+        h += '</div><p class="tl-note">バーは本番の <code>mergeAdjacentActuals</code> と同じく「同じ対応の暦日連続」で結合（工程が違っても 1 本）。8/21(金)→8/24(月) は土日を挟むため別バー。</p>';
+        return h;
+    }
+    function renderBarMenu() {
+        const m = state.a1.menu; if (!m) return '';
+        const recs = state.data[1].filter(r => m.ids.includes(r.id)); if (!recs.length) return '';
+        const b = recs[0]; const allSel = m.ids.every(id => state.a1.selected.has(id));
+        const procs = [...new Set(recs.map(r => r.process || '—'))].join('·');
+        const dates = recs.map(r => r.date).sort();
+        const sameMember = state.data[1].filter(r => r.member === b.member && r.version === b.version && r.task === b.task).length;
+        const sameAll = state.data[1].filter(r => r.version === b.version && r.task === b.task).length;
+        return `<div class="tl-menu" style="left:${m.x}px;top:${m.y}px" role="menu">
+            <div class="tl-menu-head"><b>${esc(b.task)}</b><span>${esc(b.version || '（その他）')} · ${esc(b.member)} · ${procs}</span><span>${shortDate(dates[0])}${dates[0] !== dates[dates.length - 1] ? '〜' + shortDate(dates[dates.length - 1]) : ''} · ${m.ids.length} 件 · ${fmtH(sum(recs))}</span></div>
+            <button type="button" class="tl-menu-item" data-act="a1-menu-select">${allSel ? 'このバーの選択を外す' : `このバーの ${m.ids.length} 件を選択`}</button>
+            <button type="button" class="tl-menu-item" data-act="a1-menu-same-member">同じ対応をすべて選択（${esc(b.member)} · ${sameMember} 件）</button>
+            <button type="button" class="tl-menu-item" data-act="a1-menu-same-all">同じ対応をすべて選択（全員 · ${sameAll} 件）</button>
+            <div class="tl-menu-sep"></div>
+            <button type="button" class="tl-menu-item is-primary" data-act="a1-menu-edit">この ${m.ids.length} 件を一括編集…</button>
+            <button type="button" class="tl-menu-item is-muted" data-act="a1-menu-detail">詳細パネルを開く（既存の動き）</button>
+        </div>`;
+    }
+
     // ---------- 描画: 全体 ----------
     function render() {
         const k = K();
@@ -571,8 +723,9 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
         stage.className = 'mk-stage' + (state.mobile ? ' is-mobile' : '');
         document.querySelectorAll('#widthSeg button').forEach(b => b.classList.toggle('is-on', (b.dataset.v === 'mobile') === state.mobile));
         document.querySelectorAll('.mk-tab').forEach(b => b.classList.toggle('is-active', Number(b.dataset.v) === k));
-        hint.innerHTML = HINTS[k];
-        frame.innerHTML = `<div class="mk-frame-title">実績一覧</div>` + renderToolbar(k) + renderTable(k) + renderDock(k) + (k === 1 ? renderA1Modal() : k === 2 ? renderA2Modal() : '');
+        const tl = k === 1 && state.a1.view === 'timeline';
+        hint.innerHTML = HINTS[tl ? '1t' : k];
+        frame.innerHTML = `<div class="mk-frame-title">実績一覧</div>` + renderToolbar(k) + (tl ? renderTimeline() : renderTable(k)) + renderDock(k) + (k === 1 ? renderBarMenu() + renderA1Modal() : k === 2 ? renderA2Modal() : '');
         renderLog(k);
     }
     function renderGoalCheck(k) {
@@ -623,6 +776,7 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
 
     document.addEventListener('click', e => {
         const t = e.target.closest('[data-act]');
+        if (state.a1.menu && !e.target.closest('.tl-menu')) { state.a1.menu = null; if (!t) { render(); return; } }
         if (!t) {
             const tr = e.target.closest('#frame tr[data-id]');
             if (tr && K() === 1 && state.a1.mode && !e.target.closest('.modal')) { toggleSel(Number(tr.dataset.id), Number(tr.dataset.idx), e.shiftKey); render(); }
@@ -640,7 +794,27 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
             case 'modal-close': if (k === 1) { state.a1.modal = null; log(1, 'モーダルを閉じる'); } if (k === 2) { state.a2.open = false; log(2, 'モーダルを閉じる'); } break;
 
             // 案1
-            case 'a1-mode': state.a1.mode = !state.a1.mode; state.a1.selected.clear(); state.a1.lastIdx = null; log(1, state.a1.mode ? '選択モードをオン' : '選択モードをオフ'); break;
+            case 'a1-mode': state.a1.mode = !state.a1.mode; state.a1.selected.clear(); state.a1.lastIdx = null; state.a1.condOpen = false; log(1, state.a1.mode ? '選択モードをオン' : '選択モードをオフ'); break;
+            case 'a1-cond-toggle': state.a1.condOpen = !state.a1.condOpen; log(1, state.a1.condOpen ? '「条件で選択」を開く' : '「条件で選択」を閉じる'); break;
+            case 'a1-cond-add': { const hits = condHits(1, state.a1.cond); hits.forEach(r => state.a1.selected.add(r.id)); state.a1.condOpen = false; log(1, `条件で ${hits.length} 件を選択に追加（計 ${state.a1.selected.size} 件）`); break; }
+            case 'a1-cond-only': { const hits = condHits(1, state.a1.cond); state.a1.selected = new Set(hits.map(r => r.id)); state.a1.condOpen = false; log(1, `条件の ${hits.length} 件だけを選択`); break; }
+            case 'a1-bar': {
+                const ids = t.dataset.ids.split(',').map(Number); const label = barLabelFromIds(ids);
+                if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                    const all = ids.every(id => state.a1.selected.has(id)); ids.forEach(id => all ? state.a1.selected.delete(id) : state.a1.selected.add(id));
+                    log(1, `${e.shiftKey ? 'Shift' : 'Ctrl'}+クリック: ${label} を${all ? '選択から外す' : '選択に追加'}（計 ${state.a1.selected.size} 件）`);
+                } else { openBarMenu(e, ids); log(1, `バーをクリック: ${label}`); }
+                break;
+            }
+            case 'a1-menu-select': { const m = state.a1.menu; const all = m.ids.every(id => state.a1.selected.has(id)); m.ids.forEach(id => all ? state.a1.selected.delete(id) : state.a1.selected.add(id)); log(1, `メニュー「${all ? 'このバーの選択を外す' : `このバーの ${m.ids.length} 件を選択`}」（計 ${state.a1.selected.size} 件）`); state.a1.menu = null; break; }
+            case 'a1-menu-same-member': case 'a1-menu-same-all': {
+                const m = state.a1.menu; const b = state.data[1].find(r => r.id === m.ids[0]);
+                const same = state.data[1].filter(r => r.version === b.version && r.task === b.task && (act === 'a1-menu-same-all' || r.member === b.member));
+                same.forEach(r => state.a1.selected.add(r.id)); state.a1.menu = null;
+                log(1, `メニュー「同じ対応をすべて選択（${act === 'a1-menu-same-all' ? '全員' : b.member}）」→ ${same.length} 件（計 ${state.a1.selected.size} 件）`); break;
+            }
+            case 'a1-menu-edit': { const m = state.a1.menu; state.a1.selected = new Set(m.ids); state.a1.patch = newPatch(); normalizeTask(state.a1.patch); state.a1.modal = 'edit'; state.a1.menu = null; log(1, `メニュー「この ${m.ids.length} 件を一括編集…」`); break; }
+            case 'a1-menu-detail': state.a1.menu = null; setToast(1, '既存の詳細パネルは、このモックでは省略しています', false); break;
             case 'a1-toggle': toggleSel(Number(t.dataset.id), Number(t.dataset.idx), e.shiftKey); break;
             case 'a1-toggle-all': {
                 const rows = visibleRows(1); const all = rows.every(r => state.a1.selected.has(r.id));
@@ -714,12 +888,12 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
                 break;
             }
             case 'a1-copydate': state.a1.copyDate = v; log(1, `複製先 → ${shortDate(v)}`); break;
+            case 'a1-view': state.a1.view = v; state.a1.menu = null; state.a1.condOpen = false; log(1, `表示形式 → ${v === 'timeline' ? 'タイムライン' : 'リスト'}`); break;
+            case 'a1cond': { const f = t.dataset.f; state.a1.cond[f] = v; log(1, `条件 ${condLabel(f, v)}（該当 ${condHits(1, state.a1.cond).length} 件）`); break; }
             case 'cond': {
                 const f = t.dataset.f; state.a2.cond[f] = v;
-                const name = { from: '期間（開始）', to: '期間（終了）', member: '担当', version: '版数', task: '対応名', process: '工程' }[f];
-                const disp = v === '' ? '指定なし' : v === '__none__' ? '（なし = その他工数）' : (f === 'from' || f === 'to') ? shortDate(v) : v;
                 normalizeTask(state.a2.patch);
-                log(2, `条件 ${name} → ${disp}（該当 ${state.data[2].filter(r => matches(r, state.a2.cond)).length} 件）`);
+                log(2, `条件 ${condLabel(f, v)}（該当 ${condHits(2, state.a2.cond).length} 件）`);
                 break;
             }
             case 'a3-cell': {
@@ -745,6 +919,17 @@ body { height: auto; min-height: 100vh; overflow: auto; padding: 32px 24px 96px;
             default: return;
         }
         render();
+    });
+
+    // タイムラインのバー右クリック → 同じメニュー（本番では contextmenu ハンドラは未使用なので衝突しない）
+    document.addEventListener('contextmenu', e => {
+        const bar = e.target.closest('#frame .tl-bar'); if (!bar || K() !== 1) return;
+        e.preventDefault();
+        const ids = bar.dataset.ids.split(',').map(Number);
+        openBarMenu(e, ids); log(1, `右クリック: ${barLabelFromIds(ids)}`); render();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && (state.a1.menu || state.a1.condOpen)) { state.a1.menu = null; state.a1.condOpen = false; render(); }
     });
 
     render();
