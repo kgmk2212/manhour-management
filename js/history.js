@@ -414,8 +414,16 @@ function applyRedo(action) {
 // 一括編集の復元ヘルパー
 // ============================================
 
+/**
+ * 一括編集・削除・複製の Undo/Redo を実行する
+ * @param {Object} data - アクションデータ。以下のキーを含む可能性：
+ *   - beforeEstimates/afterEstimates: 見積の変更前/変更後。undo時に before、redo時に after を適用
+ *   - beforeActuals/afterActuals: 実績の変更前/変更後。undo時に before、redo時に after を適用
+ *   - deletedActuals: 削除された実績。undo時に復元、redo時に削除
+ *   - addedEstimateIds/addedActualIds: 新規追加された ID。undo時に除去
+ * @param {string} direction - 'before' (undo) または 'after' (redo)
+ */
 function restoreBulkEdit(data, direction) {
-    // direction: 'before' (undo) or 'after' (redo)
     const estimates = direction === 'before' ? data.beforeEstimates : data.afterEstimates;
     if (estimates) {
         estimates.forEach(est => {
@@ -439,8 +447,8 @@ function restoreBulkEdit(data, direction) {
             const idx = State.actuals.findIndex(a => a.id === act.id);
             if (idx !== -1) {
                 State.actuals[idx] = { ...act };
-            } else {
-                // 複製の redo など、一度消えたレコードを戻す
+            } else if (data.addedActualIds && data.addedActualIds.includes(act.id)) {
+                // 複製の redo で消えていた追加分だけを戻す。他の一括型は従来どおり存在しない id を無視
                 State.actuals.push({ ...act });
             }
         });

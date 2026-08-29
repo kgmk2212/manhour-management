@@ -202,4 +202,49 @@ describe('actual_bulk_edit — 実績の一括編集・削除・複製の往復'
         History.redo();
         assert.deepEqual(State.actuals.map(a => a.id).sort((x, y) => x - y), [1, 2, 100]);
     });
+
+    test('削除 undo で同じ id が既に存在する場合は二重に追加しない', () => {
+        // a1 が既に State に存在する状態で、削除の undo を実行
+        State.setActuals([a1, a2]);
+        History.pushAction({ type: 'actual_bulk_edit', data: { deletedActuals: [a1] } });
+
+        History.undo();
+        const a1Records = State.actuals.filter(a => a.id === 1);
+        assert.equal(a1Records.length, 1, 'a1 が二重に追加されていないこと');
+        assert.equal(State.actuals.length, 2);
+    });
+
+    test('複製 redo で追加分が既に存在する場合は上書きのみで二重に追加しない', () => {
+        const copy = { ...a1, id: 100, date: '2026-08-24' };
+        State.setActuals([a1, a2, copy]);
+        History.pushAction({ type: 'actual_bulk_edit', data: { afterActuals: [copy], addedActualIds: [100] } });
+
+        History.undo();
+        assert.deepEqual(State.actuals.map(a => a.id), [1, 2]);
+        // undo 後、copy が out-of-band で再追加されたと仮定
+        State.actuals.push({ ...copy });
+        History.redo();
+        const ids = State.actuals.map(a => a.id).sort((x, y) => x - y);
+        assert.deepEqual(ids, [1, 2, 100]);
+        assert.equal(State.actuals.filter(a => a.id === 100).length, 1, 'id 100 が二重に追加されていないこと');
+    });
+
+    test('既存の estimate_bulk_edit は存在しない実績 id を無視する（従来挙動）', () => {
+        // a1 が存在しない状態で estimate_bulk_edit の beforeActuals/afterActuals に a1 を含める
+        State.setActuals([a2]);
+        History.pushAction({
+            type: 'estimate_bulk_edit',
+            data: {
+                beforeEstimates: [],
+                afterEstimates: [],
+                beforeActuals: [a1],
+                afterActuals: [{ ...a1, version: 'V2.4' }],
+            },
+        });
+
+        History.undo();
+        assert.deepEqual(State.actuals.map(a => a.id), [2], 'undo 後も a1 が復活しないこと');
+        History.redo();
+        assert.deepEqual(State.actuals.map(a => a.id), [2], 'redo 後も a1 が復活しないこと');
+    });
 });
