@@ -4,7 +4,10 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 34 ファイル / 37,472 行
+## js/ — 35 ファイル / 37,650 行
+
+### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (178行)
+- export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:82, duplicateActuals:108, deleteActuals:118, displayValue:132, summarizeField:144, findByCondition:156, sameTaskIds:174
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
