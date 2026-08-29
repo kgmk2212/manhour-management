@@ -164,3 +164,42 @@ describe('applyUndo/applyRedo — 未知の action type', () => {
         assert.equal(History.canUndo(), true);
     });
 });
+
+describe('actual_bulk_edit — 実績の一括編集・削除・複製の往復', () => {
+    beforeEach(resetAll);
+    const a1 = { id: 1, date: '2026-08-17', version: 'V2.3', task: 'T', process: 'PG', member: 'A', hours: 6 };
+    const a2 = { id: 2, date: '2026-08-18', version: 'V2.3', task: 'T', process: 'PT', member: 'A', hours: 8 };
+
+    test('編集: undo で before に戻り、redo で after になる', () => {
+        const a1After = { ...a1, version: 'V2.4' };
+        State.setActuals([a1After, a2]);
+        History.pushAction({ type: 'actual_bulk_edit', data: { beforeActuals: [a1], afterActuals: [a1After] } });
+
+        History.undo();
+        assert.equal(State.actuals.find(a => a.id === 1).version, 'V2.3');
+        History.redo();
+        assert.equal(State.actuals.find(a => a.id === 1).version, 'V2.4');
+        assert.equal(State.actuals.length, 2);
+    });
+
+    test('削除: undo で復元、redo で再削除', () => {
+        State.setActuals([a2]);
+        History.pushAction({ type: 'actual_bulk_edit', data: { deletedActuals: [a1] } });
+
+        History.undo();
+        assert.deepEqual(State.actuals.map(a => a.id).sort(), [1, 2]);
+        History.redo();
+        assert.deepEqual(State.actuals.map(a => a.id), [2]);
+    });
+
+    test('複製: undo で追加分が消え、redo で戻る', () => {
+        const copy = { ...a1, id: 100, date: '2026-08-24' };
+        State.setActuals([a1, a2, copy]);
+        History.pushAction({ type: 'actual_bulk_edit', data: { afterActuals: [copy], addedActualIds: [100] } });
+
+        History.undo();
+        assert.deepEqual(State.actuals.map(a => a.id), [1, 2]);
+        History.redo();
+        assert.deepEqual(State.actuals.map(a => a.id).sort((x, y) => x - y), [1, 2, 100]);
+    });
+});

@@ -223,6 +223,9 @@ function applyUndo(action) {
     } else if (t === 'estimate_bulk_edit') {
         // 一括編集: 変更前の状態に復元
         restoreBulkEdit(action.data, 'before');
+    } else if (t === 'actual_bulk_edit') {
+        // 実績の一括編集/削除/複製: 変更前に復元
+        restoreBulkEdit(action.data, 'before');
     } else if (t === 'task_edit') {
         restoreBulkEdit(action.data, 'before');
 
@@ -332,6 +335,8 @@ function applyRedo(action) {
         }
     } else if (t === 'estimate_bulk_edit') {
         restoreBulkEdit(action.data, 'after');
+    } else if (t === 'actual_bulk_edit') {
+        restoreBulkEdit(action.data, 'after');
     } else if (t === 'task_edit') {
         restoreBulkEdit(action.data, 'after');
 
@@ -434,8 +439,26 @@ function restoreBulkEdit(data, direction) {
             const idx = State.actuals.findIndex(a => a.id === act.id);
             if (idx !== -1) {
                 State.actuals[idx] = { ...act };
+            } else {
+                // 複製の redo など、一度消えたレコードを戻す
+                State.actuals.push({ ...act });
             }
         });
+    }
+    // 一括削除: undo で復元、redo で再削除
+    if (data.deletedActuals && data.deletedActuals.length) {
+        if (direction === 'before') {
+            const existing = new Set(State.actuals.map(a => a.id));
+            data.deletedActuals.forEach(a => { if (!existing.has(a.id)) State.actuals.push({ ...a }); });
+        } else {
+            const ids = new Set(data.deletedActuals.map(a => a.id));
+            State.setActuals(State.actuals.filter(a => !ids.has(a.id)));
+        }
+    }
+    // 一括複製: undo で追加分を除去（redo は afterActuals の push で戻る）
+    if (direction === 'before' && data.addedActualIds && data.addedActualIds.length) {
+        const ids = new Set(data.addedActualIds);
+        State.setActuals(State.actuals.filter(a => !ids.has(a.id)));
     }
 }
 

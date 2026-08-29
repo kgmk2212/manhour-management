@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 35 ファイル / 37,652 行
+## js/ — 35 ファイル / 37,675 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -42,8 +42,8 @@
 ### js/excel-import.js — Excel ファイルから見積・実績を追加読み込みする機能 (355行)
 - export: handleExcelImport:333
 
-### js/history.js — グローバル Undo/Redo & 変更履歴 (805行)
-- export: pushAction:22, canUndo:36, canRedo:37, getHistory:42, undo:53, redo:84, revertToAction:115, redoToAction:158, saveHistory:626, loadHistory:643, setupGlobalKeyboardShortcuts:660, openHistoryModal:702, closeHistoryModal:709
+### js/history.js — グローバル Undo/Redo & 変更履歴 (828行)
+- export: pushAction:22, canUndo:36, canRedo:37, getHistory:42, undo:53, redo:84, revertToAction:115, redoToAction:158, saveHistory:649, loadHistory:666, setupGlobalKeyboardShortcuts:683, openHistoryModal:725, closeHistoryModal:732
 
 ### js/hours-input.js — 工数入力ウィジェット（方式切替式・実地トライアル） (562行)
 - export: HOURS_INPUT_METHODS:18, getHoursInputMethod:33, setHoursInputMethod:42, getRegisteredDayHours:55, refreshHoursInput:522, initHoursInputSetting:548
