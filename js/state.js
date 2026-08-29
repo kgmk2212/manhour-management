@@ -251,6 +251,10 @@ export let memberOrder = ''; // 担当者の表示順
 export let workMonthSelectionMode = false; // 作業月選択モード
 export const selectedEstimateIds = new Set(); // 選択された見積ID
 
+// 実績関連（一括変更）
+export let actualSelectionMode = false;      // 実績リストの選択モード
+export const selectedActualIds = new Set();  // 選択中の実績ID（リスト／タイムラインで共有）
+
 // テーマカラー関連
 export let currentThemeColor = 'forest';
 export let currentThemePattern = 'none';
@@ -424,6 +428,11 @@ export function setDevFeaturesEnabled(value) {
 export function setWorkMonthSelectionMode(value) {
     workMonthSelectionMode = value;
     window.workMonthSelectionMode = value;
+}
+
+export function setActualSelectionMode(value) {
+    actualSelectionMode = value;
+    window.actualSelectionMode = value;
 }
 
 export function setMemberOrder(value) {

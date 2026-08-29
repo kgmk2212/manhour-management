@@ -948,6 +948,11 @@
                     </div>
                 </div>
 
+                <!-- 実績の一括変更: 選択モード切替 -->
+                <div id="actualSelectionToolbar" style="display: flex; justify-content: flex-end; margin: 0 0 8px;">
+                    <button type="button" class="btn btn-secondary btn-small" id="btnActualSelectionMode">選択モード</button>
+                </div>
+
                 <div id="actualList"></div>
 
                 <!-- タイムラインビュー -->
@@ -999,6 +1004,39 @@
                             </div>
                             <div class="actual-tl-pane-body" id="atlPaneBody"></div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 実績の一括変更: 選択バー（下部トレイ）＋ 条件で選択 ポップオーバー -->
+                <div id="actualSelectionTray" class="bk-dock" style="display: none;">
+                    <div id="actualConditionPopover" class="bk-pop" style="display: none;" role="dialog" aria-label="条件で選択">
+                        <div class="bk-pop-head">
+                            <span class="bk-pop-title">条件で選択 <span class="bk-muted">— 条件に合う実績をまとめて ✓ にする</span></span>
+                            <button type="button" class="bk-x" id="btnActualConditionClose" aria-label="閉じる">&times;</button>
+                        </div>
+                        <div class="bk-cond">
+                            <label>期間</label>
+                            <div class="bk-cond-range"><input type="date" id="actualCondFrom"><span>〜</span><input type="date" id="actualCondTo"></div>
+                            <label>担当</label><select id="actualCondMember"><option value="">指定なし</option></select>
+                            <label>版数</label><select id="actualCondVersion"><option value="">指定なし</option><option value="__none__">（なし = その他工数）</option></select>
+                            <label>対応名</label><select id="actualCondTask"><option value="">指定なし</option></select>
+                            <label>工程</label><select id="actualCondProcess"><option value="">指定なし</option></select>
+                        </div>
+                        <div class="bk-pop-foot">
+                            <div class="bk-hits" id="actualCondHits">該当<b>0</b>件</div>
+                            <div class="bk-pop-actions">
+                                <button type="button" class="btn btn-secondary btn-small" id="btnActualConditionReplace" disabled>この条件だけを選択</button>
+                                <button type="button" class="btn btn-primary btn-small" id="btnActualConditionAdd" disabled>選択に追加</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bk-bar" role="toolbar" aria-label="選択した実績への操作">
+                        <span class="bk-bar-count" id="actualSelectionCount">0 件選択中</span>
+                        <button type="button" class="btn btn-ghost" id="btnBulkActualCondition">条件で選択…</button>
+                        <button type="button" class="btn btn-primary" id="btnBulkActualEdit" disabled>一括編集</button>
+                        <button type="button" class="btn btn-ghost" id="btnBulkActualCopy" disabled>別日に複製</button>
+                        <button type="button" class="btn btn-ghost" id="btnBulkActualDelete" disabled>削除</button>
+                        <button type="button" class="btn btn-ghost" id="btnBulkActualClear" disabled>選択解除</button>
                     </div>
                 </div>
             </div>

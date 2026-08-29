@@ -5,7 +5,8 @@
 import {
     estimates, actuals, remainingEstimates,
     setActuals,
-    nextId} from './state.js';
+    nextId,
+    actualSelectionMode, selectedActualIds } from './state.js';
 
 import { showAlert, sortMembers, formatHours, normalizeEstimate, escapeHtml, escapeForHandler, populateQuarterHourOptions, setHoursSelectValue, reviewBadgeHtml, getTodayString } from './utils.js';
 import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
@@ -163,6 +164,9 @@ export function renderActualList() {
     if (typeof window.updateSegmentedButtons === 'function') {
         window.updateSegmentedButtons();
     }
+
+    // 一括変更の選択 UI（選択バー・行のハイライト）を表示形式に合わせる
+    if (typeof window.updateActualSelectionUI === 'function') window.updateActualSelectionUI();
 }
 
 /**
@@ -717,7 +721,11 @@ export function renderActualListView() {
         filteredActuals = filteredActuals.filter(a => a.date && a.date.startsWith(selectedMonth));
     }
 
-    let html = '<div class="table-wrapper"><table><tr><th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th><th>操作</th></tr>';
+    const selMode = actualSelectionMode;
+    let html = '<div class="table-wrapper"><table class="bk-table"><tr>'
+        + (selMode ? '<th class="bk-th-check"><input type="checkbox" class="bk-cb" id="actualSelectAll" onclick="toggleAllVisibleActuals(event)" aria-label="表示中を全選択"></th>' : '')
+        + '<th>日付</th><th>版数</th><th>対応名</th><th>工程</th><th>担当</th><th>実績工数</th>'
+        + (selMode ? '' : '<th>操作</th>') + '</tr>';
 
     // 担当者順を取得
     const memberOrderInput = document.getElementById('memberOrder').value.trim();
@@ -742,18 +750,20 @@ export function renderActualListView() {
     }
 
     sortedActuals.forEach(a => {
+        const on = selMode && selectedActualIds.has(a.id);
         html += `
-            <tr>
+            <tr data-actual-id="${a.id}" class="${on ? 'is-selected' : ''}" ${selMode ? `onclick="toggleActualSelection(${a.id}, event)"` : ''}>
+                ${selMode ? `<td class="bk-th-check"><input type="checkbox" class="bk-cb" ${on ? 'checked' : ''} onclick="toggleActualSelection(${a.id}, event)" aria-label="この実績を選択"></td>` : ''}
                 <td>${escapeHtml(a.date)}</td>
                 <td>${escapeHtml(a.version)}</td>
                 <td>${escapeHtml(a.task)}</td>
                 <td><span class="badge badge-${escapeHtml(a.process.toLowerCase())}">${escapeHtml(a.process)}</span>${reviewBadgeHtml(a.isReview)}</td>
                 <td>${escapeHtml(a.member)}</td>
                 <td>${escapeHtml(String(a.hours))}h</td>
-                <td>
+                ${selMode ? '' : `<td>
                     <button class="btn btn-primary btn-small" onclick="editActual(${a.id})" style="margin-right: 5px;">編集</button>
                     <button class="btn btn-danger btn-small" onclick="deleteActual(${a.id})">削除</button>
-                </td>
+                </td>`}
             </tr>
         `;
     });

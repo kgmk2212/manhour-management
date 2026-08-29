@@ -102,9 +102,15 @@ import {
     closeRemainingHoursModal
 } from './modal.js';
 import { debugModeEnabled, setWorkDetailStyle, setModalDesignStyle } from './state.js';
+import * as ActualBulk from './actual-bulk.js';
 
 export function initEventHandlers() {
     if (debugModeEnabled) console.log('✅ events.js: イベントハンドラ初期化開始');
+
+    // 実績の一括変更
+    const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    bind('btnActualSelectionMode', ActualBulk.toggleActualSelectionMode);
+    bind('btnBulkActualClear', ActualBulk.clearActualSelection);
     const exportBtn = document.getElementById('btnExportBackup');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBackup);

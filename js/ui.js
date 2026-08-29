@@ -165,6 +165,11 @@ export function showTab(tabName, options = {}) {
         return;
     }
 
+    // 実績タブを離れるときは一括変更の選択を持ち越さない
+    if (currentTabId === 'actual' && tabName !== 'actual' && typeof window.clearActualSelection === 'function') {
+        window.clearActualSelection();
+    }
+
     // アニメーション方向の決定（skipAnimation時はスキップ）
     let animationClassOut = '';
     let animationClassIn = '';
