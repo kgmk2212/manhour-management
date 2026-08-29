@@ -63,12 +63,14 @@ export function applyPatchToActual(actual, patch) {
 
 /**
  * 実績 1 件の妥当性（saveActualEdit と同じ規則）
- * @returns {null | 'task-required' | 'process-required' | 'invalid-date'}
+ * @returns {null | 'task-required' | 'process-required' | 'invalid-date' | 'member-required' | 'hours-required'}
  */
 export function validateActual(a) {
     if (!a.task || !String(a.task).trim()) return 'task-required';
     if (a.version && !a.process) return 'process-required';
     if (!isValidDateString(a.date)) return 'invalid-date';
+    if (!a.member || !String(a.member).trim()) return 'member-required';
+    if (!(Number(a.hours) > 0)) return 'hours-required';
     return null;
 }
 

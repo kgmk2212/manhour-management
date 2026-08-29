@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     shiftDate, isValidDateString, changedFields, applyBulkPatch,
     duplicateActuals, deleteActuals, summarizeField, findByCondition, sameTaskIds, displayValue,
+    validateActual,
 } from '../js/actual-bulk-core.js';
 
 const A = (over) => ({ id: 1, date: '2026-08-17', version: 'V2.3', task: '帳票A', process: 'PG', member: '田中', hours: 6, createdAt: 'x', ...over });
@@ -27,6 +28,34 @@ describe('shiftDate / isValidDateString', () => {
         assert.equal(isValidDateString('2026-02-30'), false);
         assert.equal(isValidDateString('2026/08/17'), false);
         assert.equal(isValidDateString(''), false);
+    });
+});
+
+describe('validateActual', () => {
+    test('妥当な実績は null を返す', () => {
+        assert.equal(validateActual(DATA[0]), null);
+    });
+    test('task が空なら task-required', () => {
+        assert.equal(validateActual({ ...DATA[0], task: '' }), 'task-required');
+    });
+    test('version があるが process が無いなら process-required', () => {
+        assert.equal(validateActual({ ...DATA[0], version: 'V2.3', process: '' }), 'process-required');
+    });
+    test('version と process が両方無いなら妥当', () => {
+        assert.equal(validateActual({ ...DATA[0], version: '', process: '' }), null);
+    });
+    test('date が無効なら invalid-date', () => {
+        assert.equal(validateActual({ ...DATA[0], date: '2026-02-30' }), 'invalid-date');
+    });
+    test('member が空なら member-required', () => {
+        assert.equal(validateActual({ ...DATA[0], member: '' }), 'member-required');
+    });
+    test('hours が 0 以下なら hours-required', () => {
+        assert.equal(validateActual({ ...DATA[0], hours: 0 }), 'hours-required');
+    });
+    test('applyBulkPatch で member を空にしたものは invalid に入る', () => {
+        const r = applyBulkPatch(DATA, [1], { member: { set: '' } });
+        assert.deepEqual(r.invalid, [{ id: 1, reason: 'member-required' }]);
     });
 });
 
@@ -67,7 +96,10 @@ describe('applyBulkPatch', () => {
     test('空パッチは changed 0 件・invalid 0 件', () => {
         const r = applyBulkPatch(DATA, [1, 2], {});
         assert.equal(r.changed.length, 0);
-        assert.equal(r.after, r.after); // 落ちないこと
+        assert.equal(r.after.length, 5);
+    });
+    test('changedFields は複数フィールドの変更を検出', () => {
+        assert.deepEqual(changedFields(DATA[0], { ...DATA[0], version: 'V2.4', hours: 7 }), ['version', 'hours']);
     });
 });
 
