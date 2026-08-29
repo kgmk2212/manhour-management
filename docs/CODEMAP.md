@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 36 ファイル / 38,252 行
+## js/ — 36 ファイル / 38,352 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -12,8 +12,8 @@
 ### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (509行)
 - export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, isActualConditionOpen:150, getActualCondition:153, updateActualConditionHits:183, toggleActualConditionPopover:201, closeActualConditionPopover:210, applyActualCondition:221, initActualConditionEvents:229, openBulkActualEditModal:354, closeBulkActualEditModal:368, applyBulkActualEdit:402, deleteSelectedActuals:437, openBulkActualCopyModal:457, closeBulkActualCopyModal:466, applyBulkActualCopy:470, initBulkActualCopyEvents:482, showUndoToast:489, initBulkActualModalEvents:502
 
-### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
-- export: initActualTimeline:94, renderActualTimeline:143
+### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3303行)
+- export: initActualTimeline:95, renderActualTimeline:144
 
 ### js/actual.js — 実績管理モジュール (actual.js) (1984行)
 - export: getDayOfWeek:27, getHoliday:38, renderTodayActuals:58, renderActualList:111, updateMemberSelectOptions:175, renderMemberCalendar:259, setupCalendarSwipe:390, renderActualMatrix:447, renderActualListView:706, showWorkDetail:782, closeWorkModal:932, deleteActual:943, editActualFromModal:966, deleteActualFromModal:974, addActualFromCalendar:1003, editActual:1082, closeEditActualModal:1188, enterEditActualTabMode:1208, exitEditActualTabMode:1248, setEditActualTab:1273, saveActualEdit:1332, getPreviousActual:1455, getRemainingDayHours:1484, getLatestActualBeforeDate:1494, updateEditActualTaskList:1511, openOtherWorkModalWithContext:1653, handleActualTaskSelect:1671, handleEditActualVersionChange:1746, handleActualProcessChange:1792, renderCalendarGrid:1847

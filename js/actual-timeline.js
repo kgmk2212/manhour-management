@@ -4,7 +4,7 @@
 
 import {
     estimates, actuals, schedules, memberOrder,
-    nextId} from './state.js';
+    nextId, selectedActualIds} from './state.js';
 
 import { showAlert, sortMembers, formatHours, escapeHtml, getTodayString, addDaysToDateString } from './utils.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
@@ -12,6 +12,7 @@ import { getTaskColor } from './schedule.js';
 import { calculateVersionProgress } from './report.js';
 import { pushAction } from './history.js';
 import { saveData } from './storage.js';
+import { sameTaskIds } from './actual-bulk-core.js';
 
 // ============================================
 // モジュール内部状態
@@ -150,6 +151,8 @@ export function renderActualTimeline() {
     }
 
     renderRightPane();
+
+    if (typeof window.updateActualSelectionUI === 'function') window.updateActualSelectionUI();
 }
 
 // ============================================
@@ -334,17 +337,18 @@ function renderGanttBody(members, year, month, daysInMonth, today, memberRowHeig
             const color = getTaskColor(bar.version, bar.task);
             const layout = barLayout[idx];
             const mergedClass = bar.days > 1 ? ' merged' : '';
+            const selectedClass = bar.ids.length > 0 && bar.ids.every(id => selectedActualIds.has(Number(id))) ? ' selected' : '';
 
             if (bar.days === 1) {
                 // 単日バー
-                html += `<div class="actual-tl-bar actual${mergedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
+                html += `<div class="actual-tl-bar actual${mergedClass}${selectedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
                     data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
                     title="${escapeHtml(bar.task)} ${bar.totalHours}h">
                     <span class="actual-tl-bar-hours">${bar.totalHours}h</span>
                 </div>`;
             } else {
                 // 複数日バー
-                html += `<div class="actual-tl-bar actual${mergedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
+                html += `<div class="actual-tl-bar actual${mergedClass}${selectedClass}" style="left:${left}px;width:${width}px;height:${layout.height}px;top:${layout.top}px;background:${color};"
                     data-actual-ids="${bar.ids.join(',')}" data-start-date="${bar.startDate}" data-end-date="${bar.endDate}" data-member="${escapeHtml(member)}"
                     title="${escapeHtml(bar.task)} ${bar.totalHours}h (${bar.days}日間)">
                     <span class="actual-tl-bar-text">${escapeHtml(bar.task)}</span>
@@ -1236,6 +1240,7 @@ function setupGanttEvents() {
     const actualBars = dom.timelineBody?.querySelectorAll('.actual-tl-bar.actual');
     actualBars?.forEach(bar => {
         bar.addEventListener('click', onActualBarClick);
+        bar.addEventListener('contextmenu', onActualBarContextMenu);
     });
 
     // 予定バーにクリックイベント（クイック登録）
@@ -1864,26 +1869,95 @@ function renderTaskPickerItems(tasks) {
 // バー操作（Phase 4）
 // ============================================
 
+/** バー要素が持つ実績 id（単一 data-actual-id か複数 data-actual-ids） */
+function barIdsOf(bar) {
+    const raw = bar.dataset.actualIds || bar.dataset.actualId || '';
+    return raw.split(',').filter(Boolean).map(Number);
+}
+
 /**
- * 実績バークリック → 詳細パネル
+ * 実績バークリック → 詳細パネル。Ctrl/Meta/Shift 付きなら選択トグルのみ
  */
 function onActualBarClick(e) {
     e.stopPropagation();
     const bar = e.currentTarget;
-    const actualId = bar.dataset.actualId;
-    const actualIds = bar.dataset.actualIds;
+    const ids = barIdsOf(bar);
+    if (ids.length === 0) return;
 
-    if (actualId) {
-        showBarDetailPanel(actualId);
-    } else if (actualIds) {
-        // 複数のactualがまとまっている場合
-        const ids = actualIds.split(',');
-        if (ids.length === 1) {
-            showBarDetailPanel(ids[0]);
-        } else {
-            showGroupDetailPanel(ids);
-        }
+    if ((e.ctrlKey || e.metaKey || e.shiftKey) && typeof window.selectActualIds === 'function') {
+        const all = ids.every(id => selectedActualIds.has(id));
+        if (all) window.deselectActualIds(ids); else window.selectActualIds(ids);
+        return;
     }
+    if (ids.length === 1) {
+        showBarDetailPanel(ids[0]);
+    } else {
+        showGroupDetailPanel(ids);
+    }
+}
+
+/** 右クリック → 選択メニュー */
+function onActualBarContextMenu(e) {
+    const ids = barIdsOf(e.currentTarget);
+    if (ids.length === 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    showBarContextMenu(ids, e.clientX, e.clientY);
+}
+
+function closeBarContextMenu() {
+    const m = document.getElementById('atlCtxMenu');
+    if (m) m.remove();
+}
+
+/**
+ * バーの選択メニュー（詳細パネルと同じ操作を右クリックで）
+ * @param {number[]} ids
+ * @param {number} x clientX
+ * @param {number} y clientY
+ */
+function showBarContextMenu(ids, x, y) {
+    closeBarContextMenu();
+    const items = ids.map(id => actuals.find(a => a.id === id)).filter(Boolean);
+    if (!items.length) return;
+    const b = items[0];
+    const allSel = ids.every(id => selectedActualIds.has(id));
+    const procs = [...new Set(items.map(a => a.process || '—'))].join('·');
+    const dates = items.map(a => a.date).sort();
+    const sameMember = sameTaskIds(actuals, b, { sameMember: true });
+    const sameAll = sameTaskIds(actuals, b, { sameMember: false });
+    const total = items.reduce((s, a) => s + (a.hours || 0), 0);
+
+    const menu = document.createElement('div');
+    menu.className = 'actual-tl-ctx-menu';
+    menu.id = 'atlCtxMenu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = `
+        <div class="actual-tl-ctx-head"><b>${escapeHtml(b.task)}</b><span>${escapeHtml(b.version || '（その他）')} · ${escapeHtml(b.member)} · ${escapeHtml(procs)}</span><span>${dates[0]}${dates[0] !== dates[dates.length - 1] ? '〜' + dates[dates.length - 1] : ''} · ${ids.length} 件 · ${formatHours(total)}h</span></div>
+        <button type="button" class="actual-tl-ctx-item" data-act="select">${allSel ? 'このバーの選択を外す' : `このバーの ${ids.length} 件を選択`}</button>
+        <button type="button" class="actual-tl-ctx-item" data-act="same-member">同じ対応をすべて選択（${escapeHtml(b.member)} · ${sameMember.length} 件）</button>
+        <button type="button" class="actual-tl-ctx-item" data-act="same-all">同じ対応をすべて選択（全員 · ${sameAll.length} 件）</button>
+        <div class="actual-tl-ctx-sep"></div>
+        <button type="button" class="actual-tl-ctx-item is-primary" data-act="edit">この ${ids.length} 件を一括編集…</button>
+    `;
+    document.body.appendChild(menu);
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - rect.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - rect.height - 8))}px`;
+
+    menu.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-act]'); if (!btn) return;
+        const act = btn.dataset.act;
+        if (act === 'select') { if (allSel) window.deselectActualIds(ids); else window.selectActualIds(ids); }
+        else if (act === 'same-member') window.selectActualIds(sameMember);
+        else if (act === 'same-all') window.selectActualIds(sameAll);
+        else if (act === 'edit') { window.selectActualIds(ids, { replace: true }); window.openBulkActualEditModal(); }
+        closeBarContextMenu();
+    });
+    const onDoc = (ev) => { if (!menu.contains(ev.target)) { closeBarContextMenu(); document.removeEventListener('mousedown', onDoc, true); } };
+    document.addEventListener('mousedown', onDoc, true);
+    const onKey = (ev) => { if (ev.key === 'Escape') { closeBarContextMenu(); document.removeEventListener('keydown', onKey); } };
+    document.addEventListener('keydown', onKey);
 }
 
 /**
@@ -2033,6 +2107,7 @@ function showBarDetailPanel(actualId) {
             </div>
             <div class="actual-tl-dp-actions">
                 <button class="btn btn-secondary btn-sm" id="atlDpEdit">編集</button>
+                <button class="btn btn-secondary btn-sm" id="atlDpSelect">${selectedActualIds.has(actual.id) ? '選択を外す' : '選択に追加'}</button>
                 <button class="btn btn-sm" id="atlDpDelete" style="background:var(--danger);color:#fff;border-color:var(--danger);">削除</button>
             </div>
         </div>
@@ -2057,6 +2132,11 @@ function showBarDetailPanel(actualId) {
             deleteActualById(actual.id);
             closeDetailPanel();
         }
+    });
+
+    panel.querySelector('#atlDpSelect').addEventListener('click', () => {
+        if (selectedActualIds.has(actual.id)) window.deselectActualIds([actual.id]); else window.selectActualIds([actual.id]);
+        closeDetailPanel();
     });
 }
 
@@ -2103,6 +2183,11 @@ function showGroupDetailPanel(ids) {
         <div class="actual-tl-dp-body">
             <div class="actual-tl-dp-total">合計 <strong>${formatHours(totalHours)}h</strong></div>
             <div class="actual-tl-dp-list">${listHtml}</div>
+            <div class="actual-tl-dp-actions">
+                <button class="btn btn-secondary btn-sm" id="atlDpSelect">${ids.every(id => selectedActualIds.has(Number(id))) ? 'このバーの選択を外す' : `このバーの ${items.length} 件を選択`}</button>
+                <button class="btn btn-secondary btn-sm" id="atlDpSelectSame">同じ対応をすべて選択</button>
+                <button class="btn btn-primary btn-sm" id="atlDpBulkEdit">この ${items.length} 件を一括編集…</button>
+            </div>
         </div>
     `;
 
@@ -2110,6 +2195,21 @@ function showGroupDetailPanel(ids) {
     requestAnimationFrame(() => panel.classList.add('open'));
 
     panel.querySelector('#atlDpClose').addEventListener('click', closeDetailPanel);
+
+    const numIds = ids.map(Number);
+    panel.querySelector('#atlDpSelect').addEventListener('click', () => {
+        if (numIds.every(id => selectedActualIds.has(id))) window.deselectActualIds(numIds); else window.selectActualIds(numIds);
+        closeDetailPanel();
+    });
+    panel.querySelector('#atlDpSelectSame').addEventListener('click', () => {
+        window.selectActualIds(sameTaskIds(actuals, items[0], { sameMember: true }));
+        closeDetailPanel();
+    });
+    panel.querySelector('#atlDpBulkEdit').addEventListener('click', () => {
+        window.selectActualIds(numIds, { replace: true });
+        closeDetailPanel();
+        if (typeof window.openBulkActualEditModal === 'function') window.openBulkActualEditModal();
+    });
 
     // 各アイテムクリックで個別詳細へ
     panel.querySelectorAll('.actual-tl-dp-item').forEach(item => {

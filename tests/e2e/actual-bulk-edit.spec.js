@@ -208,3 +208,64 @@ test("条件で選択: 担当・版数・対応名で該当 5 件、ハイライ
   await page.selectOption("#actualCondMember", "田中");
   await expect(page.locator("#actualCondHits")).toContainText("表示外");
 });
+
+test("タイムライン: 結合バーから 5 件を選び、詳細パネルの一括編集で付け替える", async ({ page }) => {
+  await page.evaluate(() => window.setActualViewType("timeline"));
+  const bar = page.locator(`.actual-tl-bar.actual[data-actual-ids="${TARGET_IDS.join(",")}"]`);
+  await expect(bar).toBeVisible();
+  await expect(page.locator("#actualSelectionTray")).toBeVisible(); // タイムラインではトレイ常設
+
+  // 条件で選択のハイライトもタイムラインのバーに効く（結合バー = 5件がまるごと一致）
+  await page.locator("#btnBulkActualCondition").click();
+  await expect(page.locator("#actualConditionPopover")).toBeVisible();
+  await page.selectOption("#actualCondMember", "田中");
+  await page.selectOption("#actualCondVersion", "V2.3");
+  await page.selectOption("#actualCondTask", "帳票A出力改修");
+  await expect(page.locator(".actual-tl-bar.actual.is-hit")).toHaveCount(1);
+  await page.locator("#btnActualConditionClose").click();
+  await expect(page.locator("#actualConditionPopover")).toBeHidden();
+
+  // クリック → 詳細パネル → 「この 5 件を一括編集…」
+  await bar.click();
+  await expect(page.locator("#atlDetailPanel")).toBeVisible();
+  await expect(page.locator("#atlDpBulkEdit")).toContainText("5 件");
+  await page.locator("#atlDpBulkEdit").click();
+  await expect(page.locator("#bulkActualEditModal")).toBeVisible();
+  await page.locator('.bk-field[data-field="version"] button[data-seg][data-v="set"]').click();
+  await page.locator('.bk-field[data-field="version"] select[data-val]').selectOption("V2.4");
+  await page.locator('.bk-field[data-field="task"] button[data-seg][data-v="set"]').click();
+  await page.locator('.bk-field[data-field="task"] select[data-val]').selectOption("帳票A出力改修（追補）");
+  await page.locator("#btnBulkActualApply").click();
+  const saved = await readActuals(page);
+  for (const id of TARGET_IDS) expect(saved.find((a) => a.id === id).version).toBe("V2.4");
+  // 結合バーの表示名が変わる（id 集合は同じ）
+  await expect(page.locator(`.actual-tl-bar.actual[data-actual-ids="${TARGET_IDS.join(",")}"]`)).toContainText("帳票A出力改修（追補）");
+});
+
+test("タイムライン: Ctrl+クリックでトグル、右クリックでメニュー、Escape で閉じる", async ({ page }) => {
+  await page.evaluate(() => window.setActualViewType("timeline"));
+  const bar = page.locator(`.actual-tl-bar.actual[data-actual-ids="${TARGET_IDS.join(",")}"]`);
+  await bar.click({ modifiers: ["Control"] });
+  await expect(bar).toHaveClass(/selected/);
+  await expect(page.locator("#actualSelectionCount")).toContainText("5 件");
+  await expect(page.locator("#atlDetailPanel")).toHaveCount(0); // 修飾キー時は詳細を開かない
+  await bar.click({ modifiers: ["Control"] });
+  await expect(bar).not.toHaveClass(/selected/);
+  await expect(page.locator("#actualSelectionCount")).toContainText("0 件");
+
+  await page.locator('.actual-tl-bar.actual[data-actual-ids="102"]').click({ button: "right" });
+  const menu = page.locator("#atlCtxMenu");
+  await expect(menu).toBeVisible();
+  await expect(menu).toContainText("打ち合わせ");
+  await menu.locator("button", { hasText: "このバーの 1 件を選択" }).click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("1 件");
+  await expect(menu).toHaveCount(0);
+
+  await bar.click({ button: "right" });
+  await menu.locator("button", { hasText: "同じ対応をすべて選択（田中" }).click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("6 件"); // 1 + 5
+
+  await bar.click({ button: "right" });
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+});
