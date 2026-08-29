@@ -2140,6 +2140,9 @@ function showBarDetailPanel(actualId) {
             <div class="actual-tl-dp-actions">
                 <button class="btn btn-secondary btn-sm" id="atlDpEdit">編集</button>
                 <button class="btn btn-secondary btn-sm" id="atlDpSelect">${selectedActualIds.has(actual.id) ? '選択を外す' : '選択に追加'}</button>
+                <button class="btn btn-secondary btn-sm" id="atlDpSelectSame">同じ対応をすべて選択</button>
+                <button class="btn btn-secondary btn-sm" id="atlDpSelectAll">同じ対応をすべて選択（全員）</button>
+                <button class="btn btn-primary btn-sm" id="atlDpBulkEdit">この 1 件を一括編集…</button>
                 <button class="btn btn-sm" id="atlDpDelete" style="background:var(--danger);color:#fff;border-color:var(--danger);">削除</button>
             </div>
         </div>
@@ -2169,6 +2172,21 @@ function showBarDetailPanel(actualId) {
     panel.querySelector('#atlDpSelect').addEventListener('click', () => {
         const on = selectedActualIds.has(actual.id);
         callBridge(on ? 'deselectActualIds' : 'selectActualIds', [actual.id]);
+        closeDetailPanel();
+    });
+
+    // §4.6/§4.7: 修飾キー・右クリックが使えないタッチ環境向けに、詳細パネルにも
+    // 「同じ対応をすべて選択（本人／全員）」「一括編集」を用意する（右クリックメニューと同じ操作）
+    panel.querySelector('#atlDpSelectSame').addEventListener('click', () => {
+        applyBarSelectionAction('same-member', [actual.id], actual);
+        closeDetailPanel();
+    });
+    panel.querySelector('#atlDpSelectAll').addEventListener('click', () => {
+        applyBarSelectionAction('same-all', [actual.id], actual);
+        closeDetailPanel();
+    });
+    panel.querySelector('#atlDpBulkEdit').addEventListener('click', () => {
+        applyBarSelectionAction('edit', [actual.id], actual);
         closeDetailPanel();
     });
 }
@@ -2219,6 +2237,7 @@ function showGroupDetailPanel(ids) {
             <div class="actual-tl-dp-actions">
                 <button class="btn btn-secondary btn-sm" id="atlDpSelect">${ids.every(id => selectedActualIds.has(Number(id))) ? 'このバーの選択を外す' : `このバーの ${items.length} 件を選択`}</button>
                 <button class="btn btn-secondary btn-sm" id="atlDpSelectSame">同じ対応をすべて選択</button>
+                <button class="btn btn-secondary btn-sm" id="atlDpSelectAll">同じ対応をすべて選択（全員）</button>
                 <button class="btn btn-primary btn-sm" id="atlDpBulkEdit">この ${items.length} 件を一括編集…</button>
             </div>
         </div>
@@ -2236,6 +2255,10 @@ function showGroupDetailPanel(ids) {
     });
     panel.querySelector('#atlDpSelectSame').addEventListener('click', () => {
         applyBarSelectionAction('same-member', numIds, items[0]);
+        closeDetailPanel();
+    });
+    panel.querySelector('#atlDpSelectAll').addEventListener('click', () => {
+        applyBarSelectionAction('same-all', numIds, items[0]);
         closeDetailPanel();
     });
     panel.querySelector('#atlDpBulkEdit').addEventListener('click', () => {

@@ -140,6 +140,12 @@ describe('findByCondition / sameTaskIds', () => {
         assert.deepEqual(findByCondition(DATA, { from: '', to: '', member: '', version: '', task: '', process: 'PT' }).map(a => a.id), [3]);
         assert.equal(findByCondition(DATA, { from: '2026-08-25', to: '', member: '', version: '', task: '', process: '' }).length, 0);
     });
+    test('version: undefined（version キー自体が無い実績）も __none__ で一致する', () => {
+        const noVersionKey = { id: 7, date: '2026-08-17', task: 'その他', process: '', member: '田中', hours: 1, createdAt: 'x' };
+        assert.equal(noVersionKey.version, undefined);
+        const cond = { from: '', to: '', member: '', version: '__none__', task: '', process: '' };
+        assert.deepEqual(findByCondition([...DATA, noVersionKey], cond).map(a => a.id), [2, 7]);
+    });
     test('同じ対応（版数＋対応名）を本人／全員で', () => {
         const all = [...DATA, A({ id: 6, member: '鈴木', date: '2026-08-20' })];
         assert.deepEqual(sameTaskIds(all, all[0], { sameMember: true }), [1, 3]);

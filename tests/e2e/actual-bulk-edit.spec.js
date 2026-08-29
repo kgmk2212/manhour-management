@@ -268,6 +268,14 @@ test("タイムライン: Ctrl+クリックでトグル、右クリックでメ�
   await page.locator("#btnBulkActualClear").click();
   await expect(page.locator("#actualSelectionCount")).toContainText("0 件");
 
+  // §4.6/§4.7: 単一実績のバーは通常クリックで詳細パネル（修飾キー・右クリックが使えないタッチ環境の経路）。
+  // 「この 1 件を一括編集…」が出ることを確認
+  await page.locator('.actual-tl-bar.actual[data-actual-ids="102"]').click();
+  await expect(page.locator("#atlDetailPanel")).toBeVisible();
+  await expect(page.locator("#atlDpBulkEdit")).toBeVisible();
+  await expect(page.locator("#atlDpBulkEdit")).toContainText("1 件");
+  await page.locator("#atlDpClose").click();
+
   await page.locator('.actual-tl-bar.actual[data-actual-ids="102"]').click({ button: "right" });
   await expect(menu).toBeVisible();
   await expect(menu).toContainText("打ち合わせ");

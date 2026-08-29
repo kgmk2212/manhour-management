@@ -1,7 +1,7 @@
 # 実績のまとめ変更（一括編集）設計書
 
 - 作成: 2026-08-29
-- 状態: ユーザーレビュー待ち（案1 採用は 2026-08-29 に決定）
+- 状態: Phase 1 実装済み（feature/actual-bulk-edit、2026-08-29）
 - モックアップ: `mockups/actual-bulk-edit/`（`index.html` / `README.md`）
 - 対象ブランチ: `experiment/ui-scaling`（実装は `/start-work actual-bulk-edit` で feature worktree に隔離）
 

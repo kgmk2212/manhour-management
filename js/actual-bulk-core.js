@@ -160,7 +160,7 @@ export function findByCondition(actuals, cond) {
         (!cond.from || a.date >= cond.from) &&
         (!cond.to || a.date <= cond.to) &&
         (!cond.member || a.member === cond.member) &&
-        (!cond.version || (cond.version === '__none__' ? a.version === '' : a.version === cond.version)) &&
+        (!cond.version || (cond.version === '__none__' ? !(a.version ?? '').trim() : a.version === cond.version)) &&
         (!cond.task || a.task === cond.task) &&
         (!cond.process || a.process === cond.process)
     );

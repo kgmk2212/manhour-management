@@ -9,7 +9,7 @@ import {
     memberOrder, nextId,
 } from './state.js';
 import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
-import { PROCESS } from './constants.js';
+import { PROCESS, BULK_EDIT } from './constants.js';
 import { pushAction, undo } from './history.js';
 import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString, findByCondition } from './actual-bulk-core.js';
 
@@ -68,6 +68,7 @@ export function toggleAllVisibleActuals(event) {
     updateActualSelectionUI();
 }
 
+/** 選択を全解除（選択モード自体は維持） */
 export function clearActualSelection() {
     selectedActualIds.clear();
     lastClickedId = null;
@@ -85,6 +86,10 @@ export function selectActualIds(ids, { replace = false } = {}) {
     updateActualSelectionUI();
 }
 
+/**
+ * id 群を選択から外す（タイムライン・条件から使う）
+ * @param {number[]} ids
+ */
 export function deselectActualIds(ids) {
     ids.forEach(x => selectedActualIds.delete(Number(x)));
     updateActualSelectionUI();
@@ -110,15 +115,18 @@ export function updateActualSelectionUI() {
     const alive = new Set(actuals.map(a => a.id));
     [...selectedActualIds].forEach(x => { if (!alive.has(x)) selectedActualIds.delete(x); });
 
+    // 選択モード OFF でもリストで n > 0 ならトレイを出す（バー選択→リスト切替時に選択を隠さない）
     const tray = $('actualSelectionTray');
-    if (tray) tray.style.display = ((actualSelectionMode && viewType === 'list') || viewType === 'timeline') ? 'flex' : 'none';
+    if (tray) tray.style.display = ((actualSelectionMode && viewType === 'list') || viewType === 'timeline' || (viewType === 'list' && n > 0)) ? 'flex' : 'none';
 
     const modeBtn = $('btnActualSelectionMode');
     if (modeBtn) {
         modeBtn.classList.toggle('is-on', actualSelectionMode);
         modeBtn.textContent = actualSelectionMode ? '✓ 選択モード' : '選択モード';
-        modeBtn.style.display = viewType === 'list' ? '' : 'none';
     }
+    // ボタンではなくラッパーを隠す（ボタンだけ隠すと margin 分の空白が残る）
+    const toolbar = $('actualSelectionToolbar');
+    if (toolbar) toolbar.style.display = viewType === 'list' ? 'flex' : 'none';
 
     const count = $('actualSelectionCount');
     if (count) {
@@ -152,6 +160,7 @@ export function updateActualSelectionUI() {
 
 let condOpen = false;
 
+/** 条件で選択ポップオーバーが開いているか */
 export const isActualConditionOpen = () => condOpen;
 
 /** 現在の条件（DOM から読む） */
@@ -203,6 +212,7 @@ export function updateActualConditionHits() {
     });
 }
 
+/** 条件で選択ポップオーバーの開閉トグル */
 export function toggleActualConditionPopover() {
     if (condOpen) { closeActualConditionPopover(); return; }
     condOpen = true;
@@ -212,11 +222,12 @@ export function toggleActualConditionPopover() {
     updateActualConditionHits();
 }
 
+/** 条件で選択ポップオーバーを閉じ、一覧・タイムラインの is-hit ハイライトを消す */
 export function closeActualConditionPopover() {
     condOpen = false;
     const pop = $('actualConditionPopover'); if (pop) pop.style.display = 'none';
     const b = $('btnBulkActualCondition'); if (b) b.classList.remove('is-on');
-    document.querySelectorAll('#actualList tr.is-hit, .actual-tl-bar.is-hit').forEach(el => el.classList.remove('is-hit'));
+    document.querySelectorAll('#actualList tr.is-hit, .actual-tl-bar.is-hit, .actual-tl-dv-block.is-hit').forEach(el => el.classList.remove('is-hit'));
 }
 
 /**
@@ -253,7 +264,7 @@ let ui = null;
 function newPatchUI() {
     return {
         version: { on: false, val: '' }, task: { on: false, val: '', free: '' }, process: { on: false, val: '' },
-        member: { on: false, val: '' }, isReview: 'keep', date: { mode: 'keep', value: '', days: 7 },
+        member: { on: false, val: '' }, isReview: 'keep', date: { mode: 'keep', value: '', days: BULK_EDIT.DEFAULT_SHIFT_DAYS },
     };
 }
 
@@ -288,7 +299,7 @@ function toBulkPatch(u) {
 
 function summaryText(targets, field) {
     const parts = summarizeField(targets, field).map(s => `${escapeHtml(s.value)} ×${s.count}`);
-    return parts.length > 3 ? `${parts.slice(0, 3).join('、')}、他 ${parts.length - 3} 種` : (parts.join('、') || '—');
+    return parts.length > BULK_EDIT.PREVIEW_ROWS ? `${parts.slice(0, BULK_EDIT.PREVIEW_ROWS).join('、')}、他 ${parts.length - BULK_EDIT.PREVIEW_ROWS} 種` : (parts.join('、') || '—');
 }
 const segBtn = (field, v, cur, label) => `<button type="button" data-seg data-field="${field}" data-v="${v}" class="${cur === v ? 'is-on' : ''}">${label}</button>`;
 
@@ -331,19 +342,23 @@ function renderPreview(targets) {
         html += '<p class="bk-muted">「変更する」に切り替えて値を選ぶと、ここに変更前 → 変更後が出ます。</p>';
     } else {
         html += '<div class="bk-diff">';
-        changed.slice(0, 3).forEach(c => {
+        changed.slice(0, BULK_EDIT.PREVIEW_ROWS).forEach(c => {
             const diff = c.fields.map(f => `<span class="bk-diff-f">${FIELD_LABEL[f]}</span><span class="old">${escapeHtml(displayValue(f, c.before))}</span> → <span class="new">${escapeHtml(displayValue(f, c.after))}</span>`).join('<span class="bk-sep">·</span>');
             html += `<span class="bk-diff-date">${escapeHtml(c.before.date)} ${escapeHtml(c.before.member)}</span><span>${diff}</span>`;
         });
         html += '</div>';
-        if (changed.length > 3) html += `<p class="bk-muted">他 ${changed.length - 3} 件も同じ規則で変わります。</p>`;
+        if (changed.length > BULK_EDIT.PREVIEW_ROWS) html += `<p class="bk-muted">他 ${changed.length - BULK_EDIT.PREVIEW_ROWS} 件も同じ規則で変わります。</p>`;
     }
     const proc = invalid.filter(i => i.reason === 'process-required').length;
     const date = invalid.filter(i => i.reason === 'invalid-date').length;
     const task = invalid.filter(i => i.reason === 'task-required').length;
+    const member = invalid.filter(i => i.reason === 'member-required').length;
+    const hours = invalid.filter(i => i.reason === 'hours-required').length;
     if (proc) html += `<p class="bk-warn">⚠ ${proc} 件で版数があるのに工程が空です。工程も「変更する」で指定してください。</p>`;
     if (date) html += `<p class="bk-warn">⚠ ${date} 件で日付が不正です。</p>`;
     if (task) html += `<p class="bk-warn">⚠ ${task} 件で対応名が空です。</p>`;
+    if (member) html += `<p class="bk-warn">⚠ ${member} 件で担当が空です。担当を「変更する」で指定してください。</p>`;
+    if (hours) html += `<p class="bk-warn">⚠ ${hours} 件で工数が 0 以下です。個別の編集で工数を直してください。</p>`;
     box.innerHTML = html + '</div>';
     $('btnBulkActualApply').disabled = changed.length === 0 || invalid.length > 0;
     $('btnBulkActualApply').textContent = `${targets.length} 件に適用`;
@@ -370,6 +385,7 @@ export function openBulkActualEditModal() {
     $('bulkActualEditModal').style.display = 'flex';
 }
 
+/** 一括編集モーダルを閉じ、編集中パッチを破棄する */
 export function closeBulkActualEditModal() {
     $('bulkActualEditModal').style.display = 'none';
     ui = null;
@@ -403,6 +419,21 @@ function onBulkFieldChange(e) {
     rerenderModal();
 }
 
+/**
+ * setActuals → pushAction → 保存・再描画（afterBulkChange）を例外から保護する共通ヘルパー（§11）。
+ * 純粋関数で after を確定させた後、この中で State を更新するので、例外が出ても State.actuals は
+ * 代入前のまま（破壊的変更が半端に残らない）
+ * @param {() => void} fn
+ */
+function runBulkChange(fn) {
+    try {
+        fn();
+    } catch (e) {
+        console.error('[actual-bulk] 適用に失敗:', e);
+        showAlert('一括編集に失敗しました', false);
+    }
+}
+
 /** 適用: エンジン → State → pushAction → 保存 → 再描画 */
 export function applyBulkActualEdit() {
     if (!ui) return;
@@ -410,15 +441,17 @@ export function applyBulkActualEdit() {
     const patch = toBulkPatch(ui);
     const { after, changed, invalid } = applyBulkPatch(actuals, targets.map(a => a.id), patch);
     if (!changed.length || invalid.length) return;
-    setActuals(after);
-    const fields = [...new Set(changed.flatMap(c => c.fields))].map(f => FIELD_LABEL[f]).join('・');
-    pushAction({
-        type: 'actual_bulk_edit',
-        description: `実績一括編集: ${fields} × ${changed.length}件`,
-        data: { beforeActuals: changed.map(c => ({ ...c.before })), afterActuals: changed.map(c => ({ ...c.after })) },
+    runBulkChange(() => {
+        setActuals(after);
+        const fields = [...new Set(changed.flatMap(c => c.fields))].map(f => FIELD_LABEL[f]).join('・');
+        pushAction({
+            type: 'actual_bulk_edit',
+            description: `実績一括編集: ${fields} × ${changed.length}件`,
+            data: { beforeActuals: changed.map(c => ({ ...c.before })), afterActuals: changed.map(c => ({ ...c.after })) },
+        });
+        afterBulkChange(`${changed.length} 件の実績を更新しました`);
+        closeBulkActualEditModal();
     });
-    afterBulkChange(`${changed.length} 件の実績を更新しました`);
-    closeBulkActualEditModal();
 }
 
 /** 一括操作後の共通後処理: 保存・選択クリア・全画面更新・Undo トースト */
@@ -444,21 +477,24 @@ export function deleteSelectedActuals() {
     if (!targets.length) return;
     if (!confirm(`${targets.length} 件の実績を削除しますか？`)) return;
     const { after, deleted } = deleteActuals(actuals, targets.map(a => a.id));
-    setActuals(after);
-    pushAction({ type: 'actual_bulk_edit', description: `実績一括削除: ${deleted.length}件`, data: { deletedActuals: deleted.map(a => ({ ...a })) } });
-    afterBulkChange(`${deleted.length} 件の実績を削除しました`);
+    runBulkChange(() => {
+        setActuals(after);
+        pushAction({ type: 'actual_bulk_edit', description: `実績一括削除: ${deleted.length}件`, data: { deletedActuals: deleted.map(a => ({ ...a })) } });
+        afterBulkChange(`${deleted.length} 件の実績を削除しました`);
+    });
 }
 
 function renderCopyPreview() {
     const targets = getSelectedActuals();
     const date = $('bulkActualCopyDate').value;
     const ok = isValidDateString(date);
-    const list = targets.slice(0, 4).map(a => `<span class="bk-diff-date">${escapeHtml(a.date)} → <b>${escapeHtml(date || '?')}</b></span><span>${escapeHtml(a.member)} ${escapeHtml(a.task)} ${escapeHtml(a.process || '—')} ${formatHours(a.hours)}h</span>`).join('');
-    $('bulkActualCopyPreview').innerHTML = `<div class="bk-preview"><div class="bk-preview-title">複製プレビュー<span class="bk-muted">${targets.length} 件を新規追加（元は残す）</span></div><div class="bk-diff">${list}</div>${targets.length > 4 ? `<p class="bk-muted">他 ${targets.length - 4} 件</p>` : ''}${ok ? '' : '<p class="bk-warn">⚠ 複製先の日付を入力してください。</p>'}</div>`;
+    const list = targets.slice(0, BULK_EDIT.COPY_PREVIEW_ROWS).map(a => `<span class="bk-diff-date">${escapeHtml(a.date)} → <b>${escapeHtml(date || '?')}</b></span><span>${escapeHtml(a.member)} ${escapeHtml(a.task)} ${escapeHtml(a.process || '—')} ${formatHours(a.hours)}h</span>`).join('');
+    $('bulkActualCopyPreview').innerHTML = `<div class="bk-preview"><div class="bk-preview-title">複製プレビュー<span class="bk-muted">${targets.length} 件を新規追加（元は残す）</span></div><div class="bk-diff">${list}</div>${targets.length > BULK_EDIT.COPY_PREVIEW_ROWS ? `<p class="bk-muted">他 ${targets.length - BULK_EDIT.COPY_PREVIEW_ROWS} 件</p>` : ''}${ok ? '' : '<p class="bk-warn">⚠ 複製先の日付を入力してください。</p>'}</div>`;
     $('btnBulkActualCopyApply').disabled = !ok;
     $('btnBulkActualCopyApply').textContent = `${targets.length} 件を複製`;
 }
 
+/** 選択中の実績を対象に「別日に複製」モーダルを開く */
 export function openBulkActualCopyModal() {
     const targets = getSelectedActuals();
     if (!targets.length) { showAlert('実績を選択してください', false); return; }
@@ -468,19 +504,23 @@ export function openBulkActualCopyModal() {
     $('bulkActualCopyModal').style.display = 'flex';
 }
 
+/** 複製モーダルを閉じる */
 export function closeBulkActualCopyModal() {
     $('bulkActualCopyModal').style.display = 'none';
 }
 
+/** 適用: エンジン → State → pushAction → 保存 → 再描画（別日に複製） */
 export function applyBulkActualCopy() {
     const targets = getSelectedActuals();
     const date = $('bulkActualCopyDate').value;
     if (!targets.length || !isValidDateString(date)) return;
     const { after, added } = duplicateActuals(actuals, targets.map(a => a.id), date, nextId);
-    setActuals(after);
-    pushAction({ type: 'actual_bulk_edit', description: `実績一括複製: ${added.length}件 → ${date}`, data: { afterActuals: added.map(a => ({ ...a })), addedActualIds: added.map(a => a.id) } });
-    afterBulkChange(`${added.length} 件の実績を ${date} に複製しました`);
-    closeBulkActualCopyModal();
+    runBulkChange(() => {
+        setActuals(after);
+        pushAction({ type: 'actual_bulk_edit', description: `実績一括複製: ${added.length}件 → ${date}`, data: { afterActuals: added.map(a => ({ ...a })), addedActualIds: added.map(a => a.id) } });
+        afterBulkChange(`${added.length} 件の実績を ${date} に複製しました`);
+        closeBulkActualCopyModal();
+    });
 }
 
 /** 複製モーダルの日付変更でプレビュー更新（initEventHandlers から呼ぶ） */
@@ -500,7 +540,7 @@ export function showUndoToast(message) {
     el.querySelector('.bk-undo').addEventListener('click', () => { el.remove(); undo(); });
     el.querySelector('.bk-x').addEventListener('click', () => el.remove());
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 8000);
+    setTimeout(() => el.remove(), BULK_EDIT.UNDO_TOAST_MS);
 }
 
 /** モーダルのイベント委譲を登録（initEventHandlers から 1 回呼ぶ） */

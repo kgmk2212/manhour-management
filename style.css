@@ -7680,6 +7680,7 @@ li.drop-below {
 
 .actual-tl-dp-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 24px;
     padding-top: 16px;
@@ -9013,7 +9014,7 @@ li.drop-below {
    設計: docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md
    ============================================ */
 .bk-table th.bk-th-check, .bk-table td.bk-th-check { width: 38px; text-align: center; padding-left: 10px; padding-right: 6px; }
-.bk-table tr[onclick] { cursor: pointer; }
+.bk-table tr[onclick] { cursor: pointer; user-select: none; }
 .bk-table tr.is-selected td { background: var(--accent-light); }
 .bk-table tr.is-hit td { background: var(--accent-secondary-light); }
 .bk-cb { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }

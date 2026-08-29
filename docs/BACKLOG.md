@@ -132,6 +132,8 @@
   - 結合バーのドラッグが先頭1件しか動かさない: `onBarMouseDown`（`js/actual-timeline.js:2282`）/`onBarTouchStart`（`:2319`）が
     `ids[0]`（`:2297,2333`）のみで対象を特定。一括変更エンジン（`js/actual-bulk-core.js` `applyBulkPatch` の日付シフト）で
     全 id を動かす形へ置き換える候補。設計書 `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md` §4.6
+  - smoke e2e（`tests/e2e/smoke.spec.js`）はタブ表示とコンソールエラー0のみを検査しており、バーのドラッグ／
+    ドラッグ作成／右ペイン D&D は未カバー。将来の smoke 追加候補
   - 昼またぎブロックがリサイズ不可＋同一 `data-actual-id` の DOM 二重（`:753-782`）
   - ドラッグ系の Esc キャンセルが全経路で無い
   - モバイル: リサイズハンドルが hover 依存で不可視（`style.css:6692,6705`）、タップ配置が旧横軸レイアウトの `DAILY_HOUR_WIDTH` で工数算出（`:969`）、見積0件メンバーはカード経路が使えない（`:819`）

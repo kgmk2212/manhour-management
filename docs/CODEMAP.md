@@ -4,15 +4,15 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 36 ファイル / 38,389 行
+## js/ — 36 ファイル / 38,463 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
 
-### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (514行)
-- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:104, isActualConditionOpen:155, getActualCondition:158, updateActualConditionHits:188, toggleActualConditionPopover:206, closeActualConditionPopover:215, applyActualCondition:226, initActualConditionEvents:234, openBulkActualEditModal:359, closeBulkActualEditModal:373, applyBulkActualEdit:407, deleteSelectedActuals:442, openBulkActualCopyModal:462, closeBulkActualCopyModal:471, applyBulkActualCopy:475, initBulkActualCopyEvents:487, showUndoToast:494, initBulkActualModalEvents:507
+### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (554行)
+- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:72, selectActualIds:83, deselectActualIds:93, getSelectedActuals:99, updateActualSelectionUI:109, isActualConditionOpen:164, getActualCondition:167, updateActualConditionHits:197, toggleActualConditionPopover:216, closeActualConditionPopover:226, applyActualCondition:237, initActualConditionEvents:245, openBulkActualEditModal:374, closeBulkActualEditModal:389, applyBulkActualEdit:438, deleteSelectedActuals:475, openBulkActualCopyModal:498, closeBulkActualCopyModal:508, applyBulkActualCopy:513, initBulkActualCopyEvents:527, showUndoToast:534, initBulkActualModalEvents:547
 
-### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3335行)
+### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3358行)
 - export: initActualTimeline:95, renderActualTimeline:144
 
 ### js/actual.js — 実績管理モジュール (actual.js) (1984行)
@@ -21,8 +21,8 @@
 ### js/ai-analysis.js — AI 分析セクション (941行)
 - export: loadHistory:75, appendHistory:110, initAiAnalysis:133
 
-### js/constants.js — アプリケーション定数定義 (668行)
-- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:202, VALIDATION:250, ERROR_MESSAGES:269, SUCCESS_MESSAGES:283, PROCESS:294, SCHEDULE:320, CAPACITY_DISPLAY_MODE:379, TASK_COLORS:387, THEME_TASK_COLORS:416
+### js/constants.js — アプリケーション定数定義 (679行)
+- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:202, VALIDATION:250, ERROR_MESSAGES:269, SUCCESS_MESSAGES:283, PROCESS:294, BULK_EDIT:319, SCHEDULE:331, CAPACITY_DISPLAY_MODE:390, TASK_COLORS:398, THEME_TASK_COLORS:427
 
 ### js/estimate-add.js — 見積追加関連機能 (1623行)
 - export: openAddEstimateModal:23, openAddEstimateSingleProcess:46, openEditAllProcesses:134, closeAddEstimateModal:657, resetAddEstimateForm:698, switchEstimateMode:750, getCurrentEstimateMode:779, initOtherWorkMemberSelect:786, autoFillMember:813, initAddEstimateForm:844, updateAddEstWorkMonthUI:895, switchAddEstMonthType:928, updateAddEstimateTableHeader:965, updateDefaultAddProcessMonths:1061, ensureExtraRowMonthCell:1147, refreshAllExtraRowMonthCells:1195, updateAddEstimateTotals:1262, addEstimateMemberRow:1291, removeEstimateMemberRow:1331, removeAllExtraMemberRows:1342, collectAllEstimateEntries:1352, addEstimateFromModal:1378, addEstimateFromModalNormal:1522
@@ -123,4 +123,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9106行
+- style.css — 9107行
