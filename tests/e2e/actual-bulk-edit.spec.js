@@ -167,3 +167,44 @@ test("一括削除は確認あり、複製は指定日に新規追加。どち�
   await page.locator("#btnBulkActualDelete").click();
   expect((await readActuals(page)).find((a) => a.id === 103)).toBeTruthy();
 });
+
+test("条件で選択: 担当・版数・対応名で該当 5 件、ハイライトと件数、選択に追加", async ({ page }) => {
+  await page.locator("#btnActualSelectionMode").click();
+  await page.locator("#btnBulkActualCondition").click();
+  await expect(page.locator("#actualConditionPopover")).toBeVisible();
+  await expect(page.locator("#btnActualConditionAdd")).toBeEnabled(); // 条件なし = 全件該当
+
+  await page.selectOption("#actualCondMember", "田中");
+  await page.selectOption("#actualCondVersion", "V2.3");
+  await page.selectOption("#actualCondTask", "帳票A出力改修");
+  await expect(page.locator("#actualCondHits")).toContainText("5");
+  await expect(page.locator("#actualCondHits")).toContainText("37.0h");
+  expect(await page.locator("tr.is-hit").count()).toBe(5);
+
+  await page.locator("#btnActualConditionAdd").click();
+  await expect(page.locator("#actualConditionPopover")).toBeHidden();
+  await expect(page.locator("#actualSelectionCount")).toContainText("5 件");
+  expect(await page.locator("tr.is-hit").count()).toBe(0);
+
+  // 「この条件だけを選択」は置き換え（102 = 打ち合わせ。その他工数なので version は空）
+  await page.locator('tr[data-actual-id="102"] td:nth-child(3)').click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("6 件");
+  await page.locator("#btnBulkActualCondition").click();
+  await page.selectOption("#actualCondVersion", "__none__");
+  await page.selectOption("#actualCondTask", "");
+  await expect(page.locator("#actualCondHits")).toContainText("1");
+  await page.locator("#btnActualConditionReplace").click();
+  await expect(page.locator("#actualSelectionCount")).toContainText("1 件");
+
+  // 表示フィルタ外の該当は注記される
+  // #actualViewMode/#actualMemberSelect はコンパクト版レイアウト（既定は segmented のため非表示）に
+  // ぶら下がっており selectOption が使えないため、実際にユーザーが操作する segmented 側の
+  // <select id="actualViewMode2">（表示・変更イベントは js/events.js が #actualViewMode に同期）と
+  // window に公開済みの handleActualMemberChange を使う（Task 3 の setActualViewType 経由と同じ方針）。
+  await page.selectOption("#actualViewMode2", "member");
+  await page.evaluate(() => window.handleActualMemberChange("佐藤", "actualMemberButtons2"));
+  await page.locator("#btnBulkActualCondition").click();
+  await page.selectOption("#actualCondVersion", "V2.3");
+  await page.selectOption("#actualCondMember", "田中");
+  await expect(page.locator("#actualCondHits")).toContainText("表示外");
+});

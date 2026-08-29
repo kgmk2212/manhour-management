@@ -4,13 +4,13 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 36 ファイル / 38,160 行
+## js/ — 36 ファイル / 38,240 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
 
-### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (422行)
-- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, closeActualConditionPopover:146, openBulkActualEditModal:267, closeBulkActualEditModal:281, applyBulkActualEdit:315, deleteSelectedActuals:350, openBulkActualCopyModal:370, closeBulkActualCopyModal:379, applyBulkActualCopy:383, initBulkActualCopyEvents:395, showUndoToast:402, initBulkActualModalEvents:415
+### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (497行)
+- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:71, selectActualIds:82, deselectActualIds:88, getSelectedActuals:94, updateActualSelectionUI:99, isActualConditionOpen:150, getActualCondition:153, updateActualConditionHits:174, toggleActualConditionPopover:192, closeActualConditionPopover:201, applyActualCondition:212, initActualConditionEvents:220, openBulkActualEditModal:342, closeBulkActualEditModal:356, applyBulkActualEdit:390, deleteSelectedActuals:425, openBulkActualCopyModal:445, closeBulkActualCopyModal:454, applyBulkActualCopy:458, initBulkActualCopyEvents:470, showUndoToast:477, initBulkActualModalEvents:490
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3203行)
 - export: initActualTimeline:94, renderActualTimeline:143
@@ -39,7 +39,7 @@
 ### js/estimate.js — 見積管理モジュール (estimate.js) (2369行)
 - export: getWorkingDays:39, getCurrentMonthWorkingDays:115, formatNumber:123, isOtherWork:131, calculateDefaultWorkMonths:144, saveRemainingEstimate:179, getRemainingEstimate:225, deleteRemainingEstimate:241, cleanupOrphanedRemainingEstimates:268, repairRemainingEstimateConsistency:312, migrateRemainingEstimatesToTaskLevel:350, renderEstimateList:651, renderEstimateGrouped:721, renderEstimateMatrix:1014, renderEstimateDetailList:1238, deleteEstimate:1305, deleteTask:1365, updateWorkMonthOptions:1429, showEstimateDetail:1476, showTaskDetail:1625, addProcessFromTaskModal:1791, deleteEstimateFromTaskModal:1801, deleteTaskFromModal:1818, editTaskFromTaskModal:1826, openEditAllProcessesFromTaskModal:1836, showOtherWorkTaskDetail:1848, closeEstimateDetailModal:1958, editEstimateFromModal:1966, deleteEstimateFromModal:1984, sortTaskKeysByOrder:2002, updateTaskSortOrder:2023, initEstimateDragAndDrop:2046
 
-### js/events.js — イベントハンドラ一括登録 (795行)
+### js/events.js — イベントハンドラ一括登録 (800行)
 - export: initEventHandlers:107
 
 ### js/excel-import.js — Excel ファイルから見積・実績を追加読み込みする機能 (355行)

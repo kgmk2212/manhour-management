@@ -122,6 +122,11 @@ export function initEventHandlers() {
     bind('btnCloseBulkActualCopyModal', ActualBulk.closeBulkActualCopyModal);
     bind('btnBulkActualCopyApply', ActualBulk.applyBulkActualCopy);
     ActualBulk.initBulkActualCopyEvents();
+    bind('btnBulkActualCondition', ActualBulk.toggleActualConditionPopover);
+    bind('btnActualConditionClose', ActualBulk.closeActualConditionPopover);
+    bind('btnActualConditionAdd', () => ActualBulk.applyActualCondition('add'));
+    bind('btnActualConditionReplace', () => ActualBulk.applyActualCondition('replace'));
+    ActualBulk.initActualConditionEvents();
     const exportBtn = document.getElementById('btnExportBackup');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBackup);

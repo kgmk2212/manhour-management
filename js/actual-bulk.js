@@ -11,7 +11,7 @@ import {
 import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
 import { PROCESS } from './constants.js';
 import { pushAction, undo } from './history.js';
-import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString } from './actual-bulk-core.js';
+import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString, findByCondition } from './actual-bulk-core.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -137,16 +137,91 @@ export function updateActualSelectionUI() {
         const ids = bar.dataset.actualIds.split(',').map(Number);
         bar.classList.toggle('selected', ids.length > 0 && ids.every(x => selectedActualIds.has(x)));
     });
+
+    if (condOpen) updateActualConditionHits();
 }
 
 // ============================================
-// 条件で選択（Task 6 で実装。ここでは閉じる関数のみ）
+// 条件で選択（ポップオーバー）
 // ============================================
 
+let condOpen = false;
+
+export const isActualConditionOpen = () => condOpen;
+
+/** 現在の条件（DOM から読む） */
+export function getActualCondition() {
+    return {
+        from: $('actualCondFrom')?.value || '', to: $('actualCondTo')?.value || '',
+        member: $('actualCondMember')?.value || '', version: $('actualCondVersion')?.value || '',
+        task: $('actualCondTask')?.value || '', process: $('actualCondProcess')?.value || '',
+    };
+}
+
+function fillConditionOptions() {
+    const keep = (sel) => sel.value;
+    const m = $('actualCondMember'); const mv = keep(m);
+    m.innerHTML = `<option value="">指定なし</option>${opt(memberOptions(), mv)}`;
+    const v = $('actualCondVersion'); const vv = keep(v);
+    v.innerHTML = `<option value="">指定なし</option><option value="__none__" ${vv === '__none__' ? 'selected' : ''}>（なし = その他工数）</option>${opt(versionOptions(), vv)}`;
+    const t = $('actualCondTask'); const tv = keep(t);
+    t.innerHTML = `<option value="">指定なし</option>${opt(taskOptions(null), tv)}`;
+    const p = $('actualCondProcess'); const pv = keep(p);
+    p.innerHTML = `<option value="">指定なし</option>${opt(PROCESS.TYPES, pv)}`;
+}
+
+/** 該当件数・合計・表示外注記・一覧ハイライトを更新 */
+export function updateActualConditionHits() {
+    if (!condOpen) return;
+    const hits = findByCondition(actuals, getActualCondition());
+    const visible = new Set(visibleRowIds());
+    const hidden = visible.size ? hits.filter(a => !visible.has(a.id)).length : 0;
+    const box = $('actualCondHits');
+    box.classList.toggle('is-zero', hits.length === 0);
+    box.innerHTML = `該当<b>${hits.length}</b>件${hits.length ? ` · ${formatHours(hits.reduce((s, a) => s + a.hours, 0))}h` : ' — 条件を広げてください'}${hidden ? `<span class="bk-pop-note">表示外 ${hidden} 件を含む</span>` : ''}`;
+    $('btnActualConditionAdd').disabled = hits.length === 0;
+    $('btnActualConditionReplace').disabled = hits.length === 0;
+    const hitIds = new Set(hits.map(a => a.id));
+    document.querySelectorAll('#actualList tr[data-actual-id]').forEach(tr => tr.classList.toggle('is-hit', hitIds.has(Number(tr.dataset.actualId))));
+    document.querySelectorAll('.actual-tl-bar.actual[data-actual-ids]').forEach(bar => {
+        const ids = bar.dataset.actualIds.split(',').map(Number);
+        bar.classList.toggle('is-hit', ids.every(x => hitIds.has(x)));
+    });
+}
+
+export function toggleActualConditionPopover() {
+    if (condOpen) { closeActualConditionPopover(); return; }
+    condOpen = true;
+    fillConditionOptions();
+    $('actualConditionPopover').style.display = 'block';
+    $('btnBulkActualCondition').classList.add('is-on');
+    updateActualConditionHits();
+}
+
 export function closeActualConditionPopover() {
-    const pop = $('actualConditionPopover');
-    if (pop) pop.style.display = 'none';
+    condOpen = false;
+    const pop = $('actualConditionPopover'); if (pop) pop.style.display = 'none';
     const b = $('btnBulkActualCondition'); if (b) b.classList.remove('is-on');
+    document.querySelectorAll('#actualList tr.is-hit, .actual-tl-bar.is-hit').forEach(el => el.classList.remove('is-hit'));
+}
+
+/**
+ * 条件に合う実績を選択へ
+ * @param {'add'|'replace'} mode add=和集合、replace=置き換え
+ */
+export function applyActualCondition(mode) {
+    const hits = findByCondition(actuals, getActualCondition());
+    if (!hits.length) return;
+    selectActualIds(hits.map(a => a.id), { replace: mode === 'replace' });
+    closeActualConditionPopover();
+}
+
+/** 条件入力のイベント登録（initEventHandlers から呼ぶ） */
+export function initActualConditionEvents() {
+    ['actualCondFrom', 'actualCondTo', 'actualCondMember', 'actualCondVersion', 'actualCondTask', 'actualCondProcess'].forEach(id => {
+        const el = $(id); if (el) { el.addEventListener('change', updateActualConditionHits); el.addEventListener('input', updateActualConditionHits); }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && condOpen) closeActualConditionPopover(); });
 }
 
 // ============================================
