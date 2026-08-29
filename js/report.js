@@ -1779,34 +1779,18 @@ function renderPhase3MemberAnalysis(filteredEstimates, filteredActuals, workingD
 }
 
 /**
- * 見積の自動分割（按分）: 見積タスクと同一キー(version/task/process)の
- * 他メンバー実績分を見積から差し引き、実績者側の見積として付け替える。
- * 付け替え合計は元見積(hours)を超えない（超過時は実績比例で圧縮）ため、
- * 按分後の合計は常に元見積と一致する（見積一覧タブの合計と整合）。
- * @param {Object} estimate - 見積オブジェクト（hours はフィルタ済みの計上値）
- * @param {Array} filteredActuals - フィルタ済み実績配列
- * @returns {Array<{member: string, hours: number}>} 担当者ごとの按分内訳
+ * 担当者別の見積合計: 各見積の hours を登録された担当者にそのまま加算する。
+ * 複数人で担当するタスクは担当者ごとに見積レコードがあるため、他担当者の
+ * 実績による按分・付け替えは行わない（見積一覧タブの「担当者別合計」と同じ計上）。
+ * @param {Array} filteredEstimates - フィルタ済み見積配列（hours はフィルタ済みの計上値）
+ * @returns {Object<string, number>} 担当者名 → 見積工数
  */
-export function computeEstimateShares(estimate, filteredActuals) {
-    const otherMembersHours = {};
-    let otherSum = 0;
-
-    filteredActuals.forEach(a => {
-        if (a.version === estimate.version &&
-            a.task === estimate.task &&
-            a.process === estimate.process &&
-            a.member !== estimate.member) {
-            otherSum += a.hours;
-            otherMembersHours[a.member] = (otherMembersHours[a.member] || 0) + a.hours;
-        }
+export function sumEstimateHoursByMember(filteredEstimates) {
+    const totals = {};
+    filteredEstimates.forEach(e => {
+        totals[e.member] = (totals[e.member] || 0) + e.hours;
     });
-
-    const transferable = Math.min(otherSum, estimate.hours);
-    const shares = [{ member: estimate.member, hours: estimate.hours - transferable }];
-    Object.entries(otherMembersHours).forEach(([member, hours]) => {
-        shares.push({ member, hours: otherSum > 0 ? (hours / otherSum) * transferable : 0 });
-    });
-    return shares;
+    return totals;
 }
 
 /**
@@ -1825,15 +1809,16 @@ function renderMemberPerformance(filteredEstimates, filteredActuals, workingDays
         memberTasks[member] = new Set();
     });
 
+    // 見積は登録された担当者にそのまま計上する（他担当者の実績による按分はしない）
+    Object.entries(sumEstimateHoursByMember(filteredEstimates)).forEach(([member, hours]) => {
+        if (!memberSummary[member]) {
+            memberSummary[member] = { estimate: 0, actual: 0 };
+            memberTasks[member] = new Set();
+        }
+        memberSummary[member].estimate += hours;
+    });
     filteredEstimates.forEach(estimate => {
-        computeEstimateShares(estimate, filteredActuals).forEach(({ member, hours }) => {
-            if (!memberSummary[member]) {
-                memberSummary[member] = { estimate: 0, actual: 0 };
-                memberTasks[member] = new Set();
-            }
-            memberSummary[member].estimate += hours;
-            memberTasks[member].add(`${estimate.version}-${estimate.task}`);
-        });
+        memberTasks[estimate.member].add(`${estimate.version}-${estimate.task}`);
     });
 
     filteredActuals.forEach(a => {
@@ -2043,17 +2028,8 @@ export function renderMemberReport(filteredActuals, filteredEstimates) {
         return;
     }
 
-    // 自動分割ロジック（按分は computeEstimateShares に共通化・合計保存）
-    const adjustedEstimates = {};
-    members.forEach(member => {
-        adjustedEstimates[member] = 0;
-    });
-
-    filteredEstimates.forEach(estimate => {
-        computeEstimateShares(estimate, filteredActuals).forEach(({ member, hours }) => {
-            adjustedEstimates[member] = (adjustedEstimates[member] || 0) + hours;
-        });
-    });
+    // 見積は登録された担当者にそのまま計上する（他担当者の実績による按分はしない）
+    const adjustedEstimates = sumEstimateHoursByMember(filteredEstimates);
 
     const isMobile = window.innerWidth <= 768;
     const headers = isMobile

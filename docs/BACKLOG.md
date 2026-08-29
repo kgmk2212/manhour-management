@@ -150,7 +150,7 @@
 - [B-038] [確認済] `loadData`（`js/storage.js:158-193`）が全キーを 1 つの try で囲むため、1 キーの JSON 破損で残りが未読込のまま
   `applyTheme→saveData(true)`（`js/theme.js:230`）が無傷のキーを `[]`/`{}` で上書き。キー毎 try/catch（`safeGetLocalStorage` あり）＋ロード失敗時は保存抑止
 - [B-039] [確認済] レポート集計の粒度混在: ①マトリクスの色・進捗（`js/report.js:2482-2501, 2599-2625, 2657-2665`）が月フィルタ時に月按分の
-  見積・実績と全期間の見込残存を混ぜて判定 ②見積自動按分 `computeEstimateShares`（:1794-1802）が isReview を見ずレビュー実績が本作業見積を引き抜く
+  見積・実績と全期間の見込残存を混ぜて判定 ②（2026-08-29 解決済み: 見積の自動按分 `computeEstimateShares` 自体を撤去し、担当者分析の見積は登録担当者にそのまま計上する方式へ変更。見積一覧の担当者別合計と一致）
   ③分析タブの版数別テーブル・精度推移（`js/report-analytics.js:155-163, 191-201`）が月フィルタを無視（隣の担当者別は反映）
 - [B-040] [確認済] スケジュール: ①遅延判定の二重実装で数え方が不一致（`js/schedule.js:508-513` 終了日超過のみ vs `js/schedule-render.js:1357-1385`
   80% 未満も遅延）②`expandRangeForSchedules`（`schedule-render.js:374-391`）が `new Date('YYYY-MM-DD')` UTC 解釈で最終日終了の予定を範囲外と誤判定し
