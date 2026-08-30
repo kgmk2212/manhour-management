@@ -7599,6 +7599,7 @@ li.drop-below {
     right: -360px;
     width: 360px;
     height: 100vh;
+    height: 100dvh; /* iOS Safari: ツールバー表示中も実際の表示領域に収める（未対応環境は上の 100vh） */
     background: var(--surface);
     border-left: 1px solid var(--border);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
@@ -7649,6 +7650,7 @@ li.drop-below {
 .actual-tl-dp-body {
     padding: 18px;
     flex: 1;
+    min-height: 0; /* flex アイテムの min-height:auto を解除しないと中身の高さまで伸びてスクロールしない */
     overflow-y: auto;
 }
 
@@ -8134,6 +8136,13 @@ li.drop-below {
     .actual-tl-detail-panel {
         width: 100%;
         right: -100%;
+    }
+
+    /* 詳細パネルは固定タブ Dock（z-index 150 > パネル 100）の上までに収め、Dock の下に操作ボタンが隠れないようにする。
+       --bulk-dock-offset は js/actual-bulk.js が Dock の実高さ（safe-area 込み）を設定する */
+    .actual-tl-detail-panel {
+        height: calc(100vh - var(--bulk-dock-offset, 0px));
+        height: calc(100dvh - var(--bulk-dock-offset, 0px));
     }
 
     .actual-tl-dp-header {
@@ -9083,6 +9092,16 @@ li.drop-below {
 .bk-warn { color: var(--danger); font-size: calc(13.5px * var(--ui-scale)); margin-top: 8px; font-weight: 600; }
 
 /* 適用後のトースト（元に戻す付き） */
+/* 一括編集／複製モーダル: 本文が長くても決定ボタン（フッター）が常に画面内に残るよう、
+   モーダル全体を表示領域（dvh。iOS のツールバー分も反映）− 上余白 − Dock に束ね、本文だけをスクロールさせる */
+#bulkActualEditModal .modal-content, #bulkActualCopyModal .modal-content {
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 24px - var(--bulk-dock-offset, 0px));
+    max-height: calc(100dvh - 24px - var(--bulk-dock-offset, 0px));
+}
+#bulkActualEditModal .modal-body, #bulkActualCopyModal .modal-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+#bulkActualEditModal .modal-footer, #bulkActualCopyModal .modal-footer { flex: 0 0 auto; }
+
 .bk-undo-toast {
     position: fixed; left: 50%; bottom: calc(24px + var(--bulk-dock-offset, 0px)); transform: translateX(-50%); z-index: 10001;
     background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);

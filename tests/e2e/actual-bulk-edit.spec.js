@@ -344,3 +344,72 @@ test.describe("モバイル幅（短い画面）: 下部タブ Dock と重なら
     expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(dockBox2.y + 0.5);
   });
 });
+
+// iPhone 報告: タイムラインのバー → 詳細パネル → 一括編集 の経路で、詳細パネル下部のボタンと
+// 一括編集モーダルのフッター（決定ボタン）が Dock の下・画面外に出て操作できない。
+// 390×664（iPhone の Safari 表示領域相当）で、各段の操作対象が「Dock の上・画面内・最前面」であることを機械判定する。
+test.describe("モバイル幅（iPhone 相当）: タイムライン→詳細パネル→一括編集", () => {
+  test.use({ viewport: { width: 390, height: 664 }, hasTouch: true });
+
+  /** 要素の中心が画面内・Dock の上にあり、最前面（タップが届く）であること */
+  async function expectTappable(page, locator, dock) {
+    await locator.scrollIntoViewIfNeeded();
+    const box = await locator.boundingBox();
+    const dockBox = await dock.boundingBox();
+    const vh = page.viewportSize().height;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(Math.min(vh, dockBox.y) + 0.5);
+    const hit = await locator.evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+      return t === el || el.contains(t);
+    });
+    expect(hit).toBe(true);
+  }
+
+  test("バーのタップで詳細パネルは 1 枚だけ開き、一括編集ボタンと決定ボタンに指が届く", async ({ page }) => {
+    const dock = page.locator("#mobileTabBar");
+    await page.evaluate(() => window.setActualViewType("timeline"));
+    const bar = page.locator(`.actual-tl-bar.actual[data-actual-ids="${TARGET_IDS.join(",")}"]`);
+    await bar.waitFor();
+    await bar.tap();
+    await page.waitForTimeout(400); // 二重発火があれば 2 枚目が出る猶予
+    await expect(page.locator("#atlDetailPanel")).toHaveCount(1);
+
+    const bulkBtn = page.locator("#atlDpBulkEdit");
+    await expectTappable(page, bulkBtn, dock);
+    await bulkBtn.tap();
+    await expect(page.locator("#atlDetailPanel")).toHaveCount(0);
+
+    const modal = page.locator("#bulkActualEditModal");
+    await expect(modal).toBeVisible();
+    await page.waitForTimeout(400); // 開閉アニメーション（slideIn 0.3s）の完了を待ってから測る
+    const header = await page.locator("#bulkActualEditModal .modal-header").boundingBox();
+    expect(header.y).toBeGreaterThanOrEqual(0);
+    const apply = page.locator("#btnBulkActualApply");
+    await expectTappable(page, apply, dock);
+    // 本文はスクロールして最後の項目（日付）に届く
+    const body = page.locator("#bulkActualEditModal .modal-body");
+    await page.locator('.bk-field[data-field="date"]').scrollIntoViewIfNeeded();
+    expect(await body.evaluate((el) => el.scrollHeight <= el.clientHeight || el.scrollTop > 0)).toBe(true);
+  });
+});
+
+test.describe("モバイル幅（さらに低い画面 390×560）: 一括編集モーダルの決定ボタンに届く", () => {
+  test.use({ viewport: { width: 390, height: 560 }, hasTouch: true });
+  test("フッターが画面内に収まり本文だけがスクロールする", async ({ page }) => {
+    const dock = page.locator("#mobileTabBar");
+    await page.locator("#btnActualSelectionMode").click();
+    await page.locator('tr[data-actual-id="101"] td:nth-child(3)').tap();
+    await page.locator("#btnBulkActualEdit").click();
+    await expect(page.locator("#bulkActualEditModal")).toBeVisible();
+    await page.waitForTimeout(400); // 開閉アニメーション（slideIn 0.3s）の完了を待ってから測る
+    const apply = page.locator("#btnBulkActualApply");
+    const box = await apply.boundingBox();
+    const dockBox = await dock.boundingBox();
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(Math.min(560, dockBox.y) + 0.5);
+    const header = await page.locator("#bulkActualEditModal .modal-header").boundingBox();
+    expect(header.y).toBeGreaterThanOrEqual(0);
+  });
+});

@@ -2275,11 +2275,11 @@ function showGroupDetailPanel(ids) {
 }
 
 function closeDetailPanel() {
-    const panel = document.getElementById('atlDetailPanel');
-    if (panel) {
+    // 同 id のパネルが複数残っていても全て閉じる（タップの二重発火などで 2 枚開いた場合の取り残し防止）
+    document.querySelectorAll('#atlDetailPanel').forEach(panel => {
         panel.classList.remove('open');
         setTimeout(() => panel.remove(), 300);
-    }
+    });
 }
 
 // ============================================
@@ -2426,7 +2426,9 @@ function onBarTouchEnd(e) {
         const touch = e.changedTouches[0];
         finalizeBarDrop(touch.clientX, touch.clientY);
     } else if (barTouchState && !barTouchState.isLongPress) {
-        // タップ → クリックとして処理
+        // タップ → クリックとして処理。touchend 後にブラウザが合成する click でも onActualBarClick が
+        // 走り詳細パネルが二重に開くため、合成 click を抑止する
+        if (e.cancelable) e.preventDefault();
         onActualBarClick({ stopPropagation: () => {}, currentTarget: barTouchState.bar });
     }
 
