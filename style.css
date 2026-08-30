@@ -9021,7 +9021,9 @@ li.drop-below {
 .bk-muted { color: var(--text-muted); }
 #btnActualSelectionMode.is-on { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-.bk-dock { position: sticky; bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; pointer-events: none; z-index: 20; }
+/* --bulk-dock-offset: モバイルの固定タブ Dock（.mobile-tab-bar）の高さ。js/actual-bulk.js が実測して設定し、
+   選択バー／Undo トーストを Dock の上に出す（PC では 0px） */
+.bk-dock { position: sticky; bottom: calc(14px + var(--bulk-dock-offset, 0px)); display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; pointer-events: none; z-index: 20; }
 .bk-bar {
     pointer-events: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     background: var(--text-primary); color: #fff; padding: 10px 14px; border-radius: 12px;
@@ -9082,7 +9084,7 @@ li.drop-below {
 
 /* 適用後のトースト（元に戻す付き） */
 .bk-undo-toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10001;
+    position: fixed; left: 50%; bottom: calc(24px + var(--bulk-dock-offset, 0px)); transform: translateX(-50%); z-index: 10001;
     background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
     border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-md);
     display: flex; gap: 12px; align-items: center; font-size: calc(14.5px * var(--ui-scale));

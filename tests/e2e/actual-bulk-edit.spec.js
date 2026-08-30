@@ -308,3 +308,39 @@ test.describe("モバイル幅", () => {
     expect(await body.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true); // 横はみ出しなし
   });
 });
+
+// iPhone 報告: 内容がスクロールする長さのとき、sticky の選択バーが固定の下部タブ Dock（.mobile-tab-bar）の裏に入る。
+// 画面高さを短くしてスクロールを発生させ、選択バーとトーストが Dock の上端より上にあることを機械判定する
+test.describe("モバイル幅（短い画面）: 下部タブ Dock と重ならない", () => {
+  test.use({ viewport: { width: 390, height: 640 }, hasTouch: true });
+  test("選択バーとUndoトーストが Dock の上に出る", async ({ page }) => {
+    const dock = page.locator("#mobileTabBar");
+    await expect(dock).toBeVisible();
+    await page.locator("#btnActualSelectionMode").click();
+    await page.locator('tr[data-actual-id="101"] td:nth-child(3)').tap();
+    await expect(page.locator("#actualSelectionCount")).toContainText("1 件");
+
+    // 一覧を末尾近くまでスクロールし（Dock は下スクロールで隠れるので少し戻して再表示させる）、
+    // sticky のバーが表示中の Dock の上端より上に留まることを確認する
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.evaluate(() => window.scrollBy(0, -60));
+    await expect(dock).not.toHaveClass(/is-hidden/);
+    const tray = page.locator("#actualSelectionTray .bk-bar");
+    await expect(tray).toBeVisible();
+    const trayBox = await tray.boundingBox();
+    const dockBox = await dock.boundingBox();
+    expect(dockBox.y).toBeLessThan(640); // Dock が画面内に出ている前提を保証
+    expect(trayBox.y + trayBox.height).toBeLessThanOrEqual(dockBox.y + 0.5);
+
+    // 適用後の Undo トーストも Dock の上に出る
+    await page.locator("#btnBulkActualEdit").click();
+    await page.locator('.bk-field[data-field="version"] button[data-seg][data-v="set"]').click();
+    await page.locator('.bk-field[data-field="version"] select[data-val]').selectOption("V2.4");
+    await page.locator("#btnBulkActualApply").click();
+    const toast = page.locator(".bk-undo-toast");
+    await expect(toast).toBeVisible();
+    const toastBox = await toast.boundingBox();
+    const dockBox2 = await dock.boundingBox();
+    expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(dockBox2.y + 0.5);
+  });
+});

@@ -105,8 +105,25 @@ function barElementIds(el) {
     return (el.dataset.actualIds || el.dataset.actualId || '').split(',').filter(Boolean).map(Number);
 }
 
+/**
+ * モバイルの固定タブ Dock（#mobileTabBar）の高さを CSS 変数 --bulk-dock-offset に反映する。
+ * 選択バー（sticky）と Undo トースト（fixed）はビューポート下端基準で位置するため、
+ * Dock 表示中はその高さ分（safe-area 込み = offsetHeight）を bottom に足して重なりを避ける。
+ */
+function syncBulkDockOffset() {
+    const dock = $('mobileTabBar');
+    const shown = !!dock && getComputedStyle(dock).display !== 'none';
+    document.documentElement.style.setProperty('--bulk-dock-offset', shown ? `${dock.offsetHeight}px` : '0px');
+}
+let dockOffsetResizeBound = false;
+
 /** 選択バー・一覧の行・タイムラインのバーの見た目を状態に合わせる（再描画はしない） */
 export function updateActualSelectionUI() {
+    syncBulkDockOffset();
+    if (!dockOffsetResizeBound) {
+        dockOffsetResizeBound = true;
+        window.addEventListener('resize', syncBulkDockOffset);
+    }
     const viewType = $('actualViewType')?.value;
     const selected = getSelectedActuals();
     const n = selected.length;
