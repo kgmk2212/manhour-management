@@ -36,6 +36,7 @@ import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
 import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { loadHistory } from './history.js';
+import { logBackupEvent } from './viewport-diag.js';
 
 // ============================================
 // 自動バックアップ設定
@@ -454,10 +455,13 @@ export function autoBackup() {
 
 export function exportBackup() {
     autoBackup();
+    // 実機（iPhone）で Dock がずれる現象の証拠採取（js/viewport-diag.js）
+    logBackupEvent('export');
     showAlert('バックアップを作成しました', true);
 }
 
 export function importBackup() {
+    logBackupEvent('import');
     document.getElementById('fileInput').click();
 }
 

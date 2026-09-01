@@ -28,6 +28,7 @@ import * as ActualBulk from './actual-bulk.js';
 import { initReportAnalytics } from './report-analytics.js';
 import { initAiAnalysis } from './ai-analysis.js';
 import { initHoursInputSetting } from './hours-input.js';
+import { initViewportDiag, openViewportDiagPanel, repairDockPosition, resetDockPosition } from './viewport-diag.js';
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -96,6 +97,11 @@ window.autoBackup = Storage.autoBackup;
 window.exportBackup = Storage.exportBackup;
 window.importBackup = Storage.importBackup;
 window.handleFileImport = Storage.handleFileImport;
+
+// viewport-diag.js の関数（実機での表示ずれ診断。原因特定後に撤去）
+window.openViewportDiagPanel = openViewportDiagPanel;
+window.repairDockPosition = repairDockPosition;
+window.resetDockPosition = resetDockPosition;
 
 // ui.js の関数
 window.showTab = UI.showTab;
@@ -619,6 +625,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // スマートStickyタブ（スクロール連動表示）を初期化
     if (typeof UI.initSmartSticky === 'function') {
         UI.initSmartSticky();
+    }
+
+    // ビューポート診断（実機での固定要素ずれの証拠採取。原因特定後に撤去）
+    initViewportDiag();
+    const btnOpenViewportDiag = document.getElementById('btnOpenViewportDiag');
+    if (btnOpenViewportDiag) {
+        btnOpenViewportDiag.addEventListener('click', openViewportDiagPanel);
     }
 
     // スマートStickyフィルタバーはindex.htmlのインラインスクリプトで初期化

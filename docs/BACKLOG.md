@@ -9,7 +9,7 @@
 > **登録規律（2026-08-20〜）**: ①項目を追加する前に、既存項目（解決済みの括弧書き記録を含む）から
 > 同根のものを検索し、あれば新規追加せず既存項目へ統合する ②原因は可能な限り file:line で特定して書く
 > ③何かを修正したら、同じ修正で解消される他項目が無いか台帳を見て一緒に閉じる
-> ④各項目には通し番号 `[B-nnn]` を付け、番号は再利用しない（**次番号: B-045**）。
+> ④各項目には通し番号 `[B-nnn]` を付け、番号は再利用しない（**次番号: B-046**）。
 > claims 層（/start-work の着手宣言）はこの ID を参照する。
 
 ## P1（バグ・実害あり）
@@ -99,6 +99,15 @@
 - [B-037] [確認済] 見積の表示形式をグループ以外へ切替えると作業月割り当てモードの state が残る: `setEstimateViewType`（`js/ui.js:1663-1669`）が
   チェック OFF・パネル非表示だけで `setWorkMonthSelectionMode(false)`／`selectedEstimateIds.clear()` を呼ばず、グループ表示に戻ると
   工程セルの onclick が `toggleEstimateSelection` のままで詳細が開けない
+- [B-045] [報告・原因未特定] iPhone（ホーム画面から起動）で **JSON バックアップ完了後に下部 Dock（`#mobileTabBar`）が大きく上にずれ、
+  リロードするまで戻らない**（毎回ではない）。Chromium・WebKit のモバイル幅エミュレーション（390×664、6タブ×スクロール有無＋WebKit 側 3タブ、
+  計15パターン）では Dock は `gap=0` のまま再現せず、`.mobile-tab-bar` は `position:fixed;bottom:0`（`style.css:435`）で祖先に
+  containing block を作る transform も無い（実測）。iOS のレイアウト／視覚ビューポート不一致の疑いが濃いが未確定のため、
+  実機で証拠を採る計測を `js/viewport-diag.js` として投入済み（設定→詳細→「表示診断ログ」／モバイルヘッダのタイトル長押しで開く。
+  `logBackupEvent` を `js/storage.js` の exportBackup／importBackup から呼び、バックアップ直後 +400/1200/3000/8000ms の状態も記録）。
+  パネルの「Dockを下端へ補正」で、ずれが getBoundingClientRect で観測できる種類（＝補正可能）か、描画のみのずれかを切り分けられる。
+  **原因が判明したら修正と同時にこの計測コードを撤去する**（`js/viewport-diag.js`・`index.html` の `btnOpenViewportDiag`・
+  `js/init.js` の初期化・`js/storage.js` の `logBackupEvent` 呼び出し）
 
 ## P2（使いにくさ・不整合）
 
