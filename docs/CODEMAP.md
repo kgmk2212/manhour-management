@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 37 ファイル / 38,930 行
+## js/ — 39 ファイル / 39,435 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -35,6 +35,12 @@
 
 ### js/estimate-split.js — 見積分割・フォーム関連機能 (387行)
 - export: openSplitEstimateModal:26, closeSplitEstimateModal:70, updateSplitPreview:77, updateSplitManualTotal:152, executeSplitEstimate:188, clearEstimateForm:260, toggleMonthSplit:279, updateMonthPreview:300, updateManualTotal:354
+
+### js/estimate-work-months-core.js — 見積の作業月 UI（4 方式切替）— 純関数 (118行)
+- export: MODES:8, DEFAULT_MODE:11, resolveMode:19, monthRange:31, shiftMonth:50, clampMonths:64, serializeMonths:78, parseMonths:87, isEvenSplit:99, buildPayload:112
+
+### js/estimate-work-months.js — 見積の作業月 UI（4 方式切替）— 共通コントローラ (387行)
+- export: registerRenderer:27, getWorkMonthUiMode:36, setWorkMonthUiMode:44, isActive:49, initWorkMonthUiSetting:56, fmtMonth:90, buildCellFrame:178, forceMultiRadio:238, setupTable:259, applyDefaults:319, onRowAdded:330, setRowMonths:343, readRow:366, reset:381
 
 ### js/estimate.js — 見積管理モジュール (estimate.js) (2369行)
 - export: getWorkingDays:39, getCurrentMonthWorkingDays:115, formatNumber:123, isOtherWork:131, calculateDefaultWorkMonths:144, saveRemainingEstimate:179, getRemainingEstimate:225, deleteRemainingEstimate:241, cleanupOrphanedRemainingEstimates:268, repairRemainingEstimateConsistency:312, migrateRemainingEstimatesToTaskLevel:350, renderEstimateList:651, renderEstimateGrouped:721, renderEstimateMatrix:1014, renderEstimateDetailList:1238, deleteEstimate:1305, deleteTask:1365, updateWorkMonthOptions:1429, showEstimateDetail:1476, showTaskDetail:1625, addProcessFromTaskModal:1791, deleteEstimateFromTaskModal:1801, deleteTaskFromModal:1818, editTaskFromTaskModal:1826, openEditAllProcessesFromTaskModal:1836, showOtherWorkTaskDetail:1848, closeEstimateDetailModal:1958, editEstimateFromModal:1966, deleteEstimateFromModal:1984, sortTaskKeysByOrder:2002, updateTaskSortOrder:2023, initEstimateDragAndDrop:2046
