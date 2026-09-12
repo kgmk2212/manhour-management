@@ -851,6 +851,9 @@ export function initAddEstimateForm() {
     // 担当者オプションを生成（updateMemberOptionsで全てのセレクトが更新される）
     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
 
+    // 工程表の作業月セル（開始月↔終了月）の追従ハンドラ
+    bindRowMonthFollow();
+
     // 作業月セレクトボックスの初期化
     Utils.generateMonthOptions('addEstStartMonth', currentMonth);
     Utils.generateMonthOptions('addEstStartMonthMulti', currentMonth);
@@ -1086,6 +1089,7 @@ export function updateDefaultAddProcessMonths(startMonth, endMonth) {
             startSelect.value = item.startMonth;
             endSelect.value = item.endMonth;
         }
+        if (startSelect) syncRowMonthMode(startSelect.closest('[data-work-month-col]'));
     });
 
     // 追加担当者行の作業月セルも全体期間に合わせて更新
@@ -1187,6 +1191,7 @@ export function ensureExtraRowMonthCell(row) {
     const ee = cell.querySelector('.est-extra-month-end');
     fillMonthSelectOptions(es, months, prevStart || (primStart ? primStart.value : '') || months[0]);
     if (ee) fillMonthSelectOptions(ee, months, prevEnd || (primEnd ? primEnd.value : '') || months[months.length - 1]);
+    syncRowMonthMode(cell);
 }
 
 /**
@@ -1196,6 +1201,62 @@ export function refreshAllExtraRowMonthCells() {
     document.querySelectorAll('#addEstimateTable tr.est-extra-member-row').forEach(row => {
         ensureExtraRowMonthCell(row);
     });
+}
+
+// ============================================
+// 作業月セルの追従（開始月↔終了月）
+// 単一月の工程は開始月を変えるだけで終了月が同じ月に追従し、範囲の工程は
+// 開始>終了 に崩れたときだけ相互にクランプする。行が「単一月か範囲か」は
+// セルの data-single-month に保持し、値を設定した箇所と change 後に同期する。
+// ============================================
+
+/**
+ * 作業月セルの単一月/範囲フラグを現在の選択値から同期する
+ * @param {HTMLElement|null} cell - td[data-work-month-col]
+ */
+function syncRowMonthMode(cell) {
+    if (!cell) return;
+    const sels = cell.querySelectorAll('select');
+    if (sels.length < 2) {
+        delete cell.dataset.singleMonth;
+        return;
+    }
+    cell.dataset.singleMonth = sels[0].value === sels[1].value ? '1' : '0';
+}
+
+/**
+ * 作業月セル内の select 変更時の追従処理（#addEstimateTable への委譲ハンドラ）
+ * @param {Event} ev
+ */
+function handleRowMonthChange(ev) {
+    const sel = ev.target;
+    if (!(sel instanceof HTMLSelectElement)) return;
+    const cell = sel.closest('[data-work-month-col]');
+    if (!cell) return;
+    const sels = cell.querySelectorAll('select');
+    if (sels.length < 2) return;
+    const [startSel, endSel] = sels;
+    // YYYY-MM 形式は文字列比較がそのまま月順になる
+    if (sel === startSel) {
+        if (cell.dataset.singleMonth === '1' || endSel.value < startSel.value) {
+            endSel.value = startSel.value;
+        }
+    } else if (sel === endSel) {
+        if (endSel.value < startSel.value) {
+            startSel.value = endSel.value;
+        }
+    }
+    syncRowMonthMode(cell);
+}
+
+/**
+ * 工程表に作業月セルの追従ハンドラを一度だけ張る（プライマリ行・追加担当者行の両方に効く）
+ */
+function bindRowMonthFollow() {
+    const table = document.getElementById('addEstimateTable');
+    if (!table || table.dataset.monthFollowBound === 'true') return;
+    table.addEventListener('change', handleRowMonthChange);
+    table.dataset.monthFollowBound = 'true';
 }
 
 /**
@@ -1212,6 +1273,7 @@ function prefillRowWorkMonths(rowEl, workMonths) {
     if (sels.length >= 2) {
         sels[0].value = sorted[0];
         sels[1].value = sorted[sorted.length - 1];
+        syncRowMonthMode(cell);
     } else if (sels.length === 1) {
         sels[0].value = sorted[0];
     }

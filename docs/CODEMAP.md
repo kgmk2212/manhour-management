@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 37 ファイル / 38,868 行
+## js/ — 37 ファイル / 38,930 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -24,8 +24,8 @@
 ### js/constants.js — アプリケーション定数定義 (679行)
 - export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:202, VALIDATION:250, ERROR_MESSAGES:269, SUCCESS_MESSAGES:283, PROCESS:294, BULK_EDIT:319, SCHEDULE:331, CAPACITY_DISPLAY_MODE:390, TASK_COLORS:398, THEME_TASK_COLORS:427
 
-### js/estimate-add.js — 見積追加関連機能 (1623行)
-- export: openAddEstimateModal:23, openAddEstimateSingleProcess:46, openEditAllProcesses:134, closeAddEstimateModal:657, resetAddEstimateForm:698, switchEstimateMode:750, getCurrentEstimateMode:779, initOtherWorkMemberSelect:786, autoFillMember:813, initAddEstimateForm:844, updateAddEstWorkMonthUI:895, switchAddEstMonthType:928, updateAddEstimateTableHeader:965, updateDefaultAddProcessMonths:1061, ensureExtraRowMonthCell:1147, refreshAllExtraRowMonthCells:1195, updateAddEstimateTotals:1262, addEstimateMemberRow:1291, removeEstimateMemberRow:1331, removeAllExtraMemberRows:1342, collectAllEstimateEntries:1352, addEstimateFromModal:1378, addEstimateFromModalNormal:1522
+### js/estimate-add.js — 見積追加関連機能 (1685行)
+- export: openAddEstimateModal:23, openAddEstimateSingleProcess:46, openEditAllProcesses:134, closeAddEstimateModal:657, resetAddEstimateForm:698, switchEstimateMode:750, getCurrentEstimateMode:779, initOtherWorkMemberSelect:786, autoFillMember:813, initAddEstimateForm:844, updateAddEstWorkMonthUI:898, switchAddEstMonthType:931, updateAddEstimateTableHeader:968, updateDefaultAddProcessMonths:1064, ensureExtraRowMonthCell:1151, refreshAllExtraRowMonthCells:1200, updateAddEstimateTotals:1324, addEstimateMemberRow:1353, removeEstimateMemberRow:1393, removeAllExtraMemberRows:1404, collectAllEstimateEntries:1414, addEstimateFromModal:1440, addEstimateFromModalNormal:1584
 
 ### js/estimate-edit.js — 見積編集・対応名編集関連機能 (951行)
 - export: editEstimate:28, setEditEstimateReopenDetailFlag:172, closeEditEstimateModal:181, saveEstimateEdit:195, toggleEditWorkMonthMode:542, updateEditMonthPreview:573, updateEditManualTotal:650, addEditEstimateMemberRow:694, removeEditEstimateMemberRow:738, clearEditExtraMembers:746, editTask:779, closeEditTaskModal:850, saveTaskEdit:857
