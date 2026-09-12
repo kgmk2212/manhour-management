@@ -1,0 +1,282 @@
+/* ============================================================
+   スケジュール機能 刷新 — 比較モックアップ共通スタイル
+   mk-* : 比較ページの外枠・幅切替・サイドパネル（本番には入れない）
+   sr-* : ガント／負荷格子／作業月導出／アジェンダの部品（採用案が決まったら style.css へ移植）
+   色・角丸・影・書体はすべて ../../style.css のトークンを使う。
+   新しく足した色は「タスク色 4 つ」と「休暇のハッチ」だけ。
+   ============================================================ */
+:root {
+    --ui-scale: 1;
+    --sr-lane-h: 34px;
+    --sr-day-w: 30px;
+    --sr-well-h: 64px;
+    --sr-hatch: repeating-linear-gradient(135deg, rgba(196, 132, 29, .22) 0 4px, transparent 4px 8px);
+    --sr-off: rgba(26, 24, 20, .04);
+}
+body { height: auto; min-height: 100vh; overflow: auto; padding: 28px 24px 96px; background: var(--bg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* ---------- ページ外枠 ---------- */
+.mk-wrap { max-width: 1320px; margin: 0 auto; }
+.mk-crumb { font-size: 13.5px; color: var(--text-secondary); text-decoration: none; }
+.mk-crumb:hover { color: var(--accent); }
+.mk-h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: var(--text-primary); margin: 6px 0 8px; }
+.mk-lead { color: var(--text-secondary); max-width: 800px; line-height: 1.75; font-size: 15px; margin: 0; }
+.mk-lead b { color: var(--text-primary); }
+.mk-nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-top: 18px; flex-wrap: wrap; }
+.mk-nav a { padding: 10px 16px 12px; text-decoration: none; color: var(--text-secondary); font-weight: 700; font-size: 15px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.mk-nav a small { display: block; font-weight: 500; font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.mk-nav a:hover { color: var(--text-primary); }
+.mk-nav a.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.mk-scenario { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius-lg); padding: 16px 22px; margin: 22px 0 16px; box-shadow: var(--shadow-sm); }
+.mk-scenario-label { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.mk-scenario-text { font-size: 15.5px; line-height: 1.65; color: var(--text-primary); }
+.mk-scenario-text b { color: var(--accent); }
+.mk-task-list { margin: 8px 0 0; padding-left: 1.5em; color: var(--text-primary); font-size: 15px; line-height: 1.7; }
+
+.mk-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 14px 0 12px; flex-wrap: wrap; }
+.mk-hint { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; max-width: 860px; }
+.mk-hint b { color: var(--text-primary); }
+.mk-width { display: inline-flex; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; gap: 2px; flex: 0 0 auto; }
+.mk-width button { border: 0; background: transparent; padding: 6px 14px; border-radius: var(--radius-sm); font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.mk-width button.is-active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+
+.mk-stage { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.mk-stage.is-mobile { grid-template-columns: 402px minmax(0, 1fr); }
+.mk-stage.is-mobile .mk-side { max-width: 480px; }
+@media (max-width: 960px) { .mk-stage, .mk-stage.is-mobile { grid-template-columns: 1fr; } }
+
+/* ---------- 疑似アプリの枠（PC / スマホ 390px） ---------- */
+.mk-frame { position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; min-height: 720px; box-shadow: var(--shadow-md); font-size: 15px; isolation: isolate; }
+.mk-frame.is-mobile { width: 390px; height: 664px; min-height: 0; border: 0; border-radius: 22px; box-shadow: 0 0 0 6px #1A1814, var(--shadow-md); font-size: 14px; margin: 6px; overflow: hidden; }
+.mk-frame.is-mobile .sr-tab { position: absolute; inset: 52px 0 60px; overflow: auto; padding: 12px 12px 16px; }
+.mk-app-header { display: none; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); align-items: center; padding: 0 16px; font-weight: 700; color: var(--text-primary); gap: 12px; }
+.mk-app-header i { width: 20px; height: 2px; background: var(--text-primary); display: block; box-shadow: 0 -6px 0 var(--text-primary), 0 6px 0 var(--text-primary); }
+.mk-frame.is-mobile .mk-app-header { display: flex; }
+.mk-dock { display: none; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: var(--sidebar-bg); border-top: 1px solid rgba(255,255,255,.08); z-index: 150; grid-template-columns: repeat(6, 1fr); align-items: center; }
+.mk-frame.is-mobile .mk-dock { display: grid; }
+.mk-dock span { color: var(--sidebar-text); font-size: 10px; text-align: center; display: grid; gap: 3px; justify-items: center; }
+.mk-dock span i { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.14); display: block; }
+.mk-dock span.is-active { color: var(--sidebar-text-active); }
+.mk-dock span.is-active i { background: var(--accent); }
+
+/* ---------- サイドパネル（比較ページ側。案B/C の「インスペクタ」もここに出す） ---------- */
+.mk-side { display: grid; gap: 14px; align-content: start; }
+.mk-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.mk-card h4 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: .02em; }
+.mk-card p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); }
+.mk-card ul { margin: 0; padding-left: 1.2em; font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); }
+.mk-card li b { color: var(--text-primary); }
+.mk-log { font-size: 12.5px; color: var(--text-secondary); display: grid; gap: 4px; max-height: 220px; overflow: auto; }
+.mk-log div { padding: 4px 0; border-bottom: 1px dashed var(--border-light); }
+.mk-log div:last-child { border-bottom: 0; }
+.mk-embed .mk-side { display: none; }
+
+/* ---------- 疑似アプリ: タブ内容 ---------- */
+/* grid-auto-rows: max-content — 高さ固定のスマホ枠で overflow:hidden のパネルがトラックごと縮まないようにする */
+.sr-tab { padding: 16px; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
+.sr-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 10px 14px; box-shadow: var(--shadow-sm); }
+.sr-toolbar .sr-spacer { flex: 1; }
+.sr-month { font-weight: 800; font-size: 17px; letter-spacing: -.01em; min-width: 7em; text-align: center; }
+.sr-nav-btn { width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); display: inline-grid; place-items: center; cursor: pointer; color: var(--text-secondary); font: inherit; }
+.sr-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sr-seg { display: inline-flex; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; gap: 2px; }
+.sr-seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: var(--radius-sm); font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+.sr-seg button.is-active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+.sr-seg.is-hinge button { padding: 8px 18px; font-size: 14.5px; }
+.sr-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sr-chips .sr-chips-label { font-size: 12.5px; color: var(--text-muted); margin-right: 2px; }
+.sr-chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.sr-chip.is-on { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.sr-chip.is-off { opacity: .55; text-decoration: line-through; }
+.sr-btn { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); padding: 7px 12px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-primary); cursor: pointer; white-space: nowrap; }
+.sr-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sr-btn.is-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sr-btn.is-primary:hover { background: var(--accent-hover); color: #fff; }
+.sr-btn.is-small { padding: 4px 9px; font-size: 12.5px; }
+.sr-btn:disabled { opacity: .45; cursor: default; }
+.sr-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); align-items: center; }
+.sr-legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+.sr-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+
+/* ---------- 部品: ガント（案A・案C の進捗ガント） ---------- */
+.sr-gantt { display: grid; grid-template-columns: var(--sr-label-w, 176px) minmax(0, 1fr); font-size: 13px; }
+.sr-g-labels { border-right: 1px solid var(--border); background: var(--surface); }
+.sr-g-corner { height: 46px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; padding: 0 12px 7px; color: var(--text-muted); font-size: 12px; box-sizing: border-box; }
+.sr-g-label { border-bottom: 1px solid var(--border-light); padding: 0 12px; display: flex; flex-direction: column; justify-content: center; gap: 1px; box-sizing: border-box; }
+.sr-g-label b { font-size: 13.5px; color: var(--text-primary); display: flex; align-items: center; gap: 7px; }
+.sr-g-label b i { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--text-muted)); flex: 0 0 auto; }
+.sr-g-label small { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.sr-g-scroll { overflow-x: auto; overflow-y: hidden; }
+.sr-g-inner { position: relative; }
+.sr-g-head { height: 46px; border-bottom: 1px solid var(--border); position: relative; box-sizing: border-box; }
+.sr-g-monthlbl { position: absolute; top: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); padding-left: 6px; border-left: 1px solid var(--border); height: 16px; line-height: 16px; white-space: nowrap; }
+.sr-g-day { position: absolute; top: 23px; width: var(--sr-day-w); text-align: center; font-size: 11px; color: var(--text-secondary); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.sr-g-day span { display: block; font-size: 9.5px; color: var(--text-muted); margin-top: 1px; }
+.sr-g-day.is-sat { color: var(--info); } .sr-g-day.is-sun, .sr-g-day.is-hol { color: var(--danger); }
+.sr-g-day.is-today { color: var(--accent); font-weight: 800; }
+.sr-g-week { position: absolute; top: 24px; font-size: 10.5px; color: var(--text-muted); padding-left: 4px; border-left: 1px solid var(--border-light); height: 16px; line-height: 16px; white-space: nowrap; }
+.sr-g-row { position: relative; border-bottom: 1px solid var(--border-light); box-sizing: border-box; }
+.sr-g-col { position: absolute; top: 0; bottom: 0; width: var(--sr-day-w); }
+.sr-g-col.is-off { background: var(--sr-off); }
+.sr-g-col.is-hol { background: rgba(185, 28, 28, .045); }
+.sr-g-col.is-vac { background-image: var(--sr-hatch); }
+.sr-g-col.is-vac-half { background-image: var(--sr-hatch); background-size: 100% 50%; background-repeat: no-repeat; background-position: 0 100%; }
+.sr-bar { position: absolute; height: var(--sr-lane-h); border-radius: 5px; background: var(--c-light); border: 1px solid var(--c-line); box-sizing: border-box; display: flex; align-items: flex-start; padding: 3px 7px 0; gap: 8px; overflow: hidden; white-space: nowrap; color: var(--c-text); font-weight: 700; font-size: 11.5px; line-height: 14px; cursor: pointer; transition: box-shadow var(--transition), opacity var(--transition); }
+.sr-bar:hover { box-shadow: 0 0 0 2px var(--c-line); }
+.sr-bar .sr-bar-t { overflow: hidden; text-overflow: ellipsis; }
+.sr-bar .sr-bar-n { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.sr-bar.is-delayed { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
+.sr-bar.is-delayed .sr-bar-n { color: var(--danger); }
+.sr-bar.is-done .sr-bar-n { color: var(--accent); }
+.sr-bar.is-review { background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgba(255,255,255,.6) 5px 8px); }
+.sr-bar.is-sel { box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px var(--accent-light); z-index: 4; }
+.sr-bar.is-dim, .sr-tick.is-dim { opacity: .3; }
+.sr-bar.is-tiny { padding: 0; }
+.sr-bar.is-tiny .sr-bar-t, .sr-bar.is-tiny .sr-bar-n { display: none; }
+.sr-bar.is-narrow .sr-bar-t { display: none; }
+.sr-bar.is-narrow .sr-bar-n { margin-left: 0; }
+.sr-tick { position: absolute; width: calc(var(--sr-day-w) - 6px); background: var(--c); border-radius: 2px 2px 0 0; opacity: .92; pointer-events: none; z-index: 2; }
+.sr-tick.is-spill { background: var(--danger); background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255,255,255,.5) 3px 5px); }
+.sr-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 3; pointer-events: none; }
+.sr-today::before { content: ''; position: absolute; top: 0; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
+.sr-load { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; border-top: 1px dashed var(--border-light); }
+.sr-load i { position: absolute; bottom: 2px; height: 6px; width: calc(var(--sr-day-w) - 4px); border-radius: 2px; background: var(--accent); }
+.sr-load i.is-over { background: var(--danger); height: 8px; }
+.sr-g-empty { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+
+/* ---------- 部品: 週の負荷カード（案A のサマリー置換） ---------- */
+.sr-week { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.sr-week-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 14px; display: grid; gap: 6px; box-shadow: var(--shadow-sm); }
+.sr-week-card .sr-week-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--text-secondary); }
+.sr-week-card .sr-week-h b { font-size: 15px; color: var(--text-primary); }
+.sr-week-card .sr-week-h span { font-variant-numeric: tabular-nums; }
+.sr-week-card .sr-week-h span.is-over { color: var(--danger); font-weight: 700; }
+.sr-week-bar { height: 8px; border-radius: 999px; background: var(--surface-elevated); border: 1px solid var(--border); position: relative; overflow: hidden; }
+.sr-week-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+.sr-week-bar i.is-over { background: var(--danger); }
+.sr-week-card small { color: var(--text-muted); font-size: 11.5px; }
+
+/* ---------- 部品: 負荷格子（案B・案C の計画ボード） ---------- */
+.sr-grid-wrap { overflow-x: auto; }
+.sr-grid { display: grid; font-size: 12px; min-width: max-content; }
+.sr-gh { border-bottom: 1px solid var(--border); padding: 8px 0 6px; text-align: center; color: var(--text-secondary); font-size: 11.5px; line-height: 1.1; font-variant-numeric: tabular-nums; box-sizing: border-box; position: relative; }
+.sr-gh span { display: block; font-size: 9.5px; color: var(--text-muted); margin-top: 2px; }
+.sr-gh.is-off { color: var(--text-muted); background: var(--sr-off); font-size: 10px; padding-top: 9px; }
+.sr-gh.is-sat { color: var(--info); } .sr-gh.is-sun, .sr-gh.is-hol { color: var(--danger); }
+.sr-gh.is-today { color: var(--accent); font-weight: 800; }
+.sr-gh.is-corner { text-align: left; padding-left: 12px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--text-muted); font-size: 11.5px; position: sticky; left: 0; background: var(--surface); z-index: 3; }
+.sr-gm { border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border); padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px; box-sizing: border-box; background: var(--surface); position: sticky; left: 0; z-index: 2; }
+.sr-gm b { font-size: 13.5px; color: var(--text-primary); }
+.sr-gm small { color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sr-gm small em { font-style: normal; color: var(--text-secondary); font-weight: 700; }
+.sr-cell { position: relative; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); height: 104px; box-sizing: border-box; cursor: pointer; }
+.sr-cell:hover { background: var(--accent-light); }
+.sr-cell.is-off { background: var(--sr-off); cursor: default; }
+.sr-cell.is-off:hover { background: var(--sr-off); }
+.sr-cell.is-hol { background: rgba(185, 28, 28, .045); }
+.sr-cell.is-target { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent); }
+.sr-cell.is-target::after { content: 'ここへ'; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--accent); font-weight: 700; }
+.sr-cell.is-selday { box-shadow: inset 0 0 0 2px var(--info); }
+.sr-rim { position: absolute; left: 3px; right: 3px; bottom: calc(var(--sr-well-h) + 6px); border-top: 1px dashed var(--border); pointer-events: none; }
+.sr-well { position: absolute; bottom: 6px; display: flex; flex-direction: column-reverse; align-items: stretch; }
+.sr-well.is-plan { left: 15%; width: 70%; }
+.sr-cell.is-past .sr-well.is-plan { left: 8%; width: 40%; }
+.sr-well.is-actual { left: 52%; width: 40%; }
+.sr-seg { background: var(--c); border-top: 1px solid rgba(255,255,255,.7); border-radius: 2px; box-sizing: border-box; cursor: pointer; transition: opacity var(--transition); min-height: 3px; }
+.sr-well.is-plan .sr-seg { opacity: .55; }
+.sr-cell.is-past .sr-well.is-plan .sr-seg { opacity: .3; }
+.sr-well.is-actual .sr-seg { opacity: .95; cursor: default; }
+.sr-seg.is-review { background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,.55) 4px 7px); }
+.sr-seg.is-sel { opacity: 1 !important; box-shadow: 0 0 0 2px var(--accent); z-index: 2; }
+.sr-seg.is-dim { opacity: .12 !important; }
+.sr-seg.is-over { outline: 1.5px solid var(--danger); outline-offset: -1.5px; }
+.sr-tot { position: absolute; left: 0; right: 0; font-size: 10.5px; text-align: center; font-variant-numeric: tabular-nums; color: var(--text-secondary); pointer-events: none; font-weight: 600; }
+.sr-tot.is-over { color: var(--danger); font-weight: 800; }
+.sr-tot.is-empty { color: var(--text-muted); font-weight: 500; }
+.sr-cap { position: absolute; left: 3px; right: 3px; background-image: var(--sr-hatch); pointer-events: none; border-radius: 2px; }
+.sr-cap span { position: absolute; top: 2px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--warning); font-weight: 700; }
+.sr-cell.is-off .sr-cap span { writing-mode: vertical-rl; top: 8px; }
+.sr-hdr-split { position: absolute; bottom: 2px; left: 0; right: 0; font-size: 9px; color: var(--text-muted); display: flex; justify-content: space-around; }
+
+/* ---------- 部品: インスペクタ（サイドパネル or 画面内） ---------- */
+.sr-insp { display: grid; gap: 10px; }
+.sr-insp .sr-insp-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; color: var(--text-primary); }
+.sr-insp .sr-insp-title i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: 0 0 auto; }
+.sr-insp .sr-insp-meta { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.sr-insp .sr-insp-meta b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.sr-insp .sr-insp-empty { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.sr-insp h5 { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); font-weight: 700; }
+.sr-daylist { display: grid; gap: 4px; }
+.sr-daylist button { display: grid; grid-template-columns: 6.5em 1fr auto; gap: 8px; align-items: center; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); padding: 7px 10px; font: inherit; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.sr-daylist button:hover { border-color: var(--accent); background: var(--accent-light); }
+.sr-daylist button .sr-mini { height: 6px; border-radius: 999px; background: var(--surface-elevated); border: 1px solid var(--border); position: relative; overflow: hidden; }
+.sr-daylist button .sr-mini i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); opacity: .7; }
+.sr-daylist button .sr-mini i.is-over { background: var(--danger); }
+.sr-daylist button small { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sr-daylist button.is-current { border-style: dashed; opacity: .6; cursor: default; }
+.sr-items { display: grid; gap: 4px; }
+.sr-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); font-size: 13px; cursor: pointer; background: var(--surface); }
+.sr-item:hover { border-color: var(--accent); }
+.sr-item.is-sel { border-color: var(--accent); background: var(--accent-light); }
+.sr-item i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); flex: 0 0 auto; }
+.sr-item i.is-review { background-image: repeating-linear-gradient(135deg, transparent 0 2px, rgba(255,255,255,.6) 2px 4px); }
+.sr-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-item small { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.sr-item small.is-over { color: var(--danger); font-weight: 700; }
+
+/* ---------- 部品: 作業月の導出テーブル（案B 下段・案C 右レール） ---------- */
+.sr-derive { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.sr-derive th, .sr-derive td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border-light); vertical-align: middle; position: static; white-space: nowrap; }
+.sr-derive th { color: var(--text-muted); font-weight: 600; font-size: 11.5px; background: transparent; }
+.sr-derive td i.sr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; vertical-align: 0; }
+.sr-derive td.sr-num { font-variant-numeric: tabular-nums; }
+.sr-derive tr.is-sel td { background: var(--accent-light); }
+.sr-derive tr.is-dim td { opacity: .45; }
+.sr-derive tr.is-click { cursor: pointer; }
+.sr-derive tr.is-click:hover td { background: var(--surface-elevated); }
+.sr-badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; line-height: 1.4; }
+.sr-badge.is-ok { background: var(--accent-light); color: var(--accent); }
+.sr-badge.is-warn { background: var(--accent-secondary-light); color: var(--accent-secondary); }
+.sr-badge.is-none { background: var(--danger-light); color: var(--danger); }
+.sr-monthchip { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--surface-elevated); border: 1px solid var(--border); color: var(--text-secondary); margin-right: 3px; font-variant-numeric: tabular-nums; }
+.sr-monthchip.is-derived { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.sr-monthchip.is-gone { text-decoration: line-through; opacity: .6; }
+
+/* ---------- 部品: モバイル用アジェンダ（案B・案C のスマホ） ---------- */
+.sr-ag-members { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.sr-ag-day { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.sr-ag-day.is-off { padding: 6px 0; color: var(--text-muted); font-size: 12px; align-items: center; }
+.sr-ag-day.is-today .sr-ag-date b { color: var(--accent); }
+.sr-ag-date { display: grid; align-content: start; line-height: 1.15; }
+.sr-ag-date b { font-size: 16px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.sr-ag-date small { font-size: 11px; color: var(--text-muted); }
+.sr-ag-date small.is-sat { color: var(--info); } .sr-ag-date small.is-sun, .sr-ag-date small.is-hol { color: var(--danger); }
+.sr-ag-body { display: grid; gap: 6px; min-width: 0; }
+.sr-ag-well { height: 12px; border-radius: 4px; background: var(--surface-elevated); border: 1px solid var(--border); position: relative; overflow: hidden; display: flex; }
+.sr-ag-well i { display: block; height: 100%; background: var(--c); opacity: .8; border-right: 1px solid rgba(255,255,255,.7); box-sizing: border-box; flex: 0 0 auto; }
+.sr-ag-well i.is-review { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255,255,255,.55) 3px 5px); }
+.sr-ag-well .sr-ag-cap { position: absolute; top: 0; bottom: 0; right: 0; background-image: var(--sr-hatch); }
+.sr-ag-well .sr-ag-overflow { position: absolute; right: 0; top: 0; bottom: 0; width: 6px; background: var(--danger); }
+.sr-ag-total { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; }
+.sr-ag-total.is-over { color: var(--danger); font-weight: 700; }
+.sr-sheet { position: absolute; left: 0; right: 0; bottom: 60px; background: var(--surface); border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px rgba(26,24,20,.12); padding: 14px 16px 16px; z-index: 120; display: grid; gap: 10px; max-height: 70%; overflow: auto; }
+.sr-sheet-close { position: absolute; top: 10px; right: 12px; border: 0; background: transparent; font-size: 20px; line-height: 1; color: var(--text-muted); cursor: pointer; }
+
+/* ---------- トースト ---------- */
+.sr-toast { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--sidebar-bg); color: var(--sidebar-text-active); border-radius: var(--radius-md); padding: 9px 14px; font-size: 13px; display: flex; gap: 12px; align-items: center; z-index: 200; box-shadow: var(--shadow-md); white-space: nowrap; }
+.mk-frame.is-mobile .sr-toast { bottom: 70px; }
+.sr-toast button { border: 0; background: transparent; color: #9FD69A; font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
+
+/* ---------- スマホ幅の調整 ---------- */
+.mk-frame.is-mobile .sr-toolbar { padding: 8px 10px; gap: 8px; }
+.mk-frame.is-mobile .sr-month { font-size: 15px; min-width: 6em; }
+.mk-frame.is-mobile .sr-seg button { padding: 6px 9px; font-size: 12.5px; }
+.mk-frame.is-mobile .sr-gantt { --sr-label-w: 92px; --sr-day-w: 26px; --sr-lane-h: 30px; }
+.mk-frame.is-mobile .sr-g-label { padding: 0 8px; }
+.mk-frame.is-mobile .sr-g-label b { font-size: 12.5px; }
+.mk-frame.is-mobile .sr-g-label small { display: none; }
+.mk-frame.is-mobile .sr-bar { font-size: 10.5px; padding: 2px 5px 0; }
+.mk-frame.is-mobile .sr-week { grid-template-columns: 1fr; }

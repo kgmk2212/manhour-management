@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案B 担当者 × 日の負荷格子 — スケジュール刷新モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* 案B 固有 */
+.gb-derive-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 14px 4px; }
+.gb-derive-head b { font-size: 14px; color: var(--text-primary); }
+.gb-derive-head span { font-size: 12.5px; color: var(--text-muted); }
+.gb-derive-wrap { overflow-x: auto; padding: 0 6px 6px; }
+.mk-frame.is-mobile .gb-derive-head { padding: 10px 12px 2px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el, esc, fmtMD, fmtMDW, fmtYM, shiftMonth } = SR.util;
+    const M = SR.model;
+    const st = { month: '2026-09', sel: null /* {s,date} */, selDay: null /* {member,date} */, moveFrom: null /* {member,date,schedId} */, agMember: SR.MEMBERS[0], sheet: false };
+
+    function inspectorOpts(api) {
+        return {
+            seg: st.sel, day: st.selDay, moveMode: !!st.moveFrom,
+            onMoveStart: () => { st.moveFrom = { member: st.sel.s.member, date: st.sel.date, schedId: st.sel.s.id }; api.note(`「${M.taskOf(st.sel.s).name} ${M.procLabel(st.sel.s)}」の ${fmtMD(st.sel.date)} 分を移す先を選択中`); api.rerender(); },
+            onMoveCancel: () => { st.moveFrom = null; api.rerender(); },
+            onClear: () => { st.sel = null; st.sheet = false; api.rerender(); },
+            onMoveTo: (m, d) => doMove(api, m, d),
+            onSelectSeg: (s, d) => { st.sel = { s, date: d }; st.selDay = null; api.rerender(); },
+        };
+    }
+    function doMove(api, member, d) {
+        const mf = st.moveFrom; if (!mf) return;
+        const s = SR.data.schedules.find(x => x.id === mf.schedId);
+        const h = s.daily[mf.date];
+        const undo = SR.ops.moveHours(mf.schedId, mf.date, d);
+        st.moveFrom = null; st.sel = { s, date: d }; st.sheet = false;
+        api.note(`${fmtMD(mf.date)} の ${h}h を ${fmtMD(d)} へ移動（${M.taskOf(s).name} ${M.procLabel(s)}）`);
+        api.rerender();
+        api.toast(`${fmtMDW(mf.date)} の ${h}h を ${fmtMDW(d)} へ移しました`, undo && (() => { undo(); st.sel = { s, date: mf.date }; api.note('移動を元に戻した'); api.rerender(); }));
+    }
+
+    SR.mount({
+        key: 'b-load-grid.html',
+        title: '案B 担当者 × 日の負荷格子',
+        lead: '行が担当者、列が日、<b>セルが「8 時間の器」</b>。予定はタスク色の積み上げで、破線の縁が 8 時間。過去の日は<b>予定（淡）と実績（濃）を並べて</b>比べる。予定の色をタップして「別の日へ移す」を選び、空いている日をタップすれば時間が動く（ドラッグ不要）。下段では予定から<b>作業月を導出</b>し、見積とのずれを見つけて反映する。',
+        hint: '<b>見るところ:</b> 田中の 9/9 と 9/16 が縁を越えて赤い「12!」。9/16 の紫（マスタ PG）か橙（権限 IT）をタップ → 右の「別の日へ移す」→ 9/18 の器をタップ。休暇（佐藤 9/18）と祝日・会社休日（9/28）は器が縮む。スマホは 1 人分の 2 週間アジェンダ。',
+        render(tab, side, api) {
+            const mobile = api.isMobile();
+            if (mobile) return renderMobile(tab, api);
+
+            // ---- ツールバー ----
+            const tb = el(`<div class="sr-toolbar">
+                <button type="button" class="sr-nav-btn" aria-label="前月">‹</button><span class="sr-month">${fmtYM(st.month)}</span><button type="button" class="sr-nav-btn" aria-label="次月">›</button>
+                <button type="button" class="sr-btn is-small">今日</button>
+                <div class="sr-legend" style="margin-left:8px"><span><i style="background:rgba(45,90,39,.5)"></i>予定</span><span><i style="background:#2D5A27"></i>実績（過去の日は右側）</span><span><i style="border-top:1px dashed var(--text-muted);height:0"></i>8 時間の縁</span><span><i style="background-image:var(--sr-hatch);border:1px solid var(--border)"></i>休暇・休日</span></div>
+                <div class="sr-spacer"></div><button type="button" class="sr-btn">自動生成</button><button type="button" class="sr-btn is-primary">＋ 予定作成</button></div>`);
+            const [prev, next] = tb.querySelectorAll('.sr-nav-btn');
+            prev.addEventListener('click', () => { st.month = shiftMonth(st.month, -1); api.rerender(); });
+            next.addEventListener('click', () => { st.month = shiftMonth(st.month, 1); api.rerender(); });
+            tb.querySelector('.sr-btn.is-small').addEventListener('click', () => { st.month = '2026-09'; api.rerender(); });
+            tab.appendChild(tb);
+
+            // ---- 格子 ----
+            const panel = el('<div class="sr-panel"></div>');
+            SR.renderGrid(panel, {
+                month: st.month, sel: st.sel ? { key: M.keyOf(st.sel.s) } : null, selDay: st.selDay, moveFrom: st.moveFrom,
+                onSelectSeg: (s, d) => { st.sel = { s, date: d }; st.selDay = null; st.moveFrom = null; api.note(`${fmtMD(d)} の「${M.taskOf(s).name} ${M.procLabel(s)}」を選択`); api.rerender(); },
+                onSelectDay: (m, d) => { st.selDay = { member: m, date: d }; st.sel = null; api.note(`${fmtMD(d)} ${m} の内訳を表示`); api.rerender(); },
+                onMoveTo: (m, d) => doMove(api, m, d),
+            });
+            tab.appendChild(panel);
+
+            // ---- 作業月の導出 ----
+            const dv = el(`<div class="sr-panel"><div class="gb-derive-head"><b>作業月の導出</b><span>予定の日別配分を月で集計し、見積の作業月と突き合わせる。「ずれ」は 1 タップで見積へ反映</span><button type="button" class="sr-btn is-small" style="margin-left:auto">${st.deriveAll ? 'ずれだけ見る' : '一致も見る'}</button></div><div class="gb-derive-wrap"></div></div>`);
+            dv.querySelector('.gb-derive-head .sr-btn').addEventListener('click', () => { st.deriveAll = !st.deriveAll; api.rerender(); });
+            SR.renderDerive(dv.querySelector('.gb-derive-wrap'), {
+                sel: st.sel ? M.keyOf(st.sel.s) : null, onlyIssues: !st.deriveAll,
+                onApply: e => { const undo = SR.ops.applyDerived(e.id); api.note(`見積「${SR.TASKS[e.task].name} ${e.process} ${M.short(e.member)}」の作業月を予定に合わせた`); api.rerender(); api.toast('見積の作業月を予定に合わせました', () => { undo(); api.rerender(); }); },
+            });
+            tab.appendChild(dv);
+
+            // ---- サイドパネル ----
+            if (!side) return;
+            const insp = el('<div class="mk-card"><h4>選んだもの</h4></div>');
+            SR.renderInspector(insp, inspectorOpts(api));
+            side.appendChild(insp);
+            side.appendChild(el(`<div class="mk-card"><h4>この案で変わること</h4><ul>
+                <li><b>見る単位が「日 × 時間」</b>になる。バーの長さではなく、その日に何時間入っているかが器の高さで見える</li>
+                <li><b>超過・空き・休暇</b>が同じ物差しで並ぶ。空いている器がそのまま「入れられる場所」</li>
+                <li><b>計画と実績を 1 マスで比較</b>。実績タイムラインと同じ格子なので、行き来しても迷わない</li>
+                <li><b>移す操作はタップ 2 回</b>（選ぶ → 行き先）。候補リストからも選べるのでスマホでも同じ手数</li>
+                <li><b>作業月は予定から導出</b>。見積側の作業月 UI（B-047）は、この画面の月集計に吸収できる</li>
+            </ul></div>`));
+            side.appendChild(el(`<div class="mk-card"><h4>必要になるもの</h4><p>予定レコードに日別配分 <code>daily</code> を追加（無いレコードは営業日で均等配分して読む）。期間の長さを俯瞰する見方はガントより弱いので、タスク視点は別の画面か案C で補う。</p></div>`));
+            const lg = el('<div class="mk-card"><h4>操作ログ</h4><div class="mk-log"></div></div>');
+            api.log().forEach(m => lg.querySelector('.mk-log').appendChild(el(`<div>${esc(m)}</div>`)));
+            if (!api.log().length) lg.querySelector('.mk-log').appendChild(el('<div>まだ操作していません</div>'));
+            side.appendChild(lg);
+        },
+    });
+
+    function renderMobile(tab, api) {
+        const tb = el(`<div class="sr-toolbar"><span class="sr-month" style="text-align:left;min-width:0">9/14 〜 9/30</span><div class="sr-spacer"></div><button type="button" class="sr-btn is-small is-primary">＋ 予定</button></div>`);
+        tab.appendChild(tb);
+        SR.renderAgenda(tab, {
+            member: st.agMember, from: '2026-09-14', to: '2026-09-30', sel: st.sel,
+            onSelectMember: m => { st.agMember = m; st.sel = null; st.sheet = false; api.note(`担当者を ${m} に切替`); api.rerender(); },
+            onSelectItem: (s, d) => { st.sel = { s, date: d }; st.selDay = null; st.sheet = true; api.note(`${fmtMD(d)} の「${M.taskOf(s).name} ${M.procLabel(s)}」を選択`); api.rerender(); },
+        });
+        if (st.sheet && st.sel) {
+            const sheet = el('<div class="sr-sheet"><button type="button" class="sr-sheet-close" aria-label="閉じる">×</button></div>');
+            sheet.querySelector('.sr-sheet-close').addEventListener('click', () => { st.sheet = false; st.moveFrom = null; api.rerender(); });
+            SR.renderInspector(sheet, inspectorOpts(api));
+            api.frame().appendChild(sheet);
+        }
+    }
+})();
+</script>
+</body>
+</html>

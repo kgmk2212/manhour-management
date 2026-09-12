@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スケジュール機能の刷新 — 案の比較</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 18px 0 8px; }
+.hub-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; display: grid; gap: 10px; align-content: start; text-decoration: none; color: inherit; box-shadow: var(--shadow-sm); }
+.hub-card:hover { border-color: var(--accent); }
+.hub-card.is-reco { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-sm); }
+.hub-card h3 { margin: 0; font-size: 17px; color: var(--text-primary); }
+.hub-card h3 small { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+.hub-card p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--text-secondary); }
+.hub-card .hub-q { font-size: 13px; color: var(--accent); font-weight: 700; }
+.hub-reco { display: inline-block; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 999px; padding: 2px 9px; justify-self: start; }
+.hub-thumb { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--bg); height: 150px; position: relative; }
+.hub-thumb iframe { width: 1100px; height: 560px; border: 0; transform: scale(.27); transform-origin: 0 0; pointer-events: none; position: absolute; left: 0; top: 0; }
+.hub-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.hub-table th, .hub-table td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-light); line-height: 1.55; position: static; }
+.hub-table th { background: var(--accent-light); color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+.hub-table td:first-child { font-weight: 700; white-space: nowrap; }
+.hub-table tr:last-child td { border-bottom: 0; }
+.hub-wrap { overflow-x: auto; }
+.hub-h2 { font-size: 19px; font-weight: 800; letter-spacing: -.02em; margin: 36px 0 6px; color: var(--text-primary); }
+.hub-p { color: var(--text-secondary); line-height: 1.75; max-width: 860px; font-size: 15px; margin: 0; }
+.hub-side { display: grid; grid-template-columns: repeat(3, 402px); gap: 18px; overflow-x: auto; padding: 8px 2px 16px; }
+.hub-side > div { display: grid; gap: 6px; }
+.hub-side .hub-side-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.hub-side .hub-side-title small { color: var(--text-muted); font-weight: 500; margin-left: 6px; }
+.hub-side iframe { width: 402px; height: 700px; border: 0; display: block; background: transparent; }
+.hub-note { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.6; }
+.hub-diag { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-top: 14px; display: grid; gap: 6px; font-size: 14px; line-height: 1.6; color: var(--text-secondary); }
+.hub-diag b { color: var(--text-primary); }
+</style>
+</head>
+<body>
+<div class="mk-wrap">
+  <h1 class="mk-h1">スケジュール機能の刷新 — 案の比較</h1>
+  <p class="mk-lead">現行のスケジュールタブ（担当者 1 人 1 行の Canvas ガント）を、<b>どこまで作り直すか</b>で 3 段階の案に分けた。3 案とも同じデータ・同じ「今日」から始まり、右のサイドパネルに「この案で変わること」と操作ログが出る。PC とスマホ 390px を切り替えて見比べられる。</p>
+
+  <section class="mk-scenario">
+    <div class="mk-scenario-label">現行の何が見づらいか（コードと画面で確認済み）</div>
+    <div class="hub-diag" style="border:0;padding:0;margin:0;background:transparent">
+      <div><b>並行予定が重なる</b> — 担当者行は 1 行で、同じ人の予定が同じ位置に重ね描きされる（<code>schedule-render.js:956-962</code>）。</div>
+      <div><b>1 日の負荷が見えない</b> — バーは期間だけを示し、その日に何時間入っているか・空きがあるかが分からない。</div>
+      <div><b>計画と実績が 1 本に混ざる</b> — 仕様書の「計画バー ＋ 実績バーの 2 層」は未実装で、進捗率の塗り分けのみ。</div>
+      <div><b>作業月と予定の二重管理</b> — 「いつやるか」を見積の作業月と予定の日付で別々に入力し、連動しない（B-047 と表裏）。</div>
+      <div><b>会社休日が飛ばされない</b> — 営業日判定が <code>h.date</code> を見るが会社休日は <code>startDate/endDate</code> 型（<code>schedule.js:685</code>、実動作は未検証）。</div>
+    </div>
+  </section>
+
+  <div class="hub-grid">
+    <a class="hub-card" href="a-gantt-refined.html">
+      <h3>案A 現行ガントの磨き込み<small>データ構造は現行のまま</small></h3>
+      <div class="hub-thumb"><iframe src="a-gantt-refined.html?embed=1" title="案A" tabindex="-1" loading="lazy"></iframe></div>
+      <div class="hub-q">問い: 「誰が何をいつまでに」を、重ならずに読めるか</div>
+      <p>レーン分割・計画/実績の 2 層バー・日ごとの負荷帯・工程チップ・週/月/四半期のスケール。サマリーは「今週の予定と稼働」へ。既知バグ群の一掃と同時に入れる。</p>
+    </a>
+    <a class="hub-card" href="b-load-grid.html">
+      <h3>案B 担当者 × 日の負荷格子<small>予定を「日別の時間」で持つ</small></h3>
+      <div class="hub-thumb"><iframe src="b-load-grid.html?embed=1" title="案B" tabindex="-1" loading="lazy"></iframe></div>
+      <div class="hub-q">問い: 「誰が・いつ・何時間」と、空き・超過はどこか</div>
+      <p>セルが 8 時間の器。積み上げの高さが予定、破線が縁、過去の日は予定と実績を並べる。時間はタップ 2 回で別の日へ。作業月は予定から導出して見積へ反映。</p>
+    </a>
+    <a class="hub-card is-reco" href="c-board-and-gantt.html">
+      <span class="hub-reco">推奨</span>
+      <h3>案C 計画ボード ＋ 進捗ガント<small>2 つの問いに 2 つの画面、データは 1 つ</small></h3>
+      <div class="hub-thumb"><iframe src="c-board-and-gantt.html?embed=1" title="案C" tabindex="-1" loading="lazy"></iframe></div>
+      <div class="hub-q">問い: 両方。切り替えても選択が続く</div>
+      <p>案B の格子を「計画ボード」、案A のタスク別ガントを「進捗ガント」として並べ、上のスイッチで切替。片方で選んだ予定はもう片方でも浮き上がる。①→②→③ と段階導入できる。</p>
+    </a>
+  </div>
+  <div class="hub-note">サムネイルは各案の PC 表示の縮小。カードをクリックすると操作できる。</div>
+
+  <h2 class="hub-h2">比較表</h2>
+  <div class="hub-wrap">
+  <table class="hub-table">
+    <thead><tr><th>観点</th><th>現行</th><th>案A ガント磨き込み</th><th>案B 負荷格子</th><th>案C ボード ＋ ガント</th></tr></thead>
+    <tbody>
+      <tr><td>並行予定の読みやすさ</td><td>同じ行に重なる</td><td>レーンで縦に分かれる</td><td>器の中で積み上がる（重なりの概念が無い）</td><td>格子で積み上げ、ガントでレーン</td></tr>
+      <tr><td>1 日の負荷（超過・空き）</td><td>見えない</td><td>行下の負荷帯で濃淡・赤</td><td>器の高さと縁で一目。空きは空の器</td><td>案B と同じ</td></tr>
+      <tr><td>計画 vs 実績</td><td>進捗率の塗り分けのみ</td><td>計画バーの底に実績の刻み。計画外の日は赤</td><td>過去の日は予定｜実績を並べる</td><td>両方</td></tr>
+      <tr><td>タスクの期間・進捗の俯瞰</td><td>タスク別ビュー</td><td>タスク別 ＋ 週/月/四半期</td><td>弱い（月集計の表で補う）</td><td>進捗ガントで担保</td></tr>
+      <tr><td>時間を動かす操作</td><td>バーのドラッグ＝着手日の変更</td><td>同じ</td><td>タップ 2 回（選ぶ → 行き先）。候補リストからも</td><td>案B と同じ</td></tr>
+      <tr><td>見積の作業月との関係</td><td>二重管理</td><td>二重管理のまま</td><td>予定から導出し、ずれを 1 タップで反映</td><td>同じ。選んだタスクに絞って見せる</td></tr>
+      <tr><td>スマホ</td><td>PC のガントを縮めて横スクロール</td><td>同じ（日幅を狭める）</td><td>1 人の 2 週間アジェンダ ＋ 下からのシート</td><td>ボードはアジェンダ、ガントは縮小</td></tr>
+      <tr><td>データ変更</td><td>—</td><td>無し</td><td>予定に日別配分 <code>daily</code> を追加（無ければ均等配分で読む）</td><td>案B と同じ</td></tr>
+      <tr><td>描画</td><td>Canvas 2 枚</td><td>DOM 化を推奨（テーマ・a11y・Playwright 検証が素直になる）</td><td>DOM（CSS Grid）</td><td>DOM</td></tr>
+      <tr><td>実装規模の目安</td><td>—</td><td>中。<code>schedule-render.js</code> の描画層を置換</td><td>大。新画面 ＋ データ移行 ＋ 作業月連携</td><td>大。ただし ①A → ②B → ③連携 と分割でき、①だけでも出せる</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="hub-h2">スマホ 390px を横に並べる</h2>
+  <p class="hub-p">下部の Dock（タブ）を含めた実機相当の枠。それぞれ操作できる。案B・案C のスマホは格子ではなく、担当者チップで切り替える 2 週間のアジェンダになる。</p>
+  <div class="hub-side">
+    <div><div class="hub-side-title">案A<small>ガントを縮めて横スクロール</small></div><iframe src="a-gantt-refined.html?w=mobile&embed=1" title="案A スマホ" loading="lazy"></iframe></div>
+    <div><div class="hub-side-title">案B<small>アジェンダ ＋ 下からのシート</small></div><iframe src="b-load-grid.html?w=mobile&embed=1" title="案B スマホ" loading="lazy"></iframe></div>
+    <div><div class="hub-side-title">案C<small>ヒンジで切替</small></div><iframe src="c-board-and-gantt.html?w=mobile&embed=1" title="案C スマホ" loading="lazy"></iframe></div>
+  </div>
+
+  <h2 class="hub-h2">推奨と進め方</h2>
+  <p class="hub-p"><b>案C を推奨。</b>ただし一度に作らず、①案A の核（レーン分割・2 層バー・既知バグ一掃）を現行ガントに入れる → ②計画ボードを新設して担当者別ビューを置き換える → ③作業月の導出連携を B-047 と合流させる、の順で段階導入する。①は単独で価値があり、②を待たない。詳細は <code>README.md</code>。</p>
+</div>
+</body>
+</html>

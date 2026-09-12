@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案A 現行ガントの磨き込み — スケジュール刷新モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* 案A 固有: 選んだ予定の詳細（サイドパネル） */
+.ga-detail dl { margin: 0; display: grid; grid-template-columns: 5.5em 1fr; gap: 4px 8px; font-size: 13px; }
+.ga-detail dt { color: var(--text-muted); }
+.ga-detail dd { margin: 0; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.ga-days { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
+.ga-days span { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--c-light); color: var(--c-text); border: 1px solid var(--c-line); font-variant-numeric: tabular-nums; }
+.ga-days span.is-spill { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el, esc, fmtMD, fmtMDW } = SR.util;
+    const M = SR.model;
+    const st = { mode: 'member', scale: 'month', procs: new Set([...SR.PROCS, 'REVIEW']), sel: null };
+    const RANGE_LABEL = { week: '9/7 〜 9/20', month: '2026年9月 〜 10月', quarter: '2026年9月 〜 11月' };
+
+    function seg(items, cur, onPick, extra = '') {
+        const s = el(`<div class="sr-seg ${extra}"></div>`);
+        items.forEach(([v, label]) => {
+            const b = el(`<button type="button" class="${v === cur ? 'is-active' : ''}">${label}</button>`);
+            b.addEventListener('click', () => onPick(v));
+            s.appendChild(b);
+        });
+        return s;
+    }
+
+    SR.mount({
+        key: 'a-gantt-refined.html',
+        title: '案A 現行ガントの磨き込み',
+        lead: '行の中で予定が重ならないように<b>レーンに分け</b>、計画バーの底に<b>実績を日ごとの刻み</b>で乗せる。担当者行の下には日ごとの負荷帯。工程チップとスケール切替を足し、サマリーは「今週の予定と稼働」に置き換える。データ構造は現行のまま。',
+        hint: '<b>見るところ:</b> 田中の行で 9/9 に 2 本の予定が上下に分かれている（現行は重なって 1 本に見える）。帳票A PG の底の刻みが 9/10・9/14 まで赤い斜線で続いている＝計画外の日に働いた。バーをクリックすると右に詳細。',
+        render(tab, side, api) {
+            const mobile = api.isMobile();
+            // ---- ツールバー ----
+            const tb = el(`<div class="sr-toolbar">
+                <button type="button" class="sr-nav-btn" aria-label="前へ">‹</button><span class="sr-month">${RANGE_LABEL[st.scale]}</span><button type="button" class="sr-nav-btn" aria-label="次へ">›</button>
+                <button type="button" class="sr-btn is-small">今日</button></div>`);
+            tb.querySelectorAll('.sr-nav-btn').forEach(b => b.addEventListener('click', () => api.toast('モックアップでは 2026 年 9〜10 月のデータだけを持っています')));
+            tb.appendChild(seg([['member', '担当者別'], ['task', 'タスク別']], st.mode, v => { st.mode = v; api.note(`表示を「${v === 'member' ? '担当者別' : 'タスク別'}」に切替`); api.rerender(); }));
+            tb.appendChild(seg([['week', '週'], ['month', '月'], ['quarter', '四半期']], st.scale, v => { st.scale = v; api.note(`スケールを「${{ week: '週', month: '月', quarter: '四半期' }[v]}」に切替`); api.rerender(); }));
+            if (!mobile) {
+                tb.appendChild(el('<div class="sr-spacer"></div>'));
+                tb.appendChild(el('<button type="button" class="sr-btn">出力</button>'));
+                tb.appendChild(el('<button type="button" class="sr-btn">自動生成</button>'));
+                tb.appendChild(el('<button type="button" class="sr-btn is-primary">＋ 予定作成</button>'));
+            }
+            tab.appendChild(tb);
+
+            // ---- 工程チップ ＋ 凡例 ----
+            const chips = el('<div class="sr-chips"><span class="sr-chips-label">工程</span></div>');
+            [...SR.PROCS, 'REVIEW'].forEach(p => {
+                const on = st.procs.has(p);
+                const c = el(`<button type="button" class="sr-chip ${on ? 'is-on' : 'is-off'}">${p === 'REVIEW' ? 'レビュー' : p}</button>`);
+                c.addEventListener('click', () => { on ? st.procs.delete(p) : st.procs.add(p); api.note(`工程「${p === 'REVIEW' ? 'レビュー' : p}」を${on ? '非表示' : '表示'}`); api.rerender(); });
+                chips.appendChild(c);
+            });
+            const bar = el('<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between"></div>');
+            bar.appendChild(chips);
+            if (!mobile) bar.appendChild(el(`<div class="sr-legend"><span><i style="background:rgba(45,90,39,.14);border:1px solid rgba(45,90,39,.45)"></i>計画</span><span><i style="background:#2D5A27;height:6px"></i>実績（日ごとの高さ＝時間）</span><span><i style="background:var(--danger);height:6px"></i>計画外の日の実績</span><span><i style="background:var(--danger);width:3px"></i>遅延</span><span><i style="background-image:var(--sr-hatch);border:1px solid var(--border)"></i>休暇</span></div>`));
+            tab.appendChild(bar);
+
+            // ---- ガント ----
+            const panel = el('<div class="sr-panel"></div>');
+            SR.renderGantt(panel, { mode: st.mode, scale: st.scale, procs: st.procs, loadStrip: true, sel: st.sel, mobile,
+                onSelect: key => { st.sel = st.sel === key ? null : key; api.note(st.sel ? `予定「${key.split('|')[0]}」を選択` : '選択を解除'); api.rerender(); } });
+            tab.appendChild(panel);
+
+            // ---- 今週の負荷（サマリー置換） ----
+            const wk = el('<div></div>');
+            SR.renderWeekLoad(wk, {});
+            tab.appendChild(wk);
+
+            // ---- サイドパネル ----
+            if (!side) return;
+            const det = el('<div class="mk-card ga-detail"><h4>選んだ予定</h4></div>');
+            if (st.sel) {
+                const s = SR.data.schedules.find(x => M.keyOf(x) === st.sel);
+                const t = M.taskOf(s), est = M.estimateOf(st.sel), am = M.actualMap(st.sel), act = M.actualTotal(st.sel), stt = M.statusOf(s);
+                det.appendChild(el(`<div class="sr-insp-title" style="${SR.util.colorVars(t.color)};margin-bottom:8px"><i></i>${esc(`${t.ver} ${t.name} / ${M.procLabel(s)}`)}</div>`));
+                det.appendChild(el(`<dl><dt>担当者</dt><dd>${esc(s.member)}</dd><dt>状態</dt><dd><span class="sr-badge ${stt === 'completed' ? 'is-ok' : M.isDelayed(s) ? 'is-none' : 'is-warn'}">${M.STATUS_LABEL[stt]}${M.isDelayed(s) ? '・遅延' : ''}</span></dd>
+                    <dt>計画</dt><dd>${fmtMD(M.start(s))} 〜 ${fmtMD(M.end(s))}（${M.planned(s)}h）</dd><dt>見積</dt><dd>${est ? est.hours : '-'}h</dd><dt>実績</dt><dd>${act}h</dd><dt>残り</dt><dd>${Math.max(0, (est ? est.hours : M.planned(s)) - act)}h</dd></dl>`));
+                const days = el(`<div class="ga-days" style="${SR.util.colorVars(t.color)}"></div>`);
+                Object.entries(am).sort().forEach(([d, h]) => days.appendChild(el(`<span class="${d > M.end(s) || d < M.start(s) ? 'is-spill' : ''}" title="${d > M.end(s) ? '計画外の日' : ''}">${fmtMD(d)} ${h}h</span>`)));
+                if (Object.keys(am).length) { det.appendChild(el('<h4 style="margin-top:10px">実績の日別</h4>')); det.appendChild(days); }
+                det.appendChild(el('<p style="margin-top:10px;font-size:12.5px">本実装では現行の予定詳細モーダル（進捗・見込み残・状態変更・見積編集への導線）がここに来る。</p>'));
+            } else det.appendChild(el('<p>ガントのバーをクリックすると、ここに計画・実績・日別の内訳が出ます。</p>'));
+            side.appendChild(det);
+            side.appendChild(el(`<div class="mk-card"><h4>この案で変わること</h4><ul>
+                <li><b>レーン分割</b>: 同じ人の並行予定が縦に分かれる。行の高さは予定の重なりに応じて伸びる</li>
+                <li><b>計画 ＋ 実績の 2 層</b>: 仕様書どおり。実績は日ごとの刻みで、計画外の日は赤い斜線</li>
+                <li><b>負荷帯</b>: 担当者行の下に日ごとの予定時間。8h 超は赤</li>
+                <li><b>スケール切替</b>（週・月・四半期）と<b>工程チップ</b></li>
+                <li><b>サマリー</b>を「今週の予定と稼働」に置換</li>
+                <li><b>変わらないこと</b>: 予定レコードの形は現行のまま。B-027/029/033/040 と会社休日判定の修正を同時に入れる</li>
+            </ul></div>`));
+            side.appendChild(el(`<div class="mk-card"><h4>できないこと</h4><p>見積の作業月との二重管理はそのまま。1 日の中で「何時間」を動かす操作は無く、バーの移動＝着手日の変更のまま。</p></div>`));
+            const lg = el('<div class="mk-card"><h4>操作ログ</h4><div class="mk-log"></div></div>');
+            api.log().forEach(m => lg.querySelector('.mk-log').appendChild(el(`<div>${esc(m)}</div>`)));
+            if (!api.log().length) lg.querySelector('.mk-log').appendChild(el('<div>まだ操作していません</div>'));
+            side.appendChild(lg);
+        },
+    });
+})();
+</script>
+</body>
+</html>

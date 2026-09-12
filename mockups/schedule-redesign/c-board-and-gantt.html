@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案C 計画ボード ＋ 進捗ガント — スケジュール刷新モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* 案C 固有: ヒンジ（2 画面の切替）と連携パネル */
+.gc-hinge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.gc-hinge .gc-what { font-size: 12.5px; color: var(--text-muted); }
+.gc-link-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 14px 4px; flex-wrap: wrap; }
+.gc-link-head b { font-size: 14px; color: var(--text-primary); }
+.gc-link-head span { font-size: 12.5px; color: var(--text-muted); }
+.gc-link-head .sr-btn { margin-left: auto; }
+.gc-link-wrap { overflow-x: auto; padding: 0 6px 6px; }
+.mk-frame.is-mobile .gc-link-head { padding: 10px 12px 2px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el, esc, fmtMD, fmtMDW, fmtYM, shiftMonth } = SR.util;
+    const M = SR.model;
+    const st = { view: 'board', month: '2026-09', scale: 'month', ganttMode: 'task',
+        selKey: null, seg: null /* {s,date} */, selDay: null, moveFrom: null, agMember: SR.MEMBERS[0], sheet: false, linkAll: false };
+
+    function seg(items, cur, onPick, extra = '') {
+        const s = el(`<div class="sr-seg ${extra}"></div>`);
+        items.forEach(([v, label]) => {
+            const b = el(`<button type="button" class="${v === cur ? 'is-active' : ''}">${label}</button>`);
+            b.addEventListener('click', () => onPick(v));
+            s.appendChild(b);
+        });
+        return s;
+    }
+    function select(api, key, segSel) {
+        st.selKey = key; st.seg = segSel || null; st.selDay = null; st.moveFrom = null;
+        api.note(key ? `「${key.split('|')[0] in SR.TASKS ? SR.TASKS[key.split('|')[0]].name : key} ${key.split('|')[1]}」を選択` : '選択を解除');
+        api.rerender();
+    }
+    function inspectorOpts(api) {
+        return {
+            seg: st.seg, day: st.selDay, moveMode: !!st.moveFrom,
+            emptyText: 'ガントのバー、または格子の予定をタップすると選択され、もう一方の画面でも同じ予定が浮き上がります。',
+            onMoveStart: () => { st.moveFrom = { member: st.seg.s.member, date: st.seg.date, schedId: st.seg.s.id }; api.rerender(); },
+            onMoveCancel: () => { st.moveFrom = null; api.rerender(); },
+            onClear: () => select(api, null),
+            onMoveTo: (m, d) => doMove(api, m, d),
+            onSelectSeg: (s, d) => select(api, M.keyOf(s), { s, date: d }),
+        };
+    }
+    function doMove(api, member, d) {
+        const mf = st.moveFrom; if (!mf) return;
+        const s = SR.data.schedules.find(x => x.id === mf.schedId);
+        const h = s.daily[mf.date];
+        const undo = SR.ops.moveHours(mf.schedId, mf.date, d);
+        st.moveFrom = null; st.seg = { s, date: d }; st.sheet = false;
+        api.note(`${fmtMD(mf.date)} の ${h}h を ${fmtMD(d)} へ移動（${M.taskOf(s).name} ${M.procLabel(s)}）`);
+        api.rerender();
+        api.toast(`${fmtMDW(mf.date)} の ${h}h を ${fmtMDW(d)} へ移しました`, undo && (() => { undo(); st.seg = { s, date: mf.date }; api.rerender(); }));
+    }
+
+    SR.mount({
+        key: 'c-board-and-gantt.html',
+        title: '案C 計画ボード ＋ 進捗ガント',
+        lead: '「誰が・いつ・何時間」を見る<b>計画ボード</b>（案B の格子）と、「タスクがどこまで進んだか」を見る<b>進捗ガント</b>（案A のタスク別ガント）を、上のスイッチで切り替える。<b>予定データは 1 つ</b>で、片方で選んだ予定はもう片方でも浮き上がる。作業月の連携パネルは、選んだタスクに絞られる。',
+        hint: '<b>見るところ:</b> 進捗ガントで「帳票A出力改修」の PG 田中 をクリック → 計画ボードに切り替えると、そのタスクの時間だけが濃く、ほかは沈む。下の「作業月の連携」も同じタスクに絞られる。ボードで移した時間は、ガントの期間にもすぐ反映される。',
+        render(tab, side, api) {
+            const mobile = api.isMobile();
+            // ---- ヒンジ ----
+            const hinge = el('<div class="sr-toolbar gc-hinge"></div>');
+            hinge.appendChild(seg([['board', '計画ボード'], ['gantt', '進捗ガント']], st.view, v => { st.view = v; api.note(`「${v === 'board' ? '計画ボード' : '進捗ガント'}」へ切替`); api.rerender(); }, 'is-hinge'));
+            if (!mobile) hinge.appendChild(el(`<span class="gc-what">${st.view === 'board' ? '誰が・いつ・何時間' : 'タスクがどこまで進んだか'}</span>`));
+            hinge.appendChild(el('<div class="sr-spacer"></div>'));
+            if (st.view === 'board' && !mobile) {
+                const nav = el(`<span style="display:inline-flex;align-items:center;gap:6px"><button type="button" class="sr-nav-btn" aria-label="前月">‹</button><span class="sr-month">${fmtYM(st.month)}</span><button type="button" class="sr-nav-btn" aria-label="次月">›</button></span>`);
+                const [p, n] = nav.querySelectorAll('.sr-nav-btn');
+                p.addEventListener('click', () => { st.month = shiftMonth(st.month, -1); api.rerender(); });
+                n.addEventListener('click', () => { st.month = shiftMonth(st.month, 1); api.rerender(); });
+                hinge.appendChild(nav);
+            }
+            if (st.view === 'gantt') {
+                hinge.appendChild(seg([['member', '担当者別'], ['task', 'タスク別']], st.ganttMode, v => { st.ganttMode = v; api.rerender(); }));
+                hinge.appendChild(seg([['week', '週'], ['month', '月'], ['quarter', '四半期']], st.scale, v => { st.scale = v; api.rerender(); }));
+            }
+            if (!mobile) hinge.appendChild(el('<button type="button" class="sr-btn is-primary">＋ 予定作成</button>'));
+            tab.appendChild(hinge);
+
+            // ---- 本体 ----
+            if (st.view === 'board') {
+                if (mobile) {
+                    SR.renderAgenda(tab, {
+                        member: st.agMember, from: '2026-09-14', to: '2026-09-30', sel: st.seg,
+                        onSelectMember: m => { st.agMember = m; st.sheet = false; api.rerender(); },
+                        onSelectItem: (s, d) => { select(api, M.keyOf(s), { s, date: d }); st.sheet = true; api.rerender(); },
+                    });
+                    if (st.sheet && st.seg) {
+                        const sheet = el('<div class="sr-sheet"><button type="button" class="sr-sheet-close" aria-label="閉じる">×</button></div>');
+                        sheet.querySelector('.sr-sheet-close').addEventListener('click', () => { st.sheet = false; st.moveFrom = null; api.rerender(); });
+                        SR.renderInspector(sheet, inspectorOpts(api));
+                        api.frame().appendChild(sheet);
+                    }
+                } else {
+                    const panel = el('<div class="sr-panel"></div>');
+                    SR.renderGrid(panel, {
+                        month: st.month, sel: st.selKey ? { key: st.selKey } : null, selDay: st.selDay, moveFrom: st.moveFrom,
+                        onSelectSeg: (s, d) => select(api, M.keyOf(s), { s, date: d }),
+                        onSelectDay: (m, d) => { st.selDay = { member: m, date: d }; st.seg = null; api.rerender(); },
+                        onMoveTo: (m, d) => doMove(api, m, d),
+                    });
+                    tab.appendChild(panel);
+                }
+            } else {
+                const panel = el('<div class="sr-panel"></div>');
+                SR.renderGantt(panel, { mode: st.ganttMode, scale: st.scale, loadStrip: st.ganttMode === 'member', sel: st.selKey, mobile,
+                    onSelect: key => select(api, st.selKey === key ? null : key) });
+                tab.appendChild(panel);
+            }
+
+            // ---- 作業月の連携（選んだタスクに絞る） ----
+            const selTask = st.selKey ? st.selKey.split('|')[0] : null;
+            const showAll = !selTask || st.linkAll;
+            const lk = el(`<div class="sr-panel"><div class="gc-link-head"><b>作業月の連携</b><span>${showAll ? 'ずれ・未スケジュールの見積。ガントや格子で予定を選ぶと、そのタスクに絞られる' : `${esc(SR.TASKS[selTask].ver)} ${esc(SR.TASKS[selTask].name)} の見積`}</span>
+                <span style="margin-left:auto;display:inline-flex;gap:6px">${selTask ? `<button type="button" class="sr-btn is-small" data-act="task">${st.linkAll ? 'このタスクだけ' : 'すべてのタスク'}</button>` : ''}<button type="button" class="sr-btn is-small" data-act="all">${st.deriveAll ? 'ずれだけ見る' : '一致も見る'}</button></span></div><div class="gc-link-wrap"></div></div>`);
+            lk.querySelectorAll('.gc-link-head .sr-btn').forEach(b => b.addEventListener('click', () => { if (b.dataset.act === 'task') st.linkAll = !st.linkAll; else st.deriveAll = !st.deriveAll; api.rerender(); }));
+            SR.renderDerive(lk.querySelector('.gc-link-wrap'), {
+                filterTask: showAll ? null : selTask, sel: st.selKey, onlyIssues: !st.deriveAll && !selTask,
+                onSelect: key => select(api, st.selKey === key ? null : key),
+                onApply: e => { const undo = SR.ops.applyDerived(e.id); api.note(`見積「${SR.TASKS[e.task].name} ${e.process} ${M.short(e.member)}」の作業月を予定に合わせた`); api.rerender(); api.toast('見積の作業月を予定に合わせました', () => { undo(); api.rerender(); }); },
+            });
+            tab.appendChild(lk);
+
+            // ---- サイドパネル ----
+            if (!side) return;
+            const insp = el('<div class="mk-card"><h4>選んだもの</h4></div>');
+            if (st.selKey && !st.seg && !st.selDay) {
+                // ガントから選んだ（日を特定しない）状態: どちらの画面でも予定の要約と、もう一方の画面への導線
+                const s = SR.data.schedules.find(x => M.keyOf(x) === st.selKey);
+                if (s) {
+                    const t = M.taskOf(s), est = M.estimateOf(st.selKey), act = M.actualTotal(st.selKey), stt = M.statusOf(s);
+                    const other = st.view === 'gantt' ? 'board' : 'gantt';
+                    insp.appendChild(el(`<div class="sr-insp"><div class="sr-insp-title" style="${SR.util.colorVars(t.color)}"><i></i>${esc(`${t.name} ${M.procLabel(s)}`)}</div>
+                        <div class="sr-insp-meta">${esc(s.member)} ・ <span class="sr-badge ${stt === 'completed' ? 'is-ok' : M.isDelayed(s) ? 'is-none' : 'is-warn'}">${M.STATUS_LABEL[stt]}${M.isDelayed(s) ? '・遅延' : ''}</span><br>計画 ${fmtMD(M.start(s))}〜${fmtMD(M.end(s))}（${M.planned(s)}h）・ 見積 ${est ? est.hours : '-'}h ・ 実績 <b>${act}h</b><br>
+                        <span style="color:var(--text-muted)">${st.view === 'gantt' ? '「計画ボード」に切り替えると、この予定の時間だけが浮き上がります。' : '濃く残っているのがこの予定の時間。色をタップすると、その日の分を別の日へ移せます。'}</span></div></div>`));
+                    const row = el('<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"></div>');
+                    const sw = el(`<button type="button" class="sr-btn is-small">${other === 'board' ? '計画ボードで見る' : '進捗ガントで見る'}</button>`);
+                    sw.addEventListener('click', () => { st.view = other; api.rerender(); });
+                    const cl = el('<button type="button" class="sr-btn is-small">選択を解除</button>');
+                    cl.addEventListener('click', () => select(api, null));
+                    row.append(sw, cl);
+                    insp.appendChild(row);
+                }
+            } else SR.renderInspector(insp, inspectorOpts(api));
+            side.appendChild(insp);
+            side.appendChild(el(`<div class="mk-card"><h4>この案で変わること</h4><ul>
+                <li><b>2 つの問いに 2 つの画面</b>。「誰がいつ何時間」は格子、「どこまで進んだか」はガント。無理に 1 枚へ詰めない</li>
+                <li><b>選択が画面をまたいで続く</b>。ガントで気になったタスクを、格子で「どの日に何時間か」まで追える</li>
+                <li><b>作業月の連携</b>は選んだタスクに絞って見せ、ずれを 1 タップで見積へ反映</li>
+                <li><b>段階導入できる</b>: ①ガントの磨き込み（案A）→ ②計画ボード追加 → ③作業月の導出連携。①だけでも価値がある</li>
+            </ul></div>`));
+            side.appendChild(el(`<div class="mk-card"><h4>気になる点</h4><p>画面が 2 つになるぶん、初見で「どちらを見ればいいか」の案内が要る（ヒンジ横の一言がその役）。スマホは格子をアジェンダに畳むので、ガント側はスクロール前提のまま。</p></div>`));
+            const lg = el('<div class="mk-card"><h4>操作ログ</h4><div class="mk-log"></div></div>');
+            api.log().forEach(m => lg.querySelector('.mk-log').appendChild(el(`<div>${esc(m)}</div>`)));
+            if (!api.log().length) lg.querySelector('.mk-log').appendChild(el('<div>まだ操作していません</div>'));
+            side.appendChild(lg);
+        },
+    });
+})();
+</script>
+</body>
+</html>
