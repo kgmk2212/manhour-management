@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案C 工程×月マトリクス — 作業月 UI 比較モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* ============================================================
+   案C: 工程×月マトリクス（wx-*）
+   月を列にして、月ごとの工数をセルに直接入れる。値のある月が作業月。
+   合計セルに入れると選択中の月へ均等配分、セルに入れると手動配分。
+   ============================================================ */
+.wx-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+.wx-grid { display: grid; grid-template-columns: 56px 128px repeat(var(--n), 78px) 96px 76px; min-width: max-content; align-items: center; }
+.wx-row { display: contents; }
+.wx-grid > .wx-row > div { padding: 6px 6px; border-bottom: 1px solid var(--border-light); min-height: 52px; display: flex; align-items: center; justify-content: center; background: var(--surface); }
+.wx-row.is-head > div { background: var(--accent-light); font-weight: 600; font-size: 13.5px; color: var(--text-primary); min-height: 36px; border-bottom: 2px solid var(--border); }
+.wx-row.is-extra > div { background: var(--surface-elevated); }
+.wx-row:last-child > div { border-bottom: 0; }
+.wx-c-proc { position: sticky; left: 0; z-index: 2; gap: 4px; }
+.wx-c-member { position: sticky; left: 56px; z-index: 2; box-shadow: 4px 0 6px -4px rgba(26, 24, 20, .12); }
+.wx-c-member select, .wx-total input { margin: 0; padding: 6px 8px; font-size: 14.5px; }
+.wx-cell {
+    width: 100%; margin: 0; padding: 6px 6px; text-align: right; font-size: 14.5px; font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border-light); border-radius: 4px; background: var(--surface-elevated); color: var(--text-primary);
+}
+input.wx-cell::placeholder { color: var(--text-muted); }
+input.wx-cell:focus { background: #fff; }
+.wx-cell.is-on { background: var(--accent-light); border-color: var(--accent); font-weight: 600; }
+.wx-mirror {
+    width: 100%; box-sizing: border-box; padding: 6px 6px; text-align: right; font-size: 14.5px; font-variant-numeric: tabular-nums;
+    border: 1px dashed var(--border); border-radius: 4px; color: var(--text-muted);
+    background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(26, 24, 20, .035) 6px 8px);
+}
+.wx-mirror.is-on { color: var(--wm-mirror-text); border-color: var(--accent); background: var(--wm-mirror); font-weight: 600; }
+.wx-total { flex-direction: column; gap: 4px; }
+.wx-total input { text-align: right; }
+.wx-even { border: 0; background: none; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0 4px; }
+.wx-even:hover { text-decoration: underline; }
+.wx-c-add { justify-content: flex-end; gap: 4px; }
+.wx-c-add .est-add-member-btn { min-width: 30px; height: 30px; }
+.wx-head-month { flex-direction: column; gap: 0; line-height: 1.2; }
+.wx-head-month small { font-weight: 500; color: var(--text-muted); font-size: 11px; }
+.wx-scroll-hint { display: none; font-size: 12px; color: var(--text-muted); margin: 4px 2px 0; }
+.mk-frame.is-mobile .wx-grid { grid-template-columns: 44px 92px repeat(var(--n), 66px) 76px 44px; }
+.mk-frame.is-mobile .wx-c-member { left: 44px; }
+.mk-frame.is-mobile .wx-c-member select, .mk-frame.is-mobile .wx-total input, .mk-frame.is-mobile input.wx-cell { font-size: 16px; padding: 8px 6px; }
+.mk-frame.is-mobile .wx-mirror { font-size: 15px; padding: 8px 6px; }
+.mk-frame.is-mobile .wx-c-add { flex-direction: column; }
+.mk-frame.is-mobile .wx-c-add .est-add-member-btn, .mk-frame.is-mobile .wx-c-add .wm-remove { width: 40px; height: 40px; }
+.mk-frame.is-mobile .wx-scroll-hint { display: block; }
+.mk-frame.is-mobile .wm-link { width: 34px; height: 34px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el, esc } = WM.api;
+
+    function renderTable(api) {
+        const months = api.months();
+        const n = months.length;
+        const outer = el('<div></div>');
+        const wrap = el('<div class="wx-wrap"></div>');
+        const grid = el(`<div class="wx-grid" role="table" aria-label="各工程の見積（月別）" style="--n:${n}"></div>`);
+        const head = el('<div class="wx-row is-head" role="row"><div class="wx-c-proc">工程</div><div class="wx-c-member">担当</div></div>');
+        months.forEach(m => head.appendChild(el(`<div class="wx-head-month"><span>${api.fmtMonth(m)}</span><small>${m.slice(0, 4)}</small></div>`)));
+        head.appendChild(el('<div>合計 h</div>'));
+        head.appendChild(el('<div></div>'));
+        grid.appendChild(head);
+        api.state.rows.forEach(row => grid.appendChild(buildRow(row, api, months)));
+        wrap.appendChild(grid);
+        outer.appendChild(wrap);
+        outer.appendChild(el('<div class="wx-scroll-hint">横にスクロールすると月の列が続きます</div>'));
+        return outer;
+    }
+
+    function buildRow(row, api, months) {
+        const linked = api.isLinked(row);
+        const mo = api.monthly(row);
+        const r = el(`<div class="wx-row${row.extra ? ' is-extra' : ''}" data-id="${row.id}" role="row"></div>`);
+
+        const proc = el('<div class="wx-c-proc"></div>');
+        if (row.extra) {
+            proc.appendChild(api.buildLinkBtn(row));
+            if (row.isReview) proc.appendChild(el('<span class="wm-review-tag">R</span>'));
+        } else {
+            proc.innerHTML = `<span class="badge badge-${row.process.toLowerCase()}">${row.process}</span>`;
+        }
+
+        const mem = el('<div class="wx-c-member"><select aria-label="担当"></select></div>');
+        const sel = mem.querySelector('select');
+        sel.innerHTML = '<option value="">-</option>' + api.MEMBERS.map(m => `<option${m === row.member ? ' selected' : ''}>${m}</option>`).join('');
+        sel.addEventListener('change', () => api.setMember(row.id, sel.value));
+        r.append(proc, mem);
+
+        months.forEach(m => {
+            const v = mo[m];
+            const cell = el('<div></div>');
+            if (linked) {
+                cell.appendChild(el(`<div class="wx-mirror${v > 0 ? ' is-on' : ''}" title="${row.process} の月に連動">${v > 0 ? v : '–'}</div>`));
+            } else {
+                const input = el(`<input type="number" class="wx-cell${v > 0 ? ' is-on' : ''}" step="0.25" min="0" inputmode="decimal" placeholder="–" data-m="${m}" aria-label="${esc(api.rowLabel(row))} ${api.fmtMonth(m)} の工数" value="${v > 0 ? v : ''}">`);
+                input.addEventListener('change', () => {
+                    const map = {};
+                    r.querySelectorAll('input.wx-cell').forEach(i => { map[i.dataset.m] = Number(i.value) || 0; });
+                    if (!Object.values(map).some(x => x > 0)) { api.note(`${api.rowLabel(row)}: 少なくとも 1 つの月に工数が必要です（元に戻しました）`); api.render(); return; }
+                    api.setManual(row.id, map, `セル入力: ${api.rowLabel(row)} ${api.fmtMonth(m)} = ${input.value === '' ? '（空）' : api.fmtH(Number(input.value))}`);
+                });
+                cell.appendChild(input);
+            }
+            r.appendChild(cell);
+        });
+
+        const total = el(`<div class="wx-total"><input type="number" step="0.25" min="0" inputmode="decimal" placeholder="h" aria-label="合計時間" value="${row.hours === '' ? '' : row.hours}"></div>`);
+        total.querySelector('input').addEventListener('change', ev => api.setHours(row.id, ev.target.value, linked ? '合計を入力' : '合計を入力（選択中の月へ均等配分）'));
+        const per = Object.values(mo);
+        if (!linked && per.length > 1 && !per.every(x => x === per[0])) {
+            const even = el('<button type="button" class="wx-even">均等にする</button>');
+            even.addEventListener('click', () => api.setHours(row.id, row.hours, '均等に配分'));
+            total.appendChild(even);
+        }
+        r.appendChild(total);
+
+        const add = el('<div class="wx-c-add"></div>');
+        if (!row.extra) {
+            add.innerHTML = '<button type="button" class="est-add-member-btn" title="担当者を追加">+</button><button type="button" class="est-add-member-btn est-add-review-btn" title="レビュー行を追加">+R</button>';
+            add.children[0].addEventListener('click', () => api.addRow(row.process, false));
+            add.children[1].addEventListener('click', () => api.addRow(row.process, true));
+        } else {
+            add.innerHTML = '<button type="button" class="wm-remove" title="この行を削除" aria-label="この行を削除">×</button>';
+            add.children[0].addEventListener('click', () => api.removeRow(row.id));
+        }
+        r.appendChild(add);
+        return r;
+    }
+
+    WM.init({
+        key: 'c',
+        title: '案C 工程×月マトリクス',
+        lead: '月を列にして、<b>月ごとの工数をセルに直接入れる</b>。値のある月が作業月。合計に入れると選択中の月へ均等配分、セルに入れると手動配分になり、月別配分（monthlyHours）まで一度に決められる。入力量は増える。',
+        hint: '<b>操作:</b> 月のセルに工数を入れる → その月が作業月になる（空にすると外れる）。合計 h を変えると、値のある月へ均等に配り直す。配分が偏ったら「均等にする」。担当者行・レビュー行は連動中は工程の月の写し（自分の合計だけ入力）。鎖を外すとセルを個別に入力できる。スマホでは表が横スクロールになる。',
+        periodHint: '列はこの範囲の月。工数を入れたセルの月が作業月になります。担当者行・レビュー行は工程の月に連動し、鎖のボタンで個別に入力できます。',
+        renderTable,
+        renderControl: () => el('<span></span>'),
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案A 月チップのレール — 作業月 UI 比較モックアップ</title>
+<!-- 実物の style.css をそのまま読み込み、色・フォント・部品を本番と揃える -->
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* ============================================================
+   案A: 月チップのレール（wm-rail）
+   行の上に期間内の月を並べ、タップした月「だけ」になる。なぞった範囲が連続月になる。
+   連続して選ばれた月は 1 本のピルに溶けて見える（＝バーとして読める）。
+   ============================================================ */
+.wm-rail {
+    position: relative; flex: 1 1 auto; min-width: 0;
+    display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    background: var(--wm-track); border: 1px solid var(--border); border-radius: 8px; padding: 2px;
+    touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.wm-chip {
+    position: relative; border: 0; background: transparent; font: inherit; font-size: 13.5px; font-weight: 600;
+    color: var(--text-muted); min-height: 32px; border-radius: 6px; cursor: pointer; padding: 0 2px;
+    font-variant-numeric: tabular-nums; white-space: nowrap; transition: background-color 120ms, color 120ms;
+}
+.wm-chip + .wm-chip::before { content: ''; position: absolute; left: 0; top: 24%; bottom: 24%; width: 1px; background: var(--border); }
+.wm-chip:not(.is-on):hover { color: var(--text-primary); background: rgba(45, 90, 39, .06); }
+.wm-chip.is-on { background: var(--wm-on); color: var(--wm-on-text); border-radius: 0; }
+.wm-chip.is-on::before, .wm-chip.is-on + .wm-chip::before { display: none; }
+.wm-chip.is-start { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.wm-chip.is-end { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+.wm-rail.is-painting .wm-chip { transition: none; }
+.wm-rail.is-painting .wm-chip.is-on { background: var(--accent-hover); }
+/* 連動中（工程の写し）: 触れない・淡い */
+.wm-rail.is-linked { background: transparent; border-style: dashed; }
+.wm-rail.is-linked .wm-chip { cursor: default; }
+.wm-rail.is-linked .wm-chip:hover { background: transparent; color: var(--text-muted); }
+.wm-rail.is-linked .wm-chip.is-on { background: var(--wm-mirror); color: var(--wm-mirror-text); }
+.mk-frame.is-mobile .wm-chip { min-height: 44px; font-size: 15px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el } = WM.api;
+
+    function renderControl(row, api) {
+        const months = api.months();
+        const eff = api.effectiveMonths(row);
+        const linked = api.isLinked(row);
+        const on = new Set(eff);
+        const rail = el(`<div class="wm-rail${linked ? ' is-linked' : ''}" role="group" style="--n:${months.length}"></div>`);
+        rail.setAttribute('aria-label', `${api.rowLabel(row)} の作業月${linked ? `（${row.process} に連動）` : ''}`);
+        months.forEach((m, i) => {
+            const b = el(`<button type="button" class="wm-chip" data-m="${m}" aria-pressed="${on.has(m)}">${api.fmtMonth(m)}</button>`);
+            if (linked) { b.tabIndex = -1; b.setAttribute('aria-disabled', 'true'); }
+            if (on.has(m)) {
+                b.classList.add('is-on');
+                if (!on.has(months[i - 1])) b.classList.add('is-start');
+                if (!on.has(months[i + 1])) b.classList.add('is-end');
+            }
+            rail.appendChild(b);
+        });
+        if (!linked) wire(rail, row, api, months, eff);
+        return rail;
+    }
+
+    function wire(rail, row, api, months, eff) {
+        const idx = m => months.indexOf(m);
+        const chips = () => Array.from(rail.querySelectorAll('.wm-chip'));
+        const chipAt = x => {
+            const r = rail.getBoundingClientRect();
+            return Math.max(0, Math.min(months.length - 1, Math.floor((x - r.left) / (r.width / months.length))));
+        };
+        let anchor = -1, live = null;
+        const paint = (a, b) => {
+            const lo = Math.min(a, b), hi = Math.max(a, b);
+            chips().forEach((c, i) => {
+                const onI = i >= lo && i <= hi;
+                c.classList.toggle('is-on', onI); c.classList.toggle('is-start', onI && i === lo); c.classList.toggle('is-end', onI && i === hi);
+            });
+            live = [lo, hi];
+        };
+        const commit = (lo, hi, verb) => api.setMonths(row.id, months.slice(lo, hi + 1), verb, { focus: `[data-m="${months[hi]}"]` });
+        const extendTo = (j, verb) => { const cur = eff.map(idx); commit(Math.min(...cur, j), Math.max(...cur, j), verb); };
+
+        rail.addEventListener('pointerdown', e => {
+            const c = e.target.closest('.wm-chip'); if (!c) return;
+            e.preventDefault();
+            if (e.shiftKey) { extendTo(idx(c.dataset.m), 'Shift+クリックで範囲'); return; }
+            anchor = idx(c.dataset.m);
+            rail.setPointerCapture(e.pointerId);
+            rail.classList.add('is-painting');
+            paint(anchor, anchor);
+        });
+        rail.addEventListener('pointermove', e => { if (anchor < 0) return; paint(anchor, chipAt(e.clientX)); });
+        rail.addEventListener('pointerup', () => {
+            if (anchor < 0) return;
+            const [lo, hi] = live; anchor = -1; rail.classList.remove('is-painting');
+            /* 再描画は touchend が届いた後に回す（pointerup の中で DOM を差し替えると、
+               Chromium のタッチ操作では次のタップの click が合成されない） */
+            setTimeout(() => commit(lo, hi, lo === hi ? 'タップ（この月だけ）' : 'なぞって範囲'), 0);
+        });
+        rail.addEventListener('pointercancel', () => { anchor = -1; api.render(); });
+        rail.addEventListener('keydown', e => {
+            const c = e.target.closest('.wm-chip'); if (!c) return;
+            const i = idx(c.dataset.m);
+            if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); commit(i, i, 'キー（この月だけ）'); return; }
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const j = Math.max(0, Math.min(months.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)));
+                if (e.shiftKey) extendTo(j, 'Shift+矢印で範囲'); else chips()[j].focus();
+            }
+        });
+    }
+
+    WM.init({
+        key: 'a',
+        title: '案A 月チップのレール',
+        lead: '月をドロップダウンから選ぶのをやめ、行の上に期間内の月をそのまま並べる。<b>タップした月だけ</b>になり、<b>なぞった範囲</b>が連続月になる。担当者行・レビュー行は工程の月に連動するのが既定で、鎖のボタンを押した行だけ個別に設定する。',
+        hint: '<b>操作:</b> 月を 1 回タップ → その月だけ（単一月の移動が 1 操作）。左右になぞる（マウスドラッグ／指でスワイプ）→ 範囲。Shift+クリック、または Shift+←→ でも範囲を伸ばせる。担当者行・レビュー行の <b>鎖ボタン</b> を押すと連動が外れ、その行だけ個別に月を選べる。作業期間を変えると月の並びが変わり、期間外の月は自動で寄せる。',
+        renderControl,
+    });
+})();
+</script>
+</body>
+</html>

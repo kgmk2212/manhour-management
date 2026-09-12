@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案B ミニガントのバー — 作業月 UI 比較モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* ============================================================
+   案B: ミニガント（wg-*）
+   月のマス目（トラック）の上に 1 本のバー。バー本体をドラッグで移動、両端のつまみで伸縮、
+   空いている月をタップするとそこまで広がる。バーの長さがそのまま期間。
+   ============================================================ */
+.wg-track {
+    position: relative; flex: 1 1 auto; min-width: 0; height: 36px;
+    display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    background: var(--wm-track); border: 1px solid var(--border); border-radius: 8px;
+    touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.wg-cell {
+    display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600;
+    color: var(--text-muted); font-variant-numeric: tabular-nums; cursor: pointer; border-left: 1px solid var(--border-light);
+}
+.wg-cell:first-child { border-left: 0; }
+.wg-cell:hover { color: var(--text-primary); }
+.wg-cell.is-covered { visibility: hidden; }
+.wg-bar {
+    position: absolute; top: 3px; bottom: 3px;
+    left: calc(var(--s) / var(--n) * 100% + 3px);
+    width: calc((var(--e) - var(--s) + 1) / var(--n) * 100% - 6px);
+    background: var(--wm-on); color: var(--wm-on-text); border-radius: 6px; cursor: grab;
+    font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; box-shadow: 0 1px 2px rgba(26, 24, 20, .18);
+}
+.wg-bar.is-dragging { cursor: grabbing; box-shadow: 0 4px 12px rgba(26, 24, 20, .28); background: var(--accent-hover); }
+/* ラベルはバー全幅の中央。つまみはバーの両端に重ねる（単一月の狭いバーでもラベルが切れない） */
+.wg-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; padding: 0 6px; pointer-events: none; }
+.wg-handle { position: absolute; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center; cursor: ew-resize; }
+.wg-handle.l { left: 0; } .wg-handle.r { right: 0; }
+.wg-handle::before { content: ''; width: 3px; height: 42%; border-radius: 2px; background: rgba(255, 255, 255, .55); }
+/* 単一月の狭いバー: ラベルを詰め、つまみの線を端に寄せる */
+.wg-bar.is-single .wg-label { padding: 0 1px; font-size: 12px; letter-spacing: -.02em; }
+.wg-bar.is-single .wg-handle { width: 10px; }
+.mk-frame.is-mobile .wg-bar.is-single .wg-handle { width: 16px; }
+.mk-frame.is-mobile .wg-bar.is-single .wg-label { font-size: 13.5px; }
+.wg-bar:hover .wg-handle::before, .wg-bar:focus-visible .wg-handle::before { background: rgba(255, 255, 255, .9); }
+/* 連動中（工程の写し） */
+.wg-track.is-linked { background: transparent; border-style: dashed; }
+.wg-track.is-linked .wg-cell { cursor: default; }
+.wg-track.is-linked .wg-cell:hover { color: var(--text-muted); }
+.wg-track.is-linked .wg-bar { background: var(--wm-mirror); color: var(--wm-mirror-text); box-shadow: none; cursor: default; }
+.wg-track.is-linked .wg-handle { display: none; }
+.mk-frame.is-mobile .wg-track { height: 44px; }
+.mk-frame.is-mobile .wg-handle { width: 22px; }
+.mk-frame.is-mobile .wg-cell, .mk-frame.is-mobile .wg-bar { font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el } = WM.api;
+
+    function renderControl(row, api) {
+        const months = api.months();
+        const eff = api.effectiveMonths(row);
+        const linked = api.isLinked(row);
+        const n = months.length;
+        let s = months.indexOf(eff[0]), e = months.indexOf(eff[eff.length - 1]);
+        if (s < 0) { s = 0; e = 0; }
+        const track = el(`<div class="wg-track${linked ? ' is-linked' : ''}" role="group" style="--n:${n}"></div>`);
+        track.setAttribute('aria-label', `${api.rowLabel(row)} の作業月 ${api.fmtRange(eff)}${linked ? `（${row.process} に連動）` : ''}`);
+        months.forEach((m, i) => track.appendChild(el(`<div class="wg-cell${i >= s && i <= e ? ' is-covered' : ''}" data-i="${i}">${api.fmtMonth(m)}</div>`)));
+        const bar = el(`<div class="wg-bar" style="--s:${s};--e:${e}" tabindex="${linked ? -1 : 0}" data-m="bar"><span class="wg-handle l" aria-hidden="true"></span><span class="wg-label"></span><span class="wg-handle r" aria-hidden="true"></span></div>`);
+        track.appendChild(bar);
+        const setLabel = (a, b) => { bar.querySelector('.wg-label').textContent = api.fmtRange(months.slice(a, b + 1)); bar.classList.toggle('is-single', a === b); };
+        setLabel(s, e);
+        if (!linked) wire(track, bar, row, api, months, s, e, setLabel);
+        return track;
+    }
+
+    function wire(track, bar, row, api, months, s0, e0, setLabel) {
+        const n = months.length;
+        const clamp = i => Math.max(0, Math.min(n - 1, i));
+        const idxAt = x => { const r = track.getBoundingClientRect(); return clamp(Math.floor((x - r.left) / (r.width / n))); };
+        let mode = null, startIdx = 0, live = [s0, e0];
+        const apply = (a, b) => {
+            bar.style.setProperty('--s', a); bar.style.setProperty('--e', b); setLabel(a, b);
+            track.querySelectorAll('.wg-cell').forEach((c, i) => c.classList.toggle('is-covered', i >= a && i <= b));
+            live = [a, b];
+        };
+        const previewFor = i => {
+            const d = i - startIdx;
+            if (mode === 'move') { const len = e0 - s0; const a = clamp(Math.min(s0 + d, n - 1 - len)); return [a, a + len]; }
+            if (mode === 'l') return [Math.min(i, e0), e0];
+            if (mode === 'r') return [s0, Math.max(i, s0)];
+            /* tap: 空いている月まで広げる */
+            return [Math.min(s0, i), Math.max(e0, i)];
+        };
+        track.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            const h = e.target.closest('.wg-handle');
+            mode = h ? (h.classList.contains('l') ? 'l' : 'r') : e.target.closest('.wg-bar') ? 'move' : 'tap';
+            startIdx = idxAt(e.clientX);
+            track.setPointerCapture(e.pointerId);
+            if (mode !== 'tap') bar.classList.add('is-dragging');
+            apply(...previewFor(startIdx));
+        });
+        track.addEventListener('pointermove', e => { if (!mode) return; apply(...previewFor(idxAt(e.clientX))); });
+        track.addEventListener('pointerup', () => {
+            if (!mode) return;
+            const verb = { move: 'バーを移動', l: '左端を伸縮', r: '右端を伸縮', tap: '空いている月をタップして広げる' }[mode];
+            const [a, b] = live; mode = null; bar.classList.remove('is-dragging');
+            /* 再描画は touchend が届いた後に回す（案A と同じ理由） */
+            setTimeout(() => api.setMonths(row.id, months.slice(a, b + 1), verb, { focus: '.wg-bar' }), 0);
+        });
+        track.addEventListener('pointercancel', () => { mode = null; api.render(); });
+        bar.addEventListener('keydown', e => {
+            const [a, b] = [s0, e0];
+            const map = {
+                ArrowRight: e.shiftKey ? [a, clamp(b + 1)] : [clamp(Math.min(a + 1, n - 1 - (b - a))), clamp(Math.min(a + 1, n - 1 - (b - a))) + (b - a)],
+                ArrowLeft:  e.shiftKey ? [a, Math.max(a, b - 1)] : [clamp(a - 1), clamp(a - 1) + (b - a)],
+            };
+            if (!map[e.key]) return;
+            e.preventDefault();
+            const [na, nb] = map[e.key];
+            api.setMonths(row.id, months.slice(na, nb + 1), e.shiftKey ? 'Shift+矢印で右端を伸縮' : '矢印でバーを移動', { focus: '.wg-bar' });
+        });
+    }
+
+    WM.init({
+        key: 'b',
+        title: '案B ミニガントのバー',
+        lead: '各行を 1 本のバーにして、月のマス目の上で<b>動かす・伸ばす</b>。バーの長さがそのまま期間なので、表全体がミニガントとして読める。単一月の移動はバーを隣へ 1 回ドラッグ。担当者行・レビュー行は工程のバーの写しが既定。',
+        hint: '<b>操作:</b> バー本体をドラッグ → 月を移動（長さはそのまま）。両端の <b>つまみ</b> をドラッグ → 開始・終了を伸縮。空いている月をタップ → そこまで広がる。キーボードは ←→ で移動、Shift+←→ で右端を伸縮。担当者行・レビュー行は鎖ボタンで連動を外すと個別に動かせる。',
+        renderControl,
+    });
+})();
+</script>
+</body>
+</html>

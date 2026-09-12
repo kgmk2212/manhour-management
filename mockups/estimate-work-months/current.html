@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現状の再現（比較基準） — 作業月 UI 比較モックアップ</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+/* 現状: 行ごとに 開始select 〜 終了select（2ヶ月期間は単一 select）。
+   js/estimate-add.js updateAddEstimateTableHeader / ensureExtraRowMonthCell の見え方を再現 */
+.cur-range { display: flex; gap: 5px; align-items: center; flex: 1 1 auto; min-width: 0; }
+.cur-range select { margin: 0; flex: 1; min-width: 0; padding: 6px 6px; font-size: 14.5px; }
+.cur-range span { font-size: 14px; color: var(--text-secondary); }
+.mk-frame.is-mobile .cur-range { gap: 2px; }
+.mk-frame.is-mobile .cur-range select { font-size: 16px; padding: 6px 2px; }
+.mk-frame.is-mobile .cur-range span { font-size: 11px; }
+/* 現状のスマホは 1 行のまま（工程 40px・時間 50px・作業月 100px・+ 32px = 本番の列幅）。B-046 の「月が読めない」を再現 */
+.mk-frame.is-mobile .wm-row { grid-template-columns: 40px minmax(0, 1fr) 50px 100px 32px; grid-template-areas: "proc member hours rail add"; column-gap: 4px; padding: 8px 6px; }
+.mk-frame.is-mobile .wm-c-add { flex-direction: column; gap: 2px; }
+.mk-frame.is-mobile .wm-c-add .est-add-member-btn, .mk-frame.is-mobile .wm-remove { width: 30px; height: 30px; }
+</style>
+</head>
+<body>
+<div id="mk-root"></div>
+<script src="common.js"></script>
+<script>
+(() => {
+    const { el } = WM.api;
+
+    function renderControl(row, api) {
+        const months = api.months();
+        const eff = row.months;
+        const opts = v => months.map(m => `<option value="${m}"${m === v ? ' selected' : ''}>${api.fmtMonth(m)}</option>`).join('');
+        const wrap = el('<div class="cur-range"></div>');
+        if (months.length <= 2) {
+            /* 2ヶ月期間: 単一 select（範囲は指定できない = 既知の制約） */
+            const s = el(`<select aria-label="作業月">${opts(eff[0])}</select>`);
+            s.addEventListener('change', () => api.setMonths(row.id, [s.value], '作業月 select', { weight: 2 }));
+            wrap.appendChild(s);
+            return wrap;
+        }
+        const s = el(`<select aria-label="開始月">${opts(eff[0])}</select>`);
+        const e = el(`<select aria-label="終了月">${opts(eff[eff.length - 1])}</select>`);
+        s.addEventListener('change', () => {
+            /* a62f797: 単一月の行は終了月が追従。範囲行は 開始 > 終了 のときだけクランプ */
+            let end = eff.length === 1 ? s.value : (s.value > e.value ? s.value : e.value);
+            api.setMonths(row.id, months.slice(months.indexOf(s.value), months.indexOf(end) + 1), '開始月 select', { weight: 2 });
+        });
+        e.addEventListener('change', () => {
+            let start = e.value < s.value ? e.value : s.value;
+            api.setMonths(row.id, months.slice(months.indexOf(start), months.indexOf(e.value) + 1), '終了月 select', { weight: 2 });
+        });
+        wrap.append(s, el('<span aria-hidden="true">〜</span>'), e);
+        return wrap;
+    }
+
+    WM.init({
+        key: 'current',
+        title: '現状の再現（比較基準）',
+        lead: 'いまの UI の見え方と手数を再現したもの。全体期間を選び、行ごとに <b>開始〜終了を select</b> で選ぶ（単一月行の終了月追従＝a62f797 込み）。追加担当者行・レビュー行も行ごとに独立した select を持ち、連動は無い。2ヶ月期間では単一 select になり、2ヶ月に跨げない。',
+        hint: '<b>操作:</b> 各行の開始月・終了月をドロップダウンで選ぶ。担当者行・レビュー行にも同じ select が並ぶ（連動しないので同じ月を人数分選ぶ）。スマホ 390px では select が文字幅より狭くなり月が読めない（B-046）。作業期間を 2ヶ月にすると単一 select に変わる。',
+        periodHint: '（現状）全体期間を選ぶと「作業月」列が現れる。各行の月はこの範囲の中の 開始〜終了。',
+        noLink: true,
+        renderControl,
+    });
+})();
+</script>
+</body>
+</html>

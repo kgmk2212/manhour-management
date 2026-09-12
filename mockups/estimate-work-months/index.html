@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>見積の作業月 UI 刷新 — 案の比較</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="common.css">
+<style>
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 18px 0 8px; }
+.hub-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; display: grid; gap: 10px; align-content: start; text-decoration: none; color: inherit; box-shadow: var(--shadow-sm); }
+.hub-card:hover { border-color: var(--accent); }
+.hub-card.is-reco { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-sm); }
+.hub-card h3 { margin: 0; font-size: 17px; color: var(--text-primary); }
+.hub-card h3 small { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+.hub-card p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--text-secondary); }
+.hub-card .hub-num { display: flex; gap: 14px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.hub-card .hub-num b { font-size: 26px; font-weight: 800; letter-spacing: -.03em; color: var(--text-primary); }
+.hub-card .hub-num span { font-size: 12.5px; color: var(--text-muted); }
+.hub-reco { display: inline-block; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 999px; padding: 2px 9px; justify-self: start; }
+.hub-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.hub-table th, .hub-table td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-light); line-height: 1.55; position: static; }
+.hub-table th { background: var(--accent-light); color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+.hub-table td:first-child { font-weight: 700; white-space: nowrap; }
+.hub-table tr:last-child td { border-bottom: 0; }
+.hub-wrap { overflow-x: auto; }
+.hub-h2 { font-size: 19px; font-weight: 800; letter-spacing: -.02em; margin: 36px 0 6px; color: var(--text-primary); }
+.hub-p { color: var(--text-secondary); line-height: 1.75; max-width: 820px; font-size: 15px; margin: 0; }
+.hub-side { display: grid; grid-template-columns: repeat(4, 390px); gap: 18px; overflow-x: auto; padding: 8px 2px 16px; }
+.hub-side > div { display: grid; gap: 6px; }
+.hub-side .hub-side-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.hub-side .hub-side-title small { color: var(--text-muted); font-weight: 500; margin-left: 6px; }
+.hub-side iframe { width: 390px; height: 900px; border: 0; display: block; background: transparent; }
+.hub-note { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="mk-wrap">
+  <h1 class="mk-h1">見積の「工程ごとの作業月」設定 UI 刷新 — 案の比較</h1>
+  <p class="mk-lead">見積登録／全工程を編集モーダルで、工程ごとの作業月を <b>開始 select 〜 終了 select</b> で選ぶ現状（単一月でも 2 つ触る・2ヶ月期間では跨げない・スマホで月が読めない）を置き換える 3 案。すべて同じ 8 行の見積と同じ課題から始まり、右の操作ログと達成判定で手数を比べられる。</p>
+
+  <section class="mk-scenario">
+    <div class="mk-scenario-label">共通の課題（4 つとも満たすまでの操作回数を比べる）</div>
+    <div class="mk-scenario-text">V2.4 帳票A出力改修。作業期間 <b>2026年8月〜11月</b>。PG には田中・佐藤の 2 人とレビュー（鈴木）が付いている。初期値はウォーターフォール式の既定。</div>
+    <ol class="mk-task-list">
+      <li>PG の田中・佐藤を 8〜10月（3ヶ月）にする</li>
+      <li>PG のレビュー（鈴木）は 10月だけにする</li>
+      <li>IT（佐藤）を 10月から 11月へ動かす</li>
+      <li>ほかの行の月と、各行の合計時間は変えない</li>
+    </ol>
+  </section>
+
+  <div class="hub-grid">
+    <a class="hub-card" href="current.html">
+      <h3>現状<small>開始〜終了の select（比較基準）</small></h3>
+      <div class="hub-num"><b>6</b><span>操作 ／ タップ換算 12</span></div>
+      <p>行ごとに 開始・終了 の 2 select。担当者行・レビュー行にも同じ select が並び、同じ月を人数分選ぶ。スマホでは select が文字幅より狭くなり月が読めない（B-046）。</p>
+    </a>
+    <a class="hub-card is-reco" href="a-month-chips.html">
+      <span class="hub-reco">推奨</span>
+      <h3>案A 月チップのレール<small>タップで 1 月、なぞって範囲</small></h3>
+      <div class="hub-num"><b>4</b><span>操作 ／ タップ換算 4</span></div>
+      <p>行の上に期間内の月を並べる。タップした月だけになり、なぞった範囲が連続月になる。担当者行・レビュー行は工程に連動（鎖で個別化）。ドラッグ無しでも全操作が完了する。</p>
+    </a>
+    <a class="hub-card" href="b-mini-gantt.html">
+      <h3>案B ミニガントのバー<small>バーを動かす・伸ばす</small></h3>
+      <div class="hub-num"><b>5</b><span>操作 ／ タップ換算 5</span></div>
+      <p>各行が 1 本のバー。本体ドラッグで移動、両端のつまみで伸縮、空いている月をタップで広げる。バーの長さが期間なので表がガントとして読めるが、伸縮はドラッグ前提。</p>
+    </a>
+    <a class="hub-card" href="c-hours-matrix.html">
+      <h3>案C 工程×月マトリクス<small>月ごとの工数を直接入力</small></h3>
+      <div class="hub-num"><b>9</b><span>操作 ／ タップ換算 17</span></div>
+      <p>月を列にし、セルに工数を直接入れる。値のある月が作業月。月別配分（monthlyHours）まで一度に決められるが、月を動かすだけでも数値を打ち直す。スマホは横スクロール。</p>
+    </a>
+  </div>
+  <div class="hub-note">数値は Playwright で共通課題を最短手順で操作したときの計測値（2026-09-12）。タップ換算は タップ・ドラッグ = 1、select の変更・セル入力 = 2。</div>
+
+  <h2 class="hub-h2">比較表</h2>
+  <div class="hub-wrap">
+  <table class="hub-table">
+    <thead><tr><th>案</th><th>単一月の移動</th><th>複数月にする</th><th>担当者・レビュー行</th><th>月別配分</th><th>スマホ 390px</th><th>主な弱点</th></tr></thead>
+    <tbody>
+      <tr><td>現状</td><td>select 1〜2 回</td><td>select 2 回（2ヶ月期間は不可）</td><td>行ごとに独立、人数分選ぶ</td><td>均等のみ</td><td>select が狭く月が読めない</td><td>月が見えない・手数が人数に比例</td></tr>
+      <tr><td>案A</td><td>タップ 1 回</td><td>なぞる 1 回（Shift+クリック／Shift+矢印でも）</td><td>既定で工程に連動、鎖で個別化</td><td>均等（案C の入力欄を後付け可）</td><td>行を 2 段にして 44px のチップ。ドラッグ不要</td><td>期間が 7 ヶ月超だとチップが狭い（横スクロール or 月省略が要る）</td></tr>
+      <tr><td>案B</td><td>ドラッグ 1 回</td><td>つまみドラッグ 1〜2 回、または空きをタップ</td><td>同上</td><td>均等</td><td>44px のバー。伸縮は指でつまみを掴む精度が要る</td><td>ドラッグ前提。単一月バーは狭く、つまみと本体の区別が付きにくい</td></tr>
+      <tr><td>案C</td><td>入力 2 回（先に新しい月を入れてから消す順序が要る）</td><td>入力 2〜3 回</td><td>連動中は写し、外すとセル入力</td><td>手動配分まで可</td><td>横スクロール＋数値キーボード</td><td>月を変えるだけでも数値を打つ。合計を崩しやすい</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="hub-h2">推奨: 案A を土台に、月別配分は案C の考え方を後付けする</h2>
+  <p class="hub-p">課題の 2 つ（単一月の手間・視覚的でない）を最少手数で解き、ドラッグ無しで全操作が終わるのは案A だけ。案B の「長さが見える」良さは、案A でも連続月が 1 本のピルに溶けて見えるので大半を吸収できる。案C が解く「月別配分」は今回の課題の外側にあり、必要になったときに案A の行へ「配分…」の入力欄（既存の単一見積編集モーダルと同じ 均等／手動）を足す方が、毎回の入力量を増やさずに済む。詳細は <code>README.md</code>。</p>
+
+  <h2 class="hub-h2">スマホ 390px で 4 つを並べて見る</h2>
+  <p class="hub-p">それぞれ操作できる。保存ボタンは下部に固定され、本文だけがスクロールする。</p>
+  <div class="hub-side">
+    <div><div class="hub-side-title">現状<small>B-046 の再現</small></div><iframe src="current.html?embed=1&amp;w=mobile" title="現状（スマホ）" loading="lazy"></iframe></div>
+    <div><div class="hub-side-title">案A 月チップ<small>推奨</small></div><iframe src="a-month-chips.html?embed=1&amp;w=mobile" title="案A（スマホ）" loading="lazy"></iframe></div>
+    <div><div class="hub-side-title">案B ミニガント</div><iframe src="b-mini-gantt.html?embed=1&amp;w=mobile" title="案B（スマホ）" loading="lazy"></iframe></div>
+    <div><div class="hub-side-title">案C マトリクス</div><iframe src="c-hours-matrix.html?embed=1&amp;w=mobile" title="案C（スマホ）" loading="lazy"></iframe></div>
+  </div>
+</div>
+</body>
+</html>
