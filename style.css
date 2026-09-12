@@ -9126,3 +9126,128 @@ li.drop-below {
 .actual-tl-ctx-item:hover { background: var(--accent-light); }
 .actual-tl-ctx-item.is-primary { font-weight: 700; color: var(--accent); }
 .actual-tl-ctx-sep { height: 1px; background: var(--border-light); margin: 4px 0; }
+
+/* ============================================================
+   wm: common — 見積の作業月 UI（4 方式切替）共通部品
+   設計: docs/superpowers/specs/2026-09-12-estimate-work-months-design.md
+   方式固有の部品は wm: chips / wm: gantt / wm: matrix の各ブロック（方式を消すときはブロックごと削除）
+   ============================================================ */
+:root {
+    --wm-on: var(--accent);
+    --wm-on-text: #FFFFFF;
+    --wm-mirror: var(--accent-light);
+    --wm-mirror-text: var(--accent);
+    --wm-track: var(--surface-elevated);
+}
+.estimate-table th.wm-slot { text-align: left; padding-left: calc(46px * var(--ui-scale)); width: 42%; min-width: 220px; }
+.estimate-table td.wm-slot { text-align: left; padding: 6px 8px; }
+.wm-cell { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; column-gap: 8px; min-width: 0; }
+.wm-control { min-width: 0; }
+.wm-link-slot { display: block; width: 30px; height: 1px; }
+.wm-link { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-light); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: background-color 120ms, border-color 120ms; }
+.wm-link svg { width: 16px; height: 16px; }
+.wm-link.is-off { color: var(--text-muted); border-color: var(--border); border-style: dashed; background: var(--surface); }
+.wm-link:hover { border-color: var(--accent); background: var(--accent-light); }
+.wm-manual-tag { grid-column: 2; justify-self: start; margin-top: 4px; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--accent-secondary-light); color: var(--accent-secondary); white-space: nowrap; }
+.wm-note { grid-column: 1 / -1; font-size: 12px; color: var(--accent-secondary); margin-top: 4px; }
+@media (max-width: 768px) {
+    .estimate-table.wm-active { display: block; table-layout: auto; }
+    .estimate-table.wm-active tbody { display: block; }
+    .estimate-table.wm-active thead { display: none; }
+    .estimate-table.wm-active tbody tr { display: grid; grid-template-columns: 40px minmax(0, 1fr) 68px 40px; grid-template-areas: "a b c e" "d d d d"; column-gap: 6px; row-gap: 8px; padding: 10px 6px; border-bottom: 1px solid var(--border-light); }
+    .estimate-table.wm-active tbody tr.est-extra-member-row { background: var(--surface-elevated); }
+    .estimate-table.wm-active tbody td { display: block; width: auto !important; position: static !important; padding: 0 !important; border: 0; text-align: left; }
+    .estimate-table.wm-active tbody td:nth-child(1) { grid-area: a; align-self: center; text-align: center; }
+    .estimate-table.wm-active tbody td:nth-child(2) { grid-area: b; }
+    .estimate-table.wm-active tbody td:nth-child(3) { grid-area: c; }
+    .estimate-table.wm-active tbody td:nth-child(4) { grid-area: d; }
+    .estimate-table.wm-active tbody td:nth-child(5) { grid-area: e; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+    .estimate-table.wm-active tbody td:nth-child(2) select, .estimate-table.wm-active tbody td:nth-child(3) input { width: 100%; box-sizing: border-box; }
+    .wm-cell { grid-template-columns: 40px minmax(0, 1fr); }
+    .wm-link, .wm-link-slot { width: 40px; }
+    .wm-link { height: 40px; }
+    .wm-link svg { width: 18px; height: 18px; }
+    .wm-active-modal .add-est-footer { position: sticky; bottom: 0; background: var(--surface); padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); margin-top: 12px; border-top: 1px solid var(--border-light); z-index: 2; }
+    .wm-active-modal .add-est-footer .btn { flex: 1; min-height: 44px; }
+    /* フォーカス移動や scrollIntoView で要素が固定フッターの裏に隠れないようにする */
+    .modal-content.wm-active-modal { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+
+/* ============================================================
+   wm: chips — 案A 月チップのレール（js/estimate-work-months-chips.js）
+   タップ = その月だけ、なぞる = 範囲。連続月は 1 本のピルに見える
+   ============================================================ */
+.wm-rail { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); background: var(--wm-track); border: 1px solid var(--border); border-radius: 8px; padding: 2px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.wm-chip { position: relative; border: 0; background: transparent; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-muted); min-height: 32px; border-radius: 6px; cursor: pointer; padding: 0 2px; font-variant-numeric: tabular-nums; white-space: nowrap; transition: background-color 120ms, color 120ms; }
+.wm-chip + .wm-chip::before { content: ''; position: absolute; left: 0; top: 24%; bottom: 24%; width: 1px; background: var(--border); }
+.wm-chip:not(.is-on):hover { color: var(--text-primary); background: rgba(45, 90, 39, .06); }
+.wm-chip.is-on { background: var(--wm-on); color: var(--wm-on-text); border-radius: 0; }
+.wm-chip.is-on::before, .wm-chip.is-on + .wm-chip::before { display: none; }
+.wm-chip.is-start { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.wm-chip.is-end { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+.wm-rail.is-painting .wm-chip { transition: none; }
+.wm-rail.is-painting .wm-chip.is-on { background: var(--accent-hover); }
+.wm-rail.is-linked { background: transparent; border-style: dashed; }
+.wm-rail.is-linked .wm-chip { cursor: default; }
+.wm-rail.is-linked .wm-chip:hover { background: transparent; color: var(--text-muted); }
+.wm-rail.is-linked .wm-chip.is-on { background: var(--wm-mirror); color: var(--wm-mirror-text); }
+@media (max-width: 768px) {
+    .wm-chip { min-height: 44px; font-size: 15px; }
+}
+
+/* ============================================================
+   wm: gantt — 案B ミニガントのバー（js/estimate-work-months-gantt.js）
+   バー本体ドラッグ = 移動、両端のつまみ = 伸縮、空いている月をタップ = そこまで広げる
+   ============================================================ */
+.wg-track { position: relative; height: 36px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); background: var(--wm-track); border: 1px solid var(--border); border-radius: 8px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.wg-cell { display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; cursor: pointer; border-left: 1px solid var(--border-light); }
+.wg-cell:first-child { border-left: 0; }
+.wg-cell:hover { color: var(--text-primary); }
+.wg-cell.is-covered { visibility: hidden; }
+.wg-bar { position: absolute; top: 3px; bottom: 3px; left: calc(var(--s) / var(--n) * 100% + 3px); width: calc((var(--e) - var(--s) + 1) / var(--n) * 100% - 6px); background: var(--wm-on); color: var(--wm-on-text); border-radius: 6px; cursor: grab; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; box-shadow: 0 1px 2px rgba(26, 24, 20, .18); }
+.wg-bar.is-dragging { cursor: grabbing; box-shadow: 0 4px 12px rgba(26, 24, 20, .28); background: var(--accent-hover); }
+.wg-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; padding: 0 6px; pointer-events: none; }
+.wg-handle { position: absolute; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center; cursor: ew-resize; }
+.wg-handle.l { left: 0; }
+.wg-handle.r { right: 0; }
+.wg-handle::before { content: ''; width: 3px; height: 42%; border-radius: 2px; background: rgba(255, 255, 255, .55); }
+.wg-bar:hover .wg-handle::before, .wg-bar:focus-visible .wg-handle::before { background: rgba(255, 255, 255, .9); }
+.wg-bar.is-single .wg-label { padding: 0 1px; font-size: 12px; letter-spacing: -.02em; }
+.wg-bar.is-single .wg-handle { width: 10px; }
+.wg-track.is-linked { background: transparent; border-style: dashed; }
+.wg-track.is-linked .wg-cell { cursor: default; }
+.wg-track.is-linked .wg-cell:hover { color: var(--text-muted); }
+.wg-track.is-linked .wg-bar { background: var(--wm-mirror); color: var(--wm-mirror-text); box-shadow: none; cursor: default; }
+.wg-track.is-linked .wg-handle { display: none; }
+@media (max-width: 768px) {
+    .wg-track { height: 44px; }
+    .wg-handle { width: 22px; }
+    .wg-cell, .wg-bar { font-size: 14px; }
+    .wg-bar.is-single .wg-handle { width: 16px; }
+    .wg-bar.is-single .wg-label { font-size: 13.5px; }
+}
+
+/* ============================================================
+   wm: matrix — 案C 工程×月マトリクス（js/estimate-work-months-matrix.js）
+   作業月スロットの中に月数ぶんの工数セルを並べる。見出しは th.wm-slot に同じ列で月ラベル
+   ============================================================ */
+.wx-head, .wx-grid { display: grid; grid-template-columns: repeat(var(--n), minmax(56px, 1fr)); gap: 4px; }
+.wx-head { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+.wx-head-month { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.wx-head-month small { font-weight: 500; color: var(--text-muted); font-size: 10.5px; }
+.estimate-table input.wx-cell { width: 100%; margin: 0; padding: 6px 4px; text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; border: 1px solid var(--border-light); border-radius: 4px; background: var(--surface-elevated); color: var(--text-primary); box-sizing: border-box; }
+.estimate-table input.wx-cell::placeholder { color: var(--text-muted); }
+.estimate-table input.wx-cell:focus { background: #FFFFFF; }
+.estimate-table input.wx-cell.is-on { background: var(--accent-light); border-color: var(--accent); font-weight: 600; }
+.wx-mirror { box-sizing: border-box; min-height: 34px; padding: 6px 4px; text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; border: 1px dashed var(--border); border-radius: 4px; color: var(--text-muted); background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(26, 24, 20, .035) 6px 8px); }
+.wx-mirror.is-on { color: var(--wm-mirror-text); border-color: var(--accent); background: var(--wm-mirror); font-weight: 600; }
+.wx-even { border: 0; background: none; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 4px; margin-top: 4px; }
+.wx-even:hover { text-decoration: underline; }
+.wx-head-inline { display: none; }
+@media (max-width: 768px) {
+    .wx-head-inline { display: grid; margin-bottom: 4px; font-size: 12px; }
+    .wx-head-inline .wx-head-month small { display: none; }
+    .wx-grid { grid-template-columns: repeat(var(--n), minmax(64px, 1fr)); overflow-x: auto; }
+    .estimate-table input.wx-cell { font-size: 16px; padding: 8px 4px; min-height: 44px; }
+    .wx-mirror { min-height: 44px; font-size: 15px; padding: 10px 4px; }
+}

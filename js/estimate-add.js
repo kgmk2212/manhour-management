@@ -9,6 +9,7 @@ import { PROCESS } from './constants.js';
 import { renderEstimateList } from './estimate.js';
 import { updateSchedule, calculateEndDate } from './schedule.js';
 import { pushAction } from './history.js';
+import * as WorkMonths from './estimate-work-months.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -37,7 +38,17 @@ export function openAddEstimateModal() {
     }
 
     document.getElementById('addEstimateModal').style.display = 'flex';
+    applyWorkMonthsMode();
     constrainProcessTableOnMobile();
+}
+
+/**
+ * 見積の作業月 UI が新方式（legacy 以外）なら、ラジオを複数月に固定して作業月スロット列を作る。
+ * 設定は js/estimate-work-months.js が持つ。legacy では何もしない。
+ */
+function applyWorkMonthsMode() {
+    if (!WorkMonths.isActive()) return;
+    if (WorkMonths.forceMultiRadio()) switchAddEstMonthType();
 }
 
 /**
@@ -252,6 +263,8 @@ export function openEditAllProcesses(version, task) {
         const startMonthSelect = document.getElementById('addEstStartMonth');
         if (startMonthSelect) startMonthSelect.value = uniqueMonths[0];
     }
+    // 新方式では単一月でも期間 select（開始=終了）で扱う
+    applyWorkMonthsMode();
 
     // 各工程の担当・工数をプリフィル
     // 同一工程に複数担当者の見積がある場合は、2人目以降を追加担当者行として展開する。
@@ -308,14 +321,18 @@ export function openEditAllProcesses(version, task) {
                 // プライマリ行 = 本作業の先頭見積の登録月
                 const primaryRow = document.getElementById(`addEst${proc}_member`)?.closest('tr');
                 if (primaryRow && procEstimates[0]) {
-                    prefillRowWorkMonths(primaryRow, Utils.normalizeEstimate(procEstimates[0]).workMonths);
+                    const n = Utils.normalizeEstimate(procEstimates[0]);
+                    prefillRowWorkMonths(primaryRow, n.workMonths, n.monthlyHours);
                 }
 
                 // 追加行（担当者行・レビュー行）= 見積IDで対応付け、各行の登録月を反映
                 document.querySelectorAll(`tr.est-extra-member-row[data-process="${proc}"]`).forEach(row => {
                     const id = row.dataset.estimateId ? Number(row.dataset.estimateId) : null;
                     const est = id != null ? procAll.find(e => e.id === id) : null;
-                    if (est) prefillRowWorkMonths(row, Utils.normalizeEstimate(est).workMonths);
+                    if (est) {
+                        const n = Utils.normalizeEstimate(est);
+                        prefillRowWorkMonths(row, n.workMonths, n.monthlyHours);
+                    }
                 });
             });
         }, 50);
@@ -616,6 +633,8 @@ function exitSingleProcessMode() {
  */
 function constrainProcessTableOnMobile() {
     if (window.innerWidth > 768) return;
+    // 新方式の作業月 UI は CSS グリッドで 2 段にするため、ピクセル直指定はしない
+    if (WorkMonths.isActive()) return;
 
     const table = document.getElementById('addEstimateTable');
     if (!table) return;
@@ -717,6 +736,8 @@ export function resetAddEstimateForm() {
 
     const singleRadio = document.querySelector('input[name="addEstMonthType"][value="single"]');
     if (singleRadio) singleRadio.checked = true;
+    // 新方式の行状態（data-wm-*）とスロットを消してから切り替える
+    WorkMonths.reset(document.getElementById('addEstimateTable'));
     switchAddEstMonthType();
 
     PROCESS.TYPES.forEach(proc => {
@@ -974,6 +995,12 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
 
     if (!headerRow) return;
 
+    // 新方式（月チップ／ミニガント／マトリクス）はコントローラがスロット列を作る
+    if (WorkMonths.isActive()) {
+        WorkMonths.setupTable(table, showWorkMonthColumn);
+        return;
+    }
+
     // ベース列数: 工程、担当、時間、+ボタン の4列
     const BASE_COLS = 4;
 
@@ -1063,6 +1090,10 @@ export function updateAddEstimateTableHeader(showWorkMonthColumn) {
 // 各工程のデフォルト作業月を設定（見積登録モーダル用）
 export function updateDefaultAddProcessMonths(startMonth, endMonth) {
     const defaults = Estimate.calculateDefaultWorkMonths(startMonth, endMonth);
+    if (WorkMonths.isActive()) {
+        WorkMonths.applyDefaults(defaults);
+        return;
+    }
     const months = Utils.generateMonthRange(startMonth, endMonth);
     const isTwoMonths = months.length === 2;
 
@@ -1151,6 +1182,10 @@ function buildExtraMonthCellInnerHTML(isTwoMonths, isMobile) {
 export function ensureExtraRowMonthCell(row) {
     const table = document.getElementById('addEstimateTable');
     if (!table || !row) return;
+    if (WorkMonths.isActive()) {
+        WorkMonths.onRowAdded(row);
+        return;
+    }
     const headerHasMonth = !!table.querySelector('thead [data-work-month-col]');
     let cell = row.querySelector('[data-work-month-col]');
 
@@ -1263,9 +1298,14 @@ function bindRowMonthFollow() {
  * 行(プライマリ/追加)の作業月セルに登録済みの作業月をプリフィルする
  * @param {HTMLTableRowElement} rowEl
  * @param {string[]} workMonths
+ * @param {Object<string, number>|null} [monthlyHours] - 登録済みの月別工数（新方式で手動配分の保持判定に使う）
  */
-function prefillRowWorkMonths(rowEl, workMonths) {
+function prefillRowWorkMonths(rowEl, workMonths, monthlyHours = null) {
     if (!rowEl || !workMonths || workMonths.length === 0) return;
+    if (WorkMonths.isActive()) {
+        WorkMonths.setRowMonths(rowEl, workMonths, monthlyHours);
+        return;
+    }
     const cell = rowEl.querySelector('[data-work-month-col]');
     if (!cell) return;
     const sels = cell.querySelectorAll('select');
@@ -1288,11 +1328,13 @@ function prefillRowWorkMonths(rowEl, workMonths) {
  * @param {string} globalStartMonth
  */
 function computeRowWorkMonths(rowEl, hours, isSingleMonth, globalStartMonth, globalEndMonth) {
+    // 新方式は行状態（data-wm-*）から算出する
+    if (WorkMonths.isActive()) return WorkMonths.readRow(rowEl, hours);
+
     const rangeResult = (start, end) => {
         const months = Utils.generateMonthRange(start, end);
-        const mh = {};
-        months.forEach(m => { mh[m] = hours / months.length; });
-        return { workMonth: start, workMonths: months, monthlyHours: mh };
+        // 均等按分は 0.01h 丸め・端数は最終月（B-041①: 未丸め保存の解消）
+        return { workMonth: start, workMonths: months, monthlyHours: Utils.splitHoursEvenly(hours, months) };
     };
     const singleResult = (m) => ({
         workMonth: m || '',

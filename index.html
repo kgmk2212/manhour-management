@@ -1930,6 +1930,15 @@
                                         <select id="hoursInputMethodSelect"></select>
                                     </div>
                                 </div>
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <div class="setting-label">見積の作業月 UI</div>
+                                        <div class="setting-desc">見積登録／全工程編集の工程ごとの作業月の選び方（実使用で比較中。決着後に残す方式だけにします）</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="estimateWorkMonthUiSelect"></select>
+                                    </div>
+                                </div>
                                 <div class="setting-group-heading">開発</div>
                                 <div class="setting-row">
                                     <div class="setting-info">
@@ -2482,7 +2491,7 @@
                     </div>
                     <div class="form-group">
                         <label>作業月</label>
-                        <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+                        <div id="addEstMonthTypeRow" style="display: flex; gap: 10px; margin-bottom: 4px;">
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="addEstMonthType" value="single" checked
                                     onchange="switchAddEstMonthType()" style="width: auto; margin-right: 4px;">
@@ -2591,7 +2600,7 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <div class="add-est-footer" style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" id="addEstSubmitBtn" onclick="addEstimateFromModal()">登録</button>
                     <button class="btn" onclick="closeAddEstimateModal()"
                         style="background: var(--text-muted); color: white;">キャンセル</button>

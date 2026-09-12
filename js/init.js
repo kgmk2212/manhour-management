@@ -28,7 +28,16 @@ import * as ActualBulk from './actual-bulk.js';
 import { initReportAnalytics } from './report-analytics.js';
 import { initAiAnalysis } from './ai-analysis.js';
 import { initHoursInputSetting } from './hours-input.js';
+import { initWorkMonthUiSetting, registerRenderer } from './estimate-work-months.js';
+import { chipsRenderer } from './estimate-work-months-chips.js';
+import { ganttRenderer } from './estimate-work-months-gantt.js';
+import { matrixRenderer } from './estimate-work-months-matrix.js';
 import { initViewportDiag, openViewportDiagPanel, repairDockPosition, resetDockPosition } from './viewport-diag.js';
+
+// 見積の作業月 UI（4 方式切替）のレンダラ登録。方式を消すときは該当 import と登録行を削除する
+registerRenderer(chipsRenderer);
+registerRenderer(ganttRenderer);
+registerRenderer(matrixRenderer);
 
 // ============================================
 // グローバルスコープに公開（HTML onclick用）
@@ -612,6 +621,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 工数入力方式の設定セレクトを初期化
     initHoursInputSetting();
+
+    // 見積の作業月 UI（4 方式切替）の設定セレクトを初期化
+    initWorkMonthUiSetting();
 
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
