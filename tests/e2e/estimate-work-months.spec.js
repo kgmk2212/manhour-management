@@ -73,8 +73,9 @@ async function center(page, selector) {
 
 /**
  * ドラッグ／なぞり（タッチは CDP の touch イベント、PC はマウス）。
- * タッチは 1 ステップ 30ms の実指相当の速度で動かす。待ち無しの瞬間スワイプだと Chromium が
- * フリングと見なし、直後のタップの click を 1 回飲み込む（切り分け済み。製品側の問題ではない）。
+ * タッチは 1 ステップ 30ms の実指相当の速度で動かし、最後に指を止めて（同位置の touchMove）から離す。
+ * 待ち無しの瞬間スワイプや動いたまま離す動きだと Chromium がフリングと見なし、直後のタップの click を
+ * 1 回飲み込む（ローカル Windows と CI の Linux で閾値が違う。切り分け済みで製品側の問題ではない）。
  */
 async function drag(page, touch, fromSel, toSel) {
   const from = await center(page, fromSel);
@@ -86,6 +87,10 @@ async function drag(page, touch, fromSel, toSel) {
       await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: from.x + (to.x - from.x) * i / 8, y: from.y + (to.y - from.y) * i / 8 }] });
       await page.waitForTimeout(30);
     }
+    // 指を止める（速度ゼロ）→ 離す
+    await page.waitForTimeout(150);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: to.x, y: to.y }] });
+    await page.waitForTimeout(60);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await cdp.detach();
   } else {
