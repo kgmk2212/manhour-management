@@ -26,6 +26,7 @@ const SEED_ENTRIES = {
   manhour_estimates: JSON.stringify(SEED_ESTIMATES),
   manhour_actuals: JSON.stringify([]),
   manhour_currentTab: "estimate",
+  manhour_estimateWorkMonthUi: "legacy",
 };
 
 const VARIANTS = [
