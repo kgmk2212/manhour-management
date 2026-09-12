@@ -102,9 +102,13 @@ Playwright MCP は `file:` を拒否するので、リポジトリ直下で `pyt
 
 - BACKLOG: B-047（本件）、B-046（スマホで月ラベル不可視）、B-041①（按分の未丸め）、B-022（全工程編集の不具合群）、B-021（一括割り当ての workMonth のみ更新）
 - 先行修正: a62f797（単一月行の終了月追従、`feature/estimate-month-follow`）。刷新案はこれを置き換える
-- 設計書（承認後に作成）: `docs/superpowers/specs/2026-09-12-estimate-work-months-design.md`
+- 設計書: `docs/superpowers/specs/2026-09-12-estimate-work-months-design.md`（4 方式切替の構成・データ整合規則・削除手順）
+- 実装計画: `docs/superpowers/plans/2026-09-12-estimate-work-months.md`
 - ADR: 本リポジトリに ADR ディレクトリは無い。設計判断は上記設計書に記す
 
 ## ステータス
 
-2026-09-12 モックアップ作成・Playwright で PC／スマホ 390px（タッチ）とも共通課題 4/4 達成を確認。**推奨は案A**。採用判断待ち（アプリ本体のコード変更は承認後）。
+- 2026-09-12 モックアップ作成・Playwright で PC／スマホ 390px（タッチ）とも共通課題 4/4 達成を確認。**推奨は案A**。
+- 2026-09-12 **「すべての案を比べたい」との判断で 4 方式（現状 select ＋ 3 案）を設定で切り替えられるよう本体に実装**（既定は案A）。
+  本体側は `js/estimate-work-months*.js`、e2e は `tests/e2e/estimate-work-months.spec.js`。実使用で比較し、決着後に負け方式を削除する。
+  モックアップは設計判断の記録として残す。

@@ -169,7 +169,8 @@
   80% 未満も遅延）②`expandRangeForSchedules`（`schedule-render.js:374-391`）が `new Date('YYYY-MM-DD')` UTC 解釈で最終日終了の予定を範囲外と誤判定し
   不要に拡張 ③タッチドラッグ（:2114-2117）が元位置に戻しても移動確定・Undo 履歴が積まれる（mouseup :1814 は判定あり）
   ④taskColorMap のキー二重（`schedule.js:350,386` は `task`、`schedule-render.js:1081` は `version/task`）でパレットが半分で枯渇
-- [B-041] [確認済] 見積: ①複数月按分の未丸め保存（`js/estimate-add.js:1232` `hours/months.length` → `splitHoursEvenly`。P1「未丸め保存」修正の取りこぼし）
+- [B-041] [確認済] 見積: ①複数月按分の未丸め保存（`js/estimate-add.js` `computeRowWorkMonths` は 2026-09-12 に `splitHoursEvenly` 化済み・B-047。
+  `js/quick.js` 側の同型コピーは未対応）
   ②編集の開始月変更で月別工数が index 位置で引き継がれ別の月にズレる（`js/estimate-edit.js:598-606`）③「：」を含まない対応名（Excel 取込・旧形式）で
   詳細モーダルからの工程追加が「帳票名を入力してください」で不能・全工程編集で強制リネーム（`estimate-add.js:99-102, 163-200, 343-350`）
   ④Excel 取込で工数空欄が `Number('')=0` を通り 0h 見積/実績になる（`js/excel-import.js:150,158,202,210`）
@@ -183,7 +184,7 @@
 - [B-046] [確認済] 見積登録／全工程編集モーダルの「作業月」列がモバイル幅（390px）で月ラベルを表示できない: 3ヶ月以上の期間で
   列幅 100px（`js/estimate-add.js:992`）に 開始select＋〜＋終了select を `flex:1; min-width:0`（:1014, :1133）で押し込むため、各 select が
   文字幅より狭くなり空欄に見える（e2e `tests/e2e/estimate-month-follow.spec.js` mobile-390 のスクショで確認・値の機械判定は PASS）。
-  作業月 UI の刷新（大物 B-047 の検討中）で解消予定。刷新を待たない場合は列幅の拡大か「8〜8」のような1セレクト化で暫定対応
+  2026-09-12 B-047 の新方式（chips / gantt / matrix）では行を 2 段にして解消。`legacy` を選んだときだけ残る（legacy 削除で閉じる）
 
 ## 大物（設計が要るもの）
 
@@ -218,7 +219,11 @@
   採用案を `docs/superpowers/specs/` に設計書化する。暫定対応として単一月行の終了月追従（a62f797・`tests/e2e/estimate-month-follow.spec.js`）
   を先行導入済み。関連: B-046（モバイル幅で月ラベル不可視）、B-041①（按分の未丸め）、B-022（全工程編集の不具合群）
   **2026-09-12 モックアップ完成**（`mockups/estimate-work-months/index.html`・README に比較表と計測）: 現状 6 操作 / 案A 月チップ 4 / 案B ミニガント 5 /
-  案C マトリクス 9。**推奨は案A**（タップ＝その月だけ・なぞる＝範囲・担当者行とレビュー行は工程に連動）。採用判断待ち → 承認後に設計書
+  案C マトリクス 9。**推奨は案A**（タップ＝その月だけ・なぞる＝範囲・担当者行とレビュー行は工程に連動）
+  **2026-09-12 実装済み（4 方式切替・実使用比較中）**: 設定「見積の作業月 UI」で `chips`（既定）/ `gantt` / `matrix` / `legacy` を切替。
+  設計書 `docs/superpowers/specs/2026-09-12-estimate-work-months-design.md`、計画 `docs/superpowers/plans/2026-09-12-estimate-work-months.md`。
+  共通 `js/estimate-work-months{,-core}.js` ＋ 方式別 `js/estimate-work-months-{chips,gantt,matrix}.js`、e2e `tests/e2e/estimate-work-months.spec.js`。
+  残件: 決着後に負け方式を削除（手順は設計書 §10）、期間 7 ヶ月超のレール、「配分…」の後付け、クイック入力側（`js/quick.js`）への展開判断
 
 ## アイデア（未評価）
 
