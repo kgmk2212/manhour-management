@@ -2378,6 +2378,7 @@ function onBarMouseDown(e) {
         moved: false,
         origMember: targetActual.member,
         origDate: targetActual.date,
+        origStartTime: targetActual.startTime,
     };
 
     document.addEventListener('mousemove', onBarDragMove);
@@ -2430,6 +2431,7 @@ function onBarTouchStart(e) {
             moved: false,
             origMember: targetActual.member,
             origDate: targetActual.date,
+            origStartTime: targetActual.startTime,
         };
 
         createBarGhost(barDragState, touch.clientX, touch.clientY);
@@ -2564,17 +2566,20 @@ function getDropTarget(x, y) {
             }
         }
     } else {
-        // 日別: ドロップ先 = メンバー列（日は固定 = currentDate）
+        // 日別: ドロップ先 = メンバー列 + 時刻
         const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
         if (!columns) return null;
 
         for (const col of columns) {
             const rect = col.getBoundingClientRect();
             if (x >= rect.left && x <= rect.right) {
+                const relY = y - rect.top;
+                const startTime = snapStartTime(yToStartTime(relY));
                 return {
                     element: col,
                     member: col.dataset.member,
-                    date: currentDate
+                    date: currentDate,
+                    startTime
                 };
             }
         }
@@ -2589,13 +2594,17 @@ function finalizeBarDrop(x, y) {
     const actual = barDragState.actual;
     const newMember = target.member;
     const newDate = target.date;
+    const newStartTime = viewMode === 'daily' ? target.startTime : undefined;
+
+    const startTimeChanged = newStartTime != null && newStartTime !== actual.startTime;
 
     // 変更がなければ何もしない
-    if (newMember === actual.member && newDate === actual.date) return;
+    if (newMember === actual.member && newDate === actual.date && !startTimeChanged) return;
 
     const before = { ...actual };
     actual.member = newMember;
     actual.date = newDate;
+    if (newStartTime != null) actual.startTime = newStartTime;
 
     saveData();
     pushAction({
@@ -2607,6 +2616,8 @@ function finalizeBarDrop(x, y) {
     const changes = [];
     if (before.member !== newMember) changes.push(`${escapeHtml(newMember)}`);
     if (before.date !== newDate) changes.push(newDate);
+    if (startTimeChanged) changes.push(`${formatClockTime(newStartTime)}~`);
+    if (changes.length === 0) changes.push('時刻変更');
     showToast(`実績を移動: ${changes.join(' / ')}`);
 
     renderActualTimeline();
