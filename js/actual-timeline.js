@@ -464,16 +464,7 @@ const LUNCH_ZONE_TOP = MORNING_HOURS * DAILY_HOUR_HEIGHT;
 const AFTERNOON_TOP = LUNCH_ZONE_TOP + LUNCH_ZONE_HEIGHT;
 
 
-/** 業務時間をY座標に変換（昼休みゾーン挿入対応） */
-function workHoursToY(accHours) {
-    if (accHours <= MORNING_HOURS) {
-        return accHours * DAILY_HOUR_HEIGHT;
-    }
-    // 午前を超えた分は午後ゾーンに配置
-    return AFTERNOON_TOP + (accHours - MORNING_HOURS) * DAILY_HOUR_HEIGHT;
-}
-
-/** Y座標を業務時間（累積）に変換 — workHoursToYの逆関数 */
+/** Y座標を業務時間（累積）に変換（昼休みゾーン挿入対応） */
 function yToWorkHours(y) {
     if (y <= LUNCH_ZONE_TOP) {
         return Math.max(0, y / DAILY_HOUR_HEIGHT);
