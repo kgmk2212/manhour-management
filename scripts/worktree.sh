@@ -3,8 +3,9 @@
 #
 # 使い方:
 #   bash scripts/worktree.sh start <topic>     隔離 worktree を作り、そのパスを出力する
-#   bash scripts/worktree.sh finish [--no-test] [--no-push]
-#                                              本線へ rebase → ff-only マージ → push → 掃除
+#   bash scripts/worktree.sh finish [--no-test] [--no-push] [--no-ci-wait]
+#                                              本線へ rebase → ff-only マージ → push → CI結果待ち → 掃除
+#                                              （push 後は gh run list で CI 完了を待ち、失敗があれば非ゼロ終了する）
 #   bash scripts/worktree.sh list              残存している feature worktree を一覧する
 #   bash scripts/worktree.sh drop <topic>      統合せずに破棄する（作業は失われる）
 #
@@ -111,11 +112,12 @@ cmd_start() {
 }
 
 cmd_finish() {
-  local run_test=1 do_push=1
+  local run_test=1 do_push=1 wait_ci=1
   for a in "$@"; do
     case "$a" in
       --no-test) run_test=0 ;;
       --no-push) do_push=0 ;;
+      --no-ci-wait) wait_ci=0 ;;
       *) die "不明な引数: $a" ;;
     esac
   done
@@ -190,6 +192,51 @@ cmd_finish() {
       || die "push に失敗しました。origin が進んでいる可能性があります（本線への統合自体は完了済み）。"
   fi
 
+  # 6.5) push 後の CI 結果を待って報告する（放置防止: 統合完了を名乗る前にセッション内で検知する）
+  local ci_failed=0
+  if [ "$wait_ci" -eq 1 ] && [ "$do_push" -eq 1 ] && [ "$has_remote" -eq 1 ]; then
+    if ! command -v gh >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+      info "gh / jq が無いため CI 結果待ちを省略します（手動で 'gh run list --branch $MAINLINE_BRANCH' を確認してください）。"
+    else
+      info "== CI 結果待ち =="
+      local sha; sha="$(git -C "$main" rev-parse HEAD)"
+      local waited=0 max_wait=300 interval=10
+      local for_sha="[]"
+      while :; do
+        local runs_json
+        runs_json="$(gh run list --branch "$MAINLINE_BRANCH" --json databaseId,headSha,status,conclusion,workflowName --limit 30 2>/dev/null || echo '[]')"
+        for_sha="$(printf '%s' "$runs_json" | jq -c --arg sha "$sha" '[.[] | select(.headSha == $sha)]')"
+        local total pending
+        total="$(printf '%s' "$for_sha" | jq 'length')"
+        pending="$(printf '%s' "$for_sha" | jq '[.[] | select(.status != "completed")] | length')"
+        if [ "$total" -gt 0 ] && [ "$pending" -eq 0 ]; then
+          break
+        fi
+        if [ "$waited" -ge "$max_wait" ]; then
+          info "CI結果の待機がタイムアウトしました（${max_wait}秒）。'gh run list --branch $MAINLINE_BRANCH' で手動確認してください。"
+          for_sha="[]"
+          break
+        fi
+        sleep "$interval"
+        waited=$((waited + interval))
+      done
+      if [ "$(printf '%s' "$for_sha" | jq 'length')" -gt 0 ]; then
+        local failed failed_count
+        failed="$(printf '%s' "$for_sha" | jq -c '[.[] | select(.conclusion != "success")]')"
+        failed_count="$(printf '%s' "$failed" | jq 'length')"
+        if [ "$failed_count" -gt 0 ]; then
+          ci_failed=1
+          info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          info "!! CI 失敗を検知しました（push・マージ自体は完了済み・要対応） !!"
+          printf '%s' "$failed" | jq -r '.[] | "  - \(.workflowName): \(.conclusion) (run \(.databaseId))"' >&2
+          info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        else
+          info "CI 結果: すべて成功"
+        fi
+      fi
+    fi
+  fi
+
   # 7) 掃除（symlink を先に解除してから worktree を削除）
   info "== 掃除 =="
   # 自分の cwd が削除対象だと、削除後の git 実行が
@@ -202,6 +249,10 @@ cmd_finish() {
   info ""
   info "統合完了: $branch -> $MAINLINE_BRANCH"
   cmd_list || true
+
+  if [ "$ci_failed" -eq 1 ]; then
+    die "CI が失敗しています（詳細は上記の CI 結果待ちログ）。統合自体は完了済みなので、別 worktree で修正して finish し直してください。"
+  fi
 }
 
 cmd_list() {
