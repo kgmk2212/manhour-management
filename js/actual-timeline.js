@@ -1006,7 +1006,7 @@ function placeSelectedTaskAtPosition(e, row) {
     const relX = e.clientX - rect.left + dom.section.scrollLeft;
     const member = row.dataset.member;
 
-    let date, defaultHours;
+    let date, defaultHours, startTime;
     if (viewMode === 'gantt') {
         const [yr, mo] = currentMonth.split('-').map(Number);
         const dayIdx = Math.floor(relX / GANTT_DAY_WIDTH);
@@ -1016,8 +1016,9 @@ function placeSelectedTaskAtPosition(e, row) {
         defaultHours = selectedTask.hours;
     } else {
         date = currentDate;
-        const hourOffset = relX / DAILY_HOUR_WIDTH;
-        defaultHours = Math.max(0.5, Math.round(hourOffset * 2) / 2);
+        const relY = e.clientY - rect.top;
+        startTime = snapStartTime(yToStartTime(relY));
+        defaultHours = selectedTask.hours || 1;
     }
 
     // インラインエディタを表示して工数確認
@@ -1025,7 +1026,8 @@ function placeSelectedTaskAtPosition(e, row) {
         row: row,
         rect: row.getBoundingClientRect(),
         member: member,
-        date: date
+        date: date,
+        startTime
     };
     const cardState = {
         version: selectedTask.version,
@@ -1237,13 +1239,15 @@ function clearDropTargets() {
  */
 function getDropInfo(x, y) {
     if (viewMode === 'daily') {
-        // 日別ビュー: メンバー列から判定
+        // 日別ビュー: メンバー列 + Y座標から判定
         const columns = dom.timelineBody?.querySelectorAll('.actual-tl-dv-column');
         if (!columns) return null;
         for (const col of columns) {
             const rect = col.getBoundingClientRect();
             if (x >= rect.left && x <= rect.right) {
-                return { member: col.dataset.member, date: currentDate, row: col, rect };
+                const relY = y - rect.top;
+                const startTime = snapStartTime(yToStartTime(relY));
+                return { member: col.dataset.member, date: currentDate, row: col, rect, startTime };
             }
         }
         return null;
@@ -1407,7 +1411,7 @@ function onAreaMouseUp(e) {
 
     // 選択範囲からタスクピッカー表示
     const member = dragState.member;
-    let date, hours;
+    let date, hours, startTime;
 
     if (viewMode === 'gantt') {
         // 複数日ドラッグは日付配列にし、日ごとに登録する（工数は1日あたり）
@@ -1418,9 +1422,10 @@ function onAreaMouseUp(e) {
         const h1 = yToWorkHours(dragState.snappedY1);
         const h2 = yToWorkHours(dragState.snappedY2);
         hours = Math.round((h2 - h1) * 10) / 10;
+        startTime = snapStartTime(yToStartTime(dragState.snappedY1));
     }
 
-    showTaskPicker(e.clientX, e.clientY, member, date, hours);
+    showTaskPicker(e.clientX, e.clientY, member, date, hours, startTime);
 
     dragState = null;
 }
@@ -1551,7 +1556,7 @@ function onAreaTouchEnd(e) {
         }
 
         const member = dragState.member;
-        let date, hours;
+        let date, hours, startTime;
         const touch = e.changedTouches[0];
 
         if (viewMode === 'gantt') {
@@ -1563,9 +1568,10 @@ function onAreaTouchEnd(e) {
             const h1 = yToWorkHours(dragState.snappedY1);
             const h2 = yToWorkHours(dragState.snappedY2);
             hours = Math.round((h2 - h1) * 10) / 10;
+            startTime = snapStartTime(yToStartTime(dragState.snappedY1));
         }
 
-        showTaskPicker(touch.clientX, touch.clientY, member, date, hours);
+        showTaskPicker(touch.clientX, touch.clientY, member, date, hours, startTime);
     }
 
     dragState = null;
@@ -1692,7 +1698,7 @@ function showInlineEditor(dropInfo, cardState) {
             closeInlineEditor();
             return;
         }
-        createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+        createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours, dropInfo.startTime);
         closeInlineEditor();
     });
 
@@ -1704,7 +1710,7 @@ function showInlineEditor(dropInfo, cardState) {
         if (e.key === 'Enter') {
             const hours = parseFloat(input.value);
             if (hours && hours > 0) {
-                createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours);
+                createActualFromDrop(dropInfo.member, dropInfo.date, cardState, hours, dropInfo.startTime);
             }
             closeInlineEditor();
         } else if (e.key === 'Escape') {
@@ -1738,7 +1744,7 @@ function closeInlineEditor() {
 /**
  * タスクピッカー表示（空エリアドラッグ後）
  */
-function showTaskPicker(x, y, member, date, defaultHours) {
+function showTaskPicker(x, y, member, date, defaultHours, startTime) {
     closeTaskPicker();
 
     const picker = document.createElement('div');
@@ -1823,7 +1829,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
     picker.querySelector('#atlTpMeetingBtn').addEventListener('click', () => {
         const hours = pickerHoursValue();
         if (hours === null) return;
-        createActual(member, date, '', '打ち合わせ', '', hours);
+        createActual(member, date, '', '打ち合わせ', '', hours, startTime);
         closeTaskPicker();
     });
     picker.querySelector('#atlTpOtherAddBtn').addEventListener('click', () => {
@@ -1834,7 +1840,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
         }
         const hours = pickerHoursValue();
         if (hours === null) return;
-        createActual(member, date, '', name, '', hours);
+        createActual(member, date, '', name, '', hours, startTime);
         closeTaskPicker();
     });
 
@@ -1861,7 +1867,7 @@ function showTaskPicker(x, y, member, date, defaultHours) {
                     showAlert('工数を入力してください', false);
                     return;
                 }
-                createActual(member, date, item.dataset.version, item.dataset.task, item.dataset.process, hours);
+                createActual(member, date, item.dataset.version, item.dataset.task, item.dataset.process, hours, startTime);
                 closeTaskPicker();
             });
         });
@@ -2748,14 +2754,15 @@ function finalizeBlockResize() {
 /**
  * ドロップからの実績作成
  */
-function createActualFromDrop(member, date, cardState, hours) {
-    createActual(member, date, cardState.version, cardState.task, cardState.process, hours);
+function createActualFromDrop(member, date, cardState, hours, startTime) {
+    createActual(member, date, cardState.version, cardState.task, cardState.process, hours, startTime);
 }
 
 /**
  * 実績作成
+ * @param {number} [startTime] - 開始時刻（clock decimal、日別ビューのみ有効）
  */
-function createActual(member, dateOrDates, version, task, process, hours) {
+function createActual(member, dateOrDates, version, task, process, hours, startTime) {
     // 複数日ドラッグからは日付配列が渡され、1日あたり hours で日ごとに登録する
     const dates = Array.isArray(dateOrDates) ? dateOrDates : [dateOrDates];
     const added = dates.map(date => ({
@@ -2766,6 +2773,7 @@ function createActual(member, dateOrDates, version, task, process, hours) {
         process,
         member,
         hours,
+        ...(startTime != null ? { startTime } : {}),
         createdAt: new Date().toISOString()
     }));
 
