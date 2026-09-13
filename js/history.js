@@ -381,6 +381,8 @@ function applyRedo(action) {
 
     // --- 担当者マスタ ---
     } else if (t === 'member_add') {
+        // renameMember/archiveMember/restoreMemberは対象を直接ミューテートするため、
+        // 参照のままpushすると後続の改名等でこの履歴エントリ自体が書き換わってしまう
         State.members.push({ ...action.data.added });
     } else if (t === 'member_archive') {
         const m = State.members.find(x => x.id === action.data.memberId);
