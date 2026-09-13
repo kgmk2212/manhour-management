@@ -420,6 +420,19 @@ window.saveScheduleFromModal = Schedule.saveScheduleFromModal;
 window.saveScheduleDetailChanges = Schedule.saveScheduleDetailChanges;
 window.deleteScheduleFromModal = Schedule.deleteScheduleFromModal;
 window.openEstimateFromSchedule = Schedule.openEstimateFromSchedule;
+// 中断モーダル
+window.openInterruptionModal = Schedule.openInterruptionModal;
+window.closeInterruptionModal = Schedule.closeInterruptionModal;
+window.onInterruptionSplitDateChange = Schedule.onInterruptionSplitDateChange;
+window.toggleInsertSection = Schedule.toggleInsertSection;
+window.updateInterruptionInsertTaskOptions = Schedule.updateInterruptionInsertTaskOptions;
+window.showImpactPreview = Schedule.showImpactPreview;
+window.closeImpactPreview = Schedule.closeImpactPreview;
+window.backToInterruptionModal = Schedule.backToInterruptionModal;
+window.applyInterruption = Schedule.applyInterruption;
+window.openInterruptionFromDetail = Schedule.openInterruptionFromDetail;
+window.editInterruptionFromDetail = Schedule.editInterruptionFromDetail;
+window.removeInterruptionFromDetail = Schedule.removeInterruptionFromDetail;
 // history.js のグローバル Undo/Redo
 window.historyUndo = History.undo;
 window.historyRedo = History.redo;
