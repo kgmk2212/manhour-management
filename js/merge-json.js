@@ -79,6 +79,7 @@ function buildRecordDefs(counters) {
     const idHoliday = () => ++counters.companyHolidays;
     const idVacation = () => ++counters.vacations;
     const idSchedule = () => `sch_${++counters.schedules}`;
+    const idMember = () => ++counters.members;
 
     return [
         {
@@ -131,6 +132,17 @@ function buildRecordDefs(counters) {
                 valueEq: (a, b) => s(a.name) === s(b.name), emitChanged: true
             },
             apply: makeApplier('companyHolidays', ['name'], idHoliday)
+        },
+        {
+            // アーカイブ状態も同一性キーに含めない（同名なら1件として扱い、archivedのみ上書き対象にする）
+            id: 'members', field: 'members', label: '担当者', kind: 'records', allowOverwrite: true,
+            keyFields: ['name'],
+            compareFields: [{ key: 'archived', label: 'アーカイブ状態' }],
+            spec: {
+                keyOf: r => s(r.name),
+                valueEq: (a, b) => !!a.archived === !!b.archived, emitChanged: true
+            },
+            apply: makeApplier('members', ['archived'], idMember)
         },
         {
             id: 'vacations', field: 'vacations', label: '休暇', kind: 'records', allowOverwrite: true,
@@ -253,6 +265,7 @@ export async function handleBackupMerge(file) {
         (Array.isArray(data.estimates) || Array.isArray(data.actuals) ||
          Array.isArray(data.schedules) || Array.isArray(data.companyHolidays) ||
          Array.isArray(data.vacations) || Array.isArray(data.remainingEstimates) ||
+         Array.isArray(data.members) ||
          // AI 分析の履歴/設定のみを含むエクスポート（ローカル LLM の無い環境への持ち込み用）も受理する
          Array.isArray(data.llmAnalysisHistory) ||
          (data.llmAnalysisSettings && typeof data.llmAnalysisSettings === 'object'));
@@ -267,7 +280,8 @@ export async function handleBackupMerge(file) {
     const counters = {
         companyHolidays: maxNumericId(State.companyHolidays),
         vacations: maxNumericId(State.vacations),
-        schedules: maxSchedId(State.schedules)
+        schedules: maxSchedId(State.schedules),
+        members: maxNumericId(State.members)
     };
 
     const defs = buildRecordDefs(counters);
@@ -297,6 +311,7 @@ export async function handleBackupMerge(file) {
             State.setNextCompanyHolidayId(maxNumericId(State.companyHolidays) + 1);
             State.setNextVacationId(maxNumericId(State.vacations) + 1);
             State.setNextScheduleId(maxSchedId(State.schedules) + 1);
+            State.setNextMemberId(maxNumericId(State.members) + 1);
         }
     });
 }
