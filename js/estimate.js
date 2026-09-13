@@ -28,6 +28,7 @@ import {
     reviewBadgeHtml
 } from './utils.js';
 import { pushAction } from './history.js';
+import { CALCULATIONS } from './constants.js';
 
 // ============================================
 // 月の実働日数計算
@@ -65,11 +66,13 @@ export function getWorkingDays(year, month) {
  * - それ以外はデータに含まれる作業月の平均営業日数を計算
  * @param {string} selectedMonth - 選択された月（'all' または 'YYYY-MM'）
  * @param {Array} estimateData - 見積データ配列
- * @returns {{ workingDaysPerMonth: number, workDaysLabel: string }}
+ * @returns {{ workingDaysPerMonth: number, workDaysLabel: string, isAveragedDays: boolean }}
+ *   isAveragedDays: 複数月の営業日数を平均した値かどうか（単月なら false）
  */
 function calculateConversionBasis(selectedMonth, estimateData) {
     let workingDaysPerMonth = 20;
     let workDaysLabel = 'デフォルト20日';
+    let isAveragedDays = false;
 
     if (selectedMonth && selectedMonth !== 'all') {
         // 特定の月が選択されている場合
@@ -102,11 +105,32 @@ function calculateConversionBasis(selectedMonth, estimateData) {
                 workDaysLabel = `${y}年${parseInt(mo)}月の営業日数（${workingDaysPerMonth}日）`;
             } else {
                 workDaysLabel = `${workMonthsSet.size}ヶ月の平均営業日数（${workingDaysPerMonth}日）`;
+                isAveragedDays = true;
             }
         }
     }
 
-    return { workingDaysPerMonth, workDaysLabel };
+    return { workingDaysPerMonth, workDaysLabel, isAveragedDays };
+}
+
+/**
+ * 担当者別合計の見出しに添える「1人あたり月標準工数」のテキストを組み立てる
+ *
+ * 全員に共通の基準値（営業日数 × 1日の稼働時間）を示すもので、担当者ごとの
+ * 休暇は差し引かない。差し引くと値が担当者ごとに変わり、見出しの1行では
+ * 表せなくなるため。
+ * @param {number} workingDays - 換算に使う月間営業日数
+ * @param {boolean} isAveragedDays - 複数月の平均営業日数を使っているか
+ * @returns {string} 表示テキスト（営業日数が不正なら空文字）
+ */
+export function formatMemberStandardHours(workingDays, isAveragedDays) {
+    if (!(workingDays > 0)) return '';
+
+    const hoursPerDay = CALCULATIONS.HOURS_PER_DAY;
+    const standardHours = workingDays * hoursPerDay;
+    const daysLabel = isAveragedDays ? `平均${workingDays}日` : `${workingDays}日`;
+
+    return `1人あたり月標準 ${standardHours}h（${daysLabel}×${hoursPerDay}h）`;
 }
 
 /**
@@ -589,11 +613,18 @@ function calculateMemberSummary(filtered, filterType, monthFilter) {
  * 担当者別合計をDOM要素に表示
  * @param {Object} memberSummary - 担当者別工数オブジェクト
  * @param {number} workingDaysPerMonth - 月間稼働日数
+ * @param {boolean} isAveragedDays - workingDaysPerMonth が複数月の平均かどうか
  */
-function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth) {
+function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth, isAveragedDays) {
     const memberSummaryContainer = document.getElementById('estimateMemberSummary');
     const memberSummaryContent = document.getElementById('estimateMemberSummaryContent');
     if (!memberSummaryContainer || !memberSummaryContent) return;
+
+    // 見出しに1人あたりの月標準工数を添える（人数倍する前の基準値）
+    const standardElement = document.getElementById('estimateMemberStandard');
+    if (standardElement) {
+        standardElement.textContent = formatMemberStandardHours(workingDaysPerMonth, isAveragedDays);
+    }
 
     const memberOrderElement = document.getElementById('memberOrder');
     const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
@@ -687,7 +718,7 @@ export function renderEstimateList() {
     }
 
     // 月間稼働日数を取得（レポートタブと同じ仕様: 月選択値をそのまま使用）
-    const { workingDaysPerMonth, workDaysLabel } = calculateConversionBasis(monthFilter, filtered);
+    const { workingDaysPerMonth, workDaysLabel, isAveragedDays } = calculateConversionBasis(monthFilter, filtered);
 
     // 担当者別集計
     const memberSummary = calculateMemberSummary(filtered, filterType, monthFilter);
@@ -698,7 +729,7 @@ export function renderEstimateList() {
     displayEstimateTotals(totalHours, workingDaysPerMonth, workDaysLabel, headcount, monthFilter);
 
     // 担当者別表示
-    renderEstimateMemberSummary(memberSummary, workingDaysPerMonth);
+    renderEstimateMemberSummary(memberSummary, workingDaysPerMonth, isAveragedDays);
 
     // ビュータイプに応じて描画
     if (viewType === 'grouped') {

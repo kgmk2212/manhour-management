@@ -14,7 +14,7 @@ before(() => {
     globalThis.window = globalThis;
 });
 
-const { getWorkingDays } = await import('../js/estimate.js');
+const { getWorkingDays, formatMemberStandardHours } = await import('../js/estimate.js');
 
 describe('getWorkingDays() — 祝日・会社休日関数が未定義の場合（土日のみ除外）', () => {
     beforeEach(() => {
@@ -48,5 +48,26 @@ describe('getWorkingDays() — window.getHoliday / isCompanyHoliday が定義さ
         assert.equal(getWorkingDays(2026, 7), 21);
         delete globalThis.window.getHoliday;
         delete globalThis.window.isCompanyHoliday;
+    });
+});
+
+describe('formatMemberStandardHours() — 担当者別合計の見出しに添える1人あたり月標準工数', () => {
+    test('単月: 営業日数 × 8h をそのまま基準値として出す', () => {
+        assert.equal(formatMemberStandardHours(21, false), '1人あたり月標準 168h（21日×8h）');
+    });
+
+    test('複数月の平均: 日数に「平均」を付けて平均であることを明示する', () => {
+        assert.equal(formatMemberStandardHours(21, true), '1人あたり月標準 168h（平均21日×8h）');
+    });
+
+    test('デフォルトの20日でも同じ書式で出す', () => {
+        assert.equal(formatMemberStandardHours(20, false), '1人あたり月標準 160h（20日×8h）');
+    });
+
+    test('営業日数が0以下・数値でない場合は空文字（見出しに何も添えない）', () => {
+        assert.equal(formatMemberStandardHours(0, false), '');
+        assert.equal(formatMemberStandardHours(-1, false), '');
+        assert.equal(formatMemberStandardHours(undefined, false), '');
+        assert.equal(formatMemberStandardHours(NaN, false), '');
     });
 });

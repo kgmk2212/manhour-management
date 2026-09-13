@@ -8623,6 +8623,14 @@ li.drop-below {
     #estimateMemberSummaryContent > div > div:nth-child(3) { font-size: 12px !important; }
     /* セクション見出し「担当者別合計」: redesign 14px */
     #estimateMemberSummary > div:first-child { font-size: 14px !important; }
+    /* 見出しに添える「1人あたり月標準」。見出しと同じ行に収まらない幅では
+       ぶら下がりではなく改行させ、左端を見出しに揃える。 */
+    #estimateMemberStandard {
+        font-size: 12px !important;
+        display: block;
+        margin-left: 0 !important;
+        margin-top: 2px;
+    }
     /* 横 padding を 20px→12px に詰め、2列(150+12+150=312px)が確実に収まる
        幅を確保（狭幅端末では flex-wrap により自然に1列へ戻る＝redesign と同挙動）。 */
     #estimateMemberSummary {

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一人当たり月標準工数の表示 — 3案比較</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap');
+
+/* ---- 本体 style.css と同一のトークン ---- */
+:root {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --border: #E7E5E0;
+    --border-light: #F0EEEA;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #9C9690;
+    --accent: #2D5A27;
+    --accent-light: #EBF5EA;
+    --accent-secondary: #C4841D;
+    --danger: #B91C1C;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(26, 24, 20, 0.04);
+    --ui-scale: 1;
+}
+
+* , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 32px 20px 80px;
+}
+
+.page { max-width: 1080px; margin: 0 auto; }
+
+/* ---- モックアップ側の枠組み（本体UIと混ざらないよう地味に） ---- */
+.doc-head { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 8px; }
+.doc-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.doc-head p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; max-width: 66ch; }
+
+.premise {
+    display: flex; flex-wrap: wrap; gap: 0 28px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px 18px; margin: 20px 0 44px;
+    font-size: 13px; color: var(--text-secondary);
+}
+.premise b { color: var(--text-primary); font-weight: 600; }
+
+.plan { margin-bottom: 56px; }
+.plan > header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.plan > header h2 { font-size: 19px; font-weight: 700; }
+.plan > header .where { font-size: 13px; color: var(--text-muted); }
+.plan > .note { font-size: 13.5px; color: var(--text-secondary); max-width: 74ch; margin-bottom: 18px; }
+.plan > .cost {
+    font-size: 12.5px; color: var(--text-secondary); margin-top: 14px;
+    border-left: 2px solid var(--border); padding-left: 12px;
+}
+.plan > .cost code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-primary); }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .compare { grid-template-columns: 1fr; } }
+.compare > div > .tag {
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+    margin-bottom: 8px; display: block;
+}
+.compare > div.after > .tag { color: var(--accent); }
+
+/* ============================================
+   以下は本体 index.html / style.css の再現
+   ============================================ */
+
+/* 合計工数カード */
+.est-total-card {
+    background: var(--accent); color: white;
+    padding: 15px 20px; border-radius: 8px;
+}
+.est-total-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+.est-total-label { font-size: 16px; opacity: 0.9; margin-bottom: 5px; }
+.est-total-hours { font-size: 28px; font-weight: bold; }
+.est-total-manpower { font-size: 19px; font-weight: 600; }
+.est-standard-a { font-size: 15.5px; opacity: 0.7; margin-top: 8px; }
+.est-standard-b {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    margin-top: 12px; padding-top: 10px; font-size: 15.5px;
+}
+.est-standard-b .row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pill { padding: 2px 10px; border-radius: 12px; font-size: 15.5px; font-weight: 600; }
+.pill.ok { background: rgba(255,255,255,0.15); }
+.pill.over { background: rgba(239,68,68,0.3); }
+
+/* 担当者別合計 */
+.member-summary {
+    background: var(--surface-elevated); padding: 15px 20px;
+    border-radius: 8px; border: 1px solid var(--border);
+}
+.member-summary > .title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+.member-summary > .content { display: flex; flex-wrap: wrap; gap: 12px; }
+.member-card {
+    background: white; padding: 10px 15px; border-radius: 6px;
+    border-left: 4px solid var(--accent); min-width: 150px;
+}
+.member-card .name { font-size: 15.5px; color: #666; margin-bottom: 3px; }
+.member-card .hours { font-size: 19px; font-weight: 700; color: #333; }
+.member-card .manpower { font-size: 15.5px; color: #666; font-weight: 500; }
+
+/* 追加分: 充足率 */
+.member-card.with-load { min-width: 208px; }
+.load {
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light);
+}
+.load-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--text-secondary); margin-bottom: 5px;
+}
+.load-head .pct { font-weight: 700; font-size: 14.5px; }
+.load-head .pct.under { color: var(--accent-secondary); }
+.load-head .pct.fit   { color: var(--accent); }
+.load-head .pct.over  { color: var(--danger); }
+.load-track { height: 6px; background: #EEEDEA; border-radius: 3px; overflow: hidden; position: relative; }
+.load-fill { height: 100%; border-radius: 3px; }
+.load-fill.under { background: var(--accent-secondary); }
+.load-fill.fit   { background: var(--accent); }
+.load-fill.over  { background: var(--danger); }
+.load-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* レポート: キャパシティ分析 */
+.capacity-analysis-section {
+    background: var(--surface-elevated); padding: 20px 24px;
+    border-radius: 12px; border: 1px solid var(--border);
+}
+.cap-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.cap-head h4 { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+.cap-standard { font-size: 16px; color: var(--text-secondary); }
+.cap-standard strong { color: var(--text-primary); font-size: 17px; }
+.cap-standard .detail { font-size: 15.5px; color: var(--text-muted); }
+.cap-perhead {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    background: var(--accent-light); color: var(--accent);
+    padding: 2px 10px; border-radius: 999px; font-size: 14px; font-weight: 600;
+}
+.capacity-bar-group { margin-bottom: 16px; }
+.capacity-bar-label { display: flex; justify-content: space-between; font-size: 15.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.capacity-track { height: 24px; background: #EEEDEA; border-radius: 4px; overflow: hidden; position: relative; }
+.capacity-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 15.5px; font-weight: 600; color: #FFF; }
+.capacity-fill.estimate { background: var(--accent); }
+.capacity-fill.actual { background: var(--accent-secondary); }
+
+/* レポート: 担当者別内訳テーブル */
+.cap-breakdown { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+.cap-breakdown > summary {
+    cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-secondary);
+    list-style: none; display: flex; align-items: center; gap: 6px;
+}
+.cap-breakdown > summary::-webkit-details-marker { display: none; }
+.cap-breakdown > summary::before { content: '▸'; color: var(--text-muted); }
+.cap-breakdown[open] > summary::before { content: '▾'; }
+.cap-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+.cap-table th {
+    text-align: left; font-weight: 600; color: var(--text-muted); font-size: 12.5px;
+    padding: 0 10px 6px 0; border-bottom: 1px solid var(--border);
+}
+.cap-table th.num, .cap-table td.num { text-align: right; }
+.cap-table td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border-light); }
+.cap-table td.name { font-weight: 600; }
+.cap-table td.bar { width: 180px; }
+.cap-table tr:last-child td { border-bottom: none; }
+
+/* モバイル確認用 */
+.phone-wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.phone {
+    width: 390px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; box-shadow: var(--shadow-sm);
+}
+.phone .caption { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.phone .member-summary > .content { flex-direction: column; }
+.phone .member-card { min-width: 0; width: 100%; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-head">
+    <h1>一人当たりの月標準工数を出す — 3案</h1>
+    <p>いまアプリが表示している「月標準工数」はすべてチーム合計（営業日数 × 8h × 人数）で、一人分の基準値は画面に出ていません。下の3案はどれも同じ計算式を使い、置き場所だけが違います。</p>
+</div>
+
+<div class="premise">
+    <span><b>対象月</b> 2026年9月</span>
+    <span><b>営業日数</b> 21日（土日祝・会社休日を除く）</span>
+    <span><b>一人当たり標準</b> 21日 × 8h = <b>168h</b>（本人の休暇時間を引く）</span>
+    <span><b>担当者</b> 5名</span>
+</div>
+
+
+<!-- ============ 案1 ============ -->
+<section class="plan">
+    <header>
+        <h2>案1　合計カードに一人当たりを併記</h2>
+        <span class="where">見積一覧 › 合計工数カード</span>
+    </header>
+    <p class="note">いまの「840h（21日×8h×5人）」は掛け算の途中式でしかなく、読み手は 840 ÷ 5 を暗算することになります。基準値の 168h を先に置き、そこから人数と休暇で組み立てる書き方に変えます。表示形式の設定（サブテキスト／バー）は現状のまま両方に反映します。</p>
+
+    <div class="compare">
+        <div>
+            <span class="tag">現在 — サブテキスト表示</span>
+            <div class="est-total-card">
+                <div class="est-total-row">
+                    <div>
+                        <div class="est-total-label">合計工数</div>
+                        <div class="est-total-hours">696.5h</div>
+                    </div>
+                    <div>
+                        <div class="est-total-label">人日 / 人月</div>
+                        <div class="est-total-manpower">87.1人日 / 4.15人月</div>
+                    </div>
+                </div>
+                <div class="est-standard-a">月標準: 840h（21日×8h×5人）</div>
+            </div>
+        </div>
+        <div class="after">
+            <span class="tag">案1 — サブテキスト表示</span>
+            <div class="est-total-card">
+                <div class="est-total-row">
+                    <div>
+                        <div class="est-total-label">合計工数</div>
+                        <div class="est-total-hours">696.5h</div>
+                    </div>
+                    <div>
+                        <div class="est-total-label">人日 / 人月</div>
+                        <div class="est-total-manpower">87.1人日 / 4.15人月</div>
+                    </div>
+                </div>
+                <div class="est-standard-a">1人あたり月標準 168h（21日×8h）／ 5名で 816h（休暇 24h を控除）</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="compare" style="margin-top: 20px;">
+        <div>
+            <span class="tag">現在 — バー表示</span>
+            <div class="est-total-card">
+                <div class="est-total-row">
+                    <div>
+                        <div class="est-total-label">合計工数</div>
+                        <div class="est-total-hours">696.5h</div>
+                    </div>
+                    <div>
+                        <div class="est-total-label">人日 / 人月</div>
+                        <div class="est-total-manpower">87.1人日 / 4.15人月</div>
+                    </div>
+                </div>
+                <div class="est-standard-b">
+                    <div class="row">
+                        <span style="opacity: 0.85;">月標準工数: <strong style="font-size: 17px;">840h</strong> <span style="opacity: 0.7; font-size: 15.5px;">（21日×8h×5人）</span></span>
+                        <span class="pill ok">余裕 143.5h</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="after">
+            <span class="tag">案1 — バー表示</span>
+            <div class="est-total-card">
+                <div class="est-total-row">
+                    <div>
+                        <div class="est-total-label">合計工数</div>
+                        <div class="est-total-hours">696.5h</div>
+                    </div>
+                    <div>
+                        <div class="est-total-label">人日 / 人月</div>
+                        <div class="est-total-manpower">87.1人日 / 4.15人月</div>
+                    </div>
+                </div>
+                <div class="est-standard-b">
+                    <div class="row">
+                        <span style="opacity: 0.85;">1人あたり月標準 <strong style="font-size: 17px;">168h</strong> <span style="opacity: 0.7; font-size: 15.5px;">（21日×8h）・5名で 816h</span></span>
+                        <span class="pill ok">余裕 119.5h</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="cost">変更は <code>js/estimate.js</code> の <code>updateEstimateStandardDisplay()</code> の文字列と、休暇控除の呼び出し1本。「余裕」の数字が休暇控除のぶん 143.5h → 119.5h に変わります（実態に寄る）。</p>
+</section>
+
+
+<!-- ============ 案2 ============ -->
+<section class="plan">
+    <header>
+        <h2>案2　担当者別カードに標準と充足率を出す</h2>
+        <span class="where">見積一覧 › 担当者別合計</span>
+    </header>
+    <p class="note">一人当たりの基準値が本当に効くのは、誰が溢れていて誰が空いているかを見るときです。担当者が横に並ぶこのカード群に、本人の標準工数と充足率を1行足します。色は既存のインサイト判定と同じ境目（70% 未満＝割当不足、110% 超＝超過）に合わせるので、カードの色とインサイトの文言が食い違いません。</p>
+
+    <div class="compare">
+        <div>
+            <span class="tag">現在</span>
+            <div class="member-summary">
+                <div class="title">担当者別合計</div>
+                <div class="content">
+                    <div class="member-card">
+                        <div class="name">田中太郎</div>
+                        <div class="hours">136.0h</div>
+                        <div class="manpower">17.0人日 / 0.81人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">佐藤花子</div>
+                        <div class="hours">192.5h</div>
+                        <div class="manpower">24.1人日 / 1.15人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">鈴木一郎</div>
+                        <div class="hours">88.0h</div>
+                        <div class="manpower">11.0人日 / 0.52人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">高橋美咲</div>
+                        <div class="hours">160.0h</div>
+                        <div class="manpower">20.0人日 / 0.95人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">伊藤健</div>
+                        <div class="hours">120.0h</div>
+                        <div class="manpower">15.0人日 / 0.71人月</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="after">
+            <span class="tag">案2</span>
+            <div class="member-summary">
+                <div class="title">担当者別合計　<span style="font-weight:500; color:var(--text-muted); font-size:13.5px;">1人あたり月標準 168h（21日×8h）</span></div>
+                <div class="content">
+                    <div class="member-card with-load">
+                        <div class="name">田中太郎</div>
+                        <div class="hours">136.0h</div>
+                        <div class="manpower">17.0人日 / 0.81人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 168h</span><span class="pct fit">81%</span></div>
+                            <div class="load-track"><div class="load-fill fit" style="width: 81%;"></div></div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">佐藤花子</div>
+                        <div class="hours">192.5h</div>
+                        <div class="manpower">24.1人日 / 1.15人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 160h</span><span class="pct over">120%</span></div>
+                            <div class="load-track"><div class="load-fill over" style="width: 100%;"></div></div>
+                            <div class="load-note">休暇 8h を控除 ／ 32.5h 超過</div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">鈴木一郎</div>
+                        <div class="hours">88.0h</div>
+                        <div class="manpower">11.0人日 / 0.52人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 152h</span><span class="pct under">58%</span></div>
+                            <div class="load-track"><div class="load-fill under" style="width: 58%;"></div></div>
+                            <div class="load-note">休暇 16h を控除 ／ 64.0h 空き</div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">高橋美咲</div>
+                        <div class="hours">160.0h</div>
+                        <div class="manpower">20.0人日 / 0.95人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 168h</span><span class="pct fit">95%</span></div>
+                            <div class="load-track"><div class="load-fill fit" style="width: 95%;"></div></div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">伊藤健</div>
+                        <div class="hours">120.0h</div>
+                        <div class="manpower">15.0人日 / 0.71人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 168h</span><span class="pct fit">71%</span></div>
+                            <div class="load-track"><div class="load-fill fit" style="width: 71%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="cost">変更は <code>js/estimate.js</code> の <code>renderEstimateMemberSummary()</code> と、休暇控除の純関数を <code>js/report.js:2286</code> から切り出して共用する部分。全期間表示のときは月が決まらないため、この行だけ出しません（カードは現状の見た目に戻ります）。</p>
+</section>
+
+
+<!-- ============ 案2 モバイル ============ -->
+<section class="plan">
+    <header>
+        <h2>案2 の 390px 表示</h2>
+        <span class="where">iPhone 相当の幅</span>
+    </header>
+    <p class="note">担当者別カードは狭い幅では1列に積まれます。1枚あたり 3行 → 5行になるぶん縦に伸びるので、実機幅で確認できるようにしています。</p>
+
+    <div class="phone-wrap">
+        <div class="phone">
+            <div class="caption">現在</div>
+            <div class="member-summary">
+                <div class="title">担当者別合計</div>
+                <div class="content">
+                    <div class="member-card">
+                        <div class="name">田中太郎</div>
+                        <div class="hours">136.0h</div>
+                        <div class="manpower">17.0人日 / 0.81人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">佐藤花子</div>
+                        <div class="hours">192.5h</div>
+                        <div class="manpower">24.1人日 / 1.15人月</div>
+                    </div>
+                    <div class="member-card">
+                        <div class="name">鈴木一郎</div>
+                        <div class="hours">88.0h</div>
+                        <div class="manpower">11.0人日 / 0.52人月</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="phone">
+            <div class="caption">案2</div>
+            <div class="member-summary">
+                <div class="title">担当者別合計　<span style="font-weight:500; color:var(--text-muted); font-size:13.5px;">1人あたり月標準 168h</span></div>
+                <div class="content">
+                    <div class="member-card with-load">
+                        <div class="name">田中太郎</div>
+                        <div class="hours">136.0h</div>
+                        <div class="manpower">17.0人日 / 0.81人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 168h</span><span class="pct fit">81%</span></div>
+                            <div class="load-track"><div class="load-fill fit" style="width: 81%;"></div></div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">佐藤花子</div>
+                        <div class="hours">192.5h</div>
+                        <div class="manpower">24.1人日 / 1.15人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 160h</span><span class="pct over">120%</span></div>
+                            <div class="load-track"><div class="load-fill over" style="width: 100%;"></div></div>
+                            <div class="load-note">休暇 8h を控除 ／ 32.5h 超過</div>
+                        </div>
+                    </div>
+                    <div class="member-card with-load">
+                        <div class="name">鈴木一郎</div>
+                        <div class="hours">88.0h</div>
+                        <div class="manpower">11.0人日 / 0.52人月</div>
+                        <div class="load">
+                            <div class="load-head"><span>標準 152h</span><span class="pct under">58%</span></div>
+                            <div class="load-track"><div class="load-fill under" style="width: 58%;"></div></div>
+                            <div class="load-note">休暇 16h を控除 ／ 64.0h 空き</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============ 案3 ============ -->
+<section class="plan">
+    <header>
+        <h2>案3　キャパシティ分析に一人あたり行と担当者別内訳</h2>
+        <span class="where">レポート › キャパシティ分析</span>
+    </header>
+    <p class="note">レポート側にも同じ基準値を置き、折りたたみの中に担当者別の内訳を入れます。いまは閾値を超えたときだけインサイト文として出てくる情報を、常に表で読めるようにするものです。案2と中身が重なるので、両方入れるかは使ってみてから決められます。</p>
+
+    <div style="margin-bottom: 8px;"><span style="font-size:12px; font-weight:600; color:var(--text-muted);">現在</span></div>
+    <div class="capacity-analysis-section" style="margin-bottom: 20px;">
+        <div class="cap-head">
+            <h4>キャパシティ分析</h4>
+            <div class="cap-standard">標準: <strong>840h</strong> <span class="detail">(21日×8h×5人)</span></div>
+        </div>
+        <div class="capacity-bar-group">
+            <div class="capacity-bar-label"><span>見積</span><span>696.5h / 82.9%</span></div>
+            <div class="capacity-track"><div class="capacity-fill estimate" style="width: 82.9%;">82.9%</div></div>
+        </div>
+        <div class="capacity-bar-group" style="margin-bottom:0;">
+            <div class="capacity-bar-label"><span>実績</span><span>612.0h / 72.9%</span></div>
+            <div class="capacity-track"><div class="capacity-fill actual" style="width: 72.9%;">72.9%</div></div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 8px;"><span style="font-size:12px; font-weight:600; color:var(--accent);">案3</span></div>
+    <div class="capacity-analysis-section">
+        <div class="cap-head">
+            <h4>キャパシティ分析</h4>
+            <div class="cap-standard">
+                <span class="cap-perhead">1人あたり <strong style="font-size:15px;">168h</strong></span>
+                　標準: <strong>816h</strong> <span class="detail">(21日×8h×5人 − 休暇24h)</span>
+            </div>
+        </div>
+        <div class="capacity-bar-group">
+            <div class="capacity-bar-label"><span>見積</span><span>696.5h / 85.4%</span></div>
+            <div class="capacity-track"><div class="capacity-fill estimate" style="width: 85.4%;">85.4%</div></div>
+        </div>
+        <div class="capacity-bar-group" style="margin-bottom:0;">
+            <div class="capacity-bar-label"><span>実績</span><span>612.0h / 75.0%</span></div>
+            <div class="capacity-track"><div class="capacity-fill actual" style="width: 75.0%;">75.0%</div></div>
+        </div>
+
+        <details class="cap-breakdown" open>
+            <summary>担当者別の内訳</summary>
+            <table class="cap-table">
+                <tr>
+                    <th>担当者</th>
+                    <th class="num">見積</th>
+                    <th class="num">標準</th>
+                    <th class="num">充足率</th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td class="name">田中太郎</td>
+                    <td class="num">136.0h</td>
+                    <td class="num">168h</td>
+                    <td class="num"><span class="pct fit" style="font-weight:700;">81%</span></td>
+                    <td class="bar"><div class="load-track"><div class="load-fill fit" style="width:81%;"></div></div></td>
+                </tr>
+                <tr>
+                    <td class="name">佐藤花子</td>
+                    <td class="num">192.5h</td>
+                    <td class="num">160h<span style="color:var(--text-muted); font-size:12px;"> −8</span></td>
+                    <td class="num"><span class="pct over" style="font-weight:700;">120%</span></td>
+                    <td class="bar"><div class="load-track"><div class="load-fill over" style="width:100%;"></div></div></td>
+                </tr>
+                <tr>
+                    <td class="name">鈴木一郎</td>
+                    <td class="num">88.0h</td>
+                    <td class="num">152h<span style="color:var(--text-muted); font-size:12px;"> −16</span></td>
+                    <td class="num"><span class="pct under" style="font-weight:700;">58%</span></td>
+                    <td class="bar"><div class="load-track"><div class="load-fill under" style="width:58%;"></div></div></td>
+                </tr>
+                <tr>
+                    <td class="name">高橋美咲</td>
+                    <td class="num">160.0h</td>
+                    <td class="num">168h</td>
+                    <td class="num"><span class="pct fit" style="font-weight:700;">95%</span></td>
+                    <td class="bar"><div class="load-track"><div class="load-fill fit" style="width:95%;"></div></div></td>
+                </tr>
+                <tr>
+                    <td class="name">伊藤健</td>
+                    <td class="num">120.0h</td>
+                    <td class="num">168h</td>
+                    <td class="num"><span class="pct fit" style="font-weight:700;">71%</span></td>
+                    <td class="bar"><div class="load-track"><div class="load-fill fit" style="width:71%;"></div></div></td>
+                </tr>
+            </table>
+        </details>
+    </div>
+
+    <p class="cost">変更は <code>index.html</code> のキャパシティ分析ブロックと <code>js/report.js</code> の <code>updateCapacityAnalysis()</code>。標準工数から休暇を引くため、既存の「標準 840h / 82.9%」の数字が動きます。</p>
+</section>
+
+</div>
+</body>
+</html>
