@@ -267,6 +267,16 @@ export function initActualConditionEvents() {
         const el = $(id); if (el) el.addEventListener('input', updateActualConditionHits);
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && condOpen) closeActualConditionPopover(); });
+    // 外クリックで閉じる（テキスト選択ドラッグで誤爆しないよう mousedown 時点の位置で判定）
+    document.addEventListener('mousedown', (e) => {
+        if (!condOpen) return;
+        const pop = $('actualConditionPopover');
+        if (pop && pop.contains(e.target)) return;
+        // トグルボタン自身は自前の click で開閉するため、ここでは閉じない
+        const btn = $('btnBulkActualCondition');
+        if (btn && btn.contains(e.target)) return;
+        closeActualConditionPopover();
+    });
 }
 
 // ============================================
