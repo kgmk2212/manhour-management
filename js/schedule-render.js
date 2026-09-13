@@ -2008,10 +2008,12 @@ const dragState = {
     originalStartDate: null,
     previewDate: null,
     autoScrollId: null,
-    pressStartTime: 0
+    pressStartTime: 0,
+    originalRowIndex: -1,
+    targetRowIndex: -1
 };
 
-export function setupDragAndDrop(onScheduleUpdate) {
+export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -2028,6 +2030,7 @@ export function setupDragAndDrop(onScheduleUpdate) {
 
             const schedule = renderer.getScheduleAtPosition(x, y);
             if (schedule) {
+                const rowIndex = renderer.getRowIndexAtPosition(y);
                 dragState.isDragging = true;
                 dragState.schedule = schedule;
                 dragState.startX = x;
@@ -2037,6 +2040,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.originalStartDate = schedule.startDate;
                 dragState.previewDate = null;
                 dragState.pressStartTime = Date.now();
+                dragState.originalRowIndex = rowIndex;
+                dragState.targetRowIndex = rowIndex;
                 canvas.style.cursor = 'grabbing';
             }
         });
@@ -2054,13 +2059,24 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
+                let rowChanged = false;
+                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows) {
+                    const rowIndex = renderer.getRowIndexAtPosition(y);
+                    if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
+                        dragState.targetRowIndex = rowIndex;
+                        rowChanged = true;
+                    }
+                }
+
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
-                    if (dateStr !== dragState.previewDate) {
+                    if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr);
+                        drawDragPreview(renderer, dragState.schedule, dateStr, dragState.targetRowIndex);
                     }
+                } else if (rowChanged) {
+                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, dragState.targetRowIndex);
                 }
 
                 // 端に近づいたら自動横スクロール
@@ -2121,8 +2137,19 @@ export function setupDragAndDrop(onScheduleUpdate) {
             const pressDuration = Date.now() - dragState.pressStartTime;
 
             let didUpdate = false;
-            // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
-            if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
+
+            const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+                dragState.targetRowIndex >= 0 &&
+                dragState.targetRowIndex !== dragState.originalRowIndex &&
+                renderer.rows && renderer.rows[dragState.targetRowIndex];
+
+            if (memberChanged && onMemberChange) {
+                const newMember = renderer.rows[dragState.targetRowIndex].label;
+                const newStartDate = dragState.previewDate || dragState.originalStartDate;
+                onMemberChange(dragState.schedule.id, newMember, newStartDate);
+                didUpdate = true;
+            } else if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
+                // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
                 onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
                 didUpdate = true;
             }
@@ -2135,6 +2162,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.targetRowIndex = -1;
+            dragState.originalRowIndex = -1;
             canvas.style.cursor = 'default';
 
             // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
@@ -2155,6 +2184,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
                 dragState.isDragging = false;
                 dragState.schedule = null;
                 dragState.previewDate = null;
+                dragState.targetRowIndex = -1;
+                dragState.originalRowIndex = -1;
 
                 const renderer = getRenderer();
                 if (renderer) {
@@ -2178,6 +2209,8 @@ export function setupDragAndDrop(onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.targetRowIndex = -1;
+            dragState.originalRowIndex = -1;
 
             const renderer = getRenderer();
             const canvas = document.getElementById('ganttTimelineCanvas');
@@ -2201,7 +2234,7 @@ function formatDateForDrag(date) {
     return `${year}-${month}-${day}`;
 }
 
-function drawDragPreview(renderer, schedule, newStartDate) {
+function drawDragPreview(renderer, schedule, newStartDate, targetRowIndex) {
     // render()内部で日付ベースのスクロール位置保持が行われる
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
 
@@ -2225,10 +2258,36 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     const originalRect = renderer.scheduleRects.find(r => r.schedule.id === schedule.id);
     if (!originalRect) return;
 
-    const barY = originalRect.y;
+    const isMemberDrag = targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
+        scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
+    const barY = isMemberDrag
+        ? HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING
+        : originalRect.y;
+
+    if (isMemberDrag) {
+        const rowY = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT;
+        ctx.fillStyle = 'rgba(45, 90, 39, 0.10)';
+        ctx.fillRect(0, rowY, renderer.timelineWidth, ROW_HEIGHT);
+
+        const labelCtx = renderer.labelCtx;
+        if (labelCtx) {
+            labelCtx.fillStyle = 'rgba(45, 90, 39, 0.10)';
+            labelCtx.fillRect(0, rowY, renderer.labelWidth, ROW_HEIGHT);
+        }
+
+        const targetRow = renderer.rows[targetRowIndex];
+        if (targetRow) {
+            ctx.fillStyle = '#2D5A27';
+            ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = 0.9;
+            ctx.fillText(`→ ${targetRow.label}`, barX + barWidth / 2, barY - 5);
+            ctx.globalAlpha = 1.0;
+        }
+    }
 
     ctx.globalAlpha = 0.6;
-    ctx.fillStyle = '#1D6FA5';  // --info
+    ctx.fillStyle = isMemberDrag ? '#2D5A27' : '#1D6FA5';  // --info
     fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
     ctx.strokeStyle = '#2D5A27';  // --accent
     ctx.lineWidth = 2;
@@ -2237,10 +2296,12 @@ function drawDragPreview(renderer, schedule, newStartDate) {
     ctx.setLineDash([]);
     ctx.globalAlpha = 1.0;
 
-    ctx.fillStyle = TEXT_PRIMARY;
-    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+    if (!isMemberDrag) {
+        ctx.fillStyle = TEXT_PRIMARY;
+        ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+    }
 }
 
 // ============================================
@@ -2281,8 +2342,9 @@ function resetTouchState() {
  * タッチイベントをセットアップ（クリック・ドラッグ統合）
  * @param {Function} onScheduleClick - バータップ時のコールバック
  * @param {Function} onScheduleUpdate - バードラッグ完了時のコールバック
+ * @param {Function} onMemberChange - 担当者変更時のコールバック
  */
-export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
+export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberChange) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -2323,6 +2385,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                     dragState.startY = y;
                     dragState.originalStartDate = schedule.startDate;
                     dragState.previewDate = null;
+                    const rowIndex = renderer.getRowIndexAtPosition(y);
+                    dragState.originalRowIndex = rowIndex;
+                    dragState.targetRowIndex = rowIndex;
 
                     renderer.highlightedScheduleId = schedule.id;
                     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
@@ -2361,14 +2426,26 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 const rect = canvas.getBoundingClientRect();
                 const _s = renderer.uiScale || 1;
                 const x = (touch.clientX - rect.left) / _s;
+                const y = (touch.clientY - rect.top) / _s;
+
+                let rowChanged = false;
+                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows) {
+                    const rowIndex = renderer.getRowIndexAtPosition(y);
+                    if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
+                        dragState.targetRowIndex = rowIndex;
+                        rowChanged = true;
+                    }
+                }
 
                 const newDate = renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
-                    if (dateStr !== dragState.previewDate) {
+                    if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr);
+                        drawDragPreview(renderer, dragState.schedule, dateStr, dragState.targetRowIndex);
                     }
+                } else if (rowChanged) {
+                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, dragState.targetRowIndex);
                 }
 
                 // 端に近づいたら自動スクロール
@@ -2422,7 +2499,18 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 }
 
                 let didUpdate = false;
-                if (dragState.previewDate && onScheduleUpdate) {
+
+                const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+                    dragState.targetRowIndex >= 0 &&
+                    dragState.targetRowIndex !== dragState.originalRowIndex &&
+                    renderer.rows && renderer.rows[dragState.targetRowIndex];
+
+                if (memberChanged && onMemberChange) {
+                    const newMember = renderer.rows[dragState.targetRowIndex].label;
+                    const newStartDate = dragState.previewDate || dragState.originalStartDate;
+                    onMemberChange(dragState.schedule.id, newMember, newStartDate);
+                    didUpdate = true;
+                } else if (dragState.previewDate && onScheduleUpdate) {
                     onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
                     didUpdate = true;
                 }
@@ -2431,6 +2519,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
                 dragState.wasDragging = true;
                 dragState.schedule = null;
                 dragState.previewDate = null;
+                dragState.targetRowIndex = -1;
+                dragState.originalRowIndex = -1;
 
                 // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
                 // 再描画が済んでいるため、ここでの再描画は不要
@@ -2462,6 +2552,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate) {
             dragState.isDragging = false;
             dragState.schedule = null;
             dragState.previewDate = null;
+            dragState.targetRowIndex = -1;
+            dragState.originalRowIndex = -1;
 
             const renderer = getRenderer();
             if (renderer) {
