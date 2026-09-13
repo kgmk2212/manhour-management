@@ -516,6 +516,7 @@ export function handleFileImport(event) {
                     actuals.length > 0 ||
                     companyHolidays.length > 0 ||
                     vacations.length > 0 ||
+                    members.length > 0 ||
                     remainingEstimates.length > 0 ||
                     schedules.length > 0;
 
