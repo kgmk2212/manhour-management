@@ -3230,6 +3230,77 @@ export function handleActualMonthChange(value, containerId) {
     }
 }
 
+/**
+ * 版数を選んだときの排他処理: 月フィルタを「全期間」に戻す。
+ *
+ * 月と版数は排他で扱う（片方を絞ったらもう片方は既定値に戻す）。
+ * `updateEstimateVersionOptions()` 等の選択肢再生成は localStorage の保存値を最優先で
+ * 現在値に採用するため、再生成より**前**に DOM 値・state・localStorage の3箇所を揃える。
+ *
+ * @param {string} versionValue 選択された版数（見積・レポートの両タブに適用する）
+ */
+function resetMonthFiltersToAll(versionValue) {
+    // すでに両タブとも全期間なら何もしない（選択肢の再生成コストを避ける）
+    const alreadyAll = ['estimateMonthFilter', 'reportMonth'].every(id => {
+        const el = document.getElementById(id);
+        return !el || el.value === 'all';
+    });
+    if (alreadyAll) return;
+
+    ['estimateMonthFilter', 'estimateMonthFilter2', 'reportMonth', 'reportMonth2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 'all';
+    });
+    ['estimateVersionFilter', 'estimateVersionFilter2', 'reportVersion', 'reportVersion2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = versionValue;
+    });
+    setEstimateFilterState({ month: 'all', version: versionValue });
+    setReportFilterState({ month: 'all', version: versionValue });
+    saveEstimateFilterToStorage();
+    saveReportFilterToStorage();
+    updateSegmentButtonSelection('estimateMonthButtons2', 'all');
+    updateSegmentButtonSelection('reportMonthButtons2', 'all');
+
+    // 月の絞り込みが外れたので、版数の選択肢を全期間ベースで作り直す
+    updateEstimateVersionOptions('all');
+    updateReportVersionOptions(null, 'all');
+}
+
+/**
+ * 月を選んだときの排他処理: 版数フィルタを「全版数」に戻す。
+ * 順序の理由は {@link resetMonthFiltersToAll} と同じ。
+ *
+ * @param {string} monthValue 選択された月（見積・レポートの両タブに適用する）
+ */
+function resetVersionFiltersToAll(monthValue) {
+    // すでに両タブとも全版数なら何もしない（選択肢の再生成コストを避ける）
+    const alreadyAll = ['estimateVersionFilter', 'reportVersion'].every(id => {
+        const el = document.getElementById(id);
+        return !el || el.value === 'all';
+    });
+    if (alreadyAll) return;
+
+    ['estimateVersionFilter', 'estimateVersionFilter2', 'reportVersion', 'reportVersion2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 'all';
+    });
+    ['estimateMonthFilter', 'estimateMonthFilter2', 'reportMonth', 'reportMonth2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = monthValue;
+    });
+    setEstimateFilterState({ version: 'all', month: monthValue });
+    setReportFilterState({ version: 'all', month: monthValue });
+    saveEstimateFilterToStorage();
+    saveReportFilterToStorage();
+    updateSegmentButtonSelection('estimateVersionButtons2', 'all');
+    updateSegmentButtonSelection('reportVersionButtons2', 'all');
+
+    // 版数の絞り込みが外れたので、月の選択肢を全版数ベースで作り直す
+    updateEstimateMonthOptions('all');
+    updateMonthOptions('all');
+}
+
 export function handleEstimateMonthChange(value, containerId) {
     const filterElement = document.getElementById('estimateMonthFilter');
     const currentMonth = filterElement ? filterElement.value : null;
@@ -3260,6 +3331,9 @@ export function handleEstimateMonthChange(value, containerId) {
     
     // localStorageに直接保存（リロード時の復元用）
     saveEstimateFilterToStorage();
+
+    // 月を絞ったら版数は「全版数」に戻す（月と版数は排他）
+    if (value !== 'all') resetVersionFiltersToAll(value);
 
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'month';
@@ -3296,6 +3370,9 @@ export function handleEstimateVersionChange(value, containerId) {
     
     // localStorageに直接保存（リロード時の復元用）
     saveEstimateFilterToStorage();
+
+    // 版数を絞ったら月は「全期間」に戻す（月と版数は排他）
+    if (value !== 'all') resetMonthFiltersToAll(value);
 
     const filterTypeEl = document.getElementById('estimateFilterType');
     if (filterTypeEl) filterTypeEl.value = 'version';
@@ -3347,9 +3424,12 @@ export function handleReportMonthChange(value, containerId) {
 
     // フィルタ状態を保存
     setReportFilterState({ month: value });
-    
+
     // localStorageに直接保存（リロード時の復元用）
     saveReportFilterToStorage();
+
+    // 月を絞ったら版数は「全版数」に戻す（月と版数は排他）
+    if (value !== 'all') resetVersionFiltersToAll(value);
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
@@ -3402,9 +3482,12 @@ export function handleReportVersionChange(value, containerId) {
 
     // フィルタ状態を保存
     setReportFilterState({ version: value });
-    
+
     // localStorageに直接保存（リロード時の復元用）
     saveReportFilterToStorage();
+
+    // 版数を絞ったら月は「全期間」に戻す（月と版数は排他）
+    if (value !== 'all') resetMonthFiltersToAll(value);
 
     // 表のスクロール比率を保存（reportDetailViewを使用）
     const tableElement = document.getElementById('reportDetailView');
