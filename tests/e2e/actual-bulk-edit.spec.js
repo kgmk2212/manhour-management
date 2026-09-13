@@ -1,6 +1,11 @@
 // 実績のまとめ変更（一括編集）— リスト選択／条件／タイムライン／モバイル
 import { test, expect } from "@playwright/test";
 
+// アプリ側は Ctrl/Cmd どちらでも複数選択トグルとして扱う（e.ctrlKey || e.metaKey）が、
+// Chromium は macOS では物理 Control+クリックを副ボタンクリック（contextmenu）として
+// 扱い click イベント自体を発火しないため、実行 OS に応じた修飾キーを使う必要がある。
+const MULTI_SELECT_MODIFIER = process.platform === "darwin" ? "Meta" : "Control";
+
 const YM = new Date().toISOString().slice(0, 7); // タイムラインは当月を表示するため当月の日付で seed する
 const D = (dd) => `${YM}-${String(dd).padStart(2, "0")}`;
 
@@ -245,11 +250,11 @@ test("タイムライン: 結合バーから 5 件を選び、詳細パネルの
 test("タイムライン: Ctrl+クリックでトグル、右クリックでメニュー、Escape で閉じる", async ({ page }) => {
   await page.evaluate(() => window.setActualViewType("timeline"));
   const bar = page.locator(`.actual-tl-bar.actual[data-actual-ids="${TARGET_IDS.join(",")}"]`);
-  await bar.click({ modifiers: ["Control"] });
+  await bar.click({ modifiers: [MULTI_SELECT_MODIFIER] });
   await expect(bar).toHaveClass(/selected/);
   await expect(page.locator("#actualSelectionCount")).toContainText("5 件");
   await expect(page.locator("#atlDetailPanel")).toHaveCount(0); // 修飾キー時は詳細を開かない
-  await bar.click({ modifiers: ["Control"] });
+  await bar.click({ modifiers: [MULTI_SELECT_MODIFIER] });
   await expect(bar).not.toHaveClass(/selected/);
   await expect(page.locator("#actualSelectionCount")).toContainText("0 件");
 
