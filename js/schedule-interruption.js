@@ -92,7 +92,7 @@ export function calculateSegments(schedule) {
             startDate: segStartDate,
             endDate: segEndDate,
             hours: segHours,
-            index: i
+            index: segments.length
         });
 
         if (int.insertedScheduleId) {
@@ -116,7 +116,7 @@ export function calculateSegments(schedule) {
             startDate: segStartDate,
             endDate: segEndDate,
             hours: remainingHours,
-            index: sorted.length
+            index: segments.length
         });
     }
 

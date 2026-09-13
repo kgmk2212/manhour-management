@@ -76,6 +76,20 @@ describe('calculateSegments', () => {
         assert.equal(segments[1].startDate, '2026-09-16');
         assert.equal(segments[1].hours, 24);
     });
+
+    test('中断2件で3セグメントに分割される', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null },
+                { id: 'int_2', splitDate: '2026-09-17', consumedHours: 32, reason: '', insertedScheduleId: null }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        assert.equal(segments.length, 3);
+        assert.equal(segments[0].hours, 16);
+        assert.equal(segments[1].hours, 16);
+        assert.equal(segments[2].index, 2); // 修正1が正しく効いていることの確認
+    });
 });
 
 describe('getNextBusinessDay', () => {
