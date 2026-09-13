@@ -107,9 +107,9 @@ export function initActualTimeline() {
 
     if (!dom.container) return;
 
-    // 初期月を設定
+    // 初期月を設定（実績タブの月フィルタが決まっていればそれに合わせる）
     const now = new Date();
-    currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    currentMonth = getFilterMonth() || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     currentDate = getTodayString();
 
     // ナビゲーションボタン
@@ -197,6 +197,10 @@ function calcMemberRowHeights(members, year, month) {
  * ガントビュー描画
  */
 function renderGanttView() {
+    // 表示月は実績タブの月フィルタ（見積・レポートと同期済み）に合わせる
+    const filterMonth = getFilterMonth();
+    if (filterMonth) currentMonth = filterMonth;
+
     const [year, month] = currentMonth.split('-').map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
     const today = getTodayString();
@@ -2772,10 +2776,58 @@ function deleteActualById(id) {
 // ナビゲーション
 // ============================================
 
+/**
+ * 実績タブの月フィルタで選択中の月を返す。
+ *
+ * ガントの表示月はこのフィルタに従う。実績タブの月フィルタは見積・レポートの
+ * 月フィルタと相互同期しているため、これに合わせることで全タブの表示月が揃う。
+ * 「全期間」など月が確定しない選択のときは null（＝表示月は現状を維持する）。
+ *
+ * @returns {string|null} YYYY-MM 形式の月、または null
+ */
+function getFilterMonth() {
+    const value = document.getElementById('actualMonthFilter')?.value || '';
+    return /^\d{4}-\d{2}$/.test(value) ? value : null;
+}
+
+/**
+ * ガントの表示月を月フィルタへ書き戻し、見積・レポートのフィルタとも揃える。
+ *
+ * 月フィルタの選択肢は「最古の実績月〜来年12月」で生成されるため、その範囲外の月は
+ * 同期できない。同期できない月へ移動すると表示月とフィルタがずれるので、false を返して
+ * 呼び出し側で移動自体を取りやめる（ガントの表示月＝フィルタ という関係を保つ）。
+ *
+ * @param {string} month YYYY-MM 形式の月
+ * @returns {boolean} フィルタへ同期できたか
+ */
+function pushMonthToFilters(month) {
+    const select = document.getElementById('actualMonthFilter');
+    if (!select) return false;
+    if (!Array.from(select.options).some(opt => opt.value === month)) return false;
+
+    select.value = month;
+    const select2 = document.getElementById('actualMonthFilter2');
+    if (select2) select2.value = month;
+
+    if (typeof window.updateSegmentButtonSelection === 'function') {
+        window.updateSegmentButtonSelection('actualMonthButtons2', month);
+    }
+    // 他タブ（見積・レポート）へも同じ月を反映する
+    if (typeof window.syncMonthToReport === 'function') window.syncMonthToReport(month);
+    if (typeof window.syncMonthToEstimate === 'function') window.syncMonthToEstimate(month);
+
+    return true;
+}
+
 function navigateMonth(delta) {
     const [year, month] = currentMonth.split('-').map(Number);
     const d = new Date(year, month - 1 + delta, 1);
-    currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const nextMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    // ガントはフィルタに存在しない月を表示できない（表示月＝フィルタを崩さない）
+    if (viewMode === 'gantt' && !pushMonthToFilters(nextMonth)) return;
+
+    currentMonth = nextMonth;
 
     if (viewMode === 'daily') {
         // 日別ビューの場合は月の1日に移動
@@ -2789,6 +2841,7 @@ function goToToday() {
     const now = new Date();
     currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     currentDate = getTodayString();
+    if (viewMode === 'gantt') pushMonthToFilters(currentMonth);
     renderActualTimeline();
 
     // 今日の列にスクロール

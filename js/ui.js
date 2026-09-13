@@ -3286,6 +3286,11 @@ export function handleActualMonthChange(value, containerId) {
             if (select) select.value = value;
             if (select2) select2.value = value;
             updateSegmentButtonSelection(containerId, value);
+
+            // 他のタブと月フィルタを同期（通常更新と同じ。ここを省くとモバイルだけ月がずれる）
+            syncMonthToReport(value);
+            syncMonthToEstimate(value);
+
             if (typeof window.renderActualList === 'function') {
                 window.renderActualList();
             }
