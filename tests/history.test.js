@@ -248,3 +248,77 @@ describe('actual_bulk_edit — 実績の一括編集・削除・複製の往復'
         assert.deepEqual(State.actuals.map(a => a.id), [2], 'redo 後も a1 が復活しないこと');
     });
 });
+
+describe('applyUndo/applyRedo — schedule_member_change の逆操作', () => {
+    beforeEach(() => {
+        resetAll();
+        window.updateScheduleFn = (id, updates) => {
+            const idx = State.schedules.findIndex(s => s.id === id);
+            if (idx !== -1) State.schedules[idx] = { ...State.schedules[idx], ...updates };
+        };
+    });
+
+    const schedule = {
+        id: 'sch_1', version: 'V1', task: 'T', process: 'PG',
+        member: '田中', startDate: '2026-09-14', endDate: '2026-09-18',
+        estimatedHours: 40, status: 'pending'
+    };
+    const estimate = { id: 5, version: 'V1', task: 'T', process: 'PG', member: '田中', hours: 40 };
+
+    test('undo で担当者・日付・見積の担当者が元に戻り、redo で再適用される', () => {
+        State.setSchedules([{ ...schedule }]);
+        State.setEstimates([{ ...estimate }]);
+
+        const newMember = '鈴木';
+        const newStartDate = '2026-09-15';
+        const newEndDate = '2026-09-21';
+
+        window.updateScheduleFn(schedule.id, { member: newMember, startDate: newStartDate, endDate: newEndDate });
+        const idx = State.estimates.findIndex(e => e.id === estimate.id);
+        State.estimates[idx] = { ...State.estimates[idx], member: newMember };
+
+        History.pushAction({
+            type: 'schedule_member_change',
+            description: '担当者変更: T（PG）田中 → 鈴木',
+            data: {
+                scheduleId: schedule.id,
+                oldMember: '田中', newMember,
+                oldStartDate: schedule.startDate, newStartDate,
+                oldEndDate: schedule.endDate, newEndDate,
+                estimateId: estimate.id, oldEstimate: { ...estimate }
+            }
+        });
+
+        History.undo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').member, '田中');
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').startDate, '2026-09-14');
+        assert.equal(State.estimates.find(e => e.id === 5).member, '田中');
+
+        History.redo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').member, '鈴木');
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').startDate, '2026-09-15');
+        assert.equal(State.estimates.find(e => e.id === 5).member, '鈴木');
+    });
+
+    test('見積が見つからない場合でもスケジュールの逆操作は成立する', () => {
+        State.setSchedules([{ ...schedule }]);
+        State.setEstimates([]);
+
+        window.updateScheduleFn(schedule.id, { member: '鈴木', startDate: '2026-09-15', endDate: '2026-09-21' });
+
+        History.pushAction({
+            type: 'schedule_member_change',
+            description: '担当者変更: T（PG）田中 → 鈴木',
+            data: {
+                scheduleId: schedule.id,
+                oldMember: '田中', newMember: '鈴木',
+                oldStartDate: '2026-09-14', newStartDate: '2026-09-15',
+                oldEndDate: '2026-09-18', newEndDate: '2026-09-21',
+                estimateId: null, oldEstimate: null
+            }
+        });
+
+        History.undo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').member, '田中');
+    });
+});

@@ -529,6 +529,19 @@ function applyScheduleUndo(action) {
                 window.updateScheduleFn(action.data.scheduleId, action.data.oldValues);
             }
             break;
+        case 'member_change':
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    member: action.data.oldMember,
+                    startDate: action.data.oldStartDate,
+                    endDate: action.data.oldEndDate
+                });
+            }
+            if (action.data.estimateId && action.data.oldEstimate) {
+                const idx = State.estimates.findIndex(e => e.id === action.data.estimateId);
+                if (idx !== -1) State.estimates[idx] = { ...action.data.oldEstimate };
+            }
+            break;
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -587,6 +600,19 @@ function applyScheduleRedo(action) {
                 window.updateScheduleFn(action.data.scheduleId, action.data.newValues);
             }
             break;
+        case 'member_change':
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    member: action.data.newMember,
+                    startDate: action.data.newStartDate,
+                    endDate: action.data.newEndDate
+                });
+            }
+            if (action.data.estimateId) {
+                const idx = State.estimates.findIndex(e => e.id === action.data.estimateId);
+                if (idx !== -1) State.estimates[idx] = { ...State.estimates[idx], member: action.data.newMember };
+            }
+            break;
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -620,6 +646,11 @@ function refreshUI(action) {
     if (t === 'remaining_edit' || t === 'remaining_bulk_edit') {
         if (typeof window.updateReport === 'function') window.updateReport();
         if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
+    }
+    if (t === 'schedule_member_change') {
+        // 見積の担当者も変更されるため見積一覧・レポートも更新
+        if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
+        if (typeof window.updateReport === 'function') window.updateReport();
     }
     if (t === 'data_merge' || t === 'excel_import') {
         // マージは複数エンティティに跨るため全体再描画
