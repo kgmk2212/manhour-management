@@ -2716,42 +2716,52 @@ export function getFullRangeTotals(totals, version, task, process) {
 }
 
 /**
- * マトリクスセルの実績文字色クラスと進捗率を求める。
- * 予測総工数 EAC（実績 + 見込残存）と見積の比率で4段階に色分けする。
+ * マトリクスセルの実績文字色クラスを求める（見積に対する超過度合いの4段階）。
  *
- * 渡す工数は「工程全体（全期間）」の値であること。見込残存が工程全体の値なので、
- * 月按分した見積・その月だけの実績を渡すと粒度が揃わず判定が壊れる（B-039①）。
+ * 月別表示では「その月に割り当てた見積 vs その月の実績」で判定する。見込残存は
+ * (version/task/process) 単位の工程全体の値で月に割り振れないため、remainingHours を
+ * 渡さない（渡すと月按分の見積と粒度が合わず、分割工程ほど過大に赤くなる: B-039①）。
+ * 全期間表示では予測総工数 EAC（実績 + 見込残存）と見積を比べ、着地見込みを色にする。
  *
- * @param {{estHours: number, actHours: number, remainingHours: number}} params - 全期間の見積・実績と見込残存
- * @returns {{colorClass: string, progressRate: number, eac: number}} 文字色クラス・進捗率(%)・予測総工数
+ * @param {{estHours: number, actHours: number, remainingHours: number}} params - 見積・実績と、色に含める見込残存（月別表示では省略）
+ * @returns {string} 文字色クラス（over / warning / safe-bright / safe-normal / 空文字）
  */
-export function evaluateMatrixCellStatus({ estHours = 0, actHours = 0, remainingHours = 0 } = {}) {
+export function evaluateMatrixCellColor({ estHours = 0, actHours = 0, remainingHours = 0 } = {}) {
     const est = Number(estHours) || 0;
     const act = Number(actHours) || 0;
     const remaining = Math.max(0, Number(remainingHours) || 0);
     const eac = act + remaining;
 
-    let colorClass = '';
     if (est > 0) {
         if (eac > 0 || act > 0) {
             const ratio = eac / est;
-            if (ratio > 1.1) {
-                colorClass = 'over';          // 10%超過 → 赤
-            } else if (ratio > 1.0) {
-                colorClass = 'warning';       // 0-10%超過 → 黄
-            } else if (ratio < 0.9) {
-                colorClass = 'safe-bright';   // 10%以上余裕 → 明るい緑
-            } else {
-                colorClass = 'safe-normal';   // 0-10%余裕 → 緑
-            }
+            if (ratio > 1.1) return 'over';          // 10%超過 → 赤
+            if (ratio > 1.0) return 'warning';       // 0-10%超過 → 黄
+            if (ratio < 0.9) return 'safe-bright';   // 10%以上余裕 → 明るい緑
+            return 'safe-normal';                    // 0-10%余裕 → 緑
         }
-    } else if (act > 0) {
-        colorClass = 'over';  // 見積なしで実績あり → 赤
+        return '';
     }
+    if (act > 0) return 'over';  // 見積なしで実績あり → 赤
 
-    const progressRate = eac > 0 ? (act / eac) * 100 : 0;
+    return '';
+}
 
-    return { colorClass, progressRate, eac };
+/**
+ * マトリクスセルの進捗率(%)を求める。
+ *
+ * 見込残存が工程全体の値なので、分子の実績も工程全体（全期間）の値を渡すこと。
+ * 月で切ると前月までの実績が分子から消え、実績のない月で 0% に見えてしまう。
+ *
+ * @param {{actHours: number, remainingHours: number}} params - 全期間の実績と工程全体の見込残存
+ * @returns {number} 進捗率(%)
+ */
+export function calcMatrixProgressRate({ actHours = 0, remainingHours = 0 } = {}) {
+    const act = Number(actHours) || 0;
+    const remaining = Math.max(0, Number(remainingHours) || 0);
+    const eac = act + remaining;
+
+    return eac > 0 ? (act / eac) * 100 : 0;
 }
 
 export function renderReportMatrix(filteredActuals, filteredEstimates, selectedMonth) {
@@ -2760,8 +2770,10 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
     const showMonthColors = bgColorMode === 'month';
     const isMobile = window.innerWidth <= 768;
 
-    // 見込残存は工程全体の値なので、残存が絡む判定は月フィルタ前の全期間データで行う（B-039①）
+    // 見込残存は工程全体の値なので、進捗率は月フィルタ前の全期間データで求める（B-039①）
     const fullRangeTotals = buildFullRangeTotals(estimates, actuals, isOtherWork);
+    // 月別表示の文字色は「その月の見積 vs その月の実績」で判定する（残存は月に割り振れない）
+    const isMonthFiltered = !!selectedMonth && selectedMonth !== 'all';
 
     const usedMonths = new Set();
     let hasMultipleMonths = false;
@@ -2970,11 +2982,11 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         
                         // デバッグ: 問題調査用ログ
                         if (debugModeEnabled) {
-                            const status = evaluateMatrixCellStatus({
-                                estHours: fullRange.est, actHours: fullRange.act, remainingHours: cellRemainingHours
-                            });
-                            const ratio = fullRange.est > 0 ? status.eac / fullRange.est : 0;
-                            console.log(`[Matrix Debug] ${version}/${taskGroup.task}/${proc}: est=${est.hours}(全期間${fullRange.est}), act=${act.hours}(全期間${fullRange.act}), remaining=${cellRemainingHours}, remainingDataCount=${remainingData.length}, usedFallback=${usedFallback}, eac=${status.eac}, ratio=${ratio.toFixed(2)}, progress=${status.progressRate.toFixed(1)}%`);
+                            const colorBasis = isMonthFiltered
+                                ? `月別(${act.hours}/${est.hours})`
+                                : `全期間(${fullRange.act}+${cellRemainingHours}/${fullRange.est})`;
+                            const progressRate = calcMatrixProgressRate({ actHours: fullRange.act, remainingHours: cellRemainingHours });
+                            console.log(`[Matrix Debug] ${version}/${taskGroup.task}/${proc}: est=${est.hours}(全期間${fullRange.est}), act=${act.hours}(全期間${fullRange.act}), remaining=${cellRemainingHours}, remainingDataCount=${remainingData.length}, usedFallback=${usedFallback}, color=${colorBasis}, progress=${progressRate.toFixed(1)}%`);
                         }
 
                         totalRemainingHours += cellRemainingHours;
@@ -2982,7 +2994,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                         totalFullRange.act += fullRange.act;
 
                         const bgColor = bgColorMode === 'month' ? getMonthColor(est.workMonths || []).bg : '';
-                        const cellInner = renderCellOptionA(version, taskGroup.task, proc, est, act, bgColorMode, workingDaysPerMonth, cellRemainingHours, fullRange);
+                        const cellInner = renderCellOptionA(version, taskGroup.task, proc, est, act, bgColorMode, workingDaysPerMonth, cellRemainingHours, { fullRange, isMonthFiltered });
                         const onclick = getCellOnclick(version, taskGroup.task, proc, est, act);
                         const title = bgColorMode === 'month' ? `title="${getMonthColor(est.workMonths || []).tooltip}"` : '';
 
@@ -3010,7 +3022,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     bgColorMode,
                     workingDaysPerMonth,
                     totalRemainingHours,
-                    totalFullRange
+                    { fullRange: totalFullRange, isMonthFiltered }
                 );
 
                 contentHtml += `<td style="text-align: center; background: ${totalBgColor};">${totalCellInner}</td></tr>`;
@@ -3078,24 +3090,23 @@ export function openMatrixTaskDetail(version, task) {
 }
 
 // 案A（改：Formatted 2-Row Layout）のセルレンダリング
-function renderCellOptionA(version, task, process, est, act, bgColorMode, workingDaysPerMonth = 20, remainingHours = null, fullRange = null) {
+function renderCellOptionA(version, task, process, est, act, bgColorMode, workingDaysPerMonth = 20, remainingHours = null, evalBasis = null) {
     const diff = act.hours - est.hours;
 
     // remainingHoursを数値として正規化（NaN/null/undefined対策）
     const remaining = (remainingHours !== null && !isNaN(remainingHours)) ? Number(remainingHours) : 0;
 
-    // 見込残存は工程全体の値なので、判定にも工程全体（全期間）の見積・実績を使う。
-    // 表示する数字は月フィルタどおり（当月按分の見積／当月の実績）のままにする（B-039①）。
-    const isFullRangeBasis = !!fullRange;
-    const evalEstHours = isFullRangeBasis ? fullRange.est : est.hours;
-    const evalActHours = isFullRangeBasis ? fullRange.act : act.hours;
+    // 進捗率は見込残存と粒度を揃えるため工程全体（全期間）の実績で求める（B-039①）
+    const fullRange = evalBasis && evalBasis.fullRange ? evalBasis.fullRange : null;
+    const fullActHours = fullRange ? fullRange.act : act.hours;
+    const fullEstHours = fullRange ? fullRange.est : est.hours;
 
-    const cellStatus = evaluateMatrixCellStatus({
-        estHours: evalEstHours,
-        actHours: evalActHours,
-        remainingHours: remaining
-    });
-    const actColorClass = cellStatus.colorClass;
+    // 文字色は月別表示なら「その月の見積 vs その月の実績」、全期間表示なら
+    // 「見積 vs 予測総工数(実績+見込残存)」。見込残存は月に割り振れないので月別では使わない。
+    const isMonthFiltered = !!(evalBasis && evalBasis.isMonthFiltered);
+    const actColorClass = isMonthFiltered
+        ? evaluateMatrixCellColor({ estHours: est.hours, actHours: act.hours })
+        : evaluateMatrixCellColor({ estHours: fullEstHours, actHours: fullActHours, remainingHours: remaining });
 
     // 担当者表示（見積一覧タブと同じ形式）
     let memberDisplay = '';
@@ -3113,7 +3124,7 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
     let progressBarHtml = '';
     if (showProgressBarsSetting && process !== 'total') {
         // 実績時間（見込残存と粒度を揃えた工程全体の値。月フィルタ時も工程の進捗を示す）
-        const actualHours = evalActHours || 0;
+        const actualHours = fullActHours || 0;
 
         // デバッグ：渡された値を確認
         if (debugModeEnabled) {
@@ -3121,10 +3132,10 @@ function renderCellOptionA(version, task, process, est, act, bgColorMode, workin
         }
 
         // 進捗率を計算（実績 / (実績 + 見込み残存) × 100）
-        const progressRate = cellStatus.progressRate;
+        const progressRate = calcMatrixProgressRate({ actHours: actualHours, remainingHours: remaining });
 
         // 進捗率が0%の場合はバーを表示しない（罫線と紛らわしいため）
-        if ((evalEstHours > 0 || actualHours > 0) && progressRate > 0) {
+        if ((fullEstHours > 0 || actualHours > 0) && progressRate > 0) {
             const barColor = getProgressColor(progressRate);
             const barWidth = Math.min(progressRate, 100);
             const displayRate = progressRate.toFixed(0);
