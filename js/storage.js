@@ -7,6 +7,7 @@ import {
     actuals, setActuals,
     companyHolidays, setCompanyHolidays,
     vacations, setVacations,
+    members, setMembers, setNextMemberId,
     nonProjectWork, setNonProjectWork, setNextNonProjectId,
     remainingEstimates, setRemainingEstimates,
     setNextCompanyHolidayId, setNextVacationId, setNextRecordId,
@@ -23,7 +24,7 @@ import {
     devFeaturesEnabled, setDevFeaturesEnabled,
     selectedChartColorScheme,
     setCurrentThemeColor, setCurrentThemePattern, setCurrentTabColor, setCurrentBackgroundColor,
-    setEstimateLayout, setActualLayout, setReportLayout, setMemberOrder,
+    setEstimateLayout, setActualLayout, setReportLayout,
     // [GANTT-CHART] スケジュール関連
     schedules, setSchedules, setNextScheduleId,
     scheduleSettings, setScheduleSettings,
@@ -36,6 +37,7 @@ import { showAlert } from './utils.js';
 import { clearProgressCache } from './report.js';
 import { TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { loadHistory } from './history.js';
+import { buildInitialMembersFromLegacyData } from './members.js';
 import { logBackupEvent } from './viewport-diag.js';
 
 // ============================================
@@ -68,16 +70,13 @@ export function saveAutoBackupSetting() {
  * @returns {void}
  */
 export function saveData(skipAutoBackup = false) {
-    // 担当者順はステート変数を優先（DOM要素が非表示の場合があるため）
-    const memberOrderEl = document.getElementById('memberOrder');
-    const memberOrderValue = window.memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
     const data = {
         estimates: estimates,
         actuals: actuals,
         companyHolidays: companyHolidays,
         vacations: vacations,
+        members: members,
         settings: {
-            memberOrder: memberOrderValue,
             themeColor: window.currentThemeColor,
             themePattern: window.currentThemePattern,
             themeTabColor: window.currentTabColor,
@@ -107,6 +106,7 @@ export function saveData(skipAutoBackup = false) {
     localStorage.setItem('manhour_actuals', JSON.stringify(actuals));
     localStorage.setItem('manhour_companyHolidays', JSON.stringify(companyHolidays));
     localStorage.setItem('manhour_vacations', JSON.stringify(vacations));
+    localStorage.setItem('manhour_members', JSON.stringify(members));
     localStorage.setItem('manhour_nonProjectWork', JSON.stringify(nonProjectWork));
     localStorage.setItem('manhour_remainingEstimates', JSON.stringify(remainingEstimates));
     // [GANTT-CHART] スケジュールデータ保存
@@ -152,6 +152,7 @@ export function loadData() {
     const savedActuals = localStorage.getItem('manhour_actuals');
     const savedCompanyHolidays = localStorage.getItem('manhour_companyHolidays');
     const savedVacations = localStorage.getItem('manhour_vacations');
+    const savedMembers = localStorage.getItem('manhour_members');
     const savedNonProjectWork = localStorage.getItem('manhour_nonProjectWork');
     const savedRemainingEstimates = localStorage.getItem('manhour_remainingEstimates');
     const savedSettings = localStorage.getItem('manhour_settings');
@@ -161,6 +162,21 @@ export function loadData() {
         if (savedActuals) setActuals(JSON.parse(savedActuals));
         if (savedCompanyHolidays) setCompanyHolidays(JSON.parse(savedCompanyHolidays));
         if (savedVacations) setVacations(JSON.parse(savedVacations));
+        // 担当者マスタ（この時点で estimates / actuals は復元済みである必要がある。
+        // 初回移行が既存データを走査してマスタを組み立てるため）
+        if (savedMembers) {
+            setMembers(JSON.parse(savedMembers));
+        } else {
+            // 初回移行: manhour_membersが一度も保存されていない場合のみ、
+            // 既存の見積・実績データと旧settings.memberOrderからマスタを自動生成する
+            let legacyOrder = '';
+            try {
+                const parsedSettings = savedSettings ? JSON.parse(savedSettings) : null;
+                if (parsedSettings && parsedSettings.memberOrder) legacyOrder = parsedSettings.memberOrder;
+            } catch { /* ignore */ }
+            const names = buildInitialMembersFromLegacyData(legacyOrder);
+            setMembers(names.map((name, i) => ({ id: i + 1, name, archived: false })));
+        }
         if (savedNonProjectWork) setNonProjectWork(JSON.parse(savedNonProjectWork));
         if (savedRemainingEstimates) setRemainingEstimates(JSON.parse(savedRemainingEstimates));
         // [GANTT-CHART] スケジュールデータ読み込み
@@ -212,6 +228,12 @@ export function loadData() {
             setNextNonProjectId(Math.max(...ids) + 1);
         }
     }
+    if (members.length > 0) {
+        const ids = members.map(m => m.id).filter(id => typeof id === 'number' && !isNaN(id));
+        if (ids.length > 0) {
+            setNextMemberId(Math.max(...ids) + 1);
+        }
+    }
 
     // [GANTT-CHART] スケジュールIDの最大値を設定
     // （数値など文字列以外の id が混入しても初期化が中断しないよう String() を通す）
@@ -231,7 +253,6 @@ export function loadData() {
     if (savedSettings) {
         try {
             const settings = JSON.parse(savedSettings);
-            if (settings.memberOrder) setMemberOrder(settings.memberOrder);
             if (settings.themeColor) setCurrentThemeColor(settings.themeColor);
             if (settings.themePattern) setCurrentThemePattern(settings.themePattern);
             if (settings.themeTabColor) setCurrentTabColor(settings.themeTabColor);
@@ -370,9 +391,7 @@ function initializeRecordIdAndDedup() {
  * @returns {void}
  */
 export function autoBackup() {
-    // 現在の設定を取得（担当者順はステート変数を優先）
-    const memberOrderEl = document.getElementById('memberOrder');
-    const memberOrderValue = window.memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
+    // 現在の設定を取得
     const settings = {
         themeColor: window.currentThemeColor,
         themePattern: window.currentThemePattern,
@@ -393,7 +412,6 @@ export function autoBackup() {
         defaultEstimateViewType: document.getElementById('defaultEstimateViewType') ? document.getElementById('defaultEstimateViewType').value : 'grouped',
         defaultReportViewType: document.getElementById('defaultReportViewType') ? document.getElementById('defaultReportViewType').value : 'grouped',
         chartColorScheme: selectedChartColorScheme,
-        memberOrder: memberOrderValue,
         debugModeEnabled: debugModeEnabled,
         devFeaturesEnabled: devFeaturesEnabled,
         workDetailStyle: window.workDetailStyle,
@@ -405,6 +423,7 @@ export function autoBackup() {
         actuals: actuals,
         companyHolidays: companyHolidays,
         vacations: vacations,
+        members: members,
         remainingEstimates: remainingEstimates,
         schedules: schedules,
         scheduleSettings: { ...scheduleSettings },
@@ -508,6 +527,17 @@ export function handleFileImport(event) {
                     setVacations(data.vacations || []);
                     setRemainingEstimates(data.remainingEstimates || []);
 
+                    // 担当者マスタを復元（上の setEstimates / setActuals より後に置くこと。
+                    // 旧バックアップからの再構築が既存データを走査するため）
+                    if (Array.isArray(data.members)) {
+                        setMembers(data.members);
+                    } else {
+                        // 旧バックアップ（membersを含まない）からの復元: 見積・実績とmemberOrderから再構築する
+                        const legacyOrder = (data.settings && data.settings.memberOrder) || '';
+                        const names = buildInitialMembersFromLegacyData(legacyOrder);
+                        setMembers(names.map((name, i) => ({ id: i + 1, name, archived: false })));
+                    }
+
                     // AI 分析履歴と設定を復元（バックアップに含まれていた場合のみ）
                     if (Array.isArray(data.llmAnalysisHistory) && data.llmAnalysisHistory.length > 0) {
                         localStorage.setItem('llmAnalysisHistory_v1', JSON.stringify(data.llmAnalysisHistory));
@@ -552,6 +582,12 @@ export function handleFileImport(event) {
                         const ids = vacations.map(v => v.id).filter(id => typeof id === 'number' && !isNaN(id));
                         if (ids.length > 0) {
                             setNextVacationId(Math.max(...ids) + 1);
+                        }
+                    }
+                    if (members.length > 0) {
+                        const ids = members.map(m => m.id).filter(id => typeof id === 'number' && !isNaN(id));
+                        if (ids.length > 0) {
+                            setNextMemberId(Math.max(...ids) + 1);
                         }
                     }
 
@@ -640,13 +676,6 @@ export function handleFileImport(event) {
                             if (select) select.value = data.settings.defaultReportViewType;
                         }
 
-                        // 担当者表示順を復元
-                        if (data.settings.memberOrder) {
-                            const memberOrderEl = document.getElementById('memberOrder');
-                            if (memberOrderEl) memberOrderEl.value = data.settings.memberOrder;
-                        }
-
-
                         // フィルタバー表示モードを復元
                         if (data.settings.filterBarMode) {
                             setFilterBarMode(data.settings.filterBarMode);
@@ -680,10 +709,6 @@ export function handleFileImport(event) {
                                 window.loadDevFeaturesSetting();
                             }
                         }
-                    } else if (data.memberOrder) {
-                        // 旧形式（settingsがない場合）の後方互換性
-                        const memberOrderEl = document.getElementById('memberOrder');
-                        if (memberOrderEl) memberOrderEl.value = data.memberOrder;
                     }
 
                     saveData(true); // 復元時は自動バックアップをスキップ
@@ -708,6 +733,7 @@ export function handleFileImport(event) {
                     if (typeof window.setDefaultEstimateMonth === 'function') window.setDefaultEstimateMonth();
                     if (typeof window.updateActualMonthOptions === 'function') window.updateActualMonthOptions();
                     if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+                    if (typeof window.renderMemberList === 'function') window.renderMemberList();
                     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
                     if (typeof window.renderEstimateList === 'function') window.renderEstimateList();
                     if (typeof window.renderActualList === 'function') window.renderActualList();
