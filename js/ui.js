@@ -1551,8 +1551,11 @@ function getSegmentVisibleLimit(maxItems) {
 }
 
 /**
- * 表示する項目を「基準点から遡った maxItems 件」に絞る。
+ * 表示する項目を「基準点から遡った maxItems 件 + 基準点より後ろ（未来側）の登録済み項目」に絞る。
  * items は昇順（配列の後ろほど新しい）で渡される前提。
+ * 件数上限は過去方向にのみ適用する。未来側（基準点より後ろ）はitemsに実在する＝
+ * 登録済みのものなので、上限を超えても切り捨てずに表示する
+ * （例: 見積で来月分をすでに登録していれば、畳んだ状態でも見えてほしい）。
  *
  * @param {*} anchorValue 「最近」の窓の右端を固定する基準値（例: 月フィルタでの「今日」）。
  *   省略時は配列末尾（＝最新項目）を基準にする。currentValue を基準にしないのは、
@@ -1565,10 +1568,9 @@ function selectRecentSegmentItems(items, currentValue, limit, expanded, anchorVa
     const isAggregate = value => value === 'all' || value === '';
     const allItem = items.find(item => isAggregate(item.value));
     const dataItems = items.filter(item => !isAggregate(item.value));
-    const collapsible = limit > 0 && dataItems.length > limit;
 
-    if (!collapsible || expanded) {
-        return { visibleItems: items, hiddenCount: 0, collapsible };
+    if (limit <= 0 || dataItems.length <= limit || expanded) {
+        return { visibleItems: items, hiddenCount: 0, collapsible: limit > 0 && dataItems.length > limit };
     }
 
     let basisIdx = dataItems.length - 1;
@@ -1586,14 +1588,15 @@ function selectRecentSegmentItems(items, currentValue, limit, expanded, anchorVa
         }
     }
     const startIdx = Math.max(0, basisIdx - limit + 1);
-    const keep = new Set(dataItems.slice(startIdx, basisIdx + 1).map(item => item.value));
+    const keep = new Set(dataItems.slice(startIdx).map(item => item.value));
     if (!isAggregate(currentValue)) keep.add(currentValue);
     const kept = dataItems.filter(item => keep.has(item.value));
+    const hiddenCount = dataItems.length - kept.length;
 
     return {
         visibleItems: allItem ? [allItem, ...kept] : kept,
-        hiddenCount: dataItems.length - kept.length,
-        collapsible
+        hiddenCount,
+        collapsible: hiddenCount > 0
     };
 }
 
