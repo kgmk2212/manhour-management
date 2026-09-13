@@ -139,7 +139,7 @@ function buildRecordDefs(counters) {
             keyFields: ['name'],
             compareFields: [{ key: 'archived', label: 'アーカイブ状態' }],
             spec: {
-                keyOf: r => s(r.name),
+                keyOf: r => s(r.name).toLowerCase(),
                 valueEq: (a, b) => !!a.archived === !!b.archived, emitChanged: true
             },
             apply: makeApplier('members', ['archived'], idMember)
