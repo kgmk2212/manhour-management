@@ -32,6 +32,7 @@ globalThis.alert = () => {};
 
 const State = await import('../js/state.js');
 const History = await import('../js/history.js');
+const Members = await import('../js/members.js');
 
 /** 各テストを空スタック・固定データから始める */
 function resetAll() {
@@ -320,5 +321,104 @@ describe('applyUndo/applyRedo — schedule_member_change の逆操作', () => {
 
         History.undo();
         assert.equal(State.schedules.find(s => s.id === 'sch_1').member, '田中');
+    });
+});
+
+describe('member_add / member_archive / member_restore — Undo/Redo', () => {
+    beforeEach(() => {
+        resetAll();
+        State.setMembers([]);
+        State.setNextMemberId(1);
+    });
+
+    test('member_add を undo すると追加した担当者が消え、redo すると戻る', () => {
+        Members.addMember('山田');
+        History.pushAction({ type: 'member_add', description: '担当者追加: 山田', data: { added: { ...State.members[0] } } });
+
+        History.undo();
+        assert.equal(State.members.length, 0);
+
+        History.redo();
+        assert.equal(State.members.length, 1);
+        assert.equal(State.members[0].name, '山田');
+    });
+
+    test('member_archive を undo するとアーカイブが解除され、redo すると再度アーカイブされる', () => {
+        Members.addMember('山田');
+        Members.archiveMember(1);
+        History.pushAction({ type: 'member_archive', description: '担当者アーカイブ: 山田', data: { memberId: 1, name: '山田' } });
+
+        History.undo();
+        assert.equal(State.members[0].archived, false);
+
+        History.redo();
+        assert.equal(State.members[0].archived, true);
+    });
+
+    test('member_restore を undo すると再度アーカイブされ、redo すると復元される', () => {
+        Members.addMember('山田');
+        Members.archiveMember(1);
+        Members.restoreMember(1);
+        History.pushAction({ type: 'member_restore', description: '担当者復元: 山田', data: { memberId: 1, name: '山田' } });
+
+        History.undo();
+        assert.equal(State.members.find(m => m.id === 1).archived, true);
+
+        History.redo();
+        assert.equal(State.members.find(m => m.id === 1).archived, false);
+    });
+});
+
+describe('member_rename — Undo/Redo（既存データへの遡及も含む）', () => {
+    beforeEach(() => {
+        resetAll();
+        State.setMembers([]);
+        State.setNextMemberId(1);
+        State.setEstimates([]);
+        State.setActuals([]);
+        State.setSchedules([]);
+        State.setVacations([]);
+    });
+
+    test('undo で改名前の名前とデータのmemberフィールドが両方戻り、redo で再度改名される', () => {
+        Members.addMember('山田');
+        State.setEstimates([{ id: 10, member: '山田' }]);
+        const result = Members.renameMember(1, '山田太郎');
+        History.pushAction({
+            type: 'member_rename',
+            description: '担当者改名: 山田 → 山田太郎',
+            data: { memberId: 1, before: '山田', after: '山田太郎', affected: result.affected }
+        });
+
+        History.undo();
+        assert.equal(State.members[0].name, '山田');
+        assert.equal(State.estimates[0].member, '山田');
+
+        History.redo();
+        assert.equal(State.members[0].name, '山田太郎');
+        assert.equal(State.estimates[0].member, '山田太郎');
+    });
+
+    test('実績・スケジュール・休暇の member も undo/redo で遡及する', () => {
+        Members.addMember('山田');
+        State.setActuals([{ id: 20, member: '山田' }]);
+        State.setSchedules([{ id: 's1', member: '山田' }]);
+        State.setVacations([{ id: 30, member: '山田' }]);
+        const result = Members.renameMember(1, '山田太郎');
+        History.pushAction({
+            type: 'member_rename',
+            description: '担当者改名: 山田 → 山田太郎',
+            data: { memberId: 1, before: '山田', after: '山田太郎', affected: result.affected }
+        });
+
+        History.undo();
+        assert.equal(State.actuals[0].member, '山田');
+        assert.equal(State.schedules[0].member, '山田');
+        assert.equal(State.vacations[0].member, '山田');
+
+        History.redo();
+        assert.equal(State.actuals[0].member, '山田太郎');
+        assert.equal(State.schedules[0].member, '山田太郎');
+        assert.equal(State.vacations[0].member, '山田太郎');
     });
 });

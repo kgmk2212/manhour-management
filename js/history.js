@@ -258,6 +258,18 @@ function applyUndo(action) {
     } else if (t === 'holiday_delete') {
         State.companyHolidays.push(action.data.deleted);
 
+    // --- 担当者マスタ ---
+    } else if (t === 'member_add') {
+        State.setMembers(State.members.filter(m => m.id !== action.data.added.id));
+    } else if (t === 'member_archive') {
+        const m = State.members.find(x => x.id === action.data.memberId);
+        if (m) m.archived = false;
+    } else if (t === 'member_restore') {
+        const m = State.members.find(x => x.id === action.data.memberId);
+        if (m) m.archived = true;
+    } else if (t === 'member_rename') {
+        applyMemberRename(action.data, 'before');
+
     // --- 見込残存 ---
     } else if (t === 'remaining_edit') {
         const d = action.data;
@@ -367,6 +379,18 @@ function applyRedo(action) {
     } else if (t === 'holiday_delete') {
         State.setCompanyHolidays(State.companyHolidays.filter(h => h.id !== action.data.deleted.id));
 
+    // --- 担当者マスタ ---
+    } else if (t === 'member_add') {
+        State.members.push({ ...action.data.added });
+    } else if (t === 'member_archive') {
+        const m = State.members.find(x => x.id === action.data.memberId);
+        if (m) m.archived = true;
+    } else if (t === 'member_restore') {
+        const m = State.members.find(x => x.id === action.data.memberId);
+        if (m) m.archived = false;
+    } else if (t === 'member_rename') {
+        applyMemberRename(action.data, 'after');
+
     // --- 見込残存 ---
     } else if (t === 'remaining_edit') {
         const d = action.data;
@@ -408,6 +432,41 @@ function applyRedo(action) {
 
     if (typeof window.saveData === 'function') window.saveData();
     return true;
+}
+
+// ============================================
+// 担当者改名の復元ヘルパー
+// ============================================
+
+/**
+ * 担当者改名（member_rename）の Undo/Redo を実行する。
+ * マスタ上の名前と、改名時に遡及更新した各レコードの member フィールドを
+ * 指定方向の名前へ揃える。affected に記録された id のみを対象とするため、
+ * 改名後に同名で作られたレコードを巻き込まない。
+ * @param {Object} data - { memberId, before, after, affected: {estimates, actuals, schedules, vacations} }
+ * @param {string} direction - 'before' (undo) または 'after' (redo)
+ */
+function applyMemberRename(data, direction) {
+    const name = direction === 'before' ? data.before : data.after;
+
+    const member = State.members.find(m => m.id === data.memberId);
+    if (member) member.name = name;
+
+    const affected = data.affected || {};
+    const TARGETS = [
+        ['estimates', State.estimates],
+        ['actuals', State.actuals],
+        ['schedules', State.schedules],
+        ['vacations', State.vacations],
+    ];
+    for (const [key, records] of TARGETS) {
+        const ids = affected[key];
+        if (!ids || !ids.length) continue;
+        ids.forEach(id => {
+            const r = records.find(x => x.id === id);
+            if (r) r.member = name;
+        });
+    }
 }
 
 // ============================================
@@ -655,6 +714,11 @@ function refreshUI(action) {
         if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
         if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
     }
+    if (t.startsWith('member_')) {
+        if (typeof window.renderMemberList === 'function') window.renderMemberList();
+        if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+        if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
+    }
     if (t === 'remaining_edit' || t === 'remaining_bulk_edit') {
         if (typeof window.updateReport === 'function') window.updateReport();
         if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -679,6 +743,7 @@ function fullRefreshUI() {
     if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
     if (typeof window.renderCompanyHolidayList === 'function') window.renderCompanyHolidayList();
+    if (typeof window.renderMemberList === 'function') window.renderMemberList();
     // 個人休暇は updateAllDisplays 内のカレンダー描画で反映される（renderVacationList は存在しない関数だった）
 }
 
