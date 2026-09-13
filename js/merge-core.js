@@ -8,6 +8,7 @@
 import { pushAction } from './history.js';
 import { saveData, autoBackup } from './storage.js';
 import { showAlert } from './utils.js';
+import { ensureMembersExist } from './members.js';
 
 // --- 軽量 DOM ヘルパー（excel-import.js と同等。XSS 安全に textContent を使用） ---
 export function el(tag, attrs = {}, children = []) {
@@ -536,7 +537,7 @@ function refreshAllViews() {
         'updateEstimateMonthOptions', 'updateEstimateVersionOptions', 'setDefaultEstimateMonth',
         'updateActualMonthOptions', 'updateMemberOptions', 'updateQuickTaskList',
         'renderEstimateList', 'renderActualList', 'renderTodayActuals', 'updateReport',
-        'renderCompanyHolidayList', 'renderScheduleView'
+        'renderCompanyHolidayList', 'renderScheduleView', 'renderMemberList'
     ];
     for (const name of fns) {
         if (typeof window[name] === 'function') { try { window[name](); } catch { /* ignore */ } }
@@ -588,6 +589,16 @@ function applyMerge() {
             }
         }
     }
+
+    // 見積・実績に新しい担当者名が含まれていれば、マスタに反映する
+    const newMemberNames = [];
+    for (const field of ['estimates', 'actuals']) {
+        const ch = entities[field];
+        if (!ch) continue;
+        ch.added.forEach(r => { if (r.member) newMemberNames.push(r.member); });
+        ch.overwritten.forEach(o => { if (o.after && o.after.member) newMemberNames.push(o.after.member); });
+    }
+    if (newMemberNames.length) ensureMembersExist(newMemberNames);
 
     // ID 再採番など（merge-json が渡すコールバック）
     if (previewState.afterApply) { try { previewState.afterApply(entities, toggles); } catch { /* ignore */ } }
