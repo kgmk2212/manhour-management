@@ -205,6 +205,7 @@ git branch -D experiment/sandbox
 | 使い方 | 関数・要素IDを探すときは、`js/` を総当たり Grep する**前に** CODEMAP.md を Grep する。当たった行番号をそのまま `Read` の `offset` に渡せば該当箇所だけ読める |
 | 再生成 | `node scripts/codemap.mjs`（`js/**.js`・`index.html`・`style.css` の編集時は PostToolUse hook が自動実行） |
 | 鮮度保証 | CI の `checks` ジョブが `node scripts/codemap.mjs --check` で検査。ずれていれば赤くなる |
+| マージ | `.gitattributes` の `merge=codemap` で、衝突時は本線側を採用（生成物なので人が選ぶ意味がない）。有効化は一度だけ `git config merge.codemap.driver true`（`.git/config` は全 worktree 共有）。未登録でも通常の3wayマージに落ちるだけで壊れない |
 | テスト | `tests/codemap.test.js`（`node --test`） |
 
 **なぜ生成物にしたか**: 手書きの `CODEBASE_STRUCTURE.md` は2ヶ月で誤情報化した

@@ -1,0 +1,14 @@
+# docs/CODEMAP.md は scripts/codemap.mjs の生成物（`名前:行番号` の索引）。
+# js を1行足すだけで下の全行がずれるため、並列セッションが rebase するたびに
+# ほぼ必ず内容衝突する（実測: 直近3日のコミット26件中15件が CODEMAP.md を変更）。
+# 生成物なので「どちらを採るか」を人が判断する意味がない。merge=codemap を当て、
+# マージ時は本線側をそのまま採用させる（その後 /integrate が再生成してコミットする。
+# 鮮度は CI の `node scripts/codemap.mjs --check` が最後の砦として守る）。
+#
+# 有効化には driver の登録が要る（.git/config は全 worktree で共有されるので一度だけ）:
+#   git config merge.codemap.driver true
+#   git config merge.codemap.name "regenerate docs/CODEMAP.md instead of merging"
+#
+# driver 未登録の環境（CI・クローン直後・他マシン）では通常の3wayマージに
+# フォールバックするだけで、壊れない（検証済み）。
+docs/CODEMAP.md merge=codemap
