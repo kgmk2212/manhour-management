@@ -10,7 +10,7 @@ import {
     taskSortOrder, setTaskSortOrder
 } from './state.js';
 import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, sortTaskKeysByOrder, updateTaskSortOrder } from './estimate.js';
-import { SCHEDULE, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
+import { SCHEDULE, PROCESS, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
@@ -756,7 +756,7 @@ export function countBusinessDays(startDate, endDate, member) {
     const start = new Date(startDate);
     const end = new Date(endDate);
     let count = 0;
-    
+
     const current = new Date(start);
     while (current <= end) {
         if (isBusinessDay(current, member)) {
@@ -764,8 +764,47 @@ export function countBusinessDays(startDate, endDate, member) {
         }
         current.setDate(current.getDate() + 1);
     }
-    
+
     return count;
+}
+
+/**
+ * 指定日の翌営業日を返す
+ * @param {string} dateStr - 起点日（YYYY-MM-DD）
+ * @param {string} member - 担当者名（休暇チェック用）
+ * @returns {string} - 翌営業日（YYYY-MM-DD）
+ */
+export function getNextBusinessDay(dateStr, member) {
+    const date = new Date(dateStr);
+    do {
+        date.setDate(date.getDate() + 1);
+    } while (!isBusinessDay(date, member));
+    return formatDateForCheck(date);
+}
+
+/**
+ * 前工程スケジュールに連結中の後工程スケジュールを探す
+ * 「同一版数+対応+担当者」かつ「後工程の開始日＝前工程終了日の翌営業日」の場合のみ
+ * 連結中とみなす（隙間があれば独立した2本として扱う）。
+ * @param {Object} frontSchedule - 前工程側のスケジュール
+ * @param {Object[]} allSchedules - 検索対象のスケジュール一覧
+ * @returns {Object|null} - 連結中の後工程スケジュール（無ければnull）
+ */
+export function findLinkedBackSchedule(frontSchedule, allSchedules) {
+    const pair = PROCESS.LINKED_PAIRS.find(([front]) => front === frontSchedule.process);
+    if (!pair) return null;
+
+    const [, backProcess] = pair;
+    const expectedBackStart = getNextBusinessDay(frontSchedule.endDate, frontSchedule.member);
+
+    return allSchedules.find(s =>
+        s.id !== frontSchedule.id &&
+        s.version === frontSchedule.version &&
+        s.task === frontSchedule.task &&
+        s.member === frontSchedule.member &&
+        s.process === backProcess &&
+        s.startDate === expectedBackStart
+    ) || null;
 }
 
 // ============================================
