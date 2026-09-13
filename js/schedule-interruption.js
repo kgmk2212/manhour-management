@@ -4,7 +4,7 @@
 
 import {
     schedules, setSchedules, nextScheduleId, setNextScheduleId,
-    scheduleSettings, estimates
+    scheduleSettings
 } from './state.js';
 import {
     isBusinessDay, calculateEndDate, countBusinessDays, formatDateForCheck
@@ -134,4 +134,331 @@ export function recalculateEndDateWithInterruptions(schedule) {
     const segments = calculateSegments(schedule);
     if (segments.length === 0) return schedule.startDate;
     return segments[segments.length - 1].endDate;
+}
+
+/**
+ * スケジュールに中断を追加
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {Object} params - 中断パラメータ
+ * @param {string} params.splitDate - 中断日（YYYY-MM-DD、表示用ラベル。セグメント計算には consumedHours のみ使用）
+ * @param {number} params.consumedHours - 中断時点の消化工数
+ * @param {string} params.reason - 中断理由
+ * @param {Object} [params.insertOptions] - 差し込み作業（任意）
+ * @param {string} params.insertOptions.version - 版数
+ * @param {string} params.insertOptions.task - 対応名
+ * @param {string} params.insertOptions.process - 工程
+ * @param {number} params.insertOptions.hours - 工数
+ * @param {string} [params.insertOptions.member] - 担当者（省略時は元スケジュールの担当者）
+ * @returns {{ schedule: Object, insertedSchedule: Object|null, cascadeResults: Array }|null}
+ */
+export function addInterruption(scheduleId, params) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const oldEndDate = schedule.endDate;
+
+    const interruption = {
+        id: `int_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        splitDate: params.splitDate,
+        consumedHours: params.consumedHours,
+        reason: params.reason || '',
+        insertedScheduleId: null
+    };
+
+    let insertedSchedule = null;
+    if (params.insertOptions) {
+        const opts = params.insertOptions;
+        const segEndDate = calculateEndDate(schedule.startDate, params.consumedHours, schedule.member);
+        const insertMember = opts.member || schedule.member;
+        const insertStartDate = getNextBusinessDay(segEndDate, insertMember);
+        const insertEndDate = calculateEndDate(insertStartDate, opts.hours, insertMember);
+
+        const insertId = `sch_${nextScheduleId}`;
+        setNextScheduleId(nextScheduleId + 1);
+
+        insertedSchedule = {
+            id: insertId,
+            version: opts.version,
+            task: opts.task,
+            process: opts.process,
+            member: insertMember,
+            startDate: insertStartDate,
+            estimatedHours: opts.hours,
+            endDate: insertEndDate,
+            status: SCHEDULE.STATUS.PENDING,
+            color: '',
+            note: `${schedule.version}/${schedule.task}/${schedule.process} の差し込み作業`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        interruption.insertedScheduleId = insertId;
+        setSchedules([...schedules, insertedSchedule]);
+    }
+
+    const interruptions = [...(schedule.interruptions || []), interruption];
+    const updatedSchedule = {
+        ...schedule,
+        interruptions,
+        updatedAt: new Date().toISOString()
+    };
+
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    const newSchedules = schedules.map(s => s.id === scheduleId ? updatedSchedule : s);
+    setSchedules(newSchedules);
+
+    const cascadeResults = cascadeShift(updatedSchedule, oldEndDate);
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return { schedule: updatedSchedule, insertedSchedule, cascadeResults };
+}
+
+/**
+ * スケジュールから中断を取り消し
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {string} interruptionId - 中断ID
+ * @param {boolean} [deleteInserted=false] - 差し込みスケジュールも削除するか
+ * @returns {{ schedule: Object, cascadeResults: Array }|null}
+ */
+export function removeInterruption(scheduleId, interruptionId, deleteInserted = false) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const oldEndDate = schedule.endDate;
+    const interruption = (schedule.interruptions || []).find(i => i.id === interruptionId);
+    if (!interruption) return null;
+
+    const interruptions = (schedule.interruptions || []).filter(i => i.id !== interruptionId);
+    const updatedSchedule = {
+        ...schedule,
+        interruptions,
+        updatedAt: new Date().toISOString()
+    };
+
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    let newSchedules = schedules.map(s => s.id === scheduleId ? updatedSchedule : s);
+
+    if (deleteInserted && interruption.insertedScheduleId) {
+        newSchedules = newSchedules.filter(s => s.id !== interruption.insertedScheduleId);
+    }
+
+    setSchedules(newSchedules);
+
+    const cascadeResults = cascadeShift(updatedSchedule, oldEndDate);
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return { schedule: updatedSchedule, cascadeResults };
+}
+
+/**
+ * 連鎖ずらしを実行
+ * @param {Object} changedSchedule - endDateが変更されたスケジュール
+ * @param {string} oldEndDate - 変更前のendDate
+ * @returns {Array<{id, version, task, process, member, oldStart, newStart, oldEnd, newEnd}>}
+ */
+export function cascadeShift(changedSchedule, oldEndDate) {
+    if (changedSchedule.endDate === oldEndDate) return [];
+
+    const results = [];
+    const processed = new Set();
+    processed.add(changedSchedule.id);
+
+    const queue = [{ schedule: changedSchedule, oldEndDate }];
+
+    while (queue.length > 0) {
+        const { schedule: src, oldEndDate: srcOldEnd } = queue.shift();
+
+        const oldEnd = new Date(srcOldEnd);
+        const newEnd = new Date(src.endDate);
+        const diffDays = Math.round((newEnd - oldEnd) / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) continue;
+
+        const targets = findDependentSchedules(src, srcOldEnd);
+
+        targets.forEach(target => {
+            if (processed.has(target.id)) return;
+            processed.add(target.id);
+
+            const targetOldStart = target.startDate;
+            const targetOldEnd = target.endDate;
+
+            const date = new Date(target.startDate);
+            if (diffDays > 0) {
+                let shifted = 0;
+                while (shifted < diffDays) { date.setDate(date.getDate() + 1); shifted++; }
+            } else {
+                let shifted = 0;
+                while (shifted < Math.abs(diffDays)) { date.setDate(date.getDate() - 1); shifted++; }
+            }
+            while (!isBusinessDay(date, target.member)) {
+                date.setDate(date.getDate() + 1);
+            }
+            const newStartDate = formatDateForCheck(date);
+            const newEndDate = calculateEndDate(newStartDate, target.estimatedHours, target.member);
+
+            const updated = {
+                ...target,
+                startDate: newStartDate,
+                endDate: newEndDate,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (updated.interruptions && updated.interruptions.length > 0) {
+                updated.endDate = recalculateEndDateWithInterruptions(updated);
+            }
+
+            const newSchedules = schedules.map(s => s.id === target.id ? updated : s);
+            setSchedules(newSchedules);
+
+            results.push({
+                id: target.id,
+                version: target.version,
+                task: target.task,
+                process: target.process,
+                member: target.member,
+                oldStart: targetOldStart,
+                newStart: newStartDate,
+                oldEnd: targetOldEnd,
+                newEnd: updated.endDate
+            });
+
+            queue.push({ schedule: updated, oldEndDate: targetOldEnd });
+        });
+    }
+
+    return results;
+}
+
+/**
+ * 依存する後続スケジュールを検索
+ */
+function findDependentSchedules(src, srcOldEndDate) {
+    const targets = [];
+    const order = PROCESS.TYPES;
+
+    schedules.forEach(s => {
+        if (s.id === src.id) return;
+
+        if (s.version === src.version && s.task === src.task) {
+            const srcIdx = order.indexOf(src.process);
+            const targetIdx = order.indexOf(s.process);
+            if (targetIdx > srcIdx && s.startDate >= srcOldEndDate) {
+                targets.push(s);
+                return;
+            }
+        }
+
+        if (s.member === src.member && s.startDate >= srcOldEndDate) {
+            targets.push(s);
+        }
+    });
+
+    return targets;
+}
+
+/**
+ * 影響分析（実際には変更しない）
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {string} splitDate - 中断日
+ * @param {number} consumedHours - 消化工数
+ * @param {number} [insertHours=0] - 差し込み工数（0なら差し込みなし）
+ * @returns {Object|null} { segments, impacts, insertPeriod }
+ */
+export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours = 0) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const member = schedule.member;
+    const remainingHours = schedule.estimatedHours - consumedHours;
+
+    const firstSegEnd = calculateEndDate(schedule.startDate, consumedHours, member);
+
+    let insertPeriod = null;
+    let lastSegStart;
+    if (insertHours > 0) {
+        const insertStart = getNextBusinessDay(firstSegEnd, member);
+        const insertEnd = calculateEndDate(insertStart, insertHours, member);
+        insertPeriod = { startDate: insertStart, endDate: insertEnd, hours: insertHours };
+        lastSegStart = getNextBusinessDay(insertEnd, member);
+    } else {
+        lastSegStart = getNextBusinessDay(firstSegEnd, member);
+    }
+
+    const lastSegEnd = calculateEndDate(lastSegStart, remainingHours, member);
+
+    const segments = [
+        { startDate: schedule.startDate, endDate: firstSegEnd, hours: consumedHours, label: '前半' },
+        { startDate: lastSegStart, endDate: lastSegEnd, hours: remainingHours, label: '後半' }
+    ];
+
+    const newEndDate = lastSegEnd;
+    const oldEndDate = schedule.endDate;
+    const impacts = [];
+
+    if (newEndDate !== oldEndDate) {
+        const processed = new Set();
+        processed.add(schedule.id);
+
+        const queue = [{
+            id: schedule.id, version: schedule.version, task: schedule.task,
+            process: schedule.process, member: schedule.member,
+            endDate: newEndDate, oldEndDate
+        }];
+
+        while (queue.length > 0) {
+            const src = queue.shift();
+            const diffDays = Math.round(
+                (new Date(src.endDate) - new Date(src.oldEndDate)) / (1000 * 60 * 60 * 24)
+            );
+            if (diffDays === 0) continue;
+
+            schedules.forEach(s => {
+                if (processed.has(s.id)) return;
+
+                let isDependent = false;
+                const order = PROCESS.TYPES;
+                if (s.version === src.version && s.task === src.task) {
+                    const srcIdx = order.indexOf(src.process);
+                    const targetIdx = order.indexOf(s.process);
+                    if (targetIdx > srcIdx && s.startDate >= src.oldEndDate) isDependent = true;
+                }
+                if (s.member === src.member && s.startDate >= src.oldEndDate) isDependent = true;
+
+                if (!isDependent) return;
+                processed.add(s.id);
+
+                const date = new Date(s.startDate);
+                if (diffDays > 0) {
+                    let shifted = 0;
+                    while (shifted < diffDays) { date.setDate(date.getDate() + 1); shifted++; }
+                } else {
+                    let shifted = 0;
+                    while (shifted < Math.abs(diffDays)) { date.setDate(date.getDate() - 1); shifted++; }
+                }
+                while (!isBusinessDay(date, s.member)) { date.setDate(date.getDate() + 1); }
+
+                const newTargetStart = formatDateForCheck(date);
+                const newTargetEnd = calculateEndDate(newTargetStart, s.estimatedHours, s.member);
+
+                impacts.push({
+                    id: s.id, version: s.version, task: s.task,
+                    process: s.process, member: s.member,
+                    oldStart: s.startDate, newStart: newTargetStart,
+                    oldEnd: s.endDate, newEnd: newTargetEnd
+                });
+
+                queue.push({
+                    id: s.id, version: s.version, task: s.task,
+                    process: s.process, member: s.member,
+                    endDate: newTargetEnd, oldEndDate: s.endDate
+                });
+            });
+        }
+    }
+
+    return { segments, impacts, insertPeriod };
 }

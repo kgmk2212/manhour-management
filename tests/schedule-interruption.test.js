@@ -118,3 +118,105 @@ describe('recalculateEndDateWithInterruptions', () => {
         assert.equal(SI.recalculateEndDateWithInterruptions(schedule), '2026-09-18');
     });
 });
+
+describe('addInterruption / removeInterruption / cascadeShift', () => {
+    beforeEach(resetAll);
+
+    test('差し込みありで中断を追加すると endDate が伸び、後続の同担当者スケジュールが連鎖ずれする', () => {
+        const target = makeSchedule();
+        // 同担当者・startDate=旧endDate の後続スケジュール（8h・1日）
+        const follower = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower]);
+
+        const result = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '緊急対応',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+
+        assert.ok(result);
+        assert.equal(result.schedule.interruptions.length, 1);
+        assert.equal(result.insertedSchedule.startDate, '2026-09-16');
+        assert.equal(result.insertedSchedule.endDate, '2026-09-16');
+        // 中断+差し込みで見積工数消化完了が3日後ろ倒しになり endDate が伸びる
+        assert.equal(result.schedule.endDate, '2026-09-21');
+
+        // 連鎖ずれ: follower は3日分（カレンダー日）後ろ倒しの上で直近営業日にスナップ
+        assert.equal(result.cascadeResults.length, 1);
+        assert.equal(result.cascadeResults[0].id, 'sch_2');
+        assert.equal(result.cascadeResults[0].oldStart, '2026-09-18');
+        assert.equal(result.cascadeResults[0].newStart, '2026-09-21');
+        assert.equal(result.cascadeResults[0].newEnd, '2026-09-21');
+
+        const updatedFollower = State.schedules.find(s => s.id === 'sch_2');
+        assert.equal(updatedFollower.startDate, '2026-09-21');
+    });
+
+    test('removeInterruption で中断を取り消すと interruptions が空になる（endDateは再計算されず維持される既知の制約）', () => {
+        const target = makeSchedule();
+        State.setSchedules([target]);
+
+        const added = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+        const interruptionId = added.schedule.interruptions[0].id;
+
+        const removed = SI.removeInterruption('sch_1', interruptionId, false);
+
+        assert.equal(removed.schedule.interruptions.length, 0);
+        // 既知の制約（Task A2 コメント参照）: endDate は addInterruption 後の値のまま
+        assert.equal(removed.schedule.endDate, '2026-09-21');
+        // 差し込みスケジュールは deleteInserted=false のため残る
+        assert.ok(State.schedules.find(s => s.id === added.insertedSchedule.id));
+    });
+
+    test('removeInterruption(deleteInserted=true) で差し込みスケジュールも削除される', () => {
+        const target = makeSchedule();
+        State.setSchedules([target]);
+
+        const added = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+        const interruptionId = added.schedule.interruptions[0].id;
+        const insertedId = added.insertedSchedule.id;
+
+        SI.removeInterruption('sch_1', interruptionId, true);
+
+        assert.equal(State.schedules.find(s => s.id === insertedId), undefined);
+    });
+});
+
+describe('analyzeImpact', () => {
+    beforeEach(resetAll);
+
+    test('state を変更せず前半/後半セグメントと影響対象を返す', () => {
+        const target = makeSchedule();
+        const follower = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower]);
+        const before = JSON.stringify(State.schedules);
+
+        const result = SI.analyzeImpact('sch_1', '2026-09-15', 16, 8);
+
+        assert.equal(JSON.stringify(State.schedules), before, 'analyzeImpact は state を変更しない');
+        assert.equal(result.segments[0].label, '前半');
+        assert.equal(result.segments[1].label, '後半');
+        assert.equal(result.insertPeriod.hours, 8);
+        assert.equal(result.impacts.length, 1);
+        assert.equal(result.impacts[0].id, 'sch_2');
+    });
+});
