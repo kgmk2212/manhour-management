@@ -51,6 +51,15 @@ export function isActive() {
 }
 
 /**
+ * 'YYYY-MM' の前月を返す（終了月セレクトの下限に使う。新方式は開始=終了を許す）
+ * @param {string} ym
+ * @returns {string}
+ */
+export function prevMonth(ym) {
+    return ym ? Core.shiftMonth(ym, -1) : ym;
+}
+
+/**
  * 設定画面の「見積の作業月 UI」select を初期化する（init.js から呼ぶ）。option はレンダラ登録から作る
  */
 export function initWorkMonthUiSetting() {
@@ -334,6 +343,15 @@ export function onRowAdded(row) {
     if (!t || !t.classList.contains('wm-active') || !row) return;
     if (!row.dataset.wmLinked && !row.dataset.wmMonths) row.dataset.wmLinked = '1';
     renderRow(row);
+}
+
+/**
+ * 全行のスロットを描き直す（工数など、スロットの外の値を後から入れたときの反映用）。
+ * スロットは buildView で工数を読むため、工数プリフィルの後に一度呼ぶ必要がある。
+ */
+export function refresh() {
+    if (!table()?.classList.contains('wm-active')) return;
+    allRows().forEach(renderRow);
 }
 
 /**

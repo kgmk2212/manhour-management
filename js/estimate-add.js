@@ -43,6 +43,20 @@ export function openAddEstimateModal() {
 }
 
 /**
+ * 終了月セレクトの選択肢を張り直す。
+ * legacy は「終了月 > 開始月」（単月は単一月モードが担う）。新方式は単月を期間 select の
+ * 開始=終了で表すため、開始月自身も選べるようにする（これを legacy 規則のままにすると
+ * 単月の登録を開いたときに終了月が翌月へ繰り上がり、期間が 1 ヶ月ぶん広がる）。
+ * @param {string} selectedValue - 選択したい終了月（YYYY-MM）
+ * @param {string} startMonth - 開始月（YYYY-MM）
+ */
+function refillEndMonthOptions(selectedValue, startMonth) {
+    if (!startMonth) return;
+    const minValue = WorkMonths.isActive() ? WorkMonths.prevMonth(startMonth) : startMonth;
+    Utils.generateMonthOptions('addEstEndMonth', selectedValue, minValue);
+}
+
+/**
  * 見積の作業月 UI が新方式（legacy 以外）なら、ラジオを複数月に固定して作業月スロット列を作る。
  * 設定は js/estimate-work-months.js が持つ。legacy では何もしない。
  */
@@ -227,8 +241,16 @@ export function openEditAllProcesses(version, task) {
 
     const uniqueMonths = [...allWorkMonths].sort();
     const isMultiMonth = uniqueMonths.length >= 2;
+    // 新方式（月チップ／ミニガント／マトリクス）はラジオが「複数月」に固定され、単月でも
+    // 期間 select（開始=終了）で扱う。よって登録月が 1 ヶ月でも期間＋行プリフィルの経路に乗せる。
+    // これをしないと各行はウォーターフォールの既定月のままになり、保存で登録月が書き換わる。
+    // legacy は単一月モードに作業月列が無いので、従来どおり複数月のときだけ。
+    const usePeriod = WorkMonths.isActive() ? uniqueMonths.length >= 1 : isMultiMonth;
 
-    if (isMultiMonth) {
+    if (usePeriod) {
+        const periodStart = uniqueMonths[0];
+        const periodEnd = uniqueMonths[uniqueMonths.length - 1];
+
         // 複数月モードに切り替え
         const multiRadio = document.querySelector('input[name="addEstMonthType"][value="multi"]');
         if (multiRadio) multiRadio.checked = true;
@@ -238,14 +260,14 @@ export function openEditAllProcesses(version, task) {
         // 値を同期するため、ここで合わせておかないと初期値(=現在月)で上書きされ、
         // 全体期間および各工程の作業月が登録内容と無関係な月になってしまう。
         const singleStartSelect = document.getElementById('addEstStartMonth');
-        if (singleStartSelect) singleStartSelect.value = uniqueMonths[0];
+        if (singleStartSelect) singleStartSelect.value = periodStart;
 
         const startMonthMulti = document.getElementById('addEstStartMonthMulti');
         const endMonthEl = document.getElementById('addEstEndMonth');
-        if (startMonthMulti) startMonthMulti.value = uniqueMonths[0];
+        if (startMonthMulti) startMonthMulti.value = periodStart;
         if (endMonthEl) {
-            Utils.generateMonthOptions('addEstEndMonth', uniqueMonths[uniqueMonths.length - 1], uniqueMonths[0]);
-            endMonthEl.value = uniqueMonths[uniqueMonths.length - 1];
+            refillEndMonthOptions(periodEnd, periodStart);
+            endMonthEl.value = periodEnd;
         }
 
         // テーブルに作業月列を表示
@@ -253,10 +275,10 @@ export function openEditAllProcesses(version, task) {
 
         // switchAddEstMonthType() 内で終了月の選択肢・値が再生成される場合があるため、
         // 登録済みの全体期間（開始=最小月 / 終了=最大月）を確実に再アサートする。
-        if (startMonthMulti) startMonthMulti.value = uniqueMonths[0];
+        if (startMonthMulti) startMonthMulti.value = periodStart;
         if (endMonthEl) {
-            Utils.generateMonthOptions('addEstEndMonth', uniqueMonths[uniqueMonths.length - 1], uniqueMonths[0]);
-            endMonthEl.value = uniqueMonths[uniqueMonths.length - 1];
+            refillEndMonthOptions(periodEnd, periodStart);
+            endMonthEl.value = periodEnd;
         }
     } else if (uniqueMonths.length === 1) {
         // 単一月モード
@@ -306,9 +328,9 @@ export function openEditAllProcesses(version, task) {
         });
     });
 
-    // 複数月モードの場合、各行（プライマリ＋追加担当者）に登録済みの作業月をプリフィル。
+    // 期間モードのとき、各行（プライマリ＋追加担当者）に登録済みの作業月をプリフィル。
     // 担当者ごとに個別の作業月を保持できるよう、行ごとにその見積の workMonths を反映する。
-    if (isMultiMonth) {
+    if (usePeriod) {
         setTimeout(() => {
             // 追加担当者行の作業月セルを確実に用意（全体期間の選択肢を設定）
             refreshAllExtraRowMonthCells();
@@ -335,6 +357,11 @@ export function openEditAllProcesses(version, task) {
                     }
                 });
             });
+
+            // 新方式のスロットは作業月列を作った時点（＝工数プリフィル前）に描かれている。
+            // マトリクスはセル値を工数から描くので、ここで全行を描き直さないと工数が入った行が
+            // 空欄のまま見える（「月が表示されない」の正体）。
+            if (WorkMonths.isActive()) WorkMonths.refresh();
         }, 50);
     }
 
@@ -889,9 +916,9 @@ export function initAddEstimateForm() {
     const endMonth = document.getElementById('addEstEndMonth');
     if (startMonthMulti) {
         startMonthMulti.addEventListener('change', function () {
-            // 開始月が変更されたら、終了月の選択肢を更新（開始月より後の月のみ）
+            // 開始月が変更されたら、終了月の選択肢を更新（legacy は開始月より後・新方式は開始月も可）
             const currentEndValue = endMonth.value;
-            Utils.generateMonthOptions('addEstEndMonth', currentEndValue, startMonthMulti.value);
+            refillEndMonthOptions(currentEndValue, startMonthMulti.value);
 
             // 開始月が終了月より後の場合、終了月を開始月に合わせる
             if (endMonth.value < startMonthMulti.value) {
@@ -908,7 +935,7 @@ export function initAddEstimateForm() {
                 startMonthMulti.value = endMonth.value;
                 // 開始月変更に伴い終了月の選択肢も再生成が必要だが、
                 // startMonthMultiのchangeイベントは発火しないのでここで処理
-                Utils.generateMonthOptions('addEstEndMonth', endMonth.value, startMonthMulti.value);
+                refillEndMonthOptions(endMonth.value, startMonthMulti.value);
             }
             updateAddEstWorkMonthUI();
         });
@@ -972,9 +999,9 @@ export function switchAddEstMonthType() {
 
         if (startMonth && startMonthMulti) {
             startMonthMulti.value = startMonth;
-            // 終了月の選択肢を開始月より後の月のみに更新
+            // 終了月の選択肢を更新（legacy は開始月より後のみ・新方式は開始月自身も可）
             const currentEndValue = endMonth ? endMonth.value : '';
-            Utils.generateMonthOptions('addEstEndMonth', currentEndValue, startMonth);
+            refillEndMonthOptions(currentEndValue, startMonth);
             if (endMonth && !endMonth.value) {
                 endMonth.value = startMonth;
             }

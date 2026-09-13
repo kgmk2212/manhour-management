@@ -224,6 +224,11 @@
   設計書 `docs/superpowers/specs/2026-09-12-estimate-work-months-design.md`、計画 `docs/superpowers/plans/2026-09-12-estimate-work-months.md`。
   共通 `js/estimate-work-months{,-core}.js` ＋ 方式別 `js/estimate-work-months-{chips,gantt,matrix}.js`、e2e `tests/e2e/estimate-work-months.spec.js`。
   残件: 決着後に負け方式を削除（手順は設計書 §10）、期間 7 ヶ月超のレール、「配分…」の後付け、クイック入力側（`js/quick.js`）への展開判断
+  **2026-09-13 修正**: 全工程編集で「全工程が同じ単月」で登録されたタスクを開くと、登録月が行に載らず既定月（ウォーターフォール）が
+  保存されていた（過去月だと期間ごと当月にすり替わる）。原因は ①行プリフィルが `isMultiMonth`（2 ヶ月以上）限定 ②工数プリフィル前に
+  スロットを描いて描き直さない（マトリクスのセルが空に見える）③`switchAddEstMonthType` の終了月選択肢が legacy 規則（開始月より後）の
+  ままで単月の終了月が翌月へ繰り上がる。`usePeriod` 判定・`WorkMonths.refresh()`・`refillEndMonthOptions()` で解消。
+  回帰テスト `tests/e2e/estimate-work-months-prefill.spec.js`（chips / gantt / matrix × 今月+2 の単月・過去単月）
 
 ## アイデア（未評価）
 
