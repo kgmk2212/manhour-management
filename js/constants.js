@@ -144,8 +144,10 @@ export const UI = {
     DEFAULT_PAGE_SIZE: 50,
     MAX_PAGE_SIZE: 200,
 
-    // セグメントボタン
+    // セグメントボタン（超過分は「▸ +N」で畳む）
     MAX_VISIBLE_SEGMENTS: 6,
+    MAX_VISIBLE_SEGMENTS_NARROW: 3,
+    SEGMENT_NARROW_WIDTH: 768,
 
     // テーブル
     MAX_TABLE_ROWS_BEFORE_PAGINATION: 100,

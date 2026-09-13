@@ -12,7 +12,7 @@ import {
     setEstimateFilterState, setReportFilterState
 } from './state.js';
 import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
-import { STORAGE_KEYS } from './constants.js';
+import { STORAGE_KEYS, UI } from './constants.js';
 
 // タブの順序を定義
 const TAB_ORDER = ['quick', 'report', 'analytics', 'estimate', 'actual', 'schedule', 'settings'];
@@ -1524,6 +1524,61 @@ export function initTabSwipe() {
 // セグメントボタン
 // ============================================
 
+/**
+ * セグメントボタンの展開状態（コンテナIDごと）。
+ * 意図的にリロードで畳んだ状態に戻す（実績タブの月フィルタと同じ挙動）。
+ */
+const segmentExpandedState = new Map();
+
+/**
+ * 各コンテナを最後に描画したときの引数。
+ * 畳んで隠れた項目が選ばれたときに描き直すために保持する。
+ */
+const segmentRenderArgs = new Map();
+
+/**
+ * セグメントボタンに並べる項目数の上限を返す。
+ * 画面幅が狭いときは横スクロールが特に辛いので、さらに絞る。
+ *
+ * @param {number} maxItems 呼び出し側が指定した上限
+ * @returns {number} 実際に表示する件数（0以下なら絞り込みなし）
+ */
+function getSegmentVisibleLimit(maxItems) {
+    if (!Number.isFinite(maxItems) || maxItems <= 0) return 0;
+    return window.innerWidth < UI.SEGMENT_NARROW_WIDTH
+        ? Math.min(maxItems, UI.MAX_VISIBLE_SEGMENTS_NARROW)
+        : maxItems;
+}
+
+/**
+ * 表示する項目を「最近の maxItems 件」に絞る。
+ * items は昇順（末尾が最新）で渡される前提。
+ *
+ * @returns {{visibleItems: Array, hiddenCount: number, collapsible: boolean}}
+ */
+function selectRecentSegmentItems(items, currentValue, limit, expanded) {
+    // 「全版数」「全期間」に当たる項目。分析タブだけ値が '' なので両方を見る
+    const isAggregate = value => value === 'all' || value === '';
+    const allItem = items.find(item => isAggregate(item.value));
+    const dataItems = items.filter(item => !isAggregate(item.value));
+    const collapsible = limit > 0 && dataItems.length > limit;
+
+    if (!collapsible || expanded) {
+        return { visibleItems: items, hiddenCount: 0, collapsible };
+    }
+
+    // 末尾（＝最近）から limit 件。選択中の項目は古くても必ず残す
+    const keep = new Set(dataItems.slice(-limit).map(item => item.value));
+    if (!isAggregate(currentValue)) keep.add(currentValue);
+    const kept = dataItems.filter(item => keep.has(item.value));
+
+    return {
+        visibleItems: allItem ? [allItem, ...kept] : kept,
+        hiddenCount: dataItems.length - kept.length,
+        collapsible
+    };
+}
+
 export function createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler) {
     const container = document.getElementById(containerId);
     const select = document.getElementById(selectId);
@@ -1535,6 +1590,12 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
     container.style.overflowX = 'auto';
     select.style.display = 'none';
     container.innerHTML = '';
+
+    segmentRenderArgs.set(containerId, { selectId, items, maxItems, onClickHandler });
+
+    const expanded = segmentExpandedState.get(containerId) === true;
+    const { visibleItems, hiddenCount, collapsible } =
+        selectRecentSegmentItems(items, currentValue, getSegmentVisibleLimit(maxItems), expanded);
 
     // ドラッグスクロールの実装
     let isDown = false;
@@ -1575,7 +1636,7 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
         }
     });
 
-    items.forEach((item, index) => {
+    visibleItems.forEach(item => {
         const button = document.createElement('button');
         button.textContent = item.label;
         button.value = item.value;
@@ -1600,6 +1661,26 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
         container.appendChild(button);
     });
 
+    // 折り畳みトグルは横スクロール領域の「外」に置く。
+    // 中に入れると畳んだ選択肢が多いほどトグル自体が画面外へ流れて押せなくなる。
+    const existingToggle = container.nextElementSibling;
+    if (existingToggle && existingToggle.classList.contains('seg-more-btn')) {
+        existingToggle.remove();
+    }
+    if (collapsible) {
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'seg-more-btn month-toggle-btn';
+        toggle.textContent = expanded ? '◂' : `▸+${hiddenCount}`;
+        toggle.title = expanded ? '最近のものだけ表示' : `残り${hiddenCount}件を表示`;
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            segmentExpandedState.set(containerId, !expanded);
+            createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler);
+        });
+        container.insertAdjacentElement('afterend', toggle);
+    }
+
     // 初期選択ボタンを表示エリア内にスクロール
     setTimeout(() => {
         const activeBtn = container.querySelector('button.active');
@@ -1615,6 +1696,15 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
 export function updateSegmentButtonSelection(containerId, value) {
     const container = document.getElementById(containerId);
     if (!container) return;
+
+    // 畳まれて隠れている項目が他タブからの同期などで選ばれた場合、
+    // そのままだと「どれも選択されていない」表示になるので描き直す
+    // （createSegmentButtons は選択中の項目を必ず残す）
+    const args = segmentRenderArgs.get(containerId);
+    if (args && !Array.from(container.querySelectorAll('button')).some(btn => btn.value === value)) {
+        createSegmentButtons(containerId, args.selectId, args.items, value, args.maxItems, args.onClickHandler);
+        return;
+    }
 
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => {
@@ -2398,7 +2488,7 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
             'reportVersion2',
             items,
             currentValue,
-            8,
+            UI.MAX_VISIBLE_SEGMENTS,
             handleReportVersionChange
         );
     } catch (e) {
@@ -2547,7 +2637,7 @@ export function updateMonthOptions(selectedVersion = 'all') {
         'reportMonth2',
         items,
         currentValue,
-        8,
+        UI.MAX_VISIBLE_SEGMENTS,
         handleReportMonthChange
     );
 }
@@ -2646,7 +2736,7 @@ export function updateEstimateMonthOptions(selectedVersion = 'all') {
         'estimateMonthFilter2',
         items,
         currentValue,
-        8,
+        UI.MAX_VISIBLE_SEGMENTS,
         handleEstimateMonthChange
     );
 }
@@ -2740,7 +2830,7 @@ export function updateEstimateVersionOptions(selectedMonth = 'all') {
         'estimateVersionFilter2',
         items,
         currentValue,
-        8,
+        UI.MAX_VISIBLE_SEGMENTS,
         handleEstimateVersionChange
     );
 }
@@ -2844,7 +2934,7 @@ export function updateActualMonthOptions() {
         'actualMonthFilter2',
         items,
         validValue,
-        8,
+        UI.MAX_VISIBLE_SEGMENTS,
         handleActualMonthChange
     );
 

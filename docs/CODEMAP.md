@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 42 ファイル / 40,491 行
+## js/ — 42 ファイル / 40,583 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -21,8 +21,8 @@
 ### js/ai-analysis.js — AI 分析セクション (941行)
 - export: loadHistory:75, appendHistory:110, initAiAnalysis:133
 
-### js/constants.js — アプリケーション定数定義 (679行)
-- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:202, VALIDATION:250, ERROR_MESSAGES:269, SUCCESS_MESSAGES:283, PROCESS:294, BULK_EDIT:319, SCHEDULE:331, CAPACITY_DISPLAY_MODE:390, TASK_COLORS:398, THEME_TASK_COLORS:427
+### js/constants.js — アプリケーション定数定義 (681行)
+- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:204, VALIDATION:252, ERROR_MESSAGES:271, SUCCESS_MESSAGES:285, PROCESS:296, BULK_EDIT:321, SCHEDULE:333, CAPACITY_DISPLAY_MODE:392, TASK_COLORS:400, THEME_TASK_COLORS:429
 
 ### js/estimate-add.js — 見積追加関連機能 (1754行)
 - export: openAddEstimateModal:24, openAddEstimateSingleProcess:71, openEditAllProcesses:159, closeAddEstimateModal:703, resetAddEstimateForm:744, switchEstimateMode:798, getCurrentEstimateMode:827, initOtherWorkMemberSelect:834, autoFillMember:861, initAddEstimateForm:892, updateAddEstWorkMonthUI:946, switchAddEstMonthType:979, updateAddEstimateTableHeader:1016, updateDefaultAddProcessMonths:1118, ensureExtraRowMonthCell:1209, refreshAllExtraRowMonthCells:1262, updateAddEstimateTotals:1393, addEstimateMemberRow:1422, removeEstimateMemberRow:1462, removeAllExtraMemberRows:1473, collectAllEstimateEntries:1483, addEstimateFromModal:1509, addEstimateFromModalNormal:1653
@@ -122,8 +122,8 @@
 ### js/theme.js — テーマ・UI設定 (506行)
 - export: getActiveChartColorScheme:37, saveChartColorScheme:52, loadChartColorScheme:69, updateChartColorPreview:89, loadThemeSettings:128, applyTheme:181, updateThemePreview:235, updateThemeElements:240, updateBodyBackground:284, updateElementTheme:290, toggleMonthColorsSetting:311, changeReportMatrixBgColorMode:327, toggleProgressBarsSetting:340, toggleProgressPercentageSetting:353, saveProgressBarStyle:366, saveMatrixEstActFormat:379, changeScheduleBarColorMode:403, changeFilterBarMode:415, saveDefaultViewTypeSetting:428, loadMobileTabDesign:438, changeMobileTabDesign:449, applyDefaultEstimateViewType:463, applyDefaultReportViewType:484
 
-### js/ui.js — UI操作・DOM操作 (4411行)
-- export: showTab:131, nextTab:373, prevTab:382, initTabIndicator:402, updateTabIndicator:526, updateTabIndicatorProgress:752, finalizeTabIndicator:804, initSmartSticky:813, initTabSwipe:882, createSegmentButtons:1527, updateSegmentButtonSelection:1615, setEstimateViewType:1641, setActualViewType:1688, setReportViewType:1717, getThemeColor:1730, applyLayoutSettings:1738, toggleFilterLayout:1776, updateLayoutToggleButtons:1922, updateSegmentedButtons:1965, updateMemberOptions:2101, updateVersionOptions:2193, updateFormNameOptions:2245, updateReportVersionOptions:2300, updateMonthOptions:2409, updateEstimateMonthOptions:2555, updateEstimateVersionOptions:2654, updateActualMonthOptions:2748, getDefaultMonth:2884, setDefaultActualMonth:2907, setDefaultReportMonth:2920, setDefaultEstimateMonth:2941, syncMonthToReport:2960, syncMonthToEstimate:2975, syncMonthToActual:2993, syncVersionToReport:3012, syncVersionToEstimate:3027, syncFilterTypeToReport:3045, syncFilterTypeToEstimate:3071, updateFilterTypeButtons:3107, handleActualMemberChange:3119, initAnimationState:3133, handleActualMonthChange:3140, handleEstimateMonthChange:3304, handleEstimateVersionChange:3362, handleReportMonthChange:3416, handleReportVersionChange:3474, handleEstimateFilterTypeChange:3527, setEstimateFilterType:3578, handleReportFilterTypeChange:3596, setReportFilterType:3658, loadFilterStatesFromStorage:3716, restoreReportFilterState:3757, restoreEstimateFilterState:3832, handleVersionChange:3892, handleQuickFormNameChange:3935, handleAddFormNameChange:3957, handleEditFormNameChange:3979, revertFormNameToSelect:4004, handleEditActualMemberChange:4027, syncSettingsToUI:4044, updateAllDisplays:4104, showMemberOrderHelp:4129, initSidebar:4181, initSmartStickyFilters:4245, initSettingsNav:4378
+### js/ui.js — UI操作・DOM操作 (4501行)
+- export: showTab:131, nextTab:373, prevTab:382, initTabIndicator:402, updateTabIndicator:526, updateTabIndicatorProgress:752, finalizeTabIndicator:804, initSmartSticky:813, initTabSwipe:882, createSegmentButtons:1582, updateSegmentButtonSelection:1696, setEstimateViewType:1731, setActualViewType:1778, setReportViewType:1807, getThemeColor:1820, applyLayoutSettings:1828, toggleFilterLayout:1866, updateLayoutToggleButtons:2012, updateSegmentedButtons:2055, updateMemberOptions:2191, updateVersionOptions:2283, updateFormNameOptions:2335, updateReportVersionOptions:2390, updateMonthOptions:2499, updateEstimateMonthOptions:2645, updateEstimateVersionOptions:2744, updateActualMonthOptions:2838, getDefaultMonth:2974, setDefaultActualMonth:2997, setDefaultReportMonth:3010, setDefaultEstimateMonth:3031, syncMonthToReport:3050, syncMonthToEstimate:3065, syncMonthToActual:3083, syncVersionToReport:3102, syncVersionToEstimate:3117, syncFilterTypeToReport:3135, syncFilterTypeToEstimate:3161, updateFilterTypeButtons:3197, handleActualMemberChange:3209, initAnimationState:3223, handleActualMonthChange:3230, handleEstimateMonthChange:3394, handleEstimateVersionChange:3452, handleReportMonthChange:3506, handleReportVersionChange:3564, handleEstimateFilterTypeChange:3617, setEstimateFilterType:3668, handleReportFilterTypeChange:3686, setReportFilterType:3748, loadFilterStatesFromStorage:3806, restoreReportFilterState:3847, restoreEstimateFilterState:3922, handleVersionChange:3982, handleQuickFormNameChange:4025, handleAddFormNameChange:4047, handleEditFormNameChange:4069, revertFormNameToSelect:4094, handleEditActualMemberChange:4117, syncSettingsToUI:4134, updateAllDisplays:4194, showMemberOrderHelp:4219, initSidebar:4271, initSmartStickyFilters:4335, initSettingsNav:4468
 - window: isTabInteracting:98
 
 ### js/utils.js — ユーティリティ関数 (876行)
@@ -141,4 +141,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9425行
+- style.css — 9433行

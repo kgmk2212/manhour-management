@@ -1018,6 +1018,14 @@ tr.est-review-row .est-review-mark {
     border-color: var(--text-muted);
 }
 
+/* 「▸+N」= 畳まれた選択肢を開くトグル。
+   .month-toggle-btn の見た目を流用しつつ、横スクロール領域の外で潰れないようにする */
+.seg-more-btn {
+    flex-shrink: 0;
+    padding: 6px 8px;
+    align-self: center;
+}
+
 .segment-buttons button.no-data {
     opacity: 0.4;
     border-style: dashed;

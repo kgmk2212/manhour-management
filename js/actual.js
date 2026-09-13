@@ -246,7 +246,7 @@ export function updateMemberSelectOptions() {
             'actualMemberSelect2',
             items,
             selectedValue,
-            6,
+            0, // 担当者は時系列ではないので「最近のN件」で畳まない（全員を常に出す）
             typeof window.handleActualMemberChange === 'function' ? window.handleActualMemberChange : null
         );
     }

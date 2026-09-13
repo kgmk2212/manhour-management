@@ -4,7 +4,7 @@
  */
 
 import { calculateProgress, calculateVersionProgress, clearProgressCache } from './report.js';
-import { PROCESS } from './constants.js';
+import { PROCESS, UI } from './constants.js';
 import { formatHours, hoursToManDays, hoursToManMonths, scaledFont, escapeHtml, getEstimateHoursForMonth } from './utils.js';
 
 // Always read latest data from window to avoid stale references after loadData()
@@ -469,7 +469,7 @@ function updateFilterOptions(allMonths) {
                 return { value: m, label: `${y}/${parseInt(mo)}` };
             })
         ];
-        window.createSegmentButtons('analyticsMonthButtons', 'ra-filter-month', items, select.value, 8, (value) => {
+        window.createSegmentButtons('analyticsMonthButtons', 'ra-filter-month', items, select.value, UI.MAX_VISIBLE_SEGMENTS, (value) => {
             select.value = value;
             select.dispatchEvent(new Event('change'));
         });
