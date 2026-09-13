@@ -7,6 +7,8 @@ import {
     nextMemberId, setNextMemberId,
     estimates, actuals, schedules, vacations
 } from './state.js';
+import { escapeHtml, showAlert } from './utils.js';
+import { pushAction } from './history.js';
 
 // ============================================
 // 内部ヘルパー
@@ -261,6 +263,178 @@ export function buildInitialMembersFromLegacyData(legacyOrderString) {
     }
     const rest = [...names].filter(n => !seen.has(n)).sort();
     return [...ordered, ...rest];
+}
+
+// ============================================
+// 設定画面: 描画
+// ============================================
+
+let editingMemberId = null;
+
+export function renderMemberList() {
+    const container = document.getElementById('memberList');
+    if (container) {
+        const active = members.filter(m => !m.archived);
+        if (active.length === 0) {
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 16px;">担当者が登録されていません</p>';
+        } else {
+            container.innerHTML = active.map((m, i) => renderMemberRow(m, i === 0, i === active.length - 1)).join('');
+        }
+        if (editingMemberId != null) {
+            const input = document.getElementById(`memberRenameInput_${editingMemberId}`);
+            if (input) { input.focus(); input.select(); }
+        }
+    }
+
+    const archived = members.filter(m => m.archived);
+    const label = document.getElementById('archivedMemberCount');
+    if (label) label.textContent = String(archived.length);
+    const archivedContainer = document.getElementById('archivedMemberList');
+    if (archivedContainer) {
+        archivedContainer.innerHTML = archived.length === 0
+            ? '<p style="color: #999; padding: 8px 0;">アーカイブ済みの担当者はいません</p>'
+            : archived.map(renderArchivedMemberRow).join('');
+    }
+}
+
+function renderMemberRow(m, isFirst, isLast) {
+    if (editingMemberId === m.id) {
+        return `
+            <div class="member-row" data-member-id="${m.id}">
+                <input type="text" class="member-rename-input" id="memberRenameInput_${m.id}" value="${escapeHtml(m.name)}">
+                <button type="button" class="btn btn-primary btn-small" onclick="confirmRenameMember(${m.id})">保存</button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="cancelRenameMember()">キャンセル</button>
+            </div>
+        `;
+    }
+    return `
+        <div class="member-row" data-member-id="${m.id}">
+            <button type="button" class="btn btn-ghost btn-small" ${isFirst ? 'disabled' : ''} onclick="handleMoveMemberUp(${m.id})" title="上へ">▲</button>
+            <button type="button" class="btn btn-ghost btn-small" ${isLast ? 'disabled' : ''} onclick="handleMoveMemberDown(${m.id})" title="下へ">▼</button>
+            <span class="member-name">${escapeHtml(m.name)}</span>
+            <button type="button" class="btn btn-secondary btn-small" onclick="handleRenameMember(${m.id})">改名</button>
+            <button type="button" class="btn btn-danger-outline btn-small" onclick="handleArchiveMember(${m.id})">アーカイブ</button>
+        </div>
+    `;
+}
+
+function renderArchivedMemberRow(m) {
+    return `
+        <div class="member-row member-row--archived" data-member-id="${m.id}">
+            <span class="member-name">${escapeHtml(m.name)}</span>
+            <button type="button" class="btn btn-secondary btn-small" onclick="handleRestoreMember(${m.id})">復元</button>
+        </div>
+    `;
+}
+
+export function toggleArchivedMemberSection() {
+    const section = document.getElementById('archivedMemberSection');
+    if (section) section.classList.toggle('collapsed');
+}
+
+// ============================================
+// 設定画面: 操作ハンドラ
+// ============================================
+
+function afterMemberChange() {
+    if (typeof window.saveData === 'function') window.saveData();
+    renderMemberList();
+    if (typeof window.updateMemberOptions === 'function') window.updateMemberOptions();
+    if (typeof window.updateAllDisplays === 'function') window.updateAllDisplays();
+}
+
+export function handleAddMemberClick() {
+    const input = document.getElementById('memberNameInput');
+    if (!input) return;
+    const result = addMember(input.value);
+    if (!result.ok) {
+        showAlert(result.reason === 'duplicate' ? 'その担当者名は既に登録されています' : '担当者名を入力してください', false);
+        return;
+    }
+    pushAction({
+        type: 'member_add',
+        description: `担当者追加: ${result.member.name}`,
+        data: { added: { ...result.member } }
+    });
+    input.value = '';
+    afterMemberChange();
+}
+
+export function handleRenameMember(id) {
+    editingMemberId = id;
+    renderMemberList();
+}
+
+export function cancelRenameMember() {
+    editingMemberId = null;
+    renderMemberList();
+}
+
+export function confirmRenameMember(id) {
+    const input = document.getElementById(`memberRenameInput_${id}`);
+    if (!input) return;
+    const member = members.find(m => m.id === id);
+    if (!member) return;
+
+    const newNameTrimmed = (input.value || '').trim();
+    if (newNameTrimmed !== member.name) {
+        const usage = countMemberUsage(member.name);
+        if (usage > 0 && !confirm(`${usage}件のデータの担当者名を「${newNameTrimmed}」に置き換えます。よろしいですか？`)) {
+            return;
+        }
+    }
+
+    const before = member.name;
+    const result = renameMember(id, input.value);
+    if (!result.ok) {
+        showAlert(result.reason === 'duplicate' ? 'その担当者名は既に登録されています' : '担当者名を入力してください', false);
+        return;
+    }
+
+    editingMemberId = null;
+
+    if (result.oldName !== result.newName) {
+        pushAction({
+            type: 'member_rename',
+            description: `担当者改名: ${result.oldName} → ${result.newName}`,
+            data: { memberId: id, before, after: result.newName, affected: result.affected }
+        });
+    }
+    afterMemberChange();
+}
+
+export function handleArchiveMember(id) {
+    const result = archiveMember(id);
+    if (!result.ok) return;
+    pushAction({
+        type: 'member_archive',
+        description: `担当者アーカイブ: ${result.member.name}`,
+        data: { memberId: id, name: result.member.name }
+    });
+    afterMemberChange();
+}
+
+export function handleRestoreMember(id) {
+    const result = restoreMember(id);
+    if (!result.ok) return;
+    pushAction({
+        type: 'member_restore',
+        description: `担当者復元: ${result.member.name}`,
+        data: { memberId: id, name: result.member.name }
+    });
+    afterMemberChange();
+}
+
+export function handleMoveMemberUp(id) {
+    if (!moveMemberUp(id)) return;
+    if (typeof window.saveData === 'function') window.saveData();
+    renderMemberList();
+}
+
+export function handleMoveMemberDown(id) {
+    if (!moveMemberDown(id)) return;
+    if (typeof window.saveData === 'function') window.saveData();
+    renderMemberList();
 }
 
 console.log('✅ モジュール members.js loaded');
