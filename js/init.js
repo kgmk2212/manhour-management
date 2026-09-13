@@ -396,6 +396,7 @@ window.renderVersionReport = Report.renderVersionReport;
 window.renderReportGrouped = Report.renderReportGrouped;
 window.renderReportMatrix = Report.renderReportMatrix;
 window.toggleProgressSection = Report.toggleProgressSection;
+window.openMatrixTaskDetail = Report.openMatrixTaskDetail;
 
 // schedule.js の関数
 // report-analytics.js の関数

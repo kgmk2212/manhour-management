@@ -1467,6 +1467,27 @@ table td[rowspan] {
     z-index: 10;
 }
 
+.matrix-header-task.matrix-task-clickable {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.matrix-header-task.matrix-task-clickable:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.matrix-header-task.matrix-task-clickable:active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.matrix-header-task.matrix-task-clickable:active .task-name-subtitle {
+    color: #fff;
+}
+
 /* Actual color classes */
 .act-color.safe-bright {
     color: #00897b !important;

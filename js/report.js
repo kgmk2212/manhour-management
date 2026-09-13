@@ -45,7 +45,8 @@ import {
     sortMembers,
     escapeHtml,
     escapeForHandler,
-    scaledFont
+    scaledFont,
+    showAlert
 } from './utils.js';
 import { getActiveChartColorScheme } from './theme.js';
 import { pushAction } from './history.js';
@@ -2810,7 +2811,13 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                 }
 
                 contentHtml += '<tr>';
-                contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                {
+                    const escapedVer = escapeForHandler(version);
+                    const escapedTsk = escapeForHandler(taskGroup.task);
+                    contentHtml += totalEst > 0
+                        ? `<td class="matrix-header-task matrix-task-clickable" style="font-weight: 600;" onclick="openMatrixTaskDetail('${escapedVer}', '${escapedTsk}')" title="クリックで工程一覧を表示">${taskDisplayHtml}</td>`
+                        : `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                }
                 let totalRemainingHours = 0;
                 taskCells.forEach(({ proc, est, act }) => {
                     if (est.hours > 0 || act.hours > 0) {
@@ -2930,6 +2937,20 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 
     html += '</div>';
     return html;
+}
+
+/**
+ * 対応別マトリクスの対応名セルクリック時に対応詳細モーダルを開く
+ * （その他付随作業の行は対象外。合成版数ラベルのため見積一覧側の
+ *  データ構造と一致せず、全工程編集も提供できないため）
+ */
+export function openMatrixTaskDetail(version, task) {
+    const hits = estimates.filter(e => e.version === version && e.task === task);
+    if (hits.length === 0) {
+        showAlert('この対応には見積データがありません（実績のみ）', true);
+        return;
+    }
+    window.showTaskDetail(version, task);
 }
 
 // 案A（改：Formatted 2-Row Layout）のセルレンダリング
