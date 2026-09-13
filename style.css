@@ -8348,6 +8348,20 @@ li.drop-below {
         font-size: calc(15.5px * var(--ui-scale));
         padding: 2px 8px;
     }
+
+    /* リサイズハンドル: hover が無いモバイルでは常時薄く見せつつ、
+       当たり判定をブロック下端の外側にも広げてタップしやすくする。
+       height/bottom を広げても見た目のバー(::after)は独立して配置し直し、
+       視覚上の太さ・位置(ブロック下端の2px上)は変えない。 */
+    .actual-tl-dv-resize-handle {
+        opacity: 0.7;
+        height: 28px;
+        bottom: -8px;
+    }
+
+    .actual-tl-dv-resize-handle::after {
+        bottom: 10px;
+    }
 }
 
 /* ---- 右ペインオーバーレイ背景（モバイル用） ---- */
