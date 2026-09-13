@@ -11,41 +11,41 @@
 
 | ブランチ | 用途 | 作業内容 |
 |----------|------|----------|
-| `experiment/ui-scaling` | **現行の正系開発ライン** | 機能開発・改善はここ。merge-core(差分/選択マージ)・CI・AI分析・Excel追加読み込み等の最新を含む。worktree: `manhour-ui-scaling` |
+| `experiment/ui-scaling` | **現行の正系開発ライン（統合専用）** | 機能開発・改善はここに集約。merge-core(差分/選択マージ)・CI・AI分析・Excel追加読み込み等の最新を含む。**直接編集はしない**。修正は `feature/<topic>` の隔離 worktree で行い、`scripts/worktree.sh finish` で統合する |
 | `main` | デプロイ起点 | 現状は `deploy: trigger Pages rebuild` の空コミット中心で、アプリ本体の開発実体は実験ライン側にある |
-| `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須） |
-| `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK） |
-| `experiment/llm-analysis` | ui-scaling からの派生（2026-05-23〜） | Excel取り込みのデータ処理fix群。fixは ui-scaling に機能統合済みのため実質役目終了。worktree: `manhour-llm-analysis` |
+| `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須）。ブランチのみ存在、worktree は必要になったら作る |
+| `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK）。ブランチのみ存在、worktree は必要になったら作る |
+| `experiment/llm-analysis` | ui-scaling からの派生（2026-05-23〜） | Excel取り込みのデータ処理fix群。fixは ui-scaling に機能統合済みのため実質役目終了。ブランチのみ存在 |
 
 > **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
 > **注（2026-06）**: 現在アクティブに開発しているのは `experiment/ui-scaling`。詳細は memory の `project-branch-topology` を参照。退避タグ `backup/ui-scaling-before-resync-8366f0d` あり。
+> **注（2026-09-14）**: `experiment/analytics` / `experiment/fixes` / `experiment/redesign-impl` は現状ブランチ自体が存在しない（過去の計画表記の名残）。
 
 ### Worktree構成
 
-各ブランチは専用のディレクトリで作業します。
+実在する worktree は2つだけ（他の experiment/\* はブランチのみ存在し、worktree は必要になったら `git worktree add` で作る）。
 
 | ディレクトリ | ブランチ | 用途 |
 |-------------|---------|------|
-| `manhour-ui-scaling` | `experiment/ui-scaling` | **現行の正系開発ライン** |
-| `manhour-management` | `main` | デプロイ起点（メイン worktree） |
-| `manhour-llm-analysis` | `experiment/llm-analysis` | Excel取り込みfix派生（ui-scaling に統合済み） |
-| `manhour-redesign` | `experiment/redesign` | リデザイン実験 |
-| `manhour-experiment` | `experiment/sandbox` | 実験用 |
-| `manhour-impl` | `experiment/redesign-impl` | リデザイン実装 |
-| `manhour-analytics` | `experiment/analytics` | 分析系実験 |
-| `manhour-fixes` | `experiment/fixes` | 修正系実験 |
+| `manhour-management` | `main` | デプロイ起点。**主 worktree**（`.git` の実体を持つ） |
+| `manhour-ui-scaling` | `experiment/ui-scaling` | 現行の正系開発ライン。**統合専用**（直接編集しない） |
+| `.manhour-worktrees/feature-<topic>` | `feature/<topic>` | 修正1件ごとの一時 worktree。`scripts/worktree.sh` が作成・削除まで自動で行う |
 
-> **⚠️ worktree 削除時の注意**: 各 worktree の `.claude/commands` は `.shared/commands` への
-> ジャンクション。worktree を削除する前に必ず `cmd /c rmdir "<worktree>\.claude\commands"` で
-> リンク解除すること。`git worktree remove --force` や `Remove-Item -Recurse` はジャンクション
-> 越しに実体（全コマンド定義）を削除する（2026-08-19 に実害発生・復旧済み）。
+> **⚠️ worktree 削除の注意**: `.claude/commands` が symlink の場合は、削除前に必ず
+> `rm -f <worktree>/.claude/commands` でリンクだけ先に外す（実体を辿って消してしまうため）。
+> `scripts/worktree.sh` の `finish`/`drop` は自動でこれを判定・実行する。
+> （旧・Windows前提の `cmd /c rmdir` 手順は撤去。経緯は
+> `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md` を参照）
 
 ### 作業前の確認事項
 
 ```bash
-# 現在のブランチを確認
-git branch
+git branch --show-current              # experiment/ui-scaling なら「まだ隔離していない」
+bash scripts/worktree.sh list          # 前回の統合忘れ・掃除漏れがないか
 ```
+
+現在地が `manhour-ui-scaling` でコード修正を頼まれたら、**編集を始める前に**
+`bash scripts/worktree.sh start <topic>` を実行する（下記「開発フロー」手順0）。
 
 ### どちらのブランチで作業するか
 
@@ -144,33 +144,37 @@ git branch -D experiment/sandbox
 
 ---
 
-## 開発フロー（自動検証・自動デプロイ）
+## 開発フロー（隔離 → 検証 → 統合）
 
-コード修正タスクでは、ユーザーが毎回指示しなくても以下を自動で実行する:
+> **絶対ルール**: `manhour-ui-scaling`（`experiment/ui-scaling`）を直接編集しない。統合専用ディレクトリとする。
+> `js/` / `index.html` / `style.css` / `tests/` を伴う修正タスクは、1件ごとに必ず専用 worktree に隔離する。
+> 質問・調査のみ、`docs/` のみの更新は隔離不要。判断に迷ったら隔離する（隔離のコストはほぼゼロ、衝突のコストは大きい）。
 
-1. **実動作検証**: 修正後、Playwright による実ブラウザ検証（手順は `/verify-ui`）で修正が効いていることを機械判定で確認する。検証が PASS するまで「完了」と報告しない。
-2. **デプロイ**: 検証が取れたら `/deploy` を実行し、デプロイ完了まで進める。途中でユーザーに確認を求めない。
-3. **コンフリクト回避**: 他セッションとの並行作業が常にありうる前提で、コミットは自分が編集したファイルのみを明示ステージする（`git add <file>...`、`-A` 禁止）。
+0. **隔離（着手前に必ず実行）**:
+   ```bash
+   bash scripts/worktree.sh start <topic>   # 出力されたパスが以後の作業ディレクトリ
+   ```
+   以後このタスクの Read/Edit/Write・テスト・検証は**すべてそのパス配下**で行う。
+1. **実装**: 隔離 worktree 内で実装し、自分が編集したファイルのみ明示ステージしてコミットする
+   （`git add <file>...`、`-A` 禁止）。
+2. **実動作検証**: Playwright（`npm run e2e`、`tests/e2e/` 配下）で修正が効いていることを機械判定で確認する。検証が PASS するまで「完了」と報告しない。
+3. **統合**:
+   ```bash
+   bash scripts/worktree.sh finish
+   ```
+   rebase → `npm run e2e` → ff-only マージ → push（`deploy.yml` の `experiment/**` トリガで Pages 再デプロイ発火）→ worktree 削除まで自動実行する。途中でユーザーに確認を求めない。
+   rebase がコンフリクトで停止した場合は、自タスクと本線側の意図を両立する形で解消し
+   `git rebase --continue` 後に `finish` を再実行する。両立の判断がつかなければ
+   `git rebase --abort` してユーザーに報告し停止する（勝手にどちらかを捨てない）。
 
-> この方針は `.claude/settings.json` の UserPromptSubmit hook（`.shared/hooks/inject-dev-flow.py`）でも毎ターン注入される（`.claude/` は gitignore のためローカル設定）。
+**掃除漏れの確認**: `bash scripts/worktree.sh list`
 
-### 並列セッション統合機構（parallel-mode）
-
-複数セッションの並列作業を安全に統合する仕組み。フラグファイル
-`.shared/hooks/parallel-mode.on` が存在する間だけ有効（`/parallel-mode on|off|status` で切替）。
-
-- **有効時**: コード修正タスクは `/start-work <topic>` で専用 worktree（`feature/<topic>`）に
-  隔離してから作業し、完了時に `/integrate` で「rebase → /verify-ui → ff-only マージ →
-  /deploy → worktree 掃除」まで自動実行する。**ui-scaling worktree は統合専用**（直接編集しない）。
-- **無効時（フラグ無し）**: 従来どおり本節上部の開発フロー（直接編集 + 明示ステージ）。
-- **claims 層（2026-08-20〜）**: 独立フラグ `.shared/hooks/claims.on` が存在する間だけ、
-  /start-work が `.shared/claims/` に着手宣言（topic・ブランチ・BACKLOG ID）を書き、hook が
-  着手中一覧を毎ターン注入する（二重着手の可視化）。**参考情報のみで、停止・ロックは一切しない**。
-  `/parallel-mode claims-off` で即無効化。設計:
-  `docs/superpowers/specs/2026-08-20-claims-layer-design.md`（原本: 各 `.orig-20260820`）。
-- **元に戻す**: `/parallel-mode off` で即復帰。完全撤去の手順と設計は
-  `docs/superpowers/specs/2026-08-19-parallel-session-merge-design.md` §6 を参照
-  （hook 原本バックアップ: `.shared/hooks/inject-dev-flow.py.orig-20260819`）。
+> 経緯: 以前は `.shared/hooks/parallel-mode.on` というフラグ有無で「隔離するかどうか」を
+> 切り替える設計だったが、`.shared/` 自体がWindows時代の設計でgit管理外だったため、
+> macOS移行時に実体ごと消失していた（フラグは無いのに条件分岐の記述だけが残り、
+> 「フラグ無し→在来フロー→直接編集」に読めてしまっていた）。運用の要をgit管理下の
+> `scripts/worktree.sh` に置き、条件分岐を無くして常時隔離に一本化したのが現行版。
+> 詳細: `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md`。
 
 ---
 
