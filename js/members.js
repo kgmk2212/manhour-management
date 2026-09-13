@@ -22,13 +22,29 @@ function normalizeName(raw) {
 }
 
 /**
- * 名前で担当者を探す（前後空白・大小文字を無視。アーカイブ済みも対象）
+ * 名前で担当者を探す（前後空白・大小文字を無視。アーカイブ済みも対象）。
+ * name は呼び出し元で正規化・trim済みであることを前提とする。
  * @param {string} name
+ * @param {number} [excludeId] 指定するとこのidの担当者は候補から除外する（改名時の自分自身除外用）
  * @returns {object|undefined}
  */
-function findByNameCI(name) {
-    const key = normalizeName(name).toLowerCase();
-    return members.find(m => m.name.trim().toLowerCase() === key);
+function findByNameCI(name, excludeId) {
+    const key = name.toLowerCase();
+    return members.find(m => m.id !== excludeId && m.name.trim().toLowerCase() === key);
+}
+
+/**
+ * 見積・実績・スケジュール・休暇いずれかのレコード配列に対し、
+ * memberフィールドが oldName のものを newName に一括置換する
+ * @param {object[]} records
+ * @param {string} oldName
+ * @param {string} newName
+ * @returns {(number|string)[]} 置換したレコードのid一覧
+ */
+function cascadeRename(records, oldName, newName) {
+    const ids = [];
+    for (const r of records) if (r.member === oldName) { r.member = newName; ids.push(r.id); }
+    return ids;
 }
 
 /**
@@ -90,17 +106,17 @@ export function renameMember(id, newName) {
     const trimmed = normalizeName(newName);
     if (!trimmed) return { ok: false, reason: 'empty' };
 
-    const dup = members.find(m => m.id !== id && m.name.trim().toLowerCase() === trimmed.toLowerCase());
+    const dup = findByNameCI(trimmed, id);
     if (dup) return { ok: false, reason: 'duplicate' };
 
     const oldName = member.name;
     const affected = { estimates: [], actuals: [], schedules: [], vacations: [] };
 
     if (oldName !== trimmed) {
-        for (const e of estimates) if (e.member === oldName) { e.member = trimmed; affected.estimates.push(e.id); }
-        for (const a of actuals) if (a.member === oldName) { a.member = trimmed; affected.actuals.push(a.id); }
-        for (const s of schedules) if (s.member === oldName) { s.member = trimmed; affected.schedules.push(s.id); }
-        for (const v of vacations) if (v.member === oldName) { v.member = trimmed; affected.vacations.push(v.id); }
+        affected.estimates = cascadeRename(estimates, oldName, trimmed);
+        affected.actuals = cascadeRename(actuals, oldName, trimmed);
+        affected.schedules = cascadeRename(schedules, oldName, trimmed);
+        affected.vacations = cascadeRename(vacations, oldName, trimmed);
         member.name = trimmed;
     }
 
@@ -234,8 +250,8 @@ export function ensureMembersExist(names) {
  */
 export function buildInitialMembersFromLegacyData(legacyOrderString) {
     const names = new Set();
-    for (const e of estimates) if (e.member) names.add(e.member);
-    for (const a of actuals) if (a.member) names.add(a.member);
+    for (const e of estimates) { const n = normalizeName(e.member); if (n) names.add(n); }
+    for (const a of actuals) { const n = normalizeName(a.member); if (n) names.add(n); }
 
     const orderList = (legacyOrderString || '').split(',').map(s => s.trim()).filter(Boolean);
     const ordered = [];

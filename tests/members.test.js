@@ -133,6 +133,8 @@ describe('renameMember() — マスタの改名と既存データへの遡及', 
         Members.addMember('山田');
         State.setEstimates([{ id: 10, member: '山田' }, { id: 11, member: '佐藤' }]);
         State.setActuals([{ id: 20, member: '山田' }]);
+        State.setSchedules([{ id: 'sch_1', member: '山田' }, { id: 'sch_2', member: '佐藤' }]);
+        State.setVacations([{ id: 30, member: '山田' }, { id: 31, member: '佐藤' }]);
 
         const result = Members.renameMember(1, '山田太郎');
 
@@ -141,10 +143,16 @@ describe('renameMember() — マスタの改名と既存データへの遡及', 
         assert.equal(result.newName, '山田太郎');
         assert.deepEqual(result.affected.estimates, [10]);
         assert.deepEqual(result.affected.actuals, [20]);
+        assert.deepEqual(result.affected.schedules, ['sch_1']);
+        assert.deepEqual(result.affected.vacations, [30]);
         assert.equal(State.members[0].name, '山田太郎');
         assert.equal(State.estimates.find(e => e.id === 10).member, '山田太郎');
         assert.equal(State.estimates.find(e => e.id === 11).member, '佐藤'); // 無関係データは変わらない
         assert.equal(State.actuals.find(a => a.id === 20).member, '山田太郎');
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').member, '山田太郎');
+        assert.equal(State.schedules.find(s => s.id === 'sch_2').member, '佐藤'); // 無関係データは変わらない
+        assert.equal(State.vacations.find(v => v.id === 30).member, '山田太郎');
+        assert.equal(State.vacations.find(v => v.id === 31).member, '佐藤'); // 無関係データは変わらない
     });
 
     test('重複名への改名はエラーになりデータも変更されない', () => {
