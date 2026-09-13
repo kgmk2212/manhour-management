@@ -124,13 +124,88 @@ function calculateConversionBasis(selectedMonth, estimateData) {
  * @returns {string} 表示テキスト（営業日数が不正なら空文字）
  */
 export function formatMemberStandardHours(workingDays, isAveragedDays) {
-    if (!(workingDays > 0)) return '';
+    const parts = buildMemberStandardParts(workingDays, isAveragedDays);
+    if (!parts) return '';
+
+    return `${parts.label} ${parts.value}（${parts.calc}）`;
+}
+
+/**
+ * 「1人あたり月標準工数」をラベル・値・根拠の3つに分けて返す
+ *
+ * 見せ方（サブテキスト／バッジ／カード等）で組み立て方が変わるため、
+ * 文字列を作る前の素材として切り出している。
+ * @param {number} workingDays - 換算に使う月間営業日数
+ * @param {boolean} isAveragedDays - 複数月の平均営業日数を使っているか
+ * @returns {{ label: string, value: string, calc: string }|null} 営業日数が不正なら null
+ */
+export function buildMemberStandardParts(workingDays, isAveragedDays) {
+    if (!(workingDays > 0)) return null;
 
     const hoursPerDay = CALCULATIONS.HOURS_PER_DAY;
-    const standardHours = workingDays * hoursPerDay;
-    const daysLabel = isAveragedDays ? `平均${workingDays}日` : `${workingDays}日`;
 
-    return `1人あたり月標準 ${standardHours}h（${daysLabel}×${hoursPerDay}h）`;
+    return {
+        label: '1人あたり月標準',
+        value: `${workingDays * hoursPerDay}h`,
+        calc: `${isAveragedDays ? '平均' : ''}${workingDays}日×${hoursPerDay}h`
+    };
+}
+
+// ============================================
+// 1人あたり月標準工数の見せ方（5方式切替のトライアル）
+//
+// 「サブテキストが見づらい」への対策案を実使用で比較するための切替。
+// 決着したら負けた方式と、この切替自体を削除する（設定 select ごと）。
+// 比較用モックアップ: mockups/monthly-standard-hours/readability.html
+// ============================================
+
+const MEMBER_STANDARD_STYLE_KEY = 'manhour_estimateMemberStandardStyle';
+
+/** 切替候補。方式を消すときはこの配列から該当行を削除する */
+export const MEMBER_STANDARD_STYLES = [
+    { id: 'value', label: '案A 値を主役に（現状の位置のまま）' },
+    { id: 'badge', label: '案B バッジ' },
+    { id: 'right', label: '案C 見出し行の右端' },
+    { id: 'card', label: '案D カードとして担当者の先頭に並べる' },
+    { id: 'row', label: '案E 見出しの下に独立行' },
+    { id: 'none', label: '非表示' }
+];
+
+const DEFAULT_MEMBER_STANDARD_STYLE = 'value';
+
+/**
+ * 現在選択されている見せ方を返す（未設定・未知の値なら既定に落とす）
+ * @returns {string}
+ */
+export function getMemberStandardStyle() {
+    const saved = localStorage.getItem(MEMBER_STANDARD_STYLE_KEY);
+    return MEMBER_STANDARD_STYLES.some(s => s.id === saved) ? saved : DEFAULT_MEMBER_STANDARD_STYLE;
+}
+
+/**
+ * 見せ方を保存する（候補にある値のみ受け付ける）
+ * @param {string} styleId
+ */
+export function setMemberStandardStyle(styleId) {
+    if (MEMBER_STANDARD_STYLES.some(s => s.id === styleId)) {
+        localStorage.setItem(MEMBER_STANDARD_STYLE_KEY, styleId);
+    }
+}
+
+/**
+ * 設定画面の見せ方セレクトを初期化する
+ */
+export function initMemberStandardStyleSetting() {
+    const select = document.getElementById('estimateMemberStandardStyle');
+    if (!select) return;
+
+    select.innerHTML = '';
+    MEMBER_STANDARD_STYLES.forEach(s => select.appendChild(new Option(s.label, s.id)));
+    select.value = getMemberStandardStyle();
+    select.addEventListener('change', () => {
+        setMemberStandardStyle(select.value);
+        renderEstimateList();
+    });
 }
 
 /**
@@ -610,6 +685,65 @@ function calculateMemberSummary(filtered, filterType, monthFilter) {
 }
 
 /**
+ * 選択中の見せ方に合わせて「1人あたり月標準」を配置する
+ *
+ * 置き場所が3つ（見出し内 span / 見出し下の行 / カード群）に分かれるため、
+ * 毎回すべてを空にしてから担当分だけを埋める。案D（カード）はカード群の
+ * 組み立て側で差し込むので、ここでは何も書かない。
+ * @param {{ label: string, value: string, calc: string }|null} parts
+ * @param {string} styleId - MEMBER_STANDARD_STYLES の id
+ */
+function applyMemberStandardPlacement(parts, styleId) {
+    const titleElement = document.getElementById('estimateMemberSummaryTitle');
+    const inlineElement = document.getElementById('estimateMemberStandard');
+    const rowElement = document.getElementById('estimateMemberStandardRow');
+
+    // 前回の描画分をすべて消してから、今回の担当分だけを埋める
+    if (titleElement) titleElement.classList.remove('ms-title--split');
+    if (inlineElement) {
+        inlineElement.className = '';
+        inlineElement.innerHTML = '';
+    }
+    if (rowElement) {
+        rowElement.className = '';
+        rowElement.innerHTML = '';
+        rowElement.hidden = true;
+    }
+
+    if (!parts || styleId === 'none' || styleId === 'card') return;
+
+    const inner = `${parts.label}<strong class="ms-standard__value">${parts.value}</strong><span class="ms-standard__calc">${parts.calc}</span>`;
+
+    if (styleId === 'row') {
+        if (!rowElement) return;
+        rowElement.className = 'ms-standard ms-standard--row';
+        rowElement.innerHTML = inner;
+        rowElement.hidden = false;
+        return;
+    }
+
+    if (!inlineElement) return;
+    if (styleId === 'right' && titleElement) titleElement.classList.add('ms-title--split');
+    inlineElement.className = `ms-standard ms-standard--${styleId}`;
+    inlineElement.innerHTML = inner;
+}
+
+/**
+ * 案D の「基準カード」HTML を返す（担当者カードと同じ3行構造に揃える）
+ * @param {{ label: string, value: string, calc: string }} parts
+ * @returns {string}
+ */
+function memberStandardCardHtml(parts) {
+    return `
+            <div class="ms-standard-card">
+                <div>${parts.label}</div>
+                <div>${parts.value}</div>
+                <div>${parts.calc}</div>
+            </div>
+        `;
+}
+
+/**
  * 担当者別合計をDOM要素に表示
  * @param {Object} memberSummary - 担当者別工数オブジェクト
  * @param {number} workingDaysPerMonth - 月間稼働日数
@@ -620,11 +754,10 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth, isAvera
     const memberSummaryContent = document.getElementById('estimateMemberSummaryContent');
     if (!memberSummaryContainer || !memberSummaryContent) return;
 
-    // 見出しに1人あたりの月標準工数を添える（人数倍する前の基準値）
-    const standardElement = document.getElementById('estimateMemberStandard');
-    if (standardElement) {
-        standardElement.textContent = formatMemberStandardHours(workingDaysPerMonth, isAveragedDays);
-    }
+    // 1人あたりの月標準工数（人数倍する前の基準値）を選択中の見せ方で配置する
+    const standardParts = buildMemberStandardParts(workingDaysPerMonth, isAveragedDays);
+    const standardStyle = getMemberStandardStyle();
+    applyMemberStandardPlacement(standardParts, standardStyle);
 
     const memberOrderElement = document.getElementById('memberOrder');
     const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
@@ -639,7 +772,10 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth, isAvera
 
     const borderColor = 'var(--accent)';
 
-    let memberHtml = '';
+    // 案D は担当者カードと同じ形の「基準カード」を先頭に置く
+    let memberHtml = (standardStyle === 'card' && standardParts)
+        ? memberStandardCardHtml(standardParts)
+        : '';
     sortedMembers.forEach(member => {
         const hours = memberSummary[member];
         const days = (hours / 8).toFixed(1);

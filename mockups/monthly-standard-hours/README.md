@@ -67,3 +67,56 @@
 - `index.html` に `id="estimateMemberSummary"` が2つある（担当者別合計の本体と、空のまま
   使われていない div）。`getElementById` は先頭を返すため現状の動作に影響は無いが、
   Playwright の strict モードではセレクタが曖昧になる。今回のスコープ外として手を付けていない。
+
+---
+
+# 追記（2026-09-13）: 見やすさの5方式トライアル
+
+上記で入れた「見出しの右にサブテキスト」が**見づらい**という指摘を受けての対応。
+比較モックアップ: `readability.html`
+
+## 何が問題だったか（実測）
+
+| 問題 | 実測値 |
+|---|---|
+| コントラスト不足 | `--text-muted` #9C9690 / `--surface-elevated` #FAFAF9 = **2.8:1**。WCAG AA（4.5:1）を下回る。ラベルも値も同じ薄さで、一番読ませたい `168h` が一番読みにくい |
+| 見出しと地続きに読める | 間隔が 12px しかなく「担当者別合計1人あたり月標準 …」と一文に見える |
+| 幅 1225px の帯に左寄せで浮く | 右側が全部空で、下のカード群との関係も見えない |
+
+## 対応: 5方式を設定で切り替えられるようにした
+
+工数入力5方式・作業月UI 4方式と同じトライアル方式。実使用で比べて決着したら、
+負けた方式と切替そのもの（設定 select 含む）を削除する。
+
+設定 → 「1人あたり月標準の見せ方」（localStorage `manhour_estimateMemberStandardStyle`）
+
+| id | 案 | 内容 |
+|---|---|---|
+| `value` | 案A | 位置はそのまま、ラベル→値→根拠の3段の強弱をつける（既定） |
+| `badge` | 案B | アクセント薄色のバッジにして見出しから切り離す |
+| `right` | 案C | 見出し行の右端へ寄せる |
+| `card` | 案D | 担当者カードと同じ形の基準カードを先頭に並べる |
+| `row` | 案E | 見出しの下に独立行（区切り線つき） |
+| `none` | — | 非表示 |
+
+コントラスト比: 案A の値 **14.9:1**（#1A1814 / #FAFAF9）・ラベル 5.0:1、案B/D **8.2:1**（#2D5A27 / #EBF5EA）。
+
+## 実装
+
+- `js/estimate.js` — `buildMemberStandardParts()`（ラベル/値/根拠に分解する純関数）、
+  `MEMBER_STANDARD_STYLES` と getter/setter、`applyMemberStandardPlacement()`、
+  `memberStandardCardHtml()`、`initMemberStandardStyleSetting()`
+- `index.html` — 見出しに id、見出し下に `#estimateMemberStandardRow`、設定に select
+- `style.css` — `18b` セクション（デスクトップ）とモバイル上書き
+- `js/init.js` — 設定 select の初期化
+- `tests/estimate.test.js` — `buildMemberStandardParts()` の単体テスト
+
+スクリーンショット（実画面）: `shots/app-a.png` `app-b.png` `app-c.png` `app-d.png`
+`app-e.png` `app-d-390.png`
+
+## 決着したときの片付け
+
+1. `MEMBER_STANDARD_STYLES` から負けた方式を削除
+2. 対応する分岐（`applyMemberStandardPlacement` の styleId 分岐・`memberStandardCardHtml`）を削除
+3. `style.css` の `18b` セクションから不要なクラスを削除
+4. 1つに決まったら `index.html` の設定 select 行ごと削除し、`initMemberStandardStyleSetting()` も削除

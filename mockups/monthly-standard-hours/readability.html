@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1人あたり月標準の見やすさ — 5案</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --surface-elevated: #FAFAF9;
+    --border: #E7E5E0;
+    --border-light: #F0EEEA;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #9C9690;
+    --accent: #2D5A27;
+    --accent-light: #EBF5EA;
+    --accent-secondary: #C4841D;
+    --danger: #B91C1C;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --shadow-sm: 0 1px 2px rgba(26, 24, 20, 0.04);
+    --ui-scale: 1;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text-primary); line-height: 1.6;
+    padding: 32px 24px 80px;
+}
+.page { max-width: 1340px; margin: 0 auto; }
+.doc-head { border-bottom: 1px solid var(--border); padding-bottom: 18px; margin-bottom: 28px; }
+.doc-head h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.01em; }
+.doc-head p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; max-width: 70ch; }
+
+.variant { margin-bottom: 40px; }
+.variant > header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 3px; }
+.variant > header h2 { font-size: 18px; font-weight: 700; }
+.variant > header .meta { font-size: 12.5px; color: var(--text-muted); }
+.variant > .note { font-size: 13.5px; color: var(--text-secondary); max-width: 78ch; margin-bottom: 14px; }
+.variant.current > header h2 { color: var(--danger); }
+
+/* ---- 本体の再現 ---- */
+.member-summary {
+    background: var(--surface-elevated); padding: 15px 20px;
+    border-radius: 8px; border: 1px solid var(--border);
+}
+.ms-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+.ms-content { display: flex; flex-wrap: wrap; gap: 12px; }
+.member-card {
+    background: white; padding: 10px 15px; border-radius: 6px;
+    border-left: 4px solid var(--accent); min-width: 150px;
+}
+.member-card .name { font-size: 15.5px; color: #666; margin-bottom: 3px; }
+.member-card .hours { font-size: 19px; font-weight: 700; color: #333; }
+.member-card .manpower { font-size: 15.5px; color: #666; font-weight: 500; }
+
+/* ---- 現状 ---- */
+.sub-current {
+    margin-left: 12px; font-weight: 500; color: var(--text-muted); font-size: 13.5px;
+}
+
+/* ---- 案A: 値を主役に ---- */
+.sub-a { margin-left: 16px; font-weight: 500; font-size: 13.5px; color: var(--text-secondary); }
+.sub-a .val { color: var(--text-primary); font-weight: 700; font-size: 15px; }
+.sub-a .calc { color: var(--text-muted); font-size: 12.5px; }
+
+/* ---- 案B: バッジ ---- */
+.sub-b {
+    margin-left: 14px; display: inline-flex; align-items: baseline; gap: 6px;
+    background: var(--accent-light); color: var(--accent);
+    padding: 2px 11px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; vertical-align: 2px;
+}
+.sub-b .val { font-size: 15px; font-weight: 700; }
+.sub-b .calc { font-weight: 500; opacity: 0.75; font-size: 12px; }
+
+/* ---- 案C: 右端寄せ ---- */
+.ms-title.row-c { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.sub-c { font-weight: 500; font-size: 13.5px; color: var(--text-secondary); }
+.sub-c .val { color: var(--text-primary); font-weight: 700; font-size: 15px; }
+.sub-c .calc { color: var(--text-muted); font-size: 12.5px; }
+
+/* ---- 案D: 基準カードとして並べる ---- */
+.standard-card {
+    background: var(--accent-light); padding: 10px 15px; border-radius: 6px;
+    border-left: 4px solid var(--accent); min-width: 150px;
+}
+.standard-card .name { font-size: 15.5px; color: var(--accent); margin-bottom: 3px; font-weight: 600; }
+.standard-card .hours { font-size: 19px; font-weight: 700; color: var(--accent); }
+.standard-card .manpower { font-size: 15.5px; color: var(--accent); font-weight: 500; opacity: 0.8; }
+
+/* ---- 案E: 見出し下の独立行 ---- */
+.sub-e {
+    margin: -4px 0 12px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px; color: var(--text-secondary); font-weight: 500;
+}
+.sub-e .val { color: var(--text-primary); font-weight: 700; font-size: 15px; }
+.sub-e .calc { color: var(--text-muted); font-size: 12.5px; }
+
+.contrast {
+    font-size: 12px; color: var(--text-secondary); margin-top: 10px;
+    border-left: 2px solid var(--border); padding-left: 10px;
+}
+.contrast b { color: var(--text-primary); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-head">
+    <h1>「1人あたり月標準」をどう見せるか — 5案</h1>
+    <p>いまの表示は色が薄く（コントラスト比 2.8:1）、見出しとの間隔も 12px しかないため、「担当者別合計」と一続きの文に見えています。下の5案はどれも同じ情報で、見せ方だけが違います。</p>
+</div>
+
+<!-- 現状 -->
+<section class="variant current">
+    <header><h2>現状</h2><span class="meta">コントラスト比 2.8:1 — WCAG AA（4.5:1）を下回る</span></header>
+    <p class="note">ラベルも数値も同じ薄さで、一番読ませたい「168h」が一番読みにくい。見出しとの間隔が狭く、続きの文として読めてしまう。</p>
+    <div class="member-summary">
+        <div class="ms-title">担当者別合計<span class="sub-current">1人あたり月標準 168h（21日×8h）</span></div>
+        <div class="ms-content">
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- 案A -->
+<section class="variant">
+    <header><h2>案A　値を主役にする</h2><span class="meta">置き場所はそのまま・色と太さだけ変える</span></header>
+    <p class="note">「1人あたり月標準」はラベルなので控えめに、「168h」は本文色の太字に、「（21日×8h）」は根拠なので最も小さく。3段の強弱で、数字だけが先に目に入る。間隔も 16px に広げる。</p>
+    <div class="member-summary">
+        <div class="ms-title">担当者別合計<span class="sub-a">1人あたり月標準 <span class="val">168h</span> <span class="calc">（21日×8h）</span></span></div>
+        <div class="ms-content">
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+    <p class="contrast">値のコントラスト比 <b>14.9:1</b>（#1A1814 / #FAFAF9）・ラベル <b>5.0:1</b>。変更は CSS のみ。</p>
+</section>
+
+<!-- 案B -->
+<section class="variant">
+    <header><h2>案B　バッジにして見出しから切り離す</h2><span class="meta">地続きに読めなくなる</span></header>
+    <p class="note">背景を持たせると「見出しの続きの文」ではなく「独立した値」として読める。色はテーマのアクセント（緑）なので、担当者カードの左ボーダーと同じ系統に収まる。</p>
+    <div class="member-summary">
+        <div class="ms-title">担当者別合計<span class="sub-b">1人あたり月標準<span class="val">168h</span><span class="calc">21日×8h</span></span></div>
+        <div class="ms-content">
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+    <p class="contrast">コントラスト比 <b>8.2:1</b>（#2D5A27 / #EBF5EA）。変更は CSS のみ。</p>
+</section>
+
+<!-- 案C -->
+<section class="variant">
+    <header><h2>案C　見出し行の右端に寄せる</h2><span class="meta">空いている右側を使う</span></header>
+    <p class="note">左が見出し、右が基準値と役割が位置で分かれるので、続きの文には読めない。ただし画面が広いと見出しから遠く離れる。</p>
+    <div class="member-summary">
+        <div class="ms-title row-c"><span>担当者別合計</span><span class="sub-c">1人あたり月標準 <span class="val">168h</span> <span class="calc">（21日×8h）</span></span></div>
+        <div class="ms-content">
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+    <p class="contrast">変更は CSS のみ（見出しを flex 化）。</p>
+</section>
+
+<!-- 案D -->
+<section class="variant">
+    <header><h2>案D　カードとして担当者の先頭に並べる</h2><span class="meta">数字どうしを直接比べられる</span></header>
+    <p class="note">担当者カードと同じ形・同じ文字サイズで置くと、152.0h と 168h が同じ視覚重量で横に並ぶ。「誰が基準を超えているか」を目で追える。背景をアクセント薄色にして、担当者の実数ではなく基準であることを示す。</p>
+    <div class="member-summary">
+        <div class="ms-title">担当者別合計</div>
+        <div class="ms-content">
+            <div class="standard-card"><div class="name">1人あたり月標準</div><div class="hours">168h</div><div class="manpower">21日 × 8h</div></div>
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+    <p class="contrast">コントラスト比 <b>8.2:1</b>。カード1枚ぶん横幅を使う。モバイルでは1列目に積まれる。</p>
+</section>
+
+<!-- 案E -->
+<section class="variant">
+    <header><h2>案E　見出しの下に独立した行で置く</h2><span class="meta">区切り線でカード群の前置きにする</span></header>
+    <p class="note">見出しと同じ行に置かないので混ざらない。区切り線を1本引くと「ここから下のカードはこの基準に対する数字」という関係が見える。</p>
+    <div class="member-summary">
+        <div class="ms-title">担当者別合計</div>
+        <div class="sub-e">1人あたり月標準 <span class="val">168h</span> <span class="calc">（21日×8h）</span></div>
+        <div class="ms-content">
+            <div class="member-card"><div class="name">佐藤花子</div><div class="hours">152.0h</div><div class="manpower">19.0人日 / 0.90人月</div></div>
+            <div class="member-card"><div class="name">田中太郎</div><div class="hours">96.0h</div><div class="manpower">12.0人日 / 0.57人月</div></div>
+            <div class="member-card"><div class="name">鈴木一郎</div><div class="hours">64.0h</div><div class="manpower">8.0人日 / 0.38人月</div></div>
+            <div class="member-card"><div class="name">高橋美咲</div><div class="hours">120.0h</div><div class="manpower">15.0人日 / 0.71人月</div></div>
+        </div>
+    </div>
+    <p class="contrast">変更は HTML 構造（span を見出しの外へ）＋ CSS。縦に 1 行ぶん伸びる。</p>
+</section>
+
+</div>
+</body>
+</html>

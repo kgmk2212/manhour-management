@@ -628,6 +628,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // 見積の作業月 UI（4 方式切替）の設定セレクトを初期化
     initWorkMonthUiSetting();
 
+    // 1人あたり月標準の見せ方（5 方式切替）の設定セレクトを初期化
+    Estimate.initMemberStandardStyleSetting();
+
     // セグメントボタンの初期色をテーマカラーに設定
     UI.updateSegmentedButtons();
 

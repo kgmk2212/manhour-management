@@ -1938,6 +1938,108 @@ table td[rowspan] {
     margin: 0;
 }
 
+/* ---- 18b. 担当者別合計の「1人あたり月標準」（5方式切替のトライアル） ----
+   方式が決着したら、負けた方式のクラスとこのセクションの不要分を削除する。
+   比較用モックアップ: mockups/monthly-standard-hours/readability.html */
+.ms-title {
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+/* 案C: 見出しを左、基準値を右端へ */
+.ms-title--split {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+/* ラベル・値・根拠の共通の強弱。値だけが本文色で、根拠が最も小さい */
+.ms-standard {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-left: 16px;
+    font-size: calc(13.5px * var(--ui-scale));
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.ms-standard__value {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: calc(15px * var(--ui-scale));
+}
+
+.ms-standard__calc {
+    color: var(--text-muted);
+    font-size: calc(12.5px * var(--ui-scale));
+}
+
+/* 案B: バッジ。背景を持たせて見出しの続きの文に読めないようにする */
+.ms-standard--badge {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 11px;
+    border-radius: 999px;
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 600;
+}
+
+.ms-standard--badge .ms-standard__value {
+    color: var(--accent);
+    font-size: calc(15px * var(--ui-scale));
+}
+
+.ms-standard--badge .ms-standard__calc {
+    color: var(--accent);
+    font-weight: 500;
+    opacity: 0.75;
+    font-size: calc(12px * var(--ui-scale));
+}
+
+/* 案C: 右端に置くので左マージンは不要 */
+.ms-standard--right {
+    margin-left: 0;
+}
+
+/* 案E: 見出しの下に独立した行。区切り線でカード群の前置きにする */
+.ms-standard--row {
+    display: flex;
+    margin: -4px 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* 案D: 担当者カードと同じ形の基準カード。色で実数ではなく基準だと示す */
+.ms-standard-card {
+    background: var(--accent-light);
+    padding: 10px 15px;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--accent);
+    min-width: 150px;
+    color: var(--accent);
+}
+
+.ms-standard-card > div:nth-child(1) {
+    font-size: calc(15.5px * var(--ui-scale));
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.ms-standard-card > div:nth-child(2) {
+    font-size: calc(19px * var(--ui-scale));
+    font-weight: 700;
+}
+
+.ms-standard-card > div:nth-child(3) {
+    font-size: calc(15.5px * var(--ui-scale));
+    font-weight: 500;
+    opacity: 0.8;
+}
+
 /* ---- 19. Calendar Matrix ---- */
 .calendar-grid {
     display: grid;
@@ -8648,14 +8750,21 @@ li.drop-below {
     #estimateMemberSummaryContent > div > div:nth-child(3) { font-size: 12px !important; }
     /* セクション見出し「担当者別合計」: redesign 14px */
     #estimateMemberSummary > div:first-child { font-size: 14px !important; }
-    /* 見出しに添える「1人あたり月標準」。見出しと同じ行に収まらない幅では
-       ぶら下がりではなく改行させ、左端を見出しに揃える。 */
-    #estimateMemberStandard {
-        font-size: 12px !important;
-        display: block;
-        margin-left: 0 !important;
-        margin-top: 2px;
+    /* 「1人あたり月標準」。狭い幅では見出しとの同居をやめ、常に改行して
+       左端を見出しに揃える（案C の右端寄せも縦積みに倒す）。 */
+    .ms-standard {
+        font-size: 12px;
+        margin-left: 0;
+        margin-top: 3px;
     }
+    .ms-standard--value,
+    .ms-standard--right,
+    .ms-standard--badge { display: flex; }
+    .ms-title--split { display: block; }
+    .ms-standard__value { font-size: 13px; }
+    .ms-standard__calc { font-size: 11px; }
+    /* 案D の基準カードは担当者カードと同じ構造なので、上の
+       #estimateMemberSummaryContent > div > div:nth-child(N) がそのまま効く */
     /* 横 padding を 20px→12px に詰め、2列(150+12+150=312px)が確実に収まる
        幅を確保（狭幅端末では flex-wrap により自然に1列へ戻る＝redesign と同挙動）。 */
     #estimateMemberSummary {

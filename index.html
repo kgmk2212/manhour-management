@@ -720,10 +720,10 @@
                 <!-- 担当者別合計表示 -->
                 <div id="estimateMemberSummary"
                     style="background: var(--surface-elevated); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: none;">
-                    <div style="font-size: calc(16px * var(--ui-scale)); font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">担当者別合計<span
-                            id="estimateMemberStandard"
-                            style="margin-left: 12px; font-weight: 500; color: var(--text-muted); font-size: calc(13.5px * var(--ui-scale));"></span>
+                    <div id="estimateMemberSummaryTitle" class="ms-title"><span>担当者別合計</span><span
+                            id="estimateMemberStandard"></span>
                     </div>
+                    <div id="estimateMemberStandardRow" hidden></div>
                     <div id="estimateMemberSummaryContent" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     </div>
                 </div>
@@ -1646,6 +1646,15 @@
                                             <option value="bar">下部バー（余裕/超過付き）</option>
                                             <option value="none">非表示</option>
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <div class="setting-label">1人あたり月標準の見せ方</div>
+                                        <div class="setting-desc">担当者別合計に添える基準値の表示方式（比較トライアル中）</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="estimateMemberStandardStyle"></select>
                                     </div>
                                 </div>
                                 <div class="setting-row">

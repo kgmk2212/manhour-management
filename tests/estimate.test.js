@@ -14,7 +14,7 @@ before(() => {
     globalThis.window = globalThis;
 });
 
-const { getWorkingDays, formatMemberStandardHours } = await import('../js/estimate.js');
+const { getWorkingDays, formatMemberStandardHours, buildMemberStandardParts } = await import('../js/estimate.js');
 
 describe('getWorkingDays() — 祝日・会社休日関数が未定義の場合（土日のみ除外）', () => {
     beforeEach(() => {
@@ -69,5 +69,29 @@ describe('formatMemberStandardHours() — 担当者別合計の見出しに添�
         assert.equal(formatMemberStandardHours(-1, false), '');
         assert.equal(formatMemberStandardHours(undefined, false), '');
         assert.equal(formatMemberStandardHours(NaN, false), '');
+    });
+});
+
+describe('buildMemberStandardParts() — 見せ方ごとに組み立てるための素材', () => {
+    test('単月: ラベル・値・根拠に分かれる', () => {
+        assert.deepEqual(buildMemberStandardParts(21, false), {
+            label: '1人あたり月標準',
+            value: '168h',
+            calc: '21日×8h'
+        });
+    });
+
+    test('複数月の平均: 根拠の側にだけ「平均」が付く', () => {
+        assert.deepEqual(buildMemberStandardParts(20, true), {
+            label: '1人あたり月標準',
+            value: '160h',
+            calc: '平均20日×8h'
+        });
+    });
+
+    test('営業日数が不正なら null（どの見せ方でも何も描かない）', () => {
+        assert.equal(buildMemberStandardParts(0, false), null);
+        assert.equal(buildMemberStandardParts(undefined, false), null);
+        assert.equal(buildMemberStandardParts(NaN, false), null);
     });
 });
