@@ -1800,17 +1800,30 @@ export function applyScheduleFilters() {
  */
 export function updateFilterResultCount() {
     const countElement = document.getElementById('scheduleFilterCount');
-    if (!countElement) return;
-    
+    const deleteBtn = document.getElementById('scheduleDeleteFilteredBtn');
+    if (!countElement && !deleteBtn) return;
+
     const filtered = getFilteredSchedules();
     const total = schedules.length;
-    
+
     const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
-    
-    if (hasFilters) {
-        countElement.innerHTML = `<strong>${filtered.length}</strong> / ${total}件`;
-    } else {
-        countElement.innerHTML = total > 0 ? `${total}件` : '';
+
+    if (countElement) {
+        if (hasFilters) {
+            countElement.innerHTML = `<strong>${filtered.length}</strong> / ${total}件`;
+        } else {
+            countElement.innerHTML = total > 0 ? `${total}件` : '';
+        }
+    }
+
+    // 削除対象の件数を押す前に見えるようにし、無フィルタ時の全件削除を自覚しやすくする
+    if (deleteBtn) {
+        deleteBtn.textContent = hasFilters
+            ? `一括削除（${filtered.length}件）`
+            : `全件削除（${filtered.length}件）`;
+        deleteBtn.title = hasFilters
+            ? 'フィルタに一致するスケジュールを削除します'
+            : 'フィルタが設定されていないため、すべてのスケジュールが削除対象です';
     }
 }
 
@@ -1850,8 +1863,8 @@ export function deleteFilteredSchedules() {
     const hasFilters = scheduleSettings.filterVersion || scheduleSettings.filterMember || scheduleSettings.filterStatus;
     const message = hasFilters
         ? `フィルタに一致する${filteredSchedules.length}件のスケジュールを削除しますか？`
-        : `すべてのスケジュール（${filteredSchedules.length}件）を削除しますか？`;
-    
+        : `フィルタが設定されていません。すべてのスケジュール（${filteredSchedules.length}件）を削除しますか？\n（削除後も「元に戻す」で復元できます）`;
+
     if (!confirm(message)) {
         return;
     }
