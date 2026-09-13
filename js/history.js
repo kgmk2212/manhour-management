@@ -485,6 +485,12 @@ function applyScheduleUndo(action) {
                     startDate: action.data.oldStartDate,
                     endDate: action.data.oldEndDate
                 });
+                if (action.data.linked) {
+                    window.updateScheduleFn(action.data.linked.scheduleId, {
+                        startDate: action.data.linked.oldStartDate,
+                        endDate: action.data.linked.oldEndDate
+                    });
+                }
             }
             break;
         case 'create':
@@ -558,6 +564,12 @@ function applyScheduleRedo(action) {
                     startDate: action.data.newStartDate,
                     endDate: action.data.newEndDate
                 });
+                if (action.data.linked) {
+                    window.updateScheduleFn(action.data.linked.scheduleId, {
+                        startDate: action.data.linked.newStartDate,
+                        endDate: action.data.linked.newEndDate
+                    });
+                }
             }
             break;
         case 'create':

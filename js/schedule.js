@@ -2031,6 +2031,8 @@ function updateStatusButtons(activeStatus) {
 
 /**
  * ドラッグによるスケジュール移動を処理
+ * 同一版数+対応+担当者で連結中の後工程（IT→ST, PG→PT）があれば、
+ * 隙間ゼロを保ったまま後工程も連動して移動する。
  * @param {string} scheduleId - スケジュールID
  * @param {string} newStartDate - 新しい開始日（YYYY-MM-DD）
  */
@@ -2042,14 +2044,30 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     const oldStartDate = schedule.startDate;
     const oldEndDate = schedule.endDate;
 
+    // 移動前の位置関係で連結中の後工程を判定（ドラッグ中は他の変更が起きない前提）
+    const linkedBefore = findLinkedBackSchedule(schedule, schedules);
+
     // 新しい終了日を計算
     const newEndDate = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
 
-    // Undo用に記録
+    let linkedData = null;
+    if (linkedBefore) {
+        const linkedNewStartDate = getNextBusinessDay(newEndDate, linkedBefore.member);
+        const linkedNewEndDate = calculateEndDate(linkedNewStartDate, linkedBefore.estimatedHours, linkedBefore.member);
+        linkedData = {
+            scheduleId: linkedBefore.id,
+            oldStartDate: linkedBefore.startDate,
+            oldEndDate: linkedBefore.endDate,
+            newStartDate: linkedNewStartDate,
+            newEndDate: linkedNewEndDate
+        };
+    }
+
+    // Undo用に記録（連動分があれば1つのアクションにまとめる）
     pushAction({
         type: 'schedule_move',
         description: `スケジュール移動: ${schedule.task} (${schedule.process})`,
-        data: { scheduleId, oldStartDate, oldEndDate, newStartDate, newEndDate }
+        data: { scheduleId, oldStartDate, oldEndDate, newStartDate, newEndDate, linked: linkedData }
     });
 
     // スケジュールを更新
@@ -2057,6 +2075,12 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
         startDate: newStartDate,
         endDate: newEndDate
     });
+    if (linkedData) {
+        updateSchedule(linkedData.scheduleId, {
+            startDate: linkedData.newStartDate,
+            endDate: linkedData.newEndDate
+        });
+    }
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
 }
