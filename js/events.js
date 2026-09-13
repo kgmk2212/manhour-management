@@ -19,7 +19,6 @@ import {
     handleReportMonthChange,
     handleReportVersionChange,
     handleReportFilterTypeChange,
-    showMemberOrderHelp,
     toggleFilterLayout,
     handleEditActualMemberChange,
     handleEditFormNameChange,
@@ -27,6 +26,7 @@ import {
     handleQuickFormNameChange,
     initAnimationState
 } from './ui.js';
+import { handleAddMemberClick } from './members.js';
 import {
     switchQuickInputMode,
     filterQuickTaskList, showQuickTaskDropdown, hideQuickTaskDropdown,
@@ -209,15 +209,6 @@ export function initEventHandlers() {
     const quickMemberSelect = document.getElementById('quickMemberSelect');
     if (quickMemberSelect) {
         quickMemberSelect.addEventListener('change', handleMemberChange);
-    }
-
-    // 担当者表示順 (自動保存 & 即時反映)
-    const memberOrderEl = document.getElementById('memberOrder');
-    if (memberOrderEl) {
-        memberOrderEl.addEventListener('change', () => {
-            import('./storage.js').then(m => m.saveData(true));
-            import('./ui.js').then(m => m.updateAllDisplays());
-        });
     }
 
     // アクションボタン
@@ -601,9 +592,8 @@ export function initEventHandlers() {
     const rememberQuickInputMode = document.getElementById('rememberQuickInputMode');
     if (rememberQuickInputMode) rememberQuickInputMode.addEventListener('change', saveQuickInputModeSetting);
 
-    // 担当者順序（自動保存＋即時反映のリスナーは initEventHandlers 前半で登録済み）
-    const btnShowMemberOrderHelp = document.getElementById('btnShowMemberOrderHelp');
-    if (btnShowMemberOrderHelp) btnShowMemberOrderHelp.addEventListener('click', showMemberOrderHelp);
+    const btnAddMember = document.getElementById('btnAddMember');
+    if (btnAddMember) btnAddMember.addEventListener('click', handleAddMemberClick);
 
     // 会社休日
     const btnAddCompanyHoliday = document.getElementById('btnAddCompanyHoliday');
