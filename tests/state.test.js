@@ -58,3 +58,28 @@ describe('nextId() — 単調増加する一意ID発番', () => {
         assert.equal(globalThis.window.nextRecordId, 43);
     });
 });
+
+describe('members / nextMemberId — 担当者マスタの状態', () => {
+    test('初期値は空配列・1から始まる', async () => {
+        const { members, nextMemberId } = await import('../js/state.js');
+        assert.deepEqual(members, []);
+        assert.equal(nextMemberId, 1);
+    });
+
+    test('setMembers()で配列を丸ごと置き換えられ、window.membersにも反映される', async () => {
+        const { setMembers, members } = await import('../js/state.js');
+        const next = [{ id: 1, name: '山田', archived: false }];
+        setMembers(next);
+        const { members: after } = await import('../js/state.js');
+        assert.deepEqual(after, next);
+        assert.deepEqual(globalThis.window.members, next);
+    });
+
+    test('setNextMemberId()でカウンタを更新でき、window.nextMemberIdにも反映される', async () => {
+        const { setNextMemberId } = await import('../js/state.js');
+        setNextMemberId(5);
+        const { nextMemberId } = await import('../js/state.js');
+        assert.equal(nextMemberId, 5);
+        assert.equal(globalThis.window.nextMemberId, 5);
+    });
+});

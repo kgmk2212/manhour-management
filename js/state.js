@@ -7,6 +7,9 @@ export let estimates = [];
 export let filteredEstimates = []; // フィルタリングされた見積データ（renderEstimateList関数で設定）
 export let actuals = [];
 
+// 担当者マスタ（配列順=表示順）
+export let members = []; // [{id, name, archived}]
+
 // 休日・休暇データ
 export let companyHolidays = []; // 会社休日データ
 export let vacations = []; // 個人休暇データ
@@ -16,6 +19,7 @@ export let nonProjectWork = []; // 非プロジェクト作業データ（storag
 // ID管理
 export let nextCompanyHolidayId = 1;
 export let nextVacationId = 1;
+export let nextMemberId = 1;
 // 見積/実績/履歴アクション等の汎用一意IDカウンター。
 // Date.now() + Math.random() は浮動小数の精度不足で同一ms内に複数発番すると
 // 衝突しうるため、整数の単調増加カウンタに置き換える。
@@ -245,7 +249,6 @@ export let scheduleBarColorMode = 'original'; // スケジュールバー色: or
 
 export let debugModeEnabled = false; // デバッグモード設定
 export let devFeaturesEnabled = false; // 開発中の機能を表示するか
-export let memberOrder = ''; // 担当者の表示順
 
 // 見積関連
 export let workMonthSelectionMode = false; // 作業月選択モード
@@ -307,6 +310,11 @@ export function setActuals(value) {
     window.actuals = value;
 }
 
+export function setMembers(value) {
+    members = value;
+    window.members = value;
+}
+
 export function setCompanyHolidays(value) {
     companyHolidays = value;
     window.companyHolidays = value;
@@ -325,6 +333,11 @@ export function setRemainingEstimates(value) {
 export function setNextCompanyHolidayId(value) {
     nextCompanyHolidayId = value;
     window.nextCompanyHolidayId = value;
+}
+
+export function setNextMemberId(value) {
+    nextMemberId = value;
+    window.nextMemberId = value;
 }
 
 export function setNextVacationId(value) {
@@ -433,11 +446,6 @@ export function setWorkMonthSelectionMode(value) {
 export function setActualSelectionMode(value) {
     actualSelectionMode = value;
     window.actualSelectionMode = value;
-}
-
-export function setMemberOrder(value) {
-    memberOrder = value;
-    window.memberOrder = value;
 }
 
 export function setCurrentThemeColor(value) {
