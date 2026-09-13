@@ -3,7 +3,7 @@
 // ============================================
 
 import {
-    members, setMembers,
+    members,
     nextMemberId, setNextMemberId,
     estimates, actuals, schedules, vacations
 } from './state.js';
