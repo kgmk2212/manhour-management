@@ -144,6 +144,37 @@ State に反映されるため、追加共通処理 `js/members.js` の
 - アーカイブ済み一覧はデフォルト折りたたみ。「復元」で元の並び位置ではなく
   アクティブ一覧の末尾に追加する
 
+## `#memberOrder` 撤去に伴う波及範囲（計画時に発覚した追加スコープ）
+
+`#memberOrder` テキスト欄は当初「見積タブ設定」の1箇所だけの表示順ヒントだと
+想定していたが、計画時の実装調査で `js/utils.js` の `sortMembers(members, orderString)`
+汎用ユーティリティの `orderString` 引数として、以下9箇所（表示順を決めるほぼ全ての
+画面）から `document.getElementById('memberOrder').value` を直接読んで渡している
+ことが判明した。`#memberOrder` を撤去すると、これらすべてで要素が無くなり
+`.value` 読み取りが失敗する。
+
+- `js/quick.js`（クイック入力の担当者select順）
+- `js/actual.js`（実績フィルタ・実績カレンダー・実績編集select・その他作業編集select、計5箇所）
+- `js/estimate-edit.js`（見積編集select順）
+- `js/estimate.js`（見積一覧マトリクスの担当者別列順）
+- `js/schedule-render.js`（ガントチャートの担当者行順）
+- `js/actual-timeline.js`（実績タイムラインの担当者行順）
+- `js/other-work.js`（その他作業新規登録selectの順序）
+- `js/ui.js`（`updateMemberOptions()`本体、および設定読み込み・`updateAllDisplays()`内の
+  DOM⇄state同期コード2箇所）
+- `js/actual-bulk.js`（`State.memberOrder` を直接import。DOM経由ではないが同じく撤去対象）
+
+`sortMembers()` 自体のアルゴリズムは変更しない。変更するのは呼び出し元が渡す
+`orderString` の取得元だけで、全箇所を `js/members.js` に新設する
+`getMemberOrderString()`（アクティブな担当者をマスタ順にカンマ結合して返す、
+旧テキスト欄と同じ形式の文字列を返す関数）の呼び出しに置き換える。これにより
+`sortMembers()` 側は一切変更せずに済み、影響範囲が「呼び出し元の1行を差し替える」
+という機械的な変更に収まる。
+
+`js/storage.js`・`js/events.js`・`js/ui.js` に残る `#memberOrder` 自体の
+読み書き・保存・復元・イベントリスナー登録コードは、要素ごと撤去に伴い
+不要になるため削除する（「永続化」節・「UI」節で前述の通り）。
+
 ## 選択肢生成ヘルパー（`js/members.js` 新設）
 
 ```js
@@ -154,6 +185,11 @@ export function getAllMemberNames()
 // マスタの全員（archived含む）に加え、万一マスタに存在しないのに
 // estimates/actuals/schedules/vacationsに登場する名前があれば安全網として合流する
 // （直接JSON編集やマージ由来のズレ対策）。フィルタ・レポート・集計表示用
+
+export function getMemberOrderString()
+// アクティブな担当者をマスタ順にカンマ結合した文字列を返す。
+// 旧 #memberOrder テキスト欄と同じ形式で、sortMembers(names, orderString) の
+// 第2引数としてそのまま渡せる（sortMembers自体は変更しない）
 ```
 
 ## 書き換え対象（既存の「見積・実績からSetを作る」ロジックを置換）
