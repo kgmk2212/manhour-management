@@ -17,10 +17,17 @@ Fable にブランドカラー（アクセントグリーン `#2D5A27` / アン�
 | `icon-5-frame-and-fill.svg` | 枠と実 | 「見積＝枠（アウトライン）」と「実績＝実（塗り）」の2つの角丸四角を重ね、両者のズレを見る工数管理の本質を抽象化。 |
 | `icon-6-timesheet-grid.svg` | タイムシート | 3×3のマス目でタイムシート（工数入力表）を象徴。入力済み＝深緑、今日＝アンバー、未来＝枠線のみで描き分け。 |
 
+## 状態
+
+**採用済み（2026-09-13）**: 案1「時計とグラフ」を favicon として採用。
+`index.html` の `<link rel="icon">` を `icon-1-clock-chart.svg` の内容に差し替え済み。
+設計判断の詳細は `docs/superpowers/specs/2026-09-13-app-icon-design.md` を参照。
+
 ## 採用時のメモ
 
 - 各SVGは `viewBox="0 0 100 100"` の自己完結ベクターで、外部フォント・外部リソースは未使用。
   favicon（`index.html` の `<link rel="icon">`）や PWA アイコンにそのまま利用可能。
 - 採用案が決まったらADRを作成し、このREADMEおよびADRから相互リンクすること（プロジェクトのモックアップ運用ルールに準拠）。
 - 本フォルダの作成・統合作業は `js/` / `index.html` / `style.css` を伴わないため、
-  `scripts/worktree.sh` による隔離worktreeは対象外（モックアップ追加のみ）。
+  `scripts/worktree.sh` による隔離worktreeは対象外（モックアップ追加のみ）。ただし採用に伴う
+  `index.html` の favicon 差し替え自体はコード変更であり、別途 `docs/superpowers/specs/2026-09-13-app-icon-design.md` に記録している。
