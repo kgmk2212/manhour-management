@@ -1149,16 +1149,19 @@ export function applyInterruption() {
 
     const result = addInterruption(interruptionTargetScheduleId, params);
 
+    if (!result) {
+        showToast('中断の追加に失敗しました（対象スケジュールが見つかりません）', 'error');
+        return;
+    }
+
     closeImpactPreview();
     closeInterruptionModal();
     renderScheduleView();
 
-    if (result) {
-        const msg = result.cascadeResults.length > 0
-            ? `中断を追加しました（${result.cascadeResults.length}件のスケジュールがずれました）`
-            : '中断を追加しました';
-        showToast(msg, 'success');
-    }
+    const msg = result.cascadeResults.length > 0
+        ? `中断を追加しました（${result.cascadeResults.length}件のスケジュールがずれました）`
+        : '中断を追加しました';
+    showToast(msg, 'success');
 }
 
 // ============================================
@@ -1193,8 +1196,8 @@ function renderDetailInterruptionHistory(schedule) {
                 <div class="text-muted">消化: ${int.consumedHours}h${insertedInfo}</div>
             </div>
             <div class="int-actions">
-                <button onclick="editInterruptionFromDetail('${int.id}')">編集</button>
-                <button onclick="removeInterruptionFromDetail('${int.id}')">取り消し</button>
+                <button onclick="editInterruptionFromDetail('${escapeHtml(int.id)}')">編集</button>
+                <button onclick="removeInterruptionFromDetail('${escapeHtml(int.id)}')">取り消し</button>
             </div>
         </div>`;
     });
@@ -1237,14 +1240,16 @@ export function removeInterruptionFromDetail(interruptionId) {
 
     const scheduleId = currentEditingScheduleId;
     const result = removeInterruption(scheduleId, interruptionId, deleteInserted);
-    if (result) {
-        renderScheduleView();
-        openScheduleDetailModal(scheduleId);
-        const msg = result.cascadeResults.length > 0
-            ? `中断を取り消しました（${result.cascadeResults.length}件のスケジュールが変更されました）`
-            : '中断を取り消しました';
-        showToast(msg, 'success');
+    if (!result) {
+        showToast('中断の取り消しに失敗しました', 'error');
+        return;
     }
+    renderScheduleView();
+    openScheduleDetailModal(scheduleId);
+    const msg = result.cascadeResults.length > 0
+        ? `中断を取り消しました（${result.cascadeResults.length}件のスケジュールが変更されました）`
+        : '中断を取り消しました';
+    showToast(msg, 'success');
 }
 
 /**
