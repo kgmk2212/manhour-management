@@ -1638,6 +1638,57 @@ export function renderGanttChart(year, month, filteredSchedules = null) {
 }
 
 // ============================================
+// コンテキストメニュー（右クリック）
+// ============================================
+
+let scheduleCtxMenuDocHandler = null;
+let scheduleCtxMenuKeyHandler = null;
+
+function closeScheduleContextMenu() {
+    if (scheduleCtxMenuDocHandler) { document.removeEventListener('mousedown', scheduleCtxMenuDocHandler, true); scheduleCtxMenuDocHandler = null; }
+    if (scheduleCtxMenuKeyHandler) { document.removeEventListener('keydown', scheduleCtxMenuKeyHandler); scheduleCtxMenuKeyHandler = null; }
+    const m = document.getElementById('scheduleCtxMenu');
+    if (m) m.remove();
+}
+
+function showScheduleContextMenu(schedule, clickDateStr, x, y) {
+    closeScheduleContextMenu();
+
+    const menu = document.createElement('div');
+    menu.className = 'schedule-ctx-menu';
+    menu.id = 'scheduleCtxMenu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = `
+        <div class="schedule-ctx-head"><b>${escapeHtml(schedule.task)}</b><span>${escapeHtml(schedule.version)} ・ ${escapeHtml(schedule.process)} ・ ${escapeHtml(schedule.member)}</span></div>
+        <button type="button" class="schedule-ctx-item" data-act="detail">詳細を表示</button>
+        <button type="button" class="schedule-ctx-item" data-act="interrupt">✂ ${escapeHtml(clickDateStr)} で中断</button>
+        <div class="schedule-ctx-sep"></div>
+        <button type="button" class="schedule-ctx-item is-danger" data-act="delete">削除</button>
+    `;
+    document.body.appendChild(menu);
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - rect.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - rect.height - 8))}px`;
+
+    menu.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-act]');
+        if (!btn) return;
+        if (btn.dataset.act === 'detail') {
+            window.openScheduleDetailModal(schedule.id);
+        } else if (btn.dataset.act === 'interrupt') {
+            window.openInterruptionModal(schedule.id, clickDateStr);
+        } else if (btn.dataset.act === 'delete') {
+            if (confirm('このスケジュールを削除しますか？')) window.deleteSchedule(schedule.id);
+        }
+        closeScheduleContextMenu();
+    });
+    scheduleCtxMenuDocHandler = (ev) => { if (!menu.contains(ev.target)) closeScheduleContextMenu(); };
+    document.addEventListener('mousedown', scheduleCtxMenuDocHandler, true);
+    scheduleCtxMenuKeyHandler = (ev) => { if (ev.key === 'Escape') closeScheduleContextMenu(); };
+    document.addEventListener('keydown', scheduleCtxMenuKeyHandler);
+}
+
+// ============================================
 // クリックイベントハンドラ
 // ============================================
 
@@ -1667,6 +1718,24 @@ export function setupCanvasClickHandler(onScheduleClick) {
             const schedule = renderer.getScheduleAtPosition(x, y);
             if (schedule && onScheduleClick) {
                 onScheduleClick(schedule);
+            }
+        });
+
+        canvas.addEventListener('contextmenu', (event) => {
+            const renderer = getRenderer();
+            if (!renderer) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const _s = renderer.uiScale || 1;
+            const x = (event.clientX - rect.left) / _s;
+            const y = (event.clientY - rect.top) / _s;
+
+            const schedule = renderer.getScheduleAtPosition(x, y);
+            if (schedule) {
+                event.preventDefault();
+                const clickDate = renderer.getDateAtPosition(x);
+                const dateStr = clickDate ? formatDateForDrag(clickDate) : schedule.startDate;
+                showScheduleContextMenu(schedule, dateStr, event.clientX, event.clientY);
             }
         });
 
