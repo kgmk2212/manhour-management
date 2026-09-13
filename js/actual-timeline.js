@@ -55,9 +55,6 @@ const SCHEDULE_LANE_H = 16;
 /** 実績レーン開始Y(px) — 予定レーン + 区切り余白 */
 const ACTUAL_LANE_TOP = 20;
 
-/** 日別ビューの1時間幅(px) */
-const DAILY_HOUR_WIDTH = 100;
-
 /** 日別ビューの業務時間 */
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 18;
