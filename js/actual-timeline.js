@@ -2707,7 +2707,9 @@ function updateBlockResize(clientY) {
     const dy = clientY - resizeState.startY;
     const snapUnit = DAILY_HOUR_HEIGHT / 2; // 30分スナップ
     const newHeight = Math.max(snapUnit, Math.round((resizeState.origHeight + dy) / snapUnit) * snapUnit);
-    const newHours = Math.round((newHeight / DAILY_HOUR_HEIGHT) * 10) / 10;
+    const heightDelta = newHeight - resizeState.origHeight;
+    const hoursDelta = Math.round((heightDelta / DAILY_HOUR_HEIGHT) * 10) / 10;
+    const newHours = Math.max(0.5, Math.round((resizeState.origHours + hoursDelta) * 10) / 10);
 
     resizeState.block.style.height = `${newHeight}px`;
     const hoursLabel = resizeState.block.querySelector('.actual-tl-dv-block-hours');
@@ -2730,7 +2732,9 @@ function finalizeBlockResize() {
     if (!resizeState) return;
 
     const newHeight = parseFloat(resizeState.block.style.height);
-    const newHours = Math.round((newHeight / DAILY_HOUR_HEIGHT) * 10) / 10;
+    const heightDelta = newHeight - resizeState.origHeight;
+    const hoursDelta = Math.round((heightDelta / DAILY_HOUR_HEIGHT) * 10) / 10;
+    const newHours = Math.max(0.5, Math.round((resizeState.origHours + hoursDelta) * 10) / 10);
 
     resizeState.block.classList.remove('resizing');
 
