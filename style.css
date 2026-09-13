@@ -3802,6 +3802,7 @@ table tr[style*="1565c0"] th:first-child {
 .modal-footer {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 12px 20px;
     border-top: 1px solid var(--border-light);
@@ -9441,3 +9442,151 @@ li.drop-below {
     .estimate-table input.wx-cell { font-size: 16px; padding: 8px 4px; min-height: 44px; }
     .wx-mirror { min-height: 44px; font-size: 15px; padding: 10px 4px; }
 }
+
+/* ============================================
+   中断履歴（詳細モーダル内）
+   ============================================ */
+.interruption-history {
+    margin-top: 16px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 12px;
+}
+
+.interruption-history-title {
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.interruption-history-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: calc(15.5px * var(--ui-scale));
+}
+
+.interruption-history-item .int-info {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.interruption-history-item .int-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.interruption-history-item .int-actions button {
+    font-size: calc(13px * var(--ui-scale));
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.interruption-history-item .int-actions button:hover {
+    background: var(--surface-elevated);
+    border-color: var(--text-muted);
+}
+
+/* ============================================
+   中断モーダル
+   ============================================ */
+.interruption-modal-content {
+    max-width: min(calc(520px * var(--ui-scale)), 90vw);
+}
+
+.interruption-consumed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.interruption-consumed-auto {
+    color: var(--text-muted);
+    font-size: calc(13.5px * var(--ui-scale));
+}
+
+.interruption-reason-details {
+    margin-top: 8px;
+}
+
+.interruption-reason-details summary {
+    cursor: pointer;
+    font-size: calc(13.5px * var(--ui-scale));
+    color: var(--text-muted);
+}
+
+.interruption-insert-toggle-row {
+    margin-top: 16px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 16px;
+}
+
+.interruption-insert-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: calc(15.5px * var(--ui-scale));
+    color: var(--text-primary);
+}
+
+.interruption-insert-section {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+}
+
+/* ============================================
+   影響プレビュー
+   ============================================ */
+.impact-section {
+    margin-bottom: 16px;
+}
+
+.impact-section-title {
+    font-weight: 600;
+    font-size: calc(15px * var(--ui-scale));
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.impact-item {
+    padding: 8px 12px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: calc(14.5px * var(--ui-scale));
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.impact-item-new {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+}
+
+.impact-item-shift {
+    background: var(--accent-secondary-light);
+    border-left: 3px solid var(--accent-secondary);
+}
+
+.impact-date-change {
+    color: var(--accent-secondary);
+    font-weight: 600;
+}
+
