@@ -797,48 +797,51 @@ function renderDailyBody(members, dateStr, totalWidth, totalHeight, isHoliday, o
                 </div>`;
             });
 
-            // 実績ブロック（縦に積み上げ — 昼休みゾーンを自動的にスキップ）
+            // 実績ブロック（startTimeで位置決定、未設定は積み上げでフォールバック）
             const dayActuals = actuals.filter(a => a.date === dateStr && a.member === member);
-            let accumulatedHours = 0;
+            dayActuals.sort((a, b) => (a.startTime ?? 999) - (b.startTime ?? 999));
+            let nextSlot = WORK_START_HOUR;
             dayActuals.forEach(act => {
-                const top = workHoursToY(accumulatedHours);
-                const endHours = accumulatedHours + act.hours;
+                const st = act.startTime ?? nextSlot;
+                const endClock = clockEndTime(st, act.hours);
+                const color = getTaskColor(act.version, act.task);
                 const dvSelectedClass = selectedActualIds.has(act.id) ? ' selected' : '';
 
                 // バーが午前→午後をまたぐ場合は分割して描画
-                if (accumulatedHours < MORNING_HOURS && endHours > MORNING_HOURS) {
-                    // 午前部分
-                    const morningPart = MORNING_HOURS - accumulatedHours;
-                    const morningTop = workHoursToY(accumulatedHours);
-                    const morningHeight = morningPart * DAILY_HOUR_HEIGHT;
-                    const color = getTaskColor(act.version, act.task);
+                if (st < LUNCH_START && endClock > LUNCH_END) {
+                    const morningHours = LUNCH_START - st;
+                    const morningTop = startTimeToY(st);
+                    const morningHeight = morningHours * DAILY_HOUR_HEIGHT;
                     html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${morningTop}px;height:${morningHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
-                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        title="${escapeHtml(act.task)} ${act.hours}h (${formatClockTime(st)}~)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
                         <span class="actual-tl-dv-block-hours">${act.hours}h</span>
                     </div>`;
-                    // 午後部分
-                    const afternoonPart = endHours - MORNING_HOURS;
-                    const afternoonHeight = afternoonPart * DAILY_HOUR_HEIGHT;
+                    const afternoonHours = act.hours - morningHours;
+                    const afternoonHeight = afternoonHours * DAILY_HOUR_HEIGHT;
                     html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${AFTERNOON_TOP}px;height:${afternoonHeight}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
                         title="${escapeHtml(act.task)} ${act.hours}h (続き)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
+                        <div class="actual-tl-dv-resize-handle" data-actual-id="${act.id}"></div>
                     </div>`;
                 } else {
-                    // 午前のみ or 午後のみ — 通常描画
+                    const top = startTimeToY(st);
                     const height = act.hours * DAILY_HOUR_HEIGHT;
-                    const color = getTaskColor(act.version, act.task);
                     html += `<div class="actual-tl-dv-block${dvSelectedClass}" style="top:${top}px;height:${height}px;background:${color};"
                         data-actual-id="${act.id}" data-member="${escapeHtml(member)}"
-                        title="${escapeHtml(act.task)} ${act.hours}h">
+                        title="${escapeHtml(act.task)} ${act.hours}h (${formatClockTime(st)}~)">
                         <span class="actual-tl-dv-block-task">${escapeHtml(act.task)}</span>
                         <span class="actual-tl-dv-block-hours">${act.hours}h</span>
                         <div class="actual-tl-dv-resize-handle" data-actual-id="${act.id}"></div>
                     </div>`;
                 }
-                accumulatedHours += act.hours;
+
+                nextSlot = endClock;
+                if (nextSlot >= LUNCH_START && nextSlot < LUNCH_END) {
+                    nextSlot = LUNCH_END;
+                }
             });
         }
 
