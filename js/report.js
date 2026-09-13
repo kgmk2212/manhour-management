@@ -1124,6 +1124,16 @@ export function getAnalysisGradients() {
 }
 
 /**
+ * その他付随作業の対応名キーを取得（対応名なしは '未分類作業' に寄せる）
+ * マトリクス・グループ表示の行キーと、内訳モーダルの抽出条件を一致させるために共用する
+ * @param {Object} item - 見積または実績のレコード
+ * @returns {string} 対応名キー
+ */
+export function getOtherWorkTaskKey(item) {
+    return item.task && item.task.trim() !== '' ? item.task : '未分類作業';
+}
+
+/**
  * レポート用のフィルタリング済みデータを取得
  * @param {string} filterType - フィルタタイプ（'month' | 'version'）
  * @param {string} selectedMonth - 選択された月
@@ -2477,7 +2487,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
         let version, taskKey;
         if (isOtherWork(e)) {
             version = 'その他付随作業';
-            taskKey = e.task && e.task.trim() !== '' ? e.task : '未分類作業';
+            taskKey = getOtherWorkTaskKey(e);
         } else {
             version = e.version;
             taskKey = e.task;
@@ -2504,7 +2514,7 @@ export function renderReportGrouped(filteredActuals, filteredEstimates) {
         let version, taskKey;
         if (isOtherWork(a)) {
             version = 'その他付随作業';
-            taskKey = a.task && a.task.trim() !== '' ? a.task : '未分類作業';
+            taskKey = getOtherWorkTaskKey(a);
         } else {
             version = a.version;
             taskKey = a.task;
@@ -2668,7 +2678,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
         let version, taskKey;
         if (isOtherWork(e)) {
             version = 'その他付随作業';
-            taskKey = e.task && e.task.trim() !== '' ? e.task : '未分類作業';
+            taskKey = getOtherWorkTaskKey(e);
         } else {
             version = e.version;
             taskKey = e.task;
@@ -2709,7 +2719,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
         let version, taskKey;
         if (isOtherWork(a)) {
             version = 'その他付随作業';
-            taskKey = a.task && a.task.trim() !== '' ? a.task : '未分類作業';
+            taskKey = getOtherWorkTaskKey(a);
         } else {
             version = a.version;
             taskKey = a.task;
@@ -2796,7 +2806,7 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
                     Object.values(taskGroup.actuals).forEach(act => act.members.forEach(m => allMembers.add(m)));
 
                     contentHtml += '<tr>';
-                    contentHtml += `<td class="matrix-header-task" style="font-weight: 600;">${taskDisplayHtml}</td>`;
+                    contentHtml += `<td class="matrix-header-task matrix-task-clickable" style="font-weight: 600;" onclick="openOtherWorkBreakdown('${escapeForHandler(taskGroup.task)}')" title="クリックで担当者別の内訳を表示">${taskDisplayHtml}</td>`;
                     contentHtml += `<td style="text-align: center;">${[...allMembers].map(m => escapeHtml(m)).join(', ')}</td>`;
                     contentHtml += `<td style="text-align: center;">
                         <div style="font-weight: 600;">${totalEst.toFixed(1)}h</div>
@@ -2942,7 +2952,8 @@ export function renderReportMatrix(filteredActuals, filteredEstimates, selectedM
 /**
  * 対応別マトリクスの対応名セルクリック時に対応詳細モーダルを開く
  * （その他付随作業の行は対象外。合成版数ラベルのため見積一覧側の
- *  データ構造と一致せず、全工程編集も提供できないため）
+ *  データ構造と一致せず、全工程編集も提供できないため。
+ *  その他付随作業は openOtherWorkBreakdown の担当者別内訳モーダルで確認する）
  */
 export function openMatrixTaskDetail(version, task) {
     const hits = estimates.filter(e => e.version === version && e.task === task);

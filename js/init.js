@@ -355,6 +355,7 @@ window.switchOtherWorkTab = OtherWork.switchOtherWorkTab;
 
 // modal.js の関数
 window.showProcessBreakdown = Modal.showProcessBreakdown;
+window.openOtherWorkBreakdown = Modal.openOtherWorkBreakdown;
 window.drawBreakdownDonutChart = Modal.drawBreakdownDonutChart;
 window.closeProcessBreakdownModal = Modal.closeProcessBreakdownModal;
 window.openRemainingHoursModal = Modal.openRemainingHoursModal;

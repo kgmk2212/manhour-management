@@ -6,7 +6,7 @@ import * as State from './state.js';
 import * as Estimate from './estimate.js';
 import { formatHours, escapeHtml, showAlert } from './utils.js';
 import { pushAction } from './history.js';
-import { filterReportData } from './report.js';
+import { filterReportData, getOtherWorkTaskKey } from './report.js';
 
 // ============================================
 // 工程内訳モーダル
@@ -62,6 +62,19 @@ export function showProcessBreakdown(version, task, process, filteredActuals, fi
         modal.style.display = 'flex';
         return;
     }
+
+    renderMemberBreakdown(modal, content, memberData);
+}
+
+/**
+ * 担当者別の内訳（ドーナツグラフ＋テーブル）を内訳モーダルに描画して開く
+ * 工程内訳モーダルとその他工数内訳モーダルで共用する
+ * @param {HTMLElement} modal - 内訳モーダル要素
+ * @param {HTMLElement} content - 内訳の描画先要素
+ * @param {Object<string, {estimate: number, actual: number}>} memberData - 担当者別の見積・実績工数
+ */
+function renderMemberBreakdown(modal, content, memberData) {
+    const members = Object.keys(memberData);
 
     // 合計値を計算
     let totalEst = 0;
@@ -256,6 +269,70 @@ export function openProcessBreakdown(version, task, process) {
 
 // Windowオブジェクトに公開
 window.openProcessBreakdown = openProcessBreakdown;
+
+/**
+ * その他工数（版数なし／対応名なしの見積・実績）の担当者別内訳モーダルを開く
+ * レポートタブ「対応別マトリクス」のその他付随作業行から呼ばれる
+ * @param {string} taskKey - マトリクスに表示している対応名（対応名なしは '未分類作業'）
+ */
+export function openOtherWorkBreakdown(taskKey) {
+    const modal = document.getElementById('processBreakdownModal');
+    const title = document.getElementById('breakdownModalTitle');
+    const content = document.getElementById('breakdownModalContent');
+
+    if (!modal || !title || !content) {
+        console.error('工程内訳モーダルの要素が見つかりません');
+        return;
+    }
+
+    // レポートタブの現在のフィルタ条件（月・版数）を適用してからその他工数を抽出する
+    // （マトリクスに表示されている合計値とモーダルの内訳を一致させる）
+    const filterType = document.getElementById('reportFilterType')?.value || 'month';
+    const selectedMonth = document.getElementById('reportMonth')?.value || 'all';
+    const selectedVersion = document.getElementById('reportVersion')?.value || 'all';
+    const { filteredActuals, filteredEstimates } = filterReportData(filterType, selectedMonth, selectedVersion);
+
+    let periodLabel = '';
+    if (selectedMonth !== 'all') {
+        const [y, m] = selectedMonth.split('-');
+        periodLabel = `${y}年${parseInt(m)}月`;
+    }
+
+    title.textContent = `その他付随作業 - ${taskKey} の内訳${periodLabel ? `（${periodLabel}）` : ''}`;
+
+    // 対応別マトリクスと同じ条件（その他付随作業かつ同じ対応名キー）で抽出する
+    const isTargetOtherWork = item => Estimate.isOtherWork(item) && getOtherWorkTaskKey(item) === taskKey;
+
+    // 担当者別にデータを集計
+    const memberData = {};
+
+    filteredEstimates.filter(isTargetOtherWork).forEach(e => {
+        if (!memberData[e.member]) {
+            memberData[e.member] = { estimate: 0, actual: 0 };
+        }
+        memberData[e.member].estimate += e.hours;
+    });
+
+    filteredActuals.filter(isTargetOtherWork).forEach(a => {
+        if (!memberData[a.member]) {
+            memberData[a.member] = { estimate: 0, actual: 0 };
+        }
+        memberData[a.member].actual += a.hours;
+    });
+
+    if (Object.keys(memberData).length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // 工程内訳と異なり、担当者が1人でも内訳（見積・実績・差異）を表示する
+    // （マトリクスの行には合計しか出ていないため）
+    renderMemberBreakdown(modal, content, memberData);
+}
+
+// Windowオブジェクトに公開
+window.openOtherWorkBreakdown = openOtherWorkBreakdown;
 
 export function closeProcessBreakdownModal() {
     document.getElementById('processBreakdownModal').style.display = 'none';
