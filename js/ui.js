@@ -1597,44 +1597,48 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
     const { visibleItems, hiddenCount, collapsible } =
         selectRecentSegmentItems(items, currentValue, getSegmentVisibleLimit(maxItems), expanded);
 
-    // ドラッグスクロールの実装
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    let isDragging = false;
+    // ドラッグスクロールの実装（コンテナは再利用されるため、リスナーは初回のみ登録する。
+    // 毎回登録するとcontainer.innerHTML=''では消えずに積み重なり続けるリークになる）
+    if (!container.dataset.dragBound) {
+        container.dataset.dragBound = 'true';
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        container._segDragging = false;
 
-    container.addEventListener('mousedown', (e) => {
-        isDown = true;
-        isDragging = false;
-        container.style.cursor = 'grabbing';
-        startX = e.pageX - container.offsetLeft;
-        scrollLeft = container.scrollLeft;
-    });
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            container._segDragging = false;
+            container.style.cursor = 'grabbing';
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
 
-    container.addEventListener('mouseleave', () => {
-        isDown = false;
-        container.style.cursor = 'grab';
-    });
+        container.addEventListener('mouseleave', () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        });
 
-    container.addEventListener('mouseup', () => {
-        isDown = false;
-        container.style.cursor = 'grab';
-        // クリックイベントの後にisDraggingをリセットするため、少し遅延させる
-        setTimeout(() => { isDragging = false; }, 0);
-    });
+        container.addEventListener('mouseup', () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+            // クリックイベントの後にisDraggingをリセットするため、少し遅延させる
+            setTimeout(() => { container._segDragging = false; }, 0);
+        });
 
-    container.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - container.offsetLeft;
-        const walk = (x - startX) * 2; // スクロール速度
-        container.scrollLeft = scrollLeft - walk;
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 2; // スクロール速度
+            container.scrollLeft = scrollLeft - walk;
 
-        // わずかな動きは除外（クリック誤爆防止）
-        if (Math.abs(x - startX) > 5) {
-            isDragging = true;
-        }
-    });
+            // わずかな動きは除外（クリック誤爆防止）
+            if (Math.abs(x - startX) > 5) {
+                container._segDragging = true;
+            }
+        });
+    }
 
     visibleItems.forEach(item => {
         const button = document.createElement('button');
@@ -1648,9 +1652,9 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
             button.classList.add('no-data');
         }
 
-        // クリックイベント：ドラッグ中は実行しない
+        // クリックイベント：ドラッグ中は実行しない（状態はcontainer側で保持し再生成後も共有）
         button.addEventListener('click', (e) => {
-            if (isDragging) {
+            if (container._segDragging) {
                 e.preventDefault();
                 e.stopPropagation();
                 return;
@@ -2912,10 +2916,19 @@ export function updateActualMonthOptions() {
 
     const isExpanded = typeof window.getActualMonthExpanded === 'function' ? window.getActualMonthExpanded() : false;
 
-    // 絞込: データあり月 or 選択中の月のみ（展開時は全月）
+    // 直近月（当月・前月）はデータの有無に関わらずデフォルトで表示する
+    const recentMonths = new Set([
+        `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+        (() => {
+            const prev = new Date(currentYear, now.getMonth() - 1, 1);
+            return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+        })()
+    ]);
+
+    // 絞込: データあり月・直近月・選択中の月のみ（展開時は全月）
     const filteredMonths = allMonths.filter(month => {
         if (isExpanded) return true;
-        return monthsWithData.has(month) || month === validValue;
+        return monthsWithData.has(month) || recentMonths.has(month) || month === validValue;
     });
 
     const items = [

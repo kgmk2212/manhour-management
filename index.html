@@ -3126,11 +3126,35 @@
                         child.style.flexWrap = 'wrap';
                         child.style.overflow = 'hidden';
                     }
-                    // segment-buttonsのインラインmax-widthを除去し全幅使用可能に
+                    // segment-buttonsの幅を「行の幅 − ラベルやトグルボタンなど他要素の実測幅」で明示的に算出する。
+                    // flex-grow任せだと折返し判定に使う仮サイズ(flex-basis)が実際の空き幅と一致せず、
+                    // max-widthいっぱいまで育って行が画面幅を突き破る（＝画面が広がってズームアウトする）ことがあるため使わない。
+                    // 行(row)自体もel直下ではなくラッパーのさらに下にあるため幅が未確定であり、
+                    // 先にrowを100%幅へ固定し、segを一旦0px化してから計測しないと
+                    // segの内容幅（多数のボタン）にrow自体が引きずられて広がってしまう。
                     var segs = el.querySelectorAll('.segment-buttons');
                     for (var j = 0; j < segs.length; j++) {
-                        segs[j].style.maxWidth = 'calc(100vw - 32px)';
-                        segs[j].style.flex = '1 0 calc(100% - 60px)';
+                        var seg = segs[j];
+                        var row = seg.parentElement;
+                        if (!row) continue;
+                        row.style.width = '100%';
+                        row.style.boxSizing = 'border-box';
+                        seg.style.flex = 'none';
+                        seg.style.maxWidth = 'none';
+                        seg.style.width = '0px';
+                        var rowWidth = row.clientWidth;
+                        var siblingsWidth = 0;
+                        var visibleSiblingCount = 0;
+                        for (var k = 0; k < row.children.length; k++) {
+                            var sibling = row.children[k];
+                            if (sibling === seg) continue;
+                            if (getComputedStyle(sibling).display === 'none') continue;
+                            siblingsWidth += sibling.offsetWidth;
+                            visibleSiblingCount++;
+                        }
+                        var gapPx = parseFloat(getComputedStyle(row).columnGap) || 0;
+                        var available = rowWidth - siblingsWidth - gapPx * visibleSiblingCount;
+                        seg.style.width = Math.max(60, available) + 'px';
                     }
                 }
 
@@ -3218,15 +3242,34 @@
                         // ドラッグ操作をクリックとして転送しない
                         if (dragMoved) { e.preventDefault(); e.stopPropagation(); return; }
                         var btn = e.target.closest('button');
-                        if (btn) {
+                        if (!btn) return;
+                        // インデックス一致だと150ms同期待ちの間の連打でボタン列がずれて誤爆する
+                        // （例: 実績月表示トグルのつもりで別の月ボタンを押してしまう）。
+                        // id/value/クラスでの一致を優先し、見つからない場合のみインデックスにフォールバックする。
+                        var origBtn = null;
+                        if (btn.id) {
+                            origBtn = origBar.querySelector('#' + CSS.escape(btn.id));
+                        } else if (btn.classList.contains('month-toggle-btn')) {
+                            origBtn = origBar.querySelector('.month-toggle-btn');
+                        } else if (btn.hasAttribute('value')) {
+                            var segList = Array.from(cloneBar.querySelectorAll('.segment-buttons'));
+                            var seg = btn.closest('.segment-buttons');
+                            var segIdx = seg ? segList.indexOf(seg) : -1;
+                            var origSeg = segIdx >= 0 ? origBar.querySelectorAll('.segment-buttons')[segIdx] : null;
+                            if (origSeg) {
+                                origBtn = origSeg.querySelector('button[value="' + CSS.escape(btn.getAttribute('value')) + '"]');
+                            }
+                        }
+                        if (!origBtn) {
                             var cloneBtns = Array.from(cloneBar.querySelectorAll('button'));
                             var idx = cloneBtns.indexOf(btn);
                             var origBtns = origBar.querySelectorAll('button');
-                            if (idx >= 0 && origBtns[idx]) {
-                                origBtns[idx].click();
-                                ignoreScrollUntil = Date.now() + 300;
-                                setTimeout(function() { syncBar(cloneBar, origBar); }, 150);
-                            }
+                            origBtn = idx >= 0 ? origBtns[idx] : null;
+                        }
+                        if (origBtn) {
+                            origBtn.click();
+                            ignoreScrollUntil = Date.now() + 300;
+                            setTimeout(function() { syncBar(cloneBar, origBar); }, 150);
                         }
                     });
                 }
