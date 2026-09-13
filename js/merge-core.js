@@ -590,7 +590,11 @@ function applyMerge() {
         }
     }
 
-    // 見積・実績に新しい担当者名が含まれていれば、マスタに反映する
+    // 見積・実績に新しい担当者名が含まれていれば、マスタに反映する。
+    // 両インポート経路（excel-import.js・merge-json.js）が最終的にここを通るため、
+    // 各アダプタ側を個別に変更する必要はない。schedulesやvacationsもmemberを
+    // 持つが、それらの担当者は必ず見積・実績由来（新規名の発生源ではない）なので
+    // ここでは見ない。
     const newMemberNames = [];
     for (const field of ['estimates', 'actuals']) {
         const ch = entities[field];
