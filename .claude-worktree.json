@@ -1,0 +1,5 @@
+{
+  "mainBranches": ["experiment/ui-scaling"],
+  "guardedPaths": ["js/", "index.html", "style.css", "tests/", "scripts/"],
+  "isolateCommand": "bash scripts/worktree.sh start <topic>"
+}

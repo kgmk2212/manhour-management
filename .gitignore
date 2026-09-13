@@ -51,6 +51,9 @@ logs/
 # Claude Code local settings
 .claude/
 
+# worktree隔離ガード（scripts/worktree.sh）の一時バイパス。人間が明示的に作る前提
+.claude-worktree-bypass
+
 # Personal notes and task lists
 修正案リスト.md
 

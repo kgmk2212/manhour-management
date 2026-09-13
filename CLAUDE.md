@@ -176,6 +176,16 @@ git branch -D experiment/sandbox
 > `scripts/worktree.sh` に置き、条件分岐を無くして常時隔離に一本化したのが現行版。
 > 詳細: `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md`。
 
+> **hookによる強制（2026-09-14〜）**: 上記は文書化しただけでは「AIエージェントが読み飛ばす/
+> 忘れる」リスクが残るため、`~/.claude/hooks/worktree-guard.py`（全プロジェクト共通）が
+> PreToolUse hookとしてEdit/Write/NotebookEditの直前に発火し、`experiment/ui-scaling`
+> ブランチ上で `js/` / `index.html` / `style.css` / `tests/` / `scripts/` を直接編集しようと
+> すると**ハーネスレベルで強制的にブロック**する（設定: リポジトリ直下の
+> `.claude-worktree.json`）。例外的に直接編集が必要な場合のみ、リポジトリ直下に
+> `.claude-worktree-bypass` ファイルを作成する（ユーザーの明示的な許可がある場合のみ。
+> gitignore済み）。この仕組みは他プロジェクトにも同じ `worktree-guard.py` を使って
+> `.claude-worktree.json` を置くだけで導入できる（プロジェクト固有のスクリプトは不要）。
+
 ---
 
 ## アイデア自動実装パイプライン
