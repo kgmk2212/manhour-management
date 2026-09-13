@@ -170,6 +170,13 @@ export function showTab(tabName, options = {}) {
         window.clearActualSelection();
     }
 
+    // 実績タブを離れるときはタイムラインが body 直下に出している UI（右ペインの
+    // オーバーレイ・選択中インジケータ・ポップアップ）を閉じる。
+    // タブ外にあるためタブの display:none では消えず、他タブに残ってしまう
+    if (currentTabId === 'actual' && tabName !== 'actual' && typeof window.deactivateActualTimeline === 'function') {
+        window.deactivateActualTimeline();
+    }
+
     // アニメーション方向の決定（skipAnimation時はスキップ）
     let animationClassOut = '';
     let animationClassIn = '';

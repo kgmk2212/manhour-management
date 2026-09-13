@@ -2866,6 +2866,33 @@ function setPane(open) {
 }
 
 /**
+ * タイムラインが画面から外れるときの後片付け
+ *
+ * 右ペインのオーバーレイ・選択中インジケータ・各種ポップアップは
+ * document.body 直下に生成されるため、タブの display:none や
+ * #actualTimeline の非表示では消えない。切替時に明示的に閉じないと、
+ * 他タブの上に暗幕とスクロールロックが残り操作を全部飲み込む。
+ * タブ切替（showTab）と表示形式切替（renderActualList）から呼ばれる。
+ */
+export function deactivateActualTimeline() {
+    if (isMobile()) {
+        // モバイルの右ペインはオーバーレイ付きのモーダル。画面から離れる＝閉じる
+        setPane(false);
+    } else {
+        // PC の右ペインはタブ内のレイアウト要素なのでタブと一緒に隠れる。
+        // 開閉状態は保ったまま、body 側に付く残骸だけ解除する
+        document.getElementById('atlPaneOverlay')?.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    clearSelectedTask();
+    closeInlineEditor();
+    closeTaskPicker();
+    closeBarContextMenu();
+    closeDetailPanel();
+}
+
+/**
  * モバイル用ペインオーバーレイ作成
  */
 function createPaneOverlay() {

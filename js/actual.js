@@ -146,6 +146,10 @@ export function renderActualList() {
         container.style.display = '';
         const tlContainer = document.getElementById('actualTimeline');
         if (tlContainer) tlContainer.style.display = 'none';
+        // タイムラインが body 直下に出している UI は上の非表示では消えないので明示的に閉じる
+        if (typeof window.deactivateActualTimeline === 'function') {
+            window.deactivateActualTimeline();
+        }
 
         if (viewType === 'matrix') {
             if (viewMode === 'member') {

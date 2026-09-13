@@ -472,6 +472,7 @@ window.getTaskColor = Schedule.getTaskColor;
 // actual-timeline.js の関数
 window.initActualTimeline = ActualTimeline.initActualTimeline;
 window.renderActualTimeline = ActualTimeline.renderActualTimeline;
+window.deactivateActualTimeline = ActualTimeline.deactivateActualTimeline;
 
 // state.js のスケジュール関連エクスポート
 window.schedules = State.schedules;
