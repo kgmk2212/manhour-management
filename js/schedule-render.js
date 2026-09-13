@@ -5,7 +5,7 @@
 
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
-import { getTaskColor, isBusinessDay } from './schedule.js';
+import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule } from './schedule.js';
 import { calculateSegments } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
 
@@ -2073,10 +2073,11 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr, dragState.targetRowIndex);
+                        drawDragPreview(renderer, buildDragPreviews(dragState.schedule, dateStr), dragState.targetRowIndex);
                     }
                 } else if (rowChanged) {
-                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, dragState.targetRowIndex);
+                    const fallbackDate = dragState.previewDate || dragState.originalStartDate;
+                    drawDragPreview(renderer, buildDragPreviews(dragState.schedule, fallbackDate), dragState.targetRowIndex);
                 }
 
                 // 端に近づいたら自動横スクロール
@@ -2234,74 +2235,95 @@ function formatDateForDrag(date) {
     return `${year}-${month}-${day}`;
 }
 
-function drawDragPreview(renderer, schedule, newStartDate, targetRowIndex) {
+function drawDragPreview(renderer, previews, targetRowIndex) {
     // render()内部で日付ベースのスクロール位置保持が行われる
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
 
     const ctx = renderer.timelineCtx;
 
-    const originalStart = new Date(schedule.startDate);
-    const originalEnd = new Date(schedule.endDate);
-    const duration = Math.ceil((originalEnd - originalStart) / (1000 * 60 * 60 * 24));
+    previews.forEach(({ schedule, newStartDate }, index) => {
+        const originalStart = new Date(schedule.startDate);
+        const originalEnd = new Date(schedule.endDate);
+        const duration = Math.ceil((originalEnd - originalStart) / (1000 * 60 * 60 * 24));
 
-    const newStart = new Date(newStartDate);
-    const newEnd = new Date(newStart);
-    newEnd.setDate(newEnd.getDate() + duration);
+        const newStart = new Date(newStartDate);
+        const newEnd = new Date(newStart);
+        newEnd.setDate(newEnd.getDate() + duration);
 
-    const visibleStart = newStart < renderer.rangeStart ? renderer.rangeStart : newStart;
-    const visibleEnd = newEnd > renderer.rangeEnd ? renderer.rangeEnd : newEnd;
+        const visibleStart = newStart < renderer.rangeStart ? renderer.rangeStart : newStart;
+        const visibleEnd = newEnd > renderer.rangeEnd ? renderer.rangeEnd : newEnd;
 
-    const barX = renderer.dateToX(visibleStart);
-    const barEndX = renderer.dateToX(visibleEnd) + DAY_WIDTH;
-    const barWidth = barEndX - barX;
+        const barX = renderer.dateToX(visibleStart);
+        const barEndX = renderer.dateToX(visibleEnd) + DAY_WIDTH;
+        const barWidth = barEndX - barX;
 
-    const originalRect = renderer.scheduleRects.find(r => r.schedule.id === schedule.id);
-    if (!originalRect) return;
+        const originalRect = renderer.scheduleRects.find(r => r.schedule.id === schedule.id);
+        if (!originalRect) return;
 
-    const isMemberDrag = targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
-        scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
-    const barY = isMemberDrag
-        ? HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING
-        : originalRect.y;
+        // 連動追従バー（2件目以降）は担当者変更の対象にならないため、常に自分の行に描画する
+        const isMemberDrag = index === 0 && targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
+            scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
+        const barY = isMemberDrag
+            ? HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING
+            : originalRect.y;
 
-    if (isMemberDrag) {
-        const rowY = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT;
-        ctx.fillStyle = 'rgba(45, 90, 39, 0.10)';
-        ctx.fillRect(0, rowY, renderer.timelineWidth, ROW_HEIGHT);
+        if (isMemberDrag) {
+            const rowY = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT;
+            ctx.fillStyle = 'rgba(45, 90, 39, 0.10)';
+            ctx.fillRect(0, rowY, renderer.timelineWidth, ROW_HEIGHT);
 
-        const labelCtx = renderer.labelCtx;
-        if (labelCtx) {
-            labelCtx.fillStyle = 'rgba(45, 90, 39, 0.10)';
-            labelCtx.fillRect(0, rowY, renderer.labelWidth, ROW_HEIGHT);
+            const labelCtx = renderer.labelCtx;
+            if (labelCtx) {
+                labelCtx.fillStyle = 'rgba(45, 90, 39, 0.10)';
+                labelCtx.fillRect(0, rowY, renderer.labelWidth, ROW_HEIGHT);
+            }
+
+            const targetRow = renderer.rows[targetRowIndex];
+            if (targetRow) {
+                ctx.fillStyle = '#2D5A27';
+                ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.globalAlpha = 0.9;
+                ctx.fillText(`→ ${targetRow.label}`, barX + barWidth / 2, barY - 5);
+                ctx.globalAlpha = 1.0;
+            }
         }
 
-        const targetRow = renderer.rows[targetRowIndex];
-        if (targetRow) {
-            ctx.fillStyle = '#2D5A27';
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = isMemberDrag ? '#2D5A27' : '#1D6FA5';  // --info
+        fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+        ctx.strokeStyle = '#2D5A27';  // --accent
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        strokeRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1.0;
+
+        if (!isMemberDrag) {
+            ctx.fillStyle = TEXT_PRIMARY;
             ctx.font = '600 11px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'center';
-            ctx.globalAlpha = 0.9;
-            ctx.fillText(`→ ${targetRow.label}`, barX + barWidth / 2, barY - 5);
-            ctx.globalAlpha = 1.0;
+            ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
         }
-    }
+    });
+}
 
-    ctx.globalAlpha = 0.6;
-    ctx.fillStyle = isMemberDrag ? '#2D5A27' : '#1D6FA5';  // --info
-    fillRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
-    ctx.strokeStyle = '#2D5A27';  // --accent
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    strokeRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1.0;
-
-    if (!isMemberDrag) {
-        ctx.fillStyle = TEXT_PRIMARY;
-        ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(newStartDate.slice(5), barX + barWidth / 2, barY - 5);
+/**
+ * ドラッグ中のスケジュールについて、連動対象（連結中の後工程）があれば
+ * そのプレビュー用エントリも含めた配列を組み立てる
+ * @param {Object} schedule - ドラッグ中のスケジュール
+ * @param {string} newStartDate - ドラッグ先の新しい開始日
+ * @returns {{schedule: Object, newStartDate: string}[]}
+ */
+function buildDragPreviews(schedule, newStartDate) {
+    const previews = [{ schedule, newStartDate }];
+    const linked = findLinkedBackSchedule(schedule, schedules);
+    if (linked) {
+        const frontNewEnd = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
+        const linkedNewStart = getNextBusinessDay(frontNewEnd, linked.member);
+        previews.push({ schedule: linked, newStartDate: linkedNewStart });
     }
+    return previews;
 }
 
 // ============================================
@@ -2442,10 +2464,11 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, dragState.schedule, dateStr, dragState.targetRowIndex);
+                        drawDragPreview(renderer, buildDragPreviews(dragState.schedule, dateStr), dragState.targetRowIndex);
                     }
                 } else if (rowChanged) {
-                    drawDragPreview(renderer, dragState.schedule, dragState.previewDate || dragState.originalStartDate, dragState.targetRowIndex);
+                    const fallbackDate = dragState.previewDate || dragState.originalStartDate;
+                    drawDragPreview(renderer, buildDragPreviews(dragState.schedule, fallbackDate), dragState.targetRowIndex);
                 }
 
                 // 端に近づいたら自動スクロール
