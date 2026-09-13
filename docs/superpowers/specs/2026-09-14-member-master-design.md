@@ -93,14 +93,19 @@ export let nextMemberId = 1;
 
 ## 新規データ取り込み時のマスタ自動追加
 
-Excelインポート（`js/excel-import.js`）や外部JSON取り込みで、マスタに存在しない
-担当者名を持つ見積・実績行が確定登録された場合、その名前を自動的に
-`archived: false` としてマスタ末尾へ追加する（`getActiveMemberNames()` に反映され、
-以降のクイック入力等で選択可能になる）。これを行わないと「マスタ経由でしか
+Excelインポート（`js/excel-import.js`）や外部JSON取り込み（`js/merge-json.js`）で、
+マスタに存在しない担当者名を持つ見積・実績行が確定登録された場合、その名前を
+自動的に `archived: false` としてマスタ末尾へ追加する（`getActiveMemberNames()` に
+反映され、以降のクイック入力等で選択可能になる）。これを行わないと「マスタ経由でしか
 新規担当者を使い始められない」という本機能の前提が、インポート経路では
-再び崩れてしまうため必須の挙動とする。追加共通処理として
-`js/members.js` に `ensureMembersExist(names: string[])` を用意し、
-インポート確定処理・移行処理の両方から呼び出す。
+再び崩れてしまうため必須の挙動とする。
+
+両インポート経路は最終的に共通の `js/merge-core.js` の `applyMerge()` を通って
+State に反映されるため、追加共通処理 `js/members.js` の
+`ensureMembersExist(names: string[])` は `applyMerge()` 側の1箇所（確定後、
+`entities.estimates`/`entities.actuals` の `added`/`overwritten後` から
+担当者名を集めて呼び出す）に実装すれば両経路をまとめてカバーできる。
+初回移行処理からも同じ関数を呼び出す。
 
 ## UI（設定画面）
 
@@ -174,7 +179,7 @@ export function getAllMemberNames()
 | `js/actual.js` | 実績編集モーダルの`editActualMember`再構築（L1142付近） | 既存データの編集 | `getAllMemberNames()` |
 | `js/actual.js` | `populateOtherWorkMembers()`（L1306付近） | 既存その他作業の編集 | `getAllMemberNames()` |
 | `js/other-work.js` | 全担当者取得・0人時エラーメッセージ | その他作業一括登録 | `getActiveMemberNames()`。メッセージを「担当者管理から先に登録してください」に更新（設定画面への導線を明示） |
-| `js/excel-import.js` | インポート確定処理 | 取り込んだ見積・実績行の担当者名をマスタに反映 | `ensureMembersExist(names)` を確定登録時に呼ぶ |
+| `js/merge-core.js` | `applyMerge()` の確定処理（`entities.estimates`/`entities.actuals` 確定後） | Excelインポート・バックアップJSONマージ両方で取り込んだ担当者名をマスタに反映 | `ensureMembersExist(names)`。両方の取り込み経路（`excel-import.js`・`merge-json.js`）が共通で通る唯一の確定処理箇所のため、ここ1箇所に実装を集約する（各アダプタ側の変更は不要） |
 
 ## テスト方針
 
