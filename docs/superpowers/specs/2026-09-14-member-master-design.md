@@ -148,15 +148,31 @@ export function getAllMemberNames()
 
 ## 書き換え対象（既存の「見積・実績からSetを作る」ロジックを置換）
 
+計画時の精査で、当初案に含めていた `js/schedule.js`（`updateScheduleMemberOptions()`は
+特定タスク・工程に紐づく既存見積の担当者だけを出す設計、`scheduleFilterMember`は
+`schedules`配列から直接導出され既にマスタと無関係に履歴を保持できる）と
+`js/modal.js`（内訳モーダル・残存時間モーダルはいずれも特定タスク・工程の
+既存見積/実績から導出する表示専用で、新規担当者の入り口ではない）は、
+マスタ導入の目的（担当者を単独で新規登録できるようにする）と無関係であり
+**変更不要**と判断した。同様に `js/report-analytics.js` の `getAllMembers()` は
+既存データを集計するだけの内部関数で、マスタの有無に関わらず正しく動作するため
+**変更不要**。
+
+行の使い分けは「新規にデータを作る入力」か「既存データの編集・絞り込み・表示」かで判断する。
+前者はアクティブなマスタのみ（`getActiveMemberNames()`）、後者はアーカイブ済みも含めて
+履歴を失わない（`getAllMemberNames()`）。
+
 | ファイル | 箇所 | 用途 | 使うヘルパー |
 |---|---|---|---|
-| `js/ui.js` | `updateMemberOptions()` | 見積タブ・クイック入力・見積登録モーダル・その他作業・実績編集・休暇登録の各select | `getActiveMemberNames()` |
-| `js/quick.js` | クイック入力のタスク一覧構築（`loadQuickTaskList`系） | 担当者フィルタ | `getAllMemberNames()` |
-| `js/estimate-add.js` | `getAllMembers()`／その他作業select初期化 | 見積追加行・その他作業 | `getActiveMemberNames()` |
-| `js/estimate-edit.js` | 編集モーダルの追加担当者行（`allMembers`集計） | 既存見積の担当者変更 | `getActiveMemberNames()` |
-| `js/schedule.js` | `updateScheduleMemberOptions()`／`scheduleFilterMember`生成箇所 | スケジュール登録／フィルタ | 登録＝`getActiveMemberNames()`、フィルタ＝`getAllMemberNames()` |
-| `js/actual.js` | 複数箇所の `allMembers` 集計（L184, L469, L1142, L1310） | 実績一覧・フィルタ | `getAllMemberNames()` |
-| `js/modal.js` | 内訳モーダルの担当者集計・実績追加select | 表示＝`getAllMemberNames()`、select＝`getActiveMemberNames()` |
+| `js/ui.js` | `updateMemberOptions()` 内、`est{P}_member`/`quickEst{P}_member`/`addEst{P}_member`（見積新規登録行）、`quickMember`（クイック入力の担当者選択）、`otherWorkMember`（その他作業新規登録）、`quickVacationMember`（休暇新規登録） | 新規データ入力 | `getActiveMemberNames()` |
+| `js/ui.js` | `updateMemberOptions()` 内、`editActualMember`（実績編集select）、`editEstimateMember`（見積編集select） | 既存データの編集 | `getAllMemberNames()` |
+| `js/quick.js` | `updateQuickMemberSelect()` | クイック入力の担当者選択（フィルタ兼・新規実績の担当者上書け） | `getActiveMemberNames()` |
+| `js/estimate-add.js` | `getAllMembers()`（`__all__`一括登録時）／`initOtherWorkMemberSelect()` | その他工数の新規登録・一括登録対象 | `getActiveMemberNames()` |
+| `js/estimate-edit.js` | 編集モーダルの担当者select・追加担当者行（`allMembers`集計） | 既存タスクの担当者変更・追加割当 | `getAllMemberNames()`（既存タスク編集コンテキストのため） |
+| `js/actual.js` | `updateMemberSelectOptions()`（`actualMemberSelect`/`actualMemberSelect2`：実績一覧の担当者フィルタ） | フィルタ | `getAllMemberNames()` |
+| `js/actual.js` | カレンダー表示の担当者行構築（L469付近） | 表示 | `getAllMemberNames()` |
+| `js/actual.js` | 実績編集モーダルの`editActualMember`再構築（L1142付近） | 既存データの編集 | `getAllMemberNames()` |
+| `js/actual.js` | `populateOtherWorkMembers()`（L1306付近） | 既存その他作業の編集 | `getAllMemberNames()` |
 | `js/other-work.js` | 全担当者取得・0人時エラーメッセージ | その他作業一括登録 | `getActiveMemberNames()`。メッセージを「担当者管理から先に登録してください」に更新（設定画面への導線を明示） |
 | `js/excel-import.js` | インポート確定処理 | 取り込んだ見積・実績行の担当者名をマスタに反映 | `ensureMembersExist(names)` を確定登録時に呼ぶ |
 
