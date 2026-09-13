@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     shiftDate, isValidDateString, changedFields, applyBulkPatch,
     duplicateActuals, deleteActuals, summarizeField, findByCondition, sameTaskIds, displayValue,
-    validateActual,
+    validateActual, taskOptionsForVersions,
 } from '../js/actual-bulk-core.js';
 
 const A = (over) => ({ id: 1, date: '2026-08-17', version: 'V2.3', task: '帳票A', process: 'PG', member: '田中', hours: 6, createdAt: 'x', ...over });
@@ -150,5 +150,34 @@ describe('findByCondition / sameTaskIds', () => {
         const all = [...DATA, A({ id: 6, member: '鈴木', date: '2026-08-20' })];
         assert.deepEqual(sameTaskIds(all, all[0], { sameMember: true }), [1, 3]);
         assert.deepEqual(sameTaskIds(all, all[0], { sameMember: false }), [1, 3, 6]);
+    });
+});
+
+describe('taskOptionsForVersions', () => {
+    const EST = [
+        { version: 'V2.3', task: '帳票A', process: 'UI', member: '田中', hours: 10 },
+        { version: 'V2.3', task: '検索画面', process: 'PG', member: '田中', hours: 8 },
+        { version: 'V2.4', task: '帳票A（追補）', process: 'PG', member: '佐藤', hours: 4 },
+        { version: '', task: '定例会', process: '', member: '田中', hours: 1 },
+    ];
+    test('null なら版数で絞らず全対応を返す', () => {
+        assert.deepEqual(taskOptionsForVersions(EST, DATA, null),
+            ['帳票A', '検索画面', '帳票A（追補）', '定例会', '打ち合わせ', 'ログイン']);
+    });
+    test('単一版数ならその版数の見積＋実績の対応だけ', () => {
+        assert.deepEqual(taskOptionsForVersions(EST, DATA, ['V2.3']), ['帳票A', '検索画面', 'ログイン']);
+        assert.deepEqual(taskOptionsForVersions(EST, DATA, ['V2.4']), ['帳票A（追補）']);
+    });
+    test('複数版数なら和集合（重複は1つ）', () => {
+        assert.deepEqual(taskOptionsForVersions(EST, DATA, ['V2.3', 'V2.4']),
+            ['帳票A', '検索画面', '帳票A（追補）', 'ログイン']);
+    });
+    test("'' はその他工数（版数なし）。version キーが無い実績も含む", () => {
+        const noVersionKey = { id: 7, date: '2026-08-17', task: 'その他', process: '', member: '田中', hours: 1 };
+        assert.deepEqual(taskOptionsForVersions(EST, [...DATA, noVersionKey], ['']),
+            ['定例会', '打ち合わせ', 'その他']);
+    });
+    test('該当する対応が無い版数なら空配列', () => {
+        assert.deepEqual(taskOptionsForVersions(EST, DATA, ['V9.9']), []);
     });
 });

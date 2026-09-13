@@ -4,13 +4,13 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 42 ファイル / 40,583 行
+## js/ — 42 ファイル / 40,603 行
 
-### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
-- export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
+### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (193行)
+- export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176, taskOptionsForVersions:189
 
-### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (581行)
-- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:72, selectActualIds:83, deselectActualIds:93, getSelectedActuals:99, updateActualSelectionUI:121, isActualConditionOpen:181, getActualCondition:184, updateActualConditionHits:214, toggleActualConditionPopover:233, closeActualConditionPopover:243, applyActualCondition:254, initActualConditionEvents:262, openBulkActualEditModal:401, closeBulkActualEditModal:416, applyBulkActualEdit:465, deleteSelectedActuals:502, openBulkActualCopyModal:525, closeBulkActualCopyModal:535, applyBulkActualCopy:540, initBulkActualCopyEvents:554, showUndoToast:561, initBulkActualModalEvents:574
+### js/actual-bulk.js — 実績の一括変更 — UI（選択状態・選択バー・条件で選択・一括編集/複製モーダル） (588行)
+- export: toggleActualSelectionMode:30, toggleActualSelection:46, toggleAllVisibleActuals:63, clearActualSelection:72, selectActualIds:83, deselectActualIds:93, getSelectedActuals:99, updateActualSelectionUI:121, isActualConditionOpen:181, getActualCondition:184, updateActualConditionHits:214, toggleActualConditionPopover:233, closeActualConditionPopover:243, applyActualCondition:254, initActualConditionEvents:262, openBulkActualEditModal:408, closeBulkActualEditModal:423, applyBulkActualEdit:472, deleteSelectedActuals:509, openBulkActualCopyModal:532, closeBulkActualCopyModal:542, applyBulkActualCopy:547, initBulkActualCopyEvents:561, showUndoToast:568, initBulkActualModalEvents:581
 
 ### js/actual-timeline.js — タイムライン実績入力モジュール (actual-timeline.js) (3387行)
 - export: initActualTimeline:95, renderActualTimeline:144, deactivateActualTimeline:2877

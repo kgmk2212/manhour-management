@@ -11,7 +11,7 @@ import {
 import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
 import { PROCESS, BULK_EDIT } from './constants.js';
 import { pushAction, undo } from './history.js';
-import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString, findByCondition } from './actual-bulk-core.js';
+import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString, findByCondition, taskOptionsForVersions } from './actual-bulk-core.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -299,12 +299,19 @@ function newPatchUI() {
 function versionOptions() {
     return [...new Set([...estimates.map(e => e.version), ...actuals.map(a => a.version)].filter(Boolean))].sort();
 }
-/** 対応名候補。version が null なら全体、'' はその他工数の実績由来 */
-function taskOptions(version) {
-    const src = version === null
-        ? [...estimates.map(e => e.task), ...actuals.map(a => a.task)]
-        : [...estimates.filter(e => e.version === version).map(e => e.task), ...actuals.filter(a => a.version === version).map(a => a.task)];
-    return [...new Set(src.filter(Boolean))];
+/** 対応名候補。versions が null なら全体、'' はその他工数（版数なし）由来 */
+function taskOptions(versions) {
+    return taskOptionsForVersions(estimates, actuals, versions);
+}
+/**
+ * 対応名の候補を絞る版数。版数を「変更する」ならその版数、変更しないなら対象実績が持つ版数
+ * （版数をまたぐ対応名が候補に混ざらないようにする）
+ * @param {object[]} targets 一括編集の対象実績
+ * @returns {string[]}
+ */
+function taskScopeVersions(targets) {
+    if (ui.version.on) return [ui.version.val];
+    return [...new Set(targets.map(a => a.version ?? ''))];
 }
 function memberOptions() {
     return sortMembers([...new Set([...estimates.map(e => e.member), ...actuals.map(a => a.member)].filter(Boolean))], memberOrder || '');
@@ -341,7 +348,7 @@ function renderPatchFields(targets) {
             <div class="bk-field-body">${body}</div>
         </div>`;
     const two = (field, on) => segBtn(field, 'keep', on ? 'set' : 'keep', '変更しない') + segBtn(field, 'set', on ? 'set' : 'keep', '変更する');
-    const tOpts = taskOptions(u.version.on ? u.version.val : null);
+    const tOpts = taskOptions(taskScopeVersions(targets));
     const dm = u.date.mode;
     $('bulkActualFields').innerHTML = [
         fld('version', !u.version.on, two('version', u.version.on),
@@ -403,7 +410,7 @@ export function openBulkActualEditModal() {
     if (!targets.length) { showAlert('実績を選択してください', false); return; }
     ui = newPatchUI();
     ui.version.val = versionOptions()[0] || '';
-    ui.task.val = taskOptions(null)[0] || '__free__';
+    ui.task.val = taskOptions(taskScopeVersions(targets))[0] || '__free__';
     ui.process.val = PROCESS.TYPES[0];
     ui.member.val = memberOptions()[0] || '';
     ui.date.value = targets[0].date;
@@ -420,7 +427,7 @@ export function closeBulkActualEditModal() {
 
 /** 版数の指定/選択が変わった直後、対応名が新しい候補に無ければ候補の先頭（無ければ自由入力）へ差し替える */
 function resyncTaskForVersion() {
-    const to = taskOptions(ui.version.on ? ui.version.val : null);
+    const to = taskOptions(taskScopeVersions(getSelectedActuals()));
     if (!to.includes(ui.task.val) && ui.task.val !== '__free__') ui.task.val = to[0] || '__free__';
 }
 

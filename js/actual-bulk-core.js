@@ -178,3 +178,16 @@ export function sameTaskIds(actuals, seed, { sameMember = false } = {}) {
         .filter(a => a.version === seed.version && a.task === seed.task && (!sameMember || a.member === seed.member))
         .map(a => a.id);
 }
+
+/**
+ * 指定した版数に属する対応名の候補（見積＋実績。空と重複は除く。出現順）
+ * @param {object[]} estimates
+ * @param {object[]} actuals
+ * @param {string[]|null} versions 絞り込む版数。null なら版数で絞らない。'' はその他工数（版数なし）
+ * @returns {string[]}
+ */
+export function taskOptionsForVersions(estimates, actuals, versions) {
+    const inScope = versions === null ? () => true : (r) => versions.includes(r.version ?? '');
+    const src = [...estimates, ...actuals].filter(inScope).map(r => r.task);
+    return [...new Set(src.filter(Boolean))];
+}
