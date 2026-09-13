@@ -2737,8 +2737,8 @@ export function evaluateMatrixCellColor({ estHours = 0, actHours = 0, remainingH
             const ratio = eac / est;
             if (ratio > 1.1) return 'over';          // 10%超過 → 赤
             if (ratio > 1.0) return 'warning';       // 0-10%超過 → 黄
-            if (ratio < 0.9) return 'safe-bright';   // 10%以上余裕 → 明るい緑
-            return 'safe-normal';                    // 0-10%余裕 → 緑
+            if (ratio < 0.9) return 'safe-bright';   // 10%以上余裕（乖離大） → 黄緑
+            return 'safe-normal';                    // 0-10%余裕（見積どおり） → 濃い緑
         }
         return '';
     }

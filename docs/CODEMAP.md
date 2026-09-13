@@ -141,4 +141,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9416行
+- style.css — 9418行
