@@ -334,25 +334,33 @@ export function cascadeShift(changedSchedule, oldEndDate) {
 }
 
 /**
+ * scheduleがsrc（基準スケジュール）に依存しているか判定
+ * 「同版数・同対応名で工程順が後」または「同担当者でstartDateがカットオフ日以降」を依存とみなす
+ * @param {Object} schedule - 判定対象
+ * @param {Object} src - 基準スケジュール（version/task/process/member）
+ * @param {string} cutoffDate - この日付以降startDateなら対象
+ * @returns {boolean}
+ */
+function isDependentSchedule(schedule, src, cutoffDate) {
+    const order = PROCESS.TYPES;
+    if (schedule.version === src.version && schedule.task === src.task) {
+        const srcIdx = order.indexOf(src.process);
+        const targetIdx = order.indexOf(schedule.process);
+        if (targetIdx > srcIdx && schedule.startDate >= cutoffDate) return true;
+    }
+    if (schedule.member === src.member && schedule.startDate >= cutoffDate) return true;
+    return false;
+}
+
+/**
  * 依存する後続スケジュールを検索
  */
 function findDependentSchedules(src, srcOldEndDate) {
     const targets = [];
-    const order = PROCESS.TYPES;
 
     schedules.forEach(s => {
         if (s.id === src.id) return;
-
-        if (s.version === src.version && s.task === src.task) {
-            const srcIdx = order.indexOf(src.process);
-            const targetIdx = order.indexOf(s.process);
-            if (targetIdx > srcIdx && s.startDate >= srcOldEndDate) {
-                targets.push(s);
-                return;
-            }
-        }
-
-        if (s.member === src.member && s.startDate >= srcOldEndDate) {
+        if (isDependentSchedule(s, src, srcOldEndDate)) {
             targets.push(s);
         }
     });
@@ -418,17 +426,7 @@ export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours 
 
             schedules.forEach(s => {
                 if (processed.has(s.id)) return;
-
-                let isDependent = false;
-                const order = PROCESS.TYPES;
-                if (s.version === src.version && s.task === src.task) {
-                    const srcIdx = order.indexOf(src.process);
-                    const targetIdx = order.indexOf(s.process);
-                    if (targetIdx > srcIdx && s.startDate >= src.oldEndDate) isDependent = true;
-                }
-                if (s.member === src.member && s.startDate >= src.oldEndDate) isDependent = true;
-
-                if (!isDependent) return;
+                if (!isDependentSchedule(s, src, src.oldEndDate)) return;
                 processed.add(s.id);
 
                 const date = new Date(s.startDate);

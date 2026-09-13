@@ -195,6 +195,38 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
 
         assert.equal(State.schedules.find(s => s.id === insertedId), undefined);
     });
+
+    test('3段階の連鎖（sch_1→sch_2→sch_3）が正しく後ろ倒しされる', () => {
+        const target = makeSchedule(); // sch_1: 2026-09-14〜09-18, 40h
+        const follower1 = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        const follower2 = {
+            id: 'sch_3', version: 'V1', task: 'T3', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower1, follower2]);
+
+        const result = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+
+        // follower1・follower2 とも同担当者・startDate>=旧endDateのため連鎖対象になるはず
+        assert.equal(result.cascadeResults.length, 2);
+        const updated2 = State.schedules.find(s => s.id === 'sch_2');
+        const updated3 = State.schedules.find(s => s.id === 'sch_3');
+        assert.ok(updated2.startDate > '2026-09-18');
+        assert.ok(updated3.startDate > '2026-09-18');
+        // processedのSetにより二重処理されず、それぞれ1回だけ結果に現れる
+        const ids = result.cascadeResults.map(r => r.id).sort();
+        assert.deepEqual(ids, ['sch_2', 'sch_3']);
+    });
 });
 
 describe('analyzeImpact', () => {
