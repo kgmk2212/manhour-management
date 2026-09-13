@@ -1,0 +1,137 @@
+// ============================================
+// [GANTT-CHART] スケジュール中断・差し込み管理
+// ============================================
+
+import {
+    schedules, setSchedules, nextScheduleId, setNextScheduleId,
+    scheduleSettings, estimates
+} from './state.js';
+import {
+    isBusinessDay, calculateEndDate, countBusinessDays, formatDateForCheck
+} from './schedule.js';
+import { SCHEDULE, PROCESS } from './constants.js';
+
+/**
+ * 翌営業日を取得
+ * @param {string} dateStr - 基準日（YYYY-MM-DD）
+ * @param {string} member - 担当者名
+ * @returns {string} 翌営業日（YYYY-MM-DD）
+ */
+export function getNextBusinessDay(dateStr, member) {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + 1);
+    let guard = 0;
+    while (!isBusinessDay(date, member)) {
+        date.setDate(date.getDate() + 1);
+        if (++guard > 365) return formatDateForCheck(date);
+    }
+    return formatDateForCheck(date);
+}
+
+/**
+ * 指定日までの消化工数を自動計算
+ * 既存の中断がある場合は、該当セグメント内の営業日から算出
+ * @param {Object} schedule - スケジュールオブジェクト
+ * @param {string} splitDate - 中断日（YYYY-MM-DD）
+ * @returns {number} 消化工数（時間）
+ */
+export function calculateConsumedHoursAtDate(schedule, splitDate) {
+    const hoursPerDay = scheduleSettings.hoursPerDay || 8;
+    const interruptions = schedule.interruptions || [];
+
+    if (interruptions.length === 0) {
+        return countBusinessDays(schedule.startDate, splitDate, schedule.member) * hoursPerDay;
+    }
+
+    const segments = calculateSegments(schedule);
+    let consumed = 0;
+
+    for (const seg of segments) {
+        if (splitDate < seg.startDate) break;
+        if (splitDate <= seg.endDate) {
+            consumed += countBusinessDays(seg.startDate, splitDate, schedule.member) * hoursPerDay;
+            break;
+        }
+        consumed += seg.hours;
+    }
+
+    return Math.min(consumed, schedule.estimatedHours);
+}
+
+/**
+ * スケジュールをセグメントに分割
+ * @param {Object} schedule - スケジュールオブジェクト
+ * @returns {Array<{startDate: string, endDate: string, hours: number, index: number}>}
+ */
+export function calculateSegments(schedule) {
+    const interruptions = schedule.interruptions || [];
+
+    if (interruptions.length === 0) {
+        return [{
+            startDate: schedule.startDate,
+            endDate: schedule.endDate,
+            hours: schedule.estimatedHours,
+            index: 0
+        }];
+    }
+
+    const sorted = [...interruptions].sort((a, b) => a.consumedHours - b.consumedHours);
+    const segments = [];
+    let segStartDate = schedule.startDate;
+    let prevConsumed = 0;
+
+    sorted.forEach((int, i) => {
+        const segHours = int.consumedHours - prevConsumed;
+        if (segHours <= 0) {
+            console.warn('calculateSegments: skipping interruption with non-positive segment hours', int);
+            return;
+        }
+
+        const segEndDate = calculateEndDate(segStartDate, segHours, schedule.member);
+        segments.push({
+            startDate: segStartDate,
+            endDate: segEndDate,
+            hours: segHours,
+            index: i
+        });
+
+        if (int.insertedScheduleId) {
+            const inserted = schedules.find(s => s.id === int.insertedScheduleId);
+            if (inserted) {
+                segStartDate = getNextBusinessDay(inserted.endDate, schedule.member);
+            } else {
+                segStartDate = getNextBusinessDay(segEndDate, schedule.member);
+            }
+        } else {
+            segStartDate = getNextBusinessDay(segEndDate, schedule.member);
+        }
+
+        prevConsumed = int.consumedHours;
+    });
+
+    const remainingHours = schedule.estimatedHours - prevConsumed;
+    if (remainingHours > 0) {
+        const segEndDate = calculateEndDate(segStartDate, remainingHours, schedule.member);
+        segments.push({
+            startDate: segStartDate,
+            endDate: segEndDate,
+            hours: remainingHours,
+            index: sorted.length
+        });
+    }
+
+    return segments;
+}
+
+/**
+ * 中断を考慮して endDate を再計算
+ * 既知の制約: interruptions が0件になった場合は schedule.endDate をそのまま返す
+ * （calculateEndDate による再計算は行わない）。redesign オリジナルの挙動を踏襲。
+ * @param {Object} schedule - スケジュールオブジェクト
+ * @returns {string} 新しい endDate（YYYY-MM-DD）
+ */
+export function recalculateEndDateWithInterruptions(schedule) {
+    const segments = calculateSegments(schedule);
+    if (segments.length === 0) return schedule.startDate;
+    return segments[segments.length - 1].endDate;
+}
