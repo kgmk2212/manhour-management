@@ -4,6 +4,13 @@
 
 import { monthColors } from './state.js';
 
+// 版数文字列の自然順ソート比較関数（"V2.0" < "V10.0" となるよう数値部分を数値として比較する。
+// 単純な文字列sort()だと "V10.0" が "V2.0" より前に来てしまい、フィルタの「最近のN件」表示で
+// 実際の最新版数が外れる不具合の原因になる）
+export function compareVersions(a, b) {
+    return String(a).localeCompare(String(b), 'ja', { numeric: true, sensitivity: 'base' });
+}
+
 // カスタムアラート表示
 export function showAlert(message, dismissible = false) {
     const modal = document.getElementById('customAlert');

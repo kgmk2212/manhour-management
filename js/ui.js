@@ -11,7 +11,7 @@ import {
     estimateFilterState, reportFilterState,
     setEstimateFilterState, setReportFilterState
 } from './state.js';
-import { normalizeEstimate, sortMembers, enableDragScroll } from './utils.js';
+import { normalizeEstimate, sortMembers, enableDragScroll, compareVersions } from './utils.js';
 import { STORAGE_KEYS, UI } from './constants.js';
 
 // タブの順序を定義
@@ -1551,8 +1551,8 @@ function getSegmentVisibleLimit(maxItems) {
 }
 
 /**
- * 表示する項目を「最近の maxItems 件」に絞る。
- * items は昇順（末尾が最新）で渡される前提。
+ * 表示する項目を「選択中の項目を末尾として、そこから遡った maxItems 件」に絞る。
+ * items は昇順（配列の後ろほど新しい）で渡される前提。
  *
  * @returns {{visibleItems: Array, hiddenCount: number, collapsible: boolean}}
  */
@@ -1567,8 +1567,14 @@ function selectRecentSegmentItems(items, currentValue, limit, expanded) {
         return { visibleItems: items, hiddenCount: 0, collapsible };
     }
 
-    // 末尾（＝最近）から limit 件。選択中の項目は古くても必ず残す
-    const keep = new Set(dataItems.slice(-limit).map(item => item.value));
+    // 選択中の項目を基準に、そこから遡って limit 件を残す。
+    // 単純に末尾（配列上の最新）から limit 件を取ると、見積の作業予定月のように
+    // 選択中より未来のデータが存在する場合に未来側だけが残り、選択中の項目より
+    // 過去が一切見えなくなってしまうため（選択中が見つからない場合は従来どおり末尾から）
+    const currentIdx = dataItems.findIndex(item => item.value === currentValue);
+    const endIdx = currentIdx >= 0 ? currentIdx : dataItems.length - 1;
+    const startIdx = Math.max(0, endIdx - limit + 1);
+    const keep = new Set(dataItems.slice(startIdx, endIdx + 1).map(item => item.value));
     if (!isAggregate(currentValue)) keep.add(currentValue);
     const kept = dataItems.filter(item => keep.has(item.value));
 
@@ -2298,7 +2304,7 @@ export function updateVersionOptions() {
             if (a.version) versions.add(a.version);
         });
 
-        const sortedVersions = Array.from(versions).sort();
+        const sortedVersions = Array.from(versions).sort(compareVersions);
 
         const versionSelects = [
             'estVersion',
@@ -2418,9 +2424,9 @@ export function updateReportVersionOptions(sortedVersions, selectedMonth = 'all'
                     versions.add(a.version);
                 }
             });
-            sortedVersions = Array.from(versions).sort();
+            sortedVersions = Array.from(versions).sort(compareVersions);
         } else {
-            sortedVersions = sortedVersions.slice().sort();
+            sortedVersions = sortedVersions.slice().sort(compareVersions);
         }
 
         const select = document.getElementById('reportVersion');
@@ -2767,7 +2773,7 @@ export function updateEstimateVersionOptions(selectedMonth = 'all') {
         }
     });
 
-    const sortedVersions = Array.from(versions).sort().reverse();
+    const sortedVersions = Array.from(versions).sort(compareVersions).reverse();
 
     select.innerHTML = '<option value="all">全版数</option>';
     if (select2) select2.innerHTML = '<option value="all">全版数</option>';
