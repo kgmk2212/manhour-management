@@ -6,6 +6,7 @@
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay } from './schedule.js';
+import { calculateSegments } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
 
 // ============================================
@@ -1059,6 +1060,11 @@ export class GanttChartRenderer {
     drawScheduleBar(schedule, rowY) {
         const ctx = this.timelineCtx;
 
+        if (schedule.interruptions && schedule.interruptions.length > 0) {
+            this.drawSplitScheduleBar(schedule, rowY);
+            return;
+        }
+
         const startDate = new Date(schedule.startDate);
         const endDate = new Date(schedule.endDate);
 
@@ -1277,6 +1283,242 @@ export class GanttChartRenderer {
             y: barY,
             width: barWidth,
             height: BAR_HEIGHT
+        });
+    }
+
+    /**
+     * 中断のあるスケジュールをセグメント単位で分割描画する。
+     * drawScheduleBar と同じ視覚言語（進捗按分・休日オーバーレイ・レビューストライプ・
+     * 長押し/新規作成ハイライト）をセグメントごとに適用し、境界に ✂ マークと
+     * 点線コネクタを重ねる。
+     */
+    drawSplitScheduleBar(schedule, rowY) {
+        const ctx = this.timelineCtx;
+        const segments = calculateSegments(schedule);
+        if (segments.length === 0) return;
+
+        const isCompletedVersion = this.completedVersions.has(schedule.version);
+        const taskColor = isCompletedVersion
+            ? this.desaturateColor(getTaskColor(schedule.version, schedule.task), 0.7)
+            : getTaskColor(schedule.version, schedule.task);
+        const lightColor = this.lightenColor(taskColor, 0.6);
+
+        if (isCompletedVersion) {
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+        }
+
+        const barY = rowY + ROW_PADDING;
+        const rowIndex = Math.round((rowY - HEADER_HEIGHT) / ROW_HEIGHT);
+        const isEvenRow = rowIndex % 2 === 0;
+
+        // スケジュール全体の進捗を、セグメントの見積工数で先頭から按分する
+        const progressInfo = this.getScheduleProgress(schedule);
+        let doneHours = schedule.estimatedHours > 0
+            ? schedule.estimatedHours * (progressInfo.progressRate / 100)
+            : 0;
+
+        const segmentRects = [];
+        const sysFont = 'system-ui, -apple-system, sans-serif';
+
+        segments.forEach((seg, i) => {
+            const segStart = new Date(seg.startDate);
+            const segEnd = new Date(seg.endDate);
+
+            const visStart = segStart < this.rangeStart ? this.rangeStart : segStart;
+            const visEnd = segEnd > this.rangeEnd ? this.rangeEnd : segEnd;
+            if (visStart > visEnd) {
+                doneHours = Math.max(0, doneHours - seg.hours);
+                return;
+            }
+
+            const barX = this.dateToX(visStart);
+            const barEndX = this.dateToX(visEnd) + DAY_WIDTH;
+            const barWidth = barEndX - barX;
+
+            const holidayDays = [];
+            const current = new Date(visStart);
+            while (current <= visEnd) {
+                if (!isBusinessDay(current, schedule.member)) {
+                    const hx = this.dateToX(current);
+                    let bgColor;
+                    if (isWeekend(current)) {
+                        bgColor = isEvenRow ? '#FAF9F7' : '#F5F4F2';
+                    } else if (isHoliday(current)) {
+                        bgColor = isEvenRow ? '#FFF8ED' : '#FFF3E0';
+                    } else {
+                        bgColor = isEvenRow ? '#F5F0F7' : '#EFE9F2';
+                    }
+                    holidayDays.push({ x: hx, bgColor });
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            const segProgressRatio = seg.hours > 0 ? Math.min(1, Math.max(0, doneHours / seg.hours)) : 1;
+            doneHours = Math.max(0, doneHours - seg.hours);
+
+            ctx.save();
+            clipRoundRect(ctx, barX, barY, barWidth, BAR_HEIGHT, BAR_RADIUS);
+
+            ctx.fillStyle = taskColor;
+            ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
+
+            if (segProgressRatio < 1) {
+                if (segProgressRatio > 0) {
+                    const doneWidth = barWidth * segProgressRatio;
+                    ctx.fillStyle = lightColor;
+                    ctx.fillRect(barX + doneWidth, barY, barWidth - doneWidth, BAR_HEIGHT);
+                } else {
+                    ctx.fillStyle = lightColor;
+                    ctx.fillRect(barX, barY, barWidth, BAR_HEIGHT);
+                }
+            }
+
+            holidayDays.forEach(({ x, bgColor }) => {
+                ctx.globalAlpha = 0.82;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(x, barY, DAY_WIDTH, BAR_HEIGHT);
+            });
+            ctx.globalAlpha = 1.0;
+
+            if (schedule.isReview) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                ctx.lineWidth = 3;
+                const stripeGap = 8;
+                for (let sx = barX - BAR_HEIGHT; sx < barX + barWidth + BAR_HEIGHT; sx += stripeGap) {
+                    ctx.beginPath();
+                    ctx.moveTo(sx, barY + BAR_HEIGHT);
+                    ctx.lineTo(sx + BAR_HEIGHT, barY);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.restore();
+
+            // 長押し/新規作成ハイライトはセグメント単位で適用する
+            // （複数セグメントにまたがる一体の枠線は将来改善の余地として許容する）
+            if (this.highlightedScheduleId === schedule.id) {
+                ctx.save();
+                ctx.shadowColor = taskColor;
+                ctx.shadowBlur = 8;
+                ctx.strokeStyle = taskColor;
+                ctx.lineWidth = 2;
+                strokeRoundRect(ctx, barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2, BAR_RADIUS);
+                ctx.restore();
+            }
+            if (this.newlyCreatedIds.has(schedule.id)) {
+                ctx.save();
+                ctx.shadowColor = SCHEDULE.COLORS.HOLIDAY;
+                ctx.shadowBlur = 10;
+                ctx.strokeStyle = '#C4841D';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([4, 2]);
+                strokeRoundRect(ctx, barX - 1, barY - 1, barWidth + 2, BAR_HEIGHT + 2, BAR_RADIUS);
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+
+            // ✂マーク（セグメント境界）
+            ctx.save();
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.85;
+            if (i < segments.length - 1) {
+                ctx.textAlign = 'right';
+                ctx.fillText('✂', barX + barWidth - 2, barY + BAR_HEIGHT - 3);
+            }
+            if (i > 0) {
+                ctx.textAlign = 'left';
+                ctx.fillText('✂', barX + 2, barY + BAR_HEIGHT - 3);
+            }
+            ctx.restore();
+
+            // テキスト: 工程名（先頭以外は「(続)」）。%とステータスアイコンは最終セグメントのみ
+            if (barWidth > 30) {
+                const barCenterY = barY + BAR_HEIGHT / 2;
+                ctx.textBaseline = 'middle';
+                const label = i === 0 ? (schedule.process || '') : `${schedule.process || ''}(続)`;
+                const isLastSegment = i === segments.length - 1;
+
+                if (isLastSegment) {
+                    const progressRate = Math.round(progressInfo.progressRate);
+                    const percentText = `${progressRate}%`;
+                    let statusIcon = '';
+                    if (schedule.status === SCHEDULE.STATUS.COMPLETED) {
+                        statusIcon = '✓';
+                    } else if (this.isDelayed(schedule)) {
+                        statusIcon = '!';
+                    }
+
+                    ctx.font = `bold 10px ${sysFont}`;
+                    const percentWidth = ctx.measureText(percentText).width;
+                    ctx.font = `bold 11px ${sysFont}`;
+                    const iconWidth = statusIcon ? ctx.measureText(statusIcon).width + 2 : 0;
+                    ctx.font = `600 11px ${sysFont}`;
+                    const labelWidth = ctx.measureText(label).width;
+
+                    const rightPad = 6;
+                    const processLeftPad = 6;
+                    const gap = 4;
+                    const rightOccupied = percentWidth + iconWidth + rightPad;
+                    const fitsInside = barWidth >= processLeftPad + labelWidth + gap + rightOccupied;
+
+                    ctx.font = `600 11px ${sysFont}`;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, barX + processLeftPad, barCenterY);
+
+                    if (fitsInside) {
+                        if (statusIcon) {
+                            ctx.font = `bold 11px ${sysFont}`;
+                            ctx.textAlign = 'right';
+                            ctx.fillText(statusIcon, barX + barWidth - rightPad - percentWidth - 2, barCenterY);
+                        }
+                        ctx.textAlign = 'right';
+                        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                        ctx.font = `bold 10px ${sysFont}`;
+                        ctx.fillText(percentText, barX + barWidth - rightPad, barCenterY);
+                    }
+                } else {
+                    ctx.font = `600 11px ${sysFont}`;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, barX + 6, barCenterY);
+                }
+            }
+
+            segmentRects.push({ barX, barY, barWidth });
+        });
+
+        for (let i = 0; i < segmentRects.length - 1; i++) {
+            const r1 = segmentRects[i];
+            const r2 = segmentRects[i + 1];
+            const lineY = barY + BAR_HEIGHT / 2;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = taskColor;
+            ctx.globalAlpha = 0.4;
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(r1.barX + r1.barWidth, lineY);
+            ctx.lineTo(r2.barX, lineY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (isCompletedVersion) {
+            ctx.restore();
+        }
+
+        segmentRects.forEach((r) => {
+            this.scheduleRects.push({
+                schedule,
+                x: r.barX,
+                y: r.barY,
+                width: r.barWidth,
+                height: BAR_HEIGHT
+            });
         });
     }
 
