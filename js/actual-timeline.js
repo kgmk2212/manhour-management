@@ -497,6 +497,53 @@ function clockToY(hour, minutes) {
     return AFTERNOON_TOP + (hour - LUNCH_END + m / 60) * DAILY_HOUR_HEIGHT;
 }
 
+/** 開始時刻(clock decimal, e.g. 9.0=9:00, 13.5=13:30)からY座標に変換 */
+export function startTimeToY(st) {
+    if (st >= LUNCH_END) {
+        return AFTERNOON_TOP + (st - LUNCH_END) * DAILY_HOUR_HEIGHT;
+    }
+    if (st >= LUNCH_START) {
+        return LUNCH_ZONE_TOP;
+    }
+    return (st - WORK_START_HOUR) * DAILY_HOUR_HEIGHT;
+}
+
+/** Y座標から開始時刻(clock decimal)に変換 */
+export function yToStartTime(y) {
+    if (y <= LUNCH_ZONE_TOP) {
+        return WORK_START_HOUR + y / DAILY_HOUR_HEIGHT;
+    }
+    if (y <= AFTERNOON_TOP) {
+        return LUNCH_END; // 昼休みゾーン → 13:00
+    }
+    return LUNCH_END + (y - AFTERNOON_TOP) / DAILY_HOUR_HEIGHT;
+}
+
+/** 開始時刻を30分単位にスナップ（昼休みゾーン回避） */
+export function snapStartTime(raw) {
+    const snapped = Math.round(raw * 2) / 2;
+    if (snapped >= LUNCH_START && snapped < LUNCH_END) {
+        return LUNCH_END;
+    }
+    return Math.max(WORK_START_HOUR, snapped);
+}
+
+/** 開始時刻(clock)と作業時間(h)から終了時刻(clock)を計算（昼休みスキップ） */
+export function clockEndTime(startClock, workHours) {
+    if (startClock >= LUNCH_END) return startClock + workHours;
+    if (startClock >= LUNCH_START) return LUNCH_END + workHours;
+    const morningAvailable = LUNCH_START - startClock;
+    if (workHours <= morningAvailable) return startClock + workHours;
+    return LUNCH_END + (workHours - morningAvailable);
+}
+
+/** 時刻(clock decimal)を "H:MM" 文字列に変換 */
+export function formatClockTime(clock) {
+    const h = Math.floor(clock);
+    const m = Math.round((clock - h) * 60);
+    return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 /**
  * 日別ビュー描画 — 縦軸=時間(9:00-18:00)、横軸=担当者
  */
