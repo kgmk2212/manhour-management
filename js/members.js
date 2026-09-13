@@ -270,10 +270,26 @@ export function buildInitialMembersFromLegacyData(legacyOrderString) {
 // ============================================
 
 let editingMemberId = null;
+// editingMemberId の行を再描画する際、既存の <input> があればその場の入力途中の値を
+// 引き継ぐためのバッファ。renderMemberList() の先頭で捕捉し、直後の
+// renderMemberRow() 呼び出しでのみ読まれる（呼び出しは同期的なので使い回して問題ない）。
+let editingDraftValue = null;
 
 export function renderMemberList() {
     const container = document.getElementById('memberList');
     if (container) {
+        // 他の行の操作（アーカイブ等）によって呼ばれた場合でも、編集中の行の
+        // 入力途中の値を m.name（保存済みの値）で上書きしないよう、再構築前に
+        // 現在のDOM上の値を読み取っておく。
+        editingDraftValue = null;
+        let hadExistingInput = false;
+        if (editingMemberId != null) {
+            const existingInput = document.getElementById(`memberRenameInput_${editingMemberId}`);
+            if (existingInput) {
+                editingDraftValue = existingInput.value;
+                hadExistingInput = true;
+            }
+        }
         const active = members.filter(m => !m.archived);
         if (active.length === 0) {
             container.innerHTML = '<p style="color: #999; text-align: center; padding: 16px;">担当者が登録されていません</p>';
@@ -282,7 +298,10 @@ export function renderMemberList() {
         }
         if (editingMemberId != null) {
             const input = document.getElementById(`memberRenameInput_${editingMemberId}`);
-            if (input) { input.focus(); input.select(); }
+            // 既存の入力を引き継いだ場合は select() で全選択し直さない
+            // （入力途中に別操作で再描画されるたびに選択されるとタイピングの邪魔になる）。
+            // 改名ボタンを押した直後の新規表示時のみ、従来どおり全選択する。
+            if (input) { input.focus(); if (!hadExistingInput) input.select(); }
         }
     }
 
@@ -299,9 +318,12 @@ export function renderMemberList() {
 
 function renderMemberRow(m, isFirst, isLast) {
     if (editingMemberId === m.id) {
+        // 入力途中の値（editingDraftValue）があればそれを優先し、無ければ
+        // 保存済みの m.name を使う（改名ボタンを押した直後の初回表示など）。
+        const value = editingDraftValue != null ? editingDraftValue : m.name;
         return `
             <div class="member-row" data-member-id="${m.id}">
-                <input type="text" class="member-rename-input" id="memberRenameInput_${m.id}" value="${escapeHtml(m.name)}">
+                <input type="text" class="member-rename-input" id="memberRenameInput_${m.id}" value="${escapeHtml(value)}">
                 <button type="button" class="btn btn-primary btn-small" onclick="confirmRenameMember(${m.id})">保存</button>
                 <button type="button" class="btn btn-secondary btn-small" onclick="cancelRenameMember()">キャンセル</button>
             </div>
