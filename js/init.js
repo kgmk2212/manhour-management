@@ -466,6 +466,7 @@ window.updateAutoGenerateTargetOptions = Schedule.updateAutoGenerateTargetOption
 window.updateAutoGeneratePreview = Schedule.updateAutoGeneratePreview;
 window.executeAutoGenerate = Schedule.executeAutoGenerate;
 window.handleScheduleDrag = Schedule.handleScheduleDrag;
+window.handleScheduleMemberDrag = Schedule.handleScheduleMemberDrag;
 window.setScheduleStatus = Schedule.setScheduleStatus;
 window.getFilteredSchedules = Schedule.getFilteredSchedules;
 window.applyScheduleFilters = Schedule.applyScheduleFilters;
