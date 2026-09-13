@@ -9282,6 +9282,16 @@ li.drop-below {
 #bulkActualEditModal .modal-body, #bulkActualCopyModal .modal-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
 #bulkActualEditModal .modal-footer, #bulkActualCopyModal .modal-footer { flex: 0 0 auto; }
 
+/* スケジュール詳細モーダル: 実績一覧が多いと本文が伸び、保存/削除ボタン（フッター）が
+   画面外に押し出されて操作できなくなるため、同じくモーダル全体をflex columnで束ねる */
+#scheduleDetailModal .modal-content {
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+}
+#scheduleDetailModal .modal-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+#scheduleDetailModal .modal-footer { flex: 0 0 auto; }
+
 .bk-undo-toast {
     position: fixed; left: 50%; bottom: calc(24px + var(--bulk-dock-offset, 0px)); transform: translateX(-50%); z-index: 10001;
     background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);

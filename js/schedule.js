@@ -2151,6 +2151,17 @@ export function updateScheduleFilterOptions() {
  * 現在の表示月に対応する未スケジュール見積を取得
  * @returns {Array} 未スケジュールの見積一覧
  */
+/**
+ * スケジュールの期間（startDate〜endDate）が指定の月（YYYY-MM）と重なるか
+ */
+function scheduleOverlapsMonth(schedule, month) {
+    const [y, m] = month.split('-').map(Number);
+    const monthStart = `${month}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    const monthEnd = `${month}-${String(lastDay).padStart(2, '0')}`;
+    return schedule.startDate <= monthEnd && schedule.endDate >= monthStart;
+}
+
 function getUnscheduledEstimates() {
     const currentMonth = scheduleSettings.currentMonth; // e.g. "2026-02"
     if (!currentMonth) return [];
@@ -2158,12 +2169,13 @@ function getUnscheduledEstimates() {
     return estimates.filter(est => {
         // 作業月がガントチャートの表示月を含むか
         if (!est.workMonths || !est.workMonths.includes(currentMonth)) return false;
-        // スケジュール未作成か
+        // その月にかかるスケジュールが既に作成済みか（複数月見積は月ごとに判定する）
         return !schedules.some(s =>
             s.version === est.version &&
             s.task === est.task &&
             s.process === est.process &&
-            s.member === est.member
+            s.member === est.member &&
+            scheduleOverlapsMonth(s, currentMonth)
         );
     });
 }
@@ -2414,12 +2426,13 @@ export function registerCheckedSchedules() {
         let currentDate = startDate;
 
         estList.forEach(est => {
-            // 既存スケジュールがないか再確認
+            // その月にかかる既存スケジュールがないか再確認
             const existing = schedules.find(s =>
                 s.version === est.version &&
                 s.task === est.task &&
                 s.process === est.process &&
-                s.member === est.member
+                s.member === est.member &&
+                scheduleOverlapsMonth(s, scheduleSettings.currentMonth)
             );
             if (existing) return;
 
