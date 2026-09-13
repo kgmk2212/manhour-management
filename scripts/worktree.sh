@@ -3,9 +3,10 @@
 #
 # 使い方:
 #   bash scripts/worktree.sh start <topic>     隔離 worktree を作り、そのパスを出力する
-#   bash scripts/worktree.sh finish [--no-test] [--no-push] [--no-ci-wait]
+#   bash scripts/worktree.sh finish [--no-test] [--no-push]
 #                                              本線へ rebase → ff-only マージ → push → CI結果待ち → 掃除
-#                                              （push 後は gh run list で CI 完了を待ち、失敗があれば非ゼロ終了する）
+#                                              （push 後は gh run list で CI 完了を待ち、失敗・タイムアウトなら
+#                                              非ゼロ終了する。バイパスするオプションは無い＝常に検証される）
 #   bash scripts/worktree.sh list              残存している feature worktree を一覧する
 #   bash scripts/worktree.sh drop <topic>      統合せずに破棄する（作業は失われる）
 #
@@ -112,12 +113,11 @@ cmd_start() {
 }
 
 cmd_finish() {
-  local run_test=1 do_push=1 wait_ci=1
+  local run_test=1 do_push=1
   for a in "$@"; do
     case "$a" in
       --no-test) run_test=0 ;;
       --no-push) do_push=0 ;;
-      --no-ci-wait) wait_ci=0 ;;
       *) die "不明な引数: $a" ;;
     esac
   done
@@ -193,15 +193,20 @@ cmd_finish() {
   fi
 
   # 6.5) push 後の CI 結果を待って報告する（放置防止: 統合完了を名乗る前にセッション内で検知する）
+  # バイパス用オプションは意図的に用意しない（あると将来のセッションが付けて無効化しうるため）。
   local ci_failed=0
-  if [ "$wait_ci" -eq 1 ] && [ "$do_push" -eq 1 ] && [ "$has_remote" -eq 1 ]; then
+  if [ "$do_push" -eq 1 ] && [ "$has_remote" -eq 1 ]; then
     if ! command -v gh >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
-      info "gh / jq が無いため CI 結果待ちを省略します（手動で 'gh run list --branch $MAINLINE_BRANCH' を確認してください）。"
+      ci_failed=1
+      info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      info "!! gh / jq が無いため CI 結果を検証できません（要対応・見落とし厳禁） !!"
+      info "!! 手動で 'gh run list --branch $MAINLINE_BRANCH' を確認してください        !!"
+      info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     else
       info "== CI 結果待ち =="
       local sha; sha="$(git -C "$main" rev-parse HEAD)"
       local waited=0 max_wait=300 interval=10
-      local for_sha="[]"
+      local for_sha="[]" timed_out=0
       while :; do
         local runs_json
         runs_json="$(gh run list --branch "$MAINLINE_BRANCH" --json databaseId,headSha,status,conclusion,workflowName --limit 30 2>/dev/null || echo '[]')"
@@ -213,14 +218,20 @@ cmd_finish() {
           break
         fi
         if [ "$waited" -ge "$max_wait" ]; then
-          info "CI結果の待機がタイムアウトしました（${max_wait}秒）。'gh run list --branch $MAINLINE_BRANCH' で手動確認してください。"
-          for_sha="[]"
+          timed_out=1
           break
         fi
         sleep "$interval"
         waited=$((waited + interval))
       done
-      if [ "$(printf '%s' "$for_sha" | jq 'length')" -gt 0 ]; then
+      if [ "$timed_out" -eq 1 ]; then
+        # タイムアウト＝未確認は「成功扱い」にしない。失敗と同様に扱い、見落としを防ぐ。
+        ci_failed=1
+        info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        info "!! CI 結果の待機がタイムアウトしました（${max_wait}秒・未確認） !!"
+        info "!! 'gh run list --branch $MAINLINE_BRANCH' で手動確認してください        !!"
+        info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      elif [ "$(printf '%s' "$for_sha" | jq 'length')" -gt 0 ]; then
         local failed failed_count
         failed="$(printf '%s' "$for_sha" | jq -c '[.[] | select(.conclusion != "success")]')"
         failed_count="$(printf '%s' "$failed" | jq 'length')"
@@ -251,7 +262,7 @@ cmd_finish() {
   cmd_list || true
 
   if [ "$ci_failed" -eq 1 ]; then
-    die "CI が失敗しています（詳細は上記の CI 結果待ちログ）。統合自体は完了済みなので、別 worktree で修正して finish し直してください。"
+    die "CI が失敗、または結果を確認できていません（詳細は上記の CI 結果待ちログ）。統合自体は完了済みなので、状況を確認のうえ、必要なら別 worktree で修正して finish し直してください。"
   fi
 }
 
