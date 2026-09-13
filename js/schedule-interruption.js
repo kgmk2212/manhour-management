@@ -256,6 +256,9 @@ export function removeInterruption(scheduleId, interruptionId, deleteInserted = 
 
 /**
  * 連鎖ずらしを実行
+ * 注意: このBFSはモジュールレベルの `schedules` 配列を読み書きしながら進行する。
+ * 各反復で `setSchedules` により状態を更新し、次の対象探索は更新後の状態を参照する
+ * （`processed` Setで二重処理を防止、`srcOldEnd` で対象抽出のカットオフ日を固定）。
  * @param {Object} changedSchedule - endDateが変更されたスケジュール
  * @param {string} oldEndDate - 変更前のendDate
  * @returns {Array<{id, version, task, process, member, oldStart, newStart, oldEnd, newEnd}>}

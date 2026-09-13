@@ -227,6 +227,40 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
         const ids = result.cascadeResults.map(r => r.id).sort();
         assert.deepEqual(ids, ['sch_2', 'sch_3']);
     });
+
+    test('真の直列連鎖（sch_1→sch_2→sch_3、sch_2の移動がsch_3に波及する）', () => {
+        const sch1 = makeSchedule({ id: 'sch_1', task: 'TaskA', process: 'UI', member: 'Alice' });
+        // sch_2は sch_1 と別task・同member（条件B経由でsch_1から直接連鎖）
+        const sch2 = {
+            id: 'sch_2', version: 'V1', task: 'TaskB', process: 'PG', member: 'Alice',
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        // sch_3は sch_2 と同task・別member（sch_1からは直接見つからず、sch_2経由でのみ連鎖）
+        const sch3 = {
+            id: 'sch_3', version: 'V1', task: 'TaskB', process: 'PT', member: 'Bob',
+            startDate: '2026-09-21', estimatedHours: 8, endDate: '2026-09-21',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([sch1, sch2, sch3]);
+
+        const result = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+
+        // sch_2・sch_3 両方とも最終的に連鎖対象になっているはず
+        const ids = result.cascadeResults.map(r => r.id).sort();
+        assert.deepEqual(ids, ['sch_2', 'sch_3']);
+
+        const updated2 = State.schedules.find(s => s.id === 'sch_2');
+        const updated3 = State.schedules.find(s => s.id === 'sch_3');
+        // sch_3 の新startDateは sch_2 の新endDate以降にスナップされているはず（sch_2の移動に波及した証拠）
+        assert.ok(updated3.startDate > sch3.startDate, `sch_3が後ろ倒しされていること: ${updated3.startDate}`);
+        assert.ok(updated2.startDate > sch2.startDate, `sch_2が後ろ倒しされていること: ${updated2.startDate}`);
+    });
 });
 
 describe('analyzeImpact', () => {
