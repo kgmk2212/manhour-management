@@ -11,7 +11,7 @@ import {
     estimateFilterState, reportFilterState,
     setEstimateFilterState, setReportFilterState
 } from './state.js';
-import { normalizeEstimate, sortMembers, enableDragScroll, compareVersions } from './utils.js';
+import { normalizeEstimate, sortMembers, enableDragScroll, compareVersions, getCurrentMonthString } from './utils.js';
 import { STORAGE_KEYS, UI } from './constants.js';
 
 // タブの順序を定義
@@ -1551,12 +1551,16 @@ function getSegmentVisibleLimit(maxItems) {
 }
 
 /**
- * 表示する項目を「選択中の項目を末尾として、そこから遡った maxItems 件」に絞る。
+ * 表示する項目を「基準点から遡った maxItems 件」に絞る。
  * items は昇順（配列の後ろほど新しい）で渡される前提。
  *
+ * @param {*} anchorValue 「最近」の窓の右端を固定する基準値（例: 月フィルタでの「今日」）。
+ *   省略時は配列末尾（＝最新項目）を基準にする。currentValue を基準にしないのは、
+ *   過去のボタンを選ぶたびに窓自体が選択中の項目へ動いてしまい、選んだボタンより
+ *   新しい項目が視界から消える不具合になるため（選択中の項目は窓の外でも force-add で残す）。
  * @returns {{visibleItems: Array, hiddenCount: number, collapsible: boolean}}
  */
-function selectRecentSegmentItems(items, currentValue, limit, expanded) {
+function selectRecentSegmentItems(items, currentValue, limit, expanded, anchorValue) {
     // 「全版数」「全期間」に当たる項目。分析タブだけ値が '' なので両方を見る
     const isAggregate = value => value === 'all' || value === '';
     const allItem = items.find(item => isAggregate(item.value));
@@ -1567,14 +1571,22 @@ function selectRecentSegmentItems(items, currentValue, limit, expanded) {
         return { visibleItems: items, hiddenCount: 0, collapsible };
     }
 
-    // 選択中の項目を基準に、そこから遡って limit 件を残す。
-    // 単純に末尾（配列上の最新）から limit 件を取ると、見積の作業予定月のように
-    // 選択中より未来のデータが存在する場合に未来側だけが残り、選択中の項目より
-    // 過去が一切見えなくなってしまうため（選択中が見つからない場合は従来どおり末尾から）
-    const currentIdx = dataItems.findIndex(item => item.value === currentValue);
-    const endIdx = currentIdx >= 0 ? currentIdx : dataItems.length - 1;
-    const startIdx = Math.max(0, endIdx - limit + 1);
-    const keep = new Set(dataItems.slice(startIdx, endIdx + 1).map(item => item.value));
+    let basisIdx = dataItems.length - 1;
+    if (anchorValue != null) {
+        const exactIdx = dataItems.findIndex(item => item.value === anchorValue);
+        if (exactIdx >= 0) {
+            basisIdx = exactIdx;
+        } else {
+            // 完全一致が無い場合（例: 今日にデータが無い月）は、基準値以下で最も新しい項目を探す
+            let found = -1;
+            for (let i = dataItems.length - 1; i >= 0; i--) {
+                if (String(dataItems[i].value) <= String(anchorValue)) { found = i; break; }
+            }
+            basisIdx = found >= 0 ? found : dataItems.length - 1;
+        }
+    }
+    const startIdx = Math.max(0, basisIdx - limit + 1);
+    const keep = new Set(dataItems.slice(startIdx, basisIdx + 1).map(item => item.value));
     if (!isAggregate(currentValue)) keep.add(currentValue);
     const kept = dataItems.filter(item => keep.has(item.value));
 
@@ -1585,7 +1597,7 @@ function selectRecentSegmentItems(items, currentValue, limit, expanded) {
     };
 }
 
-export function createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler) {
+export function createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler, anchorValue) {
     const container = document.getElementById(containerId);
     const select = document.getElementById(selectId);
 
@@ -1597,11 +1609,11 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
     select.style.display = 'none';
     container.innerHTML = '';
 
-    segmentRenderArgs.set(containerId, { selectId, items, maxItems, onClickHandler });
+    segmentRenderArgs.set(containerId, { selectId, items, maxItems, onClickHandler, anchorValue });
 
     const expanded = segmentExpandedState.get(containerId) === true;
     const { visibleItems, hiddenCount, collapsible } =
-        selectRecentSegmentItems(items, currentValue, getSegmentVisibleLimit(maxItems), expanded);
+        selectRecentSegmentItems(items, currentValue, getSegmentVisibleLimit(maxItems), expanded, anchorValue);
 
     // ドラッグスクロールの実装（コンテナは再利用されるため、リスナーは初回のみ登録する。
     // 毎回登録するとcontainer.innerHTML=''では消えずに積み重なり続けるリークになる）
@@ -1690,7 +1702,7 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
             segmentExpandedState.set(containerId, !expanded);
-            createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler);
+            createSegmentButtons(containerId, selectId, items, currentValue, maxItems, onClickHandler, anchorValue);
         });
         container.insertAdjacentElement('afterend', toggle);
     }
@@ -1716,7 +1728,7 @@ export function updateSegmentButtonSelection(containerId, value) {
     // （createSegmentButtons は選択中の項目を必ず残す）
     const args = segmentRenderArgs.get(containerId);
     if (args && !Array.from(container.querySelectorAll('button')).some(btn => btn.value === value)) {
-        createSegmentButtons(containerId, args.selectId, args.items, value, args.maxItems, args.onClickHandler);
+        createSegmentButtons(containerId, args.selectId, args.items, value, args.maxItems, args.onClickHandler, args.anchorValue);
         return;
     }
 
@@ -2652,7 +2664,8 @@ export function updateMonthOptions(selectedVersion = 'all') {
         items,
         currentValue,
         UI.MAX_VISIBLE_SEGMENTS,
-        handleReportMonthChange
+        handleReportMonthChange,
+        getCurrentMonthString()
     );
 }
 
@@ -2751,7 +2764,8 @@ export function updateEstimateMonthOptions(selectedVersion = 'all') {
         items,
         currentValue,
         UI.MAX_VISIBLE_SEGMENTS,
-        handleEstimateMonthChange
+        handleEstimateMonthChange,
+        getCurrentMonthString()
     );
 }
 
@@ -2925,8 +2939,9 @@ export function updateActualMonthOptions() {
     });
 
     // 直近月（当月・前月）はデータの有無に関わらずデフォルトで表示する
+    const currentMonthStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const recentMonths = new Set([
-        `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+        currentMonthStr,
         (() => {
             const prev = new Date(currentYear, now.getMonth() - 1, 1);
             return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
@@ -2958,7 +2973,8 @@ export function updateActualMonthOptions() {
         items,
         validValue,
         UI.MAX_VISIBLE_SEGMENTS,
-        handleActualMonthChange
+        handleActualMonthChange,
+        currentMonthStr
     );
 }
 
