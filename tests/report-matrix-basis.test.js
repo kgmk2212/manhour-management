@@ -98,12 +98,20 @@ describe('evaluateMatrixCellColor() — 月別表示: その月の見積に対�
         assert.equal(monthly(50, 52), 'warning');
     });
 
-    test('その月の見積に対し10%以上余っていれば safe-bright', () => {
+    test('その月の見積に対し10〜30%余っていれば safe-bright', () => {
         assert.equal(monthly(50, 40), 'safe-bright');
     });
 
     test('その月の見積に対し0〜10%余っていれば safe-normal', () => {
         assert.equal(monthly(50, 48), 'safe-normal');
+    });
+
+    test('その月の見積の70%未満しか使っていなければ surplus（見積過多）', () => {
+        assert.equal(monthly(50, 34), 'surplus');   // 68%
+    });
+
+    test('ちょうど70%は surplus ではなく safe-bright', () => {
+        assert.equal(monthly(50, 35), 'safe-bright');
     });
 
     test('全体残存が大きくても、その月の実績が見積内なら赤にしない', () => {
@@ -137,12 +145,25 @@ describe('evaluateMatrixCellColor() — 全期間表示: 予測総工数(実績+
         assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 80, remainingHours: 25 }), 'warning');
     });
 
-    test('10%以上の余裕見込みは safe-bright', () => {
+    test('10〜30%の余裕見込みは safe-bright', () => {
         assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 40, remainingHours: 40 }), 'safe-bright');
     });
 
+    test('完了済み（残存0）で見積の70%未満しか使わなかったら surplus', () => {
+        assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 30, remainingHours: 0 }), 'surplus');
+    });
+
+    test('残存が残っているうちは surplus にしない（まだ消化しきっていないだけ）', () => {
+        // 実績30h・残存70h → 予測総工数100h = 見積ちょうど
+        assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 30, remainingHours: 70 }), 'safe-normal');
+    });
+
+    test('残存を含めても70%未満の着地見込みなら surplus', () => {
+        assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 30, remainingHours: 20 }), 'surplus');
+    });
+
     test('remainingHours が null/NaN でも 0 として扱う', () => {
-        assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 50, remainingHours: null }), 'safe-bright');
+        assert.equal(evaluateMatrixCellColor({ estHours: 100, actHours: 50, remainingHours: null }), 'surplus');
     });
 });
 

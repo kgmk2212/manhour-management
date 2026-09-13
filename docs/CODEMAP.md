@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 42 ファイル / 40,487 行
+## js/ — 42 ファイル / 40,491 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -100,8 +100,8 @@
 ### js/report-analytics.js — Report Analytics — Real-data driven dashboard (1246行)
 - export: initReportAnalytics:1204
 
-### js/report.js — レポート設定関連機能 (3865行)
-- export: loadReportSettings:109, saveReportSettings:149, loadDebugModeSetting:168, saveDebugModeSetting:179, loadDevFeaturesSetting:191, saveDevFeaturesSetting:204, clearProgressCache:247, calculateProgress:260, calculateVersionProgress:359, createProgressBar:406, createStatusBadge:489, updateProgressReport:539, updateProgressVersionOptions:557, renderProgressSummaryCards:598, renderProgressDetailTable:676, openBulkRemainingModal:764, closeBulkRemainingModal:771, renderBulkRemainingTable:776, updateBulkRowStatus:881, saveBulkRemaining:929, togglePhaseCollapse:985, getProgressColor:1008, generateProgressBar:1024, getAnalysisGradients:1116, getOtherWorkTaskKey:1132, filterReportData:1143, updateReport:1270, sumEstimateHoursByMember:1800, computeInsights:2246, renderReportAnalytics:2366, renderMemberReport:2387, renderVersionReport:2434, renderReportGrouped:2478, buildFullRangeTotals:2680, getFullRangeTotals:2711, evaluateMatrixCellColor:2729, calcMatrixProgressRate:2759, renderReportMatrix:2767, openMatrixTaskDetail:3083, setCapacityDisplayMode:3544, initCapacitySettings:3554, updateCapacityAnalysis:3598, toggleProgressSection:3833, initProgressSectionState:3854
+### js/report.js — レポート設定関連機能 (3869行)
+- export: loadReportSettings:109, saveReportSettings:149, loadDebugModeSetting:168, saveDebugModeSetting:179, loadDevFeaturesSetting:191, saveDevFeaturesSetting:204, clearProgressCache:247, calculateProgress:260, calculateVersionProgress:359, createProgressBar:406, createStatusBadge:489, updateProgressReport:539, updateProgressVersionOptions:557, renderProgressSummaryCards:598, renderProgressDetailTable:676, openBulkRemainingModal:764, closeBulkRemainingModal:771, renderBulkRemainingTable:776, updateBulkRowStatus:881, saveBulkRemaining:929, togglePhaseCollapse:985, getProgressColor:1008, generateProgressBar:1024, getAnalysisGradients:1116, getOtherWorkTaskKey:1132, filterReportData:1143, updateReport:1270, sumEstimateHoursByMember:1800, computeInsights:2246, renderReportAnalytics:2366, renderMemberReport:2387, renderVersionReport:2434, renderReportGrouped:2478, buildFullRangeTotals:2680, getFullRangeTotals:2711, evaluateMatrixCellColor:2732, calcMatrixProgressRate:2763, renderReportMatrix:2771, openMatrixTaskDetail:3087, setCapacityDisplayMode:3548, initCapacitySettings:3558, updateCapacityAnalysis:3602, toggleProgressSection:3837, initProgressSectionState:3858
 
 ### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (2171行)
 - export: GanttChartRenderer:105, setupTooltipHandler:1567, getRenderer:1620, renderGanttChart:1633, setupCanvasClickHandler:1644, setupDragAndDrop:1703, setupTouchHandlers:1974
@@ -141,4 +141,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9418行
+- style.css — 9425行

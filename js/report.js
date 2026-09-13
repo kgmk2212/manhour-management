@@ -2716,15 +2716,18 @@ export function getFullRangeTotals(totals, version, task, process) {
 }
 
 /**
- * マトリクスセルの実績文字色クラスを求める（見積に対する超過度合いの4段階）。
+ * マトリクスセルの実績文字色クラスを求める（見積に対する消化度合いの5段階）。
  *
  * 月別表示では「その月に割り当てた見積 vs その月の実績」で判定する。見込残存は
  * (version/task/process) 単位の工程全体の値で月に割り振れないため、remainingHours を
  * 渡さない（渡すと月按分の見積と粒度が合わず、分割工程ほど過大に赤くなる: B-039①）。
  * 全期間表示では予測総工数 EAC（実績 + 見込残存）と見積を比べ、着地見込みを色にする。
  *
+ * surplus（見積過多）は全期間表示では実質「完了済み（残存0）なのに見積の70%未満」を指す。
+ * 残っている残存が EAC に乗るので、消化しきっていない工程は surplus にならない。
+ *
  * @param {{estHours: number, actHours: number, remainingHours: number}} params - 見積・実績と、色に含める見込残存（月別表示では省略）
- * @returns {string} 文字色クラス（over / warning / safe-bright / safe-normal / 空文字）
+ * @returns {string} 文字色クラス（over / warning / safe-bright / safe-normal / surplus / 空文字）
  */
 export function evaluateMatrixCellColor({ estHours = 0, actHours = 0, remainingHours = 0 } = {}) {
     const est = Number(estHours) || 0;
@@ -2737,7 +2740,8 @@ export function evaluateMatrixCellColor({ estHours = 0, actHours = 0, remainingH
             const ratio = eac / est;
             if (ratio > 1.1) return 'over';          // 10%超過 → 赤
             if (ratio > 1.0) return 'warning';       // 0-10%超過 → 黄
-            if (ratio < 0.9) return 'safe-bright';   // 10%以上余裕（乖離大） → 黄緑
+            if (ratio < 0.7) return 'surplus';       // 見積の70%未満（見積過多） → 紫
+            if (ratio < 0.9) return 'safe-bright';   // 10-30%余裕（乖離大） → 黄緑
             return 'safe-normal';                    // 0-10%余裕（見積どおり） → 濃い緑
         }
         return '';
