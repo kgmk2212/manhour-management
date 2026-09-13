@@ -3520,6 +3520,109 @@ table tr[style*="1565c0"] th:first-child {
     margin: 4px 0 16px;
 }
 
+/* 担当者マスタ（設定画面） */
+.member-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.member-add-row input {
+    flex: 1;
+}
+
+.member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 10px 0 0;
+}
+
+.member-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+    transition: border-color var(--transition), background var(--transition);
+}
+
+.member-row:hover {
+    border-color: var(--border);
+}
+
+.member-row .member-name {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+    font-size: calc(15.5px * var(--ui-scale));
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.member-rename-input {
+    flex: 1;
+}
+
+.member-row--archived {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.75;
+}
+
+.member-row--archived .member-name {
+    color: var(--text-secondary);
+}
+
+.member-archived-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
+}
+
+.member-archived-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px 0;
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    transition: color var(--transition);
+}
+
+.member-archived-toggle:hover {
+    color: var(--text-secondary);
+}
+
+.member-archived-chevron {
+    display: inline-block;
+    transition: transform var(--transition);
+}
+
+.member-archived-section:not(.collapsed) .member-archived-chevron {
+    transform: rotate(90deg);
+}
+
+.member-archived-section.collapsed .member-archived-list {
+    display: none;
+}
+
+.member-archived-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
 /* スイッチ（native checkbox 内包） */
 .setting-switch {
     position: relative;

@@ -1660,16 +1660,22 @@
                                         <select id="estimateMemberStandardStyle"></select>
                                     </div>
                                 </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <div class="setting-label">担当者表示順
-                                            <button type="button" id="btnShowMemberOrderHelp" class="setting-help-btn" title="入力方法">ℹ️</button>
-                                        </div>
-                                        <div class="setting-desc">カンマ区切り。未指定の担当者は後ろに表示（自動保存）</div>
+                                <div class="setting-group-heading">担当者</div>
+                                <div class="setting-desc">ここで登録した担当者が、見積・実績・スケジュール等の担当者選択肢になります</div>
+                                <div class="form-group">
+                                    <label>担当者名</label>
+                                    <div class="member-add-row">
+                                        <input type="text" id="memberNameInput" placeholder="例: 山田">
+                                        <button type="button" class="btn btn-primary" id="btnAddMember">追加</button>
                                     </div>
-                                    <div class="setting-control setting-control--wide">
-                                        <input type="text" id="memberOrder" placeholder="例: 山田,佐藤,田中">
-                                    </div>
+                                </div>
+                                <div id="memberList" class="member-list"></div>
+                                <div id="archivedMemberSection" class="member-archived-section collapsed">
+                                    <button type="button" class="member-archived-toggle" onclick="toggleArchivedMemberSection()">
+                                        <span class="member-archived-chevron">▸</span>
+                                        アーカイブ済み (<span id="archivedMemberCount">0</span>)
+                                    </button>
+                                    <div id="archivedMemberList" class="member-archived-list"></div>
                                 </div>
                                 <div class="setting-group-heading">マトリクス</div>
                                 <div class="setting-row">
