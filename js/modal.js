@@ -86,10 +86,12 @@ function renderMemberBreakdown(modal, content, memberData) {
     });
 
     // HTMLを生成（グラフとテーブル）
-    let html = '<div style="display: flex; flex-direction: column; gap: 30px;">';
+    // モバイルではグラフ2枚で1画面が埋まりテーブルが画面外に出るため、
+    // 表示順の入れ替えを CSS（.breakdown-body 配下の order）に委ねる
+    let html = '<div class="breakdown-body" style="display: flex; flex-direction: column; gap: 30px;">';
 
     // グラフコンテナ
-    html += '<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">';
+    html += '<div class="breakdown-charts" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">';
 
     // 見積グラフ
     if (totalEst > 0) {
@@ -110,7 +112,7 @@ function renderMemberBreakdown(modal, content, memberData) {
     html += '</div>';
 
     // テーブルを生成
-    html += '<div class="table-wrapper"><table>';
+    html += '<div class="table-wrapper breakdown-table"><table>';
     html += '<tr><th>担当者</th><th>見積</th><th>実績</th><th>差異</th></tr>';
 
     members.sort().forEach(member => {

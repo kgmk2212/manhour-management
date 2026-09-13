@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 42 ファイル / 40,162 行
+## js/ — 42 ファイル / 40,164 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (180行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176
@@ -84,9 +84,9 @@
 ### js/merge-json.js — merge-json.js — バックアップJSON 差分マージのアダプタ (304行)
 - export: handleBackupMerge:244
 
-### js/modal.js — モーダル関連機能（工程内訳・残存時間） (585行)
-- export: showProcessBreakdown:16, drawBreakdownDonutChart:156, openProcessBreakdown:248, openOtherWorkBreakdown:278, closeProcessBreakdownModal:337, openRemainingHoursModal:346, updateRemainingHoursInput:405, updateRemainingHoursActualsList:417, closeRemainingHoursModal:480, saveRemainingHoursFromModal:485, setupModalHandlers:531
-- window: openProcessBreakdown:271, openOtherWorkBreakdown:335
+### js/modal.js — モーダル関連機能（工程内訳・残存時間） (587行)
+- export: showProcessBreakdown:16, drawBreakdownDonutChart:158, openProcessBreakdown:250, openOtherWorkBreakdown:280, closeProcessBreakdownModal:339, openRemainingHoursModal:348, updateRemainingHoursInput:407, updateRemainingHoursActualsList:419, closeRemainingHoursModal:482, saveRemainingHoursFromModal:487, setupModalHandlers:533
+- window: openProcessBreakdown:273, openOtherWorkBreakdown:337
 
 ### js/other-work.js — その他作業関連機能 (342行)
 - export: addMeeting:16, addOtherWork:86, openOtherWorkModal:152, closeOtherWorkModal:201, switchOtherWorkTab:220, getPreviousOtherWork:256, applyOtherWorkDefaults:279
@@ -141,4 +141,4 @@ sidebar:88, scheduleNavItem:118, btnExportBackup:129, btnImportBackup:133, btnMe
 
 ## スタイル
 
-- style.css — 9282行
+- style.css — 9307行

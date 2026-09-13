@@ -4463,6 +4463,31 @@ table tr[style*="1565c0"] th:first-child {
     }
 }
 
+/* 内訳モーダル（工程内訳・その他工数内訳）: モバイルはグラフ2枚で1画面が埋まり
+   担当者別テーブルが画面外に出るため、数値を先に見せる */
+@media (max-width: 767px) {
+    .breakdown-body > .breakdown-table {
+        order: 1;
+    }
+
+    .breakdown-body > .breakdown-charts {
+        order: 2;
+    }
+
+    /* 内訳表は4列（担当者・見積・実績・差異）で狭幅でも収まるため、
+       広い表向けの min-width: 600px を解除して横スクロールなしで全列見せる */
+    .breakdown-table table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .breakdown-table th:first-child,
+    .breakdown-table td:first-child {
+        width: 34%;
+        word-break: break-word;
+    }
+}
+
 /* ---- 28. Report Grid ---- */
 .report-grid {
     display: grid;
