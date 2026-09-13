@@ -208,6 +208,7 @@ export const STORAGE_KEYS = {
     REMAINING_ESTIMATES: 'manhour_remainingEstimates',
     COMPANY_HOLIDAYS: 'manhour_companyHolidays',
     VACATIONS: 'manhour_vacations',
+    MEMBERS: 'manhour_members',
 
     // 設定
     THEME_COLOR: 'manhour_themeColor',
@@ -217,7 +218,6 @@ export const STORAGE_KEYS = {
 
     // UI状態
     CURRENT_TAB: 'manhour_currentTab',
-    MEMBER_ORDER: 'manhour_memberOrder',
     SETTINGS_CATEGORY: 'manhour_settingsCategory',
 
     // 表示設定
