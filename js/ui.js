@@ -1674,6 +1674,10 @@ export function createSegmentButtons(containerId, selectId, items, currentValue,
     if (collapsible) {
         const toggle = document.createElement('button');
         toggle.type = 'button';
+        // 1つのフィルタバーに複数のセグメント（版数・月など）が並ぶと.month-toggle-btnが
+        // 複数存在しうる。モバイルのフィルタバー複製機構（index.html）がクリックを
+        // id優先で元ボタンへ転送するため、containerId由来の固有idを付けて誤転送を防ぐ
+        toggle.id = containerId + 'MoreToggle';
         toggle.className = 'seg-more-btn month-toggle-btn';
         toggle.textContent = expanded ? '◂' : `▸+${hiddenCount}`;
         toggle.title = expanded ? '最近のものだけ表示' : `残り${hiddenCount}件を表示`;
@@ -2914,8 +2918,6 @@ export function updateActualMonthOptions() {
         if (a.date) monthsWithData.add(a.date.substring(0, 7));
     });
 
-    const isExpanded = typeof window.getActualMonthExpanded === 'function' ? window.getActualMonthExpanded() : false;
-
     // 直近月（当月・前月）はデータの有無に関わらずデフォルトで表示する
     const recentMonths = new Set([
         `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`,
@@ -2925,9 +2927,11 @@ export function updateActualMonthOptions() {
         })()
     ]);
 
-    // 絞込: データあり月・直近月・選択中の月のみ（展開時は全月）
+    // 絞込: データあり月・直近月・選択中の月のみ（未来の空月は候補に含めない）。
+    // 「もっと見る」はここではなくcreateSegmentButtons側の▸+Nトグルに一本化する
+    // （旧・独自トグルと二重管理になっていたことで、トグルが増殖したり未来の空月だけが
+    //   展開されたりする不具合があったため撤去した）
     const filteredMonths = allMonths.filter(month => {
-        if (isExpanded) return true;
         return monthsWithData.has(month) || recentMonths.has(month) || month === validValue;
     });
 
@@ -2950,34 +2954,6 @@ export function updateActualMonthOptions() {
         UI.MAX_VISIBLE_SEGMENTS,
         handleActualMonthChange
     );
-
-    // トグルボタンを追加（データなし月が存在する場合のみ）
-    const hasEmptyMonths = allMonths.some(m => !monthsWithData.has(m));
-    const segContainer = document.getElementById('actualMonthButtons2');
-    if (segContainer) {
-        // 既存のトグルボタンを削除
-        const oldToggle = segContainer.parentElement.querySelector('.month-toggle-btn');
-        if (oldToggle) oldToggle.remove();
-
-        if (hasEmptyMonths) {
-            const toggleBtn = document.createElement('button');
-            toggleBtn.className = 'month-toggle-btn';
-            toggleBtn.textContent = isExpanded ? '◂' : '▸';
-            toggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (typeof window.setActualMonthExpanded === 'function') {
-                    window.setActualMonthExpanded(!isExpanded);
-                }
-                updateActualMonthOptions();
-                // タブフィルタも同期
-                if (typeof window.updateTabFilterContent === 'function') {
-                    window.updateTabFilterContent(false);
-                }
-            });
-            // スクロールエリアの親に追加（スクロール外に固定表示）
-            segContainer.parentElement.appendChild(toggleBtn);
-        }
-    }
 }
 
 // ============================================
