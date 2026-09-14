@@ -31,6 +31,9 @@ jobs:
             LANE="lane:auto"
           fi
           # rename の旧パス（previous_filename）も検査対象に含める
-          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate \
-            --jq '.[] | .filename, (.previous_filename // empty)' \
-            | node scripts/pipeline/check-lane-policy.mjs --policy .github/pipeline/auto-lane-policy.json --lane "$LANE"
+          # gh api の出力を一度変数で受けてからパイプする（lane 以外では
+          # check-lane-policy.mjs が stdin を読まず即 exit するため、直接パイプすると
+          # gh 側が書き込み中に SIGPIPE を受けて pipefail でジョブが落ちる）
+          FILES="$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate \
+            --jq '.[] | .filename, (.previous_filename // empty)')"
+          echo "$FILES" | node scripts/pipeline/check-lane-policy.mjs --policy .github/pipeline/auto-lane-policy.json --lane "$LANE"
