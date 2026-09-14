@@ -4,9 +4,10 @@
 
 import * as State from './state.js';
 import { pushAction } from './history.js';
-import { showAlert, populateQuarterHourOptions, setHoursSelectValue, getTodayString } from './utils.js';
+import { showAlert, populateQuarterHourOptions, setHoursSelectValue, getTodayString, sortMembers } from './utils.js';
 import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
 import { CALCULATIONS } from './constants.js';
+import { getActiveMemberNames, getMemberOrderString } from './members.js';
 
 // ============================================
 // 打ち合わせ・その他作業
@@ -33,15 +34,13 @@ export function addMeeting() {
         return;
     }
 
-    // 全担当者を取得
-    const members = new Set();
-    State.estimates.forEach(e => members.add(e.member));
-    State.actuals.forEach(a => members.add(a.member));
+    // 全担当者を取得（アクティブのみ。新規に実績を作る操作のため）
+    const members = getActiveMemberNames();
 
-    console.log('members:', Array.from(members));
+    console.log('members:', members);
 
-    if (members.size === 0) {
-        showAlert('担当者が登録されていません。先に見積または実績を登録してください。', false);
+    if (members.length === 0) {
+        showAlert('担当者が登録されていません。設定 > 担当者から先に登録してください。', false);
         return;
     }
 
@@ -66,7 +65,7 @@ export function addMeeting() {
 
     pushAction({
         type: 'actual_add',
-        description: `打ち合わせ追加: ${members.size}名分 ${hours}h`,
+        description: `打ち合わせ追加: ${members.length}名分 ${hours}h`,
         data: { added: addedActuals[0], addedAll: addedActuals }
     });
 
@@ -79,7 +78,7 @@ export function addMeeting() {
     document.getElementById('meetingHours').value = '';
     closeOtherWorkModal();
 
-    showAlert(`打ち合わせを${members.size}名分登録しました（${date}）`, true);
+    showAlert(`打ち合わせを${members.length}名分登録しました（${date}）`, true);
 }
 
 // その他作業を追加
@@ -153,35 +152,8 @@ export function openOtherWorkModal() {
     // 担当者リストを更新
     const otherWorkMemberSelect = document.getElementById('otherWorkMember');
     if (otherWorkMemberSelect) {
-        // 担当者を抽出
-        const members = new Set();
-        State.estimates.forEach(e => members.add(e.member));
-        State.actuals.forEach(a => members.add(a.member));
-
-        // 表示順でソート
-        let sortedMembers;
-        const memberOrderInput = document.getElementById('memberOrder').value.trim();
-        if (memberOrderInput) {
-            const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-            const orderedMembers = [];
-            const unorderedMembers = [];
-
-            orderList.forEach(name => {
-                if (members.has(name)) {
-                    orderedMembers.push(name);
-                }
-            });
-
-            Array.from(members).forEach(m => {
-                if (!orderedMembers.includes(m)) {
-                    unorderedMembers.push(m);
-                }
-            });
-
-            sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
-        } else {
-            sortedMembers = Array.from(members).sort();
-        }
+        // 担当者を抽出（アクティブのみ。新規に実績を作る操作のため）
+        const sortedMembers = sortMembers(getActiveMemberNames(), getMemberOrderString());
 
         otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
         sortedMembers.forEach(member => {
