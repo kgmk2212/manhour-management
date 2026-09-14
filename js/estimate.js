@@ -14,6 +14,8 @@ import {
     taskSortOrder, setTaskSortOrder
 } from './state.js';
 
+import { getMemberOrderString } from './members.js';
+
 import {
     normalizeEstimate,
     getEstimateHoursForMonth,
@@ -759,8 +761,7 @@ function renderEstimateMemberSummary(memberSummary, workingDaysPerMonth, isAvera
     const standardStyle = getMemberStandardStyle();
     applyMemberStandardPlacement(standardParts, standardStyle);
 
-    const memberOrderElement = document.getElementById('memberOrder');
-    const memberOrderInput = memberOrderElement ? memberOrderElement.value.trim() : '';
+    const memberOrderInput = getMemberOrderString();
     const sortedMembers = sortMembers(Object.keys(memberSummary), memberOrderInput);
 
     if (sortedMembers.length === 0) {

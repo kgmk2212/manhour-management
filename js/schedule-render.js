@@ -3,11 +3,12 @@
 // 複数月連続表示対応（2キャンバス構成）
 // ============================================
 
-import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, memberOrder } from './state.js';
+import { schedules, scheduleSettings, actuals, vacations, remainingEstimates } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule } from './schedule.js';
 import { calculateSegments } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
+import { getMemberOrderString } from './members.js';
 
 // ============================================
 // 定数
@@ -586,8 +587,7 @@ export class GanttChartRenderer {
         const rows = [];
 
         // 担当者順の取得
-        const memberOrderEl = document.getElementById('memberOrder');
-        const orderString = memberOrder || (memberOrderEl ? memberOrderEl.value.trim() : '');
+        const orderString = getMemberOrderString();
 
         if (viewMode === SCHEDULE.VIEW_MODE.MEMBER) {
             const memberMap = new Map();

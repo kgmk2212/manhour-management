@@ -6,9 +6,10 @@
 import {
     actuals, estimates, setActuals,
     actualSelectionMode, setActualSelectionMode, selectedActualIds,
-    memberOrder, nextId,
+    nextId,
 } from './state.js';
 import { formatHours, escapeHtml, showAlert, sortMembers } from './utils.js';
+import { getMemberOrderString } from './members.js';
 import { PROCESS, BULK_EDIT } from './constants.js';
 import { pushAction, undo } from './history.js';
 import { applyBulkPatch, summarizeField, displayValue, deleteActuals, duplicateActuals, isValidDateString, findByCondition, taskOptionsForVersions } from './actual-bulk-core.js';
@@ -314,7 +315,7 @@ function taskScopeVersions(targets) {
     return [...new Set(targets.map(a => a.version ?? ''))];
 }
 function memberOptions() {
-    return sortMembers([...new Set([...estimates.map(e => e.member), ...actuals.map(a => a.member)].filter(Boolean))], memberOrder || '');
+    return sortMembers([...new Set([...estimates.map(e => e.member), ...actuals.map(a => a.member)].filter(Boolean))], getMemberOrderString());
 }
 const opt = (arr, cur, labelFn) => arr.map(v => `<option value="${escapeHtml(v)}" ${v === cur ? 'selected' : ''}>${escapeHtml(labelFn ? labelFn(v) : v)}</option>`).join('');
 

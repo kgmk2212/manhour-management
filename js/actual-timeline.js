@@ -3,10 +3,11 @@
 // ============================================
 
 import {
-    estimates, actuals, schedules, memberOrder,
+    estimates, actuals, schedules,
     nextId, selectedActualIds} from './state.js';
 
 import { showAlert, sortMembers, formatHours, escapeHtml, getTodayString, addDaysToDateString } from './utils.js';
+import { getMemberOrderString } from './members.js';
 import { getHoliday, getDayOfWeek } from './actual.js';
 import { getTaskColor } from './schedule.js';
 import { calculateVersionProgress } from './report.js';
@@ -3139,9 +3140,8 @@ function getTimelineMembers() {
         if (sch.member) memberSet.add(sch.member);
     });
 
-    // 設定画面のDOM要素から表示順を取得（他のビューと同じ方式）
-    const memberOrderEl = document.getElementById('memberOrder');
-    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : (memberOrder || '');
+    // 担当者マスタから表示順を取得
+    const memberOrderInput = getMemberOrderString();
     return sortMembers(Array.from(memberSet), memberOrderInput);
 }
 
