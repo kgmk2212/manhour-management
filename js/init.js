@@ -23,6 +23,7 @@ import * as EstimateSplit from './estimate-split.js';
 import { initEventHandlers } from './events.js';
 import * as Schedule from './schedule.js';
 import * as History from './history.js';
+import * as Members from './members.js';
 import * as ActualTimeline from './actual-timeline.js';
 import * as ActualBulk from './actual-bulk.js';
 import { initReportAnalytics } from './report-analytics.js';
@@ -69,7 +70,6 @@ window.workDetailStyle = State.workDetailStyle;
 window.modalDesignStyle = State.modalDesignStyle;
 
 window.debugModeEnabled = State.debugModeEnabled;
-window.memberOrder = State.memberOrder;
 
 // utils.js の関数
 window.showAlert = Utils.showAlert;
@@ -96,6 +96,28 @@ window.closeVacationModal = Vacation.closeVacationModal;
 window.handleVacationModalTypeChange = Vacation.handleVacationModalTypeChange;
 window.saveVacationFromModal = Vacation.saveVacationFromModal;
 window.getVacation = Vacation.getVacation;
+
+// members.js の関数
+window.addMember = Members.addMember;
+window.renameMember = Members.renameMember;
+window.archiveMember = Members.archiveMember;
+window.restoreMember = Members.restoreMember;
+window.moveMemberUp = Members.moveMemberUp;
+window.moveMemberDown = Members.moveMemberDown;
+window.getActiveMemberNames = Members.getActiveMemberNames;
+window.getAllMemberNames = Members.getAllMemberNames;
+window.getMemberOrderString = Members.getMemberOrderString;
+window.ensureMembersExist = Members.ensureMembersExist;
+window.renderMemberList = Members.renderMemberList;
+window.toggleArchivedMemberSection = Members.toggleArchivedMemberSection;
+window.handleAddMemberClick = Members.handleAddMemberClick;
+window.handleRenameMember = Members.handleRenameMember;
+window.cancelRenameMember = Members.cancelRenameMember;
+window.confirmRenameMember = Members.confirmRenameMember;
+window.handleArchiveMember = Members.handleArchiveMember;
+window.handleRestoreMember = Members.handleRestoreMember;
+window.handleMoveMemberUp = Members.handleMoveMemberUp;
+window.handleMoveMemberDown = Members.handleMoveMemberDown;
 
 // storage.js の関数
 window.loadAutoBackupSetting = Storage.loadAutoBackupSetting;
@@ -166,7 +188,6 @@ window.handleEditFormNameChange = UI.handleEditFormNameChange;
 window.revertFormNameToSelect = UI.revertFormNameToSelect;
 window.handleEditActualMemberChange = UI.handleEditActualMemberChange;
 window.updateAllDisplays = UI.updateAllDisplays;
-window.showMemberOrderHelp = UI.showMemberOrderHelp;
 
 // theme.js の関数
 window.getActiveChartColorScheme = Theme.getActiveChartColorScheme;
@@ -509,7 +530,6 @@ window.actuals = State.actuals;
 window.companyHolidays = State.companyHolidays;
 window.vacations = State.vacations;
 window.remainingEstimates = State.remainingEstimates;
-window.memberOrder = State.memberOrder;
 window.schedules = State.schedules;
 window.scheduleSettings = State.scheduleSettings;
 window.taskColorMap = State.taskColorMap;
@@ -566,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
     UI.restoreEstimateFilterState();
     UI.updateActualMonthOptions();
     UI.updateMemberOptions();
+    Members.renderMemberList();
     UI.updateVersionOptions();
     UI.updateFormNameOptions();
     Quick.updateQuickTaskList();
