@@ -16,6 +16,7 @@ import { CALCULATIONS } from './constants.js';
 import { applyOtherWorkDefaults } from './other-work.js';
 import { prepareVacationFields } from './vacation.js';
 import { handleVersionChange } from './ui.js';
+import { getAllMemberNames, getMemberOrderString } from './members.js';
 
 // ============================================
 // 祝日・曜日判定
@@ -181,33 +182,7 @@ export function updateMemberSelectOptions() {
     const select2 = document.getElementById('actualMemberSelect2');
     const currentValue = select.value;
 
-    const allMembers = new Set();
-    actuals.forEach(a => allMembers.add(a.member));
-    estimates.forEach(e => allMembers.add(e.member));
-
-    let sortedMembers;
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    if (memberOrderInput) {
-        const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
-
-        orderList.forEach(name => {
-            if (allMembers.has(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        Array.from(allMembers).forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        sortedMembers = Array.from(allMembers).sort();
-    }
+    const sortedMembers = sortMembers(getAllMemberNames(), getMemberOrderString());
 
     select.innerHTML = '';
     if (select2) select2.innerHTML = '';
@@ -451,7 +426,6 @@ export function setupCalendarSwipe() {
 export function renderActualMatrix() {
     const container = document.getElementById('actualList');
     const selectedMonth = document.getElementById('actualMonthFilter').value;
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
 
     let filteredActuals = actuals;
     if (selectedMonth !== 'all') {
@@ -466,12 +440,9 @@ export function renderActualMatrix() {
     }
 
     // メンバーリストは全実績・見積から取得（選択月にデータがなくても表示できるように）
-    const allMembers = new Set();
-    actuals.forEach(a => allMembers.add(a.member));
-    estimates.forEach(e => allMembers.add(e.member));
-    let members = [...allMembers];
+    let members = getAllMemberNames();
 
-    members = sortMembers(members, memberOrderInput);
+    members = sortMembers(members, getMemberOrderString());
 
     // メンバーがいない場合はメッセージ表示
     if (members.length === 0) {
@@ -732,8 +703,7 @@ export function renderActualListView() {
         + (selMode ? '' : '<th>操作</th>') + '</tr>';
 
     // 担当者順を取得
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    const orderList = memberOrderInput ? memberOrderInput.split(',').map(m => m.trim()).filter(m => m) : [];
+    const orderList = getMemberOrderString().split(',').map(m => m.trim()).filter(m => m);
 
     const getMemberIndex = (member) => {
         const idx = orderList.indexOf(member);
@@ -1139,33 +1109,7 @@ export function editActual(id) {
     modalTitle.textContent = `実績データを編集 - ${actual.member} (${year}/${parseInt(month)}/${parseInt(day)})`;
 
     const memberSelect = document.getElementById('editActualMember');
-    const allMembers = new Set();
-    estimates.forEach(e => allMembers.add(e.member));
-    actuals.forEach(a => allMembers.add(a.member));
-
-    let sortedMembers;
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    if (memberOrderInput) {
-        const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
-
-        orderList.forEach(name => {
-            if (allMembers.has(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        Array.from(allMembers).forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        sortedMembers = Array.from(allMembers).sort();
-    }
+    const sortedMembers = sortMembers(getAllMemberNames(), getMemberOrderString());
 
     memberSelect.innerHTML = '';
     sortedMembers.forEach(member => {
@@ -1307,12 +1251,7 @@ function populateOtherWorkMembers(selectedMember) {
     const otherWorkMemberSelect = document.getElementById('otherWorkMember');
     if (!otherWorkMemberSelect) return;
 
-    const allMembers = new Set();
-    estimates.forEach(e => allMembers.add(e.member));
-    actuals.forEach(a => allMembers.add(a.member));
-
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    const sortedMembers = sortMembers([...allMembers], memberOrderInput);
+    const sortedMembers = sortMembers(getAllMemberNames(), getMemberOrderString());
 
     otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
     sortedMembers.forEach(m => {
@@ -1623,11 +1562,8 @@ export function updateEditActualTaskList(member, isEditMode = false, selectedVer
         select.appendChild(optgroup);
     }
 
-    const memberOrderEl = document.getElementById('memberOrder');
-    const memberOrderInput = memberOrderEl ? memberOrderEl.value.trim() : '';
-
     const otherMembers = Object.keys(tasksByMember).filter(m => m !== member);
-    const sortedOtherMembers = sortMembers(otherMembers, memberOrderInput);
+    const sortedOtherMembers = sortMembers(otherMembers, getMemberOrderString());
 
     sortedOtherMembers.forEach(otherMember => {
         if (tasksByMember[otherMember].length > 0) {
