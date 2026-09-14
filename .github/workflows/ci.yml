@@ -15,7 +15,6 @@ on:
   push:
     branches:
       - main
-      - experiment/ui-scaling
 
 permissions:
   contents: read
@@ -94,6 +93,13 @@ jobs:
       # ここが赤くなるのは hook 未設定の環境で js/index.html を触った場合。
       - name: コードマップの鮮度チェック
         run: node scripts/codemap.mjs --check
+
+      # main/ui-scaling統合（2026-09-14）で退避したブランチ名が、CI/自動化ファイルに
+      # 直書きされたまま残っていないか検査する。対象は .github/retired-branches.json。
+      # 一定期間（目安1ヶ月）運用し、問題なければ削除してよい
+      # （docs/superpowers/specs/2026-09-14-stale-branch-ref-check-design.md 参照）。
+      - name: 退避済みブランチ名の残存チェック
+        run: node scripts/check-stale-branch-refs.mjs
 
   # ESLint（レベル2）: "構文は正しいが未定義参照" 型を静的検出する。
   # 既存の checks（依存ゼロ）とは分離し、開発用依存を使うのはこのジョブだけに閉じる。

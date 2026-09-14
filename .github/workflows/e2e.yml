@@ -1,11 +1,11 @@
-# 実ブラウザスモーク: PR と ui-scaling への push で起動・全タブ描画・コンソールエラー0 を検証する。
+# 実ブラウザスモーク: PR と main への push で起動・全タブ描画・コンソールエラー0 を検証する。
 # ブランチ保護の required check（名前: e2e）。
 name: e2e
 
 on:
   pull_request:
   push:
-    branches: [experiment/ui-scaling]
+    branches: [main]
 
 permissions:
   contents: read

@@ -10,7 +10,7 @@
    含める: 背景／要求の解釈／データモデルへの影響／UI案／実装方針の選択肢と推奨／受入条件案。
 3. UI 変更を伴う場合は `mockups/<slug>/` に静的 HTML モックアップ（1〜3案）と README.md を作る。
 4. ブランチ `pipeline/issue-<番号>` で設計書（＋モックアップ）だけをコミットし、
-   `gh pr create --base experiment/ui-scaling --label lane:design --title "docs: <要約>の設計書 (#<番号>)"`
+   `gh pr create --base main --label lane:design --title "docs: <要約>の設計書 (#<番号>)"`
    で PR を作成。本文に「実装はこの設計の承認後、別 Issue で」と明記し、`Refs #<番号>`（Closes ではない）。
 5. Issue に設計書の要点（選択肢と推奨案）をコメントする。
 

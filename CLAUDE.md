@@ -11,25 +11,30 @@
 
 | ブランチ | 用途 | 作業内容 |
 |----------|------|----------|
-| `experiment/ui-scaling` | **現行の正系開発ライン（統合専用）** | 機能開発・改善はここに集約。merge-core(差分/選択マージ)・CI・AI分析・Excel追加読み込み等の最新を含む。**直接編集はしない**。修正は `feature/<topic>` の隔離 worktree で行い、`scripts/worktree.sh finish` で統合する |
-| `main` | デプロイ起点 | 現状は `deploy: trigger Pages rebuild` の空コミット中心で、アプリ本体の開発実体は実験ライン側にある |
+| `main` | **本線（統合専用・デプロイ起点）** | 機能開発・改善はここに集約。merge-core(差分/選択マージ)・CI・AI分析・Excel追加読み込み等の最新を含む。**直接編集はしない**。修正は `feature/<topic>` の隔離 worktree で行い、`scripts/worktree.sh finish` で統合する。push すると deploy.yml でルート配信される |
 | `experiment/redesign` | リデザイン実験 | UI/UXの全面的なリデザイン（frontend-designスキル必須）。ブランチのみ存在、worktree は必要になったら作る |
 | `experiment/sandbox` | 実験用 | 自由に試行錯誤（破壊的変更OK）。ブランチのみ存在、worktree は必要になったら作る |
-| `experiment/llm-analysis` | ui-scaling からの派生（2026-05-23〜） | Excel取り込みのデータ処理fix群。fixは ui-scaling に機能統合済みのため実質役目終了。ブランチのみ存在 |
+| `experiment/llm-analysis` | main(旧ui-scaling) からの派生（2026-05-23〜） | Excel取り込みのデータ処理fix群。fixは本線に機能統合済みのため実質役目終了。ブランチのみ存在 |
 
 > **注**: `feature/gantt-chart` は 2026-01-31 に main へマージ済み。`experiment/design-rebuild` は未使用のため削除済み。
-> **注（2026-06）**: 現在アクティブに開発しているのは `experiment/ui-scaling`。詳細は memory の `project-branch-topology` を参照。退避タグ `backup/ui-scaling-before-resync-8366f0d` あり。
-> **注（2026-09-14）**: `experiment/analytics` / `experiment/fixes` / `experiment/redesign-impl` は現状ブランチ自体が存在しない（過去の計画表記の名残）。
+> **注（2026-09-14〜）**: 旧`main`（`deploy: trigger Pages rebuild` の空コミット中心で開発実体が無かったブランチ）を
+> `archive/main` へ退避し、実開発の本線だった `experiment/ui-scaling` を `main` にリネームして一本化した。
+> **「本線＝main」に統一済み**（旧`experiment/ui-scaling`という名前は存在しない）。旧mainの履歴は`archive/main`で参照可能。
+> 移行時の影響範囲・対応記録は `docs/superpowers/specs/2026-09-14-main-ui-scaling-unification.md` を参照。
 
 ### Worktree構成
 
-実在する worktree は2つだけ（他の experiment/\* はブランチのみ存在し、worktree は必要になったら `git worktree add` で作る）。
+実在する worktree は1つだけ（他の experiment/\* はブランチのみ存在し、worktree は必要になったら `git worktree add` で作る）。
 
 | ディレクトリ | ブランチ | 用途 |
 |-------------|---------|------|
-| `manhour-management` | `main` | デプロイ起点。**主 worktree**（`.git` の実体を持つ） |
-| `manhour-ui-scaling` | `experiment/ui-scaling` | 現行の正系開発ライン。**統合専用**（直接編集しない） |
+| `manhour-management` | `main` | 本線。**主 worktree**（`.git` の実体を持つ）。統合専用（直接編集しない） |
 | `.manhour-worktrees/feature-<topic>` | `feature/<topic>` | 修正1件ごとの一時 worktree。`scripts/worktree.sh` が作成・削除まで自動で行う |
+
+> **注（2026-09-14〜）**: 旧`manhour-ui-scaling` worktree（`experiment/ui-scaling`追跡）は、
+> ブランチのリネームにより追跡先が消滅したため廃止。ローカルに残っている場合は
+> `git worktree remove` で削除し、ローカルの`experiment/ui-scaling`ブランチも削除すること
+> （クラウドセッションからはローカルマシンを操作できないため、この後片付けはユーザー側の対応が必要）。
 
 > **⚠️ worktree 削除の注意**: `.claude/commands` が symlink の場合は、削除前に必ず
 > `rm -f <worktree>/.claude/commands` でリンクだけ先に外す（実体を辿って消してしまうため）。
@@ -40,23 +45,21 @@
 ### 作業前の確認事項
 
 ```bash
-git branch --show-current              # experiment/ui-scaling なら「まだ隔離していない」
+git branch --show-current              # main なら「まだ隔離していない」
 bash scripts/worktree.sh list          # 前回の統合忘れ・掃除漏れがないか
 ```
 
-現在地が `manhour-ui-scaling` でコード修正を頼まれたら、**編集を始める前に**
+現在地が `manhour-management`（`main`）でコード修正を頼まれたら、**編集を始める前に**
 `bash scripts/worktree.sh start <topic>` を実行する（下記「開発フロー」手順0）。
 
 ### どちらのブランチで作業するか
 
 | ユーザーの依頼内容 | 作業ブランチ |
 |-------------------|--------------|
-| バグ修正、表示の微調整 | `experiment/ui-scaling` |
-| 既存機能（見積・実績・レポート・スケジュール）の改善 | `experiment/ui-scaling` |
+| バグ修正、表示の微調整 | `main` |
+| 既存機能（見積・実績・レポート・スケジュール）の改善 | `main` |
 | UI/UXのリデザイン | `experiment/redesign` |
 | 実験的な変更、新しいアイデアの試行 | `experiment/sandbox` |
-
-> **注（2026-06）**: 機能開発・改善は現行の正系 `experiment/ui-scaling` で行う（旧記載の `main` 起点から実態が移行済み）。`main` への取り込み方針はユーザー判断のため、マージ時は確認すること。
 
 **判断に迷う場合**: ユーザーに確認してください。
 
@@ -146,7 +149,7 @@ git branch -D experiment/sandbox
 
 ## 開発フロー（隔離 → 検証 → 統合）
 
-> **絶対ルール**: `manhour-ui-scaling`（`experiment/ui-scaling`）を直接編集しない。統合専用ディレクトリとする。
+> **絶対ルール**: `manhour-management`（`main`）を直接編集しない。統合専用ディレクトリとする。
 > `js/` / `index.html` / `style.css` / `tests/` を伴う修正タスクは、1件ごとに必ず専用 worktree に隔離する。
 > 質問・調査のみ、`docs/` のみの更新は隔離不要。判断に迷ったら隔離する（隔離のコストはほぼゼロ、衝突のコストは大きい）。
 
@@ -162,7 +165,7 @@ git branch -D experiment/sandbox
    ```bash
    bash scripts/worktree.sh finish
    ```
-   rebase → `npm run e2e` → ff-only マージ → push（`deploy.yml` の `experiment/**` トリガで Pages 再デプロイ発火）→ worktree 削除まで自動実行する。途中でユーザーに確認を求めない。
+   rebase → `npm run e2e` → ff-only マージ → push（`deploy.yml` の `main` トリガで Pages 再デプロイ発火・ルート配信）→ worktree 削除まで自動実行する。途中でユーザーに確認を求めない。
    rebase がコンフリクトで停止した場合は、自タスクと本線側の意図を両立する形で解消し
    `git rebase --continue` 後に `finish` を再実行する。両立の判断がつかなければ
    `git rebase --abort` してユーザーに報告し停止する（勝手にどちらかを捨てない）。
@@ -178,7 +181,7 @@ git branch -D experiment/sandbox
 
 > **hookによる強制（2026-09-14〜）**: 上記は文書化しただけでは「AIエージェントが読み飛ばす/
 > 忘れる」リスクが残るため、`~/.claude/hooks/worktree-guard.py`（全プロジェクト共通）が
-> PreToolUse hookとしてEdit/Write/NotebookEditの直前に発火し、`experiment/ui-scaling`
+> PreToolUse hookとしてEdit/Write/NotebookEditの直前に発火し、`main`
 > ブランチ上で `js/` / `index.html` / `style.css` / `tests/` / `scripts/` を直接編集しようと
 > すると**ハーネスレベルで強制的にブロック**する（設定: リポジトリ直下の
 > `.claude-worktree.json`）。例外的に直接編集が必要な場合のみ、リポジトリ直下に
@@ -195,7 +198,7 @@ git branch -D experiment/sandbox
 - 設計: `docs/superpowers/specs/2026-08-19-idea-pipeline-design.md` ／ セットアップ・解禁手順: `docs/pipeline/SETUP.md`
 - 判定基準の調整は `.github/pipeline/prompts/*.md` と `auto-lane-policy.json` を編集
 - パイプラインが作る PR（`pipeline/issue-*`）と対話セッションは並行しうる。**対話セッションで
-  ui-scaling に push する前に `git pull --rebase`** を徹底する
+  main に push する前に `git pull --rebase`** を徹底する
 - 撤回はマージ済み PR か元 Issue に `/revert` コメント
 
 ---

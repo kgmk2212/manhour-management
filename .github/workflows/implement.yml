@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: experiment/ui-scaling
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.PIPELINE_PAT }}   # push が PAT 経由になり PR の checks が発火する
       - uses: actions/setup-node@v4
@@ -65,7 +65,7 @@ jobs:
           if [ -z "$PR" ]; then
             echo "PRが見つからない（needs-clarification降格等の正常系もある）"; exit 0
           fi
-          # 信頼側（ui-scaling checkout）のスクリプト・ポリシーで触禁を再検査
+          # 信頼側（main checkout）のスクリプト・ポリシーで触禁を再検査
           # （PR 側ワークフロー/テスト自己書き換えによる required checks 無効化への対抗。AUTO_MERGE 解禁の前提）
           if [ "$LANE" = "lane:auto" ]; then
             gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate \
@@ -77,7 +77,7 @@ jobs:
           HASLANE=$(gh pr view "$PR" --json labels --jq '[.labels[].name] | index("lane:auto") != null')
           ISDRAFT=$(gh pr view "$PR" --json isDraft --jq .isDraft)
           if [ "$LANE" = "lane:auto" ] && [ "${{ vars.AUTO_MERGE_ENABLED }}" = "true" ] \
-             && [ "$BASEREF" = "experiment/ui-scaling" ] && [ "$HASLANE" = "true" ] && [ "$ISDRAFT" = "false" ]; then
+             && [ "$BASEREF" = "main" ] && [ "$HASLANE" = "true" ] && [ "$ISDRAFT" = "false" ]; then
             gh pr merge "$PR" --squash --auto
             gh issue comment "$ISSUE" --body "🤖 PR #$PR を作成しました。チェック全緑で**自動マージ→自動デプロイ**されます。取り消しは PR クローズ、事後の撤回は \`/revert\` コメント。"
           elif [ "$ISDRAFT" = "true" ]; then

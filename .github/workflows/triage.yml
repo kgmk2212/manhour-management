@@ -44,7 +44,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: experiment/ui-scaling
+          ref: main
 
       - name: Skip if already triaged (live label check)
         id: guard

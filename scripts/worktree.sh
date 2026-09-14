@@ -13,14 +13,14 @@
 # 設計: docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md
 #
 # 原則:
-#   - 本線 worktree（experiment/ui-scaling）では reset / checkout -- / clean / stash を
+#   - 本線 worktree（main）では reset / checkout -- / clean / stash を
 #     絶対に実行しない（他セッションの未コミット変更が実在しうるため）。
 #   - 失敗したら自動で回復せず、状況を出力して非ゼロ終了する。
 
 set -euo pipefail
 
 # 本線ブランチ。リハーサル時のみ MANHOUR_MAINLINE で代役ブランチに差し替える。
-MAINLINE_BRANCH="${MANHOUR_MAINLINE:-experiment/ui-scaling}"
+MAINLINE_BRANCH="${MANHOUR_MAINLINE:-main}"
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 info() { printf '%s\n' "$*" >&2; }
@@ -185,7 +185,7 @@ cmd_finish() {
     die "ff-only マージに失敗しました（他セッションが先に統合した可能性）。手順2から再実行してください。"
   fi
 
-  # 6) push（deploy.yml の experiment/** トリガで Pages が再デプロイされる）
+  # 6) push（deploy.yml の main トリガで Pages が再デプロイされる・ルート配信）
   if [ "$do_push" -eq 1 ] && [ "$has_remote" -eq 1 ]; then
     info "== push =="
     git -C "$main" push origin "$MAINLINE_BRANCH" >&2 \

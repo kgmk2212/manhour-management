@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: experiment/ui-scaling
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.PIPELINE_PAT }}
       - name: Revert merge commit
@@ -46,20 +46,20 @@ jobs:
             PR=$(gh pr list --head "pipeline/issue-${NUM}" --state merged --json number --jq '.[0].number // empty')
           fi
           [ -n "$PR" ] || { gh issue comment "$NUM" --body "⚠️ /revert: マージ済みPRが見つかりません"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1; }
-          # パイプライン産かつ ui-scaling ベースの PR だけを対象にする
+          # パイプライン産かつ main ベースの PR だけを対象にする
           HEADREF=$(gh pr view "$PR" --json headRefName --jq .headRefName)
           BASEREF=$(gh pr view "$PR" --json baseRefName --jq .baseRefName)
           case "$HEADREF" in
             pipeline/issue-*) ;;
             *) gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR はパイプライン産ではないため対象外です（head: $HEADREF）"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1;;
           esac
-          [ "$BASEREF" = "experiment/ui-scaling" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR のベースが experiment/ui-scaling ではありません（base: $BASEREF）"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1; }
+          [ "$BASEREF" = "main" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR のベースが main ではありません（base: $BASEREF）"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1; }
           SHA=$(gh pr view "$PR" --json mergeCommit --jq '.mergeCommit.oid // empty')
           [ -n "$SHA" ] || { gh issue comment "$NUM" --body "⚠️ /revert: PR #$PR はマージされていません"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1; }
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git revert --no-edit "$SHA" || { git revert --abort 2>/dev/null || true; gh issue comment "$NUM" --body "⚠️ /revert: コンフリクトのため自動撤回できません。手動対応が必要です（対象: $SHA）"; echo "notified=true" >> "$GITHUB_OUTPUT"; exit 1; }
-          git push origin experiment/ui-scaling
+          git push origin main
           gh issue comment "$NUM" --body "↩️ PR #$PR（$SHA）を revert して push しました。デプロイは自動で走ります。"
       - name: Notify failure
         if: failure() && steps.rv.outputs.notified != 'true'

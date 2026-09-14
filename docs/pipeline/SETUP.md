@@ -31,9 +31,9 @@ bash scripts/pipeline/setup-labels.sh
 
 ## 4. ブランチ保護（Phase C 完了後に実施 — required checks が存在してから）
 `gh pr merge --auto` がチェック完了を待つための前提。**「PR必須」は有効にしない**
-（対話セッションからの ui-scaling 直接 push を塞がないため）。
+（対話セッションからの main 直接 push を塞がないため）。
 ```bash
-gh api -X PUT "repos/kgmk2212/manhour-management/branches/experiment%2Fui-scaling/protection" \
+gh api -X PUT "repos/kgmk2212/manhour-management/branches/main/protection" \
   --input - <<'EOF'
 {
   "required_status_checks": { "strict": false, "contexts": ["e2e", "lane-policy-check"] },
@@ -53,7 +53,12 @@ gh variable set AUTO_MERGE_ENABLED --repo kgmk2212/manhour-management --body "tr
 解禁前チェック: 週次レポートの「判定不一致」が計測されていること／implement.yml の Gate に
 信頼側ポリシー再検査が入っていること（PR 側チェック無効化への対抗）。
 
-## 6. ワークフローの main ミラー（運用ルール）
+## 6. ワークフローの main ミラー（2026-09-14 廃止）
 issues / issue_comment / schedule トリガーは **default branch（main）上のワークフローしか発火しない**。
-`triage.yml` / `implement.yml` / `revert.yml` / `pipeline-report.yml` を変更したら必ず
-`bash scripts/pipeline/mirror-workflows-to-main.sh` を実行して main に反映する（正本は ui-scaling 側）。
+以前は正本の `experiment/ui-scaling` から default branch だった `main`（デプロイ起点のみ・開発実体なし）へ
+`triage.yml` / `implement.yml` / `revert.yml` / `pipeline-report.yml` を都度コピーする
+`scripts/pipeline/mirror-workflows-to-main.sh` が必要だった。
+
+2026-09-14、`main`（旧: ほぼ空コミットのみ）を `archive/main` へ退避し、`experiment/ui-scaling` を
+`main` にリネームして一本化したため、**正本と default branch が同じブランチになり、ミラー自体が不要になった**。
+上記スクリプトは削除済み。ワークフローを変更したら通常どおり `main` に直接 push すれば発火する。

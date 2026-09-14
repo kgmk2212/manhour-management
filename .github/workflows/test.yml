@@ -1,10 +1,10 @@
 name: test
 
-# 特性テスト（tests/・node:test）を experiment/ui-scaling への push ごとに実行する。
+# 特性テスト（tests/・node:test）を main への push ごとに実行する。
 # アプリ本体はビルド不要の素のJSなので、Node のセットアップだけで走る。
 on:
   push:
-    branches: ["experiment/ui-scaling"]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:

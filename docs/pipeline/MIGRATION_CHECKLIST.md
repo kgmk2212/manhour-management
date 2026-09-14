@@ -164,7 +164,7 @@ OAuth トークンは個人の座席に紐づくため、会社 Org の資産と
 
 localStorage は `scheme://host` 単位。`kgmk2212.github.io` → `<org>.github.io` は
 **ホストが変わるため、新 URL を開くとデータが空になる。**
-パスは無関係なので、同一ホスト内（`/manhour-management/` と `/preview/ui-scaling/`）では共有されている。
+パスは無関係なので、同一ホスト内（`/manhour-management/` と `/preview/<実験ブランチ名>/`）では共有されている。
 
 手順:
 
@@ -183,15 +183,16 @@ Pages 設定は引き継がれず、旧 URL からのリダイレクトも無い
 移管後に Settings → Pages で GitHub Actions ソースを再設定し、
 `deploy.yml` を `workflow_dispatch` で手動実行して復旧を確認する。
 
-`deploy.yml` は main をルート、`experiment/{sandbox,redesign,ui-scaling}` を
+`deploy.yml` は main をルート、`experiment/*` を
 `preview/` 配下に展開する構成。全ブランチが移管先に存在することを確認する。
 
 ### 3-5. ワークフローの main ミラーを忘れない
 
 `SETUP.md` §6 のとおり、issues / issue_comment / schedule トリガーは
 **default branch（main）上のワークフローしか発火しない。**
-移管後に default branch が main のままか確認し、`triage.yml` を編集したら
-`bash scripts/pipeline/mirror-workflows-to-main.sh` を実行する。
+移管後に default branch が main のままか確認する
+（2026-09-14 に main と experiment/ui-scaling を統合したため、以前あった
+mirror-workflows-to-main.sh によるワークフロー同期は不要になっている）。
 
 §3-2 の修正を入れたあとにミラーを忘れると、修正したのに動かないという二重の混乱になる。
 

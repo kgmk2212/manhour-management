@@ -1,0 +1,9 @@
+{
+  "retired": [
+    {
+      "name": "experiment/ui-scaling",
+      "retiredAt": "2026-09-14",
+      "note": "main にリネームして統合済み（docs/superpowers/specs/2026-09-14-main-ui-scaling-unification.md）"
+    }
+  ]
+}
