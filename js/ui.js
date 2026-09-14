@@ -7,11 +7,12 @@ import {
     showMonthColorsSetting, reportMatrixBgColorMode,
     showProgressBarsSetting, showProgressPercentageSetting,
     progressBarStyle, matrixEstActFormat, filterBarMode, scheduleBarColorMode,
-    memberOrder, setMemberOrder, debugModeEnabled,
+    debugModeEnabled,
     estimateFilterState, reportFilterState,
     setEstimateFilterState, setReportFilterState
 } from './state.js';
-import { normalizeEstimate, sortMembers, enableDragScroll, compareVersions, getCurrentMonthString } from './utils.js';
+import { normalizeEstimate, enableDragScroll, compareVersions, getCurrentMonthString } from './utils.js';
+import { getActiveMemberNames, getAllMemberNames } from './members.js';
 import { STORAGE_KEYS, UI } from './constants.js';
 
 // タブの順序を定義
@@ -2218,75 +2219,69 @@ export function updateSegmentedButtons() {
 // ============================================
 
 export function updateMemberOptions() {
-    const members = new Set();
-    estimates.forEach(e => members.add(e.member));
-    actuals.forEach(a => members.add(a.member));
+    const activeMembers = getActiveMemberNames();
+    const allMembers = getAllMemberNames();
 
-    const memberOrderInput = document.getElementById('memberOrder');
-    const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
-
-    const sortedMembers = sortMembers(members, memberOrderValue);
-
-    // 各工程の担当者選択肢を更新
+    // 各工程の担当者選択肢を更新（新規登録用）
     const processes = ['UI', 'PG', 'PT', 'IT', 'ST'];
     processes.forEach(process => {
         // 見積管理タブ
         const select = document.getElementById(`est${process}_member`);
         if (select) {
-            updateSelectOptions(select, sortedMembers, true);
+            updateSelectOptions(select, activeMembers, true);
         }
 
         // クイック入力の見積登録フォーム
         const quickEstSelect = document.getElementById(`quickEst${process}_member`);
         if (quickEstSelect) {
-            updateSelectOptions(quickEstSelect, sortedMembers, true);
+            updateSelectOptions(quickEstSelect, activeMembers, true);
         }
 
         // 見積登録モーダル
         const addEstSelect = document.getElementById(`addEst${process}_member`);
         if (addEstSelect) {
-            updateSelectOptions(addEstSelect, sortedMembers, true);
+            updateSelectOptions(addEstSelect, activeMembers, true);
         }
     });
 
-    // クイック入力の担当者選択肢
+    // クイック入力の担当者選択肢（新規登録用）
     const quickMemberSelect = document.getElementById('quickMember');
     if (quickMemberSelect) {
-        updateSelectOptions(quickMemberSelect, sortedMembers, false, true);
+        updateSelectOptions(quickMemberSelect, activeMembers, false, true);
     }
 
-    // その他作業の担当者選択肢
+    // その他作業の担当者選択肢（新規登録用）
     const otherWorkMemberSelect = document.getElementById('otherWorkMember');
     if (otherWorkMemberSelect) {
         const currentValue = otherWorkMemberSelect.value;
         otherWorkMemberSelect.innerHTML = '<option value="">選択...</option>';
-        sortedMembers.forEach(member => {
+        activeMembers.forEach(member => {
             const option = document.createElement('option');
             option.value = member;
             option.textContent = member;
             otherWorkMemberSelect.appendChild(option);
         });
-        if (currentValue && sortedMembers.includes(currentValue)) {
+        if (currentValue && activeMembers.includes(currentValue)) {
             otherWorkMemberSelect.value = currentValue;
         }
     }
 
-    // 実績編集モーダルの担当者選択肢
+    // 実績編集モーダルの担当者選択肢（既存データの編集用）
     const editActualMemberSelect = document.getElementById('editActualMember');
     if (editActualMemberSelect) {
-        updateSelectOptions(editActualMemberSelect, sortedMembers, false, true);
+        updateSelectOptions(editActualMemberSelect, allMembers, false, true);
     }
 
-    // 休暇登録フォームの担当者選択肢
+    // 休暇登録フォームの担当者選択肢（新規登録用）
     const quickVacationMemberSelect = document.getElementById('quickVacationMember');
     if (quickVacationMemberSelect) {
-        updateSelectOptions(quickVacationMemberSelect, sortedMembers, false, true);
+        updateSelectOptions(quickVacationMemberSelect, activeMembers, false, true);
     }
 
-    // 見積編集モーダルの担当者選択肢
+    // 見積編集モーダルの担当者選択肢（既存データの編集用）
     const editEstimateMemberSelect = document.getElementById('editEstimateMember');
     if (editEstimateMemberSelect) {
-        updateSelectOptions(editEstimateMemberSelect, sortedMembers, false);
+        updateSelectOptions(editEstimateMemberSelect, allMembers, false);
     }
 }
 
@@ -4197,12 +4192,6 @@ export function syncSettingsToUI() {
     // 日付/月表示形式（ラジオボタン）
 
 
-    // 担当者の表示順（window.memberOrderを使用して確実に最新値を取得）
-    const memberOrderEl = document.getElementById('memberOrder');
-    if (memberOrderEl && window.memberOrder) {
-        memberOrderEl.value = window.memberOrder;
-    }
-
     // テーマ設定の要素は Theme.loadThemeSettings で別途同期されるが、
     // ここでも念のため、State と window 変数を最終確認
 }
@@ -4212,13 +4201,6 @@ export function syncSettingsToUI() {
  */
 export function updateAllDisplays() {
     if (debugModeEnabled) console.log('🔄 全画面更新実行');
-
-    // 担当者表示順をDOMから取得して状態に反映
-    const memberOrderEl = document.getElementById('memberOrder');
-    if (memberOrderEl) {
-        const newValue = memberOrderEl.value.trim();
-        setMemberOrder(newValue);
-    }
 
     // 各モジュールのレンダリング関数を呼び出し
     // window を介して呼び出す（循環参照を避けるためと、init.js で確実に公開されているため）
@@ -4230,25 +4212,6 @@ export function updateAllDisplays() {
     if (typeof window.updateQuickTaskList === 'function') window.updateQuickTaskList();
 
     if (debugModeEnabled) console.log('✅ 全画面更新完了');
-}
-
-/**
- * 担当者表示順のヘルプを表示
- */
-export function showMemberOrderHelp() {
-    const helpMsg = `
-        <strong>担当者表示順の設定方法:</strong><br><br>
-        1. 担当者の名前をカンマ(,)区切りで入力します<br>
-        2. ここで指定した順番で、実績一覧やレポートに表示されます<br>
-        3. 指定しなかった担当者は、指定された人の後ろに名前順で表示されます<br><br>
-        例: <code>佐藤,田中,山田</code><br><br>
-        ※入力後は「設定を適用」ボタンを押すか、欄外をクリックすると反映されます。
-    `;
-    if (typeof window.showAlert === 'function') {
-        window.showAlert(helpMsg, true);
-    } else {
-        alert('担当者表示順の設定方法:\n\n1. 担当者の名前をカンマ(,)区切りで入力します\n2. 指定した順番で表示されます\n3. 指定しなかった人は後ろに名前順で表示されます');
-    }
 }
 
 // ============================================
