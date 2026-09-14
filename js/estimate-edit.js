@@ -12,8 +12,11 @@ import {
     generateMonthRange,
     generateMonthOptions,
     showAlert,
-    splitHoursEvenly
+    splitHoursEvenly,
+    sortMembers
 } from './utils.js';
+
+import { getAllMemberNames, getMemberOrderString } from './members.js';
 
 import { saveRemainingEstimate, deleteRemainingEstimate, renderEstimateList, isOtherWork } from './estimate.js';
 import { updateSchedule, calculateEndDate, showToast } from './schedule.js';
@@ -64,33 +67,7 @@ export function editEstimate(id) {
     });
 
     const memberSelect = document.getElementById('editEstimateMember');
-    const allMembers = new Set();
-    estimates.forEach(e => allMembers.add(e.member));
-    actuals.forEach(a => allMembers.add(a.member));
-
-    let sortedMembers;
-    const memberOrderInput = document.getElementById('memberOrder').value.trim();
-    if (memberOrderInput) {
-        const orderList = memberOrderInput.split(',').map(m => m.trim()).filter(m => m);
-        const orderedMembers = [];
-        const unorderedMembers = [];
-
-        orderList.forEach(name => {
-            if (allMembers.has(name)) {
-                orderedMembers.push(name);
-            }
-        });
-
-        Array.from(allMembers).forEach(m => {
-            if (!orderedMembers.includes(m)) {
-                unorderedMembers.push(m);
-            }
-        });
-
-        sortedMembers = [...orderedMembers, ...unorderedMembers.sort()];
-    } else {
-        sortedMembers = Array.from(allMembers).sort();
-    }
+    const sortedMembers = sortMembers(getAllMemberNames(), getMemberOrderString());
 
     memberSelect.innerHTML = '';
     sortedMembers.forEach(member => {
