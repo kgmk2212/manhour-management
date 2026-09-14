@@ -129,7 +129,7 @@ git branch -D experiment/sandbox
 /
 ├── index.html          # メインHTML
 ├── style.css           # スタイルシート
-├── js/                 # JavaScriptモジュール（34ファイル・約37,000行）
+├── js/                 # JavaScriptモジュール（43ファイル・約42,000行）
 │   ├── state.js        # グローバル状態管理
 │   ├── storage.js      # localStorage操作
 │   ├── constants.js    # 定数定義
