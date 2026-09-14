@@ -10,6 +10,7 @@ import { renderEstimateList } from './estimate.js';
 import { updateSchedule, calculateEndDate } from './schedule.js';
 import { pushAction } from './history.js';
 import * as WorkMonths from './estimate-work-months.js';
+import { getActiveMemberNames } from './members.js';
 
 // ============================================
 // 見積追加モーダル関連
@@ -835,14 +836,11 @@ export function initOtherWorkMemberSelect() {
     const select = document.getElementById('addEstOtherMember');
     if (!select) return;
 
-    // 担当者を estimates と actuals から取得
-    const members = new Set();
-    State.estimates.forEach(e => { if (e.member) members.add(e.member); });
-    State.actuals.forEach(a => { if (a.member) members.add(a.member); });
+    const members = getActiveMemberNames();
 
     select.innerHTML = '<option value="">-- 担当者を選択 --</option>';
     select.innerHTML += '<option value="__all__">全員</option>';
-    Array.from(members).sort().forEach(member => {
+    members.forEach(member => {
         select.innerHTML += `<option value="${Utils.escapeHtml(member)}">${Utils.escapeHtml(member)}</option>`;
     });
 }
@@ -851,10 +849,7 @@ export function initOtherWorkMemberSelect() {
  * 全担当者のリストを取得
  */
 function getAllMembers() {
-    const members = new Set();
-    State.estimates.forEach(e => { if (e.member) members.add(e.member); });
-    State.actuals.forEach(a => { if (a.member) members.add(a.member); });
-    return Array.from(members).sort();
+    return getActiveMemberNames();
 }
 
 // 担当者の自動コピー機能（PG↔PT、IT↔ST）
