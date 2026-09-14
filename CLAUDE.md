@@ -15,6 +15,11 @@
 >
 > 除外理由は `.gitignore` 内に1件ずつ記載。**新たにドキュメントを足すときは「公開リポジトリに
 > 置いてよいか」を必ず判断すること**（勤務先の内部事情・脆弱性の所在・個人環境のパスは置かない）。
+>
+> **重要**: `js/` のコメント・`style.css`・`tests/`・`mockups/*/README.md` などにも
+> `docs/superpowers/specs/...` を指す参照が約25箇所ある。**リポジトリ内のあらゆる
+> `docs/superpowers/...` への言及はローカル専用パスを指す**と解釈すること（個別注記はしていない）。
+> リモートには存在しないので、クローン環境でこれらを開こうとしても見つからない。
 
 ---
 
@@ -33,7 +38,7 @@
 > **注（2026-09-14〜）**: 旧`main`（`deploy: trigger Pages rebuild` の空コミット中心で開発実体が無かったブランチ）を
 > `archive/main` へ退避し、実開発の本線だった `experiment/ui-scaling` を `main` にリネームして一本化した。
 > **「本線＝main」に統一済み**（旧`experiment/ui-scaling`という名前は存在しない）。旧mainの履歴は`archive/main`で参照可能。
-> 移行時の影響範囲・対応記録は `docs/superpowers/specs/2026-09-14-main-ui-scaling-unification.md` を参照。
+> 移行時の影響範囲・対応記録は `docs/superpowers/specs/2026-09-14-main-ui-scaling-unification.md`(ローカルのみ) を参照。
 
 ### Worktree構成
 
