@@ -1,127 +1,86 @@
 # 工数管理システム
 
-シンプルで使いやすい工数管理・見積管理Webアプリケーション。
+見積・実績・スケジュールを1つのブラウザアプリで管理する、サーバー不要の工数管理ツール。
+ビルド工程なし・アカウント登録なしで、開いた瞬間から使えます。
 
-## 特徴
+**▶ [ブラウザで試す](https://kgmk2212.github.io/manhour-management/)**
+（実験ブランチの版: [プレビュー一覧](https://kgmk2212.github.io/manhour-management/preview/)）
 
-- 📊 **見積管理** - プロジェクトの見積を工程別・担当者別に管理
-- ⏱️ **実績記録** - 日々の作業実績をカレンダー形式で簡単入力
-- 📅 **スケジュール管理** - ガントチャート形式でプロジェクトの予定を管理
-- 📈 **レポート・分析** - 見積と実績の比較、進捗状況の可視化
-- 🎨 **カスタマイズ** - テーマカラー、表示形式を自由に設定
-- 📱 **レスポンシブ** - PC・タブレット・スマートフォン対応
-- 💾 **ローカルストレージ** - データは全てブラウザ内に保存（サーバー不要）
+> 個人の業務で実際に使っている実用ツールです。汎用パッケージではなく、
+> 特定の運用（工程 UI/PG/PT/IT/ST、版数管理、人日=8h・人月=当月営業日数 換算）に合わせて作られています。
 
-## 技術スタック
+## できること
 
-- 純粋なHTML/CSS/JavaScript（フレームワークなし）
-- ES Modules による23個のモジュール構成
-- ExcelJS（Excelファイル出力）
-- ローカルストレージによるデータ保存（JSONエクスポート/インポート対応）
+| 機能 | 内容 |
+|---|---|
+| **見積** | 版数 × 対応 × 工程 × 担当者のマトリクスで見積を積み上げ。分割・一括編集・作業月の割り当てに対応 |
+| **実績** | 日々の作業実績を入力。タイムライン表示で時間帯ごとの内訳を直接ドラッグ操作できる |
+| **スケジュール** | ガントチャートで予定を管理。中断・休暇・祝日（japanese-holidays）を考慮 |
+| **レポート** | 見積と実績の差分、進捗、担当者別・工程別の集計を可視化 |
+| **入出力** | Excel の取り込みと書き出し（SheetJS）、JSON でのバックアップ／復元、別端末データとの差分マージ |
+| **AI 分析**（任意） | ローカル Ollama で総合評価・推奨アクションを生成。データは端末外に出ない |
 
-## ファイル構成
+PC・タブレット・スマートフォンに対応しています（モバイルは下部タブの専用レイアウト）。
 
-詳細は [ARCHITECTURE.md](ARCHITECTURE.md) を参照してください。
+## データの扱い（重要）
 
-```
-/
-├── index.html              (HTML構造)
-├── style.css               (スタイル定義)
-├── js/                     (23個のJavaScriptモジュール)
-│   ├── state.js           (状態管理)
-│   ├── storage.js         (データ保存)
-│   ├── estimate.js        (見積管理)
-│   ├── actual.js          (実績管理)
-│   ├── schedule.js        (スケジュール管理)
-│   ├── report.js          (レポート・分析)
-│   └── ...                (その他17モジュール)
-├── ARCHITECTURE.md         (アーキテクチャ構成)
-└── CLAUDE.md              (開発ガイド)
+**データはブラウザの `localStorage` にのみ保存されます。サーバーには一切送信されません。**
+その裏返しとして、以下の点に注意してください。
+
+- データは**端末・ブラウザ単位**です。別の PC やスマホからは見えません
+- ブラウザの**閲覧履歴／サイトデータを削除すると消えます**。シークレットウィンドウも同様
+- **定期的に「JSON エクスポート」でバックアップを取ってください。** 復元とマージに対応しています
+- 共有 PC で使った場合は、メンバー名・工数が端末に残ります
+
+## 動作環境
+
+Chrome / Edge / Safari / Firefox の最新版。ES Modules と `localStorage` を使うため、
+`file://` で直接開くとモジュール読み込みに失敗します。ローカルで動かす場合は HTTP サーバー経由で開いてください。
+
+## ローカルで動かす
+
+ビルド工程はありません。リポジトリを取得して HTTP サーバーで配信するだけです。
+
+```bash
+git clone https://github.com/kgmk2212/manhour-management.git
+cd manhour-management
+python3 -m http.server 8000
+# → http://localhost:8000
 ```
 
 ## 開発
 
-このプロジェクトはビルド工程を必要としません。`index.html` をブラウザで直接開くか、ローカルサーバーで起動してください。
-
 ```bash
-# 例: Python の http.server を使用
-python -m http.server 8000
+npm install        # 開発ツール（ESLint / Playwright）のみ。アプリ本体に依存はない
+npm run lint       # ESLint
+npm test           # 特性テスト（node --test）
+npm run e2e        # E2E テスト（Playwright）
 ```
 
-## AI 分析機能（ローカル Ollama）
+- アプリ本体は素の HTML/CSS/JavaScript（ES Modules・`js/` 配下に43モジュール）。
+  外部ライブラリは SheetJS と japanese-holidays.js のみで、いずれも `lib/` にバンドル済み（CDN 不使用）
+- **どこに何があるかは [`docs/CODEMAP.md`](docs/CODEMAP.md) を引く**（自動生成の索引。`名前:行番号` 形式）
+- 構成と依存関係は [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- ブランチ運用・開発フローは [`CLAUDE.md`](CLAUDE.md)。`main` が開発ライン兼デプロイ起点で、
+  `experiment/*` は GitHub Pages の `preview/<名前>/` に自動配信されます
 
-「分析」タブにブラウザから直接ローカル Ollama を呼び出す AI 分析セクションがあります。工数データから総合評価・展望・推奨アクションを生成します。データはローカルマシンから一歩も外に出ません。
+## AI 分析機能
 
-### セットアップ（初回のみ）
+「分析」タブから、ローカルの [Ollama](https://ollama.com/) を呼び出して工数データの
+総合評価・展望・推奨アクションを生成できます。推論は利用者のマシン上で完結し、
+工数データが外部に送信されることはありません。
 
-1. **Ollama をインストール**
+セットアップ・トラブルシューティング・セキュリティ上の注意は
+**[docs/AI_ANALYSIS.md](docs/AI_ANALYSIS.md)** を参照してください。
 
-   ```bash
-   # macOS / Linux
-   curl -fsSL https://ollama.com/install.sh | sh
-   ```
+## このリポジトリについて
 
-2. **モデルをダウンロード**
+個人の業務用に開発しているツールを公開しているものです。参考・流用は自由ですが、
+特定の運用に合わせた作りのため、機能追加や不具合対応のご要望には応じられない場合があります。
 
-   ```bash
-   ollama pull qwen3.5:9b
-   # もしくは gemma4 でも可
-   ```
-
-3. **CORS 許可を設定**（GitHub Pages 等の HTTPS ページから叩く場合）
-
-   ```bash
-   # macOS (launchd で常駐させている場合)
-   launchctl setenv OLLAMA_ORIGINS "https://kgmk2212.github.io"
-   launchctl stop ollama && launchctl start ollama
-
-   # 開発時にローカルサーバーから試すなら複数許可
-   launchctl setenv OLLAMA_ORIGINS "https://kgmk2212.github.io,http://localhost:*"
-
-   # 手動起動の場合
-   OLLAMA_ORIGINS="https://kgmk2212.github.io" ollama serve
-   ```
-
-### 使い方
-
-1. 分析タブ → AI 分析セクションの **「分析を実行」** ボタンを押す
-2. 数十秒〜数分で推論完了、結果が画面に表示される
-3. 結果は `localStorage` にキャッシュされ、次回以降は即時表示
-4. エンドポイントやモデル名は **「設定」** ボタンから変更可能。設定内の **「疎通確認」** で Ollama との接続を確認できます
-
-### トラブルシューティング
-
-| 症状 | 対処 |
-|------|------|
-| 「Ollama に接続できません」 | `ollama serve` が動いているか確認 |
-| CORS エラー | `OLLAMA_ORIGINS` に現在のページの origin を追加して Ollama 再起動 |
-| 「モデルが見つかりません」 | 設定画面のモデル名を確認、または `ollama pull <モデル名>` |
-| JSON 解析エラー | 再実行で改善することが多い。継続する場合はモデルを変更 |
-
-### 内部構成（抜粋）
-
-- `js/llm-summarize.js` — localStorage のデータを要約 JSON に変換
-- `js/llm-analyze.js` — Ollama API を直接叩き、結果 JSON を取得
-- `js/llm-prompts.js` — モデル別システムプロンプト + 出力スキーマ
-- `js/ai-analysis.js` — 実行・キャッシュ・UI
-- `llm-analysis/` — Python 版の同等パイプライン（検証用 CLI）
-
-詳細は [docs/LLM_ANALYSIS_CONCEPT.md](docs/LLM_ANALYSIS_CONCEPT.md) 以下を参照。
-
-### セキュリティ上の注意
-
-- **`OLLAMA_ORIGINS` は必要なドメインだけを列挙**してください。`*` や広すぎるワイルドカードは、悪意あるサイトが localhost の Ollama を叩ける状態を作ります。
-- 分析結果は localStorage に保存されます。メンバー名・工数を含むため、**共有 PC では「設定 > キャッシュを削除」で消してから離席**してください。
-- CSP の `connect-src` は Ollama デフォルトポート `http://localhost:11434` と `http://127.0.0.1:11434` のみを許可しています。XSS が混入した場合に被害者ローカルの他サービスへ到達するリスクを抑えるため、ワイルドカードポートは使っていません。Ollama を非デフォルトポートで運用する場合は `index.html` の CSP メタタグを編集してください。
-- 推論処理はすべてユーザー自身のマシン上で完結し、工数データがインターネット経由で外部に送信されることはありません（トンネル変種 E1 を別途有効化した場合を除く）。
+なお、React + TypeScript ベースの後継版を並行して開発しています。現行版は移行が完了するまで
+従来どおり利用・保守します。
 
 ## ライセンス
 
-MIT License
-
-## 次世代版（manhour-next）
-
-段階移行先の次世代版が `~/manhour-next` で稼働中（React+TS+IndexedDB＋同期サーバー・
-Mac mini launchd 常駐・自宅tailnet経由でアクセス・夜間バックアップ）。
-設計書は本リポジトリの `docs/architecture-consulting.md`（第2版）。本リポジトリ（現行版）は
-移行完了まで従来どおり利用・保守する。
+MIT License（[LICENSE](LICENSE)）
