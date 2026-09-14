@@ -10,6 +10,7 @@ import {
 import { generateMonthOptions, generateMonthRange, showAlert, sortMembers, escapeHtml, escapeForHandler, getTodayString, setHoursSelectValue } from './utils.js';
 import * as Utils from './utils.js';
 import * as Estimate from './estimate.js';
+import { getActiveMemberNames, getMemberOrderString } from './members.js';
 import { PROCESS, CALCULATIONS } from './constants.js';
 import { pushAction } from './history.js';
 import { refreshHoursInput, getRegisteredDayHours } from './hours-input.js';
@@ -49,15 +50,8 @@ export function updateQuickMemberSelect() {
     const select = document.getElementById('quickMemberSelect');
     if (!select) return;
 
-    const members = new Set();
-
-    // 見積データから担当者を抽出
-    estimates.forEach(e => members.add(e.member));
-
     // 表示順が設定されている場合はそれを使用
-    const memberOrderInput = document.getElementById('memberOrder');
-    const memberOrderValue = memberOrderInput ? memberOrderInput.value.trim() : '';
-    const sortedMembers = sortMembers(members, memberOrderValue);
+    const sortedMembers = sortMembers(getActiveMemberNames(), getMemberOrderString());
 
     // オプションを生成
     const currentValue = select.value;
