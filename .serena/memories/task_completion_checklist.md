@@ -11,4 +11,4 @@ When finishing a task:
    - Follow existing patterns (window globals in init.js, state management in state.js).
 3. **Documentation**:
    - Update `ARCHITECTURE.md` if files/modules were added/renamed/deleted.
-   - Note: `CODEBASE_STRUCTURE.md`, `PHASE3_IMPLEMENTATION.md`, `IMPROVEMENT_PLAN.md` exist but are partially outdated legacy docs.
+   - Note: `CODEBASE_STRUCTURE.md`, `PHASE3_IMPLEMENTATION.md`, `IMPROVEMENT_PLAN.md` are outdated legacy docs, now untracked (local only, gitignored). Do not rely on them.

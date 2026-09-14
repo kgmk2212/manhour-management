@@ -216,7 +216,7 @@ launchctl setenv OLLAMA_ORIGINS "https://<org>.github.io"
 
 | ファイル | 該当行数 |
 |----------|----------|
-| `docs/superpowers/plans/2026-08-19-idea-pipeline.md` | 18 |
+| `docs/superpowers/plans/2026-08-19-idea-pipeline.md`（ローカルのみ・gitignore 済み） | 18 |
 | `docs/pipeline/SETUP.md` | 7 |
 | `docs/LLM_ANALYSIS_ARCHITECTURE.md` | 6 |
 | `docs/LLM_WORKFLOW.md` | 4 |

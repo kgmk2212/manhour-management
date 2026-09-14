@@ -3,6 +3,19 @@
 > **重要**: このファイルはClaude Codeが参照する開発ガイドです。
 > 作業開始前に必ずブランチを確認してください。
 
+> **📁 ローカルのみのドキュメントについて（2026-09-14〜）**
+> 本リポジトリは PUBLIC です。以下は `.gitignore` で追跡から外しており、**ローカルには実体があるが
+> リモートには存在しません**。本ガイド中でこれらを参照している箇所には「(ローカルのみ)」と付記しています。
+> クローンし直した環境では読めないので注意してください。
+>
+> `docs/superpowers/`（AI向け実装計画・設計書）／ `docs/architecture-consulting.md`（勤務先の内部方針を含む）／
+> `SECURITY_AUDIT_REPORT.md`・`SECURITY_AUDIT_PROMPT.md`・`docs/RISK_ANALYSIS.md`（脆弱性・公開リスクの記述）／
+> `IMPROVEMENT_PLAN.md`・`PHASE3_IMPLEMENTATION.md`・`CODEBASE_STRUCTURE.md`（陳腐化した旧計画）／
+> `llm-analysis/data/`（実験ログ）
+>
+> 除外理由は `.gitignore` 内に1件ずつ記載。**新たにドキュメントを足すときは「公開リポジトリに
+> 置いてよいか」を必ず判断すること**（勤務先の内部事情・脆弱性の所在・個人環境のパスは置かない）。
+
 ---
 
 ## ブランチ戦略
@@ -40,7 +53,7 @@
 > `rm -f <worktree>/.claude/commands` でリンクだけ先に外す（実体を辿って消してしまうため）。
 > `scripts/worktree.sh` の `finish`/`drop` は自動でこれを判定・実行する。
 > （旧・Windows前提の `cmd /c rmdir` 手順は撤去。経緯は
-> `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md` を参照）
+> `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md`(ローカルのみ) を参照）
 
 ### 作業前の確認事項
 
@@ -177,7 +190,7 @@ git branch -D experiment/sandbox
 > macOS移行時に実体ごと消失していた（フラグは無いのに条件分岐の記述だけが残り、
 > 「フラグ無し→在来フロー→直接編集」に読めてしまっていた）。運用の要をgit管理下の
 > `scripts/worktree.sh` に置き、条件分岐を無くして常時隔離に一本化したのが現行版。
-> 詳細: `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md`。
+> 詳細: `docs/superpowers/specs/2026-09-14-always-worktree-workflow-design.md`(ローカルのみ)。
 
 > **hookによる強制（2026-09-14〜）**: 上記は文書化しただけでは「AIエージェントが読み飛ばす/
 > 忘れる」リスクが残るため、`~/.claude/hooks/worktree-guard.py`（全プロジェクト共通）が
@@ -195,7 +208,7 @@ git branch -D experiment/sandbox
 
 「💡 アイデア」Issue を起点に triage→implement→PR→（解禁後）自動マージ→デプロイが自動で走る。
 
-- 設計: `docs/superpowers/specs/2026-08-19-idea-pipeline-design.md` ／ セットアップ・解禁手順: `docs/pipeline/SETUP.md`
+- 設計: `docs/superpowers/specs/2026-08-19-idea-pipeline-design.md`(ローカルのみ) ／ セットアップ・解禁手順: `docs/pipeline/SETUP.md`
 - 判定基準の調整は `.github/pipeline/prompts/*.md` と `auto-lane-policy.json` を編集
 - パイプラインが作る PR（`pipeline/issue-*`）と対話セッションは並行しうる。**対話セッションで
   main に push する前に `git pull --rebase`** を徹底する
@@ -225,7 +238,7 @@ git branch -D experiment/sandbox
 | マージ | `.gitattributes` の `merge=codemap` で、衝突時は本線側を採用（生成物なので人が選ぶ意味がない）。有効化は一度だけ `git config merge.codemap.driver true`（`.git/config` は全 worktree 共有）。未登録でも通常の3wayマージに落ちるだけで壊れない |
 | テスト | `tests/codemap.test.js`（`node --test`） |
 
-**なぜ生成物にしたか**: 手書きの `CODEBASE_STRUCTURE.md` は2ヶ月で誤情報化した
+**なぜ生成物にしたか**: 手書きの `CODEBASE_STRUCTURE.md`(ローカルのみ) は2ヶ月で誤情報化した
 （「19ファイル」と書かれていたが実際は34ファイル、行数も全て古い）。誤った索引は
 無いよりも害が大きいため、索引は人が書かず機械が生成し CI が守る。
 
@@ -265,7 +278,7 @@ git branch -D experiment/sandbox
 |---------|------|------|
 | `mockups/mobile-backup-access/` | モバイル版バックアップ復元アクセス改善 | 検討中 |
 | `mockups/timeline-actuals/` | タイムライン実績入力（D&D） | 検討中 |
-| `mockups/actual-bulk-edit/` | 実績のまとめ変更（選択一括編集／条件置換／表直接編集の3案比較） | 案1 採用・設計書 `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md` |
+| `mockups/actual-bulk-edit/` | 実績のまとめ変更（選択一括編集／条件置換／表直接編集の3案比較） | 案1 採用・設計書 `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md`(ローカルのみ) |
 | `mockups/schedule-redesign/` | スケジュール機能の刷新（案A ガント磨き込み／案B 担当者×日の負荷格子／案C 計画ボード＋進捗ガント の3案比較） | 検討中（推奨 案C の段階導入・B-010） |
 
 ---
@@ -276,4 +289,4 @@ git branch -D experiment/sandbox
 - `docs/GANTT_CHART_DESIGN.md` - 詳細設計書
 - `docs/CODEMAP.md` - 関数・要素IDの索引（自動生成。**何かを探すときはまずこれ**）
 - `ARCHITECTURE.md` - アーキテクチャ構成（依存関係・技術仕様。ファイルサイズ等の数値は古い）
-- `CODEBASE_STRUCTURE.md` - コードベース構造（⚠️ 2026-06-14 時点の手書き記録。現状と不一致）
+- `CODEBASE_STRUCTURE.md` - コードベース構造（⚠️ ローカルのみ・2026-06-14 時点の手書き記録。現状と不一致のため参照非推奨）

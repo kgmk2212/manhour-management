@@ -23,4 +23,4 @@
 ## Documentation
 - Update JSDoc for functions.
 - `ARCHITECTURE.md` is the primary architecture reference (may need updates for schedule-related files).
-- `CODEBASE_STRUCTURE.md` exists but is outdated/trimmed.
+- `CODEBASE_STRUCTURE.md` is outdated and untracked (local only, gitignored). Use `docs/CODEMAP.md` instead.

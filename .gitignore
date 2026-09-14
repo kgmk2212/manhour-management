@@ -57,6 +57,39 @@ logs/
 # Personal notes and task lists
 修正案リスト.md
 
+# ---------------------------------------------------------------------------
+# 公開リポジトリに置かないドキュメント（2026-09-14 に追跡から除外）
+# いずれもローカルには残す。リモートから外す理由は下記のとおり。
+# 注意: 追跡外しは過去コミットからの閲覧を防がない（履歴には残っている）。
+# ---------------------------------------------------------------------------
+
+# 勤務先の内部ネットワーク方針・ID基盤・未公表の社内共有構想を含む
+docs/architecture-consulting.md
+
+# 稼働中の公開サイトの脆弱性を file:line で列挙。かつ内容が陳腐化しており
+# （「外部通信なし」「ExcelJS(CDN)」→ 実際は Ollama 通信あり・SheetJS ローカル）、
+# 古いセキュリティ文書は読者を誤らせる方向にしか働かない
+SECURITY_AUDIT_REPORT.md
+SECURITY_AUDIT_PROMPT.md
+
+# 「このリポジトリを公開しているリスク」を公開リポジトリで論じた自己申告書
+docs/RISK_ANALYSIS.md
+
+# 2026-01 で更新停止した当時の計画・実施記録
+IMPROVEMENT_PLAN.md
+PHASE3_IMPLEMENTATION.md
+
+# 冒頭で自ら「現状と一致しない」と宣言している陳腐化文書。
+# 後継は docs/CODEMAP.md（自動生成・CI で鮮度保証）
+CODEBASE_STRUCTURE.md
+
+# AI エージェント向けの実装計画・設計書。アプリの利用者には無価値で、
+# リポジトリのドキュメントの過半（11,000行超）を占めていた
+docs/superpowers/
+
+# モデル比較実験（2026-04）の生ログ。役目終了
+llm-analysis/data/
+
 # Archive folder (old/unused files)
 archive/
 
