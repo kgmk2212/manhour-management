@@ -23,6 +23,11 @@ Fable にブランドカラー（アクセントグリーン `#2D5A27` / アン�
 `index.html` の `<link rel="icon">` を `icon-1-clock-chart.svg` の内容に差し替え済み。
 設計判断の詳細は `docs/superpowers/specs/2026-09-13-app-icon-design.md` を参照。
 
+**iOS ホーム画面アイコン追加（2026-09-15）**: iPhoneで「ホーム画面に追加」した際にアプリアイコンが
+表示されるよう、`apple-touch-icon.png`（180×180、リポジトリ直下）を追加し `index.html` に
+`<link rel="apple-touch-icon">` を追加。iOS側で角丸マスクを自動適用するため、favicon版と異なり
+角丸なしの正方形フルブリード版（`apple-touch-icon-source.svg`）を元にラスタライズしている。
+
 ## 採用時のメモ
 
 - 各SVGは `viewBox="0 0 100 100"` の自己完結ベクターで、外部フォント・外部リソースは未使用。
