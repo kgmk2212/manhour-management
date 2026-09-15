@@ -113,3 +113,4 @@ session-log/
 # Playwright
 test-results/
 playwright-report/
+docs/superpowers/
