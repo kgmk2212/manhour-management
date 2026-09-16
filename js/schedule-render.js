@@ -2503,7 +2503,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
             touchState.startClientX = touch.clientX;
             touchState.startClientY = touch.clientY;
 
-            const schedule = renderer.getScheduleAtPosition(x, y);
+            const hit = renderer.getScheduleRectAtPosition(x, y);
+            const schedule = hit ? hit.schedule : null;
             touchState.schedule = schedule;
 
             if (schedule) {
@@ -2515,9 +2516,13 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
 
                     dragState.isDragging = true;
                     dragState.schedule = schedule;
+                    dragState.segmentIndex = hit.segmentIndex;
+                    dragState.interruptionId = hit.interruptionId;
+                    dragState.segmentOriginalStart = hit.segmentStartDate;
                     dragState.startX = x;
                     dragState.startY = y;
-                    dragState.originalStartDate = schedule.startDate;
+                    // セグメントを掴んだときは「そのセグメントの開始日」が基準になる
+                    dragState.originalStartDate = hit.segmentStartDate;
                     dragState.previewDate = null;
                     const rowIndex = renderer.getRowIndexAtPosition(y);
                     dragState.originalRowIndex = rowIndex;
@@ -2563,7 +2568,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                 const y = (touch.clientY - rect.top) / _s;
 
                 let rowChanged = false;
-                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows) {
+                // 残作業セグメント（segmentIndex > 0）は担当者変更できないため行追従しない
+                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
+                    dragState.segmentIndex === 0) {
                     const rowIndex = renderer.getRowIndexAtPosition(y);
                     if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
                         dragState.targetRowIndex = rowIndex;
@@ -2576,11 +2583,19 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, buildDragPreviews(dragState.schedule, dateStr), dragState.targetRowIndex);
+                        drawDragPreview(
+                            renderer,
+                            buildDragPreviews(dragState.schedule, dateStr, dragState.segmentIndex),
+                            dragState.targetRowIndex
+                        );
                     }
                 } else if (rowChanged) {
                     const fallbackDate = dragState.previewDate || dragState.originalStartDate;
-                    drawDragPreview(renderer, buildDragPreviews(dragState.schedule, fallbackDate), dragState.targetRowIndex);
+                    drawDragPreview(
+                        renderer,
+                        buildDragPreviews(dragState.schedule, fallbackDate, dragState.segmentIndex),
+                        dragState.targetRowIndex
+                    );
                 }
 
                 // 端に近づいたら自動スクロール
@@ -2635,7 +2650,9 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
 
                 let didUpdate = false;
 
+                // 残作業セグメント（segmentIndex > 0）は担当者変更の対象にしない（設計書 §7-2）
                 const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+                    dragState.segmentIndex === 0 &&
                     dragState.targetRowIndex >= 0 &&
                     dragState.targetRowIndex !== dragState.originalRowIndex &&
                     renderer.rows && renderer.rows[dragState.targetRowIndex];
@@ -2646,7 +2663,10 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
                     didUpdate = true;
                 } else if (dragState.previewDate && onScheduleUpdate) {
-                    onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                    onScheduleUpdate(
+                        dragState.schedule.id, dragState.previewDate,
+                        dragState.segmentIndex, dragState.interruptionId
+                    );
                     didUpdate = true;
                 }
 
@@ -2656,6 +2676,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                 dragState.previewDate = null;
                 dragState.targetRowIndex = -1;
                 dragState.originalRowIndex = -1;
+                clearDragSegment();
 
                 // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
                 // 再描画が済んでいるため、ここでの再描画は不要
@@ -2689,6 +2710,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
             dragState.previewDate = null;
             dragState.targetRowIndex = -1;
             dragState.originalRowIndex = -1;
+            clearDragSegment();
 
             const renderer = getRenderer();
             if (renderer) {
