@@ -1422,7 +1422,9 @@ export class GanttChartRenderer {
                 ctx.restore();
             }
 
-            // ✂マーク（セグメント境界）
+            // ✂マーク（セグメント境界）。再開日がピン留めされたセグメントは
+            // 絵文字フォントに頼らないCanvas描画の「旗」グリフで、
+            // 「この開始日は自動で動かない」ことを ✂ より強く示す
             ctx.save();
             ctx.font = '11px sans-serif';
             ctx.fillStyle = '#ffffff';
@@ -1431,11 +1433,43 @@ export class GanttChartRenderer {
                 ctx.textAlign = 'right';
                 ctx.fillText('✂', barX + barWidth - 2, barY + BAR_HEIGHT - 3);
             }
-            if (i > 0) {
+            if (i > 0 && !seg.isPinned) {
                 ctx.textAlign = 'left';
                 ctx.fillText('✂', barX + 2, barY + BAR_HEIGHT - 3);
             }
             ctx.restore();
+
+            // ピン留め済みセグメントは左端に「旗」グリフ（ポール+ペナント）を描き、
+            // 「この開始日は自動で動かない／差し込み作業に追従しない」ことを示す。
+            // ポール自体がアンカー線を兼ねるため、✂の代わりにこの一体グリフのみを描く
+            if (i > 0 && seg.isPinned) {
+                ctx.save();
+                ctx.globalAlpha = 0.95;
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.4;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(0,0,0,0.25)';
+                ctx.shadowBlur = 1.5;
+
+                const poleX = barX + 3;
+                const poleTop = barY + 4;
+                const poleBottom = barY + BAR_HEIGHT - 4;
+
+                ctx.beginPath();
+                ctx.moveTo(poleX, poleTop);
+                ctx.lineTo(poleX, poleBottom);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(poleX, poleTop);
+                ctx.lineTo(poleX + 6, poleTop + 3);
+                ctx.lineTo(poleX, poleTop + 6);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
 
             // テキスト: 工程名（先頭以外は「(続)」）。%とステータスアイコンは最終セグメントのみ
             if (barWidth > 30) {
@@ -1507,10 +1541,18 @@ export class GanttChartRenderer {
 
             ctx.save();
             ctx.beginPath();
-            ctx.setLineDash([4, 4]);
+            if (r2.isPinned) {
+                // 固定済み: 実線で「この間隔は自動で詰まらない」ことを示す
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 0.6;
+                ctx.lineWidth = 1.5;
+            } else {
+                // 自動追従: 従来どおり点線（差し込み作業の移動に付いてくる）
+                ctx.setLineDash([4, 4]);
+                ctx.globalAlpha = 0.4;
+                ctx.lineWidth = 1.5;
+            }
             ctx.strokeStyle = taskColor;
-            ctx.globalAlpha = 0.4;
-            ctx.lineWidth = 1.5;
             ctx.moveTo(r1.barX + r1.barWidth, lineY);
             ctx.lineTo(r2.barX, lineY);
             ctx.stroke();
