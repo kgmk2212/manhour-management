@@ -1276,13 +1276,17 @@ export class GanttChartRenderer {
             ctx.restore();
         }
 
-        // クリック判定用矩形
+        // クリック判定用矩形（分割バーと形を揃えるためセグメント情報を必ず持たせる）
         this.scheduleRects.push({
             schedule,
             x: barX,
             y: barY,
             width: barWidth,
-            height: BAR_HEIGHT
+            height: BAR_HEIGHT,
+            segmentIndex: 0,
+            interruptionId: null,
+            isPinned: false,
+            segmentStartDate: schedule.startDate
         });
     }
 
@@ -1487,7 +1491,13 @@ export class GanttChartRenderer {
                 }
             }
 
-            segmentRects.push({ barX, barY, barWidth });
+            segmentRects.push({
+                barX, barY, barWidth,
+                segmentIndex: i,
+                interruptionId: seg.interruptionId,
+                isPinned: !!seg.isPinned,
+                segmentStartDate: seg.startDate
+            });
         });
 
         for (let i = 0; i < segmentRects.length - 1; i++) {
@@ -1517,7 +1527,11 @@ export class GanttChartRenderer {
                 x: r.barX,
                 y: r.barY,
                 width: r.barWidth,
-                height: BAR_HEIGHT
+                height: BAR_HEIGHT,
+                segmentIndex: r.segmentIndex,
+                interruptionId: r.interruptionId,
+                isPinned: r.isPinned,
+                segmentStartDate: r.segmentStartDate
             });
         });
     }
@@ -1663,6 +1677,32 @@ export class GanttChartRenderer {
             if (x >= rect.x && x <= rect.x + rect.width &&
                 y >= rect.y && y <= rect.y + rect.height) {
                 return rect.schedule;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 座標から「どのスケジュールのどのセグメントを掴んだか」を返す
+     * `getScheduleAtPosition` の上位互換。ドラッグ経路のみが使う。
+     * @param {number} x - timelineCanvas 座標系のX
+     * @param {number} y - timelineCanvas 座標系のY
+     * @returns {{schedule: Object, segmentIndex: number, interruptionId: string|null,
+     *            isPinned: boolean, segmentStartDate: string}|null}
+     */
+    getScheduleRectAtPosition(x, y) {
+        // 後に描画された（手前に表示される）バーを優先するため逆順で検索
+        for (let i = this.scheduleRects.length - 1; i >= 0; i--) {
+            const rect = this.scheduleRects[i];
+            if (x >= rect.x && x <= rect.x + rect.width &&
+                y >= rect.y && y <= rect.y + rect.height) {
+                return {
+                    schedule: rect.schedule,
+                    segmentIndex: rect.segmentIndex ?? 0,
+                    interruptionId: rect.interruptionId ?? null,
+                    isPinned: !!rect.isPinned,
+                    segmentStartDate: rect.segmentStartDate || rect.schedule.startDate
+                };
             }
         }
         return null;
@@ -2241,9 +2281,20 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
 
     const ctx = renderer.timelineCtx;
 
-    previews.forEach(({ schedule, newStartDate }, index) => {
-        const originalStart = new Date(schedule.startDate);
-        const originalEnd = new Date(schedule.endDate);
+    previews.forEach(({ schedule, newStartDate, segmentIndex = 0 }, index) => {
+        // セグメントドラッグ時はバー長をセグメントの期間から求める
+        let spanStartDate = schedule.startDate;
+        let spanEndDate = schedule.endDate;
+        if (segmentIndex > 0) {
+            const seg = calculateSegments(schedule)[segmentIndex];
+            if (seg) {
+                spanStartDate = seg.startDate;
+                spanEndDate = seg.endDate;
+            }
+        }
+
+        const originalStart = new Date(spanStartDate);
+        const originalEnd = new Date(spanEndDate);
         const duration = Math.ceil((originalEnd - originalStart) / (1000 * 60 * 60 * 24));
 
         const newStart = new Date(newStartDate);
@@ -2257,11 +2308,16 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
         const barEndX = renderer.dateToX(visibleEnd) + DAY_WIDTH;
         const barWidth = barEndX - barX;
 
-        const originalRect = renderer.scheduleRects.find(r => r.schedule.id === schedule.id);
+        // 同一 id の矩形が複数ある（分割バー）ため segmentIndex も一致条件に加える。
+        // これを怠ると常に先頭セグメントの Y 座標を拾ってしまう
+        const originalRect = renderer.scheduleRects.find(
+            r => r.schedule.id === schedule.id && (r.segmentIndex ?? 0) === segmentIndex
+        );
         if (!originalRect) return;
 
-        // 連動追従バー（2件目以降）は担当者変更の対象にならないため、常に自分の行に描画する
-        const isMemberDrag = index === 0 && targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
+        // 連動追従バー（2件目以降）と残作業セグメントは担当者変更の対象にならないため、常に自分の行に描画する
+        const isMemberDrag = index === 0 && segmentIndex === 0 &&
+            targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
             scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
         const barY = isMemberDrag
             ? HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING
@@ -2313,15 +2369,26 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
  * そのプレビュー用エントリも含めた配列を組み立てる
  * @param {Object} schedule - ドラッグ中のスケジュール
  * @param {string} newStartDate - ドラッグ先の新しい開始日
- * @returns {{schedule: Object, newStartDate: string}[]}
+ * @param {number} [segmentIndex=0] - 掴んでいるセグメントの index（0 = バー全体／先頭）
+ * @returns {{schedule: Object, newStartDate: string, segmentIndex: number}[]}
  */
-function buildDragPreviews(schedule, newStartDate) {
-    const previews = [{ schedule, newStartDate }];
+function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
+    const previews = [{ schedule, newStartDate, segmentIndex }];
+
+    const hasInterruptions = (schedule.interruptions || []).length > 0;
+    const segments = hasInterruptions ? calculateSegments(schedule) : null;
+
+    // 中間セグメントを動かしても schedule.endDate は変わらないため、
+    // 後工程の連動プレビューは最終セグメントを掴んだときだけ出す
+    if (segments && segmentIndex !== segments.length - 1) return previews;
+
     const linked = findLinkedBackSchedule(schedule, schedules);
     if (linked) {
-        const frontNewEnd = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
+        const seg = segments ? segments[segmentIndex] : null;
+        const hours = seg ? seg.hours : schedule.estimatedHours;
+        const frontNewEnd = calculateEndDate(newStartDate, hours, schedule.member);
         const linkedNewStart = getNextBusinessDay(frontNewEnd, linked.member);
-        previews.push({ schedule: linked, newStartDate: linkedNewStart });
+        previews.push({ schedule: linked, newStartDate: linkedNewStart, segmentIndex: 0 });
     }
     return previews;
 }
