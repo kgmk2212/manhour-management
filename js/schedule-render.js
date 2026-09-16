@@ -2281,12 +2281,15 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
 
     const ctx = renderer.timelineCtx;
 
-    previews.forEach(({ schedule, newStartDate, segmentIndex = 0 }, index) => {
+    previews.forEach(({ schedule, newStartDate, segmentIndex = 0, segments }, index) => {
         // セグメントドラッグ時はバー長をセグメントの期間から求める
         let spanStartDate = schedule.startDate;
         let spanEndDate = schedule.endDate;
         if (segmentIndex > 0) {
-            const seg = calculateSegments(schedule)[segmentIndex];
+            // buildDragPreviews が計算済みの segments を優先し、再計算を避ける。
+            // buildDragPreviews を経由しない将来の呼び出し元向けにフォールバックも残す
+            const segs = segments || calculateSegments(schedule);
+            const seg = segs[segmentIndex];
             if (seg) {
                 spanStartDate = seg.startDate;
                 spanEndDate = seg.endDate;
@@ -2370,13 +2373,17 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
  * @param {Object} schedule - ドラッグ中のスケジュール
  * @param {string} newStartDate - ドラッグ先の新しい開始日
  * @param {number} [segmentIndex=0] - 掴んでいるセグメントの index（0 = バー全体／先頭）
- * @returns {{schedule: Object, newStartDate: string, segmentIndex: number}[]}
+ * @returns {{schedule: Object, newStartDate: string, segmentIndex: number,
+ *            segments: Object[]|null}[]} segments は calculateSegments の計算結果
+ *            （中断なしの場合は null）。drawDragPreview 側での再計算を避けるために含める
  */
 function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
-    const previews = [{ schedule, newStartDate, segmentIndex }];
-
     const hasInterruptions = (schedule.interruptions || []).length > 0;
     const segments = hasInterruptions ? calculateSegments(schedule) : null;
+
+    // calculateSegments はここで計算済みなので、drawDragPreview 側では再計算させず
+    // このエントリの segments をそのまま使わせる
+    const previews = [{ schedule, newStartDate, segmentIndex, segments }];
 
     // 中間セグメントを動かしても schedule.endDate は変わらないため、
     // 後工程の連動プレビューは最終セグメントを掴んだときだけ出す
@@ -2388,7 +2395,8 @@ function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
         const hours = seg ? seg.hours : schedule.estimatedHours;
         const frontNewEnd = calculateEndDate(newStartDate, hours, schedule.member);
         const linkedNewStart = getNextBusinessDay(frontNewEnd, linked.member);
-        previews.push({ schedule: linked, newStartDate: linkedNewStart, segmentIndex: 0 });
+        // 連動先は常に segmentIndex 0（先頭）扱いなので segments は使われない
+        previews.push({ schedule: linked, newStartDate: linkedNewStart, segmentIndex: 0, segments: null });
     }
     return previews;
 }
