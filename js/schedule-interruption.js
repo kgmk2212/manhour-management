@@ -94,7 +94,10 @@ export function resolveSegmentStart(autoStartDate, prevSegEndDate, resumeDate, m
 /**
  * スケジュールをセグメントに分割
  * @param {Object} schedule - スケジュールオブジェクト
- * @returns {Array<{startDate: string, endDate: string, hours: number, index: number}>}
+ * @returns {Array<{startDate: string, endDate: string, hours: number, index: number,
+ *                  interruptionId: string|null, isPinned: boolean}>}
+ *   interruptionId: そのセグメントの開始日を支配している中断の id（先頭は null）
+ *   isPinned: その中断が resumeDate を持つか（＝自動追従しない）
  */
 export function calculateSegments(schedule) {
     const interruptions = schedule.interruptions || [];
@@ -104,16 +107,20 @@ export function calculateSegments(schedule) {
             startDate: schedule.startDate,
             endDate: schedule.endDate,
             hours: schedule.estimatedHours,
-            index: 0
+            index: 0,
+            interruptionId: null,
+            isPinned: false
         }];
     }
 
     const sorted = [...interruptions].sort((a, b) => a.consumedHours - b.consumedHours);
     const segments = [];
     let segStartDate = schedule.startDate;
+    // 現在の segStartDate を支配している中断（先頭セグメントは null）
+    let segStartInterruption = null;
     let prevConsumed = 0;
 
-    sorted.forEach((int, i) => {
+    sorted.forEach((int) => {
         const segHours = int.consumedHours - prevConsumed;
         if (segHours <= 0) {
             console.warn('calculateSegments: skipping interruption with non-positive segment hours', int);
@@ -125,20 +132,23 @@ export function calculateSegments(schedule) {
             startDate: segStartDate,
             endDate: segEndDate,
             hours: segHours,
-            index: segments.length
+            index: segments.length,
+            interruptionId: segStartInterruption ? segStartInterruption.id : null,
+            isPinned: !!(segStartInterruption && segStartInterruption.resumeDate)
         });
 
+        let autoStartDate;
         if (int.insertedScheduleId) {
             const inserted = schedules.find(s => s.id === int.insertedScheduleId);
-            if (inserted) {
-                segStartDate = getNextBusinessDay(inserted.endDate, schedule.member);
-            } else {
-                segStartDate = getNextBusinessDay(segEndDate, schedule.member);
-            }
+            autoStartDate = inserted
+                ? getNextBusinessDay(inserted.endDate, schedule.member)
+                : getNextBusinessDay(segEndDate, schedule.member);
         } else {
-            segStartDate = getNextBusinessDay(segEndDate, schedule.member);
+            autoStartDate = getNextBusinessDay(segEndDate, schedule.member);
         }
 
+        segStartDate = resolveSegmentStart(autoStartDate, segEndDate, int.resumeDate, schedule.member);
+        segStartInterruption = int;
         prevConsumed = int.consumedHours;
     });
 
@@ -149,7 +159,9 @@ export function calculateSegments(schedule) {
             startDate: segStartDate,
             endDate: segEndDate,
             hours: remainingHours,
-            index: segments.length
+            index: segments.length,
+            interruptionId: segStartInterruption ? segStartInterruption.id : null,
+            isPinned: !!(segStartInterruption && segStartInterruption.resumeDate)
         });
     }
 

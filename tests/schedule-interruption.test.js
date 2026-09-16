@@ -118,7 +118,8 @@ describe('calculateSegments', () => {
         const schedule = makeSchedule();
         const segments = SI.calculateSegments(schedule);
         assert.deepEqual(segments, [
-            { startDate: '2026-09-14', endDate: '2026-09-18', hours: 40, index: 0 }
+            { startDate: '2026-09-14', endDate: '2026-09-18', hours: 40, index: 0,
+              interruptionId: null, isPinned: false }
         ]);
     });
 
@@ -130,7 +131,8 @@ describe('calculateSegments', () => {
         });
         const segments = SI.calculateSegments(schedule);
         assert.equal(segments.length, 2);
-        assert.deepEqual(segments[0], { startDate: '2026-09-14', endDate: '2026-09-15', hours: 16, index: 0 });
+        assert.deepEqual(segments[0], { startDate: '2026-09-14', endDate: '2026-09-15', hours: 16, index: 0,
+            interruptionId: null, isPinned: false });
         assert.equal(segments[1].startDate, '2026-09-16');
         assert.equal(segments[1].hours, 24);
     });
@@ -147,6 +149,109 @@ describe('calculateSegments', () => {
         assert.equal(segments[0].hours, 16);
         assert.equal(segments[1].hours, 16);
         assert.equal(segments[2].index, 2); // 修正1が正しく効いていることの確認
+    });
+
+    test('セグメントに interruptionId と isPinned が付与される', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        assert.equal(segments[0].interruptionId, null, '先頭セグメントは常に null');
+        assert.equal(segments[0].isPinned, false);
+        assert.equal(segments[1].interruptionId, 'int_1', '残作業セグメントは直前の中断に支配される');
+        assert.equal(segments[1].isPinned, false);
+    });
+
+    test('resumeDate を設定するとそのセグメントがその日から始まり isPinned になる', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: null, resumeDate: '2026-09-21' }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        assert.equal(segments[1].startDate, '2026-09-21');
+        assert.equal(segments[1].isPinned, true);
+        // 24h（3営業日）: 09-21, 09-22, 09-23
+        assert.equal(segments[1].endDate, '2026-09-23');
+    });
+
+    test('前セグメント終了日以前の resumeDate は翌営業日へクランプされる', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: null, resumeDate: '2026-09-14' }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        // seg0 は 09-14〜09-15。クランプ先は 09-16
+        assert.equal(segments[1].startDate, '2026-09-16');
+    });
+
+    test('非営業日（土曜）の resumeDate は翌営業日（月曜）へ寄る', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: null, resumeDate: '2026-09-19' }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        assert.equal(segments[1].startDate, '2026-09-21');
+    });
+
+    test('ピンなしのセグメントは差し込み作業の endDate に追従し続ける', () => {
+        const inserted = {
+            id: 'sch_ins', version: 'V2', task: '差込', process: 'PG', member: MEMBER,
+            startDate: '2026-09-16', estimatedHours: 16, endDate: '2026-09-17',
+            status: 'pending', interruptions: []
+        };
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: 'sch_ins' }
+            ]
+        });
+        State.setSchedules([schedule, inserted]);
+
+        assert.equal(SI.calculateSegments(schedule)[1].startDate, '2026-09-18');
+
+        // 差し込み作業を後ろにずらすと残作業も追従する
+        State.setSchedules([schedule, { ...inserted, startDate: '2026-09-21', endDate: '2026-09-22' }]);
+        assert.equal(SI.calculateSegments(schedule)[1].startDate, '2026-09-23');
+    });
+
+    test('ピン留め済みセグメントは差し込み作業の移動に追従しない（絶対位置を維持）', () => {
+        const inserted = {
+            id: 'sch_ins', version: 'V2', task: '差込', process: 'PG', member: MEMBER,
+            startDate: '2026-09-16', estimatedHours: 16, endDate: '2026-09-17',
+            status: 'pending', interruptions: []
+        };
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: 'sch_ins', resumeDate: '2026-09-18' }
+            ]
+        });
+        State.setSchedules([schedule, inserted]);
+        assert.equal(SI.calculateSegments(schedule)[1].startDate, '2026-09-18');
+
+        State.setSchedules([schedule, { ...inserted, startDate: '2026-09-21', endDate: '2026-09-22' }]);
+        assert.equal(SI.calculateSegments(schedule)[1].startDate, '2026-09-18', 'ピンは動かない');
+    });
+
+    test('先頭セグメントを移動してもピン留め済みの後続セグメントは動かない', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: null, resumeDate: '2026-09-23' }
+            ]
+        });
+        const moved = { ...schedule, startDate: '2026-09-16' };
+        const segments = SI.calculateSegments(moved);
+        assert.equal(segments[0].startDate, '2026-09-16');
+        assert.equal(segments[1].startDate, '2026-09-23', 'ピンは絶対位置を維持する');
     });
 });
 
