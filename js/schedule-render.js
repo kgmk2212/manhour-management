@@ -1977,8 +1977,21 @@ function closeScheduleContextMenu() {
     if (m) m.remove();
 }
 
-function showScheduleContextMenu(schedule, clickDateStr, x, y) {
+/**
+ * @param {Object} schedule - 対象スケジュール
+ * @param {string} clickDateStr - 右クリックした日付（YYYY-MM-DD）
+ * @param {number} x - clientX
+ * @param {number} y - clientY
+ * @param {{interruptionId: string|null, isPinned: boolean}|null} pinInfo
+ *        右クリックしたセグメントのピン情報。ピン留め済みなら解除項目を出す
+ */
+function showScheduleContextMenu(schedule, clickDateStr, x, y, pinInfo) {
     closeScheduleContextMenu();
+
+    const canUnpin = !!(pinInfo && pinInfo.isPinned && pinInfo.interruptionId);
+    const unpinItem = canUnpin
+        ? '<button type="button" class="schedule-ctx-item" data-act="unpin">📌 再開日の固定を解除</button>'
+        : '';
 
     const menu = document.createElement('div');
     menu.className = 'schedule-ctx-menu';
@@ -1988,6 +2001,7 @@ function showScheduleContextMenu(schedule, clickDateStr, x, y) {
         <div class="schedule-ctx-head"><b>${escapeHtml(schedule.task)}</b><span>${escapeHtml(schedule.version)} ・ ${escapeHtml(schedule.process)} ・ ${escapeHtml(schedule.member)}</span></div>
         <button type="button" class="schedule-ctx-item" data-act="detail">詳細を表示</button>
         <button type="button" class="schedule-ctx-item" data-act="interrupt">✂ ${escapeHtml(clickDateStr)} で中断</button>
+        ${unpinItem}
         <div class="schedule-ctx-sep"></div>
         <button type="button" class="schedule-ctx-item is-danger" data-act="delete">削除</button>
     `;
@@ -2003,6 +2017,10 @@ function showScheduleContextMenu(schedule, clickDateStr, x, y) {
             window.openScheduleDetailModal(schedule.id);
         } else if (btn.dataset.act === 'interrupt') {
             window.openInterruptionModal(schedule.id, clickDateStr);
+        } else if (btn.dataset.act === 'unpin') {
+            if (typeof window.clearSegmentPin === 'function') {
+                window.clearSegmentPin(schedule.id, pinInfo.interruptionId);
+            }
         } else if (btn.dataset.act === 'delete') {
             if (confirm('このスケジュールを削除しますか？')) window.deleteSchedule(schedule.id);
         }
@@ -2056,12 +2074,14 @@ export function setupCanvasClickHandler(onScheduleClick) {
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
 
-            const schedule = renderer.getScheduleAtPosition(x, y);
+            const hit = renderer.getScheduleRectAtPosition(x, y);
+            const schedule = hit ? hit.schedule : null;
             if (schedule) {
                 event.preventDefault();
                 const clickDate = renderer.getDateAtPosition(x);
                 const dateStr = clickDate ? formatDateForDrag(clickDate) : schedule.startDate;
-                showScheduleContextMenu(schedule, dateStr, event.clientX, event.clientY);
+                showScheduleContextMenu(schedule, dateStr, event.clientX, event.clientY,
+                    { interruptionId: hit.interruptionId, isPinned: hit.isPinned });
             }
         });
 

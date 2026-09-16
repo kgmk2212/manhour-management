@@ -1229,6 +1229,9 @@ function renderDetailInterruptionHistory(schedule) {
     container.style.display = 'block';
     let html = '';
 
+    // 実効的な再開日（クランプ・営業日寄せ後の値）はセグメント計算の結果から取る
+    const segments = calculateSegments(schedule);
+
     interruptions.forEach(int => {
         const insertedInfo = int.insertedScheduleId
             ? (() => {
@@ -1237,13 +1240,23 @@ function renderDetailInterruptionHistory(schedule) {
             })()
             : '';
 
+        const seg = segments.find(s => s.interruptionId === int.id);
+        const resumeDateText = seg ? escapeHtml(seg.startDate) : '—';
+        const isPinned = !!(seg && seg.isPinned);
+        const resumeInfo = `<div class="text-muted">再開日: ${resumeDateText}${isPinned ? '（手動固定）' : '（自動）'}</div>`;
+        const unpinButton = isPinned
+            ? `<button onclick="resetSegmentResumeDateFromDetail('${escapeHtml(int.id)}')">自動に戻す</button>`
+            : '';
+
         html += `<div class="interruption-history-item">
             <div class="int-info">
                 <div><strong>✂ ${escapeHtml(int.splitDate)} 中断</strong> — ${escapeHtml(int.reason || '(理由なし)')}</div>
                 <div class="text-muted">消化: ${int.consumedHours}h${insertedInfo}</div>
+                ${resumeInfo}
             </div>
             <div class="int-actions">
                 <button onclick="editInterruptionFromDetail('${escapeHtml(int.id)}')">編集</button>
+                ${unpinButton}
                 <button onclick="removeInterruptionFromDetail('${escapeHtml(int.id)}')">取り消し</button>
             </div>
         </div>`;
@@ -1297,6 +1310,23 @@ export function removeInterruptionFromDetail(interruptionId) {
         ? `中断を取り消しました（${result.cascadeResults.length}件のスケジュールが変更されました）`
         : '中断を取り消しました';
     showToast(msg, 'success');
+}
+
+/**
+ * 詳細モーダルからセグメントの再開日固定を解除する
+ * @param {string} interruptionId - 中断ID
+ */
+export function resetSegmentResumeDateFromDetail(interruptionId) {
+    if (!currentEditingScheduleId) return;
+    const scheduleId = currentEditingScheduleId;
+
+    if (!clearSegmentPin(scheduleId, interruptionId)) {
+        showToast('再開日の固定解除に失敗しました', 'error');
+        return;
+    }
+
+    // 中断履歴の表示を更新するためモーダルを開き直す
+    openScheduleDetailModal(scheduleId);
 }
 
 /**

@@ -454,6 +454,7 @@ window.applyInterruption = Schedule.applyInterruption;
 window.openInterruptionFromDetail = Schedule.openInterruptionFromDetail;
 window.editInterruptionFromDetail = Schedule.editInterruptionFromDetail;
 window.removeInterruptionFromDetail = Schedule.removeInterruptionFromDetail;
+window.resetSegmentResumeDateFromDetail = Schedule.resetSegmentResumeDateFromDetail;
 // history.js のグローバル Undo/Redo
 window.historyUndo = History.undo;
 window.historyRedo = History.redo;
