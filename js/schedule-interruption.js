@@ -59,6 +59,39 @@ export function calculateConsumedHoursAtDate(schedule, splitDate) {
 }
 
 /**
+ * セグメント開始日を正規化する（ピン留めの解決を一箇所に集約）
+ *
+ * 規則（設計書 §7-1 のユーザー確定事項）:
+ *   ① resumeDate 未設定 → 自動計算値（従来どおり連続計算・差し込み追従）
+ *   ② resumeDate が前セグメント終了日以前 → 前セグメント終了日の翌営業日へクランプ
+ *   ③ resumeDate が非営業日 → 直近の翌営業日へ寄せる
+ * 自動計算値より前の resumeDate は（②に該当しない限り）尊重する。
+ * これにより差し込み作業より前へ残作業を戻す操作が可能になる。
+ *
+ * @param {string} autoStartDate - resumeDate が無い場合に使う自動計算値（YYYY-MM-DD）
+ * @param {string} prevSegEndDate - 直前セグメントの終了日（YYYY-MM-DD）
+ * @param {string|null|undefined} resumeDate - ピン留めされた再開日
+ * @param {string} member - 担当者名（営業日判定に使う）
+ * @returns {string} 正規化されたセグメント開始日（YYYY-MM-DD）
+ */
+export function resolveSegmentStart(autoStartDate, prevSegEndDate, resumeDate, member) {
+    if (!resumeDate) return autoStartDate;
+
+    if (resumeDate <= prevSegEndDate) {
+        console.warn(
+            `resolveSegmentStart: resumeDate(${resumeDate}) は前セグメント終了日(${prevSegEndDate}) 以前のためクランプします`
+        );
+        return getNextBusinessDay(prevSegEndDate, member);
+    }
+
+    if (!isBusinessDay(new Date(resumeDate), member)) {
+        return getNextBusinessDay(resumeDate, member);
+    }
+
+    return resumeDate;
+}
+
+/**
  * スケジュールをセグメントに分割
  * @param {Object} schedule - スケジュールオブジェクト
  * @returns {Array<{startDate: string, endDate: string, hours: number, index: number}>}

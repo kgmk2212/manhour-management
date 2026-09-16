@@ -53,6 +53,64 @@ function makeSchedule(overrides = {}) {
     };
 }
 
+describe('resolveSegmentStart', () => {
+    beforeEach(resetAll);
+
+    test('resumeDate が未設定なら自動計算値をそのまま返す', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', undefined, MEMBER),
+            '2026-09-16'
+        );
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', null, MEMBER),
+            '2026-09-16'
+        );
+    });
+
+    test('resumeDate が前セグメント終了日より後の営業日ならそのまま採用される', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', '2026-09-18', MEMBER),
+            '2026-09-18'
+        );
+    });
+
+    test('resumeDate が自動計算値より前でも、前セグメント終了日より後なら尊重される（差し込みより前に戻せる）', () => {
+        // 差し込み作業の都合で自動値は 2026-09-21 だが、ユーザーは 2026-09-16 を指定
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-21', '2026-09-15', '2026-09-16', MEMBER),
+            '2026-09-16'
+        );
+    });
+
+    test('resumeDate が前セグメント終了日と同日なら翌営業日へクランプされる', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', '2026-09-15', MEMBER),
+            '2026-09-16'
+        );
+    });
+
+    test('resumeDate が前セグメント終了日より前なら翌営業日へクランプされる', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', '2026-09-10', MEMBER),
+            '2026-09-16'
+        );
+    });
+
+    test('クランプ後の日付は前セグメント終了日が金曜なら翌月曜になる（土日をスキップ）', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-21', '2026-09-18', '2026-09-01', MEMBER),
+            '2026-09-21'
+        );
+    });
+
+    test('resumeDate が非営業日（土曜）なら翌営業日（月曜）へ寄せられる', () => {
+        assert.equal(
+            SI.resolveSegmentStart('2026-09-16', '2026-09-15', '2026-09-19', MEMBER),
+            '2026-09-21'
+        );
+    });
+});
+
 describe('calculateSegments', () => {
     beforeEach(resetAll);
 
