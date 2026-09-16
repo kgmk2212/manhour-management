@@ -15,7 +15,8 @@ import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
-import { calculateConsumedHoursAtDate, addInterruption, removeInterruption, analyzeImpact } from './schedule-interruption.js';
+import { calculateConsumedHoursAtDate, addInterruption, removeInterruption, analyzeImpact,
+    calculateSegments, recalculateEndDateWithInterruptions } from './schedule-interruption.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -1388,8 +1389,10 @@ export function saveScheduleDetailChanges() {
         return;
     }
 
-    // 終了日を再計算
-    const endDate = calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
+    // 終了日を再計算（中断があるときはセグメント分割を考慮する）
+    const endDate = (schedule.interruptions || []).length > 0
+        ? recalculateEndDateWithInterruptions({ ...schedule, startDate })
+        : calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
 
     // Undoスタックにステータス+残存+日付をセットで記録
     pushAction({
@@ -1665,8 +1668,10 @@ export function recalculateScheduleEndDateDetail() {
     const startDate = document.getElementById('detailStartDate')?.value;
     if (!startDate) return;
     
-    // プレビューとして計算（保存はまだしない）
-    const endDate = calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
+    // プレビューとして計算（保存はまだしない。中断があるときはセグメント分割を考慮する）
+    const endDate = (schedule.interruptions || []).length > 0
+        ? recalculateEndDateWithInterruptions({ ...schedule, startDate })
+        : calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
     document.getElementById('detailPlanPeriod').textContent = `${startDate} 〜 ${endDate}`;
 }
 
@@ -2042,8 +2047,11 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     // 移動前の位置関係で連結中の後工程を判定（ドラッグ中は他の変更が起きない前提）
     const linkedBefore = findLinkedBackSchedule(schedule, schedules);
 
-    // 新しい終了日を計算
-    const newEndDate = calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
+    // 新しい終了日を計算（中断があるときはセグメント分割を考慮する）
+    const hasInterruptions = (schedule.interruptions || []).length > 0;
+    const newEndDate = hasInterruptions
+        ? recalculateEndDateWithInterruptions({ ...schedule, startDate: newStartDate })
+        : calculateEndDate(newStartDate, schedule.estimatedHours, schedule.member);
 
     let linkedData = null;
     if (linkedBefore) {

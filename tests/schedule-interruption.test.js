@@ -9,10 +9,30 @@ import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 globalThis.window = globalThis;
+// showToast（schedule.js）が document.createElement / document.body を使うため、
+// handleScheduleDrag 等 schedule.js の関数呼び出しに耐えられる最小限のフェイク要素を用意する。
+function createFakeElement() {
+    return {
+        className: '',
+        innerHTML: '',
+        style: {},
+        classList: { add() {}, remove() {}, toggle() {} },
+        appendChild() {},
+        querySelector() { return null; },
+        querySelectorAll: () => [],
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        remove() {},
+        setAttribute() {},
+        getAttribute: () => null,
+    };
+}
 globalThis.document = {
     getElementById: () => null,
     addEventListener: () => {},
     querySelectorAll: () => [],
+    createElement: () => createFakeElement(),
+    body: createFakeElement(),
 };
 globalThis.localStorage = {
     _map: new Map(),
@@ -24,6 +44,7 @@ globalThis.alert = () => {};
 
 const State = await import('../js/state.js');
 const SI = await import('../js/schedule-interruption.js');
+const Schedule = await import('../js/schedule.js');
 
 function resetAll() {
     globalThis.localStorage._map.clear();
@@ -526,5 +547,40 @@ describe('analyzeImpact', () => {
         assert.equal(result.impacts.length, 1);
         assert.equal(result.impacts[0].id, 'sch_2');
         assert.equal(result.impacts[0].newStart, '2026-09-21');
+    });
+});
+
+describe('handleScheduleDrag — 中断持ちスケジュールの endDate', () => {
+    beforeEach(resetAll);
+
+    test('中断があるバーをドラッグしても endDate が中断を考慮した値になる', () => {
+        // consumedHours=4h は端数のため1日分に切り上げられ、中断考慮の終了日は
+        // 中断無視の単純計算（2026-09-21）より1営業日後ろにずれる（2026-09-22）。
+        const target = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 4, reason: '', insertedScheduleId: null }
+            ]
+        });
+        State.setSchedules([target]);
+
+        // 開始日を 2026-09-14(月) → 2026-09-15(火) へ移動
+        Schedule.handleScheduleDrag('sch_1', '2026-09-15');
+
+        const moved = State.schedules.find(s => s.id === 'sch_1');
+        assert.equal(moved.startDate, '2026-09-15');
+        const expected = SI.recalculateEndDateWithInterruptions(moved);
+        assert.equal(expected, '2026-09-22', '中断考慮の期待値が中断無視の単純計算と偶然一致していないことを確認');
+        assert.equal(moved.endDate, expected);
+    });
+
+    test('中断がないスケジュールは従来どおり calculateEndDate の結果になる', () => {
+        const target = makeSchedule();
+        State.setSchedules([target]);
+
+        Schedule.handleScheduleDrag('sch_1', '2026-09-15');
+
+        const moved = State.schedules.find(s => s.id === 'sch_1');
+        assert.equal(moved.startDate, '2026-09-15');
+        assert.equal(moved.endDate, '2026-09-21');
     });
 });
