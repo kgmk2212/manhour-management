@@ -670,3 +670,51 @@ describe('countDependentSchedules', () => {
         assert.equal(JSON.stringify(State.schedules), before, 'state を変更しない');
     });
 });
+
+describe('handleSegmentDrag / clearSegmentPin', () => {
+    beforeEach(resetAll);
+
+    function seed() {
+        State.setSchedules([makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null }
+            ]
+        })]);
+    }
+
+    test('handleSegmentDrag でセグメントがピン留めされ endDate が伸びる', () => {
+        seed();
+        Schedule.handleSegmentDrag('sch_1', 'int_1', '2026-09-21');
+
+        const s = State.schedules.find(x => x.id === 'sch_1');
+        assert.equal(s.interruptions[0].resumeDate, '2026-09-21');
+        assert.equal(s.endDate, '2026-09-23');
+        assert.equal(s.estimatedHours, 40, 'estimatedHours は変更されない');
+    });
+
+    test('handleSegmentDrag は estimates を書き換えない', () => {
+        seed();
+        State.setEstimates([{ id: 5, version: 'V1', task: 'T', process: 'PG', member: MEMBER, hours: 40 }]);
+        const before = JSON.stringify(State.estimates);
+
+        Schedule.handleSegmentDrag('sch_1', 'int_1', '2026-09-21');
+
+        assert.equal(JSON.stringify(State.estimates), before);
+    });
+
+    test('clearSegmentPin でピンが外れ自動計算に戻る', () => {
+        seed();
+        Schedule.handleSegmentDrag('sch_1', 'int_1', '2026-09-21');
+
+        assert.equal(Schedule.clearSegmentPin('sch_1', 'int_1'), true);
+
+        const s = State.schedules.find(x => x.id === 'sch_1');
+        assert.equal('resumeDate' in s.interruptions[0], false);
+        assert.equal(s.endDate, '2026-09-18');
+    });
+
+    test('存在しない中断への clearSegmentPin は false を返す', () => {
+        seed();
+        assert.equal(Schedule.clearSegmentPin('sch_1', 'int_missing'), false);
+    });
+});

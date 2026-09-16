@@ -16,7 +16,8 @@ import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupToolt
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
 import { calculateConsumedHoursAtDate, addInterruption, removeInterruption, analyzeImpact,
-    calculateSegments, recalculateEndDateWithInterruptions } from './schedule-interruption.js';
+    calculateSegments, recalculateEndDateWithInterruptions,
+    setSegmentResumeDate, countDependentSchedules } from './schedule-interruption.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -2086,6 +2087,79 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     }
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * ドラッグによる残作業セグメントの移動を処理（中断後セグメントの再開日をピン留めする）
+ *
+ * `estimates` にも `schedule.estimatedHours` にも触れない。
+ * 設計書 §7-5 に従い `cascadeShift` は自動実行せず、影響件数をトーストで知らせるだけにする。
+ *
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} interruptionId - セグメント開始日を支配している中断のID
+ * @param {string} newStartDate - ドロップ先の日付（YYYY-MM-DD）
+ */
+export function handleSegmentDrag(scheduleId, interruptionId, newStartDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    const result = setSegmentResumeDate(scheduleId, interruptionId, newStartDate);
+    if (!result) {
+        showToast('残作業の移動に失敗しました（対象の中断が見つかりません）', 'error');
+        return;
+    }
+
+    pushAction({
+        type: 'schedule_segment_move',
+        description: `残作業の移動: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId,
+            interruptionId,
+            oldInterruptions: result.oldInterruptions,
+            newInterruptions: result.newInterruptions,
+            oldEndDate: result.oldEndDate,
+            newEndDate: result.newEndDate
+        }
+    });
+
+    renderScheduleView();
+
+    const affected = countDependentSchedules(result.schedule, result.oldEndDate);
+    const msg = affected > 0
+        ? `残作業を移動しました（終了日 ${result.oldEndDate} → ${result.newEndDate}・後続 ${affected} 件は未調整）`
+        : '残作業を移動しました';
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * セグメントのピン留めを解除して自動計算に戻す
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} interruptionId - 中断ID
+ * @returns {boolean} 解除できたか
+ */
+export function clearSegmentPin(scheduleId, interruptionId) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return false;
+
+    const result = setSegmentResumeDate(scheduleId, interruptionId, null);
+    if (!result) return false;
+
+    pushAction({
+        type: 'schedule_segment_move',
+        description: `再開日の固定を解除: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId,
+            interruptionId,
+            oldInterruptions: result.oldInterruptions,
+            newInterruptions: result.newInterruptions,
+            oldEndDate: result.oldEndDate,
+            newEndDate: result.newEndDate
+        }
+    });
+
+    renderScheduleView();
+    showToast('再開日の固定を解除しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+    return true;
 }
 
 /**
