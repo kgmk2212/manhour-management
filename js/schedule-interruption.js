@@ -517,3 +517,67 @@ export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours 
 
     return { segments, impacts, insertPeriod };
 }
+
+/**
+ * セグメントの再開日をピン留め／解除する
+ *
+ * `cascadeShift` は呼ばない（設計書 §7-5: セグメント移動で後続を自動でずらさない）。
+ * 後続への影響件数が必要な場合は呼び出し側で `countDependentSchedules` を使う。
+ *
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {string} interruptionId - 対象中断ID（＝セグメント境界の識別子）
+ * @param {string|null} resumeDate - 固定したい再開日（YYYY-MM-DD）。null でピン解除
+ * @returns {{schedule: Object, oldInterruptions: Array, newInterruptions: Array,
+ *            oldEndDate: string, newEndDate: string}|null}
+ */
+export function setSegmentResumeDate(scheduleId, interruptionId, resumeDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+
+    const interruptions = schedule.interruptions || [];
+    if (!interruptions.some(i => i.id === interruptionId)) return null;
+
+    const oldInterruptions = interruptions.map(i => ({ ...i }));
+    const oldEndDate = schedule.endDate;
+
+    const newInterruptions = interruptions.map(i => {
+        if (i.id !== interruptionId) return { ...i };
+        const next = { ...i };
+        if (resumeDate) {
+            next.resumeDate = resumeDate;
+        } else {
+            delete next.resumeDate;
+        }
+        return next;
+    });
+
+    const updatedSchedule = {
+        ...schedule,
+        interruptions: newInterruptions,
+        updatedAt: new Date().toISOString()
+    };
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    setSchedules(schedules.map(s => s.id === scheduleId ? updatedSchedule : s));
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return {
+        schedule: updatedSchedule,
+        oldInterruptions,
+        newInterruptions: newInterruptions.map(i => ({ ...i })),
+        oldEndDate,
+        newEndDate: updatedSchedule.endDate
+    };
+}
+
+/**
+ * endDate 変更によって影響を受ける後続スケジュールの件数を数える（state は変更しない）
+ * @param {Object} changedSchedule - endDate が変更されたスケジュール（変更後の値を持つ）
+ * @param {string} oldEndDate - 変更前の endDate
+ * @returns {number}
+ */
+export function countDependentSchedules(changedSchedule, oldEndDate) {
+    if (changedSchedule.endDate === oldEndDate) return 0;
+    return findDependentSchedules(changedSchedule, oldEndDate).length;
+}

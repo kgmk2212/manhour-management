@@ -584,3 +584,89 @@ describe('handleScheduleDrag — 中断持ちスケジュールの endDate', () 
         assert.equal(moved.endDate, '2026-09-21');
     });
 });
+
+describe('setSegmentResumeDate', () => {
+    beforeEach(resetAll);
+
+    function makePinned() {
+        const target = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null }
+            ]
+        });
+        State.setSchedules([target]);
+        return target;
+    }
+
+    test('resumeDate を設定すると interruptions が更新され endDate が再計算される', () => {
+        makePinned();
+
+        const result = SI.setSegmentResumeDate('sch_1', 'int_1', '2026-09-21');
+
+        assert.ok(result);
+        assert.equal(result.newInterruptions[0].resumeDate, '2026-09-21');
+        assert.equal(result.oldInterruptions[0].resumeDate, undefined, 'before スナップショットは汚染されない');
+        assert.equal(result.oldEndDate, '2026-09-18');
+        // seg1(24h) = 09-21, 09-22, 09-23
+        assert.equal(result.newEndDate, '2026-09-23');
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').endDate, '2026-09-23');
+    });
+
+    test('resumeDate に null を渡すとピンが外れ自動計算に戻る', () => {
+        makePinned();
+        SI.setSegmentResumeDate('sch_1', 'int_1', '2026-09-21');
+
+        const result = SI.setSegmentResumeDate('sch_1', 'int_1', null);
+
+        assert.ok(result);
+        assert.equal('resumeDate' in result.newInterruptions[0], false, 'フィールドごと削除される');
+        assert.equal(result.newEndDate, '2026-09-18');
+    });
+
+    test('存在しないスケジュール／中断なら null を返し state を変更しない', () => {
+        makePinned();
+        const before = JSON.stringify(State.schedules);
+
+        assert.equal(SI.setSegmentResumeDate('sch_missing', 'int_1', '2026-09-21'), null);
+        assert.equal(SI.setSegmentResumeDate('sch_1', 'int_missing', '2026-09-21'), null);
+        assert.equal(JSON.stringify(State.schedules), before);
+    });
+
+    test('cascadeShift は自動実行されない（後続スケジュールは動かない）', () => {
+        makePinned();
+        State.setSchedules([
+            ...State.schedules,
+            { id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+              startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+              status: 'pending', interruptions: [] }
+        ]);
+
+        SI.setSegmentResumeDate('sch_1', 'int_1', '2026-09-21');
+
+        assert.equal(State.schedules.find(s => s.id === 'sch_2').startDate, '2026-09-18');
+    });
+});
+
+describe('countDependentSchedules', () => {
+    beforeEach(resetAll);
+
+    test('endDate が変わらなければ 0 を返す', () => {
+        const target = makeSchedule();
+        State.setSchedules([target]);
+        assert.equal(SI.countDependentSchedules(target, target.endDate), 0);
+    });
+
+    test('endDate が伸びたとき影響を受ける後続スケジュール件数を返す（state は変更しない）', () => {
+        const target = makeSchedule({ endDate: '2026-09-23' });
+        const follower = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower]);
+        const before = JSON.stringify(State.schedules);
+
+        assert.equal(SI.countDependentSchedules(target, '2026-09-18'), 1);
+        assert.equal(JSON.stringify(State.schedules), before, 'state を変更しない');
+    });
+});
