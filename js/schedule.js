@@ -51,8 +51,17 @@ export function initScheduleModule() {
     });
     
     // ドラッグ&ドロップハンドラをセットアップ（水平: 日付変更、垂直: 担当者変更）
+    // segmentIndex > 0（中断後の残作業セグメント）はバー全体ではなく再開日のピン留めとして扱う
+    const onBarDragEnd = (scheduleId, newStartDate, segmentIndex = 0, interruptionId = null) => {
+        if (segmentIndex > 0 && interruptionId) {
+            handleSegmentDrag(scheduleId, interruptionId, newStartDate);
+        } else {
+            handleScheduleDrag(scheduleId, newStartDate);
+        }
+    };
+
     setupDragAndDrop(
-        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        onBarDragEnd,
         (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
     );
 
@@ -62,7 +71,7 @@ export function initScheduleModule() {
     // タッチイベントハンドラをセットアップ（モバイル対応）
     setupTouchHandlers(
         (schedule) => { openScheduleDetailModal(schedule.id); },
-        (scheduleId, newStartDate) => { handleScheduleDrag(scheduleId, newStartDate); },
+        onBarDragEnd,
         (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
     );
 

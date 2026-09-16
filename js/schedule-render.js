@@ -2050,8 +2050,22 @@ const dragState = {
     autoScrollId: null,
     pressStartTime: 0,
     originalRowIndex: -1,
-    targetRowIndex: -1
+    targetRowIndex: -1,
+    // 掴んでいるセグメント（0 = バー全体／先頭セグメント）
+    segmentIndex: 0,
+    interruptionId: null,
+    segmentOriginalStart: null
 };
+
+/**
+ * ドラッグ終了時にセグメント関連の状態を初期化する。
+ * マウス系・タッチ系あわせて5箇所のリセット地点から呼ぶ（配線漏れ防止のため関数化）。
+ */
+function clearDragSegment() {
+    dragState.segmentIndex = 0;
+    dragState.interruptionId = null;
+    dragState.segmentOriginalStart = null;
+}
 
 export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
     const setupOnCanvas = () => {
@@ -2068,16 +2082,21 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
 
-            const schedule = renderer.getScheduleAtPosition(x, y);
-            if (schedule) {
+            const hit = renderer.getScheduleRectAtPosition(x, y);
+            if (hit) {
+                const schedule = hit.schedule;
                 const rowIndex = renderer.getRowIndexAtPosition(y);
                 dragState.isDragging = true;
                 dragState.schedule = schedule;
+                dragState.segmentIndex = hit.segmentIndex;
+                dragState.interruptionId = hit.interruptionId;
+                dragState.segmentOriginalStart = hit.segmentStartDate;
                 dragState.startX = x;
                 dragState.startY = y;
                 dragState.maxMovedX = 0;
                 dragState.maxMovedY = 0;
-                dragState.originalStartDate = schedule.startDate;
+                // セグメントを掴んだときは「そのセグメントの開始日」が基準になる
+                dragState.originalStartDate = hit.segmentStartDate;
                 dragState.previewDate = null;
                 dragState.pressStartTime = Date.now();
                 dragState.originalRowIndex = rowIndex;
@@ -2100,7 +2119,9 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
                 let rowChanged = false;
-                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows) {
+                // 残作業セグメント（segmentIndex > 0）は担当者変更できないため行追従しない
+                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
+                    dragState.segmentIndex === 0) {
                     const rowIndex = renderer.getRowIndexAtPosition(y);
                     if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
                         dragState.targetRowIndex = rowIndex;
@@ -2113,11 +2134,19 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
                         dragState.previewDate = dateStr;
-                        drawDragPreview(renderer, buildDragPreviews(dragState.schedule, dateStr), dragState.targetRowIndex);
+                        drawDragPreview(
+                            renderer,
+                            buildDragPreviews(dragState.schedule, dateStr, dragState.segmentIndex),
+                            dragState.targetRowIndex
+                        );
                     }
                 } else if (rowChanged) {
                     const fallbackDate = dragState.previewDate || dragState.originalStartDate;
-                    drawDragPreview(renderer, buildDragPreviews(dragState.schedule, fallbackDate), dragState.targetRowIndex);
+                    drawDragPreview(
+                        renderer,
+                        buildDragPreviews(dragState.schedule, fallbackDate, dragState.segmentIndex),
+                        dragState.targetRowIndex
+                    );
                 }
 
                 // 端に近づいたら自動横スクロール
@@ -2179,7 +2208,9 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
 
             let didUpdate = false;
 
+            // 残作業セグメント（segmentIndex > 0）は担当者変更の対象にしない（設計書 §7-2）
             const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+                dragState.segmentIndex === 0 &&
                 dragState.targetRowIndex >= 0 &&
                 dragState.targetRowIndex !== dragState.originalRowIndex &&
                 renderer.rows && renderer.rows[dragState.targetRowIndex];
@@ -2191,7 +2222,10 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                 didUpdate = true;
             } else if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
                 // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
-                onScheduleUpdate(dragState.schedule.id, dragState.previewDate);
+                onScheduleUpdate(
+                    dragState.schedule.id, dragState.previewDate,
+                    dragState.segmentIndex, dragState.interruptionId
+                );
                 didUpdate = true;
             }
 
@@ -2205,6 +2239,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             dragState.previewDate = null;
             dragState.targetRowIndex = -1;
             dragState.originalRowIndex = -1;
+            clearDragSegment();
             canvas.style.cursor = 'default';
 
             // onScheduleUpdate が呼ばれた場合は renderScheduleView 内でスクロール位置保持付きの
@@ -2227,6 +2262,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                 dragState.previewDate = null;
                 dragState.targetRowIndex = -1;
                 dragState.originalRowIndex = -1;
+                clearDragSegment();
 
                 const renderer = getRenderer();
                 if (renderer) {
@@ -2252,6 +2288,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             dragState.previewDate = null;
             dragState.targetRowIndex = -1;
             dragState.originalRowIndex = -1;
+            clearDragSegment();
 
             const renderer = getRenderer();
             const canvas = document.getElementById('ganttTimelineCanvas');
