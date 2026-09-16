@@ -324,6 +324,78 @@ describe('applyUndo/applyRedo — schedule_member_change の逆操作', () => {
     });
 });
 
+describe('applyUndo/applyRedo — schedule_segment_move の逆操作', () => {
+    beforeEach(() => {
+        resetAll();
+        window.updateScheduleFn = (id, updates) => {
+            const idx = State.schedules.findIndex(s => s.id === id);
+            if (idx !== -1) State.schedules[idx] = { ...State.schedules[idx], ...updates };
+        };
+    });
+
+    const oldInterruptions = [
+        { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null }
+    ];
+    const newInterruptions = [
+        { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '', insertedScheduleId: null,
+          resumeDate: '2026-09-21' }
+    ];
+
+    test('undo で interruptions と endDate が元に戻り、redo で再適用される', () => {
+        State.setSchedules([{
+            id: 'sch_1', version: 'V1', task: 'T', process: 'PG', member: '田中',
+            startDate: '2026-09-14', endDate: '2026-09-23', estimatedHours: 40,
+            status: 'pending', interruptions: newInterruptions.map(i => ({ ...i }))
+        }]);
+
+        History.pushAction({
+            type: 'schedule_segment_move',
+            description: '残作業の移動: T (PG)',
+            data: {
+                scheduleId: 'sch_1',
+                interruptionId: 'int_1',
+                oldInterruptions: oldInterruptions.map(i => ({ ...i })),
+                newInterruptions: newInterruptions.map(i => ({ ...i })),
+                oldEndDate: '2026-09-18',
+                newEndDate: '2026-09-23'
+            }
+        });
+
+        History.undo();
+        let s = State.schedules.find(x => x.id === 'sch_1');
+        assert.equal(s.endDate, '2026-09-18');
+        assert.equal('resumeDate' in s.interruptions[0], false);
+
+        History.redo();
+        s = State.schedules.find(x => x.id === 'sch_1');
+        assert.equal(s.endDate, '2026-09-23');
+        assert.equal(s.interruptions[0].resumeDate, '2026-09-21');
+    });
+
+    test('undo 後に action.data の interruptions を書き換えても state に影響しない（deep copy されている）', () => {
+        State.setSchedules([{
+            id: 'sch_1', version: 'V1', task: 'T', process: 'PG', member: '田中',
+            startDate: '2026-09-14', endDate: '2026-09-23', estimatedHours: 40,
+            status: 'pending', interruptions: newInterruptions.map(i => ({ ...i }))
+        }]);
+
+        const data = {
+            scheduleId: 'sch_1',
+            interruptionId: 'int_1',
+            oldInterruptions: oldInterruptions.map(i => ({ ...i })),
+            newInterruptions: newInterruptions.map(i => ({ ...i })),
+            oldEndDate: '2026-09-18',
+            newEndDate: '2026-09-23'
+        };
+        History.pushAction({ type: 'schedule_segment_move', description: '残作業の移動', data });
+
+        History.undo();
+        const s = State.schedules.find(x => x.id === 'sch_1');
+        s.interruptions[0].reason = '書き換え';
+        assert.equal(data.oldInterruptions[0].reason, '', 'アクション側のスナップショットは汚れない');
+    });
+});
+
 describe('member_add / member_archive / member_restore — Undo/Redo', () => {
     beforeEach(() => {
         resetAll();

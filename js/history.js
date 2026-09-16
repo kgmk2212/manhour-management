@@ -609,6 +609,14 @@ function applyScheduleUndo(action) {
                 if (idx !== -1) State.estimates[idx] = { ...action.data.oldEstimate };
             }
             break;
+        case 'segment_move':
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    interruptions: (action.data.oldInterruptions || []).map(i => ({ ...i })),
+                    endDate: action.data.oldEndDate
+                });
+            }
+            break;
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -684,6 +692,14 @@ function applyScheduleRedo(action) {
             if (action.data.estimateId) {
                 const idx = State.estimates.findIndex(e => e.id === action.data.estimateId);
                 if (idx !== -1) State.estimates[idx] = { ...State.estimates[idx], member: action.data.newMember };
+            }
+            break;
+        case 'segment_move':
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(action.data.scheduleId, {
+                    interruptions: (action.data.newInterruptions || []).map(i => ({ ...i })),
+                    endDate: action.data.newEndDate
+                });
             }
             break;
     }
