@@ -285,4 +285,58 @@ describe('analyzeImpact', () => {
         assert.equal(result.impacts.length, 1);
         assert.equal(result.impacts[0].id, 'sch_2');
     });
+
+    test('consumedHours === estimatedHours（残り0）なら前半のみ1件で newEndDate は firstSegEnd と一致する', () => {
+        const target = makeSchedule(); // estimatedHours=40, startDate=2026-09-14(月)
+        State.setSchedules([target]);
+
+        // 40h ちょうど消化: firstSegEnd = 2026-09-14起点の5営業日目 = 2026-09-18(金)
+        const result = SI.analyzeImpact('sch_1', '2026-09-18', 40, 0);
+
+        assert.equal(result.segments.length, 1);
+        assert.equal(result.segments[0].label, '前半');
+        assert.equal(result.segments[0].hours, 40);
+        assert.equal(result.segments[0].endDate, '2026-09-18');
+        assert.equal(result.insertPeriod, null);
+        // newEndDate（= firstSegEnd）が旧endDate('2026-09-18')と一致するため impacts は空
+        assert.equal(result.impacts.length, 0);
+    });
+
+    test('consumedHours > estimatedHours（見積超過）でも前半のみ1件で hours は実際の consumedHours になる', () => {
+        const target = makeSchedule(); // estimatedHours=40
+        State.setSchedules([target]);
+
+        // 48h（見積超過分8h含む）消化: firstSegEnd = 2026-09-14起点の6営業日目 = 2026-09-21(月、土日スキップ)
+        const result = SI.analyzeImpact('sch_1', '2026-09-21', 48, 0);
+
+        assert.equal(result.segments.length, 1);
+        assert.equal(result.segments[0].label, '前半');
+        assert.equal(result.segments[0].hours, 48);
+        assert.equal(result.segments[0].endDate, '2026-09-21');
+        assert.equal(result.insertPeriod, null);
+    });
+
+    test('差し込みあり・残り0の場合、newEndDate は insertPeriod.endDate と一致する（影響分析にも反映される）', () => {
+        const target = makeSchedule(); // estimatedHours=40
+        const follower = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower]);
+
+        // 40h ちょうど消化 + 8h差し込み: 後半セグメントは無く、insertPeriod.endDateが新終了日になる
+        const result = SI.analyzeImpact('sch_1', '2026-09-18', 40, 8);
+
+        assert.equal(result.segments.length, 1);
+        assert.equal(result.segments[0].label, '前半');
+        assert.ok(result.insertPeriod, 'insertPeriod が設定されていること');
+        // insertPeriod は firstSegEnd(2026-09-18=金)の翌営業日(2026-09-21=月)から1日(8h)
+        assert.equal(result.insertPeriod.startDate, '2026-09-21');
+        assert.equal(result.insertPeriod.endDate, '2026-09-21');
+        // newEndDateが2026-09-21に伸びるため、follower(旧startDate=2026-09-18)は連鎖対象になる
+        assert.equal(result.impacts.length, 1);
+        assert.equal(result.impacts[0].id, 'sch_2');
+        assert.equal(result.impacts[0].newStart, '2026-09-21');
+    });
 });

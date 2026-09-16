@@ -378,6 +378,8 @@ function findDependentSchedules(src, srcOldEndDate) {
  * @param {number} consumedHours - 消化工数
  * @param {number} [insertHours=0] - 差し込み工数（0なら差し込みなし）
  * @returns {Object|null} { segments, impacts, insertPeriod }
+ * @remarks consumedHours が estimatedHours 以上（見積超過含む）の場合、
+ *   残り工数が無いため「後半」セグメントは省略される。
  */
 export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours = 0) {
     const schedule = schedules.find(s => s.id === scheduleId);
@@ -399,14 +401,21 @@ export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours 
         lastSegStart = getNextBusinessDay(firstSegEnd, member);
     }
 
-    const lastSegEnd = calculateEndDate(lastSegStart, remainingHours, member);
-
     const segments = [
-        { startDate: schedule.startDate, endDate: firstSegEnd, hours: consumedHours, label: '前半' },
-        { startDate: lastSegStart, endDate: lastSegEnd, hours: remainingHours, label: '後半' }
+        { startDate: schedule.startDate, endDate: firstSegEnd, hours: consumedHours, label: '前半' }
     ];
 
-    const newEndDate = lastSegEnd;
+    let newEndDate;
+    if (remainingHours > 0) {
+        const lastSegEnd = calculateEndDate(lastSegStart, remainingHours, member);
+        segments.push({ startDate: lastSegStart, endDate: lastSegEnd, hours: remainingHours, label: '後半' });
+        newEndDate = lastSegEnd;
+    } else {
+        // 見積工数を消化済み（超過含む）: 元作業の「後半」は存在しない。
+        // 終了日は差し込み作業があればその終了日、無ければ前半（＝消化済み分）の終了日。
+        newEndDate = insertPeriod ? insertPeriod.endDate : firstSegEnd;
+    }
+
     const oldEndDate = schedule.endDate;
     const impacts = [];
 

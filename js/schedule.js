@@ -1088,11 +1088,6 @@ export function showImpactPreview() {
         return;
     }
 
-    if (consumedHours >= schedule.estimatedHours) {
-        showToast('消化工数が見積工数以上です', 'warning');
-        return;
-    }
-
     const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
     let insertHours = 0;
     if (createInsert) {
