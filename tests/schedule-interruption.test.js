@@ -253,6 +253,31 @@ describe('calculateSegments', () => {
         assert.equal(segments[0].startDate, '2026-09-16');
         assert.equal(segments[1].startDate, '2026-09-23', 'ピンは絶対位置を維持する');
     });
+
+    test('中断2件・片方だけピン留めされている場合、各セグメントのinterruptionId/isPinnedが正しく引き継がれる', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '',
+                  insertedScheduleId: null, resumeDate: '2026-09-21' }, // ピン留めあり
+                { id: 'int_2', splitDate: '2026-09-22', consumedHours: 32, reason: '',
+                  insertedScheduleId: null } // ピン留めなし
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+
+        // セグメント0（先頭・09-14〜09-15、16h）: 中断なしの区間
+        assert.equal(segments[0].interruptionId, null);
+        assert.equal(segments[0].isPinned, false);
+
+        // セグメント1（int_1に支配される・resumeDate=09-21から開始）: ピン留めあり
+        assert.equal(segments[1].startDate, '2026-09-21');
+        assert.equal(segments[1].interruptionId, 'int_1');
+        assert.equal(segments[1].isPinned, true);
+
+        // セグメント2（int_2に支配される・自動計算）: ピン留めなし
+        assert.equal(segments[2].interruptionId, 'int_2');
+        assert.equal(segments[2].isPinned, false);
+    });
 });
 
 describe('getNextBusinessDay', () => {
