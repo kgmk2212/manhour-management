@@ -1461,10 +1461,12 @@ export class GanttChartRenderer {
                 ctx.lineTo(poleX, poleBottom);
                 ctx.stroke();
 
+                const flagWidth = 6;
+                const flagHeight = 6;
                 ctx.beginPath();
                 ctx.moveTo(poleX, poleTop);
-                ctx.lineTo(poleX + 6, poleTop + 3);
-                ctx.lineTo(poleX, poleTop + 6);
+                ctx.lineTo(poleX + flagWidth, poleTop + flagHeight / 2);
+                ctx.lineTo(poleX, poleTop + flagHeight);
                 ctx.closePath();
                 ctx.fill();
 
