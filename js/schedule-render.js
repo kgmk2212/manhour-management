@@ -2727,7 +2727,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     // 縦ドラッグ（担当者変更）中は日付を変更しない（掴んだ位置のオフセットによる意図しない日付ずれを防ぐ）
                     onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
                     didUpdate = true;
-                } else if (dragState.previewDate && onScheduleUpdate) {
+                } else if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate && onScheduleUpdate) {
+                    // previewDateが元の開始日と異なればドラッグ成功（ピクセル距離ではなく日付変化で判定）
                     onScheduleUpdate(
                         dragState.schedule.id, dragState.previewDate,
                         dragState.segmentIndex, dragState.interruptionId
