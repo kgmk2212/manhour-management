@@ -1194,12 +1194,33 @@ export function applyInterruption() {
         }
     }
 
+    // Undo 用に変更前のスナップショットを取る（addInterruption は新オブジェクトへ差し替えるため元参照は汚れない）
+    const oldInterruptions = (schedule.interruptions || []).map(i => ({ ...i }));
+    const oldEndDate = schedule.endDate;
+
     const result = addInterruption(interruptionTargetScheduleId, params);
 
     if (!result) {
         showToast('中断の追加に失敗しました（対象スケジュールが見つかりません）', 'error');
         return;
     }
+
+    pushAction({
+        type: 'schedule_interruption_change',
+        description: `中断を追加: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId: interruptionTargetScheduleId,
+            oldInterruptions,
+            newInterruptions: result.schedule.interruptions.map(i => ({ ...i })),
+            oldEndDate,
+            newEndDate: result.schedule.endDate,
+            insertedSchedule: result.insertedSchedule ? { ...result.insertedSchedule } : null,
+            removedInsertedSchedule: null,
+            cascadeResults: result.cascadeResults.map(r => ({
+                id: r.id, oldStart: r.oldStart, newStart: r.newStart, oldEnd: r.oldEnd, newEnd: r.newEnd
+            }))
+        }
+    });
 
     closeImpactPreview();
     closeInterruptionModal();
@@ -1208,7 +1229,7 @@ export function applyInterruption() {
     const msg = result.cascadeResults.length > 0
         ? `中断を追加しました（${result.cascadeResults.length}件のスケジュールがずれました）`
         : '中断を追加しました';
-    showToast(msg, 'success');
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 // ============================================
@@ -1299,17 +1320,44 @@ export function removeInterruptionFromDetail(interruptionId) {
     }
 
     const scheduleId = currentEditingScheduleId;
+
+    // Undo 用に変更前のスナップショットを取る（削除される差し込みも含む）
+    const oldInterruptions = (schedule.interruptions || []).map(i => ({ ...i }));
+    const oldEndDate = schedule.endDate;
+    const insertedBefore = int.insertedScheduleId
+        ? schedules.find(s => s.id === int.insertedScheduleId)
+        : null;
+    const removedInsertedSchedule = (deleteInserted && insertedBefore) ? { ...insertedBefore } : null;
+
     const result = removeInterruption(scheduleId, interruptionId, deleteInserted);
     if (!result) {
         showToast('中断の取り消しに失敗しました', 'error');
         return;
     }
+
+    pushAction({
+        type: 'schedule_interruption_change',
+        description: `中断を取り消し: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId,
+            oldInterruptions,
+            newInterruptions: result.schedule.interruptions.map(i => ({ ...i })),
+            oldEndDate,
+            newEndDate: result.schedule.endDate,
+            insertedSchedule: null,
+            removedInsertedSchedule,
+            cascadeResults: result.cascadeResults.map(r => ({
+                id: r.id, oldStart: r.oldStart, newStart: r.newStart, oldEnd: r.oldEnd, newEnd: r.newEnd
+            }))
+        }
+    });
+
     renderScheduleView();
     openScheduleDetailModal(scheduleId);
     const msg = result.cascadeResults.length > 0
         ? `中断を取り消しました（${result.cascadeResults.length}件のスケジュールが変更されました）`
         : '中断を取り消しました';
-    showToast(msg, 'success');
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**

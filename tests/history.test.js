@@ -396,6 +396,101 @@ describe('applyUndo/applyRedo — schedule_segment_move の逆操作', () => {
     });
 });
 
+describe('applyUndo/applyRedo — schedule_interruption_change の逆操作', () => {
+    beforeEach(() => {
+        resetAll();
+        window.updateScheduleFn = (id, updates) => {
+            const idx = State.schedules.findIndex(s => s.id === id);
+            if (idx !== -1) State.schedules[idx] = { ...State.schedules[idx], ...updates };
+        };
+    });
+
+    const base = {
+        id: 'sch_1', version: 'V1', task: 'T', process: 'PG', member: '田中',
+        startDate: '2026-09-14', endDate: '2026-09-18', estimatedHours: 40,
+        status: 'pending', interruptions: []
+    };
+    const follower = {
+        id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: '田中',
+        startDate: '2026-09-18', endDate: '2026-09-18', estimatedHours: 8,
+        status: 'pending', interruptions: []
+    };
+    const inserted = {
+        id: 'sch_ins', version: 'V2', task: '差込', process: 'PG', member: '田中',
+        startDate: '2026-09-16', endDate: '2026-09-16', estimatedHours: 8,
+        status: 'pending', interruptions: []
+    };
+    const newInterruptions = [
+        { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '緊急', insertedScheduleId: 'sch_ins' }
+    ];
+
+    test('中断追加の undo で interruptions・差し込み・連鎖ずれがすべて巻き戻る', () => {
+        // 中断適用後の状態を再現する
+        State.setSchedules([
+            { ...base, endDate: '2026-09-21', interruptions: newInterruptions.map(i => ({ ...i })) },
+            { ...follower, startDate: '2026-09-21', endDate: '2026-09-21' },
+            { ...inserted }
+        ]);
+
+        History.pushAction({
+            type: 'schedule_interruption_change',
+            description: '中断を追加: T (PG)',
+            data: {
+                scheduleId: 'sch_1',
+                oldInterruptions: [],
+                newInterruptions: newInterruptions.map(i => ({ ...i })),
+                oldEndDate: '2026-09-18',
+                newEndDate: '2026-09-21',
+                insertedSchedule: { ...inserted },
+                removedInsertedSchedule: null,
+                cascadeResults: [
+                    { id: 'sch_2', oldStart: '2026-09-18', newStart: '2026-09-21',
+                      oldEnd: '2026-09-18', newEnd: '2026-09-21' }
+                ]
+            }
+        });
+
+        History.undo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').interruptions.length, 0);
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').endDate, '2026-09-18');
+        assert.equal(State.schedules.find(s => s.id === 'sch_ins'), undefined, '差し込みが取り除かれる');
+        assert.equal(State.schedules.find(s => s.id === 'sch_2').startDate, '2026-09-18', '連鎖ずれが戻る');
+
+        History.redo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').interruptions.length, 1);
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').endDate, '2026-09-21');
+        assert.ok(State.schedules.find(s => s.id === 'sch_ins'), '差し込みが復活する');
+        assert.equal(State.schedules.find(s => s.id === 'sch_2').startDate, '2026-09-21');
+    });
+
+    test('中断取り消し（差し込みも削除）の undo で差し込みスケジュールが復活する', () => {
+        State.setSchedules([{ ...base, interruptions: [] }]);
+
+        History.pushAction({
+            type: 'schedule_interruption_change',
+            description: '中断を取り消し: T (PG)',
+            data: {
+                scheduleId: 'sch_1',
+                oldInterruptions: newInterruptions.map(i => ({ ...i })),
+                newInterruptions: [],
+                oldEndDate: '2026-09-21',
+                newEndDate: '2026-09-18',
+                insertedSchedule: null,
+                removedInsertedSchedule: { ...inserted },
+                cascadeResults: []
+            }
+        });
+
+        History.undo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').interruptions.length, 1);
+        assert.ok(State.schedules.find(s => s.id === 'sch_ins'), '差し込みが復活する');
+
+        History.redo();
+        assert.equal(State.schedules.find(s => s.id === 'sch_1').interruptions.length, 0);
+        assert.equal(State.schedules.find(s => s.id === 'sch_ins'), undefined);
+    });
+});
+
 describe('member_add / member_archive / member_restore — Undo/Redo', () => {
     beforeEach(() => {
         resetAll();

@@ -617,6 +617,30 @@ function applyScheduleUndo(action) {
                 });
             }
             break;
+        case 'interruption_change': {
+            const d = action.data;
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(d.scheduleId, {
+                    interruptions: (d.oldInterruptions || []).map(i => ({ ...i })),
+                    endDate: d.oldEndDate
+                });
+            }
+            // 追加時に作られた差し込みスケジュールを取り除く
+            if (d.insertedSchedule) {
+                State.setSchedules(State.schedules.filter(s => s.id !== d.insertedSchedule.id));
+            }
+            // 取り消し時に削除された差し込みスケジュールを復活させる
+            if (d.removedInsertedSchedule && !State.schedules.some(s => s.id === d.removedInsertedSchedule.id)) {
+                State.setSchedules([...State.schedules, { ...d.removedInsertedSchedule }]);
+            }
+            // 連鎖ずれを元に戻す
+            (d.cascadeResults || []).forEach(r => {
+                if (typeof window.updateScheduleFn === 'function') {
+                    window.updateScheduleFn(r.id, { startDate: r.oldStart, endDate: r.oldEnd });
+                }
+            });
+            break;
+        }
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
@@ -702,6 +726,27 @@ function applyScheduleRedo(action) {
                 });
             }
             break;
+        case 'interruption_change': {
+            const d = action.data;
+            if (typeof window.updateScheduleFn === 'function') {
+                window.updateScheduleFn(d.scheduleId, {
+                    interruptions: (d.newInterruptions || []).map(i => ({ ...i })),
+                    endDate: d.newEndDate
+                });
+            }
+            if (d.insertedSchedule && !State.schedules.some(s => s.id === d.insertedSchedule.id)) {
+                State.setSchedules([...State.schedules, { ...d.insertedSchedule }]);
+            }
+            if (d.removedInsertedSchedule) {
+                State.setSchedules(State.schedules.filter(s => s.id !== d.removedInsertedSchedule.id));
+            }
+            (d.cascadeResults || []).forEach(r => {
+                if (typeof window.updateScheduleFn === 'function') {
+                    window.updateScheduleFn(r.id, { startDate: r.newStart, endDate: r.newEnd });
+                }
+            });
+            break;
+        }
     }
 
     if (typeof window.renderScheduleView === 'function') window.renderScheduleView();
