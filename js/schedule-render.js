@@ -2018,8 +2018,9 @@ function showScheduleContextMenu(schedule, clickDateStr, x, y, pinInfo) {
         } else if (btn.dataset.act === 'interrupt') {
             window.openInterruptionModal(schedule.id, clickDateStr);
         } else if (btn.dataset.act === 'unpin') {
-            if (typeof window.clearSegmentPin === 'function') {
-                window.clearSegmentPin(schedule.id, pinInfo.interruptionId);
+            if (typeof window.clearSegmentPin === 'function' &&
+                !window.clearSegmentPin(schedule.id, pinInfo.interruptionId)) {
+                window.showToast?.('再開日の固定解除に失敗しました', 'error');
             }
         } else if (btn.dataset.act === 'delete') {
             if (confirm('このスケジュールを削除しますか？')) window.deleteSchedule(schedule.id);
