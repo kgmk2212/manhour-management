@@ -181,29 +181,52 @@ const THEME_COLORS = {
 // ============================================
 // アプリアイコン（favicon / iOS ホーム画面）のテーマ追従
 // ============================================
-// テーマに追従するのは「背景色だけ」。時計・棒グラフの図形は採用時
-// （2026-09-13 案1「時計とグラフ」）の配色を固定で維持する。
+// アイコンの構成は「背景＝テーマの accent」「時計の円周・棒グラフ1〜2本目＝薄緑固定」
+// 「時計の針・棒グラフ3本目＝差し色」の3層。採用時（2026-09-13 案1「時計とグラフ」）の
+// 骨格をどのテーマでも保つため、薄緑とレイアウトは不変とする。
 // 図形の地色（時計の円周・棒グラフ1〜2本目）。テーマの accentLight とは切り離して固定する。
 const ICON_FIGURE_COLOR = '#EBF5EA';
-// 差し色（時計の針・棒グラフ3本目）。アイコンの視線誘導を担うため固定。
-const ICON_HIGHLIGHT_COLOR = '#C4841D';
 
-// favicon: 背景のみテーマの accent に差し替えたSVGを都度生成し data URI として差し込む。
+// ブランドのアンバー（style.css 定義）。差し色の基準色であり、既定テーマ forest のアイコン色。
+const BRAND_AMBER = '#C4841D';
+
+// 差し色（時計の針・棒グラフ3本目）のテーマ別定義。
+// ブランドのアンバーをそのまま全テーマに載せると、背景が明るい・同系色のテーマで
+// 差し色が沈んでしまう（teal 1.74 / amber 1.98 / slate 1.98 など、コントラスト比が
+// forest の 2.56 を下回っていた）。そこでアンバーの色相を保ったまま明度・彩度だけを
+// テーマごとに調整し、背景に対して最低 3:1 を確保している。
+// forest / ink / deep-blue は既に十分なコントラストがあり、かつ forest は既定アイコン
+// そのものなので、ブランドのアンバーを据え置く。
+// 値を変えたら scripts/generate-app-icons.mjs 内の複製も更新し、PNGを再生成すること。
+export const ICON_HIGHLIGHT_COLORS = {
+    'forest': BRAND_AMBER,   // 2.56 - 既定アイコン。ブランドのアンバーを据え置く
+    'ocean': '#E6B12E',      // 3.47 - 青背景に映えるよう明度を上げた金
+    'violet': '#D5A11F',     // 3.55 - 紫＋金の古典的な組み合わせ
+    'amber': '#EEBA2A',      // 3.47 - 背景と同系色のため明度差で分離
+    'ink': BRAND_AMBER,      // 5.63 - 黒背景で最も映える。据え置き
+    'deep-blue': BRAND_AMBER,// 3.65 - 既に3:1超。据え置き
+    'rose': '#DCA039',       // 3.40 - 臙脂に調和する暖かみのあるアンティークゴールド
+    'teal': '#F2B845',       // 3.05 - 背景が最も明るいテーマ。最も明るい金
+    'slate': '#EFB839'       // 3.44 - 無彩色の背景に対し彩度の高い金で差をつける
+};
+
+// favicon: 背景（accent）と差し色だけを差し替えたSVGを都度生成し data URI として差し込む。
 // apple-touch-icon: iOSの「ホーム画面に追加」はhref先を一度だけ取得して固定するため、
 // data URIではなくテーマごとに事前生成したPNG（scripts/generate-app-icons.mjs）に切り替える。
 /**
  * favicon用のSVG data URIを組み立てる。
  * @param {string} accent 背景に使うテーマのアクセントカラー（例: '#2D5A27'）
+ * @param {string} [highlight] 差し色（時計の針・棒グラフ3本目）。省略時はブランドのアンバー
  * @returns {string} data:image/svg+xml, 形式のURI
  */
-export function buildFaviconDataUri(accent) {
+export function buildFaviconDataUri(accent, highlight = BRAND_AMBER) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
         `<rect width="100" height="100" rx="22" fill="${accent}"/>` +
         `<circle cx="33" cy="37" r="18" fill="none" stroke="${ICON_FIGURE_COLOR}" stroke-width="6"/>` +
-        `<path d="M33 37 V25 M33 37 L41 43" fill="none" stroke="${ICON_HIGHLIGHT_COLOR}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<path d="M33 37 V25 M33 37 L41 43" fill="none" stroke="${highlight}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
         `<rect x="52" y="62" width="9" height="20" rx="3" fill="${ICON_FIGURE_COLOR}"/>` +
         `<rect x="65" y="50" width="9" height="32" rx="3" fill="${ICON_FIGURE_COLOR}"/>` +
-        `<rect x="78" y="36" width="9" height="46" rx="3" fill="${ICON_HIGHLIGHT_COLOR}"/>` +
+        `<rect x="78" y="36" width="9" height="46" rx="3" fill="${highlight}"/>` +
         `</svg>`;
     return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
@@ -211,7 +234,7 @@ export function buildFaviconDataUri(accent) {
 function updateAppIcons(themeColor, theme) {
     const faviconLink = document.querySelector('link[rel="icon"]');
     if (faviconLink) {
-        faviconLink.href = buildFaviconDataUri(theme.accent);
+        faviconLink.href = buildFaviconDataUri(theme.accent, ICON_HIGHLIGHT_COLORS[themeColor] || BRAND_AMBER);
     }
     const touchIconLink = document.querySelector('link[rel="apple-touch-icon"]');
     if (touchIconLink) {
