@@ -35,6 +35,37 @@ const seedEntries = (schedules) => ({
 const readSchedules = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem("manhour_schedules")));
 
+/**
+ * ガントチャート上の対象スケジュール（segmentIndex 指定）の描画矩形を
+ * ページ座標（viewport 基準）の中心点として返す。
+ * renderer.scheduleRects は canvas の logical 座標系なので、
+ * canvas の getBoundingClientRect() 基準に uiScale を掛けて変換する
+ * （js/schedule-render.js の mousedown/mousemove ハンドラと同じ変換式）。
+ */
+async function getSegmentCenter(page, scheduleId, segmentIndex) {
+  const canvasBox = await page.locator("#ganttTimelineCanvas").boundingBox();
+  if (!canvasBox) throw new Error("#ganttTimelineCanvas の boundingBox が取れない");
+
+  const rectInfo = await page.evaluate(
+    ({ id, idx }) => {
+      const renderer = window.getScheduleRenderer?.();
+      if (!renderer) return null;
+      const rect = renderer.scheduleRects.find(
+        (r) => r.schedule.id === id && (r.segmentIndex ?? 0) === idx
+      );
+      if (!rect) return null;
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, uiScale: renderer.uiScale || 1 };
+    },
+    { id: scheduleId, idx: segmentIndex }
+  );
+  if (!rectInfo) throw new Error(`scheduleRects に id=${scheduleId} segmentIndex=${segmentIndex} が見つからない`);
+
+  return {
+    x: canvasBox.x + (rectInfo.x + rectInfo.width / 2) * rectInfo.uiScale,
+    y: canvasBox.y + (rectInfo.y + rectInfo.height / 2) * rectInfo.uiScale,
+  };
+}
+
 test.describe("残作業セグメントの独立移動（実アプリ統合）", () => {
   test("handleSegmentDrag で resumeDate がピン留めされ、Undo/Redo で往復する", async ({ page }) => {
     const errors = [];
@@ -140,6 +171,69 @@ test.describe("残作業セグメントの独立移動（実アプリ統合）",
     const main = after.find((s) => s.id === "sch_main");
     expect(main.interruptions[0].resumeDate).toBeUndefined();
     expect(main.endDate).toBe(autoEnd);
+
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+
+  test("実マウス座標でのドラッグ: canvas 上の残作業セグメントを掴んでドロップすると resumeDate が書き込まれる", async ({ page }) => {
+    // 上の3ケースは window.handleSegmentDrag / window.clearSegmentPin を直接叩いており、
+    // getScheduleRectAtPosition によるヒット判定 → dragState 設定 → mousemove でのプレビュー →
+    // mouseup でのコミット、という js/schedule-render.js の setupDragAndDrop が担う実経路は
+    // 検証していなかった。この経路自体に「タッチドラッグで位置が変わっていないのに
+    // 再開日が固定される」という実バグ（ed8a78a で修正済み）が見つかったため、
+    // 実際のマウスイベントで同じ経路（のマウス側）を通すテストを追加する。
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+    page.on("console", (m) => {
+      if (m.type() !== "error") return;
+      const url = m.location()?.url ?? "";
+      if (url.includes("analysis/latest.json") || url.includes(":11434/")) return;
+      errors.push(`console: ${m.text()} @ ${url}`);
+    });
+
+    await page.addInitScript((entries) => {
+      localStorage.clear();
+      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+    }, seedEntries(SEED_SCHEDULES));
+    await page.goto("/index.html");
+    await expect(page.locator(".tab-content.active")).toHaveCount(1);
+
+    const before = await readSchedules(page);
+    const beforeMain = before.find((s) => s.id === "sch_main");
+    expect(beforeMain.interruptions[0].resumeDate).toBeUndefined();
+
+    // int_1 が支配する残作業セグメント（segmentIndex=1）の canvas 上の中心座標を取得
+    const start = await getSegmentCenter(page, "sch_main", 1);
+
+    // 実際に位置が変わるドラッグであることを保証するため、DAY_WIDTH(28px) の
+    // 十分な倍数（11日分 = 308px）右へ動かす。タッチ側の位置変化ガード
+    // （ed8a78a）と等価な「previewDate が変化しなければコミットしない」判定を
+    // マウス側でも自然に通過させる。
+    const targetX = start.x + 308;
+
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i++) {
+      await page.mouse.move(start.x + (targetX - start.x) * (i / 8), start.y, { steps: 2 });
+      await page.waitForTimeout(40);
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+
+    const after = await readSchedules(page);
+    const main = after.find((s) => s.id === "sch_main");
+
+    // resumeDate が実際に書き込まれ、元のセグメント開始日より後ろへ動いたことを検証
+    expect(main.interruptions[0].resumeDate).toBeTruthy();
+    expect(main.interruptions[0].resumeDate > "2026-08-06").toBe(true);
+
+    // 見積・工数には一切触れない
+    expect(main.estimatedHours).toBe(40);
+    expect(main.startDate).toBe("2026-08-03");
+    expect(await page.evaluate(() => localStorage.getItem("manhour_estimates"))).toBe("[]");
+
+    // 差し込み作業（sch_ins）は動かない
+    expect(after.find((s) => s.id === "sch_ins").startDate).toBe("2026-08-05");
 
     expect(errors, errors.join("\n")).toEqual([]);
   });
