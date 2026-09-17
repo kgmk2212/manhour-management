@@ -29,15 +29,31 @@ Fable にブランドカラー（アクセントグリーン `#2D5A27` / アン�
 角丸なしの正方形フルブリード版（`apple-touch-icon-source.svg`）を元にラスタライズしている。
 
 **テーマカラー追従（2026-09-17）**: アプリ設定の「テーマカラー」（9色: forest/ocean/violet/amber/ink/
-deep-blue/rose/teal/slate）を切り替えると、favicon・iOSホーム画面アイコンの配色もそのテーマに追従するように
-変更。当初のアンバーの差し色は廃止し、`accent`（背景）＋`accentLight`（時計・グラフの図形）の2色構成に統一した
-（テーマごとにアンバー相当の第3色が定義されていないため）。
+deep-blue/rose/teal/slate）を切り替えると、favicon・iOSホーム画面アイコンも**背景色だけ**が
+そのテーマの `accent` に追従する。
 
-- favicon: `js/theme.js` の `buildFaviconDataUri()` が都度SVGを生成しdata URIとして差し込む（画面表示中に切替可能）
+**追従するのは背景色だけ**（アイコンのアイデンティティを保つための設計ルール）:
+
+| 部位 | 色 |
+|------|-----|
+| 背景（角丸正方形 / フルブリード正方形） | テーマの `accent`（可変） |
+| 時計の円周・棒グラフ1〜2本目 | `#EBF5EA`（**固定**） |
+| 時計の針・棒グラフ3本目 | `#C4841D` アンバーの差し色（**固定**） |
+
+時計・グラフの配色まで `accentLight` に差し替えると、採用時の「針と最も伸びた棒だけアンバーで
+視線を集める」という案1の骨格が失われ、テーマごとに別のアイコンに見えてしまう。差し色はブランド側の
+固定要素として扱い、テーマは背景のみで表現する。forest テーマの出力は採用時（2026-09-13）の
+オリジナルと完全に一致する（favicon は `tests/theme.test.js` で固定、`apple-touch-icon.png` は
+2026-09-15 版とバイト一致）。
+
+- favicon: `js/theme.js` の `buildFaviconDataUri(accent)` が都度SVGを生成しdata URIとして差し込む
+  （画面表示中に切替可能）。図形の色は同ファイルの `ICON_FIGURE_COLOR` / `ICON_HIGHLIGHT_COLOR` に固定。
+  `index.html` の `<link rel="icon">` に書かれた静的data URIは forest 版と同一内容で、
+  JS読み込み前の初期表示を担う
 - apple-touch-icon: iOSの「ホーム画面に追加」はhref先を一度だけ取得して固定するため、data URIではなく
   `apple-touch-icon-<テーマ名>.png`（forestのみ従来通り`apple-touch-icon.png`）をテーマごとに事前生成し
-  リポジトリ直下に配置。`scripts/generate-app-icons.mjs` で再生成できる（テーマカラーの定義を変更した場合は
-  `js/theme.js` の `THEME_COLORS` と同スクリプト内の複製を両方更新してから再実行すること）
+  リポジトリ直下に配置。`scripts/generate-app-icons.mjs` で再生成できる（テーマの `accent` を変更した場合は
+  `js/theme.js` の `THEME_COLORS` と同スクリプト内の `THEME_ACCENTS` を両方更新してから再実行すること）
 
 ## 採用時のメモ
 

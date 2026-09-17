@@ -181,17 +181,29 @@ const THEME_COLORS = {
 // ============================================
 // アプリアイコン（favicon / iOS ホーム画面）のテーマ追従
 // ============================================
-// favicon: accent(背景) + accentLight(図形)の2色でSVGを都度生成しdata URIとして差し込む。
+// テーマに追従するのは「背景色だけ」。時計・棒グラフの図形は採用時
+// （2026-09-13 案1「時計とグラフ」）の配色を固定で維持する。
+// 図形の地色（時計の円周・棒グラフ1〜2本目）。テーマの accentLight とは切り離して固定する。
+const ICON_FIGURE_COLOR = '#EBF5EA';
+// 差し色（時計の針・棒グラフ3本目）。アイコンの視線誘導を担うため固定。
+const ICON_HIGHLIGHT_COLOR = '#C4841D';
+
+// favicon: 背景のみテーマの accent に差し替えたSVGを都度生成し data URI として差し込む。
 // apple-touch-icon: iOSの「ホーム画面に追加」はhref先を一度だけ取得して固定するため、
 // data URIではなくテーマごとに事前生成したPNG（scripts/generate-app-icons.mjs）に切り替える。
-export function buildFaviconDataUri(accent, accentLight) {
+/**
+ * favicon用のSVG data URIを組み立てる。
+ * @param {string} accent 背景に使うテーマのアクセントカラー（例: '#2D5A27'）
+ * @returns {string} data:image/svg+xml, 形式のURI
+ */
+export function buildFaviconDataUri(accent) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
         `<rect width="100" height="100" rx="22" fill="${accent}"/>` +
-        `<circle cx="33" cy="37" r="18" fill="none" stroke="${accentLight}" stroke-width="6"/>` +
-        `<path d="M33 37 V25 M33 37 L41 43" fill="none" stroke="${accentLight}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
-        `<rect x="52" y="62" width="9" height="20" rx="3" fill="${accentLight}"/>` +
-        `<rect x="65" y="50" width="9" height="32" rx="3" fill="${accentLight}"/>` +
-        `<rect x="78" y="36" width="9" height="46" rx="3" fill="${accentLight}"/>` +
+        `<circle cx="33" cy="37" r="18" fill="none" stroke="${ICON_FIGURE_COLOR}" stroke-width="6"/>` +
+        `<path d="M33 37 V25 M33 37 L41 43" fill="none" stroke="${ICON_HIGHLIGHT_COLOR}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<rect x="52" y="62" width="9" height="20" rx="3" fill="${ICON_FIGURE_COLOR}"/>` +
+        `<rect x="65" y="50" width="9" height="32" rx="3" fill="${ICON_FIGURE_COLOR}"/>` +
+        `<rect x="78" y="36" width="9" height="46" rx="3" fill="${ICON_HIGHLIGHT_COLOR}"/>` +
         `</svg>`;
     return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
@@ -199,7 +211,7 @@ export function buildFaviconDataUri(accent, accentLight) {
 function updateAppIcons(themeColor, theme) {
     const faviconLink = document.querySelector('link[rel="icon"]');
     if (faviconLink) {
-        faviconLink.href = buildFaviconDataUri(theme.accent, theme.accentLight);
+        faviconLink.href = buildFaviconDataUri(theme.accent);
     }
     const touchIconLink = document.querySelector('link[rel="apple-touch-icon"]');
     if (touchIconLink) {
