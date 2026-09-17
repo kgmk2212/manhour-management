@@ -178,6 +178,37 @@ const THEME_COLORS = {
     'slate':     { accent: '#556270', accentHover: '#687888', accentLight: '#F1F4F6', sidebarActiveBg: 'rgba(85,98,112,0.2)' }
 };
 
+// ============================================
+// アプリアイコン（favicon / iOS ホーム画面）のテーマ追従
+// ============================================
+// favicon: accent(背景) + accentLight(図形)の2色でSVGを都度生成しdata URIとして差し込む。
+// apple-touch-icon: iOSの「ホーム画面に追加」はhref先を一度だけ取得して固定するため、
+// data URIではなくテーマごとに事前生成したPNG（scripts/generate-app-icons.mjs）に切り替える。
+export function buildFaviconDataUri(accent, accentLight) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
+        `<rect width="100" height="100" rx="22" fill="${accent}"/>` +
+        `<circle cx="33" cy="37" r="18" fill="none" stroke="${accentLight}" stroke-width="6"/>` +
+        `<path d="M33 37 V25 M33 37 L41 43" fill="none" stroke="${accentLight}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<rect x="52" y="62" width="9" height="20" rx="3" fill="${accentLight}"/>` +
+        `<rect x="65" y="50" width="9" height="32" rx="3" fill="${accentLight}"/>` +
+        `<rect x="78" y="36" width="9" height="46" rx="3" fill="${accentLight}"/>` +
+        `</svg>`;
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+function updateAppIcons(themeColor, theme) {
+    const faviconLink = document.querySelector('link[rel="icon"]');
+    if (faviconLink) {
+        faviconLink.href = buildFaviconDataUri(theme.accent, theme.accentLight);
+    }
+    const touchIconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    if (touchIconLink) {
+        touchIconLink.href = themeColor === 'forest'
+            ? 'apple-touch-icon.png'
+            : `apple-touch-icon-${themeColor}.png`;
+    }
+}
+
 export function applyTheme() {
     const colorEl = document.getElementById('themeColor');
     const prevTheme = currentThemeColor;
@@ -248,6 +279,8 @@ export function updateThemeElements() {
     root.style.setProperty('--accent-light', theme.accentLight);
     root.style.setProperty('--sidebar-active-bg', theme.sidebarActiveBg);
     root.style.setProperty('--success', theme.accent);
+
+    updateAppIcons(themeColor, theme);
 
     // 旧CSS変数も互換性のため設定
     root.style.setProperty('--theme-color', theme.accent);

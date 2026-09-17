@@ -28,6 +28,17 @@ Fable にブランドカラー（アクセントグリーン `#2D5A27` / アン�
 `<link rel="apple-touch-icon">` を追加。iOS側で角丸マスクを自動適用するため、favicon版と異なり
 角丸なしの正方形フルブリード版（`apple-touch-icon-source.svg`）を元にラスタライズしている。
 
+**テーマカラー追従（2026-09-17）**: アプリ設定の「テーマカラー」（9色: forest/ocean/violet/amber/ink/
+deep-blue/rose/teal/slate）を切り替えると、favicon・iOSホーム画面アイコンの配色もそのテーマに追従するように
+変更。当初のアンバーの差し色は廃止し、`accent`（背景）＋`accentLight`（時計・グラフの図形）の2色構成に統一した
+（テーマごとにアンバー相当の第3色が定義されていないため）。
+
+- favicon: `js/theme.js` の `buildFaviconDataUri()` が都度SVGを生成しdata URIとして差し込む（画面表示中に切替可能）
+- apple-touch-icon: iOSの「ホーム画面に追加」はhref先を一度だけ取得して固定するため、data URIではなく
+  `apple-touch-icon-<テーマ名>.png`（forestのみ従来通り`apple-touch-icon.png`）をテーマごとに事前生成し
+  リポジトリ直下に配置。`scripts/generate-app-icons.mjs` で再生成できる（テーマカラーの定義を変更した場合は
+  `js/theme.js` の `THEME_COLORS` と同スクリプト内の複製を両方更新してから再実行すること）
+
 ## 採用時のメモ
 
 - 各SVGは `viewBox="0 0 100 100"` の自己完結ベクターで、外部フォント・外部リソースは未使用。
