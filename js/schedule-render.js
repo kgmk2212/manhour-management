@@ -2507,7 +2507,8 @@ export function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
     if (linked) {
         const seg = segments ? segments[segmentIndex] : null;
         const hours = seg ? seg.hours : schedule.estimatedHours;
-        const frontNewEnd = calculateEndDate(newStartDate, hours, schedule.member);
+        // 連動先の起点はクランプ後の displayStartDate を使う（自セグメントの表示位置と矛盾させない）
+        const frontNewEnd = calculateEndDate(displayStartDate, hours, schedule.member);
         const linkedNewStart = getNextBusinessDay(frontNewEnd, linked.member);
         // 連動先は常に segmentIndex 0（先頭）扱いなので segments は使われない
         previews.push({ schedule: linked, newStartDate: linkedNewStart, segmentIndex: 0, segments: null });

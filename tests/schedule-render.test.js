@@ -138,4 +138,27 @@ describe('buildDragPreviews', () => {
         assert.equal(previews[0].newStartDate, '2026-09-19');
         assert.equal(previews[0].segments, null);
     });
+
+    test('連動する後工程がある残作業セグメントをクランプ対象の日付へドラッグ → 連動先プレビューもクランプ後の位置を起点にする', () => {
+        // PG→PT連結ペア。schedule.endDate(09-18, 金)の翌営業日(09-21, 月)から
+        // PTが始まっているので findLinkedBackSchedule に拾われる
+        const schedule = makeInterruptedSchedule();
+        const linkedPt = makeSchedule({
+            id: 'sch_pt', process: 'PT', startDate: '2026-09-21', endDate: '2026-09-22'
+        });
+        State.setSchedules([schedule, linkedPt]);
+
+        // 前セグメント終了日(09-15)より前の09-10へドラッグ → 自セグメントは09-16へクランプされるはず
+        const previews = SR.buildDragPreviews(schedule, '2026-09-10', 1);
+
+        assert.equal(previews[0].newStartDate, '2026-09-16', '自セグメントはクランプ後の日付');
+        assert.equal(previews.length, 2, '連動先プレビューも含まれる');
+        assert.equal(previews[1].schedule.id, 'sch_pt');
+        // 連動先は自セグメントのクランプ後位置を起点に計算されるため、
+        // クランプ前の生値（09-10）を起点にした場合より後ろになる
+        assert.ok(
+            previews[1].newStartDate >= previews[0].newStartDate,
+            `連動先(${previews[1].newStartDate})が自セグメントのクランプ後位置(${previews[0].newStartDate})より前になってはならない`
+        );
+    });
 });

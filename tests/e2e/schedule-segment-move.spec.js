@@ -1,6 +1,8 @@
 // 中断後「残作業セグメント」の独立移動の実アプリ統合テスト。
-// Canvas 上の座標特定は不安定なため、ドラッグ完了時に呼ばれる window.handleSegmentDrag を
-// 直接叩き、localStorage に落ちた結果で機械判定する。
+// 前半のケースは Canvas 上の座標特定が不安定なため、ドラッグ完了時に呼ばれる
+// window.handleSegmentDrag を直接叩き、localStorage に落ちた結果で機械判定する。
+// 末尾の1ケースのみ、renderer.scheduleRects から実座標を求めて実際の
+// マウスドラッグ（mousedown/mousemove/mouseup）経路を通す（詳細はそのテスト内コメント参照）。
 // 2026-09 の平日はすべて営業日（祝日データは isBusinessDay 経由で判定されるが、
 // このテストは endDate の絶対値ではなく「ピンが効く／自動追従が止まる」ことのみを見る）。
 import { test, expect } from "@playwright/test";
