@@ -6,7 +6,7 @@
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule } from './schedule.js';
-import { calculateSegments } from './schedule-interruption.js';
+import { calculateSegments, resolveSegmentStart } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
 import { getMemberOrderString } from './members.js';
 
@@ -2479,13 +2479,25 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
  *            segments: Object[]|null}[]} segments は calculateSegments の計算結果
  *            （中断なしの場合は null）。drawDragPreview 側での再計算を避けるために含める
  */
-function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
+export function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
     const hasInterruptions = (schedule.interruptions || []).length > 0;
     const segments = hasInterruptions ? calculateSegments(schedule) : null;
 
+    // 残作業セグメント（segmentIndex > 0）は、確定後に resolveSegmentStart で
+    // クランプ・非営業日寄せされた表示になる。プレビューもそれに揃えることで、
+    // ドラッグ中に見えていた位置と確定後の位置がズレないようにする。
+    // newStartDate 自体（コミット時に resumeDate へ書き込まれる生の値）は変えない。
+    let displayStartDate = newStartDate;
+    if (segments && segmentIndex > 0) {
+        const prevSeg = segments[segmentIndex - 1];
+        if (prevSeg) {
+            displayStartDate = resolveSegmentStart(newStartDate, prevSeg.endDate, newStartDate, schedule.member);
+        }
+    }
+
     // calculateSegments はここで計算済みなので、drawDragPreview 側では再計算させず
     // このエントリの segments をそのまま使わせる
-    const previews = [{ schedule, newStartDate, segmentIndex, segments }];
+    const previews = [{ schedule, newStartDate: displayStartDate, segmentIndex, segments }];
 
     // 中間セグメントを動かしても schedule.endDate は変わらないため、
     // 後工程の連動プレビューは最終セグメントを掴んだときだけ出す
