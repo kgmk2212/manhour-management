@@ -9,13 +9,14 @@ import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, find
     businessDayDelta, planBatchMove } from './schedule.js';
 import { calculateSegments, resolveSegmentStart } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
+import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
 import { getMemberOrderString } from './members.js';
 
 // ============================================
 // 定数
 // ============================================
 
-const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS } = SCHEDULE.CANVAS;
+const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS, LANE_HEIGHT } = SCHEDULE.CANVAS;
 const LABEL_PADDING = 15; // テキスト右余白
 const LABEL_DOT_LEFT = 14; // 左端からドットまで
 const LABEL_DOT_SIZE = 8;  // ドットの直径
@@ -141,6 +142,7 @@ export class GanttChartRenderer {
         this.totalHeight = 0;
         this.hoverRowIndex = -1;
         this.rows = [];
+        this.rowLayout = { offsets: [], heights: [], totalHeight: HEADER_HEIGHT };
         this.filteredSchedulesCache = null;
         this.dpr = window.devicePixelRatio || 1;
         this.uiScale = 1;  // render() 時に CSS var --ui-scale から再取得
@@ -485,6 +487,13 @@ export class GanttChartRenderer {
         // 行データを構築
         const rows = this.buildRows(visibleSchedules);
         this.rows = rows;
+        // 行ごとに重なりレーンを割り当て、可変行高のレイアウトを作る
+        rows.forEach(row => {
+            row.lanes = assignLanes(row.schedules, (s) =>
+                scheduleSpan(s, (s.interruptions || []).length > 0 ? calculateSegments(s) : null));
+        });
+        this.rowLayout = buildRowLayout(rows.map(r => r.lanes.laneCount),
+            { headerHeight: HEADER_HEIGHT, rowHeight: ROW_HEIGHT, laneHeight: LANE_HEIGHT });
         this.filteredSchedulesCache = filteredSchedules;
 
         // サイズ計算
@@ -496,7 +505,7 @@ export class GanttChartRenderer {
 
         this.timelineWidth = this.totalDays * DAY_WIDTH;
         this.totalWidth = this.labelWidth + this.timelineWidth;
-        this.totalHeight = HEADER_HEIGHT + (rows.length * ROW_HEIGHT);
+        this.totalHeight = this.rowLayout.totalHeight;
         this.totalHeight = Math.max(this.totalHeight, 300);
 
         this.dpr = window.devicePixelRatio || 1;
@@ -544,7 +553,7 @@ export class GanttChartRenderer {
         this.drawLabelBackground();
         this.drawHeader();
         this.drawLabelHeader();
-        this.drawGrid(rows.length);
+        this.drawGrid();
         this.drawMonthSeparators();
         this.drawTodayLine();
         this.drawRows(rows);
@@ -822,7 +831,7 @@ export class GanttChartRenderer {
      * グリッド描画（timelineCanvas）
      * Ink & Amber: --border-light で繊細なグリッド
      */
-    drawGrid(rowCount) {
+    drawGrid() {
         const ctx = this.timelineCtx;
 
         // 縦線（--border-light: 繊細な区切り）
@@ -837,13 +846,13 @@ export class GanttChartRenderer {
         }
 
         // 横線（--border-light: 行区切り）
-        for (let row = 0; row <= rowCount; row++) {
-            const y = HEADER_HEIGHT + row * ROW_HEIGHT;
+        const lineYs = [...this.rowLayout.offsets, this.rowLayout.totalHeight];
+        lineYs.forEach(y => {
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineTo(this.timelineWidth, y);
             ctx.stroke();
-        }
+        });
     }
 
     /**
@@ -903,17 +912,18 @@ export class GanttChartRenderer {
         const ctx = this.timelineCtx;
 
         rows.forEach((row, index) => {
-            const y = HEADER_HEIGHT + index * ROW_HEIGHT;
+            const y = this.rowY(index);
+            const rowH = this.rowHeight(index);
 
             // ゼブラストライプ
             const zebraColor = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;
             ctx.fillStyle = zebraColor;
-            ctx.fillRect(0, y, this.timelineWidth, ROW_HEIGHT);
+            ctx.fillRect(0, y, this.timelineWidth, rowH);
 
             // ホバー行のハイライト
             if (index === this.hoverRowIndex) {
                 ctx.fillStyle = HOVER_HIGHLIGHT;
-                ctx.fillRect(0, y, this.timelineWidth, ROW_HEIGHT);
+                ctx.fillRect(0, y, this.timelineWidth, rowH);
             }
 
             // 担当者名（担当者別ビューの場合、休暇チェック用）
@@ -928,11 +938,11 @@ export class GanttChartRenderer {
                 if (isWeekend(date)) {
                     // 週末: #FAF9F7 ベース（ゼブラで微差）
                     ctx.fillStyle = index % 2 === 0 ? '#FAF9F7' : '#F5F4F2';
-                    ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                    ctx.fillRect(x, y, DAY_WIDTH, rowH);
                 } else if (isHoliday(date)) {
                     // 祝日: --accent-secondary-light ベース
                     ctx.fillStyle = index % 2 === 0 ? '#FFF8ED' : '#FFF3E0';
-                    ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                    ctx.fillRect(x, y, DAY_WIDTH, rowH);
                 } else if (memberName) {
                     // 担当者休暇チェック（担当者別ビューのみ）
                     const dateStr = formatDateString(date);
@@ -941,11 +951,11 @@ export class GanttChartRenderer {
                         if (vacation.hours >= 8 || vacation.vacationType !== '時間休') {
                             // 全日休暇: 薄い紫系
                             ctx.fillStyle = index % 2 === 0 ? '#F5F0F7' : '#EFE9F2';
-                            ctx.fillRect(x, y, DAY_WIDTH, ROW_HEIGHT);
+                            ctx.fillRect(x, y, DAY_WIDTH, rowH);
                         } else {
                             // 時間休（部分休暇）
                             ctx.fillStyle = index % 2 === 0 ? '#F9F4FB' : '#F4EFF6';
-                            ctx.fillRect(x, y + ROW_HEIGHT / 2, DAY_WIDTH, ROW_HEIGHT / 2);
+                            ctx.fillRect(x, y + rowH / 2, DAY_WIDTH, rowH / 2);
                         }
                     }
                 }
@@ -959,15 +969,17 @@ export class GanttChartRenderer {
             // 完了済み版数の行は背景をさらに淡くする
             if (isCompletedRow) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
-                ctx.fillRect(0, y, this.timelineWidth, ROW_HEIGHT);
+                ctx.fillRect(0, y, this.timelineWidth, rowH);
             }
 
             // スケジュールバーを描画（開始日昇順＝後のバーが手前に重なる）
             const sorted = [...row.schedules].sort((a, b) =>
                 new Date(a.startDate) - new Date(b.startDate)
             );
+            // レーンごとに下へずらして描く（重なった予定を別の段に分ける）
             sorted.forEach(schedule => {
-                this.drawScheduleBar(schedule, y);
+                const lane = row.lanes ? (row.lanes.laneOf.get(schedule.id) || 0) : 0;
+                this.drawScheduleBar(schedule, y + lane * LANE_HEIGHT, index);
             });
         });
     }
@@ -983,27 +995,28 @@ export class GanttChartRenderer {
         const textLeftPad = LABEL_TEXT_OFFSET;
 
         rows.forEach((row, index) => {
-            const y = HEADER_HEIGHT + index * ROW_HEIGHT;
+            const y = this.rowY(index);
+            const rowH = this.rowHeight(index);
 
             // ゼブラ背景
             ctx.fillStyle = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;
-            ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
+            ctx.fillRect(0, y, this.labelWidth, rowH);
 
             // ホバーハイライト
             if (index === this.hoverRowIndex) {
                 ctx.fillStyle = HOVER_HIGHLIGHT;
-                ctx.fillRect(0, y, this.labelWidth, ROW_HEIGHT);
+                ctx.fillRect(0, y, this.labelWidth, rowH);
             }
 
             // 横線（--border-light）
             ctx.strokeStyle = GRID;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
-            ctx.moveTo(0, y + ROW_HEIGHT);
-            ctx.lineTo(this.labelWidth, y + ROW_HEIGHT);
+            ctx.moveTo(0, y + rowH);
+            ctx.lineTo(this.labelWidth, y + rowH);
             ctx.stroke();
 
-            const centerY = y + ROW_HEIGHT / 2;
+            const centerY = y + rowH / 2;
 
             // 完了済み版数の行かどうか判定
             const isCompletedRow = this.completedVersions.size > 0 &&
@@ -1064,12 +1077,16 @@ export class GanttChartRenderer {
 
     /**
      * スケジュールバーを描画（dateToX座標系）
+     *
+     * @param {Object} schedule
+     * @param {number} rowY - バーを置くレーンの上端 Y（行上端＋レーン×LANE_HEIGHT）
+     * @param {number} rowIndex - 行 index（ゼブラ判定用）
      */
-    drawScheduleBar(schedule, rowY) {
+    drawScheduleBar(schedule, rowY, rowIndex) {
         const ctx = this.timelineCtx;
 
         if (schedule.interruptions && schedule.interruptions.length > 0) {
-            this.drawSplitScheduleBar(schedule, rowY);
+            this.drawSplitScheduleBar(schedule, rowY, rowIndex);
             return;
         }
 
@@ -1102,8 +1119,6 @@ export class GanttChartRenderer {
             ctx.globalAlpha = 0.35;
         }
 
-        // 行インデックス（ゼブラストライプ・背景色判定用）
-        const rowIndex = Math.round((rowY - HEADER_HEIGHT) / ROW_HEIGHT);
         const isEvenRow = rowIndex % 2 === 0;
 
         // 休日の日を事前計算（座標と背景色を記録）
@@ -1303,8 +1318,12 @@ export class GanttChartRenderer {
      * drawScheduleBar と同じ視覚言語（進捗按分・休日オーバーレイ・レビューストライプ・
      * 長押し/新規作成ハイライト）をセグメントごとに適用し、境界に ✂ マークと
      * 点線コネクタを重ねる。
+     *
+     * @param {Object} schedule
+     * @param {number} rowY - バーを置くレーンの上端 Y（行上端＋レーン×LANE_HEIGHT）
+     * @param {number} rowIndex - 行 index（ゼブラ判定用）
      */
-    drawSplitScheduleBar(schedule, rowY) {
+    drawSplitScheduleBar(schedule, rowY, rowIndex) {
         const ctx = this.timelineCtx;
         const segments = calculateSegments(schedule);
         if (segments.length === 0) return;
@@ -1321,7 +1340,6 @@ export class GanttChartRenderer {
         }
 
         const barY = rowY + ROW_PADDING;
-        const rowIndex = Math.round((rowY - HEADER_HEIGHT) / ROW_HEIGHT);
         const isEvenRow = rowIndex % 2 === 0;
 
         // スケジュール全体の進捗を、セグメントの見積工数で先頭から按分する
@@ -1829,11 +1847,18 @@ export class GanttChartRenderer {
         return this.xToDate(x);
     }
 
+    /** @returns {number} 行 index の上端 Y（logical） */
+    rowY(index) {
+        return this.rowLayout.offsets[index] ?? (HEADER_HEIGHT + index * ROW_HEIGHT);
+    }
+
+    /** @returns {number} 行 index の高さ（logical） */
+    rowHeight(index) {
+        return this.rowLayout.heights[index] ?? ROW_HEIGHT;
+    }
+
     getRowIndexAtPosition(y) {
-        if (y < HEADER_HEIGHT) return -1;
-        const rowIndex = Math.floor((y - HEADER_HEIGHT) / ROW_HEIGHT);
-        if (rowIndex < 0 || rowIndex >= this.rows.length) return -1;
-        return rowIndex;
+        return rowIndexAtY(this.rowLayout, y);
     }
 
     setHoverRow(rowIndex) {
@@ -2800,18 +2825,19 @@ function drawDragPreview(renderer, previews, targetRowIndex, showDateLabels = tr
             targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
             scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
         const barY = isMemberDrag
-            ? HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT + ROW_PADDING
+            ? renderer.rowY(targetRowIndex) + ROW_PADDING
             : originalRect.y;
 
         if (isMemberDrag) {
-            const rowY = HEADER_HEIGHT + targetRowIndex * ROW_HEIGHT;
+            const rowY = renderer.rowY(targetRowIndex);
+            const rowH = renderer.rowHeight(targetRowIndex);
             ctx.fillStyle = 'rgba(45, 90, 39, 0.10)';
-            ctx.fillRect(0, rowY, renderer.timelineWidth, ROW_HEIGHT);
+            ctx.fillRect(0, rowY, renderer.timelineWidth, rowH);
 
             const labelCtx = renderer.labelCtx;
             if (labelCtx) {
                 labelCtx.fillStyle = 'rgba(45, 90, 39, 0.10)';
-                labelCtx.fillRect(0, rowY, renderer.labelWidth, ROW_HEIGHT);
+                labelCtx.fillRect(0, rowY, renderer.labelWidth, rowH);
             }
 
             const targetRow = renderer.rows[targetRowIndex];
