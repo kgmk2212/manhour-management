@@ -1118,6 +1118,14 @@
                     <canvas id="ganttCanvas"></canvas>
                 </div>
 
+                <!-- 範囲選択中の操作バー（実績の一括選択トレイと同じ bk-dock。ガントの位置を動かさないよう下に置く） -->
+                <div id="scheduleSelectionChip" class="bk-dock schedule-selection-dock" hidden>
+                    <div class="bk-bar" role="status" aria-live="polite">
+                        <span class="bk-bar-count"><span id="scheduleSelectionCount">0</span> 件選択中<span class="bk-bar-sub"> · 選択中のバーをドラッグでまとめて移動 · Esc で解除</span></span>
+                        <button type="button" class="btn btn-ghost btn-sm ssc-clear" onclick="clearScheduleSelection()">選択解除</button>
+                    </div>
+                </div>
+
                 <!-- サマリーパネル -->
                 <div class="schedule-summary-cards" id="scheduleSummary">
                     <div class="schedule-summary-card">

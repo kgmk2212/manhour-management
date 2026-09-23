@@ -3,9 +3,10 @@
 // 複数月連続表示対応（2キャンバス構成）
 // ============================================
 
-import { schedules, scheduleSettings, actuals, vacations, remainingEstimates } from './state.js';
+import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, selectedScheduleIds } from './state.js';
 import { SCHEDULE } from './constants.js';
-import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule } from './schedule.js';
+import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule,
+    businessDayDelta, planBatchMove } from './schedule.js';
 import { calculateSegments, resolveSegmentStart } from './schedule-interruption.js';
 import { sortMembers, escapeHtml } from './utils.js';
 import { getMemberOrderString } from './members.js';
@@ -26,6 +27,11 @@ const ZEBRA_LIGHT = '#FFFFFF';
 const ZEBRA_DARK = '#FAFAF9';  // --surface-elevated に合わせる
 const HOVER_HIGHLIGHT = 'rgba(45, 90, 39, 0.06)';  // --accent ベースの薄いハイライト
 const BAR_RADIUS = 3;
+// 範囲選択・一括移動（設計書 2026-09-24-schedule-multi-select-design.md）
+const SELECTION_RING = '#2D5A27';                 // --accent
+const SELECTION_HALO = 'rgba(45, 90, 39, 0.18)';  // --accent の淡いハロー
+const MARQUEE_FILL = 'rgba(45, 90, 39, 0.07)';
+const MARQUEE_MIN_PX = 4; // これ未満の移動は「空白クリック」とみなす
 
 function fillRoundRect(ctx, x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
@@ -543,6 +549,8 @@ export class GanttChartRenderer {
         this.drawTodayLine();
         this.drawRows(rows);
         this.drawLabelColumn(rows);
+        this.drawSelectionRings(selectedScheduleIds);
+        updateScheduleSelectionChip();
 
         // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
         // dateToX は logical 座標を返すので CSS px には uiScale を掛ける。
@@ -1731,6 +1739,42 @@ export class GanttChartRenderer {
     }
 
     /**
+     * 選択中の予定のバーに強調リングを描く（分割バーは全セグメントに描く）
+     * @param {Set<string>} ids - 強調する予定ID
+     */
+    drawSelectionRings(ids) {
+        if (!ids || ids.size === 0) return;
+        const ctx = this.timelineCtx;
+        ctx.save();
+        this.scheduleRects.forEach(r => {
+            if (!ids.has(r.schedule.id)) return;
+            ctx.strokeStyle = SELECTION_HALO;
+            ctx.lineWidth = 5;
+            strokeRoundRect(ctx, r.x - 3, r.y - 3, r.width + 6, r.height + 6, BAR_RADIUS + 3);
+            ctx.strokeStyle = SELECTION_RING;
+            ctx.lineWidth = 2;
+            strokeRoundRect(ctx, r.x - 1.5, r.y - 1.5, r.width + 3, r.height + 3, BAR_RADIUS + 1.5);
+        });
+        ctx.restore();
+    }
+
+    /**
+     * 矩形（timeline 座標）と重なるバーの予定IDを返す
+     * @returns {Set<string>}
+     */
+    getScheduleIdsInRect(x1, y1, x2, y2) {
+        const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+        const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+        const ids = new Set();
+        this.scheduleRects.forEach(r => {
+            if (r.x < maxX && r.x + r.width > minX && r.y < maxY && r.y + r.height > minY) {
+                ids.add(r.schedule.id);
+            }
+        });
+        return ids;
+    }
+
+    /**
      * 座標から「どのスケジュールのどのセグメントを掴んだか」を返す
      * `getScheduleAtPosition` の上位互換。ドラッグ経路のみが使う。
      * @param {number} x - timelineCanvas 座標系のX
@@ -2154,7 +2198,20 @@ const dragState = {
     // 中断で終わるセグメントの右端を掴んでいる（最終作業日の変更）
     edgeMode: false,
     edgeSegmentStart: null,
-    edgeOriginalCache: null
+    edgeOriginalCache: null,
+    // 選択中の複数バーをまとめて動かしている（日付方向のみ）
+    groupMode: false,
+    groupDelta: 0
+};
+
+/** 空白ドラッグによる範囲選択の状態 */
+const marqueeState = {
+    active: false,
+    additive: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0
 };
 
 /**
@@ -2168,6 +2225,133 @@ function clearDragSegment() {
     dragState.edgeMode = false;
     dragState.edgeSegmentStart = null;
     dragState.edgeOriginalCache = null;
+    dragState.groupMode = false;
+    dragState.groupDelta = 0;
+}
+
+// ============================================
+// 範囲選択（PC・マウスのみ）
+// ============================================
+
+/** 選択状態を反映して再描画する */
+function redrawWithSelection() {
+    const renderer = getRenderer();
+    if (renderer) renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+    else updateScheduleSelectionChip();
+}
+
+/**
+ * ツールバーの「N件選択中」チップを選択状態に合わせて更新する。
+ * 削除などで存在しなくなった予定IDはここで選択から外す。
+ */
+export function updateScheduleSelectionChip() {
+    const existing = new Set(schedules.map(s => s.id));
+    [...selectedScheduleIds].forEach(id => { if (!existing.has(id)) selectedScheduleIds.delete(id); });
+
+    const chip = document.getElementById('scheduleSelectionChip');
+    if (!chip) return;
+    const count = selectedScheduleIds.size;
+    chip.hidden = count === 0;
+    const countEl = document.getElementById('scheduleSelectionCount');
+    if (countEl) countEl.textContent = String(count);
+}
+
+/** 範囲選択を解除する（ツールバーの ✕・Esc・ビュー切替から呼ぶ） */
+export function clearScheduleSelection() {
+    if (selectedScheduleIds.size === 0) return;
+    selectedScheduleIds.clear();
+    redrawWithSelection();
+}
+
+/** 範囲選択中の矩形と、その時点で選ばれる予定のリングを描く */
+function drawMarquee(renderer) {
+    renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+    const { startX, startY, currentX, currentY, additive } = marqueeState;
+    const hits = renderer.getScheduleIdsInRect(startX, startY, currentX, currentY);
+    const preview = additive ? new Set([...selectedScheduleIds, ...hits]) : hits;
+    // render() は確定済みの選択でリングを描いている。新たに入る分だけ重ねる
+    renderer.drawSelectionRings(new Set([...preview].filter(id => !selectedScheduleIds.has(id))));
+
+    const ctx = renderer.timelineCtx;
+    const x = Math.min(startX, currentX), y = Math.min(startY, currentY);
+    const w = Math.abs(currentX - startX), h = Math.abs(currentY - startY);
+    ctx.save();
+    ctx.fillStyle = MARQUEE_FILL;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = SELECTION_RING;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(x + 0.5, y + 0.5, w, h);
+    ctx.setLineDash([]);
+    ctx.restore();
+    if (hits.size > 0) {
+        drawPillLabel(ctx, `${preview.size}件`, currentX + 8, currentY + 8, 'left');
+    }
+}
+
+/**
+ * アクセント色の小さなピル型ラベルを描く（範囲選択の件数・一括移動の営業日数）
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} text
+ * @param {number} x - align が 'left' なら左端、'center' なら中心
+ * @param {number} y - ピルの上端
+ * @param {'left'|'center'} align
+ */
+function drawPillLabel(ctx, text, x, y, align) {
+    ctx.save();
+    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+    const padX = 7, h = 18;
+    const w = ctx.measureText(text).width + padX * 2;
+    const left = align === 'center' ? x - w / 2 : x;
+    ctx.fillStyle = SELECTION_RING;
+    fillRoundRect(ctx, left, y, w, h, h / 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, left + padX, y + h / 2 + 0.5);
+    ctx.restore();
+}
+
+/** 範囲選択を確定する（空白クリックなら選択解除） */
+function finishMarquee(renderer) {
+    if (!marqueeState.active) return;
+    marqueeState.active = false;
+    const moved = Math.abs(marqueeState.currentX - marqueeState.startX) >= MARQUEE_MIN_PX ||
+        Math.abs(marqueeState.currentY - marqueeState.startY) >= MARQUEE_MIN_PX;
+    if (moved && renderer) {
+        const hits = renderer.getScheduleIdsInRect(
+            marqueeState.startX, marqueeState.startY, marqueeState.currentX, marqueeState.currentY);
+        if (!marqueeState.additive) selectedScheduleIds.clear();
+        hits.forEach(id => selectedScheduleIds.add(id));
+    } else if (!marqueeState.additive) {
+        selectedScheduleIds.clear();
+    }
+    redrawWithSelection();
+}
+
+/**
+ * 一括移動のプレビュー: 動く予定（連結追従分を含む）のゴーストと、掴んだバーの上に移動量ラベルを描く
+ */
+function drawGroupPreview(renderer) {
+    const delta = dragState.groupDelta;
+    const moves = planBatchMove([...selectedScheduleIds], schedules, delta);
+    const previews = moves
+        .map(m => ({ schedule: schedules.find(s => s.id === m.scheduleId), newStartDate: m.newStartDate }))
+        .filter(p => p.schedule);
+    if (previews.length === 0) {
+        renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
+        return;
+    }
+    drawDragPreview(renderer, previews, -1, false);
+
+    const grabbed = moves.find(m => m.scheduleId === dragState.schedule.id);
+    const rect = renderer.scheduleRects.find(r => r.schedule.id === dragState.schedule.id);
+    if (!grabbed || !rect) return;
+    const newStart = new Date(grabbed.newStartDate);
+    const x = renderer.dateToX(newStart < renderer.rangeStart ? renderer.rangeStart : newStart);
+    const sign = delta > 0 ? '+' : '−';
+    drawPillLabel(renderer.timelineCtx, `${sign}${Math.abs(delta)}営業日 · ${moves.length}件`,
+        x, Math.max(HEADER_HEIGHT + 2, rect.y - 22), 'left');
 }
 
 /**
@@ -2195,8 +2379,9 @@ function renderEdgePreview(renderer, dateStr) {
  * @param {Function} onScheduleUpdate - (scheduleId, newStartDate, segmentIndex, interruptionId) 日付移動の確定
  * @param {Function} onMemberChange - (scheduleId, newMember, startDate) 担当者変更の確定
  * @param {Function} [onSegmentEndChange] - (scheduleId, interruptionId, newWorkedUntil) 右端ドラッグの確定
+ * @param {Function} [onBatchMove] - (scheduleIds, delta) 選択中の予定の一括移動の確定
  */
-export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndChange) {
+export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndChange, onBatchMove) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -2210,6 +2395,19 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
             const _s = renderer.uiScale || 1;
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
+            if (event.button !== 0) return;
+
+            // Shift/⌘/Ctrl＋バー → 選択の切り替え（ドラッグも詳細モーダルも開始しない）
+            const isModifier = event.shiftKey || event.metaKey || event.ctrlKey;
+            const modHit = isModifier && onBatchMove ? renderer.getScheduleRectAtPosition(x, y) : null;
+            if (modHit) {
+                const id = modHit.schedule.id;
+                if (selectedScheduleIds.has(id)) selectedScheduleIds.delete(id);
+                else selectedScheduleIds.add(id);
+                dragState.wasDragging = true; // 直後の click で詳細モーダルを開かせない
+                redrawWithSelection();
+                return;
+            }
 
             // 中断で終わるセグメントの右端 → 最終作業日の変更（バー移動より優先）
             const edge = onSegmentEndChange && Array.isArray(renderer.filteredSchedulesCache)
@@ -2235,10 +2433,27 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
             }
 
             const hit = renderer.getScheduleRectAtPosition(x, y);
+            if (!hit && onBatchMove) {
+                // 空白 → 範囲選択
+                marqueeState.active = true;
+                marqueeState.additive = isModifier;
+                marqueeState.startX = marqueeState.currentX = x;
+                marqueeState.startY = marqueeState.currentY = y;
+                event.preventDefault(); // テキスト選択を起こさない
+                return;
+            }
             if (hit) {
                 const schedule = hit.schedule;
                 const rowIndex = renderer.getRowIndexAtPosition(y);
+                // 選択中（2件以上）のバーを掴んだら一括移動。選択外を掴んだら選択を解除して単体移動
+                const isGroup = !!onBatchMove && selectedScheduleIds.size >= 2 && selectedScheduleIds.has(schedule.id);
+                if (!isGroup && selectedScheduleIds.size > 0) {
+                    selectedScheduleIds.clear();
+                    redrawWithSelection();
+                }
                 dragState.isDragging = true;
+                dragState.groupMode = isGroup;
+                dragState.groupDelta = 0;
                 dragState.schedule = schedule;
                 dragState.segmentIndex = hit.segmentIndex;
                 dragState.interruptionId = hit.interruptionId;
@@ -2266,6 +2481,14 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
 
+            if (marqueeState.active) {
+                marqueeState.currentX = x;
+                marqueeState.currentY = y;
+                drawMarquee(renderer);
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+
             if (dragState.isDragging && dragState.schedule && dragState.edgeMode) {
                 dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
@@ -2283,8 +2506,21 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
                 let rowChanged = false;
+                if (dragState.groupMode) {
+                    // 一括移動は日付方向のみ。掴んだバーの担当者カレンダーで営業日数を数える
+                    const groupDate = renderer.getDateAtPosition(x);
+                    if (groupDate) {
+                        const dateStr = formatDateForDrag(groupDate);
+                        if (dateStr !== dragState.previewDate) {
+                            dragState.previewDate = dateStr;
+                            dragState.groupDelta = businessDayDelta(
+                                dragState.originalStartDate, dateStr, dragState.schedule.member);
+                            drawGroupPreview(renderer);
+                        }
+                    }
+                }
                 // 残作業セグメント（segmentIndex > 0）は担当者変更できないため行追従しない
-                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
+                if (!dragState.groupMode && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
                     dragState.segmentIndex === 0) {
                     const rowIndex = renderer.getRowIndexAtPosition(y);
                     if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
@@ -2293,7 +2529,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                     }
                 }
 
-                const newDate = renderer.getDateAtPosition(x);
+                const newDate = dragState.groupMode ? null : renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
@@ -2304,7 +2540,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                             dragState.targetRowIndex
                         );
                     }
-                } else if (rowChanged) {
+                } else if (rowChanged && !dragState.groupMode) {
                     const fallbackDate = dragState.previewDate || dragState.originalStartDate;
                     drawDragPreview(
                         renderer,
@@ -2355,6 +2591,11 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
         });
 
         canvas.addEventListener('mouseup', (event) => {
+            if (marqueeState.active) {
+                finishMarquee(getRenderer());
+                canvas.style.cursor = 'default';
+                return;
+            }
             if (!dragState.isDragging) return;
 
             // 自動スクロールを停止
@@ -2375,14 +2616,19 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
             let didUpdate = false;
 
             // 残作業セグメント（segmentIndex > 0）は担当者変更の対象にしない（設計書 §7-2）
-            const memberChanged = !dragState.edgeMode &&
+            const memberChanged = !dragState.edgeMode && !dragState.groupMode &&
                 renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
                 dragState.segmentIndex === 0 &&
                 dragState.targetRowIndex >= 0 &&
                 dragState.targetRowIndex !== dragState.originalRowIndex &&
                 renderer.rows && renderer.rows[dragState.targetRowIndex];
 
-            if (dragState.edgeMode) {
+            if (dragState.groupMode) {
+                if (dragState.groupDelta !== 0 && onBatchMove) {
+                    onBatchMove([...selectedScheduleIds], dragState.groupDelta);
+                    didUpdate = true;
+                }
+            } else if (dragState.edgeMode) {
                 if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate) {
                     const workedUntil = dragState.previewDate < dragState.edgeSegmentStart
                         ? dragState.edgeSegmentStart : dragState.previewDate;
@@ -2424,6 +2670,9 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
         });
 
         canvas.addEventListener('mouseleave', () => {
+            // 範囲選択はキャンバス外に出た時点の矩形で確定する
+            if (marqueeState.active) finishMarquee(getRenderer());
+
             // 自動スクロールを停止
             if (dragState.autoScrollId) {
                 cancelAnimationFrame(dragState.autoScrollId);
@@ -2452,6 +2701,17 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
 
     // Escキー
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && marqueeState.active) {
+            marqueeState.active = false;
+            redrawWithSelection();
+            return;
+        }
+        // ドラッグ中でなく、モーダルも開いていなければ Esc で選択解除
+        if (event.key === 'Escape' && !dragState.isDragging && selectedScheduleIds.size > 0 &&
+            !document.querySelector('.modal[style*="flex"]')) {
+            clearScheduleSelection();
+            return;
+        }
         if (event.key === 'Escape' && dragState.isDragging) {
             if (dragState.autoScrollId) {
                 cancelAnimationFrame(dragState.autoScrollId);
@@ -2486,7 +2746,13 @@ function formatDateForDrag(date) {
     return `${year}-${month}-${day}`;
 }
 
-function drawDragPreview(renderer, previews, targetRowIndex) {
+/**
+ * @param {Object} renderer
+ * @param {{schedule: Object, newStartDate: string, segmentIndex?: number, segments?: Object[]}[]} previews
+ * @param {number} targetRowIndex - 縦ドラッグ先の行（-1 なら縦移動なし）
+ * @param {boolean} [showDateLabels=true] - 各ゴーストの上に新しい開始日を描くか（一括移動では1つのラベルにまとめる）
+ */
+function drawDragPreview(renderer, previews, targetRowIndex, showDateLabels = true) {
     // render()内部で日付ベースのスクロール位置保持が行われる
     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
 
@@ -2569,7 +2835,7 @@ function drawDragPreview(renderer, previews, targetRowIndex) {
         ctx.setLineDash([]);
         ctx.globalAlpha = 1.0;
 
-        if (!isMemberDrag) {
+        if (!isMemberDrag && showDateLabels) {
             ctx.fillStyle = TEXT_PRIMARY;
             ctx.font = '600 11px system-ui, -apple-system, sans-serif';
             ctx.textAlign = 'center';

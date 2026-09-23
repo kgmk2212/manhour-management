@@ -2658,6 +2658,18 @@ table tr[style*="1565c0"] th:first-child {
     gap: 10px;
 }
 
+/* ガントの範囲選択バー（見た目は実績の .bk-dock / .bk-bar を流用） */
+.schedule-selection-dock[hidden] { display: none; }
+.schedule-selection-dock .bk-bar { width: auto; max-width: min(100%, 760px); flex-wrap: nowrap; animation: sscIn 180ms ease-out; }
+.schedule-selection-dock .bk-bar-count { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@keyframes sscIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .schedule-selection-dock .bk-bar { animation: none; }
+}
+
 .schedule-nav-btn {
     padding: 8px 16px;
     border: 1px solid var(--border);

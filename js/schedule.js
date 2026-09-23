@@ -12,7 +12,8 @@ import {
 import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, sortTaskKeysByOrder, updateTaskSortOrder } from './estimate.js';
 import { SCHEDULE, PROCESS, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml, getTodayString } from './utils.js';
-import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
+import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer,
+    clearScheduleSelection } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
 import { calculateConsumedHoursAtDate, addInterruption, updateInterruption, removeInterruption, analyzeImpact,
@@ -63,7 +64,8 @@ export function initScheduleModule() {
     setupDragAndDrop(
         onBarDragEnd,
         (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); },
-        (scheduleId, interruptionId, workedUntil) => { handleSegmentEndDrag(scheduleId, interruptionId, workedUntil); }
+        (scheduleId, interruptionId, workedUntil) => { handleSegmentEndDrag(scheduleId, interruptionId, workedUntil); },
+        (scheduleIds, delta) => { handleScheduleBatchDrag(scheduleIds, delta); }
     );
 
     // ツールチップハンドラをセットアップ
@@ -328,6 +330,8 @@ export function goToScheduleToday() {
  */
 export function setScheduleViewMode(mode) {
     setScheduleSettings({ viewMode: mode });
+    // 行の並びが変わるため、範囲選択は持ち越さない
+    clearScheduleSelection();
     
     // ボタンのアクティブ状態を更新
     const memberBtn = document.getElementById('viewMemberBtn');
@@ -2431,6 +2435,9 @@ function updateStatusButtons(activeStatus) {
 // Undo/Redo（history.js に統合済み）
 // ============================================
 // pushAction, undo, redo は history.js から import
+
+// ツールバーの「選択解除」ボタン用に schedule-render.js の関数を再公開する
+export { clearScheduleSelection };
 
 /**
  * ドラッグによるスケジュール移動を処理
