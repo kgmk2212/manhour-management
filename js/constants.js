@@ -368,6 +368,7 @@ export const SCHEDULE = {
         DAY_WIDTH: 28,
         LABEL_WIDTH: 200,  // 長い名前に対応するため拡大
         ROW_PADDING: 6,
+        LANE_HEIGHT: 28,   // 重なった予定を下段に積むときの1レーンぶんの高さ（BAR_HEIGHT + 余白4）
         DEFAULT_DISPLAY_MONTHS: 3  // デフォルト表示月数
     },
 
