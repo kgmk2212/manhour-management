@@ -194,6 +194,8 @@ export function recalculateEndDateWithInterruptions(schedule) {
  * @param {string} params.insertOptions.process - 工程
  * @param {number} params.insertOptions.hours - 工数
  * @param {string} [params.insertOptions.member] - 担当者（省略時は元スケジュールの担当者）
+ * @param {boolean} [params.shiftDependents=false] - 後続スケジュールを連鎖でずらすか。
+ *   既定はずらさない（中断した残作業をいつやるか決める前に後続を動かすと、意図して重ねた配置まで崩れるため）
  * @returns {{ schedule: Object, insertedSchedule: Object|null, cascadeResults: Array }|null}
  */
 export function addInterruption(scheduleId, params) {
@@ -253,7 +255,7 @@ export function addInterruption(scheduleId, params) {
     const newSchedules = schedules.map(s => s.id === scheduleId ? updatedSchedule : s);
     setSchedules(newSchedules);
 
-    const cascadeResults = cascadeShift(updatedSchedule, oldEndDate);
+    const cascadeResults = params.shiftDependents ? cascadeShift(updatedSchedule, oldEndDate) : [];
 
     if (typeof window.saveData === 'function') window.saveData();
 

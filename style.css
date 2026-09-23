@@ -9643,6 +9643,7 @@ li.drop-below {
 
 .interruption-consumed-auto {
     color: var(--text-muted);
+    white-space: nowrap;
     font-size: calc(13.5px * var(--ui-scale));
 }
 
@@ -9669,6 +9670,19 @@ li.drop-below {
     cursor: pointer;
     font-size: calc(15.5px * var(--ui-scale));
     color: var(--text-primary);
+}
+
+.interruption-shift-row {
+    margin-top: 16px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 16px;
+}
+
+.interruption-shift-hint {
+    margin-top: 4px;
+    padding-left: calc(8px + 1em);
+    color: var(--text-muted);
+    font-size: calc(12.5px * var(--ui-scale));
 }
 
 .interruption-insert-section {

@@ -345,7 +345,8 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
             splitDate: '2026-09-15',
             consumedHours: 16,
             reason: '緊急対応',
-            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 },
+            shiftDependents: true
         });
 
         assert.ok(result);
@@ -364,6 +365,29 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
 
         const updatedFollower = State.schedules.find(s => s.id === 'sch_2');
         assert.equal(updatedFollower.startDate, '2026-09-21');
+    });
+
+    test('shiftDependents 未指定（既定）では endDate が伸びても後続スケジュールはずらさない', () => {
+        const target = makeSchedule();
+        const follower = {
+            id: 'sch_2', version: 'V1', task: 'T2', process: 'PG', member: MEMBER,
+            startDate: '2026-09-18', estimatedHours: 8, endDate: '2026-09-18',
+            status: 'pending', interruptions: []
+        };
+        State.setSchedules([target, follower]);
+
+        const result = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15',
+            consumedHours: 16,
+            reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+
+        assert.equal(result.schedule.endDate, '2026-09-21');
+        assert.deepEqual(result.cascadeResults, []);
+        const unchanged = State.schedules.find(s => s.id === 'sch_2');
+        assert.equal(unchanged.startDate, '2026-09-18');
+        assert.equal(unchanged.endDate, '2026-09-18');
     });
 
     test('removeInterruption で中断を取り消すと interruptions が空になる（endDateは再計算されず維持される既知の制約）', () => {
@@ -423,7 +447,8 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
             splitDate: '2026-09-15',
             consumedHours: 16,
             reason: '',
-            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 },
+            shiftDependents: true
         });
 
         // follower1・follower2 とも同担当者・startDate>=旧endDateのため連鎖対象になるはず
@@ -457,7 +482,8 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
             splitDate: '2026-09-15',
             consumedHours: 16,
             reason: '',
-            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 },
+            shiftDependents: true
         });
 
         // sch_2・sch_3 両方とも最終的に連鎖対象になっているはず

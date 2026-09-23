@@ -2919,9 +2919,9 @@
                     <input type="date" id="interruptionSplitDate" onchange="onInterruptionSplitDateChange()">
                 </div>
                 <div class="form-group">
-                    <label>中断時点の消化工数</label>
+                    <label for="interruptionRemainingHours">残工数</label>
                     <div class="interruption-consumed-row">
-                        <input type="number" id="interruptionConsumedHours" step="0.5" min="0">
+                        <input type="number" id="interruptionRemainingHours" step="0.5" min="0" oninput="updateInterruptionConsumedLabel()">
                         <span>h</span>
                         <span id="interruptionConsumedAuto" class="interruption-consumed-auto"></span>
                     </div>
@@ -2936,10 +2936,10 @@
 
                 <div class="interruption-insert-toggle-row">
                     <label class="interruption-insert-checkbox-label">
-                        <input type="checkbox" id="interruptionCreateInsert" checked onchange="toggleInsertSection()">
+                        <input type="checkbox" id="interruptionCreateInsert" onchange="toggleInsertSection()">
                         <span>差し込み作業を同時に作成する</span>
                     </label>
-                    <div id="interruptionInsertSection" class="interruption-insert-section">
+                    <div id="interruptionInsertSection" class="interruption-insert-section" style="display: none;">
                         <div class="form-group">
                             <label>版数</label>
                             <select id="interruptionInsertVersion" onchange="updateInterruptionInsertTaskOptions()">
@@ -2969,6 +2969,14 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="interruption-shift-row">
+                    <label class="interruption-insert-checkbox-label">
+                        <input type="checkbox" id="interruptionShiftDependents">
+                        <span>後続のスケジュールもずらす</span>
+                    </label>
+                    <div class="interruption-shift-hint">オフのときは後続を動かさず、延びた分は重なったまま残ります</div>
                 </div>
             </div>
             <div class="modal-footer">

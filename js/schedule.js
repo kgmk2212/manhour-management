@@ -1024,10 +1024,13 @@ export function openInterruptionModal(scheduleId, presetDate) {
     const reasonInput = document.getElementById('interruptionReason');
     if (reasonInput) reasonInput.value = '';
 
+    // 既定: 差し込み作業は作らない・後続はずらさない（残作業の再開時期を決める前に周囲を動かさない）
     const createInsert = document.getElementById('interruptionCreateInsert');
-    if (createInsert) createInsert.checked = true;
+    if (createInsert) createInsert.checked = false;
     const insertSection = document.getElementById('interruptionInsertSection');
-    if (insertSection) insertSection.style.display = 'block';
+    if (insertSection) insertSection.style.display = 'none';
+    const shiftDependents = document.getElementById('interruptionShiftDependents');
+    if (shiftDependents) shiftDependents.checked = false;
 
     updateInterruptionVersionOptions();
 
@@ -1052,17 +1055,64 @@ function updateConsumedHoursDisplay() {
     const splitDate = document.getElementById('interruptionSplitDate')?.value;
     if (!splitDate) return;
 
-    const hoursPerDay = scheduleSettings.hoursPerDay || 8;
+    // 中断日までの営業日から消化工数を見積もり、その残りを残工数の初期値にする
     const consumed = calculateConsumedHoursAtDate(schedule, splitDate);
-
-    const input = document.getElementById('interruptionConsumedHours');
-    if (input) input.value = consumed;
-
-    const autoLabel = document.getElementById('interruptionConsumedAuto');
-    if (autoLabel) {
-        const days = countBusinessDays(schedule.startDate, splitDate, schedule.member);
-        autoLabel.textContent = `/ ${schedule.estimatedHours}h  (自動: ${days}営業日×${hoursPerDay}h)`;
+    const input = document.getElementById('interruptionRemainingHours');
+    if (input) {
+        input.max = schedule.estimatedHours;
+        input.value = Math.max(0, schedule.estimatedHours - consumed);
     }
+
+    updateInterruptionConsumedLabel();
+}
+
+/**
+ * 中断モーダルの残工数入力から消化工数を逆算する
+ * @returns {number|null} 消化工数（h）。入力が空・数値でない場合は null
+ */
+function getInterruptionConsumedHours() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    if (!schedule) return null;
+    const remaining = parseFloat(document.getElementById('interruptionRemainingHours')?.value);
+    if (!Number.isFinite(remaining)) return null;
+    return schedule.estimatedHours - remaining;
+}
+
+/**
+ * 残工数入力の横に「見積 / 消化済み」の内訳を表示する
+ */
+export function updateInterruptionConsumedLabel() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    const autoLabel = document.getElementById('interruptionConsumedAuto');
+    if (!schedule || !autoLabel) return;
+    const consumed = getInterruptionConsumedHours();
+    autoLabel.textContent = consumed === null
+        ? `/ 見積 ${schedule.estimatedHours}h`
+        : `/ 見積 ${schedule.estimatedHours}h・消化 ${consumed}h`;
+}
+
+/**
+ * 残工数入力を検証し、消化工数を返す
+ * @returns {number|null} 妥当なら消化工数（h）、不正なら警告を出して null
+ */
+function validateInterruptionConsumedHours() {
+    const schedule = schedules.find(s => s.id === interruptionTargetScheduleId);
+    if (!schedule) return null;
+    const consumed = getInterruptionConsumedHours();
+    if (consumed === null) {
+        showToast('残工数を入力してください', 'warning');
+        return null;
+    }
+    if (consumed <= 0 || consumed > schedule.estimatedHours) {
+        showToast(`残工数は 0〜${schedule.estimatedHours}h 未満で入力してください`, 'warning');
+        return null;
+    }
+    const prevConsumed = Math.max(0, ...(schedule.interruptions || []).map(i => i.consumedHours));
+    if (consumed <= prevConsumed) {
+        showToast(`既存の中断より後の時点になるよう、残工数は ${schedule.estimatedHours - prevConsumed}h 未満で入力してください`, 'warning');
+        return null;
+    }
+    return consumed;
 }
 
 export function toggleInsertSection() {
@@ -1092,12 +1142,12 @@ export function showImpactPreview() {
     if (!schedule) return;
 
     const splitDate = document.getElementById('interruptionSplitDate')?.value;
-    const consumedHours = parseFloat(document.getElementById('interruptionConsumedHours')?.value) || 0;
-
-    if (!splitDate || consumedHours <= 0) {
-        showToast('中断日と消化工数を入力してください', 'warning');
+    if (!splitDate) {
+        showToast('中断日を入力してください', 'warning');
         return;
     }
+    const consumedHours = validateInterruptionConsumedHours();
+    if (consumedHours === null) return;
 
     const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
     let insertHours = 0;
@@ -1138,7 +1188,12 @@ export function showImpactPreview() {
         html += '</div>';
     }
 
-    if (result.impacts.length > 0) {
+    const shiftDependents = document.getElementById('interruptionShiftDependents')?.checked;
+    if (!shiftDependents) {
+        html += '<div class="impact-section"><div class="text-muted">後続のスケジュールはずらしません'
+            + (result.impacts.length > 0 ? `（${result.impacts.length}件と重なる可能性があります）` : '')
+            + '</div></div>';
+    } else if (result.impacts.length > 0) {
         html += '<div class="impact-section">';
         html += '<div class="impact-section-title">⚠ 影響を受けるスケジュール</div>';
         result.impacts.forEach(imp => {
@@ -1177,10 +1232,12 @@ export function applyInterruption() {
     if (!schedule) return;
 
     const splitDate = document.getElementById('interruptionSplitDate')?.value;
-    const consumedHours = parseFloat(document.getElementById('interruptionConsumedHours')?.value) || 0;
+    const consumedHours = validateInterruptionConsumedHours();
+    if (!splitDate || consumedHours === null) return;
     const reason = document.getElementById('interruptionReason')?.value || '';
+    const shiftDependents = !!document.getElementById('interruptionShiftDependents')?.checked;
 
-    const params = { splitDate, consumedHours, reason };
+    const params = { splitDate, consumedHours, reason, shiftDependents };
 
     const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
     if (createInsert) {

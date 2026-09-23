@@ -445,6 +445,7 @@ window.openEstimateFromSchedule = Schedule.openEstimateFromSchedule;
 window.openInterruptionModal = Schedule.openInterruptionModal;
 window.closeInterruptionModal = Schedule.closeInterruptionModal;
 window.onInterruptionSplitDateChange = Schedule.onInterruptionSplitDateChange;
+window.updateInterruptionConsumedLabel = Schedule.updateInterruptionConsumedLabel;
 window.toggleInsertSection = Schedule.toggleInsertSection;
 window.updateInterruptionInsertTaskOptions = Schedule.updateInterruptionInsertTaskOptions;
 window.showImpactPreview = Schedule.showImpactPreview;
