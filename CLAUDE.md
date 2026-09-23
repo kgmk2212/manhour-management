@@ -49,10 +49,10 @@
 | `manhour-management` | `main` | 本線。**主 worktree**（`.git` の実体を持つ）。統合専用（直接編集しない） |
 | `.manhour-worktrees/feature-<topic>` | `feature/<topic>` | 修正1件ごとの一時 worktree。`scripts/worktree.sh` が作成・削除まで自動で行う |
 
-> **注（2026-09-14〜）**: 旧`manhour-ui-scaling` worktree（`experiment/ui-scaling`追跡）は、
-> ブランチのリネームにより追跡先が消滅したため廃止。ローカルに残っている場合は
-> `git worktree remove` で削除し、ローカルの`experiment/ui-scaling`ブランチも削除すること
-> （クラウドセッションからはローカルマシンを操作できないため、この後片付けはユーザー側の対応が必要）。
+> **注（2026-09-24 片付け済み）**: 旧`manhour-ui-scaling` worktree（`experiment/ui-scaling`追跡）は廃止・撤去済み。
+> そこにだけあったローカル専用資料（`docs/superpowers/` ほか冒頭の一覧）・`session-log/`・`node_modules/` は
+> **すべて `manhour-management` に移設**した。ローカル専用資料を探すときは `manhour-management` 側を見ること。
+> フォルダ本体は macOS のゴミ箱へ退避、ローカルの`experiment/ui-scaling`ブランチも削除済み（中身は`main`に統合済み）。
 
 > **⚠️ worktree 削除の注意**: `.claude/commands` が symlink の場合は、削除前に必ず
 > `rm -f <worktree>/.claude/commands` でリンクだけ先に外す（実体を辿って消してしまうため）。
@@ -176,6 +176,7 @@ git branch -D experiment/sandbox
    bash scripts/worktree.sh start <topic>   # 出力されたパスが以後の作業ディレクトリ
    ```
    以後このタスクの Read/Edit/Write・テスト・検証は**すべてそのパス配下**で行う。
+   `start` は本線の `node_modules` を symlink で共有する（`finish` の e2e 用）。本線に無ければ先に本線で `npm install`。
 1. **実装**: 隔離 worktree 内で実装し、自分が編集したファイルのみ明示ステージしてコミットする
    （`git add <file>...`、`-A` 禁止）。
 2. **実動作検証**: Playwright（`npm run e2e`、`tests/e2e/` 配下）で修正が効いていることを機械判定で確認する。検証が PASS するまで「完了」と報告しない。

@@ -85,6 +85,17 @@ seed_claude_dir() {
   return 0
 }
 
+# 本線の node_modules を隔離 worktree から使えるようにする（finish の npm run e2e に Playwright が要る）。
+# worktree ごとに npm install すると数百MBずつ増えるため symlink で共有する。
+# .gitignore の `node_modules`（末尾スラッシュ無し）が symlink も無視するので git status は汚れない。
+link_node_modules() {
+  local main="$1" wt="$2"
+  [ -d "$main/node_modules" ] || { info "  node_modules: 本線に無いのでスキップ（e2e 前に本線で npm install）"; return 0; }
+  [ -e "$wt/node_modules" ] && return 0
+  ln -s "$main/node_modules" "$wt/node_modules"
+  info "  node_modules -> $main/node_modules (symlink)"
+}
+
 cmd_start() {
   local topic; topic="$(sanitize_topic "${1:-}")"
   [ -n "$topic" ] || die "topic が空です。例: bash scripts/worktree.sh start fix-report-label"
@@ -106,6 +117,7 @@ cmd_start() {
   info "隔離 worktree : $wt"
   git -C "$main" worktree add -b "feature/$name" "$wt" "$MAINLINE_BRANCH" >&2
   seed_claude_dir "$main" "$wt"
+  link_node_modules "$main" "$wt"
   info ""
   info "以後このタスクの編集・テスト・検証はすべて $wt 内で行ってください。"
   info "完了したら: bash \"$wt/scripts/worktree.sh\" finish"
@@ -265,6 +277,8 @@ cmd_finish() {
   # 「Unable to read current working directory」で落ちるため先に脱出する
   cd "$main"
   unlink_claude_commands "$wt"
+  # node_modules の symlink もリンクだけ先に外す（本線の実体を巻き込まないため）
+  if [ -L "$wt/node_modules" ]; then rm -f "$wt/node_modules"; fi
   git -C "$main" worktree remove --force "$wt" >&2
   git -C "$main" branch -d "$branch" >&2
 
@@ -302,6 +316,8 @@ cmd_drop() {
   [ -d "$wt" ] || die "見つかりません: $wt"
   info "破棄します（作業内容は失われます）: $wt / feature/$topic"
   unlink_claude_commands "$wt"
+  # node_modules の symlink もリンクだけ先に外す（本線の実体を巻き込まないため）
+  if [ -L "$wt/node_modules" ]; then rm -f "$wt/node_modules"; fi
   git -C "$main" worktree remove --force "$wt" >&2
   git -C "$main" branch -D "feature/$topic" >&2
 }
