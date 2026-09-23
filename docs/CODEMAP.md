@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 47 ファイル / 44,760 行
+## js/ — 47 ファイル / 44,766 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (193行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176, taskOptionsForVersions:189
@@ -109,8 +109,8 @@
 ### js/schedule-delay.js — スケジュールの遅延（期限超過）情報（純粋関数） (26行)
 - export: getDelayInfo:16
 
-### js/schedule-insert.js — 割り込みドロップ（重なる位置へのドロップで後ろの予定を押し出す） (218行)
-- export: schedulesOverlap:32, planInsertDrop:61, closeInsertDropMenu:150, showInsertDropMenu:175
+### js/schedule-insert.js — 割り込みドロップ（重なる位置へのドロップで後ろの予定を押し出す） (224行)
+- export: schedulesOverlap:32, planInsertDrop:61, closeInsertDropMenu:150, showInsertDropMenu:179
 
 ### js/schedule-interruption.js — [GANTT-CHART] スケジュール中断・差し込み管理 (763行)
 - export: getNextBusinessDay:20, calculateConsumedHoursAtDate:38, resolveSegmentStart:77, calculateSegments:114, recalculateEndDateWithInterruptions:201, normalizeWorkedUntil:215, simulateInterruption:241, addInterruption:308, updateInterruption:384, removeInterruption:414, cascadeShift:455, analyzeImpact:576, setSegmentResumeDate:665, setSegmentWorkedUntil:718, countDependentSchedules:760
