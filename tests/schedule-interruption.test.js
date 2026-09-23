@@ -140,7 +140,7 @@ describe('calculateSegments', () => {
         const segments = SI.calculateSegments(schedule);
         assert.deepEqual(segments, [
             { startDate: '2026-09-14', endDate: '2026-09-18', hours: 40, index: 0,
-              interruptionId: null, isPinned: false }
+              interruptionId: null, endInterruptionId: null, isPinned: false }
         ]);
     });
 
@@ -153,7 +153,7 @@ describe('calculateSegments', () => {
         const segments = SI.calculateSegments(schedule);
         assert.equal(segments.length, 2);
         assert.deepEqual(segments[0], { startDate: '2026-09-14', endDate: '2026-09-15', hours: 16, index: 0,
-            interruptionId: null, isPinned: false });
+            interruptionId: null, endInterruptionId: 'int_1', isPinned: false });
         assert.equal(segments[1].startDate, '2026-09-16');
         assert.equal(segments[1].hours, 24);
     });
@@ -495,6 +495,84 @@ describe('addInterruption / removeInterruption / cascadeShift', () => {
         // sch_3 の新startDateは sch_2 の新endDate以降にスナップされているはず（sch_2の移動に波及した証拠）
         assert.ok(updated3.startDate > sch3.startDate, `sch_3が後ろ倒しされていること: ${updated3.startDate}`);
         assert.ok(updated2.startDate > sch2.startDate, `sch_2が後ろ倒しされていること: ${updated2.startDate}`);
+    });
+});
+
+describe('workedUntil（日付主導のセグメント終了日）', () => {
+    beforeEach(resetAll);
+
+    test('workedUntil があれば消化工数に関係なくその日で前半が終わる', () => {
+        // 30h 消化（工数換算なら 09-17 まで）だが、作業したのは 09-15 まで
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', workedUntil: '2026-09-15', consumedHours: 30,
+                  reason: '', insertedScheduleId: null }
+            ]
+        });
+        const segments = SI.calculateSegments(schedule);
+        assert.equal(segments[0].endDate, '2026-09-15');
+        assert.equal(segments[0].hours, 30);
+        assert.equal(segments[1].startDate, '2026-09-16');
+        assert.equal(segments[1].hours, 10);
+        assert.equal(segments[1].endDate, '2026-09-17');
+    });
+
+    test('workedUntil がセグメント開始日より前ならセグメント開始日へクランプする', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-10', workedUntil: '2026-09-10', consumedHours: 8,
+                  reason: '', insertedScheduleId: null }
+            ]
+        });
+        assert.equal(SI.calculateSegments(schedule)[0].endDate, '2026-09-14');
+    });
+
+    test('addInterruption は workedUntil を保存し、差し込みはその翌営業日から始まる', () => {
+        State.setSchedules([makeSchedule()]);
+        const result = SI.addInterruption('sch_1', {
+            splitDate: '2026-09-15', workedUntil: '2026-09-15', consumedHours: 30, reason: '',
+            insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
+        });
+        assert.equal(result.schedule.interruptions[0].workedUntil, '2026-09-15');
+        assert.equal(result.insertedSchedule.startDate, '2026-09-16');
+        // 後半 10h は差し込み（09-16）の翌営業日 09-17 から2日
+        assert.equal(result.schedule.endDate, '2026-09-18');
+    });
+
+    test('analyzeImpact は workedUntil と既存の中断を考慮してセグメントを出す', () => {
+        State.setSchedules([makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-14', workedUntil: '2026-09-14', consumedHours: 8,
+                  reason: '', insertedScheduleId: null }
+            ]
+        })]);
+        const result = SI.analyzeImpact('sch_1', '2026-09-16', 20, 0, { workedUntil: '2026-09-16' });
+        assert.equal(result.segments.length, 3);
+        assert.equal(result.segments[0].endDate, '2026-09-14');
+        assert.equal(result.segments[1].startDate, '2026-09-15');
+        assert.equal(result.segments[1].endDate, '2026-09-16');
+        assert.equal(result.segments[2].startDate, '2026-09-17');
+        assert.equal(result.segments[2].hours, 20);
+    });
+
+    test('updateInterruption は既存の中断を書き換え、件数は増えず差し込み・再開日を引き継ぐ', () => {
+        State.setSchedules([makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', consumedHours: 16, reason: '旧',
+                  insertedScheduleId: null, resumeDate: '2026-09-22' }
+            ]
+        })]);
+        const result = SI.updateInterruption('sch_1', 'int_1', {
+            splitDate: '2026-09-16', workedUntil: '2026-09-16', consumedHours: 20, reason: '新'
+        });
+        assert.equal(result.schedule.interruptions.length, 1);
+        const int = result.schedule.interruptions[0];
+        assert.equal(int.id, 'int_1');
+        assert.equal(int.workedUntil, '2026-09-16');
+        assert.equal(int.consumedHours, 20);
+        assert.equal(int.reason, '新');
+        assert.equal(int.resumeDate, '2026-09-22');
+        assert.deepEqual(result.cascadeResults, []);
     });
 });
 

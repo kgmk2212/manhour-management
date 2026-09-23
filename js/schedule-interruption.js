@@ -93,13 +93,21 @@ export function resolveSegmentStart(autoStartDate, prevSegEndDate, resumeDate, m
 
 /**
  * スケジュールをセグメントに分割
+ *
+ * セグメントの終了日は、中断が workedUntil（その中断の直前まで作業した最終日）を持てば
+ * それを採用し（日付主導）、持たなければ消化工数から営業日換算する（工数主導・旧データ互換）。
+ * workedUntil がセグメント開始日より前ならセグメント開始日へクランプする。
+ *
  * @param {Object} schedule - スケジュールオブジェクト
+ * @param {Array<Object>} [lookupSchedules] - 差し込みスケジュールの参照先（既定は state の schedules。
+ *   プレビュー時に未作成の差し込みを混ぜて計算するために使う）
  * @returns {Array<{startDate: string, endDate: string, hours: number, index: number,
- *                  interruptionId: string|null, isPinned: boolean}>}
+ *                  interruptionId: string|null, endInterruptionId: string|null, isPinned: boolean}>}
  *   interruptionId: そのセグメントの開始日を支配している中断の id（先頭は null）
+ *   endInterruptionId: そのセグメントを終わらせている中断の id（末尾は null）
  *   isPinned: その中断が resumeDate を持つか（＝自動追従しない）
  */
-export function calculateSegments(schedule) {
+export function calculateSegments(schedule, lookupSchedules = schedules) {
     const interruptions = schedule.interruptions || [];
 
     if (interruptions.length === 0) {
@@ -109,6 +117,7 @@ export function calculateSegments(schedule) {
             hours: schedule.estimatedHours,
             index: 0,
             interruptionId: null,
+            endInterruptionId: null,
             isPinned: false
         }];
     }
@@ -127,19 +136,22 @@ export function calculateSegments(schedule) {
             return;
         }
 
-        const segEndDate = calculateEndDate(segStartDate, segHours, schedule.member);
+        const segEndDate = int.workedUntil
+            ? (int.workedUntil < segStartDate ? segStartDate : int.workedUntil)
+            : calculateEndDate(segStartDate, segHours, schedule.member);
         segments.push({
             startDate: segStartDate,
             endDate: segEndDate,
             hours: segHours,
             index: segments.length,
             interruptionId: segStartInterruption ? segStartInterruption.id : null,
+            endInterruptionId: int.id,
             isPinned: !!(segStartInterruption && segStartInterruption.resumeDate)
         });
 
         let autoStartDate;
         if (int.insertedScheduleId) {
-            const inserted = schedules.find(s => s.id === int.insertedScheduleId);
+            const inserted = lookupSchedules.find(s => s.id === int.insertedScheduleId);
             autoStartDate = inserted
                 ? getNextBusinessDay(inserted.endDate, schedule.member)
                 : getNextBusinessDay(segEndDate, schedule.member);
@@ -161,6 +173,7 @@ export function calculateSegments(schedule) {
             hours: remainingHours,
             index: segments.length,
             interruptionId: segStartInterruption ? segStartInterruption.id : null,
+            endInterruptionId: null,
             isPinned: !!(segStartInterruption && segStartInterruption.resumeDate)
         });
     }
@@ -182,10 +195,64 @@ export function recalculateEndDateWithInterruptions(schedule) {
 }
 
 /**
+ * 中断の追加・編集を仮適用したときのセグメントと終了日を計算する（state は変更しない）
+ * @param {Object} schedule - 対象スケジュール
+ * @param {Object} draft - 中断の入力値 { splitDate, workedUntil, consumedHours, reason }
+ * @param {Object} [options]
+ * @param {string|null} [options.editingId=null] - 既存の中断を編集する場合その id（差し込み・再開日は引き継ぐ）
+ * @param {number} [options.insertHours=0] - 新規の差し込み作業の工数（0なら差し込みなし。編集時は無視）
+ * @returns {{ schedule: Object, interruption: Object, segments: Array, newEndDate: string,
+ *             insertPeriod: {startDate: string, endDate: string, hours: number}|null }}
+ */
+export function simulateInterruption(schedule, draft, { editingId = null, insertHours = 0 } = {}) {
+    const existing = schedule.interruptions || [];
+    const original = editingId ? existing.find(i => i.id === editingId) : null;
+    const interruption = {
+        insertedScheduleId: null,
+        ...(original || {}),
+        id: original ? original.id : '__draft__',
+        splitDate: draft.splitDate,
+        consumedHours: draft.consumedHours,
+        reason: draft.reason ?? (original ? original.reason : '')
+    };
+    if (draft.workedUntil) interruption.workedUntil = draft.workedUntil;
+    else delete interruption.workedUntil;
+
+    const temp = {
+        ...schedule,
+        interruptions: [...existing.filter(i => i.id !== interruption.id), interruption]
+    };
+
+    let insertPeriod = null;
+    let lookup = schedules;
+    if (!original && insertHours > 0) {
+        const closed = calculateSegments(temp).find(seg => seg.endInterruptionId === interruption.id);
+        const closedEnd = closed ? closed.endDate : schedule.startDate;
+        const insertStart = getNextBusinessDay(closedEnd, schedule.member);
+        const insertEnd = calculateEndDate(insertStart, insertHours, schedule.member);
+        insertPeriod = { startDate: insertStart, endDate: insertEnd, hours: insertHours };
+        interruption.insertedScheduleId = '__draft_insert__';
+        lookup = [...schedules, { id: '__draft_insert__', startDate: insertStart, endDate: insertEnd }];
+    }
+
+    const segments = calculateSegments(temp, lookup);
+    let newEndDate = segments.length > 0 ? segments[segments.length - 1].endDate : schedule.startDate;
+    // 残り工数が無い（後半セグメントなし）場合、差し込み作業の終了までを元作業の期間とみなす
+    const lastSeg = segments[segments.length - 1];
+    if (insertPeriod && lastSeg && lastSeg.endInterruptionId === interruption.id && insertPeriod.endDate > newEndDate) {
+        newEndDate = insertPeriod.endDate;
+    }
+
+    return { schedule: temp, interruption, segments, newEndDate, insertPeriod };
+}
+
+/**
  * スケジュールに中断を追加
  * @param {string} scheduleId - 対象スケジュールID
  * @param {Object} params - 中断パラメータ
- * @param {string} params.splitDate - 中断日（YYYY-MM-DD、表示用ラベル。セグメント計算には consumedHours のみ使用）
+ * @param {string} params.splitDate - 中断日（YYYY-MM-DD）
+ * @param {string} [params.workedUntil] - 中断前のセグメントの最終作業日（YYYY-MM-DD）。
+ *   指定するとセグメント終了日を日付で決める。省略時は consumedHours から営業日換算（旧挙動）
  * @param {number} params.consumedHours - 中断時点の消化工数
  * @param {string} params.reason - 中断理由
  * @param {Object} [params.insertOptions] - 差し込み作業（任意）
@@ -211,11 +278,16 @@ export function addInterruption(scheduleId, params) {
         reason: params.reason || '',
         insertedScheduleId: null
     };
+    if (params.workedUntil) interruption.workedUntil = params.workedUntil;
 
     let insertedSchedule = null;
     if (params.insertOptions) {
         const opts = params.insertOptions;
-        const segEndDate = calculateEndDate(schedule.startDate, params.consumedHours, schedule.member);
+        const closed = calculateSegments({
+            ...schedule,
+            interruptions: [...(schedule.interruptions || []), interruption]
+        }).find(seg => seg.endInterruptionId === interruption.id);
+        const segEndDate = closed ? closed.endDate : schedule.startDate;
         const insertMember = opts.member || schedule.member;
         const insertStartDate = getNextBusinessDay(segEndDate, insertMember);
         const insertEndDate = calculateEndDate(insertStartDate, opts.hours, insertMember);
@@ -260,6 +332,36 @@ export function addInterruption(scheduleId, params) {
     if (typeof window.saveData === 'function') window.saveData();
 
     return { schedule: updatedSchedule, insertedSchedule, cascadeResults };
+}
+
+/**
+ * 既存の中断を編集する（差し込みスケジュール・再開日のピン留めは引き継ぐ）
+ * @param {string} scheduleId - 対象スケジュールID
+ * @param {string} interruptionId - 編集する中断ID
+ * @param {Object} params - { splitDate, workedUntil, consumedHours, reason, shiftDependents }
+ * @returns {{ schedule: Object, cascadeResults: Array }|null}
+ */
+export function updateInterruption(scheduleId, interruptionId, params) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return null;
+    if (!(schedule.interruptions || []).some(i => i.id === interruptionId)) return null;
+
+    const oldEndDate = schedule.endDate;
+    const { schedule: simulated } = simulateInterruption(schedule, params, { editingId: interruptionId });
+    const updatedSchedule = {
+        ...schedule,
+        interruptions: simulated.interruptions,
+        updatedAt: new Date().toISOString()
+    };
+    updatedSchedule.endDate = recalculateEndDateWithInterruptions(updatedSchedule);
+
+    setSchedules(schedules.map(s => s.id === scheduleId ? updatedSchedule : s));
+
+    const cascadeResults = params.shiftDependents ? cascadeShift(updatedSchedule, oldEndDate) : [];
+
+    if (typeof window.saveData === 'function') window.saveData();
+
+    return { schedule: updatedSchedule, cascadeResults };
 }
 
 /**
@@ -424,44 +526,32 @@ function findDependentSchedules(src, srcOldEndDate) {
  * @param {string} splitDate - 中断日
  * @param {number} consumedHours - 消化工数
  * @param {number} [insertHours=0] - 差し込み工数（0なら差し込みなし）
+ * @param {Object} [options]
+ * @param {string} [options.workedUntil] - 中断前セグメントの最終作業日（日付主導でセグメントを切る）
+ * @param {string|null} [options.editingId] - 既存の中断を編集する場合その id
  * @returns {Object|null} { segments, impacts, insertPeriod }
  * @remarks consumedHours が estimatedHours 以上（見積超過含む）の場合、
  *   残り工数が無いため「後半」セグメントは省略される。
  */
-export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours = 0) {
+export function analyzeImpact(scheduleId, splitDate, consumedHours, insertHours = 0, options = {}) {
     const schedule = schedules.find(s => s.id === scheduleId);
     if (!schedule) return null;
 
-    const member = schedule.member;
-    const remainingHours = schedule.estimatedHours - consumedHours;
-
-    const firstSegEnd = calculateEndDate(schedule.startDate, consumedHours, member);
-
-    let insertPeriod = null;
-    let lastSegStart;
-    if (insertHours > 0) {
-        const insertStart = getNextBusinessDay(firstSegEnd, member);
-        const insertEnd = calculateEndDate(insertStart, insertHours, member);
-        insertPeriod = { startDate: insertStart, endDate: insertEnd, hours: insertHours };
-        lastSegStart = getNextBusinessDay(insertEnd, member);
-    } else {
-        lastSegStart = getNextBusinessDay(firstSegEnd, member);
-    }
-
-    const segments = [
-        { startDate: schedule.startDate, endDate: firstSegEnd, hours: consumedHours, label: '前半' }
-    ];
-
-    let newEndDate;
-    if (remainingHours > 0) {
-        const lastSegEnd = calculateEndDate(lastSegStart, remainingHours, member);
-        segments.push({ startDate: lastSegStart, endDate: lastSegEnd, hours: remainingHours, label: '後半' });
-        newEndDate = lastSegEnd;
-    } else {
-        // 見積工数を消化済み（超過含む）: 元作業の「後半」は存在しない。
-        // 終了日は差し込み作業があればその終了日、無ければ前半（＝消化済み分）の終了日。
-        newEndDate = insertPeriod ? insertPeriod.endDate : firstSegEnd;
-    }
+    const sim = simulateInterruption(
+        schedule,
+        { splitDate, consumedHours, workedUntil: options.workedUntil },
+        { editingId: options.editingId || null, insertHours }
+    );
+    const insertPeriod = sim.insertPeriod;
+    const newEndDate = sim.newEndDate;
+    const segments = sim.segments.map((seg, idx, arr) => ({
+        startDate: seg.startDate,
+        endDate: seg.endDate,
+        hours: seg.hours,
+        label: arr.length === 1 ? '前半'
+            : arr.length === 2 ? (idx === 0 ? '前半' : '後半')
+                : `第${idx + 1}区間`
+    }));
 
     const oldEndDate = schedule.endDate;
     const impacts = [];

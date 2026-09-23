@@ -29,16 +29,17 @@ const seedEntries = (schedules) => ({
 const readSchedules = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem("manhour_schedules")));
 
-async function openModal(page) {
+async function openModal(page, { schedules = SEED_SCHEDULES, actuals = [], presetDate = "2026-08-04" } = {}) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+  const entries = { ...seedEntries(schedules), manhour_actuals: JSON.stringify(actuals) };
   await page.addInitScript((entries) => {
     localStorage.clear();
     for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
-  }, seedEntries(SEED_SCHEDULES));
+  }, entries);
   await page.goto("/index.html");
   await expect(page.locator(".tab-content.active")).toHaveCount(1);
-  await page.evaluate(() => window.openInterruptionModal("sch_main", "2026-08-04"));
+  await page.evaluate((d) => window.openInterruptionModal("sch_main", d || undefined), presetDate);
   await expect(page.locator("#interruptionModal")).toBeVisible();
   return errors;
 }
@@ -66,6 +67,8 @@ test.describe("中断モーダルの既定値と残工数入力", () => {
     const main = after.find((s) => s.id === "sch_main");
     expect(main.interruptions).toHaveLength(1);
     expect(main.interruptions[0].consumedHours).toBe(10);
+    // 前半は中断日（この日まで作業）で終わる: 消化10hでも工数換算ではなく日付で切る
+    expect(main.interruptions[0].workedUntil).toBe("2026-08-04");
     expect(main.interruptions[0].insertedScheduleId).toBeNull();
     expect(main.estimatedHours).toBe(40);
     // 後続は動かない
@@ -107,5 +110,68 @@ test.describe("中断モーダルの既定値と残工数入力", () => {
     await page.getByRole("button", { name: "影響を確認" }).click();
     await expect(page.locator("#impactPreviewModal")).toBeHidden();
     await expect(page.locator("#interruptionModal")).toBeVisible();
+  });
+
+  test("中断日で前半のバーが終わり、残工数ぶんが翌営業日から続く", async ({ page }) => {
+    await openModal(page, { presetDate: "2026-08-04" });
+    // 2日で 30h 消化した（工数換算なら 4日目まで伸びる）ケース
+    await page.locator("#interruptionRemainingHours").fill("10");
+    await page.getByRole("button", { name: "影響を確認" }).click();
+    await expect(page.locator("#impactPreviewContent")).toContainText("2026-08-03 〜 2026-08-04 (30h)");
+    await expect(page.locator("#impactPreviewContent")).toContainText("2026-08-05 〜 2026-08-06 (10h)");
+    await page.locator("#impactPreviewModal").getByRole("button", { name: "適用する" }).click();
+    const main = (await readSchedules(page)).find((s) => s.id === "sch_main");
+    expect(main.endDate).toBe("2026-08-06");
+  });
+
+  test("中断日と残工数の初期値は実績から取る", async ({ page }) => {
+    const actual = (date, hours) => ({ id: `a_${date}`, date, version: "V1.0", task: "対応A",
+      process: "PG", member: MEMBER, hours });
+    await openModal(page, {
+      presetDate: null,
+      actuals: [actual("2026-08-03", 6), actual("2026-08-05", 7)],
+    });
+    await expect(page.locator("#interruptionSplitDate")).toHaveValue("2026-08-05");
+    await expect(page.locator("#interruptionRemainingHours")).toHaveValue("27");
+    await expect(page.locator("#interruptionRemainingSource")).toContainText("実績 13h から算出");
+    // 日付を変えると、その日までの実績で再計算する
+    await page.locator("#interruptionSplitDate").fill("2026-08-04");
+    await expect(page.locator("#interruptionRemainingHours")).toHaveValue("34");
+  });
+
+  test("詳細の『編集』は既存の中断を書き換え、件数を増やさない", async ({ page }) => {
+    const withInt = SEED_SCHEDULES.map((s) => s.id !== "sch_main" ? s : {
+      ...s, endDate: "2026-08-07",
+      interruptions: [{ id: "int_1", splitDate: "2026-08-04", consumedHours: 16, reason: "旧理由",
+        insertedScheduleId: null }],
+    });
+    const errors = await openModal(page, { schedules: withInt, presetDate: null });
+    await page.evaluate(() => window.closeInterruptionModal());
+
+    await page.evaluate(() => window.openScheduleDetailModal("sch_main"));
+    await page.locator("#detailInterruptionList").getByRole("button", { name: "編集" }).click();
+    await expect(page.locator("#interruptionModalTitle")).toContainText("中断を編集");
+    await expect(page.locator("#interruptionInsertToggleRow")).toBeHidden();
+    await expect(page.locator("#interruptionSplitDate")).toHaveValue("2026-08-04");
+    await expect(page.locator("#interruptionRemainingHours")).toHaveValue("24");
+
+    await page.locator("#interruptionSplitDate").fill("2026-08-05");
+    await page.locator("#interruptionRemainingHours").fill("20");
+    await page.getByRole("button", { name: "影響を確認" }).click();
+    await page.locator("#impactPreviewModal").getByRole("button", { name: "適用する" }).click();
+
+    const main = (await readSchedules(page)).find((s) => s.id === "sch_main");
+    expect(main.interruptions).toHaveLength(1);
+    expect(main.interruptions[0].id).toBe("int_1");
+    expect(main.interruptions[0].workedUntil).toBe("2026-08-05");
+    expect(main.interruptions[0].consumedHours).toBe(20);
+    expect(main.interruptions[0].reason).toBe("旧理由");
+
+    // Undo で編集前に戻る
+    await page.evaluate(() => window.historyUndo());
+    const undone = (await readSchedules(page)).find((s) => s.id === "sch_main");
+    expect(undone.interruptions[0].consumedHours).toBe(16);
+    expect(undone.interruptions[0].workedUntil).toBeUndefined();
+    expect(errors).toEqual([]);
   });
 });

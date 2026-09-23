@@ -15,7 +15,7 @@ import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
-import { calculateConsumedHoursAtDate, addInterruption, removeInterruption, analyzeImpact,
+import { calculateConsumedHoursAtDate, addInterruption, updateInterruption, removeInterruption, analyzeImpact,
     calculateSegments, recalculateEndDateWithInterruptions,
     setSegmentResumeDate, countDependentSchedules } from './schedule-interruption.js';
 
@@ -997,34 +997,122 @@ function renderDetailActualList(schedule) {
 // ============================================
 
 let interruptionTargetScheduleId = null;
+/** 編集中の中断ID（null なら新規追加） */
+let interruptionEditingId = null;
+
+/**
+ * 対象スケジュールに紐づく実績（本作業／レビューの区別も一致させる）
+ * @param {Object} schedule
+ * @returns {Array<Object>}
+ */
+function getScheduleRelatedActuals(schedule) {
+    return actuals.filter(a =>
+        a.version === schedule.version &&
+        a.task === schedule.task &&
+        a.process === schedule.process &&
+        a.member === schedule.member &&
+        !a.isReview === !schedule.isReview
+    );
+}
+
+/**
+ * 中断日の初期値を決める: 期間内の最後の実績日 → 今日（期間内に丸める）の順
+ * @param {Object} schedule
+ * @returns {string} YYYY-MM-DD
+ */
+function getDefaultInterruptionDate(schedule) {
+    const lastActual = getScheduleRelatedActuals(schedule)
+        .map(a => a.date)
+        .filter(d => d >= schedule.startDate && d <= schedule.endDate)
+        .sort()
+        .pop();
+    if (lastActual) return lastActual;
+    const today = getTodayString();
+    if (today < schedule.startDate) return schedule.startDate;
+    if (today > schedule.endDate) return schedule.endDate;
+    return today;
+}
+
+/**
+ * 中断日時点の残工数の推定値とその根拠を返す
+ * 優先順: 登録済みの見込残存（中断日が最後の実績日以降のとき）→ 実績の合計 → 営業日換算
+ * @param {Object} schedule
+ * @param {string} splitDate - YYYY-MM-DD
+ * @returns {{ remaining: number, source: string }}
+ */
+function estimateRemainingAtDate(schedule, splitDate) {
+    const related = getScheduleRelatedActuals(schedule);
+    const lastActualDate = related.map(a => a.date).sort().pop();
+
+    const registered = schedule.isReview ? null
+        : getRemainingEstimate(schedule.version, schedule.task, schedule.process, schedule.member);
+    if (registered && registered.remainingHours !== undefined && (!lastActualDate || splitDate >= lastActualDate)) {
+        return { remaining: registered.remainingHours, source: '登録済みの見込残存から' };
+    }
+
+    if (related.length > 0) {
+        const actualHours = related
+            .filter(a => a.date <= splitDate)
+            .reduce((sum, a) => sum + (a.hours || 0), 0);
+        return {
+            remaining: Math.max(0, schedule.estimatedHours - actualHours),
+            source: `実績 ${actualHours}h から算出`
+        };
+    }
+
+    const consumed = calculateConsumedHoursAtDate(schedule, splitDate);
+    return {
+        remaining: Math.max(0, schedule.estimatedHours - consumed),
+        source: '営業日数から推定（実績なし）'
+    };
+}
 
 /**
  * 中断モーダルを開く
  * @param {string} scheduleId - 対象スケジュールID
  * @param {string} [presetDate] - 中断日の初期値（右クリックメニューからの起動時）
+ * @param {string} [editingId] - 既存の中断を編集する場合その ID
  */
-export function openInterruptionModal(scheduleId, presetDate) {
+export function openInterruptionModal(scheduleId, presetDate, editingId) {
     const schedule = schedules.find(s => s.id === scheduleId);
     if (!schedule) return;
 
     interruptionTargetScheduleId = scheduleId;
+    const editing = editingId ? (schedule.interruptions || []).find(i => i.id === editingId) : null;
+    interruptionEditingId = editing ? editing.id : null;
 
+    const label = `${schedule.version} / ${schedule.task} / ${schedule.process} (${schedule.member})`;
     const title = document.getElementById('interruptionModalTitle');
-    if (title) title.textContent = `✂ 作業中断 — ${schedule.version} / ${schedule.task} / ${schedule.process} (${schedule.member})`;
+    if (title) title.textContent = editing ? `✎ 中断を編集 — ${label}` : `✂ 作業中断 — ${label}`;
 
     const splitDateInput = document.getElementById('interruptionSplitDate');
     if (splitDateInput) {
-        splitDateInput.value = presetDate || schedule.startDate;
+        splitDateInput.value = editing
+            ? (editing.workedUntil || editing.splitDate)
+            : (presetDate || getDefaultInterruptionDate(schedule));
         splitDateInput.min = schedule.startDate;
         splitDateInput.max = schedule.endDate;
     }
 
-    updateConsumedHoursDisplay();
+    if (editing) {
+        const input = document.getElementById('interruptionRemainingHours');
+        if (input) {
+            input.max = schedule.estimatedHours;
+            input.value = Math.max(0, schedule.estimatedHours - editing.consumedHours);
+        }
+        setInterruptionRemainingSource('登録済みの値');
+        updateInterruptionConsumedLabel();
+    } else {
+        updateConsumedHoursDisplay();
+    }
 
     const reasonInput = document.getElementById('interruptionReason');
-    if (reasonInput) reasonInput.value = '';
+    if (reasonInput) reasonInput.value = editing ? (editing.reason || '') : '';
 
     // 既定: 差し込み作業は作らない・後続はずらさない（残作業の再開時期を決める前に周囲を動かさない）
+    // 編集時は差し込みの新規作成はできない（既存の差し込みはそのまま引き継ぐ）
+    const insertRow = document.getElementById('interruptionInsertToggleRow');
+    if (insertRow) insertRow.style.display = editing ? 'none' : '';
     const createInsert = document.getElementById('interruptionCreateInsert');
     if (createInsert) createInsert.checked = false;
     const insertSection = document.getElementById('interruptionInsertSection');
@@ -1042,6 +1130,7 @@ export function closeInterruptionModal() {
     const modal = document.getElementById('interruptionModal');
     if (modal) modal.style.display = 'none';
     interruptionTargetScheduleId = null;
+    interruptionEditingId = null;
 }
 
 export function onInterruptionSplitDateChange() {
@@ -1055,15 +1144,21 @@ function updateConsumedHoursDisplay() {
     const splitDate = document.getElementById('interruptionSplitDate')?.value;
     if (!splitDate) return;
 
-    // 中断日までの営業日から消化工数を見積もり、その残りを残工数の初期値にする
-    const consumed = calculateConsumedHoursAtDate(schedule, splitDate);
+    // 中断日時点の残工数を実績（なければ営業日数）から見積もって初期値にする
+    const { remaining, source } = estimateRemainingAtDate(schedule, splitDate);
     const input = document.getElementById('interruptionRemainingHours');
     if (input) {
         input.max = schedule.estimatedHours;
-        input.value = Math.max(0, schedule.estimatedHours - consumed);
+        input.value = remaining;
     }
+    setInterruptionRemainingSource(source);
 
     updateInterruptionConsumedLabel();
+}
+
+function setInterruptionRemainingSource(text) {
+    const el = document.getElementById('interruptionRemainingSource');
+    if (el) el.textContent = text ? `初期値: ${text}` : '';
 }
 
 /**
@@ -1107,9 +1202,23 @@ function validateInterruptionConsumedHours() {
         showToast(`残工数は 0〜${schedule.estimatedHours}h 未満で入力してください`, 'warning');
         return null;
     }
-    const prevConsumed = Math.max(0, ...(schedule.interruptions || []).map(i => i.consumedHours));
-    if (consumed <= prevConsumed) {
-        showToast(`既存の中断より後の時点になるよう、残工数は ${schedule.estimatedHours - prevConsumed}h 未満で入力してください`, 'warning');
+    // 他の中断との前後関係（消化工数の順）を崩さない範囲に収める
+    const all = schedule.interruptions || [];
+    const editing = interruptionEditingId ? all.find(i => i.id === interruptionEditingId) : null;
+    const others = all.filter(i => i.id !== interruptionEditingId);
+    const lower = Math.max(0, ...others
+        .filter(i => !editing || i.consumedHours < editing.consumedHours)
+        .map(i => i.consumedHours));
+    const uppers = editing
+        ? others.filter(i => i.consumedHours > editing.consumedHours).map(i => i.consumedHours)
+        : [];
+    const upper = uppers.length > 0 ? Math.min(...uppers) : Infinity;
+    if (consumed <= lower) {
+        showToast(`前の中断より後の時点になるよう、残工数は ${schedule.estimatedHours - lower}h 未満で入力してください`, 'warning');
+        return null;
+    }
+    if (consumed >= upper) {
+        showToast(`次の中断より前の時点になるよう、残工数は ${schedule.estimatedHours - upper}h より大きくしてください`, 'warning');
         return null;
     }
     return consumed;
@@ -1149,7 +1258,7 @@ export function showImpactPreview() {
     const consumedHours = validateInterruptionConsumedHours();
     if (consumedHours === null) return;
 
-    const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
+    const createInsert = !interruptionEditingId && document.getElementById('interruptionCreateInsert')?.checked;
     let insertHours = 0;
     if (createInsert) {
         insertHours = parseFloat(document.getElementById('interruptionInsertHours')?.value) || 0;
@@ -1159,7 +1268,8 @@ export function showImpactPreview() {
         }
     }
 
-    const result = analyzeImpact(interruptionTargetScheduleId, splitDate, consumedHours, insertHours);
+    const result = analyzeImpact(interruptionTargetScheduleId, splitDate, consumedHours, insertHours,
+        { workedUntil: splitDate, editingId: interruptionEditingId });
     if (!result) return;
 
     const content = document.getElementById('impactPreviewContent');
@@ -1237,7 +1347,13 @@ export function applyInterruption() {
     const reason = document.getElementById('interruptionReason')?.value || '';
     const shiftDependents = !!document.getElementById('interruptionShiftDependents')?.checked;
 
-    const params = { splitDate, consumedHours, reason, shiftDependents };
+    // 中断日＝中断前に作業した最終日。前半のバーはこの日で終わる
+    const params = { splitDate, workedUntil: splitDate, consumedHours, reason, shiftDependents };
+
+    if (interruptionEditingId) {
+        applyInterruptionEdit(schedule, params);
+        return;
+    }
 
     const createInsert = document.getElementById('interruptionCreateInsert')?.checked;
     if (createInsert) {
@@ -1289,6 +1405,49 @@ export function applyInterruption() {
     showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
+/**
+ * 中断モーダルの編集モードでの適用（既存の中断を書き換える）
+ * @param {Object} schedule - 対象スケジュール
+ * @param {Object} params - updateInterruption に渡すパラメータ
+ */
+function applyInterruptionEdit(schedule, params) {
+    const scheduleId = schedule.id;
+    const oldInterruptions = (schedule.interruptions || []).map(i => ({ ...i }));
+    const oldEndDate = schedule.endDate;
+
+    const result = updateInterruption(scheduleId, interruptionEditingId, params);
+    if (!result) {
+        showToast('中断の編集に失敗しました', 'error');
+        return;
+    }
+
+    pushAction({
+        type: 'schedule_interruption_change',
+        description: `中断を編集: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId,
+            oldInterruptions,
+            newInterruptions: result.schedule.interruptions.map(i => ({ ...i })),
+            oldEndDate,
+            newEndDate: result.schedule.endDate,
+            insertedSchedule: null,
+            removedInsertedSchedule: null,
+            cascadeResults: result.cascadeResults.map(r => ({
+                id: r.id, oldStart: r.oldStart, newStart: r.newStart, oldEnd: r.oldEnd, newEnd: r.newEnd
+            }))
+        }
+    });
+
+    closeImpactPreview();
+    closeInterruptionModal();
+    renderScheduleView();
+
+    const msg = result.cascadeResults.length > 0
+        ? `中断を編集しました（${result.cascadeResults.length}件のスケジュールがずれました）`
+        : '中断を編集しました';
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
 // ============================================
 // 中断履歴（詳細モーダル内）
 // ============================================
@@ -1329,7 +1488,7 @@ function renderDetailInterruptionHistory(schedule) {
         html += `<div class="interruption-history-item">
             <div class="int-info">
                 <div><strong>✂ ${escapeHtml(int.splitDate)} 中断</strong> — ${escapeHtml(int.reason || '(理由なし)')}</div>
-                <div class="text-muted">消化: ${int.consumedHours}h${insertedInfo}</div>
+                <div class="text-muted">${int.workedUntil ? `作業: 〜${escapeHtml(int.workedUntil)}・` : ''}消化: ${int.consumedHours}h${insertedInfo}</div>
                 ${resumeInfo}
             </div>
             <div class="int-actions">
@@ -1359,7 +1518,7 @@ export function editInterruptionFromDetail(interruptionId) {
 
     const scheduleId = currentEditingScheduleId;
     closeScheduleDetailModal();
-    openInterruptionModal(scheduleId, int.splitDate);
+    openInterruptionModal(scheduleId, null, int.id);
 }
 
 export function removeInterruptionFromDetail(interruptionId) {
