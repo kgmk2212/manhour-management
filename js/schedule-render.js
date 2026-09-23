@@ -8,7 +8,8 @@ import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule,
     businessDayDelta, planBatchMove } from './schedule.js';
 import { calculateSegments, resolveSegmentStart } from './schedule-interruption.js';
-import { sortMembers, escapeHtml } from './utils.js';
+import { sortMembers, escapeHtml, getTodayString } from './utils.js';
+import { getDelayInfo } from './schedule-delay.js';
 import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
 import { getMemberOrderString } from './members.js';
 
@@ -33,6 +34,10 @@ const SELECTION_RING = '#2D5A27';                 // --accent
 const SELECTION_HALO = 'rgba(45, 90, 39, 0.18)';  // --accent の淡いハロー
 const MARQUEE_FILL = 'rgba(45, 90, 39, 0.07)';
 const MARQUEE_MIN_PX = 4; // これ未満の移動は「空白クリック」とみなす
+// 遅延予定の「超過のしっぽ」（設計書 2026-09-24-schedule-lanes-and-insert-drop-design.md §②）
+const OVERRUN_FILL = 'rgba(185, 28, 28, 0.08)';   // --danger の淡い地
+const OVERRUN_HATCH = 'rgba(185, 28, 28, 0.40)';  // --danger の斜線
+const OVERRUN_TEXT = '#B91C1C';                   // --danger
 
 function fillRoundRect(ctx, x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
@@ -475,6 +480,7 @@ export class GanttChartRenderer {
         this.calculateMonthRange(year, month);
 
         this.scheduleRects = [];
+        this.overrunRects = [];
 
         // 表示範囲内のスケジュールをフィルタ
         const sourceSchedules = filteredSchedules || schedules;
@@ -488,9 +494,14 @@ export class GanttChartRenderer {
         const rows = this.buildRows(visibleSchedules);
         this.rows = rows;
         // 行ごとに重なりレーンを割り当て、可変行高のレイアウトを作る
+        // 遅延予定は今日までの「超過のしっぽ」も占有するので、その分も期間に含める
+        const todayStr = getTodayString();
         rows.forEach(row => {
-            row.lanes = assignLanes(row.schedules, (s) =>
-                scheduleSpan(s, (s.interruptions || []).length > 0 ? calculateSegments(s) : null));
+            row.lanes = assignLanes(row.schedules, (s) => {
+                const span = scheduleSpan(s, (s.interruptions || []).length > 0 ? calculateSegments(s) : null);
+                const delay = getDelayInfo(s, todayStr);
+                return delay.delayed && delay.overrunEnd > span.end ? { ...span, end: delay.overrunEnd } : span;
+            });
         });
         this.rowLayout = buildRowLayout(rows.map(r => r.lanes.laneCount),
             { headerHeight: HEADER_HEIGHT, rowHeight: ROW_HEIGHT, laneHeight: LANE_HEIGHT });
@@ -1311,6 +1322,8 @@ export class GanttChartRenderer {
             isPinned: false,
             segmentStartDate: schedule.startDate
         });
+
+        this.drawOverrunTail(schedule, barY);
     }
 
     /**
@@ -1607,7 +1620,65 @@ export class GanttChartRenderer {
                 segmentStartDate: r.segmentStartDate,
                 segmentEndDate: r.segmentEndDate
             });
+
+        const lastRect = segmentRects[segmentRects.length - 1];
+        if (lastRect) this.drawOverrunTail(schedule, lastRect.barY);
         });
+    }
+
+    /**
+     * 遅延予定の「超過のしっぽ」（終了日翌日〜今日）と「! 実績/予定h」バッジを描く
+     * @param {Object} schedule
+     * @param {number} barY - バー上端 Y（logical）
+     */
+    drawOverrunTail(schedule, barY) {
+        const info = getDelayInfo(schedule, getTodayString());
+        if (!info.delayed) return;
+        const toDate = (ds) => {
+            const [y, m, d] = ds.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+        const start = toDate(info.overrunStart);
+        const end = toDate(info.overrunEnd);
+        const visibleStart = start < this.rangeStart ? this.rangeStart : start;
+        const visibleEnd = end > this.rangeEnd ? this.rangeEnd : end;
+        if (visibleStart > visibleEnd) return;
+
+        const ctx = this.timelineCtx;
+        const x = this.dateToX(visibleStart);
+        const width = this.dateToX(visibleEnd) + DAY_WIDTH - x;
+        const progress = this.getScheduleProgress(schedule);
+        const label = `! ${Math.round(progress.actualHours * 10) / 10}/${schedule.estimatedHours}h`;
+
+        // 半透明の地に斜線ハッチ（予定の延長ではなく「はみ出し」だと分かる見た目）
+        ctx.save();
+        ctx.fillStyle = OVERRUN_FILL;
+        fillRoundRect(ctx, x, barY, width, BAR_HEIGHT, BAR_RADIUS);
+        ctx.beginPath();
+        ctx.rect(x, barY, width, BAR_HEIGHT);
+        ctx.clip();
+        ctx.strokeStyle = OVERRUN_HATCH;
+        ctx.lineWidth = 1;
+        for (let hx = x - BAR_HEIGHT; hx < x + width; hx += 6) {
+            ctx.beginPath();
+            ctx.moveTo(hx, barY + BAR_HEIGHT);
+            ctx.lineTo(hx + BAR_HEIGHT, barY);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // バッジは収まるときだけしっぽの中に描く（短いしっぽはバー側の「!」で足りる）
+        ctx.save();
+        ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+        if (ctx.measureText(label).width + 8 <= width) {
+            ctx.fillStyle = OVERRUN_TEXT;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x + 4, barY + BAR_HEIGHT / 2);
+        }
+        ctx.restore();
+
+        this.overrunRects.push({ scheduleId: schedule.id, x, y: barY, width, label });
     }
 
     /**
@@ -1961,7 +2032,7 @@ function showTooltip(schedule, x, y, renderer) {
             <div class="tooltip-row"><span class="tooltip-label">期間:</span><span>${escapeHtml(schedule.startDate)} 〜 ${escapeHtml(schedule.endDate)}</span></div>
             <div class="tooltip-row"><span class="tooltip-label">進捗:</span><span class="${isDelayedSchedule ? 'delayed' : ''}">${progressRate}% (${progressInfo.actualHours.toFixed(1)}h / ${progressInfo.estimatedHours}h)</span></div>
             <div class="tooltip-row"><span class="tooltip-label">残:</span><span>${remainingDisplay}</span></div>
-            ${isDelayedSchedule ? '<div class="tooltip-warning">⚠️ 遅延中</div>' : ''}
+            ${isDelayedSchedule ? `<div class="tooltip-warning">⚠️ 遅延 ${getDelayInfo(schedule, getTodayString()).businessDays} 営業日</div>` : ''}
         </div>
     `;
 

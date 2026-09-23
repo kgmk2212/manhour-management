@@ -54,3 +54,23 @@ test.describe("重なりレーン化", () => {
     await expect(page.locator("#scheduleDetailTitle")).toContainText("B");
   });
 });
+
+test.describe("遅延表現", () => {
+  test("終了日を過ぎた未完了予定は今日までのしっぽが描かれ、完了済みには描かれない", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-12T10:00:00"));
+    await open(page, [
+      { ...base, id: "late", task: "遅延", process: "PG", startDate: "2026-08-03", endDate: "2026-08-05", estimatedHours: 24 },
+      { ...base, id: "done", task: "完了", process: "PG", member: "佐藤", status: "completed",
+        startDate: "2026-08-03", endDate: "2026-08-05", estimatedHours: 24 },
+    ], { actuals: [{ id: 1, date: "2026-08-04", version: "V1.0", task: "遅延", process: "PG", member: MEMBER, hours: 10 }] });
+
+    const tails = await page.evaluate(() => window.getScheduleRenderer().overrunRects);
+    expect(tails.map((t) => t.scheduleId)).toEqual(["late"]);
+    const late = (await rectsOf(page)).rects.find((r) => r.id === "late");
+    expect(tails[0].x).toBeCloseTo(late.x + late.w, 0);  // バー右端から始まる
+    expect(tails[0].width).toBe(7 * 28);                   // 08-06〜08-12 の7日
+
+    const label = await page.evaluate(() => window.getScheduleRenderer().overrunRects[0].label);
+    expect(label).toBe("! 10/24h");
+  });
+});
