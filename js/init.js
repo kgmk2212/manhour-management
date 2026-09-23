@@ -490,6 +490,7 @@ window.updateAutoGeneratePreview = Schedule.updateAutoGeneratePreview;
 window.executeAutoGenerate = Schedule.executeAutoGenerate;
 window.handleScheduleDrag = Schedule.handleScheduleDrag;
 window.handleSegmentDrag = Schedule.handleSegmentDrag;
+window.handleSegmentEndDrag = Schedule.handleSegmentEndDrag;
 window.clearSegmentPin = Schedule.clearSegmentPin;
 window.handleScheduleMemberDrag = Schedule.handleScheduleMemberDrag;
 window.setScheduleStatus = Schedule.setScheduleStatus;

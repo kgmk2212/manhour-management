@@ -17,7 +17,7 @@ import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
 import { calculateConsumedHoursAtDate, addInterruption, updateInterruption, removeInterruption, analyzeImpact,
     calculateSegments, recalculateEndDateWithInterruptions,
-    setSegmentResumeDate, countDependentSchedules } from './schedule-interruption.js';
+    setSegmentResumeDate, setSegmentWorkedUntil, countDependentSchedules } from './schedule-interruption.js';
 
 // getRendererをリエクスポート（ui.jsからwindow経由でアクセス用）
 export { getRenderer as getScheduleRenderer };
@@ -62,7 +62,8 @@ export function initScheduleModule() {
 
     setupDragAndDrop(
         onBarDragEnd,
-        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
+        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); },
+        (scheduleId, interruptionId, workedUntil) => { handleSegmentEndDrag(scheduleId, interruptionId, workedUntil); }
     );
 
     // ツールチップハンドラをセットアップ
@@ -1087,8 +1088,11 @@ export function openInterruptionModal(scheduleId, presetDate, editingId) {
 
     const splitDateInput = document.getElementById('interruptionSplitDate');
     if (splitDateInput) {
+        const editingSeg = editing
+            ? calculateSegments(schedule).find(seg => seg.endInterruptionId === editing.id)
+            : null;
         splitDateInput.value = editing
-            ? (editing.workedUntil || editing.splitDate)
+            ? (editingSeg ? editingSeg.endDate : editing.splitDate)
             : (presetDate || getDefaultInterruptionDate(schedule));
         splitDateInput.min = schedule.startDate;
         splitDateInput.max = schedule.endDate;
@@ -1478,6 +1482,8 @@ function renderDetailInterruptionHistory(schedule) {
             : '';
 
         const seg = segments.find(s => s.interruptionId === int.id);
+        const closedSeg = segments.find(s => s.endInterruptionId === int.id);
+        const workedUntilText = closedSeg ? closedSeg.endDate : '';
         const resumeDateText = seg ? escapeHtml(seg.startDate) : '—';
         const isPinned = !!(seg && seg.isPinned);
         const resumeInfo = `<div class="text-muted">再開日: ${resumeDateText}${isPinned ? '（手動固定）' : '（自動）'}</div>`;
@@ -1488,7 +1494,7 @@ function renderDetailInterruptionHistory(schedule) {
         html += `<div class="interruption-history-item">
             <div class="int-info">
                 <div><strong>✂ ${escapeHtml(int.splitDate)} 中断</strong> — ${escapeHtml(int.reason || '(理由なし)')}</div>
-                <div class="text-muted">${int.workedUntil ? `作業: 〜${escapeHtml(int.workedUntil)}・` : ''}消化: ${int.consumedHours}h${insertedInfo}</div>
+                <div class="text-muted">${workedUntilText ? `作業: 〜${escapeHtml(workedUntilText)}・` : ''}消化: ${int.consumedHours}h${insertedInfo}</div>
                 ${resumeInfo}
             </div>
             <div class="int-actions">
@@ -2431,6 +2437,45 @@ export function handleSegmentDrag(scheduleId, interruptionId, newStartDate) {
     const msg = affected > 0
         ? `残作業を移動しました（終了日 ${result.oldEndDate} → ${result.newEndDate}・後続 ${affected} 件は未調整）`
         : '残作業を移動しました';
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * 分割バーの右端ドラッグで、中断前セグメントの最終作業日を変更する
+ * 消化工数は変えず「いつまでやったか」だけを動かす。後続は自動でずらさない。
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} interruptionId - そのセグメントを終わらせている中断のID
+ * @param {string} workedUntil - 新しい最終作業日（YYYY-MM-DD）
+ */
+export function handleSegmentEndDrag(scheduleId, interruptionId, workedUntil) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    const result = setSegmentWorkedUntil(scheduleId, interruptionId, workedUntil);
+    if (!result) {
+        showToast('中断日の変更に失敗しました（対象の中断が見つかりません）', 'error');
+        return;
+    }
+
+    pushAction({
+        type: 'schedule_segment_move',
+        description: `中断日の変更: ${schedule.task} (${schedule.process})`,
+        data: {
+            scheduleId,
+            interruptionId,
+            oldInterruptions: result.oldInterruptions,
+            newInterruptions: result.newInterruptions,
+            oldEndDate: result.oldEndDate,
+            newEndDate: result.newEndDate
+        }
+    });
+
+    renderScheduleView();
+
+    const affected = countDependentSchedules(result.schedule, result.oldEndDate);
+    const msg = affected > 0
+        ? `中断日を ${workedUntil} に変更しました（終了日 ${result.oldEndDate} → ${result.newEndDate}・後続 ${affected} 件は未調整）`
+        : `中断日を ${workedUntil} に変更しました`;
     showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 

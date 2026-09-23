@@ -533,7 +533,9 @@ describe('workedUntil（日付主導のセグメント終了日）', () => {
             splitDate: '2026-09-15', workedUntil: '2026-09-15', consumedHours: 30, reason: '',
             insertOptions: { version: 'V2', task: '差込', process: 'PG', hours: 8 }
         });
-        assert.equal(result.schedule.interruptions[0].workedUntil, '2026-09-15');
+        // 保存時は営業日数（09-14〜09-15 の2日）に変換される
+        assert.equal(result.schedule.interruptions[0].workedDays, 2);
+        assert.equal(result.schedule.interruptions[0].workedUntil, undefined);
         assert.equal(result.insertedSchedule.startDate, '2026-09-16');
         // 後半 10h は差し込み（09-16）の翌営業日 09-17 から2日
         assert.equal(result.schedule.endDate, '2026-09-18');
@@ -568,11 +570,61 @@ describe('workedUntil（日付主導のセグメント終了日）', () => {
         assert.equal(result.schedule.interruptions.length, 1);
         const int = result.schedule.interruptions[0];
         assert.equal(int.id, 'int_1');
-        assert.equal(int.workedUntil, '2026-09-16');
+        assert.equal(int.workedDays, 3);
         assert.equal(int.consumedHours, 20);
         assert.equal(int.reason, '新');
         assert.equal(int.resumeDate, '2026-09-22');
         assert.deepEqual(result.cascadeResults, []);
+    });
+});
+
+describe('workedDays（日数で持つ最終作業日）', () => {
+    beforeEach(resetAll);
+
+    test('workedDays はセグメント開始日から数えた営業日で前半を切り、バー全体を動かしても長さが保たれる', () => {
+        const base = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', workedDays: 2, consumedHours: 30,
+                  reason: '', insertedScheduleId: null }
+            ]
+        });
+        assert.equal(SI.calculateSegments(base)[0].endDate, '2026-09-15');
+        // 開始日を 09-17(木) に動かすと、前半は 2 営業日＝ 09-18(金) まで
+        const moved = { ...base, startDate: '2026-09-17' };
+        const segs = SI.calculateSegments(moved);
+        assert.equal(segs[0].endDate, '2026-09-18');
+        assert.equal(segs[1].startDate, '2026-09-21');
+    });
+
+    test('setSegmentWorkedUntil は日付を受けて workedDays に変換し、消化工数は変えない', () => {
+        State.setSchedules([makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', workedDays: 2, consumedHours: 16,
+                  reason: '', insertedScheduleId: null }
+            ]
+        })]);
+        const result = SI.setSegmentWorkedUntil('sch_1', 'int_1', '2026-09-17');
+        const int = result.schedule.interruptions[0];
+        assert.equal(int.workedDays, 4);
+        assert.equal(int.workedUntil, undefined);
+        assert.equal(int.splitDate, '2026-09-17');
+        assert.equal(int.consumedHours, 16);
+        // 後半 24h は 09-18 から3営業日 → 09-22
+        assert.equal(result.newEndDate, '2026-09-22');
+        assert.equal(result.oldEndDate, '2026-09-18');
+    });
+
+    test('旧形式 workedUntil のデータもそのまま読める', () => {
+        const schedule = makeSchedule({
+            interruptions: [
+                { id: 'int_1', splitDate: '2026-09-15', workedUntil: '2026-09-15', consumedHours: 30,
+                  reason: '', insertedScheduleId: null }
+            ]
+        });
+        assert.equal(SI.calculateSegments(schedule)[0].endDate, '2026-09-15');
+        const normalized = SI.normalizeWorkedUntil(schedule, schedule.interruptions);
+        assert.equal(normalized[0].workedDays, 2);
+        assert.equal(normalized[0].workedUntil, undefined);
     });
 });
 

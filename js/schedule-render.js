@@ -1531,8 +1531,10 @@ export class GanttChartRenderer {
                 barX, barY, barWidth,
                 segmentIndex: i,
                 interruptionId: seg.interruptionId,
+                endInterruptionId: seg.endInterruptionId ?? null,
                 isPinned: !!seg.isPinned,
-                segmentStartDate: seg.startDate
+                segmentStartDate: seg.startDate,
+                segmentEndDate: seg.endDate
             });
         });
 
@@ -1574,8 +1576,10 @@ export class GanttChartRenderer {
                 height: BAR_HEIGHT,
                 segmentIndex: r.segmentIndex,
                 interruptionId: r.interruptionId,
+                endInterruptionId: r.endInterruptionId,
                 isPinned: r.isPinned,
-                segmentStartDate: r.segmentStartDate
+                segmentStartDate: r.segmentStartDate,
+                segmentEndDate: r.segmentEndDate
             });
         });
     }
@@ -1746,6 +1750,31 @@ export class GanttChartRenderer {
                     interruptionId: rect.interruptionId ?? null,
                     isPinned: !!rect.isPinned,
                     segmentStartDate: rect.segmentStartDate || rect.schedule.startDate
+                };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 座標が「中断で終わるセグメントの右端」付近なら、その情報を返す（右端ドラッグ判定用）
+     * @param {number} x - timelineCanvas 座標系のX
+     * @param {number} y - timelineCanvas 座標系のY
+     * @returns {{schedule: Object, interruptionId: string, segmentStartDate: string,
+     *            segmentEndDate: string}|null}
+     */
+    getSegmentEndEdgeAtPosition(x, y) {
+        for (let i = this.scheduleRects.length - 1; i >= 0; i--) {
+            const rect = this.scheduleRects[i];
+            if (!rect.endInterruptionId) continue;
+            const right = rect.x + rect.width;
+            if (x >= right - SEGMENT_EDGE_HIT_PX && x <= right + SEGMENT_EDGE_HIT_PX &&
+                y >= rect.y && y <= rect.y + rect.height) {
+                return {
+                    schedule: rect.schedule,
+                    interruptionId: rect.endInterruptionId,
+                    segmentStartDate: rect.segmentStartDate,
+                    segmentEndDate: rect.segmentEndDate
                 };
             }
         }
@@ -2101,6 +2130,8 @@ export function setupCanvasClickHandler(onScheduleClick) {
 // ============================================
 
 const LONG_PRESS_MS = 300; // この時間以上押していたらクリック扱いにしない
+/** 分割バー右端の「最終作業日ドラッグ」判定幅（px, 論理座標） */
+const SEGMENT_EDGE_HIT_PX = 5;
 
 const dragState = {
     isDragging: false,
@@ -2119,7 +2150,11 @@ const dragState = {
     // 掴んでいるセグメント（0 = バー全体／先頭セグメント）
     segmentIndex: 0,
     interruptionId: null,
-    segmentOriginalStart: null
+    segmentOriginalStart: null,
+    // 中断で終わるセグメントの右端を掴んでいる（最終作業日の変更）
+    edgeMode: false,
+    edgeSegmentStart: null,
+    edgeOriginalCache: null
 };
 
 /**
@@ -2130,9 +2165,38 @@ function clearDragSegment() {
     dragState.segmentIndex = 0;
     dragState.interruptionId = null;
     dragState.segmentOriginalStart = null;
+    dragState.edgeMode = false;
+    dragState.edgeSegmentStart = null;
+    dragState.edgeOriginalCache = null;
 }
 
-export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
+/**
+ * 右端ドラッグ中のプレビュー: 最終作業日を仮に差し替えたスケジュールで再描画する。
+ * 描画キャッシュは元に戻しておき、キャンセル時の再描画で仮の値が残らないようにする。
+ */
+function renderEdgePreview(renderer, dateStr) {
+    const original = dragState.edgeOriginalCache;
+    if (!original) return;
+    const target = dragState.schedule;
+    const workedUntil = dateStr < dragState.edgeSegmentStart ? dragState.edgeSegmentStart : dateStr;
+    const temp = {
+        ...target,
+        interruptions: (target.interruptions || []).map(i =>
+            i.id === dragState.interruptionId ? { ...i, workedUntil, workedDays: undefined } : i)
+    };
+    const segs = calculateSegments(temp);
+    if (segs.length > 0) temp.endDate = segs[segs.length - 1].endDate;
+    renderer.render(renderer.currentYear, renderer.currentMonth,
+        original.map(s => s.id === target.id ? temp : s));
+    renderer.filteredSchedulesCache = original;
+}
+
+/**
+ * @param {Function} onScheduleUpdate - (scheduleId, newStartDate, segmentIndex, interruptionId) 日付移動の確定
+ * @param {Function} onMemberChange - (scheduleId, newMember, startDate) 担当者変更の確定
+ * @param {Function} [onSegmentEndChange] - (scheduleId, interruptionId, newWorkedUntil) 右端ドラッグの確定
+ */
+export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndChange) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -2146,6 +2210,29 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             const _s = renderer.uiScale || 1;
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
+
+            // 中断で終わるセグメントの右端 → 最終作業日の変更（バー移動より優先）
+            const edge = onSegmentEndChange && Array.isArray(renderer.filteredSchedulesCache)
+                ? renderer.getSegmentEndEdgeAtPosition(x, y) : null;
+            if (edge) {
+                dragState.isDragging = true;
+                dragState.edgeMode = true;
+                dragState.schedule = edge.schedule;
+                dragState.interruptionId = edge.interruptionId;
+                dragState.edgeSegmentStart = edge.segmentStartDate;
+                dragState.edgeOriginalCache = renderer.filteredSchedulesCache;
+                dragState.originalStartDate = edge.segmentEndDate;
+                dragState.previewDate = null;
+                dragState.startX = x;
+                dragState.startY = y;
+                dragState.maxMovedX = 0;
+                dragState.maxMovedY = 0;
+                dragState.pressStartTime = Date.now();
+                dragState.originalRowIndex = -1;
+                dragState.targetRowIndex = -1;
+                canvas.style.cursor = 'col-resize';
+                return;
+            }
 
             const hit = renderer.getScheduleRectAtPosition(x, y);
             if (hit) {
@@ -2179,7 +2266,19 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
 
-            if (dragState.isDragging && dragState.schedule) {
+            if (dragState.isDragging && dragState.schedule && dragState.edgeMode) {
+                dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
+                dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
+                const newDate = renderer.getDateAtPosition(x);
+                if (newDate) {
+                    const dateStr = formatDateForDrag(newDate);
+                    if (dateStr !== dragState.previewDate) {
+                        dragState.previewDate = dateStr;
+                        renderEdgePreview(renderer, dateStr);
+                    }
+                }
+                canvas.style.cursor = 'col-resize';
+            } else if (dragState.isDragging && dragState.schedule) {
                 dragState.maxMovedX = Math.max(dragState.maxMovedX, Math.abs(x - dragState.startX));
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
@@ -2247,6 +2346,8 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
                         dragState.autoScrollId = requestAnimationFrame(autoScroll);
                     }
                 }
+            } else if (onSegmentEndChange && renderer.getSegmentEndEdgeAtPosition(x, y)) {
+                canvas.style.cursor = 'col-resize';
             } else {
                 const schedule = renderer.getScheduleAtPosition(x, y);
                 canvas.style.cursor = schedule ? 'grab' : 'default';
@@ -2274,13 +2375,21 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange) {
             let didUpdate = false;
 
             // 残作業セグメント（segmentIndex > 0）は担当者変更の対象にしない（設計書 §7-2）
-            const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+            const memberChanged = !dragState.edgeMode &&
+                renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
                 dragState.segmentIndex === 0 &&
                 dragState.targetRowIndex >= 0 &&
                 dragState.targetRowIndex !== dragState.originalRowIndex &&
                 renderer.rows && renderer.rows[dragState.targetRowIndex];
 
-            if (memberChanged && onMemberChange) {
+            if (dragState.edgeMode) {
+                if (dragState.previewDate && dragState.previewDate !== dragState.originalStartDate) {
+                    const workedUntil = dragState.previewDate < dragState.edgeSegmentStart
+                        ? dragState.edgeSegmentStart : dragState.previewDate;
+                    onSegmentEndChange(dragState.schedule.id, dragState.interruptionId, workedUntil);
+                    didUpdate = true;
+                }
+            } else if (memberChanged && onMemberChange) {
                 const newMember = renderer.rows[dragState.targetRowIndex].label;
                 // 縦ドラッグ（担当者変更）中は日付を変更しない（掴んだ位置のオフセットによる意図しない日付ずれを防ぐ）
                 onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
