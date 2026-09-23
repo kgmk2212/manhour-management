@@ -148,7 +148,11 @@ let menuKeyHandler = null;
 
 /** 割り込みメニューを閉じる */
 export function closeInsertDropMenu() {
-    if (menuDocHandler) { document.removeEventListener('mousedown', menuDocHandler, true); menuDocHandler = null; }
+    if (menuDocHandler) {
+        document.removeEventListener('mousedown', menuDocHandler, true);
+        document.removeEventListener('touchstart', menuDocHandler, true);
+        menuDocHandler = null;
+    }
     if (menuKeyHandler) { document.removeEventListener('keydown', menuKeyHandler); menuKeyHandler = null; }
     const m = document.getElementById('insertDropMenu');
     if (m) m.remove();
@@ -212,7 +216,9 @@ export function showInsertDropMenu({ schedule, plan, allSchedules, x, y, onInser
         else onCancel();
     });
     menuDocHandler = (ev) => { if (!menu.contains(ev.target)) { closeInsertDropMenu(); onCancel(); } };
+    // iOS Safari は空白部分のタップで mousedown を合成しないことがあるため touchstart でも閉じる
     document.addEventListener('mousedown', menuDocHandler, true);
+    document.addEventListener('touchstart', menuDocHandler, { capture: true, passive: true });
     menuKeyHandler = (ev) => { if (ev.key === 'Escape') { closeInsertDropMenu(); onCancel(); } };
     document.addEventListener('keydown', menuKeyHandler);
 }

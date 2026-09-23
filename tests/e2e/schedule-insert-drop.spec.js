@@ -132,4 +132,15 @@ test.describe("割り込みドロップ", () => {
     await expect(page.locator("#insertDropMenu")).toHaveCount(0);
     expect((await byId(page, "X")).startDate).toBe("2026-08-12");
   });
+
+  test("メニューの外側をタッチすると閉じ、何も動かさない（iOS 対策）", async ({ page }) => {
+    await open(page);
+    await dragXTo(page, "2026-08-05");
+    await expect(page.locator("#insertDropMenu")).toBeVisible();
+    await page.evaluate(() => {
+      document.body.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, cancelable: true, touches: [] }));
+    });
+    await expect(page.locator("#insertDropMenu")).toHaveCount(0);
+    expect((await byId(page, "X")).startDate).toBe("2026-08-24");
+  });
 });
