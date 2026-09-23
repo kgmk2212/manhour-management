@@ -9474,6 +9474,18 @@ li.drop-below {
 .schedule-ctx-item.is-danger:hover { background: var(--danger-light); }
 .schedule-ctx-sep { height: 1px; background: var(--border-light); margin: 4px 0; }
 
+/* 割り込みドロップのメニュー（.schedule-ctx-menu を土台に、押される予定の一覧を添える） */
+.insert-drop-menu { max-width: 340px; }
+.schedule-ctx-item.is-primary { font-weight: 700; color: var(--accent); }
+.insert-drop-moves {
+    list-style: none; margin: 0 0 4px; padding: 2px 10px 6px 22px;
+    max-height: 160px; overflow-y: auto;
+    font-size: calc(12.5px * var(--ui-scale)); color: var(--text-secondary);
+}
+.insert-drop-moves li { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+.insert-drop-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insert-drop-date { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
 /* ============================================================
    wm: common — 見積の作業月 UI（4 方式切替）共通部品
    設計: docs/superpowers/specs/2026-09-12-estimate-work-months-design.md

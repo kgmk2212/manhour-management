@@ -15,6 +15,7 @@ import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer,
     clearScheduleSelection, toggleScheduleSelectionMode } from './schedule-render.js';
 import { pushAction } from './history.js';
+import { planInsertDrop, showInsertDropMenu } from './schedule-insert.js';
 import { calculateVersionProgress } from './report.js';
 import { calculateConsumedHoursAtDate, addInterruption, updateInterruption, removeInterruption, analyzeImpact,
     calculateSegments, recalculateEndDateWithInterruptions,
@@ -57,7 +58,7 @@ export function initScheduleModule() {
         if (segmentIndex > 0 && interruptionId) {
             handleSegmentDrag(scheduleId, interruptionId, newStartDate);
         } else {
-            handleScheduleDrag(scheduleId, newStartDate);
+            handleScheduleDropWithInsert(scheduleId, newStartDate);
         }
     };
 
@@ -842,7 +843,7 @@ export function businessDayDelta(fromDate, toDate, member) {
  * @param {string} startDate - 新しい開始日（YYYY-MM-DD）
  * @returns {string} - 新しい終了日（YYYY-MM-DD）
  */
-function endDateForStart(schedule, startDate) {
+export function endDateForStart(schedule, startDate) {
     return (schedule.interruptions || []).length > 0
         ? recalculateEndDateWithInterruptions({ ...schedule, startDate })
         : calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
@@ -2497,6 +2498,80 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     }
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * バーのドロップを処理する。同じ担当者の予定と新しく重なるときだけ
+ * 「割り込む／並行にする／キャンセル」のメニューを出し、重ならなければそのまま移動する。
+ * @param {string} scheduleId - スケジュールID
+ * @param {string} newStartDate - ドロップ先の開始日（YYYY-MM-DD）
+ */
+export function handleScheduleDropWithInsert(scheduleId, newStartDate) {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    const plan = planInsertDrop(scheduleId, newStartDate, schedules);
+    if (!plan || !plan.collided) {
+        handleScheduleDrag(scheduleId, newStartDate);
+        return;
+    }
+
+    const anchor = getInsertMenuAnchor(scheduleId, newStartDate);
+    showInsertDropMenu({
+        schedule,
+        plan,
+        allSchedules: schedules,
+        x: anchor.x,
+        y: anchor.y,
+        onInsert: () => applyInsertDrop(schedule, plan),
+        onParallel: () => handleScheduleDrag(scheduleId, newStartDate),
+        onCancel: () => renderScheduleView()
+    });
+}
+
+/**
+ * 割り込みメニューの表示位置（ドロップ先の日付・対象バーの行の少し下）を画面座標で返す
+ * @param {string} scheduleId
+ * @param {string} dateStr - YYYY-MM-DD
+ * @returns {{x: number, y: number}}
+ */
+function getInsertMenuAnchor(scheduleId, dateStr) {
+    const renderer = getRenderer();
+    const canvas = document.getElementById('ganttTimelineCanvas');
+    if (!renderer || !canvas) return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
+    const box = canvas.getBoundingClientRect();
+    const scale = renderer.uiScale || 1;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const rect = renderer.scheduleRects.find(r => r.schedule.id === scheduleId && (r.segmentIndex ?? 0) === 0);
+    const logicalY = rect ? rect.y + rect.height + 4 : 0;
+    return {
+        x: box.left + renderer.dateToX(new Date(y, m - 1, d)) * scale,
+        y: box.top + logicalY * scale
+    };
+}
+
+/**
+ * 割り込み計画を適用する（ドロップした予定の移動と押し出しを1回の Undo で戻せる1アクションにまとめる）
+ * @param {Object} schedule - ドロップした予定
+ * @param {Object} plan - planInsertDrop の結果
+ */
+function applyInsertDrop(schedule, plan) {
+    if (plan.moves.length === 0) return;
+
+    pushAction({
+        type: 'schedule_batch_move',
+        description: `割り込み: ${schedule.task} (${schedule.process})・${plan.pushedCount}件を後ろへ`,
+        data: { moves: plan.moves }
+    });
+
+    plan.moves.forEach(m => {
+        updateSchedule(m.scheduleId, { startDate: m.newStartDate, endDate: m.newEndDate });
+    });
+
+    const msg = plan.pushedCount > 0
+        ? `割り込みました（${plan.pushedCount}件を後ろへずらしました）`
+        : '予定を移動しました';
+    showToast(msg, 'success', 3000, { onUndo: () => window.historyUndo() });
 }
 
 /**

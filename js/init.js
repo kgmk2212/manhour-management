@@ -494,6 +494,7 @@ window.clearScheduleSelection = Schedule.clearScheduleSelection;
 window.toggleScheduleSelectionMode = Schedule.toggleScheduleSelectionMode;
 window.handleSegmentDrag = Schedule.handleSegmentDrag;
 window.handleSegmentEndDrag = Schedule.handleSegmentEndDrag;
+window.handleScheduleDropWithInsert = Schedule.handleScheduleDropWithInsert;
 window.clearSegmentPin = Schedule.clearSegmentPin;
 window.handleScheduleMemberDrag = Schedule.handleScheduleMemberDrag;
 window.setScheduleStatus = Schedule.setScheduleStatus;
