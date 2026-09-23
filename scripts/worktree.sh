@@ -166,6 +166,17 @@ cmd_finish() {
     exit 1
   fi
 
+  # 3.5) CODEMAP 再生成。rebase で CODEMAP.md が衝突すると merge=codemap ドライバが
+  #      本線側を採用するため、自分の js 変更ぶんの行番号が失われて CI の鮮度チェックが落ちる。
+  #      生成物なので、ずれていれば機械的に再生成してコミットする。
+  if ! (cd "$wt" && node scripts/codemap.mjs --check >/dev/null 2>&1); then
+    info "== CODEMAP 再生成（rebase でずれたため） =="
+    (cd "$wt" && node scripts/codemap.mjs >&2) || die "CODEMAP の再生成に失敗しました。"
+    git -C "$wt" add docs/CODEMAP.md
+    git -C "$wt" commit -q -m "chore(codemap): $MAINLINE_BRANCH への rebase でずれた CODEMAP を再生成" >&2 \
+      || die "CODEMAP 再生成のコミットに失敗しました。"
+  fi
+
   # 4) 検証（コード差分があるときのみ。docs のみなら省略）
   local changed; changed="$(git -C "$wt" diff --name-only "$MAINLINE_BRANCH...HEAD")"
   if [ -z "$changed" ]; then
