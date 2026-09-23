@@ -795,6 +795,99 @@ export function getNextBusinessDay(dateStr, member) {
 }
 
 /**
+ * 日付を担当者の営業日カレンダーで n 営業日ずらす
+ * @param {string} dateStr - 起点日（YYYY-MM-DD）
+ * @param {number} n - ずらす営業日数（負なら過去方向、0 ならそのまま）
+ * @param {string} member - 担当者名（休暇チェック用）
+ * @returns {string} - ずらした日付（YYYY-MM-DD）
+ */
+export function shiftBusinessDays(dateStr, n, member) {
+    const date = new Date(dateStr);
+    const step = n > 0 ? 1 : -1;
+    let remaining = Math.abs(n);
+    while (remaining > 0) {
+        date.setDate(date.getDate() + step);
+        if (isBusinessDay(date, member)) remaining--;
+    }
+    return formatDateForCheck(date);
+}
+
+/**
+ * from から to までの符号付き営業日数を返す（to が非営業日なら from 側の直近営業日までで数える）
+ * @param {string} fromDate - 基準日（YYYY-MM-DD）
+ * @param {string} toDate - 移動先の日付（YYYY-MM-DD）
+ * @param {string} member - 担当者名（休暇チェック用）
+ * @returns {number} - 未来方向なら正、過去方向なら負
+ */
+export function businessDayDelta(fromDate, toDate, member) {
+    if (fromDate === toDate) return 0;
+    const dayAfter = (d, step) => {
+        const date = new Date(d);
+        date.setDate(date.getDate() + step);
+        return formatDateForCheck(date);
+    };
+    return toDate > fromDate
+        ? countBusinessDays(dayAfter(fromDate, 1), toDate, member)
+        : -countBusinessDays(toDate, dayAfter(fromDate, -1), member);
+}
+
+/**
+ * 開始日を差し替えたときの終了日を求める（中断があればセグメント分割を考慮する）
+ * @param {Object} schedule - スケジュール
+ * @param {string} startDate - 新しい開始日（YYYY-MM-DD）
+ * @returns {string} - 新しい終了日（YYYY-MM-DD）
+ */
+function endDateForStart(schedule, startDate) {
+    return (schedule.interruptions || []).length > 0
+        ? recalculateEndDateWithInterruptions({ ...schedule, startDate })
+        : calculateEndDate(startDate, schedule.estimatedHours, schedule.member);
+}
+
+/**
+ * 選択中の予定を delta 営業日ずらす一括移動の計画を立てる（状態は変更しない）
+ * 各予定は自分の担当者のカレンダーでずらす。移動する前工程に連結中の後工程があれば、
+ * 選択の内外を問わず「前工程の新しい終了日の翌営業日」から始まるよう配置する（隙間ゼロを保つ）。
+ * @param {string[]} ids - 選択中の予定ID
+ * @param {Object[]} allSchedules - 全スケジュール
+ * @param {number} delta - ずらす営業日数
+ * @returns {{scheduleId: string, oldStartDate: string, oldEndDate: string,
+ *            newStartDate: string, newEndDate: string}[]} - 日付が変わる予定のみ
+ */
+export function planBatchMove(ids, allSchedules, delta) {
+    if (!delta) return [];
+    const idSet = new Set(ids);
+    const targets = allSchedules.filter(s => idSet.has(s.id));
+
+    // 連結判定は移動前の位置関係で行う
+    const followers = new Map();
+    targets.forEach(front => {
+        const back = findLinkedBackSchedule(front, allSchedules);
+        if (back) followers.set(back.id, { frontId: front.id, back });
+    });
+
+    const moves = new Map();
+    const addMove = (schedule, newStartDate) => {
+        moves.set(schedule.id, {
+            scheduleId: schedule.id,
+            oldStartDate: schedule.startDate,
+            oldEndDate: schedule.endDate,
+            newStartDate,
+            newEndDate: endDateForStart(schedule, newStartDate)
+        });
+    };
+
+    targets.forEach(s => {
+        if (!followers.has(s.id)) addMove(s, shiftBusinessDays(s.startDate, delta, s.member));
+    });
+    followers.forEach(({ frontId, back }) => {
+        addMove(back, getNextBusinessDay(moves.get(frontId).newEndDate, back.member));
+    });
+
+    return [...moves.values()].filter(m =>
+        m.newStartDate !== m.oldStartDate || m.newEndDate !== m.oldEndDate);
+}
+
+/**
  * 前工程スケジュールに連結中の後工程スケジュールを探す
  * 「同一版数+対応+担当者」かつ「後工程の開始日＝前工程終了日の翌営業日」の場合のみ
  * 連結中とみなす（隙間があれば独立した2本として扱う）。
@@ -2396,6 +2489,31 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     }
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/**
+ * 選択中の予定をまとめて delta 営業日ずらす（範囲選択からのドラッグ）
+ * 連結中の後工程も追従させ、Undo/Redo は1回で全件戻るように1アクションにまとめる。
+ * @param {string[]} ids - 選択中の予定ID
+ * @param {number} delta - ずらす営業日数
+ * @returns {number} - 移動した予定の件数
+ */
+export function handleScheduleBatchDrag(ids, delta) {
+    const moves = planBatchMove(ids, schedules, delta);
+    if (moves.length === 0) return 0;
+
+    pushAction({
+        type: 'schedule_batch_move',
+        description: `スケジュール一括移動: ${moves.length}件（${delta > 0 ? '+' : ''}${delta}営業日）`,
+        data: { moves }
+    });
+
+    moves.forEach(m => {
+        updateSchedule(m.scheduleId, { startDate: m.newStartDate, endDate: m.newEndDate });
+    });
+
+    showToast(`${moves.length}件の予定を移動しました`, 'success', 3000, { onUndo: () => window.historyUndo() });
+    return moves.length;
 }
 
 /**

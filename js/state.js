@@ -257,6 +257,7 @@ export const selectedEstimateIds = new Set(); // 選択された見積ID
 // 実績関連（一括変更）
 export let actualSelectionMode = false;      // 実績リストの選択モード
 export const selectedActualIds = new Set();  // 選択中の実績ID（リスト／タイムラインで共有）
+export const selectedScheduleIds = new Set(); // ガントで選択中の予定ID（範囲選択・一括移動用。永続化しない）
 
 // テーマカラー関連
 export let currentThemeColor = 'forest';

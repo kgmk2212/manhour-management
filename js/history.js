@@ -554,6 +554,13 @@ function applyScheduleUndo(action) {
                 }
             }
             break;
+        case 'batch_move':
+            if (typeof window.updateScheduleFn === 'function') {
+                action.data.moves.forEach(m => {
+                    window.updateScheduleFn(m.scheduleId, { startDate: m.oldStartDate, endDate: m.oldEndDate });
+                });
+            }
+            break;
         case 'create':
             if (typeof window.deleteScheduleFn === 'function') {
                 window.deleteScheduleFn(action.data.schedule.id);
@@ -663,6 +670,13 @@ function applyScheduleRedo(action) {
                         endDate: action.data.linked.newEndDate
                     });
                 }
+            }
+            break;
+        case 'batch_move':
+            if (typeof window.updateScheduleFn === 'function') {
+                action.data.moves.forEach(m => {
+                    window.updateScheduleFn(m.scheduleId, { startDate: m.newStartDate, endDate: m.newEndDate });
+                });
             }
             break;
         case 'create':
