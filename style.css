@@ -2669,6 +2669,20 @@ table tr[style*="1565c0"] th:first-child {
 @media (prefers-reduced-motion: reduce) {
     .schedule-selection-dock .bk-bar { animation: none; }
 }
+.schedule-selection-dock .ssc-done[hidden] { display: none; }
+
+/* スマホ用の「選択」モードボタン。マウス操作の広い画面では矩形選択があるので出さない */
+.schedule-select-mode-btn svg { width: calc(13px * var(--ui-scale)); height: calc(13px * var(--ui-scale)); }
+.schedule-select-mode-btn.is-on { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+@media (pointer: fine) and (min-width: 769px) {
+    .schedule-select-mode-btn { display: none; }
+}
+/* スマホでは帯を2行にしてボタンを押しやすくする */
+@media (max-width: 768px) {
+    .schedule-selection-dock .bk-bar { flex-wrap: wrap; width: 100%; }
+    .schedule-selection-dock .bk-bar-count { white-space: normal; flex: 1 1 100%; }
+    .schedule-selection-dock .bk-bar .btn { flex: 1 1 0; }
+}
 
 .schedule-nav-btn {
     padding: 8px 16px;

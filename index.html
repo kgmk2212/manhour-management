@@ -1064,6 +1064,12 @@
                         <div class="segment-item active" id="viewMemberBtn" onclick="setScheduleViewMode('member')">担当者別</div>
                         <div class="segment-item" id="viewTaskBtn" onclick="setScheduleViewMode('task')">タスク別</div>
                     </div>
+                    <!-- スマホ用: タップで予定を選ぶモード（マウス操作の PC では矩形選択を使うため CSS で隠す） -->
+                    <button type="button" id="scheduleSelectModeBtn" class="btn btn-secondary btn-sm schedule-select-mode-btn"
+                        onclick="toggleScheduleSelectionMode()" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><polyline points="8 12 11 15 16 9"/></svg>
+                        選択
+                    </button>
                     <div style="flex:1;"></div>
                     <div class="schedule-actions">
                         <button onclick="exportSchedulesToExcel()" class="btn btn-secondary btn-sm" title="Excel出力">
@@ -1121,8 +1127,9 @@
                 <!-- 範囲選択中の操作バー（実績の一括選択トレイと同じ bk-dock。ガントの位置を動かさないよう下に置く） -->
                 <div id="scheduleSelectionChip" class="bk-dock schedule-selection-dock" hidden>
                     <div class="bk-bar" role="status" aria-live="polite">
-                        <span class="bk-bar-count"><span id="scheduleSelectionCount">0</span> 件選択中<span class="bk-bar-sub"> · 選択中のバーをドラッグでまとめて移動 · Esc で解除</span></span>
+                        <span class="bk-bar-count"><span id="scheduleSelectionCount">0</span> 件選択中<span id="scheduleSelectionHint" class="bk-bar-sub"> · 選択中のバーをドラッグでまとめて移動 · Esc で解除</span></span>
                         <button type="button" class="btn btn-ghost btn-sm ssc-clear" onclick="clearScheduleSelection()">選択解除</button>
+                        <button type="button" class="btn btn-primary btn-sm ssc-done" onclick="toggleScheduleSelectionMode(false)" hidden>完了</button>
                     </div>
                 </div>
 

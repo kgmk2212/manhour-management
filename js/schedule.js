@@ -13,7 +13,7 @@ import { getRemainingEstimate, saveRemainingEstimate, deleteRemainingEstimate, s
 import { SCHEDULE, PROCESS, TASK_COLORS, THEME_TASK_COLORS } from './constants.js';
 import { formatHours, escapeHtml, getTodayString } from './utils.js';
 import { renderGanttChart, setupCanvasClickHandler, setupDragAndDrop, setupTooltipHandler, setupTouchHandlers, getRenderer,
-    clearScheduleSelection } from './schedule-render.js';
+    clearScheduleSelection, toggleScheduleSelectionMode } from './schedule-render.js';
 import { pushAction } from './history.js';
 import { calculateVersionProgress } from './report.js';
 import { calculateConsumedHoursAtDate, addInterruption, updateInterruption, removeInterruption, analyzeImpact,
@@ -75,7 +75,8 @@ export function initScheduleModule() {
     setupTouchHandlers(
         (schedule) => { openScheduleDetailModal(schedule.id); },
         onBarDragEnd,
-        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); }
+        (scheduleId, newMember, newStartDate) => { handleScheduleMemberDrag(scheduleId, newMember, newStartDate); },
+        (scheduleIds, delta) => { handleScheduleBatchDrag(scheduleIds, delta); }
     );
 
     // スケジュールタブ固有のキーボードショートカットをセットアップ
@@ -2437,7 +2438,7 @@ function updateStatusButtons(activeStatus) {
 // pushAction, undo, redo は history.js から import
 
 // ツールバーの「選択解除」ボタン用に schedule-render.js の関数を再公開する
-export { clearScheduleSelection };
+export { clearScheduleSelection, toggleScheduleSelectionMode };
 
 /**
  * ドラッグによるスケジュール移動を処理

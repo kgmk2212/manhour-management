@@ -491,6 +491,7 @@ window.executeAutoGenerate = Schedule.executeAutoGenerate;
 window.handleScheduleDrag = Schedule.handleScheduleDrag;
 window.handleScheduleBatchDrag = Schedule.handleScheduleBatchDrag;
 window.clearScheduleSelection = Schedule.clearScheduleSelection;
+window.toggleScheduleSelectionMode = Schedule.toggleScheduleSelectionMode;
 window.handleSegmentDrag = Schedule.handleSegmentDrag;
 window.handleSegmentEndDrag = Schedule.handleSegmentEndDrag;
 window.clearSegmentPin = Schedule.clearSegmentPin;

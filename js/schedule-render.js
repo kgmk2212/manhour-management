@@ -3,7 +3,8 @@
 // 複数月連続表示対応（2キャンバス構成）
 // ============================================
 
-import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, selectedScheduleIds } from './state.js';
+import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, selectedScheduleIds,
+    scheduleSelectionMode, setScheduleSelectionMode } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule,
     businessDayDelta, planBatchMove } from './schedule.js';
@@ -12,6 +13,7 @@ import { sortMembers, escapeHtml, getTodayString } from './utils.js';
 import { getDelayInfo } from './schedule-delay.js';
 import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
 import { getMemberOrderString } from './members.js';
+import { syncBulkDockOffset } from './actual-bulk.js';
 
 // ============================================
 // 定数
@@ -466,9 +468,14 @@ export class GanttChartRenderer {
         // ピクセル値ではなく日付に変換して保持する）。scrollLeft は CSS px なので
         // uiScale で除算して logical 座標に戻してから日付計算する。
         let savedScrollDate = null;
+        // 1日未満の端数（logical px）も保持する。丸めると描き直しのたびに最大1日ぶん横に跳ね、
+        // ドラッグ中は指・カーソルの下の日付がずれる
+        let savedScrollRemainder = 0;
         const prevUiScale = this.uiScale || 1;
         if (this.scrollContainer && this.scrollContainer.scrollLeft > 0 && this.rangeStart) {
-            const dayOffset = Math.floor((this.scrollContainer.scrollLeft / prevUiScale) / DAY_WIDTH);
+            const logicalScroll = this.scrollContainer.scrollLeft / prevUiScale;
+            const dayOffset = Math.floor(logicalScroll / DAY_WIDTH);
+            savedScrollRemainder = logicalScroll - dayOffset * DAY_WIDTH;
             savedScrollDate = new Date(this.rangeStart);
             savedScrollDate.setDate(savedScrollDate.getDate() + dayOffset);
         }
@@ -575,7 +582,7 @@ export class GanttChartRenderer {
         // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
         // dateToX は logical 座標を返すので CSS px には uiScale を掛ける。
         if (this.scrollContainer && savedScrollDate !== null) {
-            this.scrollContainer.scrollLeft = this.dateToX(savedScrollDate) * this.uiScale;
+            this.scrollContainer.scrollLeft = (this.dateToX(savedScrollDate) + savedScrollRemainder) * this.uiScale;
         }
     }
 
@@ -2068,6 +2075,8 @@ export function setupTooltipHandler() {
 
         canvas.addEventListener('mousemove', (event) => {
             if (dragState.isDragging) { hideTooltip(); return; }
+            // タップ後にブラウザが合成する mousemove ではツールチップを出さない（ガントに被さって残るため）
+            if (Date.now() - lastTouchEndTime < SYNTHETIC_MOUSE_WINDOW_MS) return;
 
             const renderer = getRenderer();
             if (!renderer) return;
@@ -2344,12 +2353,41 @@ export function updateScheduleSelectionChip() {
     const existing = new Set(schedules.map(s => s.id));
     [...selectedScheduleIds].forEach(id => { if (!existing.has(id)) selectedScheduleIds.delete(id); });
 
+    const count = selectedScheduleIds.size;
+    const modeBtn = document.getElementById('scheduleSelectModeBtn');
+    if (modeBtn) {
+        modeBtn.classList.toggle('is-on', scheduleSelectionMode);
+        modeBtn.setAttribute('aria-pressed', String(scheduleSelectionMode));
+    }
+
     const chip = document.getElementById('scheduleSelectionChip');
     if (!chip) return;
-    const count = selectedScheduleIds.size;
-    chip.hidden = count === 0;
+    // 選択モード中は0件でも出す（何をすればよいかの案内と「完了」を見せるため）
+    chip.hidden = count === 0 && !scheduleSelectionMode;
     const countEl = document.getElementById('scheduleSelectionCount');
     if (countEl) countEl.textContent = String(count);
+    const hintEl = document.getElementById('scheduleSelectionHint');
+    if (hintEl) {
+        hintEl.textContent = scheduleSelectionMode
+            ? (count >= 2 ? ' · 選択中のバーを長押しでまとめて移動' : ' · バーをタップして選択')
+            : ' · 選択中のバーをドラッグでまとめて移動 · Esc で解除';
+    }
+    const clearBtn = chip.querySelector('.ssc-clear');
+    if (clearBtn) clearBtn.disabled = count === 0;
+    const doneBtn = chip.querySelector('.ssc-done');
+    if (doneBtn) doneBtn.hidden = !scheduleSelectionMode;
+    if (!chip.hidden) syncBulkDockOffset(); // スマホのタブ Dock に重ならないよう下端をずらす
+}
+
+/**
+ * スマホ用の選択モードを切り替える。終了時は選択も解除する。
+ * @param {boolean} [force] - 指定すればその状態にする
+ */
+export function toggleScheduleSelectionMode(force) {
+    const next = typeof force === 'boolean' ? force : !scheduleSelectionMode;
+    setScheduleSelectionMode(next);
+    if (!next) selectedScheduleIds.clear();
+    redrawWithSelection();
 }
 
 /** 範囲選択を解除する（ツールバーの ✕・Esc・ビュー切替から呼ぶ） */
@@ -2426,6 +2464,22 @@ function finishMarquee(renderer) {
 }
 
 /**
+ * 一括移動中のポインタ位置から移動量（営業日）を求め、変わっていればプレビューを描き直す。
+ * マウス・タッチ共通。掴んだバーの担当者カレンダーで営業日数を数える。
+ * @param {Object} renderer
+ * @param {number} x - timeline 座標のX
+ */
+function updateGroupDrag(renderer, x) {
+    const date = renderer.getDateAtPosition(x);
+    if (!date) return;
+    const dateStr = formatDateForDrag(date);
+    if (dateStr === dragState.previewDate) return;
+    dragState.previewDate = dateStr;
+    dragState.groupDelta = businessDayDelta(dragState.originalStartDate, dateStr, dragState.schedule.member);
+    drawGroupPreview(renderer);
+}
+
+/**
  * 一括移動のプレビュー: 動く予定（連結追従分を含む）のゴーストと、掴んだバーの上に移動量ラベルを描く
  */
 function drawGroupPreview(renderer) {
@@ -2492,6 +2546,8 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
             const x = (event.clientX - rect.left) / _s;
             const y = (event.clientY - rect.top) / _s;
             if (event.button !== 0) return;
+            // タッチ直後にブラウザが合成する mousedown は無視する（タップ選択を解除してしまうため）
+            if (Date.now() - lastTouchEndTime < SYNTHETIC_MOUSE_WINDOW_MS) return;
 
             // Shift/⌘/Ctrl＋バー → 選択の切り替え（ドラッグも詳細モーダルも開始しない）
             const isModifier = event.shiftKey || event.metaKey || event.ctrlKey;
@@ -2602,19 +2658,8 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                 dragState.maxMovedY = Math.max(dragState.maxMovedY, Math.abs(y - dragState.startY));
 
                 let rowChanged = false;
-                if (dragState.groupMode) {
-                    // 一括移動は日付方向のみ。掴んだバーの担当者カレンダーで営業日数を数える
-                    const groupDate = renderer.getDateAtPosition(x);
-                    if (groupDate) {
-                        const dateStr = formatDateForDrag(groupDate);
-                        if (dateStr !== dragState.previewDate) {
-                            dragState.previewDate = dateStr;
-                            dragState.groupDelta = businessDayDelta(
-                                dragState.originalStartDate, dateStr, dragState.schedule.member);
-                            drawGroupPreview(renderer);
-                        }
-                    }
-                }
+                // 一括移動は日付方向のみ
+                if (dragState.groupMode) updateGroupDrag(renderer, x);
                 // 残作業セグメント（segmentIndex > 0）は担当者変更できないため行追従しない
                 if (!dragState.groupMode && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
                     dragState.segmentIndex === 0) {
@@ -2993,6 +3038,8 @@ export function buildDragPreviews(schedule, newStartDate, segmentIndex = 0) {
 // ============================================
 
 const LONG_PRESS_DELAY = 500;
+/** タッチ終了からこの時間内のマウスイベントはブラウザの合成とみなす */
+const SYNTHETIC_MOUSE_WINDOW_MS = 600;
 const TOUCH_MOVE_THRESHOLD = 10;
 
 let lastTouchEndTime = 0;
@@ -3027,8 +3074,9 @@ function resetTouchState() {
  * @param {Function} onScheduleClick - バータップ時のコールバック
  * @param {Function} onScheduleUpdate - バードラッグ完了時のコールバック
  * @param {Function} onMemberChange - 担当者変更時のコールバック
+ * @param {Function} [onBatchMove] - (scheduleIds, delta) 選択中の予定の一括移動の確定
  */
-export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberChange) {
+export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberChange, onBatchMove) {
     const setupOnCanvas = () => {
         const canvas = document.getElementById('ganttTimelineCanvas');
         if (!canvas) return false;
@@ -3064,6 +3112,11 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
 
                     if (navigator.vibrate) navigator.vibrate(30);
 
+                    // 選択中（2件以上）のバーの長押しは一括移動。選択外なら選択を解除して単体移動（PC と同じ規則）
+                    const isGroup = !!onBatchMove && selectedScheduleIds.size >= 2 && selectedScheduleIds.has(schedule.id);
+                    if (!isGroup) selectedScheduleIds.clear();
+                    dragState.groupMode = isGroup;
+                    dragState.groupDelta = 0;
                     dragState.isDragging = true;
                     dragState.schedule = schedule;
                     dragState.segmentIndex = hit.segmentIndex;
@@ -3118,8 +3171,10 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                 const y = (touch.clientY - rect.top) / _s;
 
                 let rowChanged = false;
+                // 一括移動は日付方向のみ
+                if (dragState.groupMode) updateGroupDrag(renderer, x);
                 // 残作業セグメント（segmentIndex > 0）は担当者変更できないため行追従しない
-                if (scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
+                if (!dragState.groupMode && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && renderer.rows &&
                     dragState.segmentIndex === 0) {
                     const rowIndex = renderer.getRowIndexAtPosition(y);
                     if (rowIndex >= 0 && rowIndex !== dragState.targetRowIndex) {
@@ -3128,7 +3183,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     }
                 }
 
-                const newDate = renderer.getDateAtPosition(x);
+                const newDate = dragState.groupMode ? null : renderer.getDateAtPosition(x);
                 if (newDate) {
                     const dateStr = formatDateForDrag(newDate);
                     if (dateStr !== dragState.previewDate || rowChanged) {
@@ -3139,7 +3194,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                             dragState.targetRowIndex
                         );
                     }
-                } else if (rowChanged) {
+                } else if (rowChanged && !dragState.groupMode) {
                     const fallbackDate = dragState.previewDate || dragState.originalStartDate;
                     drawDragPreview(
                         renderer,
@@ -3201,13 +3256,18 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                 let didUpdate = false;
 
                 // 残作業セグメント（segmentIndex > 0）は担当者変更の対象にしない（設計書 §7-2）
-                const memberChanged = renderer && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+                const memberChanged = renderer && !dragState.groupMode && scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
                     dragState.segmentIndex === 0 &&
                     dragState.targetRowIndex >= 0 &&
                     dragState.targetRowIndex !== dragState.originalRowIndex &&
                     renderer.rows && renderer.rows[dragState.targetRowIndex];
 
-                if (memberChanged && onMemberChange) {
+                if (dragState.groupMode) {
+                    if (dragState.groupDelta !== 0 && onBatchMove) {
+                        onBatchMove([...selectedScheduleIds], dragState.groupDelta);
+                        didUpdate = true;
+                    }
+                } else if (memberChanged && onMemberChange) {
                     const newMember = renderer.rows[dragState.targetRowIndex].label;
                     // 縦ドラッグ（担当者変更）中は日付を変更しない（掴んだ位置のオフセットによる意図しない日付ずれを防ぐ）
                     onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
@@ -3235,8 +3295,14 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     renderer.render(renderer.currentYear, renderer.currentMonth, renderer.filteredSchedulesCache);
                 }
             } else if (touchState.schedule && !touchState.isDragging && !touchState.hasMoved) {
-                // タップ: 詳細モーダルを開く
-                if (onScheduleClick) {
+                if (scheduleSelectionMode) {
+                    // 選択モード中のタップ: 選択の切り替え（詳細は開かない）
+                    const id = touchState.schedule.id;
+                    if (selectedScheduleIds.has(id)) selectedScheduleIds.delete(id);
+                    else selectedScheduleIds.add(id);
+                    redrawWithSelection();
+                } else if (onScheduleClick) {
+                    // タップ: 詳細モーダルを開く
                     onScheduleClick(touchState.schedule);
                 }
             }

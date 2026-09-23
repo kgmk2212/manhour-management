@@ -111,7 +111,7 @@ function barElementIds(el) {
  * 選択バー（sticky）と Undo トースト（fixed）はビューポート下端基準で位置するため、
  * Dock 表示中はその高さ分（safe-area 込み = offsetHeight）を bottom に足して重なりを避ける。
  */
-function syncBulkDockOffset() {
+export function syncBulkDockOffset() {
     const dock = $('mobileTabBar');
     const shown = !!dock && getComputedStyle(dock).display !== 'none';
     document.documentElement.style.setProperty('--bulk-dock-offset', shown ? `${dock.offsetHeight}px` : '0px');
