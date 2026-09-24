@@ -547,7 +547,9 @@ export let scheduleSettings = {
     displayMonths: 3,        // 表示月数（複数月連続表示）
     filterVersion: '',       // フィルタ: 版数
     filterMember: '',        // フィルタ: 担当者
-    filterStatus: ''         // フィルタ: ステータス
+    filterStatus: '',        // フィルタ: ステータス
+    laneLayout: true,        // ガント: 重なる予定を行内の段（レーン）に分けて表示する
+    showOverrun: true        // ガント: 遅延予定に今日までの「はみ出し」とバッジを描く
 };
 
 // タスク色マッピング（タスク名 → 色）

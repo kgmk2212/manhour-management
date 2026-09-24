@@ -503,10 +503,17 @@ export class GanttChartRenderer {
         // 行ごとに重なりレーンを割り当て、可変行高のレイアウトを作る
         // 遅延予定は今日までの「超過のしっぽ」も占有するので、その分も期間に含める
         const todayStr = getTodayString();
+        const useLanes = scheduleSettings.laneLayout !== false;
+        const showOverrun = scheduleSettings.showOverrun !== false;
         rows.forEach(row => {
+            // 段分けオフ（従来表示）: 全予定を1段に重ね描きする
+            if (!useLanes) {
+                row.lanes = { laneOf: new Map(), laneCount: 1 };
+                return;
+            }
             row.lanes = assignLanes(row.schedules, (s) => {
                 const span = scheduleSpan(s, (s.interruptions || []).length > 0 ? calculateSegments(s) : null);
-                const delay = getDelayInfo(s, todayStr);
+                const delay = showOverrun ? getDelayInfo(s, todayStr) : { delayed: false };
                 return delay.delayed && delay.overrunEnd > span.end ? { ...span, end: delay.overrunEnd } : span;
             });
         });
@@ -1639,6 +1646,7 @@ export class GanttChartRenderer {
      * @param {number} barY - バー上端 Y（logical）
      */
     drawOverrunTail(schedule, barY) {
+        if (scheduleSettings.showOverrun === false) return;
         const info = getDelayInfo(schedule, getTodayString());
         if (!info.delayed) return;
         const toDate = (ds) => {

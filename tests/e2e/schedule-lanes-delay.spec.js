@@ -8,7 +8,7 @@ const base = { version: "V1.0", member: MEMBER, status: "pending", color: "", no
 const seed = (schedules, extra = {}) => ({
   manhour_estimates: "[]", manhour_actuals: JSON.stringify(extra.actuals || []),
   manhour_schedules: JSON.stringify(schedules),
-  manhour_scheduleSettings: JSON.stringify({ currentMonth: "2026-08", viewMode: "member" }),
+  manhour_scheduleSettings: JSON.stringify({ currentMonth: "2026-08", viewMode: "member", ...(extra.settings || {}) }),
   manhour_currentTab: "schedule",
 });
 
@@ -72,5 +72,51 @@ test.describe("遅延表現", () => {
 
     const label = await page.evaluate(() => window.getScheduleRenderer().overrunRects[0].label);
     expect(label).toBe("! 10/24h");
+  });
+});
+
+test.describe("表示設定で従来表示に戻せる", () => {
+  test("『重なる予定を段に分ける』『遅延のはみ出しを表示』をオフにすると従来表示になり、設定は保存される", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-12T10:00:00"));
+    await open(page, [
+      { ...base, id: "a", task: "A", process: "PG", startDate: "2026-08-03", endDate: "2026-08-05", estimatedHours: 24 },
+      { ...base, id: "b", task: "B", process: "PG", startDate: "2026-08-04", endDate: "2026-08-05", estimatedHours: 16 },
+    ]);
+    let r = await rectsOf(page);
+    expect(r.rects.find((x) => x.id === "b").y).not.toBe(r.rects.find((x) => x.id === "a").y);
+    expect(await page.evaluate(() => window.getScheduleRenderer().overrunRects.length)).toBeGreaterThan(0);
+
+    await page.evaluate(() => window.showTab("settings"));
+    await page.locator('.settings-nav-item[data-category="display"]').click();
+    const lane = page.locator("#scheduleLaneLayoutCheckbox");
+    const overrun = page.locator("#scheduleShowOverrunCheckbox");
+    await expect(lane).toBeChecked();
+    await expect(overrun).toBeChecked();
+    await lane.evaluate((el) => el.click());
+    await overrun.evaluate((el) => el.click());
+
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("manhour_scheduleSettings")));
+    expect(saved.laneLayout).toBe(false);
+    expect(saved.showOverrun).toBe(false);
+
+    await page.evaluate(() => window.showTab("schedule"));
+    r = await rectsOf(page);
+    expect(r.rects.find((x) => x.id === "b").y).toBe(r.rects.find((x) => x.id === "a").y);
+    expect(Math.max(...r.layout.heights)).toBe(36);
+    expect(await page.evaluate(() => window.getScheduleRenderer().overrunRects.length)).toBe(0);
+
+  });
+
+  test("保存済みの設定がオフなら、開いたときから従来表示でスイッチもオフになっている", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-12T10:00:00"));
+    await open(page, [
+      { ...base, id: "a", task: "A", process: "PG", startDate: "2026-08-03", endDate: "2026-08-05", estimatedHours: 24 },
+      { ...base, id: "b", task: "B", process: "PG", startDate: "2026-08-04", endDate: "2026-08-05", estimatedHours: 16 },
+    ], { settings: { laneLayout: false, showOverrun: false } });
+    const r = await rectsOf(page);
+    expect(r.rects.find((x) => x.id === "b").y).toBe(r.rects.find((x) => x.id === "a").y);
+    expect(await page.evaluate(() => window.getScheduleRenderer().overrunRects.length)).toBe(0);
+    await expect(page.locator("#scheduleLaneLayoutCheckbox")).not.toBeChecked();
+    await expect(page.locator("#scheduleShowOverrunCheckbox")).not.toBeChecked();
   });
 });

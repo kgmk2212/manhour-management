@@ -46,6 +46,9 @@ export function initScheduleModule() {
     
     // 月表示を更新
     updateCurrentMonthDisplay();
+
+    // 設定画面のガント表示スイッチ（重なりの段分け・遅延のはみ出し）
+    setupScheduleDisplaySettings();
     
     // Canvasクリックハンドラをセットアップ
     setupCanvasClickHandler((schedule) => {
@@ -2498,6 +2501,30 @@ export function handleScheduleDrag(scheduleId, newStartDate) {
     }
 
     showToast('予定を移動しました', 'success', 3000, { onUndo: () => window.historyUndo() });
+}
+
+/** 設定画面のスイッチ ID → scheduleSettings のキー */
+const SCHEDULE_DISPLAY_SETTING_INPUTS = {
+    scheduleLaneLayoutCheckbox: 'laneLayout',
+    scheduleShowOverrunCheckbox: 'showOverrun'
+};
+
+/**
+ * 設定画面のガント表示スイッチに現在値を反映し、変更時に保存して再描画する
+ */
+function setupScheduleDisplaySettings() {
+    Object.entries(SCHEDULE_DISPLAY_SETTING_INPUTS).forEach(([id, key]) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.checked = scheduleSettings[key] !== false;
+        if (input._scheduleDisplayBound) return;
+        input._scheduleDisplayBound = true;
+        input.addEventListener('change', () => {
+            setScheduleSettings({ [key]: input.checked });
+            if (typeof window.saveData === 'function') window.saveData(true);
+            renderScheduleView();
+        });
+    });
 }
 
 /**
