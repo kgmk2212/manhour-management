@@ -31,6 +31,9 @@
   --t2: #D07A7A;  /* 権限管理 */
   --t3: #D9A55B;  /* マスタ画面追加 */
   --t4: #6FAE8E;  /* 集計バッチ */
+  --t5: #7A9BB0;  /* ログイン画面改修 */
+  --t6: #B58BA8;  /* 通知機能 */
+  --t7: #8FA05A;  /* CSV取込 */
   --shadow: 0 1px 2px rgba(26, 24, 20, 0.05), 0 6px 18px rgba(26, 24, 20, 0.05);
   --label-w: 200px;
   --day-w: 28px;
@@ -48,7 +51,7 @@
     --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
     --load-1: #2C4229; --load-2: #8C6A2E; --load-3: #C4841D;
     --bar-ink: #FFFFFF;
-    --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A;
+    --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A; --t5: #5E7D92; --t6: #93708A; --t7: #748446;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
   }
 }
@@ -61,7 +64,7 @@
   --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
   --load-1: #2C4229; --load-2: #8C6A2E; --load-3: #C4841D;
   --bar-ink: #FFFFFF;
-  --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A;
+  --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A; --t5: #5E7D92; --t6: #93708A; --t7: #748446;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
 }
 
@@ -94,6 +97,15 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 }
 .ghost[hidden] { display: none !important; }
 .hint { font-size: 12.5px; color: var(--text-3); }
+.monthnav { display: inline-flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+.monthnav button { font: inherit; border: 0; background: none; color: var(--text-2); width: 30px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 15px; }
+.monthnav button:hover { background: var(--accent-light); color: var(--accent); }
+.monthnav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.monthnav output { min-width: 7.5em; text-align: center; font-weight: 700; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.rangeinfo { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--text-2); }
+.rangeinfo b { color: var(--text); font-variant-numeric: tabular-nums; }
+.rangeinfo .muted { color: var(--text-3); }
+.day.m1 { box-shadow: inset 1px 0 0 var(--border); }
 
 /* ---------- gantt ---------- */
 .gantt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
@@ -198,9 +210,18 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
       <button type="button" id="viewCurrent" aria-pressed="false">今の担当者別（段分け）</button>
       <button type="button" id="viewProposed" aria-pressed="true">担当者×タスク（案）</button>
     </div>
+    <div class="monthnav" role="group" aria-label="表示する月">
+      <button type="button" id="prevMonth" aria-label="前の月">‹</button>
+      <output id="monthLabel" aria-live="polite"></output>
+      <button type="button" id="nextMonth" aria-label="次の月">›</button>
+    </div>
+    <div class="seg" role="group" aria-label="表示月数">
+      <button type="button" id="span1" aria-pressed="false">1 か月</button>
+      <button type="button" id="span3" aria-pressed="true">3 か月</button>
+    </div>
     <button type="button" class="ghost" id="toggleAll">すべて畳む</button>
-    <span class="hint">サンプルデータ ・ 今日は 2026-09-24（木）で固定</span>
   </div>
+  <div class="rangeinfo" id="rangeInfo"></div>
 
   <div class="gantt-card">
     <div class="gantt-scroll">
@@ -223,69 +244,98 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
         <li><span class="tag good">流れ</span>1 行は同じタスクの工程の並び（PG→PT、IT→ST が横につながる）</li>
         <li><span class="tag good">要約</span>見出しの帯で「その人が同じ日に何本抱えているか」が一目で分かる（田中は遅延中の帳票Aを抱えたまま 9/24 が 3 本、9/28〜30 が 2 本）</li>
         <li><span class="tag good">畳める</span>担当者を畳むと帯だけ残り、人数が多くても全体を見渡せる</li>
+        <li><span class="tag good">絞れる</span>行になるのは表示範囲（月ナビの月を中心に表示月数ぶん）に 1 日でも掛かる予定を持つタスクだけ。終わった過去のタスクは積み上がらない</li>
       </ul>
     </section>
     <section class="note">
       <h2>気になるところ</h2>
       <ul>
-        <li><span class="tag care">行数</span>タスク数ぶん行が増える（このサンプルで 3 行 → 担当者 3 ＋ タスク 9 の 12 行）</li>
+        <li><span class="tag care">行数</span>表示範囲のタスク数ぶん行が増える（このサンプルの 9 月中心・3 か月表示で 担当者 3 ＋ タスク 14 行。1 か月表示なら 8 行）</li>
+        <li><span class="tag care">入れ替わり</span>月を動かすと行の顔ぶれが変わる。横は、表示中のタスクの予定がはみ出す分だけ広げる</li>
         <li><span class="tag care">操作</span>縦ドラッグで別担当者のグループに落とすと担当者変更。同じ担当者の別タスク行へは日付の移動だけにする</li>
         <li><span class="tag care">並び</span>タスクの並びは「タスク着手順」→ 開始日順。見出しの並びは今の担当者順を使う</li>
       </ul>
     </section>
   </div>
-  <p class="caption">表示モードは今の「担当者別／タスク別」を残したまま、3 つ目のモード「担当者×タスク」として追加する想定。</p>
+  <p class="caption">サンプルデータ（2026 年 7〜12 月）・今日は 2026-09-24（木）で固定。表示モードは今の「担当者別／タスク別」を残したまま、3 つ目のモード「担当者×タスク」として追加する想定。「今の担当者別」は現行どおり、フィルタに合う予定がすべて入るところまで横に広がる。</p>
 </div>
 
 <script>
 (() => {
   const TODAY = '2026-09-24';
-  const START = '2026-09-14';
-  const DAYS = 28; // 9/14〜10/11
-  const HOLIDAYS = new Set(['2026-09-21', '2026-09-22', '2026-09-23']);
+  const HOLIDAYS = new Set(['2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
+    '2026-10-12', '2026-11-03', '2026-11-23']);
   const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 
   const TASKS = {
-    A: { ver: 'V2.4', name: '帳票A出力改修', color: 'var(--t1)' },
+    L: { ver: 'V2.3', name: 'ログイン画面改修', color: 'var(--t5)' },
     K: { ver: 'V2.3', name: '権限管理 不具合修正', color: 'var(--t2)' },
+    A: { ver: 'V2.4', name: '帳票A出力改修', color: 'var(--t1)' },
     M: { ver: 'V2.4', name: 'マスタ画面追加', color: 'var(--t3)' },
     S: { ver: 'V2.4', name: '集計バッチ高速化', color: 'var(--t4)' },
+    N: { ver: 'V2.5', name: '通知機能', color: 'var(--t6)' },
+    C: { ver: 'V2.5', name: 'CSV取込', color: 'var(--t7)' },
   };
   const MEMBERS = ['田中', '佐藤', '鈴木'];
   // 予定（サンプル）: pct は進捗、done は完了、act/est は実績/予定h
   const SCHEDULES = [
+    { m: '田中', t: 'L', p: 'UI', s: '2026-07-13', e: '2026-07-17', pct: 100, done: true },
+    { m: '田中', t: 'L', p: 'PG', s: '2026-07-21', e: '2026-08-07', pct: 100, done: true },
     { m: '田中', t: 'A', p: 'PG', s: '2026-09-14', e: '2026-09-18', pct: 85, act: 34, est: 40 },
     { m: '田中', t: 'A', p: 'PT', s: '2026-09-28', e: '2026-09-30', pct: 0 },
     { m: '田中', t: 'K', p: 'PG', s: '2026-09-16', e: '2026-09-17', pct: 100, done: true },
     { m: '田中', t: 'K', p: 'IT', s: '2026-09-24', e: '2026-09-25', pct: 20 },
     { m: '田中', t: 'M', p: 'PG', s: '2026-09-24', e: '2026-10-02', pct: 5 },
+    { m: '田中', t: 'N', p: 'PG', s: '2026-10-19', e: '2026-10-30', pct: 0 },
+    { m: '田中', t: 'N', p: 'PT', s: '2026-11-02', e: '2026-11-06', pct: 0 },
+    { m: '佐藤', t: 'L', p: 'IT', s: '2026-08-10', e: '2026-08-21', pct: 100, done: true },
+    { m: '佐藤', t: 'L', p: 'ST', s: '2026-08-24', e: '2026-08-28', pct: 100, done: true },
     { m: '佐藤', t: 'M', p: 'UI', s: '2026-09-14', e: '2026-09-16', pct: 100, done: true },
     { m: '佐藤', t: 'S', p: 'PG', s: '2026-09-15', e: '2026-09-18', pct: 100, done: true },
     { m: '佐藤', t: 'S', p: 'PT', s: '2026-09-24', e: '2026-09-28', pct: 30 },
     { m: '佐藤', t: 'A', p: 'IT', s: '2026-09-29', e: '2026-10-01', pct: 0 },
     { m: '佐藤', t: 'A', p: 'ST', s: '2026-10-02', e: '2026-10-06', pct: 0 },
+    { m: '佐藤', t: 'N', p: 'UI', s: '2026-10-13', e: '2026-10-16', pct: 0 },
+    { m: '佐藤', t: 'C', p: 'PG', s: '2026-11-09', e: '2026-11-20', pct: 0 },
+    { m: '鈴木', t: 'K', p: 'PG', s: '2026-08-03', e: '2026-08-14', pct: 100, done: true },
     { m: '鈴木', t: 'K', p: 'ST', s: '2026-09-28', e: '2026-09-29', pct: 0 },
     { m: '鈴木', t: 'S', p: 'IT', s: '2026-09-29', e: '2026-10-02', pct: 0 },
     { m: '鈴木', t: 'M', p: 'PT', s: '2026-10-05', e: '2026-10-08', pct: 0 },
     { m: '鈴木', t: 'M', p: 'PT', s: '2026-10-07', e: '2026-10-08', pct: 0, review: true },
+    { m: '鈴木', t: 'C', p: 'UI', s: '2026-10-26', e: '2026-10-30', pct: 0 },
+    { m: '鈴木', t: 'C', p: 'IT', s: '2026-11-24', e: '2026-12-04', pct: 0 },
   ];
 
   const parse = (d) => { const [y, mo, da] = d.split('-').map(Number); return new Date(y, mo - 1, da); };
   const fmt = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   const addDays = (d, n) => { const dt = parse(d); dt.setDate(dt.getDate() + n); return fmt(dt); };
-  const idx = (d) => Math.round((parse(d) - parse(START)) / 86400000);
-  const dayList = Array.from({ length: DAYS }, (_, i) => addDays(START, i));
+  const md = (d) => { const dt = parse(d); return `${dt.getMonth() + 1}/${dt.getDate()}`; };
   const isWeekend = (d) => { const w = parse(d).getDay(); return w === 0 || w === 6; };
   const isOff = (d) => isWeekend(d) || HOLIDAYS.has(d);
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const DAY_W = () => parseFloat(cssVar('--day-w')) || 28;
   const ROW_H = 36, LANE_H = 28, PAD = 6;
-
   const isDelayed = (s) => !s.done && s.e < TODAY;
+  const effEnd = (s) => (isDelayed(s) ? TODAY : s.e);
+
+  // 表示状態
+  let mode = 'proposed';
+  let month = { y: 2026, m: 9 };
+  let span = 3;
+  const collapsed = new Set();
+
+  /** 月ナビの月を中心に span か月の表示範囲（アプリの calculateMonthRange と同じ中心の取り方） */
+  function periodRange() {
+    const half = Math.floor((span - 1) / 2);
+    const from = new Date(month.y, month.m - 1 - half, 1);
+    const to = new Date(month.y, month.m - 1 - half + span, 0);
+    return { start: fmt(from), end: fmt(to) };
+  }
+  const overlaps = (s, r) => s.s <= r.end && effEnd(s) >= r.start;
 
   // 期間が重ならない最上段へ詰める（アプリの assignLanes と同じ規則。遅延のはみ出しも期間に含める）
   function assignLanes(list) {
-    const items = list.map((s, o) => ({ s, o, end: isDelayed(s) ? TODAY : s.e }))
+    const items = list.map((s, o) => ({ s, o, end: effEnd(s) }))
       .sort((a, b) => (a.s.s < b.s.s ? -1 : a.s.s > b.s.s ? 1 : a.o - b.o));
     const ends = []; const lane = new Map();
     items.forEach(({ s, end }) => {
@@ -298,79 +348,86 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 
   const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
 
-  function bgCells() {
-    const b = el('div', 'bg-cells');
-    dayList.forEach(d => b.appendChild(el('span', HOLIDAYS.has(d) ? 'hol' : isWeekend(d) ? 'we' : '')));
-    return b;
-  }
+  function render() {
+    const period = periodRange();
 
-  function drawBar(row, s, top) {
+    // 行にするタスク（案）: 表示範囲に掛かる予定を持つ (担当者, タスク)
+    const shownKeys = new Set(SCHEDULES.filter(s => overlaps(s, period)).map(s => `${s.m}|${s.t}`));
+    const drawn = mode === 'current' ? SCHEDULES : SCHEDULES.filter(s => shownKeys.has(`${s.m}|${s.t}`));
+
+    // 横の範囲: 表示範囲を、描く予定がはみ出す分だけ広げる（月初〜月末に丸める）
+    let start = period.start, end = period.end;
+    drawn.forEach(s => { if (s.s < start) start = s.s; if (effEnd(s) > end) end = effEnd(s); });
+    start = fmt(new Date(parse(start).getFullYear(), parse(start).getMonth(), 1));
+    end = fmt(new Date(parse(end).getFullYear(), parse(end).getMonth() + 1, 0));
+    const dayList = [];
+    for (let d = start; d <= end; d = addDays(d, 1)) dayList.push(d);
+    const idx = (d) => Math.round((parse(d) - parse(start)) / 86400000);
     const w = DAY_W();
-    const x = idx(s.s) * w;
-    const width = (idx(s.e) - idx(s.s) + 1) * w;
-    const bar = el('div', 'bar' + (s.done ? ' done' : '') + (s.review ? ' review' : ''));
-    bar.style.left = `${x + 1}px`;
-    bar.style.width = `${width - 2}px`;
-    bar.style.top = `${top}px`;
-    bar.style.background = TASKS[s.t].color;
-    const mark = s.done ? '✓ ' : isDelayed(s) ? '! ' : '';
-    bar.innerHTML = `<span>${s.p}${s.review ? ' R' : ''}</span>${width > 70 ? `<span class="pct">${mark}${s.pct}%</span>` : ''}`;
-    bar.title = `${TASKS[s.t].ver} ${TASKS[s.t].name} ${s.p}（${s.m}） ${s.s} 〜 ${s.e}`;
-    row.appendChild(bar);
-    if (isDelayed(s)) {
-      const tx = (idx(s.e) + 1) * w;
-      const tw = (idx(TODAY) - idx(s.e)) * w;
-      const tail = el('div', 'tail', tw > 60 ? `! ${s.act}/${s.est}h` : '');
-      tail.style.left = `${tx}px`; tail.style.width = `${tw - 1}px`; tail.style.top = `${top}px`;
-      row.appendChild(tail);
-    }
-  }
 
-  function header(labelCol, timeCol) {
+    const bgCells = () => {
+      const b = el('div', 'bg-cells');
+      dayList.forEach(d => b.appendChild(el('span', HOLIDAYS.has(d) ? 'hol' : isWeekend(d) ? 'we' : '')));
+      return b;
+    };
+    const drawBar = (row, s, top) => {
+      const x = idx(s.s) * w;
+      const width = (idx(s.e) - idx(s.s) + 1) * w;
+      const bar = el('div', 'bar' + (s.done ? ' done' : '') + (s.review ? ' review' : ''));
+      bar.style.left = `${x + 1}px`; bar.style.width = `${width - 2}px`; bar.style.top = `${top}px`;
+      bar.style.background = TASKS[s.t].color;
+      const mark = s.done ? '✓ ' : isDelayed(s) ? '! ' : '';
+      bar.innerHTML = `<span>${s.p}${s.review ? ' R' : ''}</span>${width > 70 ? `<span class="pct">${mark}${s.pct}%</span>` : ''}`;
+      bar.title = `${TASKS[s.t].ver} ${TASKS[s.t].name} ${s.p}（${s.m}） ${s.s} 〜 ${s.e}`;
+      row.appendChild(bar);
+      if (isDelayed(s)) {
+        const tw = (idx(TODAY) - idx(s.e)) * w;
+        const tail = el('div', 'tail', tw > 60 ? `! ${s.act}/${s.est}h` : '');
+        tail.style.left = `${(idx(s.e) + 1) * w}px`; tail.style.width = `${tw - 1}px`; tail.style.top = `${top}px`;
+        row.appendChild(tail);
+      }
+    };
+
+    const g = document.getElementById('gantt');
+    g.innerHTML = '';
+    const labelCol = el('div', 'col-label');
+    const timeCol = el('div', 'col-time');
+    timeCol.style.width = `${dayList.length * w}px`;
+
     labelCol.appendChild(el('div', 'head label', '担当者 / タスク'));
     const h = el('div', 'head');
     const days = el('div', 'days');
-    dayList.forEach(d => {
+    dayList.forEach((d, i) => {
       const dt = parse(d);
       const cls = ['day'];
       if (isWeekend(d)) cls.push('we');
       if (HOLIDAYS.has(d)) cls.push('hol');
       if (d === TODAY) cls.push('today');
-      days.appendChild(el('div', cls.join(' '), `<span><b>${dt.getDate() === 1 || d === START ? `${dt.getMonth() + 1}/` : ''}${dt.getDate()}</b><small>${DOW[dt.getDay()]}</small></span>`));
+      if (dt.getDate() === 1 && i > 0) cls.push('m1');
+      days.appendChild(el('div', cls.join(' '), `<span><b>${dt.getDate() === 1 ? `${dt.getMonth() + 1}/` : ''}${dt.getDate()}</b><small>${DOW[dt.getDay()]}</small></span>`));
     });
     h.appendChild(days);
     timeCol.appendChild(h);
-  }
 
-  const collapsed = new Set();
-  let mode = 'proposed';
-
-  function render() {
-    const g = document.getElementById('gantt');
-    g.innerHTML = '';
-    const labelCol = el('div', 'col-label');
-    const timeCol = el('div', 'col-time');
-    timeCol.style.width = `${DAYS * DAY_W()}px`;
-    header(labelCol, timeCol);
-
+    let taskRowCount = 0;
     MEMBERS.forEach(m => {
-      const mine = SCHEDULES.filter(s => s.m === m);
+      const mine = drawn.filter(s => s.m === m);
       if (mode === 'current') {
         const { lane, count } = assignLanes(mine);
-        const h = ROW_H + (count - 1) * LANE_H;
+        const rh = ROW_H + (count - 1) * LANE_H;
         const lab = el('div', 'lab', `<i class="dot"></i><span class="name">${m}</span>`);
-        lab.style.height = `${h}px`;
+        lab.style.height = `${rh}px`;
         labelCol.appendChild(lab);
         const row = el('div', 'row');
-        row.style.height = `${h}px`;
+        row.style.height = `${rh}px`;
         row.appendChild(bgCells());
         mine.forEach(s => drawBar(row, s, PAD + lane.get(s) * LANE_H));
         timeCol.appendChild(row);
         return;
       }
 
-      // 担当者の見出し行（要約の帯）
-      const taskKeys = [...new Set(mine.slice().sort((a, b) => a.s < b.s ? -1 : 1).map(s => s.t))];
+      const taskKeys = [...new Set(mine.slice().sort((a, b) => (a.s < b.s ? -1 : 1)).map(s => s.t))];
+      taskRowCount += taskKeys.length;
       const open = !collapsed.has(m);
       const glab = el('div', 'lab group');
       glab.style.height = `${ROW_H}px`;
@@ -384,7 +441,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
       const strip = el('div', 'strip');
       dayList.forEach(d => {
         // 未完了の予定を数える。遅延中の予定は今日まで（はみ出し分）も抱えているとみなす
-        const n = isOff(d) ? 0 : mine.filter(s => !s.done && s.s <= d && d <= (isDelayed(s) ? TODAY : s.e)).length;
+        const n = isOff(d) ? 0 : mine.filter(s => !s.done && s.s <= d && d <= effEnd(s)).length;
         const i = el('i', n >= 3 ? 'l3' : n === 2 ? 'l2' : n === 1 ? 'l1' : '', n >= 2 ? String(n) : '');
         if (n) i.title = `${d} ・ ${n} 本`;
         strip.appendChild(i);
@@ -396,47 +453,79 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
       taskKeys.forEach(tk => {
         const list = mine.filter(s => s.t === tk);
         const { lane, count } = assignLanes(list);
-        const h = ROW_H + (count - 1) * LANE_H;
+        const rh = ROW_H + (count - 1) * LANE_H;
         const t = TASKS[tk];
         const lab = el('div', 'lab task', `<i class="sw" style="background:${t.color}"></i><span class="ver">${t.ver}</span><span class="name">${t.name}</span>`);
-        lab.style.height = `${h}px`;
+        lab.style.height = `${rh}px`;
         lab.title = `${t.ver} / ${t.name}`;
         labelCol.appendChild(lab);
         const row = el('div', 'row');
-        row.style.height = `${h}px`;
+        row.style.height = `${rh}px`;
         row.appendChild(bgCells());
         list.forEach(s => drawBar(row, s, PAD + lane.get(s) * LANE_H));
         timeCol.appendChild(row);
       });
     });
 
-    const tl = el('div', 'today-line');
-    tl.style.left = `${idx(TODAY) * DAY_W() + DAY_W() / 2 - 1}px`;
-    tl.style.top = `var(--head-h)`;
-    timeCol.appendChild(tl);
+    if (TODAY >= start && TODAY <= end) {
+      const tl = el('div', 'today-line');
+      tl.style.left = `${idx(TODAY) * w + w / 2 - 1}px`;
+      tl.style.top = 'var(--head-h)';
+      timeCol.appendChild(tl);
+    }
 
     g.appendChild(labelCol);
     g.appendChild(timeCol);
 
+    // コントロールと範囲の表示
+    document.getElementById('monthLabel').textContent = `${month.y}年${month.m}月`;
     document.getElementById('viewCurrent').setAttribute('aria-pressed', String(mode === 'current'));
     document.getElementById('viewProposed').setAttribute('aria-pressed', String(mode === 'proposed'));
+    document.getElementById('span1').setAttribute('aria-pressed', String(span === 1));
+    document.getElementById('span3').setAttribute('aria-pressed', String(span === 3));
     const ta = document.getElementById('toggleAll');
     ta.hidden = mode !== 'proposed';
     ta.textContent = collapsed.size === MEMBERS.length ? 'すべて開く' : 'すべて畳む';
-    document.getElementById('legend').querySelectorAll('span').forEach((s, i) => { s.hidden = mode === 'current' && i < 3; });
+    document.getElementById('legend').querySelectorAll('span').forEach((sp, i) => { sp.hidden = mode === 'current' && i < 3; });
+
+    const allTaskRows = new Set(SCHEDULES.map(s => `${s.m}|${s.t}`)).size;
+    const info = document.getElementById('rangeInfo');
+    info.innerHTML = mode === 'proposed'
+      ? `<span>表示範囲 <b>${md(period.start)}〜${md(period.end)}</b></span><span>タスク行 <b>${taskRowCount}</b> <span class="muted">／ 全期間なら ${allTaskRows}</span></span>${start < period.start || end > period.end ? `<span class="muted">横は予定のはみ出し分だけ広げて ${md(start)}〜${md(end)}</span>` : ''}`
+      : `<span>今の表示: 予定がすべて入るまで横に広がる（<b>${md(start)}〜${md(end)}</b>）。月ナビは表示の中心を動かすだけ</span>`;
+
+    return { idx, start, end };
   }
 
-  document.getElementById('viewCurrent').addEventListener('click', () => { mode = 'current'; render(); });
-  document.getElementById('viewProposed').addEventListener('click', () => { mode = 'proposed'; render(); });
+  let last;
+  const draw = (scrollToToday) => {
+    last = render();
+    const sc = document.querySelector('.gantt-scroll');
+    if (!scrollToToday || sc.clientWidth >= sc.scrollWidth) return;
+    const w = DAY_W();
+    // 今日が範囲内なら今日を中央に、範囲外なら表示範囲の先頭を左端に
+    const period = periodRange();
+    sc.scrollLeft = TODAY >= period.start && TODAY <= period.end
+      ? Math.max(0, last.idx(TODAY) * w - sc.clientWidth / 2)
+      : Math.max(0, last.idx(period.start) * w - 8);
+  };
+  const shiftMonth = (n) => {
+    const d = new Date(month.y, month.m - 1 + n, 1);
+    month = { y: d.getFullYear(), m: d.getMonth() + 1 };
+    draw(true);
+  };
+
+  document.getElementById('viewCurrent').addEventListener('click', () => { mode = 'current'; draw(true); });
+  document.getElementById('viewProposed').addEventListener('click', () => { mode = 'proposed'; draw(true); });
+  document.getElementById('prevMonth').addEventListener('click', () => shiftMonth(-1));
+  document.getElementById('nextMonth').addEventListener('click', () => shiftMonth(1));
+  document.getElementById('span1').addEventListener('click', () => { span = 1; draw(true); });
+  document.getElementById('span3').addEventListener('click', () => { span = 3; draw(true); });
   document.getElementById('toggleAll').addEventListener('click', () => {
     if (collapsed.size === MEMBERS.length) collapsed.clear(); else MEMBERS.forEach(m => collapsed.add(m));
-    render();
+    draw(false);
   });
-  window.addEventListener('resize', render);
-  render();
-
-  // 初期表示で今日付近が見えるように少しスクロール
-  const sc = document.querySelector('.gantt-scroll');
-  if (sc.clientWidth < sc.scrollWidth) sc.scrollLeft = Math.max(0, idx(TODAY) * DAY_W() - sc.clientWidth / 2);
+  window.addEventListener('resize', () => draw(false));
+  draw(true);
 })();
 </script>
