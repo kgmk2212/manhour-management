@@ -1,0 +1,442 @@
+<title>担当者×タスク ビュー</title>
+<meta name="description" content="ガントの担当者別ビューを「担当者の中でタスクごとに行を分ける」表示にした案のモックアップ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+<style>
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface-2: #FAFAF9;
+  --border: #E7E5E0;
+  --border-light: #F0EEEA;
+  --text: #1A1814;
+  --text-2: #6B6560;
+  --text-3: #9C9690;
+  --accent: #2D5A27;
+  --accent-light: #EBF5EA;
+  --amber: #C4841D;
+  --amber-light: #FFF3DF;
+  --danger: #B91C1C;
+  --danger-soft: rgba(185, 28, 28, 0.08);
+  --danger-hatch: rgba(185, 28, 28, 0.40);
+  --weekend: #F4F2EE;
+  --holiday: #FFF6E6;
+  --today: #B91C1C;
+  --load-1: #DCEBD9;
+  --load-2: #E9B45A;
+  --load-3: #C4841D;
+  --bar-ink: #FFFFFF;
+  --t1: #5B8BD6;  /* 帳票A出力改修 */
+  --t2: #D07A7A;  /* 権限管理 */
+  --t3: #D9A55B;  /* マスタ画面追加 */
+  --t4: #6FAE8E;  /* 集計バッチ */
+  --shadow: 0 1px 2px rgba(26, 24, 20, 0.05), 0 6px 18px rgba(26, 24, 20, 0.05);
+  --label-w: 200px;
+  --day-w: 28px;
+  --row-h: 36px;
+  --lane-h: 28px;
+  --head-h: 34px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #151412; --surface: #1D1C19; --surface-2: #22211E; --border: #34322D; --border-light: #2A2825;
+    --text: #EDEBE6; --text-2: #B3ADA5; --text-3: #847E76;
+    --accent: #7FB874; --accent-light: #243322; --amber: #E0A445; --amber-light: #3A2E17;
+    --danger: #F07171; --danger-soft: rgba(240, 113, 113, 0.10); --danger-hatch: rgba(240, 113, 113, 0.45);
+    --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
+    --load-1: #2C4229; --load-2: #8C6A2E; --load-3: #C4841D;
+    --bar-ink: #FFFFFF;
+    --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #151412; --surface: #1D1C19; --surface-2: #22211E; --border: #34322D; --border-light: #2A2825;
+  --text: #EDEBE6; --text-2: #B3ADA5; --text-3: #847E76;
+  --accent: #7FB874; --accent-light: #243322; --amber: #E0A445; --amber-light: #3A2E17;
+  --danger: #F07171; --danger-soft: rgba(240, 113, 113, 0.10); --danger-hatch: rgba(240, 113, 113, 0.45);
+  --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
+  --load-1: #2C4229; --load-2: #8C6A2E; --load-3: #C4841D;
+  --bar-ink: #FFFFFF;
+  --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; display: grid; gap: 22px; }
+
+header.top { display: grid; gap: 6px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .08em; color: var(--text-3); font-weight: 600; }
+h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+.lede { margin: 0; color: var(--text-2); max-width: 68ch; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: 13px; font-weight: 600; border: 0; background: none; color: var(--text-2);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent-light); color: var(--accent); }
+.seg button:focus-visible, .ghost:focus-visible, .grp-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ghost {
+  font: inherit; font-size: 13px; color: var(--text-2); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer;
+}
+.ghost[hidden] { display: none !important; }
+.hint { font-size: 12.5px; color: var(--text-3); }
+
+/* ---------- gantt ---------- */
+.gantt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.gantt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.gantt { position: relative; display: grid; grid-template-columns: var(--label-w) max-content; min-width: max-content; }
+.col-label { position: sticky; left: 0; z-index: 3; background: var(--surface); border-right: 1px solid var(--border); }
+.col-time { position: relative; }
+
+.head { height: var(--head-h); display: flex; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.head.label { padding: 0 12px; font-size: 11.5px; color: var(--text-3); font-weight: 600; letter-spacing: .06em; }
+.days { display: flex; height: 100%; }
+.day { width: var(--day-w); flex: 0 0 var(--day-w); display: grid; place-items: center; font-size: 10.5px; line-height: 1.1; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.day small { display: block; font-size: 9px; color: var(--text-3); }
+.day.we { color: var(--text-3); }
+.day.hol b { color: var(--danger); }
+.day.today b { color: var(--surface); background: var(--today); border-radius: 4px; padding: 0 3px; }
+
+.row { position: relative; border-bottom: 1px solid var(--border-light); }
+.lab { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border-light); overflow: hidden; }
+.lab .name { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: 0 0 7px; }
+.lab.task { padding-left: 30px; }
+.lab.task .ver { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.lab.task .name { font-weight: 500; font-size: 13px; }
+.lab.task .sw { width: 4px; align-self: stretch; margin-block: 9px; border-radius: 2px; flex: 0 0 4px; }
+.lab.group { background: var(--surface-2); }
+.grp-toggle { font: inherit; border: 0; background: none; color: var(--text-2); cursor: pointer; padding: 2px; width: 20px; display: grid; place-items: center; border-radius: 4px; }
+.grp-toggle svg { transition: transform .15s ease; }
+.grp-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.lab .count { margin-left: auto; font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+
+.bg-cells { position: absolute; inset: 0; display: flex; pointer-events: none; }
+.bg-cells span { width: var(--day-w); flex: 0 0 var(--day-w); border-right: 1px solid var(--border-light); }
+.bg-cells span.we { background: var(--weekend); }
+.bg-cells span.hol { background: var(--holiday); }
+.row.group .bg-cells { opacity: .9; }
+.row.group { background: var(--surface-2); }
+
+.bar {
+  position: absolute; height: 24px; border-radius: 4px; color: var(--bar-ink);
+  font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 0 6px;
+  white-space: nowrap; overflow: hidden; z-index: 1; box-shadow: 0 1px 0 rgba(0,0,0,.06);
+}
+.bar .pct { margin-left: auto; opacity: .85; font-weight: 700; font-size: 10px; }
+.bar.done { opacity: .45; }
+.bar.review { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 4px, transparent 4px 8px); }
+.tail {
+  position: absolute; height: 24px; border-radius: 4px; z-index: 0;
+  background: var(--danger-soft) repeating-linear-gradient(135deg, var(--danger-hatch) 0 1px, transparent 1px 6px);
+  color: var(--danger); font-size: 10px; font-weight: 700; display: flex; align-items: center; padding-left: 4px; white-space: nowrap; overflow: hidden;
+}
+.today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--today); z-index: 2; pointer-events: none; opacity: .8; }
+
+/* 担当者見出しの負荷ストリップ */
+.strip { position: absolute; left: 0; top: 9px; height: 18px; display: flex; }
+.strip i {
+  width: var(--day-w); flex: 0 0 var(--day-w); height: 18px; border-right: 2px solid transparent; background-clip: padding-box;
+  font-style: normal; font-size: 10px; font-weight: 700; display: grid; place-items: center; color: var(--text); font-variant-numeric: tabular-nums;
+}
+.strip i.l1 { background-color: var(--load-1); }
+.strip i.l2 { background-color: var(--load-2); color: #1A1814; }
+.strip i.l3 { background-color: var(--load-3); color: #FFFFFF; }
+.strip i:first-child { border-radius: 3px 0 0 3px; }
+
+/* ---------- legend & notes ---------- */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12.5px; color: var(--text-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-box { width: 22px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-box.l1 { background: var(--load-1); } .sw-box.l2 { background: var(--load-2); } .sw-box.l3 { background: var(--load-3); }
+.sw-box.tailbox { background: var(--danger-soft) repeating-linear-gradient(135deg, var(--danger-hatch) 0 1px, transparent 1px 6px); }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.note { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.note h2 { font-size: 14.5px; margin: 0 0 8px; }
+.note ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; color: var(--text-2); }
+.note li b { color: var(--text); font-weight: 600; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 1px 7px; border-radius: 999px; margin-right: 6px; }
+.tag.good { background: var(--accent-light); color: var(--accent); }
+.tag.care { background: var(--amber-light); color: var(--amber); }
+
+.caption { font-size: 12.5px; color: var(--text-3); margin: 0; }
+
+@media (max-width: 640px) {
+  :root { --label-w: 128px; }
+  h1 { font-size: 20px; }
+  .wrap { padding: 20px 16px 40px; }
+  .lab.task { padding-left: 16px; }
+  .lab.task .ver { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .grp-toggle svg { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">スケジュール ・ ガント表示案</div>
+    <h1>担当者の中をタスクごとの行に分ける</h1>
+    <p class="lede">担当者別ビューで重なっていた予定を、担当者ごとのグループの中で「版数 / 対応名」の行に並べ直した案です。担当者の見出し行には、その人の全タスクを合わせた日ごとの本数を帯で出し、畳むと帯だけの要約になります。</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="表示の切り替え">
+      <button type="button" id="viewCurrent" aria-pressed="false">今の担当者別（段分け）</button>
+      <button type="button" id="viewProposed" aria-pressed="true">担当者×タスク（案）</button>
+    </div>
+    <button type="button" class="ghost" id="toggleAll">すべて畳む</button>
+    <span class="hint">サンプルデータ ・ 今日は 2026-09-24（木）で固定</span>
+  </div>
+
+  <div class="gantt-card">
+    <div class="gantt-scroll">
+      <div class="gantt" id="gantt"></div>
+    </div>
+  </div>
+
+  <div class="legend" id="legend">
+    <span><i class="sw-box l1"></i>予定 1 本</span>
+    <span><i class="sw-box l2"></i>2 本重なり</span>
+    <span><i class="sw-box l3"></i>3 本以上</span>
+    <span><i class="sw-box tailbox"></i>遅延のはみ出し（終了日翌日〜今日）</span>
+  </div>
+
+  <div class="notes">
+    <section class="note">
+      <h2>この案で良くなること</h2>
+      <ul>
+        <li><span class="tag good">読める</span>左の見出しでバーが何の作業か分かる。段に意味がつく</li>
+        <li><span class="tag good">流れ</span>1 行は同じタスクの工程の並び（PG→PT、IT→ST が横につながる）</li>
+        <li><span class="tag good">要約</span>見出しの帯で「その人が同じ日に何本抱えているか」が一目で分かる（田中は遅延中の帳票Aを抱えたまま 9/24 が 3 本、9/28〜30 が 2 本）</li>
+        <li><span class="tag good">畳める</span>担当者を畳むと帯だけ残り、人数が多くても全体を見渡せる</li>
+      </ul>
+    </section>
+    <section class="note">
+      <h2>気になるところ</h2>
+      <ul>
+        <li><span class="tag care">行数</span>タスク数ぶん行が増える（このサンプルで 3 行 → 担当者 3 ＋ タスク 9 の 12 行）</li>
+        <li><span class="tag care">操作</span>縦ドラッグで別担当者のグループに落とすと担当者変更。同じ担当者の別タスク行へは日付の移動だけにする</li>
+        <li><span class="tag care">並び</span>タスクの並びは「タスク着手順」→ 開始日順。見出しの並びは今の担当者順を使う</li>
+      </ul>
+    </section>
+  </div>
+  <p class="caption">表示モードは今の「担当者別／タスク別」を残したまま、3 つ目のモード「担当者×タスク」として追加する想定。</p>
+</div>
+
+<script>
+(() => {
+  const TODAY = '2026-09-24';
+  const START = '2026-09-14';
+  const DAYS = 28; // 9/14〜10/11
+  const HOLIDAYS = new Set(['2026-09-21', '2026-09-22', '2026-09-23']);
+  const DOW = ['日', '月', '火', '水', '木', '金', '土'];
+
+  const TASKS = {
+    A: { ver: 'V2.4', name: '帳票A出力改修', color: 'var(--t1)' },
+    K: { ver: 'V2.3', name: '権限管理 不具合修正', color: 'var(--t2)' },
+    M: { ver: 'V2.4', name: 'マスタ画面追加', color: 'var(--t3)' },
+    S: { ver: 'V2.4', name: '集計バッチ高速化', color: 'var(--t4)' },
+  };
+  const MEMBERS = ['田中', '佐藤', '鈴木'];
+  // 予定（サンプル）: pct は進捗、done は完了、act/est は実績/予定h
+  const SCHEDULES = [
+    { m: '田中', t: 'A', p: 'PG', s: '2026-09-14', e: '2026-09-18', pct: 85, act: 34, est: 40 },
+    { m: '田中', t: 'A', p: 'PT', s: '2026-09-28', e: '2026-09-30', pct: 0 },
+    { m: '田中', t: 'K', p: 'PG', s: '2026-09-16', e: '2026-09-17', pct: 100, done: true },
+    { m: '田中', t: 'K', p: 'IT', s: '2026-09-24', e: '2026-09-25', pct: 20 },
+    { m: '田中', t: 'M', p: 'PG', s: '2026-09-24', e: '2026-10-02', pct: 5 },
+    { m: '佐藤', t: 'M', p: 'UI', s: '2026-09-14', e: '2026-09-16', pct: 100, done: true },
+    { m: '佐藤', t: 'S', p: 'PG', s: '2026-09-15', e: '2026-09-18', pct: 100, done: true },
+    { m: '佐藤', t: 'S', p: 'PT', s: '2026-09-24', e: '2026-09-28', pct: 30 },
+    { m: '佐藤', t: 'A', p: 'IT', s: '2026-09-29', e: '2026-10-01', pct: 0 },
+    { m: '佐藤', t: 'A', p: 'ST', s: '2026-10-02', e: '2026-10-06', pct: 0 },
+    { m: '鈴木', t: 'K', p: 'ST', s: '2026-09-28', e: '2026-09-29', pct: 0 },
+    { m: '鈴木', t: 'S', p: 'IT', s: '2026-09-29', e: '2026-10-02', pct: 0 },
+    { m: '鈴木', t: 'M', p: 'PT', s: '2026-10-05', e: '2026-10-08', pct: 0 },
+    { m: '鈴木', t: 'M', p: 'PT', s: '2026-10-07', e: '2026-10-08', pct: 0, review: true },
+  ];
+
+  const parse = (d) => { const [y, mo, da] = d.split('-').map(Number); return new Date(y, mo - 1, da); };
+  const fmt = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  const addDays = (d, n) => { const dt = parse(d); dt.setDate(dt.getDate() + n); return fmt(dt); };
+  const idx = (d) => Math.round((parse(d) - parse(START)) / 86400000);
+  const dayList = Array.from({ length: DAYS }, (_, i) => addDays(START, i));
+  const isWeekend = (d) => { const w = parse(d).getDay(); return w === 0 || w === 6; };
+  const isOff = (d) => isWeekend(d) || HOLIDAYS.has(d);
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const DAY_W = () => parseFloat(cssVar('--day-w')) || 28;
+  const ROW_H = 36, LANE_H = 28, PAD = 6;
+
+  const isDelayed = (s) => !s.done && s.e < TODAY;
+
+  // 期間が重ならない最上段へ詰める（アプリの assignLanes と同じ規則。遅延のはみ出しも期間に含める）
+  function assignLanes(list) {
+    const items = list.map((s, o) => ({ s, o, end: isDelayed(s) ? TODAY : s.e }))
+      .sort((a, b) => (a.s.s < b.s.s ? -1 : a.s.s > b.s.s ? 1 : a.o - b.o));
+    const ends = []; const lane = new Map();
+    items.forEach(({ s, end }) => {
+      let l = ends.findIndex(x => x < s.s);
+      if (l === -1) { l = ends.length; ends.push(end); } else { ends[l] = end; }
+      lane.set(s, l);
+    });
+    return { lane, count: Math.max(1, ends.length) };
+  }
+
+  const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+
+  function bgCells() {
+    const b = el('div', 'bg-cells');
+    dayList.forEach(d => b.appendChild(el('span', HOLIDAYS.has(d) ? 'hol' : isWeekend(d) ? 'we' : '')));
+    return b;
+  }
+
+  function drawBar(row, s, top) {
+    const w = DAY_W();
+    const x = idx(s.s) * w;
+    const width = (idx(s.e) - idx(s.s) + 1) * w;
+    const bar = el('div', 'bar' + (s.done ? ' done' : '') + (s.review ? ' review' : ''));
+    bar.style.left = `${x + 1}px`;
+    bar.style.width = `${width - 2}px`;
+    bar.style.top = `${top}px`;
+    bar.style.background = TASKS[s.t].color;
+    const mark = s.done ? '✓ ' : isDelayed(s) ? '! ' : '';
+    bar.innerHTML = `<span>${s.p}${s.review ? ' R' : ''}</span>${width > 70 ? `<span class="pct">${mark}${s.pct}%</span>` : ''}`;
+    bar.title = `${TASKS[s.t].ver} ${TASKS[s.t].name} ${s.p}（${s.m}） ${s.s} 〜 ${s.e}`;
+    row.appendChild(bar);
+    if (isDelayed(s)) {
+      const tx = (idx(s.e) + 1) * w;
+      const tw = (idx(TODAY) - idx(s.e)) * w;
+      const tail = el('div', 'tail', tw > 60 ? `! ${s.act}/${s.est}h` : '');
+      tail.style.left = `${tx}px`; tail.style.width = `${tw - 1}px`; tail.style.top = `${top}px`;
+      row.appendChild(tail);
+    }
+  }
+
+  function header(labelCol, timeCol) {
+    labelCol.appendChild(el('div', 'head label', '担当者 / タスク'));
+    const h = el('div', 'head');
+    const days = el('div', 'days');
+    dayList.forEach(d => {
+      const dt = parse(d);
+      const cls = ['day'];
+      if (isWeekend(d)) cls.push('we');
+      if (HOLIDAYS.has(d)) cls.push('hol');
+      if (d === TODAY) cls.push('today');
+      days.appendChild(el('div', cls.join(' '), `<span><b>${dt.getDate() === 1 || d === START ? `${dt.getMonth() + 1}/` : ''}${dt.getDate()}</b><small>${DOW[dt.getDay()]}</small></span>`));
+    });
+    h.appendChild(days);
+    timeCol.appendChild(h);
+  }
+
+  const collapsed = new Set();
+  let mode = 'proposed';
+
+  function render() {
+    const g = document.getElementById('gantt');
+    g.innerHTML = '';
+    const labelCol = el('div', 'col-label');
+    const timeCol = el('div', 'col-time');
+    timeCol.style.width = `${DAYS * DAY_W()}px`;
+    header(labelCol, timeCol);
+
+    MEMBERS.forEach(m => {
+      const mine = SCHEDULES.filter(s => s.m === m);
+      if (mode === 'current') {
+        const { lane, count } = assignLanes(mine);
+        const h = ROW_H + (count - 1) * LANE_H;
+        const lab = el('div', 'lab', `<i class="dot"></i><span class="name">${m}</span>`);
+        lab.style.height = `${h}px`;
+        labelCol.appendChild(lab);
+        const row = el('div', 'row');
+        row.style.height = `${h}px`;
+        row.appendChild(bgCells());
+        mine.forEach(s => drawBar(row, s, PAD + lane.get(s) * LANE_H));
+        timeCol.appendChild(row);
+        return;
+      }
+
+      // 担当者の見出し行（要約の帯）
+      const taskKeys = [...new Set(mine.slice().sort((a, b) => a.s < b.s ? -1 : 1).map(s => s.t))];
+      const open = !collapsed.has(m);
+      const glab = el('div', 'lab group');
+      glab.style.height = `${ROW_H}px`;
+      glab.innerHTML = `<button type="button" class="grp-toggle" aria-expanded="${open}" aria-label="${m} を${open ? '畳む' : '開く'}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.2 5 6.8 8.5 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><i class="dot"></i><span class="name">${m}</span><span class="count">${taskKeys.length} 件</span>`;
+      glab.querySelector('button').addEventListener('click', () => { open ? collapsed.add(m) : collapsed.delete(m); render(); });
+      labelCol.appendChild(glab);
+
+      const grow = el('div', 'row group');
+      grow.style.height = `${ROW_H}px`;
+      grow.appendChild(bgCells());
+      const strip = el('div', 'strip');
+      dayList.forEach(d => {
+        // 未完了の予定を数える。遅延中の予定は今日まで（はみ出し分）も抱えているとみなす
+        const n = isOff(d) ? 0 : mine.filter(s => !s.done && s.s <= d && d <= (isDelayed(s) ? TODAY : s.e)).length;
+        const i = el('i', n >= 3 ? 'l3' : n === 2 ? 'l2' : n === 1 ? 'l1' : '', n >= 2 ? String(n) : '');
+        if (n) i.title = `${d} ・ ${n} 本`;
+        strip.appendChild(i);
+      });
+      grow.appendChild(strip);
+      timeCol.appendChild(grow);
+
+      if (!open) return;
+      taskKeys.forEach(tk => {
+        const list = mine.filter(s => s.t === tk);
+        const { lane, count } = assignLanes(list);
+        const h = ROW_H + (count - 1) * LANE_H;
+        const t = TASKS[tk];
+        const lab = el('div', 'lab task', `<i class="sw" style="background:${t.color}"></i><span class="ver">${t.ver}</span><span class="name">${t.name}</span>`);
+        lab.style.height = `${h}px`;
+        lab.title = `${t.ver} / ${t.name}`;
+        labelCol.appendChild(lab);
+        const row = el('div', 'row');
+        row.style.height = `${h}px`;
+        row.appendChild(bgCells());
+        list.forEach(s => drawBar(row, s, PAD + lane.get(s) * LANE_H));
+        timeCol.appendChild(row);
+      });
+    });
+
+    const tl = el('div', 'today-line');
+    tl.style.left = `${idx(TODAY) * DAY_W() + DAY_W() / 2 - 1}px`;
+    tl.style.top = `var(--head-h)`;
+    timeCol.appendChild(tl);
+
+    g.appendChild(labelCol);
+    g.appendChild(timeCol);
+
+    document.getElementById('viewCurrent').setAttribute('aria-pressed', String(mode === 'current'));
+    document.getElementById('viewProposed').setAttribute('aria-pressed', String(mode === 'proposed'));
+    const ta = document.getElementById('toggleAll');
+    ta.hidden = mode !== 'proposed';
+    ta.textContent = collapsed.size === MEMBERS.length ? 'すべて開く' : 'すべて畳む';
+    document.getElementById('legend').querySelectorAll('span').forEach((s, i) => { s.hidden = mode === 'current' && i < 3; });
+  }
+
+  document.getElementById('viewCurrent').addEventListener('click', () => { mode = 'current'; render(); });
+  document.getElementById('viewProposed').addEventListener('click', () => { mode = 'proposed'; render(); });
+  document.getElementById('toggleAll').addEventListener('click', () => {
+    if (collapsed.size === MEMBERS.length) collapsed.clear(); else MEMBERS.forEach(m => collapsed.add(m));
+    render();
+  });
+  window.addEventListener('resize', render);
+  render();
+
+  // 初期表示で今日付近が見えるように少しスクロール
+  const sc = document.querySelector('.gantt-scroll');
+  if (sc.clientWidth < sc.scrollWidth) sc.scrollLeft = Math.max(0, idx(TODAY) * DAY_W() - sc.clientWidth / 2);
+})();
+</script>
