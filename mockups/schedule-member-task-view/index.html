@@ -112,6 +112,18 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 .gantt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .gantt { position: relative; display: grid; grid-template-columns: var(--label-w) max-content; min-width: max-content; }
 .col-label { position: sticky; left: 0; z-index: 3; background: var(--surface); border-right: 1px solid var(--border); }
+/* 見出し欄の幅を変える境目（PC）。ドラッグで調整、ダブルクリックで一番長い見出しに合わせる */
+.resizer { position: absolute; top: 0; right: -4px; width: 8px; height: 100%; cursor: col-resize; z-index: 4; touch-action: none; }
+.resizer::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 2px; background: transparent; transition: background .15s; }
+.resizer:hover::after, .resizer.dragging::after { background: var(--accent); }
+@media (hover: none) { .resizer { display: none; } }
+/* 省略された見出しの全文 */
+.fulltip {
+  position: fixed; z-index: 20; max-width: min(360px, calc(100vw - 32px));
+  background: var(--text); color: var(--surface); font-size: 12.5px; line-height: 1.5;
+  padding: 6px 10px; border-radius: 6px; box-shadow: var(--shadow); pointer-events: none;
+}
+.fulltip small { display: block; opacity: .7; font-size: 11px; }
 .col-time { position: relative; }
 
 .head { height: var(--head-h); display: flex; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface-2); }
@@ -127,9 +139,15 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 .lab { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border-light); overflow: hidden; }
 .lab .name { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: 0 0 7px; }
-.lab.task { padding-left: 30px; }
-.lab.task .ver { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
-.lab.task .name { font-weight: 500; font-size: 13px; }
+.lab.task { padding-left: 30px; padding-right: 10px; }
+/* タスク名は 2 行まで折り返し（行が高ければ 3 行以上）、入らない分だけ … にする */
+.lab.task .text {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--lines, 2);
+  overflow: hidden; overflow-wrap: anywhere; line-break: strict;
+  font-size: 12.5px; line-height: 1.3; font-weight: 500; min-width: 0;
+}
+.lab.task .ver { font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; margin-right: 4px; font-weight: 600; }
+.lab.task.clipped { cursor: help; }
 .lab.task .sw { width: 4px; align-self: stretch; margin-block: 9px; border-radius: 2px; flex: 0 0 4px; }
 .lab.group { background: var(--surface-2); }
 .grp-toggle { font: inherit; border: 0; background: none; color: var(--text-2); cursor: pointer; padding: 2px; width: 20px; display: grid; place-items: center; border-radius: 4px; }
@@ -189,11 +207,10 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 .caption { font-size: 12.5px; color: var(--text-3); margin: 0; }
 
 @media (max-width: 640px) {
-  :root { --label-w: 128px; }
+  :root { --label-w: min(40vw, 160px); }
   h1 { font-size: 20px; }
   .wrap { padding: 20px 16px 40px; }
   .lab.task { padding-left: 16px; }
-  .lab.task .ver { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .grp-toggle svg { transition: none; } }
 </style>
@@ -253,11 +270,12 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
         <li><span class="tag care">行数</span>表示範囲のタスク数ぶん行が増える（このサンプルの 9 月中心・3 か月表示で 担当者 3 ＋ タスク 14 行。1 か月表示なら 8 行）</li>
         <li><span class="tag care">入れ替わり</span>月を動かすと行の顔ぶれが変わる。横は、表示中のタスクの予定がはみ出す分だけ広げる</li>
         <li><span class="tag care">操作</span>縦ドラッグで別担当者のグループに落とすと担当者変更。同じ担当者の別タスク行へは日付の移動だけにする</li>
+        <li><span class="tag care">長い名前</span>見出しは 2 行まで折り返し（段が増えた行はもっと）、入らない分は「…」。省略された見出しは PC ならマウスを乗せる、スマホなら長押しで全文。PC は見出し欄の境目をダブルクリックすると一番長い見出しの幅に合わせる（上限は画面幅の 40%）。既存のタスク別表示にも同じ方式を使う</li>
         <li><span class="tag care">並び</span>タスクの並びは「タスク着手順」→ 開始日順。見出しの並びは今の担当者順を使う</li>
       </ul>
     </section>
   </div>
-  <p class="caption">サンプルデータ（2026 年 7〜12 月）・今日は 2026-09-24（木）で固定。表示モードは今の「担当者別／タスク別」を残したまま、3 つ目のモード「担当者×タスク」として追加する想定。「今の担当者別」は現行どおり、フィルタに合う予定がすべて入るところまで横に広がる。</p>
+  <p class="caption">サンプルデータ（2026 年 7〜12 月）・今日は 2026-09-24（木）で固定。本実装では新しい表示モードとして追加し、設定で今までの表示と切り替えられるようにする。「今の担当者別」は現行どおり、フィルタに合う予定がすべて入るところまで横に広がる。</p>
 </div>
 
 <script>
@@ -269,11 +287,11 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 
   const TASKS = {
     L: { ver: 'V2.3', name: 'ログイン画面改修', color: 'var(--t5)' },
-    K: { ver: 'V2.3', name: '権限管理 不具合修正', color: 'var(--t2)' },
-    A: { ver: 'V2.4', name: '帳票A出力改修', color: 'var(--t1)' },
+    K: { ver: 'V2.3', name: '権限管理 不具合修正（ロール継承時に閲覧権限が外れる件）', color: 'var(--t2)' },
+    A: { ver: 'V2.4', name: '帳票A出力改修（請求書PDFのレイアウト変更と電子帳簿保存法への対応）', color: 'var(--t1)' },
     M: { ver: 'V2.4', name: 'マスタ画面追加', color: 'var(--t3)' },
     S: { ver: 'V2.4', name: '集計バッチ高速化', color: 'var(--t4)' },
-    N: { ver: 'V2.5', name: '通知機能', color: 'var(--t6)' },
+    N: { ver: 'V2.5', name: '通知機能（メール・Slack連携と配信スケジュール設定）', color: 'var(--t6)' },
     C: { ver: 'V2.5', name: 'CSV取込', color: 'var(--t7)' },
   };
   const MEMBERS = ['田中', '佐藤', '鈴木'];
@@ -455,9 +473,11 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
         const { lane, count } = assignLanes(list);
         const rh = ROW_H + (count - 1) * LANE_H;
         const t = TASKS[tk];
-        const lab = el('div', 'lab task', `<i class="sw" style="background:${t.color}"></i><span class="ver">${t.ver}</span><span class="name">${t.name}</span>`);
+        const lab = el('div', 'lab task', `<i class="sw" style="background:${t.color}"></i><span class="text"><span class="ver">${t.ver}</span>${t.name}</span>`);
         lab.style.height = `${rh}px`;
-        lab.title = `${t.ver} / ${t.name}`;
+        // 行が高い（段が増えた）ほど多くの行数まで折り返せる
+        lab.style.setProperty('--lines', String(Math.max(2, Math.floor((rh - 8) / (12.5 * 1.3)))));
+        lab.dataset.full = `${t.ver} / ${t.name}`;
         labelCol.appendChild(lab);
         const row = el('div', 'row');
         row.style.height = `${rh}px`;
@@ -476,6 +496,14 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 
     g.appendChild(labelCol);
     g.appendChild(timeCol);
+    const rz = el('div', 'resizer');
+    rz.title = 'ドラッグで幅を変更・ダブルクリックで一番長い見出しに合わせる';
+    labelCol.appendChild(rz);
+    bindResizer(rz);
+    labelCol.querySelectorAll('.lab.task').forEach(lab => {
+      const tx = lab.querySelector('.text');
+      lab.classList.toggle('clipped', tx.scrollHeight > tx.clientHeight + 1);
+    });
 
     // コントロールと範囲の表示
     document.getElementById('monthLabel').textContent = `${month.y}年${month.m}月`;
@@ -496,6 +524,75 @@ h1 { font-size: 24px; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: 
 
     return { idx, start, end };
   }
+
+  // ---------- 見出し欄の幅 ----------
+  let labelW = null; // null = CSS の既定幅
+  const gantt = document.getElementById('gantt');
+  const applyLabelW = () => { if (labelW) gantt.style.setProperty('--label-w', `${labelW}px`); else gantt.style.removeProperty('--label-w'); };
+  const maxLabelW = () => Math.round(window.innerWidth * 0.4);
+  function fitLabelWidth() {
+    // 見出しを 1 行で書いたときの最大幅（版数・色の目印・余白込み）に合わせる。上限は画面幅の 40%
+    const probe = el('span');
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:12.5px;font-weight:500;';
+    document.body.appendChild(probe);
+    let widest = 0;
+    gantt.querySelectorAll('.lab').forEach(lab => {
+      const tx = lab.querySelector('.text') || lab.querySelector('.name');
+      probe.textContent = tx.textContent;
+      const extra = lab.classList.contains('task') ? 30 + 4 + 8 + 10 + 6 : 12 + 20 + 7 + 16 + 60;
+      widest = Math.max(widest, probe.getBoundingClientRect().width + extra);
+    });
+    probe.remove();
+    labelW = Math.min(maxLabelW(), Math.max(160, Math.ceil(widest)));
+    applyLabelW();
+    draw(false);
+  }
+  function bindResizer(rz) {
+    rz.addEventListener('dblclick', fitLabelWidth);
+    rz.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      rz.setPointerCapture(ev.pointerId);
+      rz.classList.add('dragging');
+      const startX = ev.clientX;
+      const startW = gantt.querySelector('.col-label').getBoundingClientRect().width;
+      let moved = false;
+      const move = (e) => {
+        if (Math.abs(e.clientX - startX) < 2) return;
+        moved = true;
+        labelW = Math.min(maxLabelW(), Math.max(120, Math.round(startW + e.clientX - startX)));
+        applyLabelW();
+      };
+      // ドラッグしたときだけ描き直す（クリックだけで描き直すと境目が作り直され、ダブルクリックが届かない）
+      const up = () => {
+        rz.classList.remove('dragging'); rz.removeEventListener('pointermove', move); rz.removeEventListener('pointerup', up);
+        if (moved) draw(false);
+      };
+      rz.addEventListener('pointermove', move);
+      rz.addEventListener('pointerup', up);
+    });
+  }
+
+  // ---------- 省略された見出しの全文（PC: ホバー / スマホ: 長押し） ----------
+  const tip = el('div', 'fulltip'); tip.hidden = true; document.body.appendChild(tip);
+  const showTip = (lab) => {
+    const [ver, ...rest] = lab.dataset.full.split(' / ');
+    tip.innerHTML = `<small>${ver}</small>${rest.join(' / ')}`;
+    tip.hidden = false;
+    const r = lab.getBoundingClientRect();
+    const tw = tip.getBoundingClientRect();
+    tip.style.left = `${Math.max(16, Math.min(r.left + 24, window.innerWidth - tw.width - 16))}px`;
+    tip.style.top = `${r.bottom + 4 + tw.height > window.innerHeight ? r.top - tw.height - 4 : r.bottom + 4}px`;
+  };
+  const hideTip = () => { tip.hidden = true; };
+  gantt.addEventListener('mouseover', (e) => { const lab = e.target.closest('.lab.task.clipped'); if (lab) showTip(lab); });
+  gantt.addEventListener('mouseout', (e) => { if (e.target.closest('.lab.task.clipped')) hideTip(); });
+  let pressTimer = null;
+  gantt.addEventListener('touchstart', (e) => {
+    const lab = e.target.closest('.lab.task.clipped');
+    if (!lab) return;
+    pressTimer = setTimeout(() => showTip(lab), 450);
+  }, { passive: true });
+  ['touchend', 'touchmove', 'touchcancel'].forEach(t => gantt.addEventListener(t, () => { clearTimeout(pressTimer); setTimeout(hideTip, 1600); }, { passive: true }));
 
   let last;
   const draw = (scrollToToday) => {
