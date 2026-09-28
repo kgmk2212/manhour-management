@@ -220,52 +220,52 @@ test.describe("ガントの縦スクロール", () => {
     await expect(page.locator(".tab-content.active")).toHaveCount(1);
   };
 
-  test("PC: 外枠の高さを超える行は、外枠の中を縦スクロールして見られる（見出し欄と表が一緒に動く）", async ({ page }) => {
+  test("PC: 外枠の高さを超える行は、ガントの中を縦スクロールして見られ、日付の行と見出し欄は固定される", async ({ page }) => {
     await openMany(page);
-    // ガントを描き終えて外枠が溢れるまで待つ（並列実行で負荷が高いと、描画前に測ってしまうことがある）
-    await expect.poll(() => page.evaluate(() => {
-      const o = document.getElementById("ganttOuter");
+    const SC = "ganttTimelineScroll";
+    // ガントを描き終えて溢れるまで待つ（並列実行で負荷が高いと、描画前に測ってしまうことがある）
+    await expect.poll(() => page.evaluate((id) => {
+      const o = document.getElementById(id);
       return o ? o.scrollHeight - o.clientHeight : 0;
-    })).toBeGreaterThan(0);
-    const m = await page.evaluate(() => {
-      const o = document.getElementById("ganttOuter");
+    }, SC)).toBeGreaterThan(0);
+    const m = await page.evaluate((id) => {
+      const o = document.getElementById(id);
       return { client: o.clientHeight, scroll: o.scrollHeight, canvas: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().height };
-    });
-    expect(m.scroll).toBeGreaterThan(m.client);
+    }, SC);
     // scrollHeight は整数、canvas の高さは小数（1970 と 1970.0001 など）なので 1px 未満の差は許す
     expect(m.scroll).toBeGreaterThanOrEqual(Math.floor(m.canvas));
-    const box = await page.locator("#ganttOuter").boundingBox();
+
+    // 何もしていないときは、日付の行の写しは canvas の日付の行にぴったり重なっている
+    const rest = await page.evaluate(() => ({
+      sticky: document.getElementById("ganttStickyRow").getBoundingClientRect().top,
+      canvas: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().top,
+    }));
+    expect(Math.abs(rest.sticky - rest.canvas)).toBeLessThanOrEqual(1);
+
+    const box = await page.locator(`#${SC}`).boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.wheel(0, 400);
-    await expect.poll(() => page.evaluate(() => document.getElementById("ganttOuter").scrollTop)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate((id) => document.getElementById(id).scrollTop, SC)).toBeGreaterThan(0);
+    await page.mouse.wheel(300, 0);
+    await expect.poll(() => page.evaluate((id) => document.getElementById(id).scrollLeft, SC)).toBeGreaterThan(0);
     await page.waitForTimeout(100);
-    const after = await page.evaluate(() => ({
-      outer: document.getElementById("ganttOuter").scrollTop,
-      labelTop: document.getElementById("ganttLabelCanvas").getBoundingClientRect().top,
-      timelineTop: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().top,
-    }));
-    expect(after.outer).toBeGreaterThan(0);
-    expect(after.labelTop).toBeCloseTo(after.timelineTop, 0);
-
-    // 日付の行が外枠の上端に固定されて見えている（写しの canvas に日付の文字が描かれている）
-    const sticky = await page.evaluate(() => {
+    const after = await page.evaluate((id) => {
+      const sc = document.getElementById(id).getBoundingClientRect();
+      const row = document.getElementById("ganttStickyRow").getBoundingClientRect();
+      const label = document.getElementById("ganttLabelScroll").getBoundingClientRect();
+      const lc = document.getElementById("ganttLabelCanvas").getBoundingClientRect();
+      const tc = document.getElementById("ganttTimelineCanvas").getBoundingClientRect();
       const el = document.getElementById("ganttStickyHeader");
-      const o = document.getElementById("ganttOuter").getBoundingClientRect();
-      const b = el.getBoundingClientRect();
       const data = el.getContext("2d").getImageData(0, 0, el.width, el.height).data;
       const colors = new Set();
       for (let i = 0; i < data.length; i += 4 * 97) colors.add(`${data[i]},${data[i + 1]},${data[i + 2]}`);
-      return { hidden: el.hidden, topDiff: Math.abs(b.top - o.top), widthDiff: Math.abs(b.width - o.width), colors: colors.size };
-    });
-    expect(sticky.hidden).toBe(false);
-    expect(sticky.topDiff).toBeLessThanOrEqual(2);
-    expect(sticky.widthDiff).toBeLessThanOrEqual(20);
-    expect(sticky.colors).toBeGreaterThan(3);
-
-    // 一番上まで戻すと写しは消える
-    await page.mouse.wheel(0, -2000);
-    await page.waitForTimeout(200);
-    expect(await page.evaluate(() => document.getElementById("ganttStickyHeader").hidden)).toBe(true);
+      return { scTop: sc.top, scLeft: sc.left, rowTop: row.top, labelLeft: label.left, labelTop: lc.top, timelineTop: tc.top, colors: colors.size };
+    }, SC);
+    // 日付の行は上に、見出し欄は左に固定され、見出し欄と表は縦に一緒に動く
+    expect(Math.abs(after.rowTop - after.scTop)).toBeLessThanOrEqual(1);
+    expect(Math.abs(after.labelLeft - after.scLeft)).toBeLessThanOrEqual(1);
+    expect(after.labelTop).toBeCloseTo(after.timelineTop, 0);
+    expect(after.colors).toBeGreaterThan(3); // 写しに日付の文字が描かれている
   });
 });
 
@@ -326,7 +326,7 @@ test.describe("ガントの縦スクロール（スマホ）", () => {
     await page.goto("/index.html");
     await expect(page.locator(".tab-content.active")).toHaveCount(1);
     // ガントの外枠を画面の上寄りに出してから、表の中ほどを上へスワイプする
-    await page.locator("#ganttOuter").evaluate((el) => window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 80));
+    await page.locator("#ganttTimelineScroll").evaluate((el) => window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 80));
     await page.waitForTimeout(100);
     const winBefore = await page.evaluate(() => window.scrollY);
     const box = await page.locator("#ganttTimelineScroll").boundingBox();
@@ -336,7 +336,7 @@ test.describe("ガントの縦スクロール（スマホ）", () => {
     for (let i = 1; i <= 10; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - i * 20 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await page.waitForTimeout(400);
-    const after = await page.evaluate(() => ({ outer: document.getElementById("ganttOuter").scrollTop, win: window.scrollY }));
+    const after = await page.evaluate(() => ({ outer: document.getElementById("ganttTimelineScroll").scrollTop, win: window.scrollY }));
     expect(after.outer).toBeGreaterThan(0);
     expect(after.win).toBe(winBefore);
   });

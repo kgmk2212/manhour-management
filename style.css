@@ -2336,12 +2336,6 @@ table tr[style*="1565c0"] th:first-child {
     border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--surface);
-    display: flex;
-    /* 中の見出し欄・表を外枠の高さに引き伸ばさない（引き伸ばすと中身がはみ出さず、max-height を超えた行が
-       切れて縦スクロールもできなかった）。外枠が縦スクロールし、見出し欄と表が一緒に動く */
-    align-items: flex-start;
-    overflow-y: auto;
-    max-height: calc(600px * var(--gantt-scale));
 }
 
 .gantt-container {
@@ -2354,12 +2348,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 /* 縦スクロール時に上端へ重ねる日付の行の写し（js/schedule-render.js updateStickyHeader） */
-.gantt-sticky-header {
-    position: absolute;
-    z-index: 3;
-    pointer-events: none;
-    box-shadow: 0 2px 4px rgba(26, 24, 20, 0.06);
-}
+
 
 #ganttCanvas,
 #ganttLabelCanvas,
@@ -2371,7 +2360,39 @@ table tr[style*="1565c0"] th:first-child {
     flex-shrink: 0;
     overflow-x: auto;
     overflow-y: hidden;
+    /* 横スクロールしても見出し欄は左に残る */
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface);
 }
+
+/* 表の本体（見出し欄・リサイズハンドル・表の canvas を横に並べる） */
+.gantt-body {
+    display: flex;
+    align-items: flex-start;
+    width: max-content;
+    min-width: 100%;
+}
+
+/* 日付の行の写し（上に固定）。canvas の日付の行に重ね、縦スクロールしたときだけ上端に残る */
+.gantt-sticky-row {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    width: max-content;
+    pointer-events: none;
+}
+.gantt-sticky-corner {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    display: block;
+    flex-shrink: 0;
+}
+.gantt-sticky-gap { flex-shrink: 0; background: var(--surface); }
+.gantt-sticky-header { display: block; flex-shrink: 0; }
 
 .gantt-resize-handle {
     align-self: stretch;
@@ -2379,7 +2400,8 @@ table tr[style*="1565c0"] th:first-child {
     flex-shrink: 0;
     cursor: col-resize;
     background: transparent;
-    position: relative;
+    /* 見出し欄の右隣に固定（left は描画時に見出し欄の幅を入れる） */
+    position: sticky;
     z-index: 2;
     transition: background 0.15s;
 }
@@ -2409,9 +2431,9 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .gantt-timeline-scroll {
-    flex: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
+    /* 縦横のスクロールをこの 1 つの領域で受け持つ（見出し欄・日付の行は sticky で固定） */
+    overflow: auto;
+    max-height: calc(600px * var(--gantt-scale));
 }
 
 .gantt-header {

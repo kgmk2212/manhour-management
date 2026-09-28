@@ -269,7 +269,8 @@ export class GanttChartRenderer {
         this.labelCanvas.id = 'ganttLabelCanvas';
         this.labelCtx = this.labelCanvas.getContext('2d');
 
-        // timeline scroll container
+        // 縦横のスクロールを 1 つの領域（#ganttTimelineScroll）にまとめる。見出し欄は左に、日付の行は上に
+        // sticky で固定する（スクロール中に JS で描き直さないので、スマホの慣性スクロールでも揺れない）
         this.scrollContainer = document.createElement('div');
         this.scrollContainer.className = 'gantt-timeline-scroll';
         this.scrollContainer.id = 'ganttTimelineScroll';
@@ -279,35 +280,38 @@ export class GanttChartRenderer {
         this.timelineCanvas.id = 'ganttTimelineCanvas';
         this.timelineCtx = this.timelineCanvas.getContext('2d');
 
-        // label scroll container（モバイル時のラベル横スクロール用）
+        // label scroll container（左に固定。モバイル時はラベルだけ横スクロールできる）
         this.labelScrollContainer = document.createElement('div');
         this.labelScrollContainer.className = 'gantt-label-scroll';
         this.labelScrollContainer.id = 'ganttLabelScroll';
         this.labelScrollContainer.appendChild(this.labelCanvas);
 
-        this.scrollContainer.appendChild(this.timelineCanvas);
-        outer.appendChild(this.labelScrollContainer);
-
-        // PC時のみリサイズハンドルを追加
+        // PC時のみリサイズハンドルを追加（見出し欄の右隣に固定）
         this.resizeHandle = document.createElement('div');
         this.resizeHandle.className = 'gantt-resize-handle';
-        outer.appendChild(this.resizeHandle);
 
-        outer.appendChild(this.scrollContainer);
-        container.appendChild(outer);
-
-        // 縦スクロールしても日付の行が見えるよう、日付の行の写しを上に重ねる（スクロールしたときだけ表示）
-        // 日付の行は各 canvas の上端に描いているので、行の座標系を変えずに済むよう写しで固定する
+        // 日付の行の写し（上に固定）。描き終えたときに各 canvas の上端から 1 回だけ写す
+        this.stickyRow = document.createElement('div');
+        this.stickyRow.className = 'gantt-sticky-row';
+        this.stickyRow.id = 'ganttStickyRow';
+        this.stickyCorner = document.createElement('canvas');
+        this.stickyCorner.className = 'gantt-sticky-corner';
+        this.stickyGap = document.createElement('div');
+        this.stickyGap.className = 'gantt-sticky-gap';
         this.stickyHeader = document.createElement('canvas');
         this.stickyHeader.className = 'gantt-sticky-header';
         this.stickyHeader.id = 'ganttStickyHeader';
-        this.stickyHeader.hidden = true;
-        container.appendChild(this.stickyHeader);
-        const onScroll = () => this.scheduleStickyHeaderUpdate();
-        outer.addEventListener('scroll', onScroll, { passive: true });
-        this.scrollContainer.addEventListener('scroll', onScroll, { passive: true });
-        this.labelScrollContainer.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll, { passive: true });
+        this.stickyRow.append(this.stickyCorner, this.stickyGap, this.stickyHeader);
+
+        const body = document.createElement('div');
+        body.className = 'gantt-body';
+        body.append(this.labelScrollContainer, this.resizeHandle, this.timelineCanvas);
+
+        this.scrollContainer.append(this.stickyRow, body);
+        outer.appendChild(this.scrollContainer);
+        container.appendChild(outer);
+        // 見出し欄だけを横スクロールしたとき（モバイル）は、角の写しを描き直す
+        this.labelScrollContainer.addEventListener('scroll', () => this.updateStickyHeader(), { passive: true });
 
         this.dualCanvasInitialized = true;
 
@@ -319,62 +323,50 @@ export class GanttChartRenderer {
         this.setupResizeHandle();
     }
 
-    /** 次のフレームで固定の日付の行を描き直す（スクロール中の連続呼び出しをまとめる） */
+    /** 固定の日付の行を描き直す（描き終えたときに呼ぶ。スクロール中は呼ばない） */
     scheduleStickyHeaderUpdate() {
-        if (this._stickyRaf) return;
-        this._stickyRaf = requestAnimationFrame(() => {
-            this._stickyRaf = null;
-            this.updateStickyHeader();
-        });
+        this.updateStickyHeader();
     }
 
     /**
-     * 固定の日付の行: 外枠が縦スクロールしているときだけ、見出し欄と表の日付の行を写して外枠の上端に重ねる
+     * 固定の日付の行: 見出し欄と表の canvas の上端（日付の行）を写し、sticky で上に固定した行に描く。
+     * 行は canvas の日付の行にぴったり重ねてあり（margin-bottom で高さを打ち消す）、縦にスクロールしたときだけ
+     * 上端に残る。横スクロールは表と同じ領域なのでブラウザがそのまま一緒に動かす
      */
     updateStickyHeader() {
-        const sticky = this.stickyHeader;
-        const outer = document.getElementById('ganttOuter');
-        if (!sticky || !outer || !this.labelCanvas || !this.timelineCanvas) return;
-        if (outer.scrollTop <= 0) { sticky.hidden = true; return; }
-
-        const container = sticky.parentElement;
-        const cBox = container.getBoundingClientRect();
-        const oBox = outer.getBoundingClientRect();
-        const lBox = this.labelScrollContainer.getBoundingClientRect();
-        const tBox = this.scrollContainer.getBoundingClientRect();
+        if (!this.stickyRow || !this.labelCanvas || !this.timelineCanvas) return;
         const scale = this.uiScale || 1;
-        const cssW = oBox.width - (outer.offsetWidth - outer.clientWidth); // 縦スクロールバーの幅を除く
-        const cssH = Math.ceil(HEADER_HEIGHT * scale) + 1;
-        const dpr = window.devicePixelRatio || 1;
+        const cssH = HEADER_HEIGHT * scale;
+        const labelCssW = this.labelScrollContainer.clientWidth || this.labelWidth * scale;
+        const handleCssW = this.resizeHandle && this.resizeHandle.offsetParent ? this.resizeHandle.offsetWidth : 0;
+        this.stickyRow.style.height = `${cssH}px`;
+        this.stickyRow.style.marginBottom = `${-cssH}px`;
+        this.stickyGap.style.width = `${handleCssW}px`;
 
-        // 端数で上に 1px の隙間ができ、下のバーが覗くのを防ぐため上端は切り捨てる
-        sticky.style.left = `${oBox.left - cBox.left + outer.clientLeft}px`;
-        sticky.style.top = `${Math.floor(oBox.top - cBox.top + outer.clientTop)}px`;
-        sticky.style.width = `${cssW}px`;
-        sticky.style.height = `${cssH}px`;
-        sticky.width = Math.round(cssW * dpr);
-        sticky.height = Math.round(cssH * dpr);
-        const ctx = sticky.getContext('2d');
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = HEADER_BG;
-        ctx.fillRect(0, 0, sticky.width, sticky.height);
-
-        // 見出し欄・表それぞれの見えている範囲（横スクロール位置から）の日付の行を、画面上の位置に写す
-        // srcRatio: 元 canvas の raster px / logical px（画素数の上限で解像度を下げていることがある）
-        const copy = (src, box, scrollLeft, srcRatio) => {
-            const left = box.left - oBox.left - outer.clientLeft;     // 重ねる canvas 上の位置（CSS px）
-            const width = Math.min(box.width, cssW - left);           // 写す幅（CSS px）
-            if (width <= 0) return;
-            ctx.drawImage(src,
-                (scrollLeft / scale) * srcRatio, 0, (width / scale) * srcRatio, HEADER_HEIGHT * srcRatio,
-                left * dpr, 0, width * dpr, HEADER_HEIGHT * scale * dpr);
+        const copy = (dst, src, srcRatio, srcX, cssW) => {
+            const w = Math.max(1, Math.round(cssW * srcRatio / scale));
+            const h = Math.max(1, Math.round(HEADER_HEIGHT * srcRatio));
+            if (dst.width !== w) dst.width = w;
+            if (dst.height !== h) dst.height = h;
+            dst.style.width = `${cssW}px`;
+            dst.style.height = `${cssH}px`;
+            const ctx = dst.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(src, srcX * srcRatio / scale, 0, w, h, 0, 0, w, h);
         };
-        copy(this.labelCanvas, lBox, this.labelScrollContainer.scrollLeft, this.labelRasterScale || (this.dpr || 1) * scale);
-        copy(this.timelineCanvas, tBox, this.scrollContainer.scrollLeft, this.timelineRasterScale || (this.dpr || 1) * scale);
-        // 下端の区切り線
-        ctx.fillStyle = BORDER;
-        ctx.fillRect(0, sticky.height - Math.max(1, dpr), sticky.width, Math.max(1, dpr));
-        sticky.hidden = false;
+        const labelRatio = this.labelRasterScale || (this.dpr || 1) * scale;
+        const timelineRatio = this.timelineRasterScale || (this.dpr || 1) * scale;
+        copy(this.stickyCorner, this.labelCanvas, labelRatio, this.labelScrollContainer.scrollLeft, labelCssW);
+        copy(this.stickyHeader, this.timelineCanvas, timelineRatio, 0, this.timelineWidth * scale);
+    }
+
+    /** 表として見えている横幅（CSS px。左に固定した見出し欄とリサイズハンドルを除く） */
+    timelineViewportWidth() {
+        if (!this.scrollContainer) return 0;
+        const labelCssW = this.labelScrollContainer ? this.labelScrollContainer.offsetWidth : 0;
+        const handleCssW = this.resizeHandle && this.resizeHandle.offsetParent ? this.resizeHandle.offsetWidth : 0;
+        return Math.max(0, this.scrollContainer.clientWidth - labelCssW - handleCssW);
     }
 
     /**
@@ -762,6 +754,7 @@ export class GanttChartRenderer {
         // リサイズハンドルの表示制御（PC時のみ表示）
         if (this.resizeHandle) {
             this.resizeHandle.style.display = isMobile ? 'none' : '';
+            this.resizeHandle.style.left = `${this.labelWidth * this.uiScale}px`;
         }
 
         // 描画
@@ -2423,7 +2416,7 @@ export class GanttChartRenderer {
         const today = new Date();
         if (today < this.rangeStart || today > this.rangeEnd) return;
         const x = this.dateToX(today);
-        const containerWidth = this.scrollContainer.clientWidth;
+        const containerWidth = this.timelineViewportWidth();
         this.scrollContainer.scrollTo({
             left: Math.max(0, x - containerWidth / 3),
             behavior: smooth ? 'smooth' : 'auto'
@@ -2442,7 +2435,7 @@ export class GanttChartRenderer {
      */
     getVisibleCenterMonth() {
         if (!this.scrollContainer) return null;
-        const centerX = this.scrollContainer.scrollLeft + this.scrollContainer.clientWidth / 2;
+        const centerX = this.scrollContainer.scrollLeft + this.timelineViewportWidth() / 2;
         const date = this.xToDate(centerX);
         if (!date) return null;
         return {
@@ -3265,8 +3258,10 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                 if (scrollContainer) {
                     const scrollRect = scrollContainer.getBoundingClientRect();
                     const edgeZone = 40; // 端から40px以内でスクロール開始
-                    const cursorX = event.clientX - scrollRect.left;
-                    const containerWidth = scrollRect.width;
+                    // 見出し欄（左に固定）の右端から測る
+                    const viewLeft = scrollRect.left + (scrollRect.width - renderer.timelineViewportWidth());
+                    const cursorX = event.clientX - viewLeft;
+                    const containerWidth = renderer.timelineViewportWidth();
 
                     if (dragState.autoScrollId) {
                         cancelAnimationFrame(dragState.autoScrollId);
@@ -3783,8 +3778,10 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                 if (scrollContainer) {
                     const scrollRect = scrollContainer.getBoundingClientRect();
                     const edgeZone = 40;
-                    const cursorX = touch.clientX - scrollRect.left;
-                    const containerWidth = scrollRect.width;
+                    // 見出し欄（左に固定）の右端から測る
+                    const viewLeft = scrollRect.left + (scrollRect.width - renderer.timelineViewportWidth());
+                    const cursorX = touch.clientX - viewLeft;
+                    const containerWidth = renderer.timelineViewportWidth();
 
                     if (dragState.autoScrollId) {
                         cancelAnimationFrame(dragState.autoScrollId);
