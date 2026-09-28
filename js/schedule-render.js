@@ -765,7 +765,7 @@ export class GanttChartRenderer {
         this.drawGrid();
         this.drawMonthSeparators();
         this.drawRows(rows);
-        // 今日の線は行の背景・バーより後に描く（先に描くと行の背景に塗りつぶされて見えなかった）
+        // 今日の線は行ごとにバーの下へ描いた（drawTodayMarkBehindBars）。ここでは行の無い下の余白と日付の行の印
         this.drawTodayLine();
         this.drawLabelColumn(rows);
         this.drawSelectionRings(selectedScheduleIds);
@@ -1108,29 +1108,38 @@ export class GanttChartRenderer {
      * 今日の線を描画
      * Ink & Amber: ソリッド2px赤ライン + 上部に丸インジケータ
      */
-    drawTodayLine() {
+    /** @returns {number|null} 今日の列の左端 x（表示範囲外なら null） */
+    todayColumnX() {
         const today = new Date();
         today.setHours(12, 0, 0, 0);
+        if (today < this.rangeStart || today > this.rangeEnd) return null;
+        return this.dateToX(today);
+    }
 
-        if (today < this.rangeStart || today > this.rangeEnd) return;
+    /**
+     * 今日の線を、行の背景の上・バーの下に描く（バーや遅延のはみ出しを縦に切らないよう、その下に回す）
+     * @param {number} y - 行の上端
+     * @param {number} h - 行の高さ
+     */
+    drawTodayMarkBehindBars(y, h) {
+        const colX = this.todayColumnX();
+        if (colX === null) return;
+        this.timelineCtx.fillStyle = TODAY_LINE;
+        this.timelineCtx.fillRect(colX + DAY_WIDTH / 2 - 1, y, 2, h);
+    }
 
+    /** 今日の線の残り（行の無い下の余白）と、日付の行の小さな丸 */
+    drawTodayLine() {
+        const colX = this.todayColumnX();
+        if (colX === null) return;
         const ctx = this.timelineCtx;
-        const x = this.dateToX(today) + DAY_WIDTH / 2;
-
-        // ソリッドライン（--danger）— ボディ部分のみ。バーの上に重なるので、バーの文字が読めるよう少し透かす
-        ctx.save();
-        ctx.globalAlpha = 0.8;
-        ctx.strokeStyle = TODAY_LINE;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, HEADER_HEIGHT);
-        ctx.lineTo(x, this.totalHeight);
-        ctx.stroke();
-        ctx.restore();
+        const x = colX + DAY_WIDTH / 2;
+        const rowsBottom = this.rowLayout.totalHeight;
+        ctx.fillStyle = TODAY_LINE;
+        ctx.fillRect(x - 1, rowsBottom, 2, this.totalHeight - rowsBottom);
 
         // 月名行と日付行の境界に小さな丸インジケータ
         const monthRowH = 20;
-        ctx.fillStyle = TODAY_LINE;
         ctx.beginPath();
         ctx.arc(x, monthRowH, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -1203,6 +1212,9 @@ export class GanttChartRenderer {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
                 ctx.fillRect(0, y, this.timelineWidth, rowH);
             }
+
+            // 今日の線（行の背景の上・バーの下）
+            this.drawTodayMarkBehindBars(y, rowH);
 
             // 開いている担当者の見出し行: バーの代わりに日ごとの本数の帯（畳んだ見出し行は下で従来どおりバーを描く）
             if (row.type === 'memberGroup' && !row.collapsed) {
@@ -2105,6 +2117,9 @@ export class GanttChartRenderer {
 
         // 半透明の地に斜線ハッチ（予定の延長ではなく「はみ出し」だと分かる見た目）
         ctx.save();
+        // 地を不透明にしてから淡い赤を重ねる（下に描いた今日の線などが透けないよう、バーと同じく手前に見せる）
+        ctx.fillStyle = SURFACE;
+        fillRoundRect(ctx, x, barY, width, BAR_HEIGHT, BAR_RADIUS);
         ctx.fillStyle = OVERRUN_FILL;
         fillRoundRect(ctx, x, barY, width, BAR_HEIGHT, BAR_RADIUS);
         ctx.beginPath();
