@@ -125,7 +125,12 @@ test.describe("担当者×タスク表示", () => {
     await scrollToDate(page, "2026-09-20");
     await page.waitForTimeout(100);
     const sp = await rowPoint(page, "#ganttTimelineCanvas", gIdx, await stripX(page, "2026-09-24"));
+    // 一度見出しの吹き出しを外してから帯の上へ。スクロール直後は mousemove が 1 回しか出ず取りこぼすことがある
+    // （CI で見出しの吹き出しが残ったまま判定された）ので、帯の上で少し動かして確実にイベントを出す
+    await page.mouse.move(sp.x, sp.y - 200);
+    await expect(page.locator("#ganttTip")).toBeHidden();
     await page.mouse.move(sp.x, sp.y);
+    await page.mouse.move(sp.x + 2, sp.y);
     // 9/24 に表示されているバーは 権限管理 IT・マスタ PG の 2 本（遅延のはみ出しはバーではないので数えない）
     await expect(page.locator("#ganttTip")).toContainText("2 本");
     await expect(page.locator("#ganttTip")).toContainText("権限管理 IT");
