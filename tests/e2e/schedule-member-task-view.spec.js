@@ -301,12 +301,21 @@ test.describe("担当者×タスク表示（スマホ）", () => {
     await page.touchscreen.tap(gp.x, gp.y);
     expect((await rowsOf(page)).find((r) => r.label === "田中").collapsed).toBe(true);
 
-    // 全員を畳んでも見出し欄は名前と件数が入る幅を保つ（名前だけの幅に縮んで名前が消えていた）
+    // 全員を畳むと、以前の担当者別表示のように見出し欄を中身（▸・名前・件数）が入る幅まで狭める。
+    // 名前が件数に押されて見えなくならないよう、件数の分も含めて測る
     const widthOpen = await page.evaluate(() => window.getScheduleRenderer().labelWidth);
     await page.evaluate(() => { const r = window.getScheduleRenderer(); r.collapsedMembers.add("佐藤"); r.collapsedMembers.add("田中"); r.render(r.currentYear, r.currentMonth, r.filteredSchedulesCache); });
     const allCollapsed = await rowsOf(page);
     expect(allCollapsed.every((r) => r.type === "memberGroup" && r.collapsed)).toBe(true);
-    expect(await page.evaluate(() => window.getScheduleRenderer().labelWidth)).toBe(widthOpen);
+    const narrow = await page.evaluate(() => {
+      const r = window.getScheduleRenderer();
+      const c = document.createElement("canvas").getContext("2d");
+      c.font = "600 13px system-ui, -apple-system, sans-serif";
+      const name = Math.max(...r.rows.map((x) => c.measureText(x.label).width));
+      return { width: r.labelWidth, name };
+    });
+    expect(narrow.width).toBeLessThan(widthOpen);
+    expect(narrow.width).toBeGreaterThan(narrow.name + 40); // ▸・ドット・名前・件数が入る
     expect(errors).toEqual([]);
   });
 });

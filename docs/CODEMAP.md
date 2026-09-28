@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 50 ファイル / 46,085 行
+## js/ — 50 ファイル / 46,108 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (193行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176, taskOptionsForVersions:189
@@ -124,8 +124,8 @@
 ### js/schedule-member-task.js — ガント「担当者×タスク」表示の純粋ロジック（行の組み立て・日ごとの本数・見出しの折り返し） (244行)
 - export: selectMemberTaskSchedules:18, buildMemberTaskRows:38, countDailyLoad:88, splitTaskName:103, phraseTokens:118, applyTaskLabelStyle:149, wrapLabel:208
 
-### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (4034行)
-- export: isMemberTaskLayout:60, rowMember:69, GanttChartRenderer:192, setupTooltipHandler:2729, getRenderer:2794, renderGanttChart:2807, setupCanvasClickHandler:2888, updateScheduleSelectionChip:3022, toggleScheduleSelectionMode:3056, clearScheduleSelection:3064, setupDragAndDrop:3204, buildDragPreviews:3676, setupTouchHandlers:3756
+### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (4057行)
+- export: isMemberTaskLayout:60, rowMember:69, GanttChartRenderer:192, setupTooltipHandler:2752, getRenderer:2817, renderGanttChart:2830, setupCanvasClickHandler:2911, updateScheduleSelectionChip:3045, toggleScheduleSelectionMode:3079, clearScheduleSelection:3087, setupDragAndDrop:3227, buildDragPreviews:3699, setupTouchHandlers:3779
 
 ### js/schedule-tiles.js — ガントの canvas をタイルに分けて、画面に見えている付近だけ描く（TiledSurface） (215行)
 - export: TiledSurface:19

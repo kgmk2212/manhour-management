@@ -556,6 +556,26 @@ export class GanttChartRenderer {
     /**
      * カスタムラベル幅をlocalStorageから読み込み
      */
+    /**
+     * 畳んだ担当者の見出し（▸・ドット・名前・件数）がちょうど入る幅（logical px）。画面幅の 40% を上限にする
+     * @param {Object[]} rows - すべて畳んだ担当者の見出し行
+     * @returns {number}
+     */
+    measureCollapsedGroupWidth(rows) {
+        const ctx = this.labelCtx;
+        const nameX = GROUP_CHEVRON_LEFT + 16 + LABEL_DOT_SIZE + 8;
+        let widest = 0;
+        rows.forEach(row => {
+            ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+            const nameW = ctx.measureText(row.label).width;
+            ctx.font = '500 11.5px system-ui, -apple-system, sans-serif';
+            const countW = ctx.measureText(`${row.taskCount} 件`).width;
+            widest = Math.max(widest, nameX + nameW + 12 + countW + 10);
+        });
+        const max = Math.floor(window.innerWidth * LABEL_FIT_MAX_RATIO / (this.uiScale || 1));
+        return Math.max(60, Math.min(max, Math.ceil(widest)));
+    }
+
     /** 見出し欄の幅を覚えるキー（担当者×タスク表示は担当者別と別に覚える） */
     labelWidthKey(viewMode = scheduleSettings.viewMode) {
         return isMemberTaskLayout() ? 'memberTasks' : viewMode;
@@ -951,9 +971,12 @@ export class GanttChartRenderer {
         // PC時はカスタム幅があればそれを使用（表示ごと）
         if (!isMobile && this.customLabelWidths[key]) return this.customLabelWidths[key];
         if (!isMobile) return LABEL_WIDTH;
-        // タスク名の行は折り返すので、スマホでは画面幅の 40% までに収めて折り返させる。
-        // 担当者×タスク表示は全員を畳んでタスク行が無くなっても同じ幅に保つ（名前だけの幅に縮むと、件数の表示に押されて
-        // 名前が見えなくなるため）
+        // 担当者×タスク表示で全員を畳んでいるときは、以前の担当者別表示と同じく中身（▸・名前・件数）が入る幅まで狭める
+        // （件数の分も含めて測るので、名前が件数に押されて見えなくなることはない）。PC は利用者が決めた幅のまま変えない
+        if (isMemberTaskLayout() && rows.length > 0 && rows.every(r => r.type === 'memberGroup' && r.collapsed)) {
+            return this.measureCollapsedGroupWidth(rows);
+        }
+        // タスク名の行は折り返すので、スマホでは画面幅の 40% までに収めて折り返させる
         if (isMemberTaskLayout() || rows.some(r => r.type === 'task' || r.type === 'memberTask')) {
             return Math.max(80, Math.floor(window.innerWidth * LABEL_FIT_MAX_RATIO / (this.uiScale || 1)));
         }
