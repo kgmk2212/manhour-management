@@ -120,6 +120,8 @@ describe('phraseTokens / wrapLabel(phrase)', () => {
     test('助詞・括弧・英数字の前後で区切る', () => {
         assert.deepEqual(phraseTokens('宛名の敬称切替'), ['宛名の', '敬称切替']);
         assert.deepEqual(phraseTokens('PDFレイアウト（並列化）'), ['PDF', 'レイアウト', '（並列化）']);
+        // 開き括弧の直後では切らない（「（」だけが行末に残らない）
+        assert.deepEqual(phraseTokens('対応（PDF変更）'), ['対応', '（PDF', '変更）']);
     });
     test('文節の切れ目で折り返し、語の途中では折らない', () => {
         const measure = (s) => s.length * 10;

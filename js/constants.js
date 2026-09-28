@@ -369,6 +369,11 @@ export const SCHEDULE = {
         LABEL_WIDTH: 200,  // 長い名前に対応するため拡大
         ROW_PADDING: 6,
         LANE_HEIGHT: 28,   // 重なった予定を下段に積むときの1レーンぶんの高さ（BAR_HEIGHT + 余白4）
+        // タスク名の見せ方ごとの行の基本の高さ（設計書 2026-09-29-schedule-member-task-view-design.md 追記）
+        TASK_ROW_HEIGHT_A: 68,          // 3 段（版数／処理名／対応名）
+        TASK_ROW_HEIGHT_DETAIL: 38,     // まとめる: 対応名だけの行
+        TASK_ROW_HEIGHT_PROC_DETAIL: 46, // まとめる（見出し減）: 処理名＋対応名の行
+        TASK_HEAD_ROW_HEIGHT: 26,       // 版数・処理名の見出し行
         DEFAULT_DISPLAY_MONTHS: 3  // デフォルト表示月数
     },
 

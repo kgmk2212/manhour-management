@@ -122,7 +122,8 @@ export function phraseTokens(text) {
     for (let i = 0; i < text.length; i++) {
         const c = text[i];
         const prev = text[i - 1] || '';
-        const breakBefore = cur !== '' && (
+        // 開き括弧の直後では切らない（括弧だけが行末に残るのを防ぐ）
+        const breakBefore = cur !== '' && !/[（(「]/.test(prev) && (
             /[（(「]/.test(c) ||
             (/[のとをにがでへはや、・）)」]/.test(prev) && !/[、。）)」]/.test(c)) ||
             isAlnum(c) !== isAlnum(prev)

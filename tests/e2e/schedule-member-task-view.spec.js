@@ -222,6 +222,11 @@ test.describe("ガントの縦スクロール", () => {
 
   test("PC: 外枠の高さを超える行は、外枠の中を縦スクロールして見られる（見出し欄と表が一緒に動く）", async ({ page }) => {
     await openMany(page);
+    // ガントを描き終えて外枠が溢れるまで待つ（並列実行で負荷が高いと、描画前に測ってしまうことがある）
+    await expect.poll(() => page.evaluate(() => {
+      const o = document.getElementById("ganttOuter");
+      return o ? o.scrollHeight - o.clientHeight : 0;
+    })).toBeGreaterThan(0);
     const m = await page.evaluate(() => {
       const o = document.getElementById("ganttOuter");
       return { client: o.clientHeight, scroll: o.scrollHeight, canvas: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().height };
@@ -231,7 +236,8 @@ test.describe("ガントの縦スクロール", () => {
     const box = await page.locator("#ganttOuter").boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(200);
+    await expect.poll(() => page.evaluate(() => document.getElementById("ganttOuter").scrollTop)).toBeGreaterThan(0);
+    await page.waitForTimeout(100);
     const after = await page.evaluate(() => ({
       outer: document.getElementById("ganttOuter").scrollTop,
       labelTop: document.getElementById("ganttLabelCanvas").getBoundingClientRect().top,

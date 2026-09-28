@@ -550,7 +550,8 @@ export let scheduleSettings = {
     filterStatus: '',        // フィルタ: ステータス
     laneLayout: true,        // ガント: 重なる予定を行内の段（レーン）に分けて表示する
     showOverrun: true,       // ガント: 遅延予定に今日までの「はみ出し」とバッジを描く
-    memberLayout: 'lanes'    // ガント担当者別の表示: 'lanes'（今までの表示）| 'tasks'（担当者×タスク）
+    memberLayout: 'lanes',   // ガント担当者別の表示: 'lanes'（今までの表示）| 'tasks'（担当者×タスク）
+    taskLabelStyle: 'A'      // ガントのタスク名の見せ方: 'A'（3段）| 'C'（版数・処理名でまとめる）| 'C2'（まとめる・見出し減）
 };
 
 // タスク色マッピング（タスク名 → 色）

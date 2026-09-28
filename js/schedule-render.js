@@ -12,7 +12,7 @@ import { calculateSegments, resolveSegmentStart } from './schedule-interruption.
 import { sortMembers, escapeHtml, getTodayString } from './utils.js';
 import { getDelayInfo } from './schedule-delay.js';
 import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
-import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel } from './schedule-member-task.js';
+import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel, applyTaskLabelStyle } from './schedule-member-task.js';
 import { showGanttTip, hideGanttTip, currentGanttTipKey, bindTap } from './schedule-gantt-tips.js';
 import { getMemberOrderString } from './members.js';
 import { syncBulkDockOffset } from './actual-bulk.js';
@@ -21,7 +21,9 @@ import { syncBulkDockOffset } from './actual-bulk.js';
 // 定数
 // ============================================
 
-const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS, LANE_HEIGHT } = SCHEDULE.CANVAS;
+const { BAR_HEIGHT, ROW_HEIGHT, HEADER_HEIGHT, DAY_WIDTH, LABEL_WIDTH, ROW_PADDING, DEFAULT_DISPLAY_MONTHS, LANE_HEIGHT,
+    TASK_ROW_HEIGHT_A, TASK_ROW_HEIGHT_DETAIL, TASK_ROW_HEIGHT_PROC_DETAIL, TASK_HEAD_ROW_HEIGHT } = SCHEDULE.CANVAS;
+const TASK_ROW_HEIGHTS = { A: TASK_ROW_HEIGHT_A, detail: TASK_ROW_HEIGHT_DETAIL, procDetail: TASK_ROW_HEIGHT_PROC_DETAIL, head: TASK_HEAD_ROW_HEIGHT };
 const LABEL_PADDING = 15; // テキスト右余白
 const LABEL_DOT_LEFT = 14; // 左端からドットまで
 const LABEL_DOT_SIZE = 8;  // ドットの直径
@@ -67,6 +69,28 @@ export function rowMember(row) {
     if (!row) return null;
     if (row.member) return row.member;
     return row.type === 'member' ? row.label : null;
+}
+
+/** @returns {boolean} 版数・処理名の見出し行（タスク名の見せ方「まとめる」）か */
+function isHeadRow(row) {
+    return !!row && (row.type === 'versionHead' || row.type === 'procHead');
+}
+
+/**
+ * 見出し欄の字下げ（担当者×タスク表示は担当者の見出しの下なので深め。スマホは浅め）
+ * @param {Object} row
+ * @returns {number} logical px
+ */
+function labelIndent(row) {
+    const narrow = window.innerWidth <= 768;
+    const inMember = !!row.member;
+    const base = inMember ? (narrow ? 14 : 20) : (narrow ? 8 : 12);
+    const step = narrow ? 6 : 12;
+    if (row.type === 'versionHead') return base;
+    if (row.type === 'procHead') return base + step;
+    if (row.labelMode === 'detail') return base + step * (row.proc ? 2 : 1);
+    if (row.labelMode === 'procDetail') return base + step;
+    return inMember ? (narrow ? 16 : TASK_LABEL_INDENT) : LABEL_DOT_LEFT;
 }
 
 /** 予定が占める最終日（遅延中は今日まで） */
@@ -434,9 +458,14 @@ export class GanttChartRenderer {
         let widest = 0;
         this.rows.forEach(row => {
             if (row.type === 'task' || row.type === 'memberTask') {
-                ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
-                const indent = row.type === 'memberTask' ? TASK_LABEL_INDENT : LABEL_DOT_LEFT;
-                widest = Math.max(widest, indent + TASK_SWATCH_W + 8 + ctx.measureText(`${row.version} ${row.label}`).width + LABEL_PADDING);
+                // 各段を 1 行で書いたときの一番長い段に合わせる
+                ctx.font = `600 ${TASK_LABEL_FONT_PX + 0.5}px system-ui, -apple-system, sans-serif`;
+                const pieces = row.labelMode === 'detail' ? [row.detail ?? row.label] : [row.proc || '', row.detail ?? row.label, row.version || ''];
+                const w = Math.max(...pieces.map(t => ctx.measureText(t).width));
+                widest = Math.max(widest, labelIndent(row) + TASK_SWATCH_W + 8 + w + LABEL_PADDING);
+            } else if (isHeadRow(row)) {
+                ctx.font = '700 12.5px system-ui, -apple-system, sans-serif';
+                widest = Math.max(widest, labelIndent(row) + ctx.measureText(row.label).width + LABEL_PADDING + (row.type === 'versionHead' ? 44 : 0));
             } else {
                 ctx.font = '600 13px system-ui, -apple-system, sans-serif';
                 const extra = row.type === 'memberGroup' ? 48 : 0; // 件数の表示ぶん
@@ -658,7 +687,7 @@ export class GanttChartRenderer {
         rows.forEach(row => {
             // 開いている担当者の見出し行はバーを描かない（帯だけ）。畳んだ見出し行は従来の担当者行と同じくバーを段分けで描く。
             // 段分けオフ（従来表示）は全予定を1段に重ね描きする
-            if (!useLanes || (row.type === 'memberGroup' && !row.collapsed)) {
+            if (!useLanes || (row.type === 'memberGroup' && !row.collapsed) || isHeadRow(row)) {
                 row.lanes = { laneOf: new Map(), laneCount: 1 };
                 return;
             }
@@ -669,7 +698,8 @@ export class GanttChartRenderer {
             });
         });
         this.rowLayout = buildRowLayout(rows.map(r => r.lanes.laneCount),
-            { headerHeight: HEADER_HEIGHT, rowHeight: ROW_HEIGHT, laneHeight: LANE_HEIGHT });
+            { headerHeight: HEADER_HEIGHT, rowHeight: ROW_HEIGHT, laneHeight: LANE_HEIGHT },
+            rows.map(r => r.baseHeight));
         this.filteredSchedulesCache = filteredSchedules;
 
         // サイズ計算
@@ -783,11 +813,12 @@ export class GanttChartRenderer {
         // 担当者順の取得
         const orderString = getMemberOrderString();
 
+        const style = scheduleSettings.taskLabelStyle || 'A';
         if (isMemberTaskLayout()) {
             const members = sortMembers([...new Set(visibleSchedules.map(s => s.member))], orderString);
-            return buildMemberTaskRows(visibleSchedules, {
+            return applyTaskLabelStyle(buildMemberTaskRows(visibleSchedules, {
                 memberOrder: members, taskSortOrder, collapsed: this.collapsedMembers
-            });
+            }), style, TASK_ROW_HEIGHTS);
         }
 
         if (viewMode === SCHEDULE.VIEW_MODE.MEMBER) {
@@ -814,6 +845,8 @@ export class GanttChartRenderer {
             taskMap.forEach(taskData => {
                 rows.push({ label: taskData.label, type: 'task', version: taskData.version, schedules: taskData.schedules });
             });
+            // タスク別ビューもタスク名の見せ方（3段／まとめる）に合わせて行を組み替える
+            return applyTaskLabelStyle(rows, style, TASK_ROW_HEIGHTS);
         }
 
         return rows;
@@ -1169,6 +1202,10 @@ export class GanttChartRenderer {
                 this.drawLoadStrip(row, index, y, rowH);
                 return;
             }
+            // 版数・処理名の見出し行はバーを描かない
+            if (isHeadRow(row)) return;
+            // 基本の高さが標準より高い行（3段など）は、1段目のバーを基本の高さの中央に置く
+            const barBaseY = y + ((row.baseHeight ?? ROW_HEIGHT) - ROW_HEIGHT) / 2;
 
             // スケジュールバーを描画（開始日昇順＝後のバーが手前に重なる）
             const sorted = [...row.schedules].sort((a, b) =>
@@ -1177,7 +1214,7 @@ export class GanttChartRenderer {
             // レーンごとに下へずらして描く（重なった予定を別の段に分ける）
             sorted.forEach(schedule => {
                 const lane = row.lanes ? (row.lanes.laneOf.get(schedule.id) || 0) : 0;
-                this.drawScheduleBar(schedule, y + lane * LANE_HEIGHT, index);
+                this.drawScheduleBar(schedule, barBaseY + lane * LANE_HEIGHT, index);
             });
         });
     }
@@ -1219,6 +1256,10 @@ export class GanttChartRenderer {
             // 担当者×タスク表示の見出し行・タスク行、タスク別ビューの行は専用の描き方
             if (row.type === 'memberGroup') {
                 this.drawGroupLabel(row, index, y, rowH);
+                return;
+            }
+            if (isHeadRow(row)) {
+                this.drawHeadLabel(row, y, rowH);
                 return;
             }
             if (row.type === 'memberTask' || row.type === 'task') {
@@ -1325,48 +1366,98 @@ export class GanttChartRenderer {
     }
 
     /**
-     * タスクの見出し（色の目印・版数・タスク名）。2 行まで（行が高ければもっと）折り返し、入らない分は …
-     * 省略したかどうかと全文を row.labelClipped / row.fullLabel に記録する（吹き出し用）
+     * 版数・処理名の見出し行（タスク名の見せ方「まとめる」）。版数の見出しは件数付き
+     */
+    drawHeadLabel(row, y, rowH) {
+        const ctx = this.labelCtx;
+        const centerY = y + rowH / 2;
+        const x = labelIndent(row);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        let right = this.labelWidth - 10;
+        if (row.type === 'versionHead') {
+            ctx.font = '500 11px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = TEXT_MUTED;
+            ctx.textAlign = 'right';
+            const cnt = `${row.taskCount} 件`;
+            ctx.fillText(cnt, right, centerY);
+            right -= ctx.measureText(cnt).width + 8;
+            ctx.textAlign = 'left';
+            ctx.font = '700 12px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = TEXT_MUTED;
+        } else {
+            ctx.font = `600 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
+            ctx.fillStyle = TEXT_PRIMARY;
+        }
+        const { lines, clipped } = wrapLabel(row.label, right - x, 1, (t) => ctx.measureText(t).width);
+        ctx.fillText(lines[0], x, centerY);
+        row.labelClipped = clipped;
+        row.fullLabel = { version: row.type === 'versionHead' ? '版数' : (row.version || ''), name: row.label };
+    }
+
+    /**
+     * タスクの見出し（色の目印＋タスク名）。タスク名の見せ方（row.labelMode）で書き分ける
+     * - 'A': 版数 ／ 処理名（太字 1 行）／ 対応名（残りの高さで折り返し）
+     * - 'detail': 対応名だけ（処理名の見出しの下）
+     * - 'procDetail': 処理名（太字 1 行）／ 対応名（1 行）
+     * 対応名は文節の切れ目で折り返し、入らない分は …。省略したかと全文を row.labelClipped / row.fullLabel に記録する
      */
     drawTaskLabel(row, y, rowH) {
         const ctx = this.labelCtx;
-        const indent = row.type === 'memberTask' ? TASK_LABEL_INDENT : LABEL_DOT_LEFT;
+        const indent = labelIndent(row);
         const isCompletedRow = this.completedVersions.size > 0 &&
             row.schedules.length > 0 &&
             row.schedules.every(s => this.completedVersions.has(s.version));
+        const mode = row.labelMode || 'A';
+        const baseH = row.baseHeight ?? rowH;
 
-        // 色の目印
+        // 色の目印（基本の高さの範囲に描く。段が増えて行が高くなっても 1 段目に揃える）
         ctx.fillStyle = isCompletedRow ? TEXT_MUTED : getTaskColor(row.version, row.label);
-        fillRoundRect(ctx, indent, y + 9, TASK_SWATCH_W, rowH - 18, 2);
+        fillRoundRect(ctx, indent, y + 6, TASK_SWATCH_W, baseH - 12, 2);
 
         const textX = indent + TASK_SWATCH_W + 8;
         const maxWidth = this.labelWidth - textX - 8;
-        const maxLines = Math.max(2, Math.floor((rowH - 8) / TASK_LABEL_LINE_H));
-        const prefix = `${isCompletedRow ? '✓ ' : ''}${row.version || ''}`;
-        const full = prefix ? `${prefix} ${row.label}` : row.label;
-        ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
-        const { lines, clipped } = wrapLabel(full, maxWidth, maxLines, (t) => ctx.measureText(t).width);
+        const font = (weight, px) => `${weight} ${px}px system-ui, -apple-system, sans-serif`;
+        const measureWith = (f) => (t) => { ctx.font = f; return ctx.measureText(t).width; };
+        const proc = row.proc || '';
+        const detail = row.detail ?? row.label;
+        const lines = []; // { text, font, color }
+        let clipped = false;
+        const push = (text, f, color, maxLines, phrase) => {
+            const r = wrapLabel(text, maxWidth, maxLines, measureWith(f), { phrase });
+            if (r.clipped) clipped = true;
+            r.lines.forEach(t => lines.push({ text: t, font: f, color }));
+        };
+        const textColor = isCompletedRow ? TEXT_MUTED : TEXT_PRIMARY;
+        const procFont = font(600, TASK_LABEL_FONT_PX + 0.5);
+        const detailFont = font(500, TASK_LABEL_FONT_PX);
+        const lineSlots = Math.max(1, Math.floor((baseH - 6) / TASK_LABEL_LINE_H));
+
+        if (mode === 'A') {
+            push(`${isCompletedRow ? '✓ ' : ''}${row.version || ''}`, font(600, TASK_LABEL_FONT_PX - 2), TEXT_MUTED, 1, false);
+            if (proc) push(proc, procFont, textColor, 1, false);
+            push(detail, proc ? detailFont : procFont, textColor, Math.max(1, lineSlots - lines.length), true);
+        } else if (mode === 'procDetail') {
+            push(proc, procFont, textColor, 1, false);
+            push(detail, detailFont, textColor, 1, true);
+        } else {
+            push(detail, detailFont, textColor, Math.max(2, lineSlots), true);
+        }
         row.labelClipped = clipped;
         row.fullLabel = { version: row.version || '', name: row.label };
 
-        const blockH = lines.length * TASK_LABEL_LINE_H;
-        let lineY = y + (rowH - blockH) / 2 + TASK_LABEL_LINE_H / 2;
+        // 基本の高さの中で上下中央に並べる（版数の行は少し詰める）
+        const lineH = (l) => (l.color === TEXT_MUTED && mode === 'A' && l === lines[0] ? TASK_LABEL_LINE_H - 2 : TASK_LABEL_LINE_H);
+        const blockH = lines.reduce((sum, l) => sum + lineH(l), 0);
+        let lineY = y + (baseH - blockH) / 2;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        lines.forEach((line, i) => {
-            let x = textX;
-            // 1 行目の頭の版数は小さく淡く
-            if (i === 0 && prefix && line.startsWith(prefix)) {
-                ctx.font = `600 ${TASK_LABEL_FONT_PX - 1.5}px system-ui, -apple-system, sans-serif`;
-                ctx.fillStyle = TEXT_MUTED;
-                ctx.fillText(prefix, x, lineY);
-                x += ctx.measureText(prefix + ' ').width;
-                line = line.slice(prefix.length).trimStart();
-            }
-            ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
-            ctx.fillStyle = isCompletedRow ? TEXT_MUTED : TEXT_PRIMARY;
-            ctx.fillText(line, x, lineY);
-            lineY += TASK_LABEL_LINE_H;
+        lines.forEach(l => {
+            const h = lineH(l);
+            ctx.font = l.font;
+            ctx.fillStyle = l.color;
+            ctx.fillText(l.text, textX, lineY + h / 2);
+            lineY += h;
         });
     }
 
