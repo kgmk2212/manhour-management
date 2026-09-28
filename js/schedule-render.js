@@ -272,6 +272,19 @@ export class GanttChartRenderer {
         outer.appendChild(this.scrollContainer);
         container.appendChild(outer);
 
+        // 縦スクロールしても日付の行が見えるよう、日付の行の写しを上に重ねる（スクロールしたときだけ表示）
+        // 日付の行は各 canvas の上端に描いているので、行の座標系を変えずに済むよう写しで固定する
+        this.stickyHeader = document.createElement('canvas');
+        this.stickyHeader.className = 'gantt-sticky-header';
+        this.stickyHeader.id = 'ganttStickyHeader';
+        this.stickyHeader.hidden = true;
+        container.appendChild(this.stickyHeader);
+        const onScroll = () => this.scheduleStickyHeaderUpdate();
+        outer.addEventListener('scroll', onScroll, { passive: true });
+        this.scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+        this.labelScrollContainer.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+
         this.dualCanvasInitialized = true;
 
         // 遅延セットアップのコールバックを実行
@@ -280,6 +293,65 @@ export class GanttChartRenderer {
 
         // PC時のリサイズハンドルをセットアップ
         this.setupResizeHandle();
+    }
+
+    /** 次のフレームで固定の日付の行を描き直す（スクロール中の連続呼び出しをまとめる） */
+    scheduleStickyHeaderUpdate() {
+        if (this._stickyRaf) return;
+        this._stickyRaf = requestAnimationFrame(() => {
+            this._stickyRaf = null;
+            this.updateStickyHeader();
+        });
+    }
+
+    /**
+     * 固定の日付の行: 外枠が縦スクロールしているときだけ、見出し欄と表の日付の行を写して外枠の上端に重ねる
+     */
+    updateStickyHeader() {
+        const sticky = this.stickyHeader;
+        const outer = document.getElementById('ganttOuter');
+        if (!sticky || !outer || !this.labelCanvas || !this.timelineCanvas) return;
+        if (outer.scrollTop <= 0) { sticky.hidden = true; return; }
+
+        const container = sticky.parentElement;
+        const cBox = container.getBoundingClientRect();
+        const oBox = outer.getBoundingClientRect();
+        const lBox = this.labelScrollContainer.getBoundingClientRect();
+        const tBox = this.scrollContainer.getBoundingClientRect();
+        const scale = this.uiScale || 1;
+        const cssW = oBox.width - (outer.offsetWidth - outer.clientWidth); // 縦スクロールバーの幅を除く
+        const cssH = Math.ceil(HEADER_HEIGHT * scale) + 1;
+        const dpr = window.devicePixelRatio || 1;
+
+        // 端数で上に 1px の隙間ができ、下のバーが覗くのを防ぐため上端は切り捨てる
+        sticky.style.left = `${oBox.left - cBox.left + outer.clientLeft}px`;
+        sticky.style.top = `${Math.floor(oBox.top - cBox.top + outer.clientTop)}px`;
+        sticky.style.width = `${cssW}px`;
+        sticky.style.height = `${cssH}px`;
+        sticky.width = Math.round(cssW * dpr);
+        sticky.height = Math.round(cssH * dpr);
+        const ctx = sticky.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = HEADER_BG;
+        ctx.fillRect(0, 0, sticky.width, sticky.height);
+
+        // 元 canvas の raster px ↔ 画面の CSS px の比
+        const srcRatio = (this.dpr || 1) * scale;
+        // 見出し欄・表それぞれの見えている範囲（横スクロール位置から）の日付の行を、画面上の位置に写す
+        const copy = (src, box, scrollLeft) => {
+            const left = box.left - oBox.left - outer.clientLeft;     // 重ねる canvas 上の位置（CSS px）
+            const width = Math.min(box.width, cssW - left);           // 写す幅（CSS px）
+            if (width <= 0) return;
+            ctx.drawImage(src,
+                (scrollLeft / scale) * srcRatio, 0, (width / scale) * srcRatio, HEADER_HEIGHT * srcRatio,
+                left * dpr, 0, width * dpr, HEADER_HEIGHT * scale * dpr);
+        };
+        copy(this.labelCanvas, lBox, this.labelScrollContainer.scrollLeft);
+        copy(this.timelineCanvas, tBox, this.scrollContainer.scrollLeft);
+        // 下端の区切り線
+        ctx.fillStyle = BORDER;
+        ctx.fillRect(0, sticky.height - Math.max(1, dpr), sticky.width, Math.max(1, dpr));
+        sticky.hidden = false;
     }
 
     /**
@@ -584,8 +656,9 @@ export class GanttChartRenderer {
         const useLanes = scheduleSettings.laneLayout !== false;
         const showOverrun = scheduleSettings.showOverrun !== false;
         rows.forEach(row => {
-            // 担当者の見出し行はバーを描かない（帯だけ）。段分けオフ（従来表示）は全予定を1段に重ね描きする
-            if (!useLanes || row.type === 'memberGroup') {
+            // 開いている担当者の見出し行はバーを描かない（帯だけ）。畳んだ見出し行は従来の担当者行と同じくバーを段分けで描く。
+            // 段分けオフ（従来表示）は全予定を1段に重ね描きする
+            if (!useLanes || (row.type === 'memberGroup' && !row.collapsed)) {
                 row.lanes = { laneOf: new Map(), laneCount: 1 };
                 return;
             }
@@ -663,6 +736,7 @@ export class GanttChartRenderer {
         this.drawLabelColumn(rows);
         this.drawSelectionRings(selectedScheduleIds);
         updateScheduleSelectionChip();
+        this.scheduleStickyHeaderUpdate();
 
         // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
         // dateToX は logical 座標を返すので CSS px には uiScale を掛ける。
@@ -1088,8 +1162,8 @@ export class GanttChartRenderer {
                 ctx.fillRect(0, y, this.timelineWidth, rowH);
             }
 
-            // 担当者の見出し行: バーの代わりに日ごとの本数の帯
-            if (row.type === 'memberGroup') {
+            // 開いている担当者の見出し行: バーの代わりに日ごとの本数の帯（畳んだ見出し行は下で従来どおりバーを描く）
+            if (row.type === 'memberGroup' && !row.collapsed) {
                 this.drawLoadStrip(row, index, y, rowH);
                 return;
             }
@@ -1200,8 +1274,15 @@ export class GanttChartRenderer {
     drawGroupLabel(row, index, y, rowH) {
         const ctx = this.labelCtx;
         const centerY = y + rowH / 2;
-        ctx.fillStyle = GROUP_ROW_BG;
-        ctx.fillRect(0, y, this.labelWidth, rowH - 0.5);
+        // 畳んだ行は従来の担当者行（バーの行）なので、見出しの背景は他の担当者行と同じにする
+        if (row.collapsed) {
+            ctx.fillStyle = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;
+            ctx.fillRect(0, y, this.labelWidth, rowH - 0.5);
+        }
+        if (!row.collapsed) {
+            ctx.fillStyle = GROUP_ROW_BG;
+            ctx.fillRect(0, y, this.labelWidth, rowH - 0.5);
+        }
 
         // ▾（畳んでいるときは ▸）
         ctx.save();
@@ -1288,7 +1369,7 @@ export class GanttChartRenderer {
     }
 
     /**
-     * 担当者の見出し行の帯（その日に表示されているバーの本数）。セルを this.stripCells に記録する
+     * 担当者の見出し行の帯（その日に表示されているバーの本数を数字で出す）。セルを this.stripCells に記録する
      */
     drawLoadStrip(row, index, y, rowH) {
         const ctx = this.timelineCtx;
@@ -1312,7 +1393,7 @@ export class GanttChartRenderer {
             const n = list.length;
             ctx.fillStyle = LOAD_COLORS[Math.min(n, 3) - 1];
             ctx.fillRect(x + 1, top, DAY_WIDTH - 2, LOAD_STRIP_H);
-            if (n >= 2) {
+            {
                 ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
                 ctx.fillStyle = n >= 3 ? '#FFFFFF' : TEXT_PRIMARY;
                 ctx.textAlign = 'center';

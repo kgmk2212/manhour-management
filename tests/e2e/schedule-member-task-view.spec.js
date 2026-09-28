@@ -95,6 +95,17 @@ test.describe("担当者×タスク表示", () => {
     let after = await rowsOf(page);
     expect(after.filter((r) => r.member === "田中").length).toBe(1);
     expect(after.find((r) => r.label === "田中").collapsed).toBe(true);
+    // 畳んだ行は従来の担当者行と同じく、その人の全タスクのバーを描く（重なりは段に分ける）
+    const collapsedRow = await page.evaluate(() => {
+      const r = window.getScheduleRenderer();
+      const i = r.rows.findIndex((x) => x.label === "田中");
+      const top = r.rowY(i), bottom = top + r.rowHeight(i);
+      const ids = r.scheduleRects.filter((x) => x.y >= top && x.y < bottom).map((x) => x.schedule.id).sort();
+      return { ids, lanes: r.rows[i].lanes.laneCount, strip: r.stripCells.has(i) };
+    });
+    expect(collapsedRow.ids).toEqual(["t1", "t2", "t3"]);
+    expect(collapsedRow.lanes).toBeGreaterThan(1);
+    expect(collapsedRow.strip).toBe(false);
     pt = await rowPoint(page, "#ganttLabelCanvas", after.findIndex((r) => r.label === "田中"), 40);
     await page.mouse.click(pt.x, pt.y);
     after = await rowsOf(page);
@@ -217,6 +228,26 @@ test.describe("ガントの縦スクロール", () => {
     }));
     expect(after.outer).toBeGreaterThan(0);
     expect(after.labelTop).toBeCloseTo(after.timelineTop, 0);
+
+    // 日付の行が外枠の上端に固定されて見えている（写しの canvas に日付の文字が描かれている）
+    const sticky = await page.evaluate(() => {
+      const el = document.getElementById("ganttStickyHeader");
+      const o = document.getElementById("ganttOuter").getBoundingClientRect();
+      const b = el.getBoundingClientRect();
+      const data = el.getContext("2d").getImageData(0, 0, el.width, el.height).data;
+      const colors = new Set();
+      for (let i = 0; i < data.length; i += 4 * 97) colors.add(`${data[i]},${data[i + 1]},${data[i + 2]}`);
+      return { hidden: el.hidden, topDiff: Math.abs(b.top - o.top), widthDiff: Math.abs(b.width - o.width), colors: colors.size };
+    });
+    expect(sticky.hidden).toBe(false);
+    expect(sticky.topDiff).toBeLessThanOrEqual(2);
+    expect(sticky.widthDiff).toBeLessThanOrEqual(20);
+    expect(sticky.colors).toBeGreaterThan(3);
+
+    // 一番上まで戻すと写しは消える
+    await page.mouse.wheel(0, -2000);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => document.getElementById("ganttStickyHeader").hidden)).toBe(true);
   });
 });
 

@@ -2350,6 +2350,15 @@ table tr[style*="1565c0"] th:first-child {
     overflow: hidden;
     background: var(--surface);
     min-height: calc(400px * var(--gantt-scale));
+    position: relative;
+}
+
+/* 縦スクロール時に上端へ重ねる日付の行の写し（js/schedule-render.js updateStickyHeader） */
+.gantt-sticky-header {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(26, 24, 20, 0.06);
 }
 
 #ganttCanvas,
