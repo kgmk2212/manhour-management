@@ -5,7 +5,9 @@ import { test, expect } from "@playwright/test";
 
 const base = { status: "pending", color: "", note: "", interruptions: [],
   createdAt: "2026-08-01T00:00:00.000Z", updatedAt: "2026-08-01T00:00:00.000Z" };
-const LONG = "帳票A出力改修（請求書PDFのレイアウト変更と電子帳簿保存法への対応）";
+// 省略されることを前提にするテストがあるため、フォント（CI の Linux には日本語フォントが無く、日本語の文字幅が
+// 手元と違う）に左右されないよう、英字を多く含む十分に長い名前にする
+const LONG = "帳票A出力改修（Invoice PDF layout redesign and electronic bookkeeping law compliance for all templates）";
 const SEED = [
   { ...base, id: "t1", member: "田中", version: "V2.4", task: LONG, process: "PG", startDate: "2026-09-14", endDate: "2026-09-18", estimatedHours: 40 },
   { ...base, id: "t2", member: "田中", version: "V2.3", task: "権限管理", process: "IT", startDate: "2026-09-24", endDate: "2026-09-25", estimatedHours: 16 },
@@ -106,7 +108,7 @@ test.describe("担当者×タスク表示", () => {
     const lp = await rowPoint(page, "#ganttLabelCanvas", longIdx, 80);
     await page.mouse.move(lp.x, lp.y);
     await expect(page.locator("#ganttTip")).toBeVisible();
-    await expect(page.locator("#ganttTip")).toContainText("電子帳簿保存法");
+    await expect(page.locator("#ganttTip")).toContainText("bookkeeping");
 
     const gIdx = rows.findIndex((r) => r.label === "田中");
     await scrollToDate(page, "2026-09-20");
