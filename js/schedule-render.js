@@ -2163,16 +2163,15 @@ export class GanttChartRenderer {
 
             ctx.save();
             ctx.beginPath();
+            // 中断の間をつなぐ線は目立ちすぎないよう細い点線にする。
+            // 再開日を固定した区間は点を細かくして区別する（固定していることは ✂ マークの強さでも示している）
+            ctx.lineWidth = 1;
             if (r2.isPinned) {
-                // 固定済み: 実線で「この間隔は自動で詰まらない」ことを示す
-                ctx.setLineDash([]);
-                ctx.globalAlpha = 0.6;
-                ctx.lineWidth = 1.5;
+                ctx.setLineDash([2, 3]);
+                ctx.globalAlpha = 0.45;
             } else {
-                // 自動追従: 従来どおり点線（差し込み作業の移動に付いてくる）
                 ctx.setLineDash([4, 4]);
-                ctx.globalAlpha = 0.4;
-                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.35;
             }
             ctx.strokeStyle = taskColor;
             ctx.moveTo(r1.barX + r1.barWidth, lineY);
