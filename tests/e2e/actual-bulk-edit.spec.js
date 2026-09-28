@@ -327,9 +327,15 @@ test.describe("モバイル幅（短い画面）: 下部タブ Dock と重なら
 
     // 一覧を末尾近くまでスクロールし（Dock は下スクロールで隠れるので少し戻して再表示させる）、
     // sticky のバーが表示中の Dock の上端より上に留まることを確認する
+    // 2 回のスクロールを同じ瞬間に行うと、負荷が高いときに 1 回（下向き）にまとめて処理され Dock が隠れたままになる。
+    // 下へのスクロールが処理されるのを待ってから、上へ少しずつ戻して Dock が再表示されるまで待つ
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.evaluate(() => window.scrollBy(0, -60));
-    await expect(dock).not.toHaveClass(/is-hidden/);
+    await page.waitForTimeout(150);
+    await expect.poll(async () => {
+      await page.evaluate(() => window.scrollBy(0, -30));
+      await page.waitForTimeout(60);
+      return dock.getAttribute("class");
+    }).not.toMatch(/is-hidden/);
     const tray = page.locator("#actualSelectionTray .bk-bar");
     await expect(tray).toBeVisible();
     const trayBox = await tray.boundingBox();
