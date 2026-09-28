@@ -2390,9 +2390,13 @@ table tr[style*="1565c0"] th:first-child {
     z-index: 1;
     display: block;
     flex-shrink: 0;
+    overflow: hidden;
+    background: var(--surface);
 }
 .gantt-sticky-gap { flex-shrink: 0; background: var(--surface); }
 .gantt-sticky-header { display: block; flex-shrink: 0; }
+/* タイルを並べる要素（js/schedule-tiles.js）。タイルが描かれるまでの一瞬も地の色で見せる */
+#ganttTimelineCanvas, #ganttLabelCanvas { flex-shrink: 0; background: var(--surface); }
 
 .gantt-resize-handle {
     align-self: stretch;

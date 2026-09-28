@@ -14,6 +14,7 @@ import { getDelayInfo } from './schedule-delay.js';
 import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY, fitRasterScale } from './schedule-lanes.js';
 import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel, applyTaskLabelStyle } from './schedule-member-task.js';
 import { showGanttTip, hideGanttTip, currentGanttTipKey, bindTap } from './schedule-gantt-tips.js';
+import { TiledSurface } from './schedule-tiles.js';
 import { getMemberOrderString } from './members.js';
 import { syncBulkDockOffset } from './actual-bulk.js';
 
@@ -278,9 +279,10 @@ export class GanttChartRenderer {
         outer.id = 'ganttOuter';
 
         // label canvas
-        this.labelCanvas = document.createElement('canvas');
+        // 見出し欄・表・日付の行は、それぞれタイルに分けて見えている付近だけ描く（js/schedule-tiles.js）。
+        // id は従来の canvas と同じにしてあり、イベントや座標の計算は getBoundingClientRect で従来どおり行える
+        this.labelCanvas = document.createElement('div');
         this.labelCanvas.id = 'ganttLabelCanvas';
-        this.labelCtx = this.labelCanvas.getContext('2d');
 
         // 縦横のスクロールを 1 つの領域（#ganttTimelineScroll）にまとめる。見出し欄は左に、日付の行は上に
         // sticky で固定する（スクロール中に JS で描き直さないので、スマホの慣性スクロールでも揺れない）
@@ -289,9 +291,8 @@ export class GanttChartRenderer {
         this.scrollContainer.id = 'ganttTimelineScroll';
 
         // timeline canvas
-        this.timelineCanvas = document.createElement('canvas');
+        this.timelineCanvas = document.createElement('div');
         this.timelineCanvas.id = 'ganttTimelineCanvas';
-        this.timelineCtx = this.timelineCanvas.getContext('2d');
 
         // label scroll container（左に固定。モバイル時はラベルだけ横スクロールできる）
         this.labelScrollContainer = document.createElement('div');
@@ -307,11 +308,13 @@ export class GanttChartRenderer {
         this.stickyRow = document.createElement('div');
         this.stickyRow.className = 'gantt-sticky-row';
         this.stickyRow.id = 'ganttStickyRow';
-        this.stickyCorner = document.createElement('canvas');
+        this.stickyCorner = document.createElement('div');
         this.stickyCorner.className = 'gantt-sticky-corner';
+        this.stickyCornerInner = document.createElement('div');
+        this.stickyCorner.appendChild(this.stickyCornerInner);
         this.stickyGap = document.createElement('div');
         this.stickyGap.className = 'gantt-sticky-gap';
-        this.stickyHeader = document.createElement('canvas');
+        this.stickyHeader = document.createElement('div');
         this.stickyHeader.className = 'gantt-sticky-header';
         this.stickyHeader.id = 'ganttStickyHeader';
         this.stickyRow.append(this.stickyCorner, this.stickyGap, this.stickyHeader);
@@ -323,8 +326,24 @@ export class GanttChartRenderer {
         this.scrollContainer.append(this.stickyRow, body);
         outer.appendChild(this.scrollContainer);
         container.appendChild(outer);
-        // 見出し欄だけを横スクロールしたとき（モバイル）は、角の写しを描き直す
-        this.labelScrollContainer.addEventListener('scroll', () => this.updateStickyHeader(), { passive: true });
+        this.timelineSurface = new TiledSurface(this.timelineCanvas, this.scrollContainer);
+        this.labelSurface = new TiledSurface(this.labelCanvas, this.scrollContainer);
+        this.stickyHeaderSurface = new TiledSurface(this.stickyHeader, this.scrollContainer);
+        this.stickyCornerSurface = new TiledSurface(this.stickyCornerInner, null);
+        this.timelineCtx = this.timelineSurface.ctx;
+        this.labelCtx = this.labelSurface.ctx;
+        // 描き終えた後の集計（バーの位置など）用の作業 canvas
+        this.scratchCtx = document.createElement('canvas').getContext('2d');
+
+        // スクロールで見えてきたタイルを作って描く（今あるタイルは描き直さないので揺れない）
+        const onScroll = () => this.scheduleSurfaceUpdate();
+        this.scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        // 見出し欄だけを横スクロールしたとき（モバイル）は、角の日付の行も一緒にずらす
+        this.labelScrollContainer.addEventListener('scroll', () => {
+            this.stickyCornerInner.style.transform = `translateX(${-this.labelScrollContainer.scrollLeft}px)`;
+        }, { passive: true });
 
         this.dualCanvasInitialized = true;
 
@@ -341,13 +360,9 @@ export class GanttChartRenderer {
         this.updateStickyHeader();
     }
 
-    /**
-     * 固定の日付の行: 見出し欄と表の canvas の上端（日付の行）を写し、sticky で上に固定した行に描く。
-     * 行は canvas の日付の行にぴったり重ねてあり（margin-bottom で高さを打ち消す）、縦にスクロールしたときだけ
-     * 上端に残る。横スクロールは表と同じ領域なのでブラウザがそのまま一緒に動かす
-     */
+    /** 固定の日付の行の大きさを合わせる（中身はタイルで描く） */
     updateStickyHeader() {
-        if (!this.stickyRow || !this.labelCanvas || !this.timelineCanvas) return;
+        if (!this.stickyRow) return;
         const scale = this.uiScale || 1;
         const cssH = HEADER_HEIGHT * scale;
         const labelCssW = this.labelScrollContainer.clientWidth || this.labelWidth * scale;
@@ -355,23 +370,81 @@ export class GanttChartRenderer {
         this.stickyRow.style.height = `${cssH}px`;
         this.stickyRow.style.marginBottom = `${-cssH}px`;
         this.stickyGap.style.width = `${handleCssW}px`;
+        this.stickyCorner.style.width = `${labelCssW}px`;
+        this.stickyCorner.style.height = `${cssH}px`;
+    }
 
-        const copy = (dst, src, srcRatio, srcX, cssW) => {
-            const w = Math.max(1, Math.round(cssW * srcRatio / scale));
-            const h = Math.max(1, Math.round(HEADER_HEIGHT * srcRatio));
-            if (dst.width !== w) dst.width = w;
-            if (dst.height !== h) dst.height = h;
-            dst.style.width = `${cssW}px`;
-            dst.style.height = `${cssH}px`;
-            const ctx = dst.getContext('2d');
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(src, srcX * srcRatio / scale, 0, w, h, 0, 0, w, h);
-        };
-        const labelRatio = this.labelRasterScale || (this.dpr || 1) * scale;
-        const timelineRatio = this.timelineRasterScale || (this.dpr || 1) * scale;
-        copy(this.stickyCorner, this.labelCanvas, labelRatio, this.labelScrollContainer.scrollLeft, labelCssW);
-        copy(this.stickyHeader, this.timelineCanvas, timelineRatio, 0, this.timelineWidth * scale);
+    /** 次のフレームで、見えている付近のタイルを作って描く（スクロール中の連続呼び出しをまとめる） */
+    scheduleSurfaceUpdate() {
+        if (this._surfaceRaf) return;
+        this._surfaceRaf = requestAnimationFrame(() => {
+            this._surfaceRaf = null;
+            this.updateSurfaces();
+        });
+    }
+
+    updateSurfaces() {
+        if (!this.timelineSurface) return;
+        this.timelineSurface.update();
+        this.labelSurface.update();
+        this.stickyHeaderSurface.update();
+        this.stickyCornerSurface.update({ x: 0, y: 0, w: this.labelWidth * (this.uiScale || 1), h: HEADER_HEIGHT * (this.uiScale || 1) });
+    }
+
+    /**
+     * タイル 1 枚を描く: ctx をそのタイルのものに差し替えて場面を描き、集計（バーの位置など）は元に戻す
+     * @param {'timeline'|'label'} kind
+     * @param {CanvasRenderingContext2D} ctx - タイルの ctx（論理座標で描ける変換済み）
+     * @param {{x: number, y: number, w: number, h: number}|null} clip - 描く範囲（論理座標）。null は全体
+     * @param {Function} scene - 描く場面
+     */
+    paintInto(kind, ctx, clip, scene) {
+        const key = kind === 'timeline' ? 'timelineCtx' : 'labelCtx';
+        const prevCtx = this[key];
+        const kept = { scheduleRects: this.scheduleRects, overrunRects: this.overrunRects, stripCells: this.stripCells };
+        this[key] = ctx;
+        this._paintClip = clip;
+        this.scheduleRects = [];
+        this.overrunRects = [];
+        this.stripCells = new Map();
+        try {
+            scene();
+        } finally {
+            this[key] = prevCtx;
+            this._paintClip = null;
+            Object.assign(this, kept);
+        }
+    }
+
+    /** 表の場面（日付の行・格子・行・今日の線・選択の枠） */
+    paintTimelineScene() {
+        this.drawTimelineBackground();
+        this.drawHeader();
+        this.drawGrid();
+        this.drawMonthSeparators();
+        this.drawRows(this.rows);
+        this.drawTodayLine();
+        this.drawSelectionRings(selectedScheduleIds);
+    }
+
+    /** 見出し欄の場面 */
+    paintLabelScene() {
+        this.drawLabelBackground();
+        this.drawLabelHeader();
+        this.drawLabelColumn(this.rows);
+    }
+
+    /** 描く範囲（タイル）に入る日の範囲 [開始, 終了)（全体を描くときは全日） */
+    paintDayRange() {
+        const c = this._paintClip;
+        if (!c) return [0, this.totalDays];
+        return [Math.max(0, Math.floor(c.x / DAY_WIDTH) - 1), Math.min(this.totalDays, Math.ceil((c.x + c.w) / DAY_WIDTH) + 1)];
+    }
+
+    /** @returns {boolean} 描く範囲（タイル）に縦方向で掛かるか */
+    paintHitsY(y, h) {
+        const c = this._paintClip;
+        return !c || (y + h >= c.y && y <= c.y + c.h);
     }
 
     /** 表として見えている横幅（CSS px。左に固定した見出し欄とリサイズハンドルを除く） */
@@ -722,32 +795,14 @@ export class GanttChartRenderer {
         this.uiScale = this.getUiScale();
         // raster は logical × dpr × uiScale、CSS は logical × uiScale、
         // setTransform は dpr × uiScale で logical 座標を raster へ写像する。
-        // canvas が端末の上限（iOS は約 1,677 万画素）を超えると真っ白になるので、超えるときは解像度を下げて収める
-        const desiredRaster = this.dpr * this.uiScale;
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        const limits = {
-            maxArea: isIOS ? SCHEDULE.CANVAS.CANVAS_MAX_AREA_IOS : SCHEDULE.CANVAS.CANVAS_MAX_AREA,
-            maxDim: SCHEDULE.CANVAS.CANVAS_MAX_DIM
-        };
-        const rasterScale = fitRasterScale(this.timelineWidth, this.totalHeight, desiredRaster, limits);
-        const labelRasterScale = fitRasterScale(this.labelWidth, this.totalHeight, desiredRaster, limits);
+        // 見出し欄・表・日付の行はタイルに分けて描くので、1 枚の canvas の上限を気にせず元の解像度で描ける
+        const rasterScale = this.dpr * this.uiScale;
         this.timelineRasterScale = rasterScale;
-        this.labelRasterScale = labelRasterScale;
-
-        // Timeline canvas サイズ設定
-        this.timelineCanvas.width = Math.round(this.timelineWidth * rasterScale);
-        this.timelineCanvas.height = Math.round(this.totalHeight * rasterScale);
-        this.timelineCanvas.style.width = (this.timelineWidth * this.uiScale) + 'px';
-        this.timelineCanvas.style.height = (this.totalHeight * this.uiScale) + 'px';
-        this.timelineCtx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
-
-        // Label canvas サイズ設定
-        this.labelCanvas.width = Math.round(this.labelWidth * labelRasterScale);
-        this.labelCanvas.height = Math.round(this.totalHeight * labelRasterScale);
-        this.labelCanvas.style.width = (this.labelWidth * this.uiScale) + 'px';
-        this.labelCanvas.style.height = (this.totalHeight * this.uiScale) + 'px';
-        this.labelCtx.setTransform(labelRasterScale, 0, 0, labelRasterScale, 0, 0);
+        this.labelRasterScale = rasterScale;
+        this.timelineSurface.resize(this.timelineWidth, this.totalHeight, this.uiScale, rasterScale);
+        this.labelSurface.resize(this.labelWidth, this.totalHeight, this.uiScale, rasterScale);
+        this.stickyHeaderSurface.resize(this.timelineWidth, HEADER_HEIGHT, this.uiScale, rasterScale);
+        this.stickyCornerSurface.resize(this.labelWidth, HEADER_HEIGHT, this.uiScale, rasterScale);
 
         // モバイル時のラベルスクロールコンテナ設定
         if (this.labelScrollContainer) {
@@ -770,26 +825,45 @@ export class GanttChartRenderer {
             this.resizeHandle.style.left = `${this.labelWidth * this.uiScale}px`;
         }
 
-        // 描画
-        this.drawTimelineBackground();
-        this.drawLabelBackground();
-        this.drawHeader();
-        this.drawLabelHeader();
-        this.drawGrid();
-        this.drawMonthSeparators();
-        this.drawRows(rows);
-        // 今日の線は行ごとにバーの下へ描いた（drawTodayMarkBehindBars）。ここでは行の無い下の余白と日付の行の印
-        this.drawTodayLine();
-        this.drawLabelColumn(rows);
-        this.drawSelectionRings(selectedScheduleIds);
+        // 描画: まず作業 canvas に全体を 1 回描いて、バーの位置・帯のセル・見出しの省略などを集計する
+        // （今日の線は行ごとにバーの下へ描く（drawTodayMarkBehindBars）。drawTodayLine は行の無い余白と日付の行の印）
+        const scratch = this.scratchCtx;
+        scratch.setTransform(1, 0, 0, 1, 0, 0);
+        const collectT = this.timelineCtx;
+        const collectL = this.labelCtx;
+        this.timelineCtx = scratch;
+        this.labelCtx = scratch;
+        try {
+            this.paintTimelineScene();
+            this.paintLabelScene();
+        } finally {
+            this.timelineCtx = collectT;
+            this.labelCtx = collectL;
+        }
+        // タイルごとの描き方を登録し、見えている付近のタイルを描く
+        this.timelineSurface.setPainter((ctx, clip) => this.paintInto('timeline', ctx, clip, () => this.paintTimelineScene()));
+        this.labelSurface.setPainter((ctx, clip) => this.paintInto('label', ctx, clip, () => this.paintLabelScene()));
+        this.stickyHeaderSurface.setPainter((ctx, clip) => this.paintInto('timeline', ctx, clip, () => {
+            ctx.fillStyle = HEADER_BG;
+            ctx.fillRect(clip.x, 0, clip.w, HEADER_HEIGHT);
+            this.drawHeader();
+            this.drawTodayLine();
+        }));
+        this.stickyCornerSurface.setPainter((ctx, clip) => this.paintInto('label', ctx, clip, () => this.drawLabelHeader()));
+        this.timelineSurface.invalidate();
+        this.labelSurface.invalidate();
+        this.stickyHeaderSurface.invalidate();
+        this.stickyCornerSurface.invalidate();
         updateScheduleSelectionChip();
-        this.scheduleStickyHeaderUpdate();
 
         // スクロール位置を日付から復元（キャンバス幅が変わっても正しい位置にスクロール）
         // dateToX は logical 座標を返すので CSS px には uiScale を掛ける。
         if (this.scrollContainer && savedScrollDate !== null) {
             this.scrollContainer.scrollLeft = (this.dateToX(savedScrollDate) + savedScrollRemainder) * this.uiScale;
         }
+        // 固定の日付の行の大きさを合わせ、見えている付近のタイルを描く
+        this.updateStickyHeader();
+        this.updateSurfaces();
     }
 
     /**
@@ -1079,7 +1153,8 @@ export class GanttChartRenderer {
         // 縦線（--border-light: 繊細な区切り）
         ctx.strokeStyle = GRID;
         ctx.lineWidth = 0.5;
-        for (let day = 0; day <= this.totalDays; day++) {
+        const [gridFrom, gridTo] = this.paintDayRange();
+        for (let day = gridFrom; day <= gridTo; day++) {
             const x = day * DAY_WIDTH;
             ctx.beginPath();
             ctx.moveTo(x, HEADER_HEIGHT);
@@ -1165,9 +1240,12 @@ export class GanttChartRenderer {
     drawRows(rows) {
         const ctx = this.timelineCtx;
 
+        const [dayFrom, dayTo] = this.paintDayRange();
         rows.forEach((row, index) => {
             const y = this.rowY(index);
             const rowH = this.rowHeight(index);
+            // タイルに掛からない行は描かない（集計のための全体描画では全行を描く）
+            if (!this.paintHitsY(y, rowH)) return;
 
             // ゼブラストライプ
             const zebraColor = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;
@@ -1184,7 +1262,7 @@ export class GanttChartRenderer {
             const memberName = rowMember(row);
 
             // 週末・祝日・担当者休暇の背景（全日数分）
-            for (let dayOffset = 0; dayOffset < this.totalDays; dayOffset++) {
+            for (let dayOffset = dayFrom; dayOffset < dayTo; dayOffset++) {
                 const date = new Date(this.rangeStart);
                 date.setDate(date.getDate() + dayOffset);
                 const x = dayOffset * DAY_WIDTH;
@@ -1264,6 +1342,7 @@ export class GanttChartRenderer {
         rows.forEach((row, index) => {
             const y = this.rowY(index);
             const rowH = this.rowHeight(index);
+            if (!this.paintHitsY(y, rowH)) return;
 
             // ゼブラ背景
             ctx.fillStyle = index % 2 === 0 ? ZEBRA_LIGHT : ZEBRA_DARK;

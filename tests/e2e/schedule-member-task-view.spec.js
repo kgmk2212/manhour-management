@@ -132,11 +132,16 @@ test.describe("担当者×タスク表示", () => {
       const box = document.getElementById("ganttTimelineCanvas").getBoundingClientRect();
       return { x: box.left + (cell.x + 14) * s, y: box.top + (r.rowY(i) + r.rowHeight(i) / 2) * s };
     }, { i: gIdx, d: "2026-09-24" });
-    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.id, [sp.x, sp.y])).toBe("ganttTimelineCanvas");
+    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("#ganttTimelineCanvas")?.id, [sp.x, sp.y])).toBe("ganttTimelineCanvas");
     await page.mouse.move(sp.x, sp.y - 200);
     await expect(page.locator("#ganttTip")).toBeHidden();
-    await page.mouse.move(sp.x, sp.y);
-    await page.mouse.move(sp.x + 2, sp.y);
+    // 負荷が高いと帯の上の mousemove より前のイベントが遅れて届くことがあるので、帯の上で少しずつ動かしながら待つ
+    let nudge = 0;
+    await expect.poll(async () => {
+      nudge = (nudge + 1) % 6;
+      await page.mouse.move(sp.x + nudge, sp.y);
+      return page.locator("#ganttTip").textContent();
+    }).toContain("本");
     // 9/24 に表示されているバーは 権限管理 IT・マスタ PG の 2 本（遅延のはみ出しはバーではないので数えない）
     await expect(page.locator("#ganttTip")).toContainText("2 本");
     await expect(page.locator("#ganttTip")).toContainText("権限管理 IT");
@@ -255,7 +260,8 @@ test.describe("ガントの縦スクロール", () => {
       const label = document.getElementById("ganttLabelScroll").getBoundingClientRect();
       const lc = document.getElementById("ganttLabelCanvas").getBoundingClientRect();
       const tc = document.getElementById("ganttTimelineCanvas").getBoundingClientRect();
-      const el = document.getElementById("ganttStickyHeader");
+      // 日付の行の写しはタイル（canvas）に分けて描いている。見えているタイルの 1 枚を読む
+      const el = document.querySelector("#ganttStickyHeader canvas");
       const data = el.getContext("2d").getImageData(0, 0, el.width, el.height).data;
       const colors = new Set();
       for (let i = 0; i < data.length; i += 4 * 97) colors.add(`${data[i]},${data[i + 1]},${data[i + 2]}`);
