@@ -122,11 +122,17 @@ test.describe("担当者×タスク表示", () => {
     await expect(page.locator("#ganttTip")).toContainText("bookkeeping");
 
     const gIdx = rows.findIndex((r) => r.label === "田中");
-    await scrollToDate(page, "2026-09-20");
-    await page.waitForTimeout(100);
-    const sp = await rowPoint(page, "#ganttTimelineCanvas", gIdx, await stripX(page, "2026-09-24"));
-    // 一度見出しの吹き出しを外してから帯の上へ。スクロール直後は mousemove が 1 回しか出ず取りこぼすことがある
-    // （CI で見出しの吹き出しが残ったまま判定された）ので、帯の上で少し動かして確実にイベントを出す
+    // 帯の 9/24 のセルを表の見えている範囲の中央までスクロールし、その画面座標を求める
+    // （見出し欄の下に隠れた位置へマウスを動かすと、見出しの吹き出しが出てしまう。CI で実際に起きた）
+    const sp = await page.evaluate(({ i, d }) => {
+      const r = window.getScheduleRenderer();
+      const cell = r.stripCells.get(i).find((c) => c.date === d);
+      const s = r.uiScale || 1;
+      r.scrollContainer.scrollLeft = Math.max(0, (cell.x + 14) * s - r.scrollContainer.clientWidth / 2);
+      const box = document.getElementById("ganttTimelineCanvas").getBoundingClientRect();
+      return { x: box.left + (cell.x + 14) * s, y: box.top + (r.rowY(i) + r.rowHeight(i) / 2) * s };
+    }, { i: gIdx, d: "2026-09-24" });
+    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.id, [sp.x, sp.y])).toBe("ganttTimelineCanvas");
     await page.mouse.move(sp.x, sp.y - 200);
     await expect(page.locator("#ganttTip")).toBeHidden();
     await page.mouse.move(sp.x, sp.y);
@@ -281,6 +287,13 @@ test.describe("担当者×タスク表示（スマホ）", () => {
     const gp = await rowPoint(page, "#ganttLabelCanvas", gIdx, 30);
     await page.touchscreen.tap(gp.x, gp.y);
     expect((await rowsOf(page)).find((r) => r.label === "田中").collapsed).toBe(true);
+
+    // 全員を畳んでも見出し欄は名前と件数が入る幅を保つ（名前だけの幅に縮んで名前が消えていた）
+    const widthOpen = await page.evaluate(() => window.getScheduleRenderer().labelWidth);
+    await page.evaluate(() => { const r = window.getScheduleRenderer(); r.collapsedMembers.add("佐藤"); r.collapsedMembers.add("田中"); r.render(r.currentYear, r.currentMonth, r.filteredSchedulesCache); });
+    const allCollapsed = await rowsOf(page);
+    expect(allCollapsed.every((r) => r.type === "memberGroup" && r.collapsed)).toBe(true);
+    expect(await page.evaluate(() => window.getScheduleRenderer().labelWidth)).toBe(widthOpen);
     expect(errors).toEqual([]);
   });
 });

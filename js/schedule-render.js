@@ -827,8 +827,10 @@ export class GanttChartRenderer {
         // PC時はカスタム幅があればそれを使用（表示ごと）
         if (!isMobile && this.customLabelWidths[key]) return this.customLabelWidths[key];
         if (!isMobile) return LABEL_WIDTH;
-        // タスク名の行は折り返すので、スマホでは画面幅の 40% までに収めて折り返させる
-        if (rows.some(r => r.type === 'task' || r.type === 'memberTask')) {
+        // タスク名の行は折り返すので、スマホでは画面幅の 40% までに収めて折り返させる。
+        // 担当者×タスク表示は全員を畳んでタスク行が無くなっても同じ幅に保つ（名前だけの幅に縮むと、件数の表示に押されて
+        // 名前が見えなくなるため）
+        if (isMemberTaskLayout() || rows.some(r => r.type === 'task' || r.type === 'memberTask')) {
             return Math.max(80, Math.floor(window.innerWidth * LABEL_FIT_MAX_RATIO / (this.uiScale || 1)));
         }
 
