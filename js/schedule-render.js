@@ -4,7 +4,7 @@
 // ============================================
 
 import { schedules, scheduleSettings, actuals, vacations, remainingEstimates, selectedScheduleIds,
-    scheduleSelectionMode, setScheduleSelectionMode } from './state.js';
+    scheduleSelectionMode, setScheduleSelectionMode, taskSortOrder } from './state.js';
 import { SCHEDULE } from './constants.js';
 import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, findLinkedBackSchedule,
     businessDayDelta, planBatchMove } from './schedule.js';
@@ -12,6 +12,8 @@ import { calculateSegments, resolveSegmentStart } from './schedule-interruption.
 import { sortMembers, escapeHtml, getTodayString } from './utils.js';
 import { getDelayInfo } from './schedule-delay.js';
 import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
+import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel } from './schedule-member-task.js';
+import { showGanttTip, hideGanttTip, currentGanttTipKey, bindTap } from './schedule-gantt-tips.js';
 import { getMemberOrderString } from './members.js';
 import { syncBulkDockOffset } from './actual-bulk.js';
 
@@ -40,6 +42,37 @@ const MARQUEE_MIN_PX = 4; // これ未満の移動は「空白クリック」と
 const OVERRUN_FILL = 'rgba(185, 28, 28, 0.08)';   // --danger の淡い地
 const OVERRUN_HATCH = 'rgba(185, 28, 28, 0.40)';  // --danger の斜線
 const OVERRUN_TEXT = '#B91C1C';                   // --danger
+// 担当者×タスク表示（設計書 2026-09-29-schedule-member-task-view-design.md）
+const GROUP_ROW_BG = '#FAFAF9';                   // --surface-elevated
+const LOAD_COLORS = ['#DCEBD9', '#E9B45A', '#C4841D']; // 1 本・2 本・3 本以上
+const LOAD_STRIP_H = 18;
+const TASK_LABEL_FONT_PX = 12.5;
+const TASK_LABEL_LINE_H = 16;
+const TASK_LABEL_INDENT = 30;   // 担当者の見出しの下のタスク行の字下げ
+const TASK_SWATCH_W = 4;
+const GROUP_CHEVRON_LEFT = 8;
+const LABEL_FIT_MAX_RATIO = 0.4; // 幅合わせの上限（画面幅に対する割合）
+
+/** @returns {boolean} 担当者別ビューを「担当者×タスク」表示で描くか */
+export function isMemberTaskLayout() {
+    return scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER && scheduleSettings.memberLayout === 'tasks';
+}
+
+/**
+ * 行の担当者（担当者の行・担当者×タスクの行なら担当者名、タスク別ビューの行なら null）
+ * @param {Object|undefined} row
+ * @returns {string|null}
+ */
+export function rowMember(row) {
+    if (!row) return null;
+    if (row.member) return row.member;
+    return row.type === 'member' ? row.label : null;
+}
+
+/** 予定が占める最終日（遅延中は今日まで） */
+function effectiveEnd(schedule, todayStr) {
+    return getDelayInfo(schedule, todayStr).delayed ? todayStr : schedule.endDate;
+}
 
 function fillRoundRect(ctx, x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
@@ -150,6 +183,8 @@ export class GanttChartRenderer {
         this.hoverRowIndex = -1;
         this.rows = [];
         this.rowLayout = { offsets: [], heights: [], totalHeight: HEADER_HEIGHT };
+        this.collapsedMembers = new Set(); // 担当者×タスク表示で畳んでいる担当者（セッション内のみ）
+        this.stripCells = new Map();       // 担当者の見出し行 index → 帯のセル [{x, date, list}]
         this.filteredSchedulesCache = null;
         this.dpr = window.devicePixelRatio || 1;
         this.uiScale = 1;  // render() 時に CSS var --ui-scale から再取得
@@ -295,10 +330,10 @@ export class GanttChartRenderer {
             const scale = this.uiScale || 1;
             const deltaLogical = (e.clientX - startX) / scale;
             const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + deltaLogical));
-            const viewMode = scheduleSettings.viewMode;
+            const key = this.labelWidthKey();
             // localStorage には logical 値で保存する
-            this.customLabelWidths[viewMode] = newWidth;
-            this.saveCustomLabelWidth(viewMode, newWidth);
+            this.customLabelWidths[key] = newWidth;
+            this.saveCustomLabelWidth(key, newWidth);
             // 新しい幅で再描画
             this.render(this.currentYear, this.currentMonth, this.filteredSchedulesCache);
         };
@@ -306,15 +341,52 @@ export class GanttChartRenderer {
         handle.addEventListener('mousedown', onMouseDown);
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
+        // ダブルクリック: 一番長い見出しを 1 行で書ける幅に合わせる（上限 画面幅の 40%）
+        handle.addEventListener('dblclick', () => {
+            if (window.innerWidth <= 768) return;
+            const width = this.measureFitLabelWidth();
+            const key = this.labelWidthKey();
+            this.customLabelWidths[key] = width;
+            this.saveCustomLabelWidth(key, width);
+            this.render(this.currentYear, this.currentMonth, this.filteredSchedulesCache);
+        });
+    }
+
+    /**
+     * 見出しを 1 行で書いたときに一番長い見出しが収まる幅（logical px）
+     * @returns {number}
+     */
+    measureFitLabelWidth() {
+        const ctx = this.labelCtx;
+        const scale = this.uiScale || 1;
+        let widest = 0;
+        this.rows.forEach(row => {
+            if (row.type === 'task' || row.type === 'memberTask') {
+                ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
+                const indent = row.type === 'memberTask' ? TASK_LABEL_INDENT : LABEL_DOT_LEFT;
+                widest = Math.max(widest, indent + TASK_SWATCH_W + 8 + ctx.measureText(`${row.version} ${row.label}`).width + LABEL_PADDING);
+            } else {
+                ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+                const extra = row.type === 'memberGroup' ? 48 : 0; // 件数の表示ぶん
+                widest = Math.max(widest, LABEL_TEXT_OFFSET + ctx.measureText(row.label).width + LABEL_PADDING + extra);
+            }
+        });
+        const max = Math.min(500, Math.floor(window.innerWidth * LABEL_FIT_MAX_RATIO / scale));
+        return Math.max(80, Math.min(max, Math.ceil(widest)));
     }
 
     /**
      * カスタムラベル幅をlocalStorageから読み込み
      */
+    /** 見出し欄の幅を覚えるキー（担当者×タスク表示は担当者別と別に覚える） */
+    labelWidthKey(viewMode = scheduleSettings.viewMode) {
+        return isMemberTaskLayout() ? 'memberTasks' : viewMode;
+    }
+
     loadCustomLabelWidths() {
-        const widths = { member: null, task: null };
+        const widths = { member: null, task: null, memberTasks: null };
         try {
-            for (const mode of ['member', 'task']) {
+            for (const mode of ['member', 'task', 'memberTasks']) {
                 const saved = localStorage.getItem(`schedule_label_width_${mode}`);
                 if (saved) {
                     const width = parseInt(saved, 10);
@@ -488,9 +560,16 @@ export class GanttChartRenderer {
 
         this.scheduleRects = [];
         this.overrunRects = [];
+        this.stripCells = new Map();
 
         // 表示範囲内のスケジュールをフィルタ
-        const sourceSchedules = filteredSchedules || schedules;
+        const todayStr = getTodayString();
+        let sourceSchedules = filteredSchedules || schedules;
+        // 担当者×タスク表示: 表示範囲（月ナビの月を中心に表示月数ぶん）に掛かるタスクだけを行にする
+        if (isMemberTaskLayout()) {
+            const period = { start: formatDateString(this.rangeStart), end: formatDateString(this.rangeEnd) };
+            sourceSchedules = selectMemberTaskSchedules(sourceSchedules, period, (s) => effectiveEnd(s, todayStr));
+        }
 
         // スケジュールデータに合わせて表示範囲を拡張
         this.expandRangeForSchedules(sourceSchedules);
@@ -502,12 +581,11 @@ export class GanttChartRenderer {
         this.rows = rows;
         // 行ごとに重なりレーンを割り当て、可変行高のレイアウトを作る
         // 遅延予定は今日までの「超過のしっぽ」も占有するので、その分も期間に含める
-        const todayStr = getTodayString();
         const useLanes = scheduleSettings.laneLayout !== false;
         const showOverrun = scheduleSettings.showOverrun !== false;
         rows.forEach(row => {
-            // 段分けオフ（従来表示）: 全予定を1段に重ね描きする
-            if (!useLanes) {
+            // 担当者の見出し行はバーを描かない（帯だけ）。段分けオフ（従来表示）は全予定を1段に重ね描きする
+            if (!useLanes || row.type === 'memberGroup') {
                 row.lanes = { laneOf: new Map(), laneCount: 1 };
                 return;
             }
@@ -631,6 +709,13 @@ export class GanttChartRenderer {
         // 担当者順の取得
         const orderString = getMemberOrderString();
 
+        if (isMemberTaskLayout()) {
+            const members = sortMembers([...new Set(visibleSchedules.map(s => s.member))], orderString);
+            return buildMemberTaskRows(visibleSchedules, {
+                memberOrder: members, taskSortOrder, collapsed: this.collapsedMembers
+            });
+        }
+
         if (viewMode === SCHEDULE.VIEW_MODE.MEMBER) {
             const memberMap = new Map();
             visibleSchedules.forEach(schedule => {
@@ -664,9 +749,14 @@ export class GanttChartRenderer {
      * ラベル列の最適幅を計算（コンテンツ幅ベース）
      */
     calculateLabelWidth(rows, isMobile, viewMode) {
-        // PC時はカスタム幅があればそれを使用（ビューモード別）
-        if (!isMobile && this.customLabelWidths[viewMode]) return this.customLabelWidths[viewMode];
+        const key = this.labelWidthKey(viewMode);
+        // PC時はカスタム幅があればそれを使用（表示ごと）
+        if (!isMobile && this.customLabelWidths[key]) return this.customLabelWidths[key];
         if (!isMobile) return LABEL_WIDTH;
+        // タスク名の行は折り返すので、スマホでは画面幅の 40% までに収めて折り返させる
+        if (rows.some(r => r.type === 'task' || r.type === 'memberTask')) {
+            return Math.max(80, Math.floor(window.innerWidth * LABEL_FIT_MAX_RATIO / (this.uiScale || 1)));
+        }
 
         // canvasでテキスト幅を計測
         const ctx = this.labelCtx;
@@ -828,7 +918,8 @@ export class GanttChartRenderer {
         ctx.fillRect(0, 0, this.labelWidth, HEADER_HEIGHT);
 
         // ヘッダーラベル（表示モードに応じて動的に変更）
-        const headerLabel = scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.TASK ? 'タスク' : '担当者';
+        const headerLabel = scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.TASK ? 'タスク'
+            : isMemberTaskLayout() ? '担当者 / タスク' : '担当者';
         ctx.fillStyle = TEXT_MUTED;
         ctx.font = '600 12px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'left';
@@ -951,8 +1042,8 @@ export class GanttChartRenderer {
                 ctx.fillRect(0, y, this.timelineWidth, rowH);
             }
 
-            // 担当者名（担当者別ビューの場合、休暇チェック用）
-            const memberName = row.type === 'member' ? row.label : null;
+            // 担当者名（担当者別・担当者×タスクの場合、休暇チェック用）
+            const memberName = rowMember(row);
 
             // 週末・祝日・担当者休暇の背景（全日数分）
             for (let dayOffset = 0; dayOffset < this.totalDays; dayOffset++) {
@@ -995,6 +1086,12 @@ export class GanttChartRenderer {
             if (isCompletedRow) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
                 ctx.fillRect(0, y, this.timelineWidth, rowH);
+            }
+
+            // 担当者の見出し行: バーの代わりに日ごとの本数の帯
+            if (row.type === 'memberGroup') {
+                this.drawLoadStrip(row, index, y, rowH);
+                return;
             }
 
             // スケジュールバーを描画（開始日昇順＝後のバーが手前に重なる）
@@ -1043,6 +1140,16 @@ export class GanttChartRenderer {
 
             const centerY = y + rowH / 2;
 
+            // 担当者×タスク表示の見出し行・タスク行、タスク別ビューの行は専用の描き方
+            if (row.type === 'memberGroup') {
+                this.drawGroupLabel(row, index, y, rowH);
+                return;
+            }
+            if (row.type === 'memberTask' || row.type === 'task') {
+                this.drawTaskLabel(row, y, rowH);
+                return;
+            }
+
             // 完了済み版数の行かどうか判定
             const isCompletedRow = this.completedVersions.size > 0 &&
                 row.schedules.length > 0 &&
@@ -1085,6 +1192,160 @@ export class GanttChartRenderer {
 
             ctx.fillText(labelText, labelStartX, centerY);
         });
+    }
+
+    /**
+     * 担当者×タスク表示の担当者の見出し（▾・ドット・名前・件数）
+     */
+    drawGroupLabel(row, index, y, rowH) {
+        const ctx = this.labelCtx;
+        const centerY = y + rowH / 2;
+        ctx.fillStyle = GROUP_ROW_BG;
+        ctx.fillRect(0, y, this.labelWidth, rowH - 0.5);
+
+        // ▾（畳んでいるときは ▸）
+        ctx.save();
+        ctx.strokeStyle = TEXT_MUTED;
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const cx = GROUP_CHEVRON_LEFT + 5;
+        if (row.collapsed) {
+            ctx.moveTo(cx - 2, centerY - 4); ctx.lineTo(cx + 2, centerY); ctx.lineTo(cx - 2, centerY + 4);
+        } else {
+            ctx.moveTo(cx - 4, centerY - 2); ctx.lineTo(cx, centerY + 2); ctx.lineTo(cx + 4, centerY - 2);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        const dotX = GROUP_CHEVRON_LEFT + 16;
+        ctx.fillStyle = this.getMemberDotColor(row.label, index);
+        ctx.beginPath();
+        ctx.arc(dotX + LABEL_DOT_SIZE / 2, centerY, LABEL_DOT_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        const countText = `${row.taskCount} 件`;
+        ctx.font = '500 11.5px system-ui, -apple-system, sans-serif';
+        const countW = ctx.measureText(countText).width;
+        ctx.fillStyle = TEXT_MUTED;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(countText, this.labelWidth - 10, centerY);
+
+        ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = TEXT_PRIMARY;
+        ctx.textAlign = 'left';
+        const nameX = dotX + LABEL_DOT_SIZE + 8;
+        const { lines } = wrapLabel(row.label, this.labelWidth - nameX - countW - 18, 1, (t) => ctx.measureText(t).width);
+        ctx.fillText(lines[0], nameX, centerY);
+    }
+
+    /**
+     * タスクの見出し（色の目印・版数・タスク名）。2 行まで（行が高ければもっと）折り返し、入らない分は …
+     * 省略したかどうかと全文を row.labelClipped / row.fullLabel に記録する（吹き出し用）
+     */
+    drawTaskLabel(row, y, rowH) {
+        const ctx = this.labelCtx;
+        const indent = row.type === 'memberTask' ? TASK_LABEL_INDENT : LABEL_DOT_LEFT;
+        const isCompletedRow = this.completedVersions.size > 0 &&
+            row.schedules.length > 0 &&
+            row.schedules.every(s => this.completedVersions.has(s.version));
+
+        // 色の目印
+        ctx.fillStyle = isCompletedRow ? TEXT_MUTED : getTaskColor(row.version, row.label);
+        fillRoundRect(ctx, indent, y + 9, TASK_SWATCH_W, rowH - 18, 2);
+
+        const textX = indent + TASK_SWATCH_W + 8;
+        const maxWidth = this.labelWidth - textX - 8;
+        const maxLines = Math.max(2, Math.floor((rowH - 8) / TASK_LABEL_LINE_H));
+        const prefix = `${isCompletedRow ? '✓ ' : ''}${row.version || ''}`;
+        const full = prefix ? `${prefix} ${row.label}` : row.label;
+        ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
+        const { lines, clipped } = wrapLabel(full, maxWidth, maxLines, (t) => ctx.measureText(t).width);
+        row.labelClipped = clipped;
+        row.fullLabel = { version: row.version || '', name: row.label };
+
+        const blockH = lines.length * TASK_LABEL_LINE_H;
+        let lineY = y + (rowH - blockH) / 2 + TASK_LABEL_LINE_H / 2;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        lines.forEach((line, i) => {
+            let x = textX;
+            // 1 行目の頭の版数は小さく淡く
+            if (i === 0 && prefix && line.startsWith(prefix)) {
+                ctx.font = `600 ${TASK_LABEL_FONT_PX - 1.5}px system-ui, -apple-system, sans-serif`;
+                ctx.fillStyle = TEXT_MUTED;
+                ctx.fillText(prefix, x, lineY);
+                x += ctx.measureText(prefix + ' ').width;
+                line = line.slice(prefix.length).trimStart();
+            }
+            ctx.font = `500 ${TASK_LABEL_FONT_PX}px system-ui, -apple-system, sans-serif`;
+            ctx.fillStyle = isCompletedRow ? TEXT_MUTED : TEXT_PRIMARY;
+            ctx.fillText(line, x, lineY);
+            lineY += TASK_LABEL_LINE_H;
+        });
+    }
+
+    /**
+     * 担当者の見出し行の帯（営業日ごとの未完了の予定の本数）。セルを this.stripCells に記録する
+     */
+    drawLoadStrip(row, index, y, rowH) {
+        const ctx = this.timelineCtx;
+        const todayStr = getTodayString();
+        const days = [];
+        for (let i = 0; i < this.totalDays; i++) {
+            const d = new Date(this.rangeStart);
+            d.setDate(d.getDate() + i);
+            days.push(formatDateString(d));
+        }
+        const load = countDailyLoad(row.schedules, days, {
+            isOff: (ds) => {
+                const [yy, mm, dd] = ds.split('-').map(Number);
+                return !isBusinessDay(new Date(yy, mm - 1, dd), row.member);
+            },
+            effEnd: (s) => effectiveEnd(s, todayStr),
+            isDone: (s) => s.status === SCHEDULE.STATUS.COMPLETED
+        });
+
+        const top = y + (rowH - LOAD_STRIP_H) / 2;
+        const cells = [];
+        days.forEach((ds, i) => {
+            const list = load.get(ds);
+            if (!list) return;
+            const x = i * DAY_WIDTH;
+            const n = list.length;
+            ctx.fillStyle = LOAD_COLORS[Math.min(n, 3) - 1];
+            ctx.fillRect(x + 1, top, DAY_WIDTH - 2, LOAD_STRIP_H);
+            if (n >= 2) {
+                ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+                ctx.fillStyle = n >= 3 ? '#FFFFFF' : TEXT_PRIMARY;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(n), x + DAY_WIDTH / 2, top + LOAD_STRIP_H / 2 + 0.5);
+            }
+            cells.push({ x, date: ds, list });
+        });
+        this.stripCells.set(index, cells);
+    }
+
+    /**
+     * 担当者の帯のセル（その日の予定一覧）を座標から引く
+     * @returns {{rowIndex: number, x: number, date: string, list: Object[]}|null}
+     */
+    getStripCellAtPosition(x, y) {
+        const rowIndex = this.getRowIndexAtPosition(y);
+        const cells = this.stripCells.get(rowIndex);
+        if (!cells) return null;
+        const cell = cells.find(c => x >= c.x && x < c.x + DAY_WIDTH);
+        return cell ? { rowIndex, ...cell } : null;
+    }
+
+    /** 担当者×タスク表示の担当者を畳む・開く */
+    toggleMemberCollapsed(member) {
+        if (this.collapsedMembers.has(member)) this.collapsedMembers.delete(member);
+        else this.collapsedMembers.add(member);
+        this.render(this.currentYear, this.currentMonth, this.filteredSchedulesCache);
     }
 
     /**
@@ -2071,6 +2332,113 @@ function hideTooltip() {
     currentTooltipSchedule = null;
 }
 
+/** YYYY-MM-DD → M/D */
+function monthDay(ds) {
+    const [, m, d] = ds.split('-').map(Number);
+    return `${m}/${d}`;
+}
+
+/**
+ * 担当者の帯のセルに、その日の予定一覧の吹き出しを出す（同じセルの再タップで閉じる）
+ * @param {ScheduleRenderer} renderer
+ * @param {{rowIndex: number, x: number, date: string, list: Object[]}} cell
+ * @param {HTMLCanvasElement} canvas - タイムライン canvas
+ * @param {boolean} touch - タップで出すなら true
+ */
+function showStripTip(renderer, cell, canvas, touch) {
+    const row = renderer.rows[cell.rowIndex];
+    const key = `strip:${row.member}:${cell.date}`;
+    if (currentGanttTipKey() === key) {
+        if (touch) hideGanttTip();
+        return;
+    }
+    const today = getTodayString();
+    const items = cell.list.map(s => {
+        const late = getDelayInfo(s, today).delayed ? '（遅延）' : '';
+        return `<li>${escapeHtml(s.task)} ${escapeHtml(s.process)}${s.isReview ? ' R' : ''}${late}</li>`;
+    }).join('');
+    const box = canvas.getBoundingClientRect();
+    const scale = renderer.uiScale || 1;
+    const top = box.top + renderer.rowY(cell.rowIndex) * scale;
+    showGanttTip({
+        key,
+        html: `<small>${escapeHtml(row.member)} ・ ${monthDay(cell.date)} ・ ${cell.list.length} 本</small><ul>${items}</ul>`,
+        anchor: { left: box.left + cell.x * scale, top, bottom: top + renderer.rowHeight(cell.rowIndex) * scale },
+        touch
+    });
+}
+
+/**
+ * 省略された見出しの全文の吹き出しを出す（同じ見出しの再タップで閉じる）
+ */
+function showLabelTip(renderer, rowIndex, labelCanvas, touch) {
+    const row = renderer.rows[rowIndex];
+    const key = `label:${rowIndex}:${row.label}`;
+    if (currentGanttTipKey() === key) {
+        if (touch) hideGanttTip();
+        return;
+    }
+    const box = labelCanvas.getBoundingClientRect();
+    const scale = renderer.uiScale || 1;
+    const top = box.top + renderer.rowY(rowIndex) * scale;
+    showGanttTip({
+        key,
+        html: `<small>${escapeHtml(row.fullLabel.version)}</small>${escapeHtml(row.fullLabel.name)}`,
+        anchor: { left: box.left + 24 * scale, top, bottom: top + renderer.rowHeight(rowIndex) * scale },
+        touch
+    });
+}
+
+/**
+ * 見出し欄（ラベル canvas）の操作: 担当者の見出しで畳む・開く、省略された見出しで全文を出す
+ * PC はクリック／マウスを乗せる、スマホはタップ（指が動いた操作はタップとみなさない）
+ */
+function setupLabelInteractions() {
+    const labelCanvas = document.getElementById('ganttLabelCanvas');
+    if (!labelCanvas || labelCanvas._labelInteractionSetup) return;
+    labelCanvas._labelInteractionSetup = true;
+
+    const rowAt = (clientY) => {
+        const renderer = getRenderer();
+        if (!renderer) return { renderer: null, index: -1, row: null };
+        const box = labelCanvas.getBoundingClientRect();
+        const index = renderer.getRowIndexAtPosition((clientY - box.top) / (renderer.uiScale || 1));
+        return { renderer, index, row: index >= 0 ? renderer.rows[index] : null };
+    };
+
+    labelCanvas.addEventListener('mousemove', (event) => {
+        if (Date.now() - lastTouchEndTime < SYNTHETIC_MOUSE_WINDOW_MS) return;
+        const { renderer, index, row } = rowAt(event.clientY);
+        labelCanvas.style.cursor = row && row.type === 'memberGroup' ? 'pointer' : '';
+        if (row && row.labelClipped) showLabelTip(renderer, index, labelCanvas, false);
+        else if (String(currentGanttTipKey()).startsWith('label:')) hideGanttTip();
+    });
+    labelCanvas.addEventListener('mouseleave', () => {
+        if (String(currentGanttTipKey()).startsWith('label:')) hideGanttTip();
+    });
+    labelCanvas.addEventListener('click', (event) => {
+        if (Date.now() - lastTouchEndTime < SYNTHETIC_MOUSE_WINDOW_MS) return;
+        const { renderer, row } = rowAt(event.clientY);
+        if (row && row.type === 'memberGroup') {
+            hideGanttTip();
+            renderer.toggleMemberCollapsed(row.member);
+        }
+    });
+    bindTap(labelCanvas, (touch) => {
+        lastTouchEndTime = Date.now();
+        const { renderer, index, row } = rowAt(touch.clientY);
+        if (!row) { hideGanttTip(); return; }
+        if (row.type === 'memberGroup') {
+            hideGanttTip();
+            renderer.toggleMemberCollapsed(row.member);
+        } else if (row.labelClipped) {
+            showLabelTip(renderer, index, labelCanvas, true);
+        } else {
+            hideGanttTip();
+        }
+    });
+}
+
 /**
  * ツールチップイベントをセットアップ（timelineCanvas用）
  */
@@ -2105,15 +2473,25 @@ export function setupTooltipHandler() {
             } else {
                 hideTooltip();
             }
+
+            // 担当者×タスク表示の帯: その日の予定一覧
+            const cell = !schedule ? renderer.getStripCellAtPosition(x, y) : null;
+            if (cell) {
+                showStripTip(renderer, cell, canvas, false);
+            } else if (String(currentGanttTipKey()).startsWith('strip:')) {
+                hideGanttTip();
+            }
         });
 
         canvas.addEventListener('mouseleave', () => {
             hideTooltip();
+            if (String(currentGanttTipKey()).startsWith('strip:')) hideGanttTip();
             const renderer = getRenderer();
             if (renderer) renderer.setHoverRow(-1);
         });
 
         canvas._tooltipSetup = true;
+        setupLabelInteractions();
         return true;
     };
 
@@ -2770,6 +3148,8 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                 dragState.segmentIndex === 0 &&
                 dragState.targetRowIndex >= 0 &&
                 dragState.targetRowIndex !== dragState.originalRowIndex &&
+                !!rowMember(renderer.rows && renderer.rows[dragState.targetRowIndex]) &&
+                rowMember(renderer.rows[dragState.targetRowIndex]) !== dragState.schedule.member &&
                 renderer.rows && renderer.rows[dragState.targetRowIndex];
 
             if (dragState.groupMode) {
@@ -2785,7 +3165,7 @@ export function setupDragAndDrop(onScheduleUpdate, onMemberChange, onSegmentEndC
                     didUpdate = true;
                 }
             } else if (memberChanged && onMemberChange) {
-                const newMember = renderer.rows[dragState.targetRowIndex].label;
+                const newMember = rowMember(renderer.rows[dragState.targetRowIndex]);
                 // 縦ドラッグ（担当者変更）中は日付を変更しない（掴んだ位置のオフセットによる意図しない日付ずれを防ぐ）
                 onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
                 didUpdate = true;
@@ -2945,9 +3325,12 @@ function drawDragPreview(renderer, previews, targetRowIndex, showDateLabels = tr
         if (!originalRect) return;
 
         // 連動追従バー（2件目以降）と残作業セグメントは担当者変更の対象にならないため、常に自分の行に描画する
+        // 別の担当者の行に来たときだけ担当者変更のプレビュー（担当者×タスク表示で同じ担当者の別タスク行は日付移動のみ）
+        const targetMember = rowMember(renderer.rows && renderer.rows[targetRowIndex]);
         const isMemberDrag = index === 0 && segmentIndex === 0 &&
             targetRowIndex >= 0 && targetRowIndex !== dragState.originalRowIndex &&
-            scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER;
+            scheduleSettings.viewMode === SCHEDULE.VIEW_MODE.MEMBER &&
+            !!targetMember && targetMember !== schedule.member;
         const barY = isMemberDrag
             ? renderer.rowY(targetRowIndex) + ROW_PADDING
             : originalRect.y;
@@ -2970,7 +3353,7 @@ function drawDragPreview(renderer, previews, targetRowIndex, showDateLabels = tr
                 ctx.font = '600 11px system-ui, -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.globalAlpha = 0.9;
-                ctx.fillText(`→ ${targetRow.label}`, barX + barWidth / 2, barY - 5);
+                ctx.fillText(`→ ${targetMember}`, barX + barWidth / 2, barY - 5);
                 ctx.globalAlpha = 1.0;
             }
         }
@@ -3268,6 +3651,8 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     dragState.segmentIndex === 0 &&
                     dragState.targetRowIndex >= 0 &&
                     dragState.targetRowIndex !== dragState.originalRowIndex &&
+                    !!rowMember(renderer.rows && renderer.rows[dragState.targetRowIndex]) &&
+                    rowMember(renderer.rows[dragState.targetRowIndex]) !== dragState.schedule.member &&
                     renderer.rows && renderer.rows[dragState.targetRowIndex];
 
                 if (dragState.groupMode) {
@@ -3276,7 +3661,7 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                         didUpdate = true;
                     }
                 } else if (memberChanged && onMemberChange) {
-                    const newMember = renderer.rows[dragState.targetRowIndex].label;
+                    const newMember = rowMember(renderer.rows[dragState.targetRowIndex]);
                     // 縦ドラッグ（担当者変更）中は日付を変更しない（掴んだ位置のオフセットによる意図しない日付ずれを防ぐ）
                     onMemberChange(dragState.schedule.id, newMember, dragState.originalStartDate);
                     didUpdate = true;
@@ -3313,6 +3698,11 @@ export function setupTouchHandlers(onScheduleClick, onScheduleUpdate, onMemberCh
                     // タップ: 詳細モーダルを開く
                     onScheduleClick(touchState.schedule);
                 }
+            } else if (!touchState.schedule && !touchState.hasMoved && renderer) {
+                // 担当者×タスク表示の帯のタップ: その日の予定一覧（帯以外のタップは吹き出しを閉じる）
+                const cell = renderer.getStripCellAtPosition(touchState.startX, touchState.startY);
+                if (cell) showStripTip(renderer, cell, canvas, true);
+                else hideGanttTip();
             }
 
             // ツールチップ非表示

@@ -2513,6 +2513,17 @@ const SCHEDULE_DISPLAY_SETTING_INPUTS = {
  * 設定画面のガント表示スイッチに現在値を反映し、変更時に保存して再描画する
  */
 function setupScheduleDisplaySettings() {
+    document.querySelectorAll('input[name="scheduleMemberLayout"]').forEach(radio => {
+        radio.checked = radio.value === (scheduleSettings.memberLayout || 'lanes');
+        if (radio._scheduleDisplayBound) return;
+        radio._scheduleDisplayBound = true;
+        radio.addEventListener('change', () => {
+            if (!radio.checked) return;
+            setScheduleSettings({ memberLayout: radio.value });
+            if (typeof window.saveData === 'function') window.saveData(true);
+            renderScheduleView();
+        });
+    });
     Object.entries(SCHEDULE_DISPLAY_SETTING_INPUTS).forEach(([id, key]) => {
         const input = document.getElementById(id);
         if (!input) return;

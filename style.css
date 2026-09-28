@@ -2525,6 +2525,16 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 /* Gantt tooltip */
+/* ガントの小さな吹き出し（省略された見出しの全文・担当者の帯のその日の予定）: js/schedule-gantt-tips.js */
+.gantt-tip {
+    position: fixed; z-index: 10001; max-width: min(360px, calc(100vw - 32px));
+    background: var(--text-primary); color: var(--surface);
+    font-size: calc(13px * var(--ui-scale)); line-height: 1.5;
+    padding: 6px 10px; border-radius: var(--radius-sm); box-shadow: var(--shadow-md); pointer-events: none;
+}
+.gantt-tip small { display: block; opacity: .7; font-size: calc(11.5px * var(--ui-scale)); }
+.gantt-tip ul { margin: 2px 0 0; padding-left: 1.1em; }
+
 .gantt-tooltip {
     position: fixed;
     background: var(--surface);
