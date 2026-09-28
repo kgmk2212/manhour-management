@@ -88,9 +88,16 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
 .line1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .line1 .proc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip { font-size: 10px; font-weight: 700; color: var(--text-3); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; line-height: 1.5; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
-.lab.proc-head { padding-left: 26px; background: var(--surface); }
+.lab.ver-head { padding-left: 20px; gap: 8px; background: var(--surface); }
+.lab.ver-head .vname { font-size: 12px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.lab.ver-head .cnt { margin-left: auto; font-size: 11px; color: var(--text-3); }
+.row.ver { background: var(--surface); }
+.lab.proc-head { padding-left: 32px; background: var(--surface); }
 .lab.proc-head .proc { font-size: 12.5px; }
 .lab.task.under { padding-left: 42px; }
+.frame.phone .lab.ver-head { padding-left: 14px; }
+.frame.phone .lab.proc-head { padding-left: 20px; }
+.frame.phone .lab.task.under { padding-left: 26px; }
 
 .metrics { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--text-2); }
 .metrics b { color: var(--text); font-variant-numeric: tabular-nums; }
@@ -110,7 +117,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
   <header>
     <div class="eyebrow">スケジュール ・ 担当者×タスク表示 ・ 見出し欄</div>
     <h1>タスク名の見せ方</h1>
-    <p class="lede">タスク名は「処理名：対応名」で保存されています（古いデータは「_」区切り）。これを版数・処理名・対応名に分けて見せる案を、PC とスマホ、見出し欄の幅で切り替えて比べます。</p>
+    <p class="lede">タスク名は「処理名：対応名」で保存されています（古いデータは「_」区切り）。これを版数・処理名・対応名に分けて見せる A・C の 2 案を、PC とスマホ、見出し欄の幅で切り替えて比べます（本実装では A と C を設定で切り替える想定）。版数は複数の対応をまとめた 1 つの版数です。</p>
   </header>
 
   <div class="controls">
@@ -118,8 +125,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
       <div class="seg" role="group" aria-label="見せ方" id="variantSeg">
         <button type="button" data-v="now">現状</button>
         <button type="button" data-v="A">A 3段</button>
-        <button type="button" data-v="B">B 2段</button>
-        <button type="button" data-v="C">C 処理名でまとめる</button>
+        <button type="button" data-v="C">C 版数・処理名でまとめる</button>
       </div>
     </div>
     <div class="ctl"><span class="ctl-label">表示幅</span>
@@ -147,15 +153,16 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
   const START = '2026-09-14', DAYS = 21, HOL = new Set(['2026-09-21', '2026-09-22', '2026-09-23']);
   const DOW = ['日', '月', '火', '水', '木', '金', '土'];
   // サンプル（実データと同じ「処理名：対応名」。1 件は古い「_」区切り）
+  // 版数は処理・対応ごとではなく、複数の対応をまとめた 1 つの版数（全角 2 文字＋半角 7 文字）
   const TASKS = [
-    { m: '田中', ver: 'V2.4', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['PG', 0, 4], ['PT', 14, 16]] },
-    { m: '田中', ver: 'V2.4', name: '請求書出力：宛名の敬称切替', c: 'var(--t1)', bars: [['PG', 10, 11]] },
-    { m: '田中', ver: 'V2.3', name: '権限管理：ロール継承時に閲覧権限が外れる不具合の修正', c: 'var(--t2)', bars: [['IT', 10, 11]] },
-    { m: '田中', ver: 'V2.4', name: '取引先マスタ保守画面：取引先区分の追加', c: 'var(--t3)', bars: [['PG', 10, 18]] },
-    { m: '佐藤', ver: 'V2.5', name: '日次集計バッチ：処理時間短縮（並列化）', c: 'var(--t4)', bars: [['PT', 10, 14]] },
-    { m: '佐藤', ver: 'V2.5', name: 'CSV取込：文字コード自動判定', c: 'var(--t6)', bars: [['PG', 15, 20]] },
-    { m: '佐藤', ver: 'V2.2', name: 'ログイン画面_パスワード強度チェック', c: 'var(--t7)', bars: [['ST', 1, 3]] },
-    { m: '佐藤', ver: 'V2.4', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['IT', 15, 17]] },
+    { m: '田中', ver: '定期2026-10', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['PG', 0, 4], ['PT', 14, 16]] },
+    { m: '田中', ver: '定期2026-10', name: '請求書出力：宛名の敬称切替', c: 'var(--t1)', bars: [['PG', 10, 11]] },
+    { m: '田中', ver: '定期2026-10', name: '取引先マスタ保守画面：取引先区分の追加', c: 'var(--t3)', bars: [['PG', 10, 18]] },
+    { m: '田中', ver: '臨時2026-09', name: '権限管理：ロール継承時に閲覧権限が外れる不具合の修正', c: 'var(--t2)', bars: [['IT', 10, 11]] },
+    { m: '佐藤', ver: '定期2026-10', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['IT', 15, 17]] },
+    { m: '佐藤', ver: '定期2026-11', name: '日次集計バッチ：処理時間短縮（並列化）', c: 'var(--t4)', bars: [['PT', 10, 14]] },
+    { m: '佐藤', ver: '定期2026-11', name: 'CSV取込：文字コード自動判定', c: 'var(--t6)', bars: [['PG', 15, 20]] },
+    { m: '佐藤', ver: '定期2026-08', name: 'ログイン画面_パスワード強度チェック', c: 'var(--t7)', bars: [['ST', 1, 3]] },
   ];
 
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -201,24 +208,18 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
     A: {
       title: 'A: 3 段（版数 ／ 処理名 ／ 対応名）',
       rowH: 68,
-      good: ['版数・処理名・対応名が決まった位置に出るので、目で探す場所が一定', '対応名は文節の切れ目で 2 行まで折り返す'],
+      good: ['版数・処理名・対応名が決まった位置に出るので、目で探す場所が一定', '版数（定期2026-10 など）が長くても 1 行目に収まる', '対応名は文節の切れ目で 2 行まで折り返す'],
       care: ['行が高くなる（36px → 68px 程度）。同じ画面に入るタスク行は半分ほどになる', 'バーは行の中で上寄せ／中央寄せのどちらにするか決める必要がある'],
     },
-    B: {
-      title: 'B: 2 段（処理名＋版数 ／ 対応名）',
-      rowH: 42,
-      good: ['1 行目で「何の処理か」、2 行目で「何の対応か」。行の高さは 42px 程度で済む', '版数は小さな札にして処理名の右へ。広い画面では対応名も 1 行で全部見える'],
-      care: ['見出し欄が狭いと対応名は 1 行で「…」になる（全文は吹き出しで見る）'],
-    },
     C: {
-      title: 'C: 処理名でまとめる（担当者 ＞ 処理名 ＞ 対応名）',
+      title: 'C: 版数・処理名でまとめる（担当者 ＞ 版数 ＞ 処理名 ＞ 対応名）',
       rowH: 38,
-      good: ['同じ処理名の対応がまとまり、処理名を繰り返さない（請求書出力の 2 件など）', 'タスク行は対応名だけなので、今の行の高さ（36px）とほぼ同じ 38px で 2 行まで読める'],
-      care: ['処理名の見出し行が増える（処理名ごとに 1 行）', '処理名が 1 件しかない場合も見出し行が出るので、少ないタスクでは冗長'],
+      good: ['版数と処理名を見出し行にまとめるので、同じ版数・同じ処理の対応を繰り返し書かない', 'タスク行は対応名だけなので、今の行の高さに近い 38px で 2 行まで読める', '版数の見出しで「この版数でこの人が何を抱えているか」がまとまって見える'],
+      care: ['見出し行が増える（版数ごと・処理名ごとに 1 行ずつ）。対応が少ない版数・処理名では冗長', '字下げが 3 段になるので、スマホでは対応名に使える幅が狭くなる（字下げを浅くして補う）'],
     },
   };
 
-  let state = { v: 'B', d: 'pc', w: 'std' };
+  let state = { v: 'C', d: 'pc', w: 'std' };
 
   function labelWidth() {
     if (state.d === 'sp') return Math.round(390 * 0.4 + (state.w === 'wide' ? 40 : 0)); // スマホは画面幅の 40%（広めでも +40px まで）
@@ -233,9 +234,6 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
     }
     if (v === 'A') {
       return `${sw}<span class="txt"><span class="ver">${t.ver}</span>${proc ? `<span class="proc clamp1">${esc(proc)}</span>` : ''}<span class="dt phrase clamp2 ${proc ? '' : 'proc'}">${phrase(detail)}</span></span>`;
-    }
-    if (v === 'B') {
-      return `${sw}<span class="txt"><span class="line1"><span class="proc">${esc(proc || detail)}</span><span class="chip">${t.ver}</span></span>${proc ? `<span class="dt muted phrase clamp1">${phrase(detail)}</span>` : ''}</span>`;
     }
     // C: 処理名の見出しの下の行は対応名だけ
     return `${sw}<span class="txt"><span class="dt phrase clamp2">${phrase(detail)}</span></span>`;
@@ -278,13 +276,19 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
       addRow(el('div', 'lab member', `<i></i><span>${m}</span><span class="cnt">${mine.length} 件</span>`), 36, [], 'member');
       total += 36;
       if (state.v === 'C') {
-        const groups = new Map();
-        mine.forEach(t => { const k = `${t.ver} ${split(t.name).proc || '（処理名なし）'}`; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
-        groups.forEach((list, k) => {
-          const [ver, ...rest] = k.split(' ');
-          addRow(el('div', 'lab proc-head', `<span class="line1"><span class="proc">${esc(rest.join(' '))}</span><span class="chip">${ver}</span></span>`), 28, []);
-          headRows++; total += 28;
-          list.forEach(t => { addRow(el('div', 'lab task under', labelHtml(t, 'C')), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
+        // 版数 → 処理名 の順にまとめる
+        const byVer = new Map();
+        mine.forEach(t => { if (!byVer.has(t.ver)) byVer.set(t.ver, []); byVer.get(t.ver).push(t); });
+        byVer.forEach((vlist, ver) => {
+          addRow(el('div', 'lab ver-head', `<span class="vname">${esc(ver)}</span><span class="cnt">${vlist.length} 件</span>`), 26, [], 'ver');
+          headRows++; total += 26;
+          const byProc = new Map();
+          vlist.forEach(t => { const k = split(t.name).proc || '（処理名なし）'; if (!byProc.has(k)) byProc.set(k, []); byProc.get(k).push(t); });
+          byProc.forEach((list, proc) => {
+            addRow(el('div', 'lab proc-head', `<span class="proc clamp1">${esc(proc)}</span>`), 26, []);
+            headRows++; total += 26;
+            list.forEach(t => { addRow(el('div', 'lab task under', labelHtml(t, 'C')), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
+          });
         });
       } else {
         mine.forEach(t => { addRow(el('div', 'lab task', labelHtml(t, state.v)), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
@@ -295,7 +299,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
     document.getElementById('frame').className = `frame${state.d === 'sp' ? ' phone' : ''}`;
     document.getElementById('metrics').innerHTML =
       `<span>見出し欄 <b>${lw}px</b></span><span>タスク行の高さ <b>${v.rowH}px</b></span>` +
-      `<span>行数 <b>担当者 2 ＋ ${state.v === 'C' ? `処理名 ${headRows} ＋ ` : ''}タスク ${taskRows}</b></span><span>表の高さ <b>${total}px</b>（現状 ${34 + 36 * 2 + 36 * TASKS.length}px）</span>`;
+      `<span>行数 <b>担当者 2 ＋ ${state.v === 'C' ? `版数・処理名の見出し ${headRows} ＋ ` : ''}タスク ${taskRows}</b></span><span>表の高さ <b>${total}px</b>（現状 ${34 + 36 * 2 + 36 * TASKS.length}px）</span>`;
     const note = document.getElementById('note');
     note.innerHTML = `<h2>${v.title}</h2><ul>${v.good.map(x => `<li><span class="tag good">良い</span>${x}</li>`).join('')}${v.care.map(x => `<li><span class="tag care">注意</span>${x}</li>`).join('')}` +
       `<li><span class="tag care">共通</span>対応名の折り返しは文節の切れ目（このモックアップでは簡易ルール、本実装は BudouX）。「現状」だけ文字単位</li></ul>`;
