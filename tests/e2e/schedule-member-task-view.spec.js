@@ -232,7 +232,8 @@ test.describe("ガントの縦スクロール", () => {
       return { client: o.clientHeight, scroll: o.scrollHeight, canvas: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().height };
     });
     expect(m.scroll).toBeGreaterThan(m.client);
-    expect(m.scroll).toBeGreaterThanOrEqual(m.canvas);
+    // scrollHeight は整数、canvas の高さは小数（1970 と 1970.0001 など）なので 1px 未満の差は許す
+    expect(m.scroll).toBeGreaterThanOrEqual(Math.floor(m.canvas));
     const box = await page.locator("#ganttOuter").boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.wheel(0, 400);
