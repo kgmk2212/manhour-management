@@ -98,6 +98,8 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
 .frame.phone .lab.ver-head { padding-left: 14px; }
 .frame.phone .lab.proc-head { padding-left: 20px; }
 .frame.phone .lab.task.under { padding-left: 26px; }
+.lab.task.merged { padding-left: 32px; }
+.frame.phone .lab.task.merged { padding-left: 20px; }
 
 .metrics { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--text-2); }
 .metrics b { color: var(--text); font-variant-numeric: tabular-nums; }
@@ -126,6 +128,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
         <button type="button" data-v="now">現状</button>
         <button type="button" data-v="A">A 3段</button>
         <button type="button" data-v="C">C 版数・処理名でまとめる</button>
+        <button type="button" data-v="C2">C＋見出し行を減らす</button>
       </div>
     </div>
     <div class="ctl"><span class="ctl-label">表示幅</span>
@@ -217,6 +220,13 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
       good: ['版数と処理名を見出し行にまとめるので、同じ版数・同じ処理の対応を繰り返し書かない', 'タスク行は対応名だけなので、今の行の高さに近い 38px で 2 行まで読める', '版数の見出しで「この版数でこの人が何を抱えているか」がまとまって見える'],
       care: ['見出し行が増える（版数ごと・処理名ごとに 1 行ずつ）。対応が少ない版数・処理名では冗長', '字下げが 3 段になるので、スマホでは対応名に使える幅が狭くなる（字下げを浅くして補う）'],
     },
+    C2: {
+      title: 'C＋見出し行を減らす（処理名の下の対応が 1 件なら、処理名の見出し行を作らない）',
+      rowH: 38,
+      rowH2: 46,
+      good: ['C のまとまりはそのままで、見出し行が減る（処理名の下に対応が 1 件だけの所は 1 行にまとめる）', 'まとめた行は 1 段目が処理名（太字）、2 段目が対応名。A の 3 段から版数を除いた形'],
+      care: ['同じ見出しの下で、行の形が 2 種類（対応名だけの行／処理名＋対応名の行）混ざる', '処理名の下の対応が 2 件以上なら見出し行が出るので、件数が増えた時に形が変わる'],
+    },
   };
 
   let state = { v: 'C', d: 'pc', w: 'std' };
@@ -234,6 +244,10 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
     }
     if (v === 'A') {
       return `${sw}<span class="txt"><span class="ver">${t.ver}</span>${proc ? `<span class="proc clamp1">${esc(proc)}</span>` : ''}<span class="dt phrase clamp2 ${proc ? '' : 'proc'}">${phrase(detail)}</span></span>`;
+    }
+    if (v === 'C2single') {
+      const { proc: pr, detail: dt } = split(t.name);
+      return `${sw}<span class="txt"><span class="proc clamp1">${esc(pr || dt)}</span>${pr ? `<span class="dt phrase clamp1">${phrase(dt)}</span>` : ''}</span>`;
     }
     // C: 処理名の見出しの下の行は対応名だけ
     return `${sw}<span class="txt"><span class="dt phrase clamp2">${phrase(detail)}</span></span>`;
@@ -275,7 +289,7 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
       const mine = TASKS.filter(t => t.m === m);
       addRow(el('div', 'lab member', `<i></i><span>${m}</span><span class="cnt">${mine.length} 件</span>`), 36, [], 'member');
       total += 36;
-      if (state.v === 'C') {
+      if (state.v === 'C' || state.v === 'C2') {
         // 版数 → 処理名 の順にまとめる
         const byVer = new Map();
         mine.forEach(t => { if (!byVer.has(t.ver)) byVer.set(t.ver, []); byVer.get(t.ver).push(t); });
@@ -285,6 +299,13 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
           const byProc = new Map();
           vlist.forEach(t => { const k = split(t.name).proc || '（処理名なし）'; if (!byProc.has(k)) byProc.set(k, []); byProc.get(k).push(t); });
           byProc.forEach((list, proc) => {
+            // C＋見出し行を減らす: 対応が 1 件だけの処理名は、見出し行を作らず 1 行（処理名＋対応名）にまとめる
+            if (state.v === 'C2' && list.length === 1) {
+              const t = list[0];
+              addRow(el('div', 'lab task merged', labelHtml(t, 'C2single')), v.rowH2, t.bars.map(b => [...b, t.c]));
+              taskRows++; total += v.rowH2;
+              return;
+            }
             addRow(el('div', 'lab proc-head', `<span class="proc clamp1">${esc(proc)}</span>`), 26, []);
             headRows++; total += 26;
             list.forEach(t => { addRow(el('div', 'lab task under', labelHtml(t, 'C')), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
@@ -298,8 +319,8 @@ h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
 
     document.getElementById('frame').className = `frame${state.d === 'sp' ? ' phone' : ''}`;
     document.getElementById('metrics').innerHTML =
-      `<span>見出し欄 <b>${lw}px</b></span><span>タスク行の高さ <b>${v.rowH}px</b></span>` +
-      `<span>行数 <b>担当者 2 ＋ ${state.v === 'C' ? `版数・処理名の見出し ${headRows} ＋ ` : ''}タスク ${taskRows}</b></span><span>表の高さ <b>${total}px</b>（現状 ${34 + 36 * 2 + 36 * TASKS.length}px）</span>`;
+      `<span>見出し欄 <b>${lw}px</b></span><span>タスク行の高さ <b>${v.rowH}px${v.rowH2 ? `（まとめた行 ${v.rowH2}px）` : ''}</b></span>` +
+      `<span>行数 <b>担当者 2 ＋ ${state.v.startsWith('C') ? `版数・処理名の見出し ${headRows} ＋ ` : ''}タスク ${taskRows}</b></span><span>表の高さ <b>${total}px</b>（現状 ${34 + 36 * 2 + 36 * TASKS.length}px）</span>`;
     const note = document.getElementById('note');
     note.innerHTML = `<h2>${v.title}</h2><ul>${v.good.map(x => `<li><span class="tag good">良い</span>${x}</li>`).join('')}${v.care.map(x => `<li><span class="tag care">注意</span>${x}</li>`).join('')}` +
       `<li><span class="tag care">共通</span>対応名の折り返しは文節の切れ目（このモックアップでは簡易ルール、本実装は BudouX）。「現状」だけ文字単位</li></ul>`;
