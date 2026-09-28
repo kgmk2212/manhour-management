@@ -52,14 +52,15 @@ export function assignLanes(schedules, spanOf = scheduleSpan) {
  * 行ごとのレーン数から、各行の Y オフセットと高さを求める
  * @param {number[]} laneCounts - 行ごとのレーン数（1 以上）
  * @param {{headerHeight: number, rowHeight: number, laneHeight: number}} cfg
+ * @param {Array<number|undefined>} [baseHeights] - 行ごとの基本の高さ（1 段目の高さ）。未指定の行は cfg.rowHeight
  * @returns {{offsets: number[], heights: number[], totalHeight: number}}
  */
-export function buildRowLayout(laneCounts, { headerHeight, rowHeight, laneHeight }) {
+export function buildRowLayout(laneCounts, { headerHeight, rowHeight, laneHeight }, baseHeights = []) {
     const offsets = [];
     const heights = [];
     let y = headerHeight;
-    laneCounts.forEach(count => {
-        const h = rowHeight + (Math.max(1, count) - 1) * laneHeight;
+    laneCounts.forEach((count, i) => {
+        const h = (baseHeights[i] ?? rowHeight) + (Math.max(1, count) - 1) * laneHeight;
         offsets.push(y);
         heights.push(h);
         y += h;

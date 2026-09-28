@@ -4,7 +4,7 @@
 // ============================================
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel } from '../js/schedule-member-task.js';
+import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel, splitTaskName, phraseTokens, applyTaskLabelStyle } from '../js/schedule-member-task.js';
 
 const sc = (id, member, version, task, startDate, endDate, extra = {}) =>
     ({ id, member, version, task, process: 'PG', startDate, endDate, status: 'pending', ...extra });
@@ -101,5 +101,94 @@ describe('wrapLabel', () => {
     test('1 行に収まらない英数字の続きは文字単位に落とす', () => {
         const r = wrapLabel('ABCDEFGHIJ', 50, 3, measure);
         assert.deepEqual(r.lines, ['ABCDE', 'FGHIJ']);
+    });
+});
+
+describe('splitTaskName', () => {
+    test('「：」で処理名と対応名に分ける（最初の区切りだけ）', () => {
+        assert.deepEqual(splitTaskName('請求書出力：宛名：敬称'), { proc: '請求書出力', detail: '宛名：敬称' });
+    });
+    test('「：」が無ければ「_」で分ける（古いデータ）', () => {
+        assert.deepEqual(splitTaskName('ログイン画面_パスワード強度'), { proc: 'ログイン画面', detail: 'パスワード強度' });
+    });
+    test('区切りが無ければ全体が対応名', () => {
+        assert.deepEqual(splitTaskName('単独タスク'), { proc: '', detail: '単独タスク' });
+    });
+});
+
+describe('phraseTokens / wrapLabel(phrase)', () => {
+    test('助詞・括弧・英数字の前後で区切る', () => {
+        assert.deepEqual(phraseTokens('宛名の敬称切替'), ['宛名の', '敬称切替']);
+        assert.deepEqual(phraseTokens('PDFレイアウト（並列化）'), ['PDF', 'レイアウト', '（並列化）']);
+    });
+    test('文節の切れ目で折り返し、語の途中では折らない', () => {
+        const measure = (s) => s.length * 10;
+        const r = wrapLabel('ロール継承時に閲覧権限が外れる', 80, 3, measure, { phrase: true });
+        assert.deepEqual(r.lines, ['ロール継承時に', '閲覧権限が外れる']);
+        // 幅を狭めると、文節の切れ目（「閲覧権限が」の後）で折る
+        assert.deepEqual(wrapLabel('ロール継承時に閲覧権限が外れる', 70, 3, measure, { phrase: true }).lines,
+            ['ロール継承時に', '閲覧権限が', '外れる']);
+    });
+});
+
+describe('applyTaskLabelStyle', () => {
+    const H = { A: 68, detail: 38, procDetail: 46, head: 26 };
+    const t = (label, version, member = '田中') => ({ type: 'memberTask', label, version, member, schedules: [{ id: label + version }] });
+    const rows = [
+        { type: 'memberGroup', label: '田中', member: '田中', schedules: [] },
+        t('請求書出力：電帳法対応', '定期2026-10'),
+        t('請求書出力：宛名の敬称', '定期2026-10'),
+        t('取引先マスタ：区分追加', '定期2026-10'),
+        t('権限管理：不具合修正', '臨時2026-09'),
+        { type: 'memberGroup', label: '佐藤', member: '佐藤', schedules: [] },
+        t('単独タスク', '定期2026-11', '佐藤'),
+    ];
+    const shape = (rs) => rs.map(r => `${r.type}${r.labelMode ? `/${r.labelMode}` : ''}:${r.label}@${r.baseHeight ?? '-'}`);
+
+    test('A はタスク行を 3 段（基本の高さ 68）にし、処理名・対応名を持たせる', () => {
+        const out = applyTaskLabelStyle(rows, 'A', H);
+        assert.equal(out.length, rows.length);
+        const r = out[1];
+        assert.equal(r.labelMode, 'A');
+        assert.equal(r.baseHeight, 68);
+        assert.equal(r.proc, '請求書出力');
+        assert.equal(r.detail, '電帳法対応');
+    });
+
+    test('C は版数 → 処理名の見出し行を挟み、タスク行は対応名だけ', () => {
+        assert.deepEqual(shape(applyTaskLabelStyle(rows, 'C', H)), [
+            'memberGroup:田中@-',
+            'versionHead:定期2026-10@26',
+            'procHead:請求書出力@26',
+            'memberTask/detail:請求書出力：電帳法対応@38',
+            'memberTask/detail:請求書出力：宛名の敬称@38',
+            'procHead:取引先マスタ@26',
+            'memberTask/detail:取引先マスタ：区分追加@38',
+            'versionHead:臨時2026-09@26',
+            'procHead:権限管理@26',
+            'memberTask/detail:権限管理：不具合修正@38',
+            'memberGroup:佐藤@-',
+            'versionHead:定期2026-11@26',
+            'memberTask/detail:単独タスク@38',
+        ]);
+        const v = applyTaskLabelStyle(rows, 'C', H)[1];
+        assert.equal(v.taskCount, 3);
+        assert.equal(v.member, '田中');
+    });
+
+    test('C2 は処理名の下の対応が 1 件なら見出し行を作らず、処理名＋対応名の行にする', () => {
+        assert.deepEqual(shape(applyTaskLabelStyle(rows, 'C2', H)), [
+            'memberGroup:田中@-',
+            'versionHead:定期2026-10@26',
+            'procHead:請求書出力@26',
+            'memberTask/detail:請求書出力：電帳法対応@38',
+            'memberTask/detail:請求書出力：宛名の敬称@38',
+            'memberTask/procDetail:取引先マスタ：区分追加@46',
+            'versionHead:臨時2026-09@26',
+            'memberTask/procDetail:権限管理：不具合修正@46',
+            'memberGroup:佐藤@-',
+            'versionHead:定期2026-11@26',
+            'memberTask/detail:単独タスク@38',
+        ]);
     });
 });

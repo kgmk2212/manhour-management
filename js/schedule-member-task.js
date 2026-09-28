@@ -96,9 +96,107 @@ export function countDailyLoad(schedules, days, spansOf = (s) => [{ start: s.sta
 }
 
 /**
+ * タスク名を処理名と対応名に分ける（見積入力と同じ規則: 「：」→「_」の順で最初の区切り）
+ * @param {string} name
+ * @returns {{proc: string, detail: string}} 区切りが無ければ proc は空、detail が全体
+ */
+export function splitTaskName(name) {
+    const text = name || '';
+    for (const sep of ['：', '_']) {
+        const i = text.indexOf(sep);
+        if (i > 0) return { proc: text.slice(0, i), detail: text.slice(i + 1) };
+    }
+    return { proc: '', detail: text };
+}
+
+/**
+ * 文節っぽい切れ目で分ける（折り返しの候補位置）。簡易ルール:
+ * 助詞・読点・中黒・閉じ括弧の後、開き括弧の前、英数字の続きの前後で切る
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function phraseTokens(text) {
+    const chunks = [];
+    let cur = '';
+    const isAlnum = (c) => /[A-Za-z0-9.\-_/]/.test(c);
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const prev = text[i - 1] || '';
+        const breakBefore = cur !== '' && (
+            /[（(「]/.test(c) ||
+            (/[のとをにがでへはや、・）)」]/.test(prev) && !/[、。）)」]/.test(c)) ||
+            isAlnum(c) !== isAlnum(prev)
+        );
+        if (breakBefore) { chunks.push(cur); cur = ''; }
+        cur += c;
+    }
+    if (cur) chunks.push(cur);
+    return chunks;
+}
+
+/**
+ * タスクの行を「タスク名の見せ方」に合わせて組み替える（純粋関数・行配列を新しく返す）
+ * - 'A': タスク行を 3 段（版数／処理名／対応名）にする
+ * - 'C': 版数の見出し行 → 処理名の見出し行 → 対応名だけのタスク行
+ * - 'C2': C と同じだが、処理名の下の対応が 1 件なら見出し行を作らず、そのタスク行に処理名／対応名を 2 段で書く
+ * 版数・処理名は、連続するタスク行の中で最初に出てきた順にまとめる（担当者の見出し行などで区切る）
+ * @param {Object[]} rows - buildRows の結果（タスク行は type 'task' か 'memberTask'）
+ * @param {'A'|'C'|'C2'} style
+ * @param {{A: number, detail: number, procDetail: number, head: number}} heights - 行の基本の高さ
+ * @returns {Object[]}
+ */
+export function applyTaskLabelStyle(rows, style, heights) {
+    const isTask = (r) => r.type === 'task' || r.type === 'memberTask';
+    const withName = (r, labelMode, baseHeight) => ({ ...r, ...splitTaskName(r.label), labelMode, baseHeight });
+    if (style !== 'C' && style !== 'C2') {
+        return rows.map(r => (isTask(r) ? withName(r, 'A', heights.A) : r));
+    }
+
+    const out = [];
+    let i = 0;
+    while (i < rows.length) {
+        if (!isTask(rows[i])) { out.push(rows[i]); i++; continue; }
+        // 連続するタスク行のまとまりを、版数 → 処理名 の順にまとめ直す
+        const block = [];
+        while (i < rows.length && isTask(rows[i])) { block.push(rows[i]); i++; }
+        const byVersion = new Map();
+        block.forEach(r => {
+            if (!byVersion.has(r.version)) byVersion.set(r.version, []);
+            byVersion.get(r.version).push(r);
+        });
+        byVersion.forEach((list, version) => {
+            const member = list[0].member;
+            out.push({ type: 'versionHead', label: version, version, member, taskCount: list.length,
+                schedules: list.flatMap(r => r.schedules), baseHeight: heights.head });
+            const byProc = new Map();
+            list.forEach(r => {
+                const { proc } = splitTaskName(r.label);
+                if (!byProc.has(proc)) byProc.set(proc, []);
+                byProc.get(proc).push(r);
+            });
+            byProc.forEach((plist, proc) => {
+                if (!proc) {
+                    // 処理名の無いタスク（区切りなし）は見出し行を作らず、対応名（＝タスク名全体）だけの行にする
+                    plist.forEach(r => out.push(withName(r, 'detail', heights.detail)));
+                    return;
+                }
+                if (style === 'C2' && plist.length === 1) {
+                    out.push(withName(plist[0], 'procDetail', heights.procDetail));
+                    return;
+                }
+                out.push({ type: 'procHead', label: proc, version, member, schedules: plist.flatMap(r => r.schedules), baseHeight: heights.head });
+                plist.forEach(r => out.push(withName(r, 'detail', heights.detail)));
+            });
+        });
+    }
+    return out;
+}
+
+/**
  * 見出しの文字列を maxWidth に収まるよう最大 maxLines 行に折り返す
  * - 日本語などは文字単位で折り返す
  * - 英数字の続き（CSV・V2.4・Slack など）は途中で切らない。1 行に収まらない長さなら文字単位に落とす
+ * - phrase オプションで文節っぽい切れ目（phraseTokens）で折る
  * - 最終行に入りきらない場合は、末尾を「…」にして収める
  * @param {string} text
  * @param {number} maxWidth
@@ -106,9 +204,9 @@ export function countDailyLoad(schedules, days, spansOf = (s) => [{ start: s.sta
  * @param {(s: string) => number} measure - 文字列の描画幅
  * @returns {{lines: string[], clipped: boolean}}
  */
-export function wrapLabel(text, maxWidth, maxLines, measure) {
-    // 英数字の続き・その他の 1 文字ずつに分ける
-    const tokens = text.match(/[A-Za-z0-9.\-_/]+|[\s\S]/gu) || [];
+export function wrapLabel(text, maxWidth, maxLines, measure, { phrase = false } = {}) {
+    // phrase: 文節っぽい切れ目で折る。そうでなければ英数字の続き・その他の 1 文字ずつに分ける
+    const tokens = phrase ? phraseTokens(text) : (text.match(/[A-Za-z0-9.\-_/]+|[\s\S]/gu) || []);
     const lines = [];
     let current = '';
     let clipped = false;
