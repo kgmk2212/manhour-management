@@ -374,6 +374,11 @@ export const SCHEDULE = {
         TASK_ROW_HEIGHT_DETAIL: 38,     // まとめる: 対応名だけの行
         TASK_ROW_HEIGHT_PROC_DETAIL: 46, // まとめる（見出し減）: 処理名＋対応名の行
         TASK_HEAD_ROW_HEIGHT: 26,       // 版数・処理名の見出し行
+        // canvas 1 枚あたりの画素数・一辺の上限。超えるとブラウザが何も描かなくなる（真っ白になる）ため、
+        // 超えそうなときは描く解像度を下げて収める。iOS（iPhone の Chrome 等も同じ WebKit）は約 1,677 万画素
+        CANVAS_MAX_AREA_IOS: 16777216,
+        CANVAS_MAX_AREA: 268435456,
+        CANVAS_MAX_DIM: 32767,
         DEFAULT_DISPLAY_MONTHS: 3  // デフォルト表示月数
     },
 

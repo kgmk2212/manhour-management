@@ -4,7 +4,7 @@
 コード内の関数・要素を探すときは、`js/` を総当たり Grep する前に**このファイルを Grep** する。
 `名前:行番号` 形式なので、当たった行番号を `Read` の `offset` に渡せば該当箇所だけ読める。
 
-## js/ — 49 ファイル / 45,726 行
+## js/ — 49 ファイル / 45,763 行
 
 ### js/actual-bulk-core.js — 実績の一括変更 — 適用エンジン（DOM・state 非依存の純粋ロジック） (193行)
 - export: ACTUAL_FIELDS:7, shiftDate:17, isValidDateString:28, changedFields:37, applyPatchToActual:49, validateActual:68, applyBulkPatch:84, duplicateActuals:110, deleteActuals:120, displayValue:134, summarizeField:146, findByCondition:158, sameTaskIds:176, taskOptionsForVersions:189
@@ -21,8 +21,8 @@
 ### js/ai-analysis.js — AI 分析セクション (941行)
 - export: loadHistory:75, appendHistory:110, initAiAnalysis:133
 
-### js/constants.js — アプリケーション定数定義 (694行)
-- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:204, VALIDATION:252, ERROR_MESSAGES:271, SUCCESS_MESSAGES:285, PROCESS:296, BULK_EDIT:328, SCHEDULE:340, CAPACITY_DISPLAY_MODE:405, TASK_COLORS:413, THEME_TASK_COLORS:442
+### js/constants.js — アプリケーション定数定義 (699行)
+- export: LAYOUT:8, GESTURE:36, PROGRESS:48, CALCULATIONS:84, INSIGHT:105, UI:142, STORAGE_KEYS:204, VALIDATION:252, ERROR_MESSAGES:271, SUCCESS_MESSAGES:285, PROCESS:296, BULK_EDIT:328, SCHEDULE:340, CAPACITY_DISPLAY_MODE:410, TASK_COLORS:418, THEME_TASK_COLORS:447
 
 ### js/estimate-add.js — 見積追加関連機能 (1749行)
 - export: openAddEstimateModal:25, openAddEstimateSingleProcess:72, openEditAllProcesses:160, closeAddEstimateModal:704, resetAddEstimateForm:745, switchEstimateMode:799, getCurrentEstimateMode:828, initOtherWorkMemberSelect:835, autoFillMember:856, initAddEstimateForm:887, updateAddEstWorkMonthUI:941, switchAddEstMonthType:974, updateAddEstimateTableHeader:1011, updateDefaultAddProcessMonths:1113, ensureExtraRowMonthCell:1204, refreshAllExtraRowMonthCells:1257, updateAddEstimateTotals:1388, addEstimateMemberRow:1417, removeEstimateMemberRow:1457, removeAllExtraMemberRows:1468, collectAllEstimateEntries:1478, addEstimateFromModal:1504, addEstimateFromModalNormal:1648
@@ -118,14 +118,14 @@
 ### js/schedule-interruption.js — [GANTT-CHART] スケジュール中断・差し込み管理 (763行)
 - export: getNextBusinessDay:20, calculateConsumedHoursAtDate:38, resolveSegmentStart:77, calculateSegments:114, recalculateEndDateWithInterruptions:201, normalizeWorkedUntil:215, simulateInterruption:241, addInterruption:308, updateInterruption:384, removeInterruption:414, cascadeShift:455, analyzeImpact:576, setSegmentResumeDate:665, setSegmentWorkedUntil:718, countDependentSchedules:760
 
-### js/schedule-lanes.js — スケジュールの重なりレーン割り当てと行レイアウト（純粋関数） (82行)
-- export: scheduleSpan:12, assignLanes:32, buildRowLayout:58, rowIndexAtY:77
+### js/schedule-lanes.js — スケジュールの重なりレーン割り当てと行レイアウト（純粋関数） (100行)
+- export: scheduleSpan:12, assignLanes:32, buildRowLayout:58, fitRasterScale:79, rowIndexAtY:95
 
 ### js/schedule-member-task.js — ガント「担当者×タスク」表示の純粋ロジック（行の組み立て・日ごとの本数・見出しの折り返し） (244行)
 - export: selectMemberTaskSchedules:18, buildMemberTaskRows:38, countDailyLoad:88, splitTaskName:103, phraseTokens:118, applyTaskLabelStyle:149, wrapLabel:208
 
-### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (3916行)
-- export: isMemberTaskLayout:59, rowMember:68, GanttChartRenderer:178, setupTooltipHandler:2615, getRenderer:2680, renderGanttChart:2693, setupCanvasClickHandler:2774, updateScheduleSelectionChip:2908, toggleScheduleSelectionMode:2942, clearScheduleSelection:2950, setupDragAndDrop:3090, buildDragPreviews:3560, setupTouchHandlers:3640
+### js/schedule-render.js — スケジュール描画モジュール（ガントチャートCanvas描画） (3930行)
+- export: isMemberTaskLayout:59, rowMember:68, GanttChartRenderer:178, setupTooltipHandler:2629, getRenderer:2694, renderGanttChart:2707, setupCanvasClickHandler:2788, updateScheduleSelectionChip:2922, toggleScheduleSelectionMode:2956, clearScheduleSelection:2964, setupDragAndDrop:3104, buildDragPreviews:3574, setupTouchHandlers:3654
 
 ### js/schedule.js — [GANTT-CHART] スケジュール管理モジュール (3825行)
 - export: initScheduleModule:39, updateCurrentMonthDisplay:138, renderScheduleView:149, updateScheduleSummary:251, navigateScheduleMonth:291, goToScheduleToday:313, setScheduleViewMode:336, addSchedule:360, updateSchedule:424, deleteSchedule:449, calculateProgress:467, isDelayed:532, getCurrentTaskPalette:642, getTaskColor:655, isBusinessDay:692, formatDateForCheck:732, calculateEndDate:746, countBusinessDays:776, getNextBusinessDay:798, shiftBusinessDays:813, businessDayDelta:831, endDateForStart:849, planBatchMove:865, findLinkedBackSchedule:907, openCreateScheduleModal:934, closeCreateScheduleModal:969, openScheduleDetailModal:977, openInterruptionModal:1179, closeInterruptionModal:1235, onInterruptionSplitDateChange:1242, updateInterruptionConsumedLabel:1285, toggleInsertSection:1333, updateInterruptionInsertTaskOptions:1347, showImpactPreview:1355, closeImpactPreview:1435, backToInterruptionModal:1440, applyInterruption:1446, openInterruptionFromDetail:1613, editInterruptionFromDetail:1620, removeInterruptionFromDetail:1632, resetSegmentResumeDateFromDetail:1691, closeScheduleDetailModal:1707, openEstimateFromSchedule:1717, saveScheduleFromModal:1747, saveScheduleDetailChanges:1781, deleteScheduleFromModal:1856, updateScheduleVersionOptions:1882, updateScheduleTaskOptions:1897, updateScheduleProcessOptions:1921, updateScheduleMemberOptions:1944, populateScheduleEstimateHours:1968, recalculateScheduleEndDate:1989, saveScheduleRemainingHours:2010, recalculateScheduleEndDateDetail:2074, generateSchedulesFromEstimates:2104, openAutoGenerateModal:2254, closeAutoGenerateModal:2276, updateAutoGenerateVersionOptions:2284, updateAutoGenerateTargetOptions:2299, updateAutoGeneratePreview:2336, setScheduleStatus:2396, handleScheduleDrag:2454, handleScheduleDropWithInsert:2554, handleScheduleBatchDrag:2629, handleSegmentDrag:2657, handleSegmentEndDrag:2696, clearSegmentPin:2734, handleScheduleMemberDrag:2766, executeAutoGenerate:2823, getFilteredSchedules:2869, applyScheduleFilters:2895, updateFilterResultCount:2913, clearScheduleFilters:2945, deleteFilteredSchedules:2967, exportSchedulesToExcel:3008, showToast:3085, updateScheduleFilterOptions:3245, updateUnscheduledBadge:3305, toggleUnscheduledDropdown:3325, toggleUnscheduledSelectAll:3455, updateUnscheduledCount:3464, registerCheckedSchedules:3484

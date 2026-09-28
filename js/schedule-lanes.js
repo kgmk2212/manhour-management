@@ -69,6 +69,24 @@ export function buildRowLayout(laneCounts, { headerHeight, rowHeight, laneHeight
 }
 
 /**
+ * canvas の解像度倍率を、画素数と一辺の上限に収まるよう下げる（上限内なら desired のまま）
+ * @param {number} width - logical 幅
+ * @param {number} height - logical 高さ
+ * @param {number} desired - 望む倍率（devicePixelRatio × 表示倍率）
+ * @param {{maxArea: number, maxDim: number}} limits
+ * @returns {number}
+ */
+export function fitRasterScale(width, height, desired, { maxArea, maxDim }) {
+    if (width <= 0 || height <= 0) return desired;
+    return Math.min(
+        desired,
+        Math.sqrt(maxArea / (width * height)),
+        maxDim / width,
+        maxDim / height
+    );
+}
+
+/**
  * Y 座標がどの行に入るか（行の範囲外は -1）
  * @param {{offsets: number[], heights: number[]}} layout
  * @param {number} y

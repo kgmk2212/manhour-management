@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from '../js/schedule-lanes.js';
+import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY, fitRasterScale } from '../js/schedule-lanes.js';
 
 const s = (id, startDate, endDate, extra = {}) => ({ id, startDate, endDate, ...extra });
 
@@ -69,5 +69,21 @@ describe('buildRowLayout / rowIndexAtY', () => {
         assert.equal(rowIndexAtY(layout, 177), 1);
         assert.equal(rowIndexAtY(layout, 213), 2);
         assert.equal(rowIndexAtY(layout, 214), -1);
+    });
+});
+
+describe('fitRasterScale', () => {
+    const limits = { maxArea: 16777216, maxDim: 32767 };
+    test('上限内なら望んだ倍率のまま', () => {
+        assert.equal(fitRasterScale(1000, 1000, 3, limits), 3);
+    });
+    test('画素数の上限を超えるなら、上限に収まるまで倍率を下げる', () => {
+        const s = fitRasterScale(2576, 8354, 3, limits);
+        assert.ok(s < 3);
+        assert.ok(2576 * s * 8354 * s <= 16777216 + 1);
+    });
+    test('一辺の上限も守る', () => {
+        const s = fitRasterScale(100, 20000, 2, { maxArea: 1e12, maxDim: 32767 });
+        assert.ok(20000 * s <= 32767);
     });
 });

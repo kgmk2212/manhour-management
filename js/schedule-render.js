@@ -11,7 +11,7 @@ import { getTaskColor, isBusinessDay, calculateEndDate, getNextBusinessDay, find
 import { calculateSegments, resolveSegmentStart } from './schedule-interruption.js';
 import { sortMembers, escapeHtml, getTodayString } from './utils.js';
 import { getDelayInfo } from './schedule-delay.js';
-import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY } from './schedule-lanes.js';
+import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY, fitRasterScale } from './schedule-lanes.js';
 import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel, applyTaskLabelStyle } from './schedule-member-task.js';
 import { showGanttTip, hideGanttTip, currentGanttTipKey, bindTap } from './schedule-gantt-tips.js';
 import { getMemberOrderString } from './members.js';
@@ -359,10 +359,9 @@ export class GanttChartRenderer {
         ctx.fillStyle = HEADER_BG;
         ctx.fillRect(0, 0, sticky.width, sticky.height);
 
-        // 元 canvas の raster px ↔ 画面の CSS px の比
-        const srcRatio = (this.dpr || 1) * scale;
         // 見出し欄・表それぞれの見えている範囲（横スクロール位置から）の日付の行を、画面上の位置に写す
-        const copy = (src, box, scrollLeft) => {
+        // srcRatio: 元 canvas の raster px / logical px（画素数の上限で解像度を下げていることがある）
+        const copy = (src, box, scrollLeft, srcRatio) => {
             const left = box.left - oBox.left - outer.clientLeft;     // 重ねる canvas 上の位置（CSS px）
             const width = Math.min(box.width, cssW - left);           // 写す幅（CSS px）
             if (width <= 0) return;
@@ -370,8 +369,8 @@ export class GanttChartRenderer {
                 (scrollLeft / scale) * srcRatio, 0, (width / scale) * srcRatio, HEADER_HEIGHT * srcRatio,
                 left * dpr, 0, width * dpr, HEADER_HEIGHT * scale * dpr);
         };
-        copy(this.labelCanvas, lBox, this.labelScrollContainer.scrollLeft);
-        copy(this.timelineCanvas, tBox, this.scrollContainer.scrollLeft);
+        copy(this.labelCanvas, lBox, this.labelScrollContainer.scrollLeft, this.labelRasterScale || (this.dpr || 1) * scale);
+        copy(this.timelineCanvas, tBox, this.scrollContainer.scrollLeft, this.timelineRasterScale || (this.dpr || 1) * scale);
         // 下端の区切り線
         ctx.fillStyle = BORDER;
         ctx.fillRect(0, sticky.height - Math.max(1, dpr), sticky.width, Math.max(1, dpr));
@@ -718,7 +717,18 @@ export class GanttChartRenderer {
         this.uiScale = this.getUiScale();
         // raster は logical × dpr × uiScale、CSS は logical × uiScale、
         // setTransform は dpr × uiScale で logical 座標を raster へ写像する。
-        const rasterScale = this.dpr * this.uiScale;
+        // canvas が端末の上限（iOS は約 1,677 万画素）を超えると真っ白になるので、超えるときは解像度を下げて収める
+        const desiredRaster = this.dpr * this.uiScale;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const limits = {
+            maxArea: isIOS ? SCHEDULE.CANVAS.CANVAS_MAX_AREA_IOS : SCHEDULE.CANVAS.CANVAS_MAX_AREA,
+            maxDim: SCHEDULE.CANVAS.CANVAS_MAX_DIM
+        };
+        const rasterScale = fitRasterScale(this.timelineWidth, this.totalHeight, desiredRaster, limits);
+        const labelRasterScale = fitRasterScale(this.labelWidth, this.totalHeight, desiredRaster, limits);
+        this.timelineRasterScale = rasterScale;
+        this.labelRasterScale = labelRasterScale;
 
         // Timeline canvas サイズ設定
         this.timelineCanvas.width = Math.round(this.timelineWidth * rasterScale);
@@ -728,11 +738,11 @@ export class GanttChartRenderer {
         this.timelineCtx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
 
         // Label canvas サイズ設定
-        this.labelCanvas.width = Math.round(this.labelWidth * rasterScale);
-        this.labelCanvas.height = Math.round(this.totalHeight * rasterScale);
+        this.labelCanvas.width = Math.round(this.labelWidth * labelRasterScale);
+        this.labelCanvas.height = Math.round(this.totalHeight * labelRasterScale);
         this.labelCanvas.style.width = (this.labelWidth * this.uiScale) + 'px';
         this.labelCanvas.style.height = (this.totalHeight * this.uiScale) + 'px';
-        this.labelCtx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
+        this.labelCtx.setTransform(labelRasterScale, 0, 0, labelRasterScale, 0, 0);
 
         // モバイル時のラベルスクロールコンテナ設定
         if (this.labelScrollContainer) {
@@ -761,8 +771,9 @@ export class GanttChartRenderer {
         this.drawLabelHeader();
         this.drawGrid();
         this.drawMonthSeparators();
-        this.drawTodayLine();
         this.drawRows(rows);
+        // 今日の線は行の背景・バーより後に描く（先に描くと行の背景に塗りつぶされて見えなかった）
+        this.drawTodayLine();
         this.drawLabelColumn(rows);
         this.drawSelectionRings(selectedScheduleIds);
         updateScheduleSelectionChip();
@@ -1113,13 +1124,16 @@ export class GanttChartRenderer {
         const ctx = this.timelineCtx;
         const x = this.dateToX(today) + DAY_WIDTH / 2;
 
-        // ソリッドライン（--danger）— ボディ部分のみ
+        // ソリッドライン（--danger）— ボディ部分のみ。バーの上に重なるので、バーの文字が読めるよう少し透かす
+        ctx.save();
+        ctx.globalAlpha = 0.8;
         ctx.strokeStyle = TODAY_LINE;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x, HEADER_HEIGHT);
         ctx.lineTo(x, this.totalHeight);
         ctx.stroke();
+        ctx.restore();
 
         // 月名行と日付行の境界に小さな丸インジケータ
         const monthRowH = 20;
