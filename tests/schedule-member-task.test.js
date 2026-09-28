@@ -62,22 +62,20 @@ describe('buildMemberTaskRows', () => {
 });
 
 describe('countDailyLoad', () => {
-    test('営業日ごとに未完了の予定を数え、休日・完了済みは数えない。遅延は effEnd まで', () => {
+    test('その日にバーが描かれている予定を数える（完了済み・週末も数え、分割の合間は数えない）', () => {
         const list = [
-            sc('a', '田中', 'V1', 'A', '2026-09-14', '2026-09-15'),
-            sc('b', '田中', 'V1', 'B', '2026-09-15', '2026-09-16'),
-            sc('c', '田中', 'V1', 'C', '2026-09-15', '2026-09-15', { status: 'completed' }),
-            sc('late', '田中', 'V1', 'L', '2026-09-10', '2026-09-11'),
+            sc('a', '田中', 'V1', 'A', '2026-09-18', '2026-09-21'), // 金〜月（週末をまたぐ）
+            sc('b', '田中', 'V1', 'B', '2026-09-19', '2026-09-19', { status: 'completed' }),
+            sc('split', '田中', 'V1', 'S', '2026-09-17', '2026-09-22'),
         ];
-        const days = ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-19'];
-        const load = countDailyLoad(list, days, {
-            isOff: (d) => d === '2026-09-19',
-            effEnd: (s) => (s.id === 'late' ? '2026-09-16' : s.endDate),
-            isDone: (s) => s.status === 'completed',
-        });
-        assert.deepEqual([...load.keys()], ['2026-09-14', '2026-09-15', '2026-09-16']);
-        assert.deepEqual(load.get('2026-09-15').map(s => s.id).sort(), ['a', 'b', 'late']);
-        assert.equal(load.get('2026-09-14').length, 2);
+        const days = ['2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22'];
+        const spansOf = (s) => (s.id === 'split'
+            ? [{ start: '2026-09-17', end: '2026-09-17' }, { start: '2026-09-22', end: '2026-09-22' }]
+            : [{ start: s.startDate, end: s.endDate }]);
+        const load = countDailyLoad(list, days, spansOf);
+        assert.deepEqual([...load.entries()].map(([d, l]) => `${d.slice(8)}:${l.map(s => s.id).join('')}`), [
+            '17:split', '18:a', '19:ab', '20:a', '21:a', '22:split',
+        ]);
     });
 });
 

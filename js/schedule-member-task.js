@@ -77,21 +77,19 @@ export function buildMemberTaskRows(schedules, { memberOrder, taskSortOrder = {}
 }
 
 /**
- * 担当者の見出しの帯に出す、日ごとの未完了の予定の本数
+ * 担当者の見出しの帯に出す、日ごとの「その日に表示されているバー」の本数
+ * （完了済み・週末や祝日にまたがるバーも、画面に描かれていれば数える。遅延のはみ出しはバーではないので数えない）
  * @param {Object[]} schedules - その担当者の予定
  * @param {string[]} days - 対象日（YYYY-MM-DD）
- * @param {Object} options
- * @param {(d: string) => boolean} options.isOff - 休日（週末・祝日・休暇）なら true。本数を数えない
- * @param {(s: Object) => string} [options.effEnd] - 予定が占める最終日（遅延中は今日まで）
- * @param {(s: Object) => boolean} [options.isDone] - 完了済みなら true。数えない
- * @returns {Map<string, Object[]>} 日付 → その日の予定（本数 0 の日は含めない）
+ * @param {(s: Object) => Array<{start: string, end: string}>} [spansOf] - 予定のバーが描かれる期間
+ *   （分割された予定は区間ごと。既定は startDate〜endDate の 1 区間）
+ * @returns {Map<string, Object[]>} 日付 → その日にバーがある予定（0 本の日は含めない）
  */
-export function countDailyLoad(schedules, days, { isOff, effEnd = (s) => s.endDate, isDone = () => false }) {
-    const active = schedules.filter(s => !isDone(s));
+export function countDailyLoad(schedules, days, spansOf = (s) => [{ start: s.startDate, end: s.endDate }]) {
+    const spans = schedules.map(s => ({ s, spans: spansOf(s) }));
     const result = new Map();
     days.forEach(d => {
-        if (isOff(d)) return;
-        const list = active.filter(s => s.startDate <= d && d <= effEnd(s));
+        const list = spans.filter(x => x.spans.some(p => p.start <= d && d <= p.end)).map(x => x.s);
         if (list.length > 0) result.set(d, list);
     });
     return result;

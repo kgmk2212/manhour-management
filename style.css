@@ -2337,6 +2337,9 @@ table tr[style*="1565c0"] th:first-child {
     overflow: hidden;
     background: var(--surface);
     display: flex;
+    /* 中の見出し欄・表を外枠の高さに引き伸ばさない（引き伸ばすと中身がはみ出さず、max-height を超えた行が
+       切れて縦スクロールもできなかった）。外枠が縦スクロールし、見出し欄と表が一緒に動く */
+    align-items: flex-start;
     overflow-y: auto;
     max-height: calc(600px * var(--gantt-scale));
 }
@@ -2362,6 +2365,7 @@ table tr[style*="1565c0"] th:first-child {
 }
 
 .gantt-resize-handle {
+    align-self: stretch;
     width: calc(5px * var(--gantt-scale));
     flex-shrink: 0;
     cursor: col-resize;

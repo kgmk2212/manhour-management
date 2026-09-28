@@ -1288,25 +1288,20 @@ export class GanttChartRenderer {
     }
 
     /**
-     * 担当者の見出し行の帯（営業日ごとの未完了の予定の本数）。セルを this.stripCells に記録する
+     * 担当者の見出し行の帯（その日に表示されているバーの本数）。セルを this.stripCells に記録する
      */
     drawLoadStrip(row, index, y, rowH) {
         const ctx = this.timelineCtx;
-        const todayStr = getTodayString();
         const days = [];
         for (let i = 0; i < this.totalDays; i++) {
             const d = new Date(this.rangeStart);
             d.setDate(d.getDate() + i);
             days.push(formatDateString(d));
         }
-        const load = countDailyLoad(row.schedules, days, {
-            isOff: (ds) => {
-                const [yy, mm, dd] = ds.split('-').map(Number);
-                return !isBusinessDay(new Date(yy, mm - 1, dd), row.member);
-            },
-            effEnd: (s) => effectiveEnd(s, todayStr),
-            isDone: (s) => s.status === SCHEDULE.STATUS.COMPLETED
-        });
+        // その日に表示されているバーの本数（分割された予定は区間ごと）
+        const load = countDailyLoad(row.schedules, days, (s) => ((s.interruptions || []).length > 0
+            ? calculateSegments(s).map(seg => ({ start: seg.startDate, end: seg.endDate }))
+            : [{ start: s.startDate, end: s.endDate }]));
 
         const top = y + (rowH - LOAD_STRIP_H) / 2;
         const cells = [];

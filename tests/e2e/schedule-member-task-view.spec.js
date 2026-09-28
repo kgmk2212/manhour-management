@@ -115,9 +115,9 @@ test.describe("担当者×タスク表示", () => {
     await page.waitForTimeout(100);
     const sp = await rowPoint(page, "#ganttTimelineCanvas", gIdx, await stripX(page, "2026-09-24"));
     await page.mouse.move(sp.x, sp.y);
-    // 9/24 は 帳票A（遅延中）・権限管理 IT・マスタ PG の 3 本
-    await expect(page.locator("#ganttTip")).toContainText("3 本");
-    await expect(page.locator("#ganttTip")).toContainText("（遅延）");
+    // 9/24 に表示されているバーは 権限管理 IT・マスタ PG の 2 本（遅延のはみ出しはバーではないので数えない）
+    await expect(page.locator("#ganttTip")).toContainText("2 本");
+    await expect(page.locator("#ganttTip")).toContainText("権限管理 IT");
   });
 
   test("別担当者のグループへドラッグすると担当者変更、同じ担当者の別タスク行へは担当者を変えない", async ({ page }) => {
@@ -177,6 +177,49 @@ test.describe("担当者×タスク表示", () => {
   });
 });
 
+test.describe("ガントの縦スクロール", () => {
+  /** 担当者 8 人 × 3 タスク（32 行）で、外枠の高さを超える量の予定 */
+  const MANY = [];
+  ["田中", "佐藤", "鈴木", "高橋", "伊藤", "渡辺", "山本", "中村"].forEach((m, mi) => {
+    for (let k = 0; k < 3; k++) {
+      MANY.push({ ...base, id: `m${mi}-${k}`, member: m, version: "V1", task: `タスク${m}${k}`, process: "PG",
+        startDate: `2026-09-${String(14 + k * 3).padStart(2, "0")}`, endDate: `2026-09-${String(15 + k * 3).padStart(2, "0")}`, estimatedHours: 16 });
+    }
+  });
+  const openMany = async (page) => {
+    await page.clock.setFixedTime(new Date("2026-09-24T10:00:00"));
+    await page.addInitScript((sc) => {
+      localStorage.clear();
+      localStorage.setItem("manhour_schedules", JSON.stringify(sc));
+      localStorage.setItem("manhour_scheduleSettings", JSON.stringify({ currentMonth: "2026-09", viewMode: "member", memberLayout: "tasks" }));
+      localStorage.setItem("manhour_currentTab", "schedule");
+    }, MANY);
+    await page.goto("/index.html");
+    await expect(page.locator(".tab-content.active")).toHaveCount(1);
+  };
+
+  test("PC: 外枠の高さを超える行は、外枠の中を縦スクロールして見られる（見出し欄と表が一緒に動く）", async ({ page }) => {
+    await openMany(page);
+    const m = await page.evaluate(() => {
+      const o = document.getElementById("ganttOuter");
+      return { client: o.clientHeight, scroll: o.scrollHeight, canvas: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().height };
+    });
+    expect(m.scroll).toBeGreaterThan(m.client);
+    expect(m.scroll).toBeGreaterThanOrEqual(m.canvas);
+    const box = await page.locator("#ganttOuter").boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(200);
+    const after = await page.evaluate(() => ({
+      outer: document.getElementById("ganttOuter").scrollTop,
+      labelTop: document.getElementById("ganttLabelCanvas").getBoundingClientRect().top,
+      timelineTop: document.getElementById("ganttTimelineCanvas").getBoundingClientRect().top,
+    }));
+    expect(after.outer).toBeGreaterThan(0);
+    expect(after.labelTop).toBeCloseTo(after.timelineTop, 0);
+  });
+});
+
 test.describe("担当者×タスク表示（スマホ）", () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 800 } });
 
@@ -203,5 +246,42 @@ test.describe("担当者×タスク表示（スマホ）", () => {
     await page.touchscreen.tap(gp.x, gp.y);
     expect((await rowsOf(page)).find((r) => r.label === "田中").collapsed).toBe(true);
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe("ガントの縦スクロール（スマホ）", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test("表の上を上へスワイプすると、ページではなくガントの中が縦スクロールする", async ({ page, context }) => {
+    const MANY = [];
+    ["田中", "佐藤", "鈴木", "高橋", "伊藤", "渡辺", "山本", "中村"].forEach((m, mi) => {
+      for (let k = 0; k < 3; k++) {
+        MANY.push({ ...base, id: `m${mi}-${k}`, member: m, version: "V1", task: `タスク${m}${k}`, process: "PG",
+          startDate: `2026-09-${String(14 + k * 3).padStart(2, "0")}`, endDate: `2026-09-${String(15 + k * 3).padStart(2, "0")}`, estimatedHours: 16 });
+      }
+    });
+    await page.clock.setFixedTime(new Date("2026-09-24T10:00:00"));
+    await page.addInitScript((sc) => {
+      localStorage.clear();
+      localStorage.setItem("manhour_schedules", JSON.stringify(sc));
+      localStorage.setItem("manhour_scheduleSettings", JSON.stringify({ currentMonth: "2026-09", viewMode: "member", memberLayout: "tasks" }));
+      localStorage.setItem("manhour_currentTab", "schedule");
+    }, MANY);
+    await page.goto("/index.html");
+    await expect(page.locator(".tab-content.active")).toHaveCount(1);
+    // ガントの外枠を画面の上寄りに出してから、表の中ほどを上へスワイプする
+    await page.locator("#ganttOuter").evaluate((el) => window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 80));
+    await page.waitForTimeout(100);
+    const winBefore = await page.evaluate(() => window.scrollY);
+    const box = await page.locator("#ganttTimelineScroll").boundingBox();
+    const x = box.x + box.width / 2, y = box.y + 300;
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 10; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - i * 20 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.waitForTimeout(400);
+    const after = await page.evaluate(() => ({ outer: document.getElementById("ganttOuter").scrollTop, win: window.scrollY }));
+    expect(after.outer).toBeGreaterThan(0);
+    expect(after.win).toBe(winBefore);
   });
 });
