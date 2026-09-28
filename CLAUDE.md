@@ -305,6 +305,7 @@ worktree統合・push）は通常どおり進めてよいが、色や形など�
 | `mockups/actual-bulk-edit/` | 実績のまとめ変更（選択一括編集／条件置換／表直接編集の3案比較） | 案1 採用・設計書 `docs/superpowers/specs/2026-08-29-actual-bulk-edit-design.md`(ローカルのみ) |
 | `mockups/schedule-redesign/` | スケジュール機能の刷新（案A ガント磨き込み／案B 担当者×日の負荷格子／案C 計画ボード＋進捗ガント の3案比較） | 検討中（推奨 案C の段階導入・B-010） |
 | `mockups/schedule-member-task-view/` | ガントの担当者×タスク表示（担当者グループ内をタスク行に分け、見出しに日ごとの本数の帯） | 検討中 |
+| `mockups/schedule-task-label/` | ガント見出し欄のタスク名の見せ方（版数・処理名・対応名の分け方、PC/スマホ、見出し欄の幅） | 検討中 |
 
 ---
 

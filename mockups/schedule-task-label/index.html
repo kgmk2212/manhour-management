@@ -1,0 +1,313 @@
+<title>タスク名の見せ方</title>
+<meta name="description" content="ガントの見出し欄でタスク名（版数・処理名・対応名）をどう見せるかの比較モックアップ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+<style>
+:root {
+  --bg: #F7F6F3; --surface: #FFFFFF; --surface-2: #FAFAF9; --border: #E7E5E0; --border-light: #F0EEEA;
+  --text: #1A1814; --text-2: #6B6560; --text-3: #9C9690;
+  --accent: #2D5A27; --accent-light: #EBF5EA; --amber: #C4841D; --amber-light: #FFF3DF;
+  --weekend: #F4F2EE; --holiday: #FFF6E6; --today: #B91C1C; --bar-ink: #FFFFFF;
+  --t1: #5B8BD6; --t2: #D07A7A; --t3: #D9A55B; --t4: #6FAE8E; --t5: #B58BA8; --t6: #8FA05A; --t7: #7A9BB0;
+  --shadow: 0 1px 2px rgba(26,24,20,.05), 0 6px 18px rgba(26,24,20,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #151412; --surface: #1D1C19; --surface-2: #22211E; --border: #34322D; --border-light: #2A2825;
+    --text: #EDEBE6; --text-2: #B3ADA5; --text-3: #847E76;
+    --accent: #7FB874; --accent-light: #243322; --amber: #E0A445; --amber-light: #3A2E17;
+    --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
+    --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A; --t5: #93708A; --t6: #748446; --t7: #5E7D92;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #151412; --surface: #1D1C19; --surface-2: #22211E; --border: #34322D; --border-light: #2A2825;
+  --text: #EDEBE6; --text-2: #B3ADA5; --text-3: #847E76;
+  --accent: #7FB874; --accent-light: #243322; --amber: #E0A445; --amber-light: #3A2E17;
+  --weekend: #1A1917; --holiday: #2A2419; --today: #F07171;
+  --t1: #4A73B5; --t2: #B06262; --t3: #B98A45; --t4: #57927A; --t5: #93708A; --t6: #748446; --t7: #5E7D92;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; line-height: 1.6; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; display: grid; gap: 20px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .08em; color: var(--text-3); font-weight: 600; }
+h1 { font-size: 24px; line-height: 1.3; margin: 4px 0 6px; text-wrap: balance; }
+.lede { margin: 0; color: var(--text-2); max-width: 70ch; }
+
+.controls { display: grid; gap: 10px; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ctl-label { font-size: 12px; color: var(--text-3); font-weight: 600; letter-spacing: .04em; min-width: 5.5em; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: 13px; font-weight: 600; border: 0; background: none; color: var(--text-2); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-light); color: var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stage { display: grid; justify-items: start; overflow-x: auto; }
+.frame { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; width: 100%; }
+.frame.phone { width: 390px; max-width: 100%; border-radius: 22px; border-width: 6px; border-color: var(--text); }
+.gscroll { overflow-x: auto; }
+.gantt { display: grid; grid-template-columns: var(--lw) max-content; min-width: max-content; }
+.col-label { position: sticky; left: 0; z-index: 2; background: var(--surface); border-right: 1px solid var(--border); }
+.head { height: 34px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.head.l { padding: 0 12px; font-size: 11.5px; color: var(--text-3); font-weight: 600; letter-spacing: .06em; }
+.day { width: 28px; flex: 0 0 28px; text-align: center; font-size: 10.5px; line-height: 1.1; color: var(--text-2); }
+.day small { display: block; font-size: 9px; color: var(--text-3); }
+.day.we, .day.we small { color: var(--text-3); }
+.day.hol b { color: var(--today); }
+
+.lab, .row { border-bottom: 1px solid var(--border-light); }
+.row { position: relative; }
+.bg { position: absolute; inset: 0; display: flex; pointer-events: none; }
+.bg span { width: 28px; flex: 0 0 28px; border-right: 1px solid var(--border-light); }
+.bg span.we { background: var(--weekend); } .bg span.hol { background: var(--holiday); }
+.bar { position: absolute; height: 24px; border-radius: 4px; color: var(--bar-ink); font-size: 11px; font-weight: 600; display: flex; align-items: center; padding: 0 6px; white-space: nowrap; overflow: hidden; }
+
+.lab { display: flex; align-items: center; gap: 8px; padding: 2px 10px 2px 12px; overflow: hidden; }
+.lab.member { background: var(--surface-2); font-weight: 700; font-size: 13.5px; gap: 8px; }
+.lab.member i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: 0 0 7px; }
+.lab.member .cnt { margin-left: auto; font-size: 11.5px; color: var(--text-3); font-weight: 500; }
+.row.member { background: var(--surface-2); }
+.sw { width: 4px; align-self: stretch; border-radius: 2px; flex: 0 0 4px; margin-block: 3px; }
+.lab.task { padding-left: 26px; align-items: stretch; }
+.txt { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.ver { font-size: 10.5px; color: var(--text-3); font-weight: 600; font-variant-numeric: tabular-nums; }
+.proc { font-size: 13px; font-weight: 600; line-height: 16px; }
+.dt { font-size: 12.5px; line-height: 16px; color: var(--text); }
+.ver { line-height: 14px; }
+.muted { color: var(--text-2); }
+/* 文節単位の折り返し: 区切りに <wbr> を入れ、それ以外では折らない（本実装は BudouX で区切りを決める想定） */
+.phrase { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.char { word-break: break-all; }
+.clamp1 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+.clamp2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.line1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.line1 .proc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip { font-size: 10px; font-weight: 700; color: var(--text-3); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; line-height: 1.5; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.lab.proc-head { padding-left: 26px; background: var(--surface); }
+.lab.proc-head .proc { font-size: 12.5px; }
+.lab.task.under { padding-left: 42px; }
+
+.metrics { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--text-2); }
+.metrics b { color: var(--text); font-variant-numeric: tabular-nums; }
+.note { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; max-width: 80ch; }
+.note h2 { font-size: 15px; margin: 0; }
+.note ul { margin: 0; padding-left: 1.2em; display: grid; gap: 5px; color: var(--text-2); }
+.note b { color: var(--text); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-right: 6px; }
+.tag.good { background: var(--accent-light); color: var(--accent); }
+.tag.care { background: var(--amber-light); color: var(--amber); }
+.pending { background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px 18px; color: var(--text-2); font-size: 13px; max-width: 80ch; }
+.pending b { color: var(--text); }
+@media (max-width: 640px) { .wrap { padding: 20px 16px 40px; } h1 { font-size: 20px; } .ctl-label { min-width: 100%; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">スケジュール ・ 担当者×タスク表示 ・ 見出し欄</div>
+    <h1>タスク名の見せ方</h1>
+    <p class="lede">タスク名は「処理名：対応名」で保存されています（古いデータは「_」区切り）。これを版数・処理名・対応名に分けて見せる案を、PC とスマホ、見出し欄の幅で切り替えて比べます。</p>
+  </header>
+
+  <div class="controls">
+    <div class="ctl"><span class="ctl-label">見せ方</span>
+      <div class="seg" role="group" aria-label="見せ方" id="variantSeg">
+        <button type="button" data-v="now">現状</button>
+        <button type="button" data-v="A">A 3段</button>
+        <button type="button" data-v="B">B 2段</button>
+        <button type="button" data-v="C">C 処理名でまとめる</button>
+      </div>
+    </div>
+    <div class="ctl"><span class="ctl-label">表示幅</span>
+      <div class="seg" role="group" aria-label="表示幅" id="deviceSeg">
+        <button type="button" data-d="pc">PC</button>
+        <button type="button" data-d="sp">スマホ</button>
+      </div>
+    </div>
+    <div class="ctl"><span class="ctl-label">見出し欄の幅</span>
+      <div class="seg" role="group" aria-label="見出し欄の幅" id="widthSeg">
+        <button type="button" data-w="std">標準</button>
+        <button type="button" data-w="wide">広め（画面が広いとき）</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+  <div class="stage"><div class="frame" id="frame"><div class="gscroll"><div class="gantt" id="gantt"></div></div></div></div>
+  <section class="note" id="note"></section>
+  <div class="pending"><b>別途検討</b>: 担当者の見出しの帯の数え方（その日に表示されているバーの本数）と、残タスク数（未完了・保留などを数える以前の方式）の出し方は、帯とは別の表示方法も含めてあらためて検討する。</div>
+</div>
+
+<script>
+(() => {
+  const START = '2026-09-14', DAYS = 21, HOL = new Set(['2026-09-21', '2026-09-22', '2026-09-23']);
+  const DOW = ['日', '月', '火', '水', '木', '金', '土'];
+  // サンプル（実データと同じ「処理名：対応名」。1 件は古い「_」区切り）
+  const TASKS = [
+    { m: '田中', ver: 'V2.4', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['PG', 0, 4], ['PT', 14, 16]] },
+    { m: '田中', ver: 'V2.4', name: '請求書出力：宛名の敬称切替', c: 'var(--t1)', bars: [['PG', 10, 11]] },
+    { m: '田中', ver: 'V2.3', name: '権限管理：ロール継承時に閲覧権限が外れる不具合の修正', c: 'var(--t2)', bars: [['IT', 10, 11]] },
+    { m: '田中', ver: 'V2.4', name: '取引先マスタ保守画面：取引先区分の追加', c: 'var(--t3)', bars: [['PG', 10, 18]] },
+    { m: '佐藤', ver: 'V2.5', name: '日次集計バッチ：処理時間短縮（並列化）', c: 'var(--t4)', bars: [['PT', 10, 14]] },
+    { m: '佐藤', ver: 'V2.5', name: 'CSV取込：文字コード自動判定', c: 'var(--t6)', bars: [['PG', 15, 20]] },
+    { m: '佐藤', ver: 'V2.2', name: 'ログイン画面_パスワード強度チェック', c: 'var(--t7)', bars: [['ST', 1, 3]] },
+    { m: '佐藤', ver: 'V2.4', name: '請求書出力：電子帳簿保存法対応（PDFレイアウト変更含む）', c: 'var(--t1)', bars: [['IT', 15, 17]] },
+  ];
+
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  /** アプリと同じ規則で処理名と対応名に分ける（「：」→「_」、どちらも無ければ全体が対応名） */
+  const split = (name) => {
+    for (const sep of ['：', '_']) {
+      const i = name.indexOf(sep);
+      if (i > 0) return { proc: name.slice(0, i), detail: name.slice(i + 1) };
+    }
+    return { proc: '', detail: name };
+  };
+
+  /**
+   * 文節っぽい区切りで分けて <wbr> でつなぐ（モックアップ用の簡易版。本実装は BudouX を想定）
+   * 区切る位置: 助詞・読点・中黒・閉じ括弧の後、開き括弧の前、英数字の続きの前後
+   */
+  const phrase = (text) => {
+    const chunks = [];
+    let cur = '';
+    const isAlnum = (c) => /[A-Za-z0-9]/.test(c);
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], prev = text[i - 1] || '';
+      const breakBefore = cur !== '' && (
+        /[（(]/.test(c) ||                                   // 開き括弧の前
+        /[のとをにがでへはや、・）)]/.test(prev) && !/[、。）)]/.test(c) || // 助詞・区切りの後
+        isAlnum(c) !== isAlnum(prev)                          // 英数字の続きの前後
+      );
+      if (breakBefore) { chunks.push(cur); cur = ''; }
+      cur += c;
+    }
+    if (cur) chunks.push(cur);
+    return chunks.map(esc).join('<wbr>');
+  };
+
+  const VARIANTS = {
+    now: {
+      title: '現状（1 つの文字列を文字単位で 2 行まで折り返す）',
+      rowH: 36,
+      good: ['行の高さが今のまま（36px）で、行数も増えない'],
+      care: ['単語や処理名の途中で改行されることがあり読みにくい', '処理名と対応名の区切りが見た目で分からない'],
+    },
+    A: {
+      title: 'A: 3 段（版数 ／ 処理名 ／ 対応名）',
+      rowH: 68,
+      good: ['版数・処理名・対応名が決まった位置に出るので、目で探す場所が一定', '対応名は文節の切れ目で 2 行まで折り返す'],
+      care: ['行が高くなる（36px → 68px 程度）。同じ画面に入るタスク行は半分ほどになる', 'バーは行の中で上寄せ／中央寄せのどちらにするか決める必要がある'],
+    },
+    B: {
+      title: 'B: 2 段（処理名＋版数 ／ 対応名）',
+      rowH: 42,
+      good: ['1 行目で「何の処理か」、2 行目で「何の対応か」。行の高さは 42px 程度で済む', '版数は小さな札にして処理名の右へ。広い画面では対応名も 1 行で全部見える'],
+      care: ['見出し欄が狭いと対応名は 1 行で「…」になる（全文は吹き出しで見る）'],
+    },
+    C: {
+      title: 'C: 処理名でまとめる（担当者 ＞ 処理名 ＞ 対応名）',
+      rowH: 38,
+      good: ['同じ処理名の対応がまとまり、処理名を繰り返さない（請求書出力の 2 件など）', 'タスク行は対応名だけなので、今の行の高さ（36px）とほぼ同じ 38px で 2 行まで読める'],
+      care: ['処理名の見出し行が増える（処理名ごとに 1 行）', '処理名が 1 件しかない場合も見出し行が出るので、少ないタスクでは冗長'],
+    },
+  };
+
+  let state = { v: 'B', d: 'pc', w: 'std' };
+
+  function labelWidth() {
+    if (state.d === 'sp') return Math.round(390 * 0.4 + (state.w === 'wide' ? 40 : 0)); // スマホは画面幅の 40%（広めでも +40px まで）
+    return state.w === 'wide' ? 320 : 200;
+  }
+
+  function labelHtml(t, v) {
+    const { proc, detail } = split(t.name);
+    const sw = `<i class="sw" style="background:${t.c}"></i>`;
+    if (v === 'now') {
+      return `${sw}<span class="txt"><span class="dt char clamp2"><span class="ver">${t.ver}</span> ${esc(t.name)}</span></span>`;
+    }
+    if (v === 'A') {
+      return `${sw}<span class="txt"><span class="ver">${t.ver}</span>${proc ? `<span class="proc clamp1">${esc(proc)}</span>` : ''}<span class="dt phrase clamp2 ${proc ? '' : 'proc'}">${phrase(detail)}</span></span>`;
+    }
+    if (v === 'B') {
+      return `${sw}<span class="txt"><span class="line1"><span class="proc">${esc(proc || detail)}</span><span class="chip">${t.ver}</span></span>${proc ? `<span class="dt muted phrase clamp1">${phrase(detail)}</span>` : ''}</span>`;
+    }
+    // C: 処理名の見出しの下の行は対応名だけ
+    return `${sw}<span class="txt"><span class="dt phrase clamp2">${phrase(detail)}</span></span>`;
+  }
+
+  const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+  const days = Array.from({ length: DAYS }, (_, i) => { const d = new Date(2026, 8, 14 + i); return { d, key: `2026-09-${String(d.getDate()).padStart(2, '0')}` }; });
+
+  function render() {
+    const v = VARIANTS[state.v];
+    const lw = labelWidth();
+    const g = document.getElementById('gantt');
+    g.style.setProperty('--lw', `${lw}px`);
+    g.innerHTML = '';
+    const lc = el('div', 'col-label'), tc = el('div', 'col-time');
+    lc.appendChild(el('div', 'head l', '担当者 / タスク'));
+    const h = el('div', 'head');
+    days.forEach(({ d, key }) => {
+      const we = d.getDay() === 0 || d.getDay() === 6;
+      h.appendChild(el('div', `day${we ? ' we' : ''}${HOL.has(key) ? ' hol' : ''}`, `<b>${d.getDate()}</b><small>${DOW[d.getDay()]}</small>`));
+    });
+    tc.appendChild(h);
+    const bg = () => { const b = el('div', 'bg'); days.forEach(({ d, key }) => b.appendChild(el('span', HOL.has(key) ? 'hol' : (d.getDay() === 0 || d.getDay() === 6) ? 'we' : ''))); return b; };
+    const addRow = (labNode, height, bars, cls = '') => {
+      labNode.style.height = `${height}px`;
+      lc.appendChild(labNode);
+      const r = el('div', `row ${cls}`); r.style.height = `${height}px`; r.appendChild(bg());
+      (bars || []).forEach(([p, s, e, c]) => {
+        const b = el('div', 'bar', p);
+        b.style.left = `${s * 28 + 1}px`; b.style.width = `${(e - s + 1) * 28 - 2}px`; b.style.background = c;
+        b.style.top = `${Math.round((height - 24) / 2)}px`;
+        r.appendChild(b);
+      });
+      tc.appendChild(r);
+    };
+
+    let taskRows = 0, headRows = 0, total = 34;
+    ['田中', '佐藤'].forEach(m => {
+      const mine = TASKS.filter(t => t.m === m);
+      addRow(el('div', 'lab member', `<i></i><span>${m}</span><span class="cnt">${mine.length} 件</span>`), 36, [], 'member');
+      total += 36;
+      if (state.v === 'C') {
+        const groups = new Map();
+        mine.forEach(t => { const k = `${t.ver} ${split(t.name).proc || '（処理名なし）'}`; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
+        groups.forEach((list, k) => {
+          const [ver, ...rest] = k.split(' ');
+          addRow(el('div', 'lab proc-head', `<span class="line1"><span class="proc">${esc(rest.join(' '))}</span><span class="chip">${ver}</span></span>`), 28, []);
+          headRows++; total += 28;
+          list.forEach(t => { addRow(el('div', 'lab task under', labelHtml(t, 'C')), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
+        });
+      } else {
+        mine.forEach(t => { addRow(el('div', 'lab task', labelHtml(t, state.v)), v.rowH, t.bars.map(b => [...b, t.c])); taskRows++; total += v.rowH; });
+      }
+    });
+    g.appendChild(lc); g.appendChild(tc);
+
+    document.getElementById('frame').className = `frame${state.d === 'sp' ? ' phone' : ''}`;
+    document.getElementById('metrics').innerHTML =
+      `<span>見出し欄 <b>${lw}px</b></span><span>タスク行の高さ <b>${v.rowH}px</b></span>` +
+      `<span>行数 <b>担当者 2 ＋ ${state.v === 'C' ? `処理名 ${headRows} ＋ ` : ''}タスク ${taskRows}</b></span><span>表の高さ <b>${total}px</b>（現状 ${34 + 36 * 2 + 36 * TASKS.length}px）</span>`;
+    const note = document.getElementById('note');
+    note.innerHTML = `<h2>${v.title}</h2><ul>${v.good.map(x => `<li><span class="tag good">良い</span>${x}</li>`).join('')}${v.care.map(x => `<li><span class="tag care">注意</span>${x}</li>`).join('')}` +
+      `<li><span class="tag care">共通</span>対応名の折り返しは文節の切れ目（このモックアップでは簡易ルール、本実装は BudouX）。「現状」だけ文字単位</li></ul>`;
+
+    for (const [id, key, attr] of [['variantSeg', 'v', 'data-v'], ['deviceSeg', 'd', 'data-d'], ['widthSeg', 'w', 'data-w']]) {
+      document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.getAttribute(attr) === state[key])));
+    }
+  }
+
+  document.getElementById('variantSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.v = b.dataset.v; render(); } });
+  document.getElementById('deviceSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.d = b.dataset.d; render(); } });
+  document.getElementById('widthSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.w = b.dataset.w; render(); } });
+  render();
+})();
+</script>
