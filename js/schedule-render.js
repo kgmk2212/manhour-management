@@ -1369,7 +1369,7 @@ export class GanttChartRenderer {
     }
 
     /**
-     * 担当者の見出し行の帯（その日に表示されているバーの本数を数字で出す）。セルを this.stripCells に記録する
+     * 担当者の見出し行の帯（その日に表示されているバーの本数。2 本以上の日は数字も出す）。セルを this.stripCells に記録する
      */
     drawLoadStrip(row, index, y, rowH) {
         const ctx = this.timelineCtx;
@@ -1393,7 +1393,8 @@ export class GanttChartRenderer {
             const n = list.length;
             ctx.fillStyle = LOAD_COLORS[Math.min(n, 3) - 1];
             ctx.fillRect(x + 1, top, DAY_WIDTH - 2, LOAD_STRIP_H);
-            {
+            // 1 本の日は色だけ（数字を出すのは重なっている日）
+            if (n >= 2) {
                 ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
                 ctx.fillStyle = n >= 3 ? '#FFFFFF' : TEXT_PRIMARY;
                 ctx.textAlign = 'center';
