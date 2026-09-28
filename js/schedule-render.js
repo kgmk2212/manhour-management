@@ -93,6 +93,19 @@ function labelIndent(row) {
     return inMember ? (narrow ? 16 : TASK_LABEL_INDENT) : LABEL_DOT_LEFT;
 }
 
+/**
+ * 担当者×タスク表示で行にするタスクの期間: 選んだ月（月ナビ・今日で決めた月）の 1 日から表示月数ぶん先の月末まで。
+ * 選択月より前は含めない（遅延中の予定は今日まで掛かっているとみなすので、終わっていない過去のタスクは残る）。
+ * スクロールで選択月が変わっても行は入れ替えない（rowPeriodMonth はスクロールでは変えない）
+ * @returns {{start: string, end: string}}
+ */
+function memberTaskPeriod() {
+    const ym = scheduleSettings.rowPeriodMonth || scheduleSettings.currentMonth;
+    const [y, m] = (ym || formatDateString(new Date()).slice(0, 7)).split('-').map(Number);
+    const months = scheduleSettings.displayMonths || DEFAULT_DISPLAY_MONTHS || 3;
+    return { start: formatDateString(new Date(y, m - 1, 1)), end: formatDateString(new Date(y, m - 1 + months, 0)) };
+}
+
 /** 予定が占める最終日（遅延中は今日まで） */
 function effectiveEnd(schedule, todayStr) {
     return getDelayInfo(schedule, todayStr).delayed ? todayStr : schedule.endDate;
@@ -659,7 +672,7 @@ export class GanttChartRenderer {
         let sourceSchedules = filteredSchedules || schedules;
         // 担当者×タスク表示: 表示範囲（月ナビの月を中心に表示月数ぶん）に掛かるタスクだけを行にする
         if (isMemberTaskLayout()) {
-            const period = { start: formatDateString(this.rangeStart), end: formatDateString(this.rangeEnd) };
+            const period = memberTaskPeriod();
             sourceSchedules = selectMemberTaskSchedules(sourceSchedules, period, (s) => effectiveEnd(s, todayStr));
         }
 

@@ -43,6 +43,8 @@ export function initScheduleModule() {
         const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setScheduleSettings({ currentMonth });
     }
+    // 担当者×タスク表示で行にする期間の起点（月ナビ・今日で選んだ月。スクロールでは変えない）
+    if (!scheduleSettings.rowPeriodMonth) setScheduleSettings({ rowPeriodMonth: scheduleSettings.currentMonth });
     
     // 月表示を更新
     updateCurrentMonthDisplay();
@@ -297,8 +299,8 @@ export function navigateScheduleMonth(delta) {
     const newMonthNum = date.getMonth() + 1;
     const newMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
 
-    // 常に再描画＋新月位置へスクロールで動作を統一
-    setScheduleSettings({ currentMonth: newMonth });
+    // 常に再描画＋新月位置へスクロールで動作を統一。担当者×タスク表示の行もこの月から入れ替える
+    setScheduleSettings({ currentMonth: newMonth, rowPeriodMonth: newMonth });
     updateCurrentMonthDisplay();
     updateUnscheduledBadge();
 
@@ -316,7 +318,7 @@ export function goToScheduleToday() {
     const newMonthNum = now.getMonth() + 1;
     const currentMonth = `${newYear}-${String(newMonthNum).padStart(2, '0')}`;
 
-    setScheduleSettings({ currentMonth });
+    setScheduleSettings({ currentMonth, rowPeriodMonth: currentMonth });
     updateCurrentMonthDisplay();
     updateUnscheduledBadge();
 

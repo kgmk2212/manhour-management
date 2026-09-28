@@ -341,3 +341,52 @@ test.describe("ガントの縦スクロール（スマホ）", () => {
     expect(after.win).toBe(winBefore);
   });
 });
+
+test.describe("担当者×タスク表示: 行にするタスクの期間", () => {
+  const P = [
+    { ...base, id: "p1", member: "田中", version: "V1", task: "8月に完了", process: "PG", startDate: "2026-08-03", endDate: "2026-08-07", estimatedHours: 40, status: "completed" },
+    { ...base, id: "p2", member: "田中", version: "V1", task: "8月に終わり遅延中", process: "PG", startDate: "2026-08-17", endDate: "2026-08-21", estimatedHours: 40 },
+    { ...base, id: "p3", member: "田中", version: "V1", task: "9月", process: "PG", startDate: "2026-09-14", endDate: "2026-09-18", estimatedHours: 40 },
+    { ...base, id: "p4", member: "田中", version: "V1", task: "12月", process: "PG", startDate: "2026-12-07", endDate: "2026-12-11", estimatedHours: 40 },
+  ];
+  const openP = async (page) => {
+    await page.clock.setFixedTime(new Date("2026-09-24T10:00:00"));
+    await page.addInitScript((sc) => {
+      localStorage.clear();
+      localStorage.setItem("manhour_schedules", JSON.stringify(sc));
+      localStorage.setItem("manhour_scheduleSettings", JSON.stringify({ currentMonth: "2026-09", viewMode: "member", memberLayout: "tasks" }));
+      localStorage.setItem("manhour_currentTab", "schedule");
+    }, P);
+    await page.goto("/index.html");
+    await expect(page.locator(".tab-content.active")).toHaveCount(1);
+  };
+  const taskLabels = async (page) => (await rowsOf(page)).filter((r) => r.type === "memberTask").map((r) => r.label).sort();
+
+  test("選択月（9月）の 1 日から 3 か月先まで。前月に終わったタスクは出ず、遅延中は残る", async ({ page }) => {
+    await openP(page);
+    expect(await taskLabels(page)).toEqual(["8月に終わり遅延中", "9月"].sort());
+  });
+
+  test("スクロールで選択月が変わっても行は入れ替えず、月ナビで月を選ぶと入れ替える", async ({ page }) => {
+    await openP(page);
+    // 横スクロールで 12 月付近を中央へ → 表示の月（currentMonth）は変わるが行はそのまま
+    await page.evaluate(() => {
+      const r = window.getScheduleRenderer();
+      r.scrollContainer.scrollLeft = r.dateToX(new Date(2026, 10, 25)) * (r.uiScale || 1);
+    });
+    await page.waitForTimeout(400); // スクロールが止まってから選択月を更新する（150ms 後）
+    expect(await taskLabels(page)).toEqual(["8月に終わり遅延中", "9月"].sort());
+    // 行が変わる操作（描き直し）をしても、スクロールで変わった月では入れ替えない
+    await page.evaluate(() => window.renderScheduleView());
+    expect(await taskLabels(page)).toEqual(["8月に終わり遅延中", "9月"].sort());
+
+    // 「今日」で 9 月を選び直すと 9〜11 月、そこから月ナビで次の月（10 月）へ進めると 10〜12 月の期間になる
+    await page.evaluate(() => window.goToScheduleToday());
+    await page.waitForTimeout(200);
+    expect(await taskLabels(page)).toEqual(["8月に終わり遅延中", "9月"].sort());
+    await page.evaluate(() => window.navigateScheduleMonth(1));
+    await page.waitForTimeout(200);
+    // 10〜12 月: 12 月のタスクが出る。9 月のタスクと、今日（9/24）までしか掛からない遅延中のタスクは出ない
+    expect(await taskLabels(page)).toEqual(["12月"]);
+  });
+});
