@@ -1123,6 +1123,8 @@
                 <div class="gantt-container" id="ganttContainer">
                     <canvas id="ganttCanvas"></canvas>
                 </div>
+                <!-- バーの色の凡例（js/schedule-legend.js。見出しにタスク名が無い表示のときだけ出す） -->
+                <section id="scheduleLegend" class="schedule-legend" aria-label="バーの色の凡例" hidden></section>
 
                 <!-- 範囲選択中の操作バー（実績の一括選択トレイと同じ bk-dock。ガントの位置を動かさないよう下に置く） -->
                 <div id="scheduleSelectionChip" class="bk-dock schedule-selection-dock" hidden>

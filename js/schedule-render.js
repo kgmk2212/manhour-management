@@ -15,6 +15,7 @@ import { scheduleSpan, assignLanes, buildRowLayout, rowIndexAtY, fitRasterScale 
 import { selectMemberTaskSchedules, buildMemberTaskRows, countDailyLoad, wrapLabel, applyTaskLabelStyle } from './schedule-member-task.js';
 import { showGanttTip, hideGanttTip, currentGanttTipKey, bindTap } from './schedule-gantt-tips.js';
 import { TiledSurface } from './schedule-tiles.js';
+import { renderScheduleLegend, legendKey } from './schedule-legend.js';
 import { getMemberOrderString } from './members.js';
 import { syncBulkDockOffset } from './actual-bulk.js';
 
@@ -45,6 +46,7 @@ const MARQUEE_MIN_PX = 4; // これ未満の移動は「空白クリック」と
 const OVERRUN_FILL = 'rgba(185, 28, 28, 0.08)';   // --danger の淡い地
 const OVERRUN_HATCH = 'rgba(185, 28, 28, 0.40)';  // --danger の斜線
 const OVERRUN_TEXT = '#B91C1C';                   // --danger
+const LEGEND_DIM = 'rgba(255, 255, 255, 0.78)';   // 凡例で選んでいないバーに重ねて薄く見せる
 // 担当者×タスク表示（設計書 2026-09-29-schedule-member-task-view-design.md）
 const GROUP_ROW_BG = '#FAFAF9';                   // --surface-elevated
 const LOAD_COLORS = ['#DCEBD9', '#E9B45A', '#C4841D']; // 1 本・2 本・3 本以上
@@ -884,6 +886,8 @@ export class GanttChartRenderer {
         // 固定の日付の行の大きさを合わせ、見えている付近のタイルを描く
         this.updateStickyHeader();
         this.updateSurfaces();
+        // バーの色の凡例（見出しにタスク名が無い表示のときだけ）
+        renderScheduleLegend(this);
     }
 
     /**
@@ -1219,6 +1223,28 @@ export class GanttChartRenderer {
      * 今日の線を描画
      * Ink & Amber: ソリッド2px赤ライン + 上部に丸インジケータ
      */
+    /**
+     * 凡例で選んだ対応のバーを枠で強調し、それ以外のバーの上に地の色を重ねて薄く見せる
+     * @param {Object} schedule
+     * @param {Array<{x: number, y: number, width: number, height: number}>} rects - このバー（分割なら区間ごと）の矩形
+     */
+    drawLegendEmphasis(schedule, rects) {
+        const ctx = this.timelineCtx;
+        const on = legendKey(schedule.version, schedule.task) === this.legendHighlight;
+        ctx.save();
+        rects.forEach(r => {
+            if (on) {
+                ctx.strokeStyle = getTaskColor(schedule.version, schedule.task);
+                ctx.lineWidth = 2;
+                ctx.strokeRect(r.x - 1.5, r.y - 1.5, r.width + 3, r.height + 3);
+            } else {
+                ctx.fillStyle = LEGEND_DIM;
+                fillRoundRect(ctx, r.x, r.y, r.width, r.height, BAR_RADIUS);
+            }
+        });
+        ctx.restore();
+    }
+
     /** @returns {number|null} 今日の列の左端 x（表示範囲外なら null） */
     todayColumnX() {
         const today = new Date();
@@ -1347,7 +1373,14 @@ export class GanttChartRenderer {
             // レーンごとに下へずらして描く（重なった予定を別の段に分ける）
             sorted.forEach(schedule => {
                 const lane = row.lanes ? (row.lanes.laneOf.get(schedule.id) || 0) : 0;
+                const firstRect = this.scheduleRects.length;
+                const firstOverrun = this.overrunRects.length;
                 this.drawScheduleBar(schedule, barBaseY + lane * LANE_HEIGHT, index);
+                // 凡例で選んだ対応があれば、そのバーを強調し、ほかのバー（遅延のはみ出しも）を薄くする
+                if (this.legendHighlight) {
+                    const overruns = this.overrunRects.slice(firstOverrun).map(o => ({ x: o.x, y: o.y, width: o.width, height: BAR_HEIGHT }));
+                    this.drawLegendEmphasis(schedule, [...this.scheduleRects.slice(firstRect), ...overruns]);
+                }
             });
         });
     }
